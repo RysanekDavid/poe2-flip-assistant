@@ -1,0 +1,146 @@
+[     696ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:25630
+[  303213ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  303228ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  303307ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  309772ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  309773ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  309780ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  310066ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/__nextjs_original-stack-frames:0
+[  333220ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  363243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  363244ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  363244ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  369772ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  369772ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  369789ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  393233ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  423248ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  423248ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  423249ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  429780ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  429781ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  429780ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  453223ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  483229ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  483230ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  483230ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  489787ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  489787ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  489788ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  513224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  543230ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  543231ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  543231ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  549789ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  549789ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  549790ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  573218ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  603235ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  603235ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  603235ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  609812ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  609812ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  609813ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  633211ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  663216ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  663232ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  663233ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  669794ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  669793ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  669810ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  693224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  723228ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  723228ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  723229ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  730822ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  730822ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  730855ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  753221ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  783220ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  783220ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  783222ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  789796ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  789797ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  789797ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  813239ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  843226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  843242ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  843242ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  849767ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  849768ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  849768ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  873234ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  903243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  903244ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  903244ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  909794ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  909794ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  909795ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  933228ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  963207ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[  963208ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[  963208ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  969786ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[  969787ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[  969803ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[  993216ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[ 1023213ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[ 1023214ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[ 1023271ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[ 1029774ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[ 1029774ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[ 1029775ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[ 1053234ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[ 1083224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[ 1083224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[ 1083225ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[ 1089792ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[ 1089792ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[ 1089808ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[ 1113212ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[ 1143229ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[ 1143230ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[ 1143230ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[ 1149798ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[ 1149798ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[ 1149817ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[ 1173192ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[ 1203239ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/alerts?unseen=1:0
+[ 1203240ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/discover?limit=80:0
+[ 1203240ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[ 1209808ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/spreads:0
+[ 1209809ms] TypeError: Failed to fetch
+    at FlipDetailCard.useCallback[load] (webpack-internal:///(app-pages-browser)/./src/components/FlipDetailCard.tsx:35:17)
+[ 1209809ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/watchlist:0
+[ 1861064ms] TypeError: Cannot read properties of undefined (reading 'toFixed')
+    at roundPrice (webpack-internal:///(app-pages-browser)/./src/lib/format.ts:19:14)
+    at formatDenom (webpack-internal:///(app-pages-browser)/./src/core/treasury.ts:43:139)
+    at eval (webpack-internal:///(app-pages-browser)/./src/components/SpreadTable.tsx:325:118)
+    at Array.map (<anonymous>)
+    at SpreadTable (webpack-internal:///(app-pages-browser)/./src/components/SpreadTable.tsx:257:39)
+    at Object.react_stack_bottom_frame (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:23584:20)
+    at renderWithHooks (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:6793:22)
+    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:9247:19)
+    at beginWork (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:10858:18)
+    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:872:30)
+    at performUnitOfWork (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15727:22)
+    at workLoopSync (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15547:41)
+    at renderRootSync (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15527:11)
+    at performWorkOnRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15034:44)
+    at performWorkOnRootViaSchedulerTask (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:16816:7)
+    at MessagePort.performWorkUntilDeadline (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/scheduler/cjs/scheduler.development.js:45:48)

@@ -1,0 +1,48 @@
+{
+  "name": "poe2-flip-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n web,poll -c cyan,magenta \"next dev\" \"tsx watch src/scheduler/poller.ts\"",
+    "dev:web": "next dev",
+    "dev:poll": "tsx watch src/scheduler/poller.ts",
+    "build": "next build",
+    "start": "next start",
+    "probe": "tsx src/scripts/probe.ts",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "better-sqlite3": "^11.0.0",
+    "bottleneck": "^2.19.5",
+    "date-fns": "^3.0.0",
+    "dotenv": "^16.4.0",
+    "driver.js": "^1.5.0",
+    "lucide-react": "^1.21.0",
+    "next": "^15.0.0",
+    "node-cron": "^3.0.3",
+    "node-notifier": "^10.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.12.0",
+    "ws": "^8.21.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.14.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/node-notifier": "^8.0.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/ws": "^8.18.1",
+    "autoprefixer": "^10.4.0",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}

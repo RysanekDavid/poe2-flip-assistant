@@ -1,0 +1,2005 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - heading "PoE2 Flip Assistant" [level=1] [ref=e5]
+        - text: Currency Exchange · Ange
+      - generic [ref=e6]:
+        - button "Swap rates" [active] [ref=e7] [cursor=pointer]:
+          - img [ref=e8]
+        - button "Alerts" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - generic [ref=e116]: "29"
+        - generic [ref=e1850]:
+          - generic [ref=e1851]:
+            - heading "Swap Rates" [level=3] [ref=e1852]
+            - button [ref=e1853] [cursor=pointer]:
+              - img [ref=e1854]
+          - generic [ref=e1857]:
+            - generic [ref=e1858]:
+              - generic [ref=e1859]:
+                - generic [ref=e1860]: 1 Div
+                - generic [ref=e1861]: 261 Ex
+              - generic [ref=e1862]:
+                - generic [ref=e1863]: 1 Div
+                - generic [ref=e1864]: 10.1 Ch
+              - generic [ref=e1865]:
+                - generic [ref=e1866]: 1 Ch
+                - generic [ref=e1867]: 26 Ex
+            - generic [ref=e1868]:
+              - generic [ref=e1869]: Pick a swap
+              - generic [ref=e1870]:
+                - combobox [ref=e1871]:
+                  - option "Exalted → Divine" [selected]
+                  - option "Divine → Exalted"
+                  - option "Chaos → Exalted"
+                  - option "Exalted → Chaos"
+                  - option "Chaos → Divine"
+                  - option "Divine → Chaos"
+                - button "reverse direction" [ref=e1872] [cursor=pointer]:
+                  - img [ref=e1873]
+              - generic [ref=e1876]:
+                - textbox [ref=e1877]: "230"
+                - generic [ref=e1878]: Ex
+                - generic [ref=e1879]: →
+                - generic [ref=e1880]: Div
+              - generic [ref=e1881]:
+                - generic [ref=e1882]: Market rate
+                - generic [ref=e1883]: 1 Ex =
+                - textbox [ref=e1884]: "0.0038"
+                - generic [ref=e1885]: Div
+                - generic [ref=e1886]: from poe.ninja
+              - generic [ref=e1887]:
+                - generic [ref=e1888]:
+                  - generic [ref=e1889]:
+                    - generic [ref=e1890]: Classic — market price
+                    - generic [ref=e1891]: instant
+                  - generic [ref=e1892]:
+                    - generic [ref=e1893]: 1 Ex = 0.004 Div
+                    - generic [ref=e1894]: 0.880 Div
+                  - generic [ref=e1895]: place at market, fills immediately
+                - generic [ref=e1896]:
+                  - generic [ref=e1897]:
+                    - generic [ref=e1898]: Max — edge swap
+                    - generic [ref=e1899]: slower
+                  - generic [ref=e1900]:
+                    - generic [ref=e1901]: 1 Ex = 0.004 Div
+                    - generic [ref=e1902]: 0.906 Div
+                  - generic [ref=e1903]: offer 3% better, wait for a taker
+            - paragraph [ref=e1904]: ⚡ Fast = Classic (market, instant). More value = Max (offer ~3% better, sits until taken).
+            - paragraph [ref=e1905]: Rates are poe.ninja aggregate (~1h lag) and can overshoot the live book — bulk fills at the deep-liquidity ratio, not the headline. Read the in-game Market Ratio and type it above for an exact swap.
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - heading "Top Flips — whole market" [level=2] [ref=e18]
+          - generic "poe.ninja refreshes ~hourly, so prices move slowly" [ref=e117]: · data 2h 48m ago
+          - generic [ref=e19]: · 80 items
+        - generic [ref=e20]:
+          - button "+ seed top 2/category" [ref=e21] [cursor=pointer]
+          - generic [ref=e22]:
+            - checkbox "hide falling (↓)" [ref=e23]
+            - text: hide falling (↓)
+      - textbox "search item… (e.g. kulemak, rune, reliquary)" [ref=e24]
+      - table [ref=e26]:
+        - rowgroup [ref=e27]:
+          - row "Item Cat Mid (Div) Buy (Ex) Sell (Ch) Margin 7d Vol Score ▼" [ref=e28]:
+            - columnheader "Item" [ref=e1906] [cursor=pointer]: Item
+            - columnheader "Cat" [ref=e1907] [cursor=pointer]: Cat
+            - columnheader "Mid (Div)" [ref=e1908] [cursor=pointer]: Mid (Div)
+            - columnheader "Buy (Ex)" [ref=e1909] [cursor=pointer]: Buy (Ex)
+            - columnheader "Sell (Ch)" [ref=e1910] [cursor=pointer]: Sell (Ch)
+            - columnheader "Margin" [ref=e1911] [cursor=pointer]: Margin
+            - columnheader "7d" [ref=e1912] [cursor=pointer]: 7d
+            - columnheader "Vol" [ref=e1913] [cursor=pointer]: Vol
+            - columnheader "Score ▼" [ref=e37] [cursor=pointer]
+            - columnheader [ref=e38]
+        - rowgroup [ref=e39]:
+          - row "Mirror of Kalandra Currency 3651.000 859,059 40,604 22.2% +47% 113.8k 100 watching" [ref=e126]:
+            - cell "Mirror of Kalandra" [ref=e127]:
+              - generic [ref=e128]: Mirror of Kalandra
+            - cell "Currency" [ref=e129]
+            - cell "3651.000" [ref=e130]
+            - cell "859,059" [ref=e131]
+            - cell "40,604" [ref=e132]
+            - cell "22.2%" [ref=e133]:
+              - generic [ref=e134]: 22.2%
+            - cell "+47%" [ref=e135]
+            - cell "113.8k" [ref=e136]
+            - cell "100" [ref=e137]
+            - cell "watching" [ref=e138]
+          - row "Hinekora's Lock Currency 579.900 136,447 6,449 22.2% +134% 71.4k 89 watching" [ref=e139]:
+            - cell "Hinekora's Lock" [ref=e140]:
+              - generic [ref=e141]:
+                - text: Hinekora's Lock
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e142]:
+                  - img [ref=e143]
+            - cell "Currency" [ref=e145]
+            - cell "579.900" [ref=e146]
+            - cell "136,447" [ref=e147]
+            - cell "6,449" [ref=e148]
+            - cell "22.2%" [ref=e149]:
+              - generic [ref=e150]: 22.2%
+            - cell "+134%" [ref=e151]
+            - cell "71.4k" [ref=e152]
+            - cell "89" [ref=e153]
+            - cell "watching" [ref=e154]
+          - row "Aldur's Legacy stable Runes 193.700 45,576 2,154 22.2% -8% 32.5k 80 watching" [ref=e155]:
+            - cell "Aldur's Legacy stable" [ref=e156]:
+              - generic [ref=e157]:
+                - text: Aldur's Legacy
+                - generic [ref=e158]: stable
+            - cell "Runes" [ref=e159]
+            - cell "193.700" [ref=e160]
+            - cell "45,576" [ref=e161]
+            - cell "2,154" [ref=e162]
+            - cell "22.2%" [ref=e163]:
+              - generic [ref=e164]: 22.2%
+            - cell "-8%" [ref=e165]
+            - cell "32.5k" [ref=e166]
+            - cell "80" [ref=e167]
+            - cell "watching" [ref=e168]
+          - row "Raven-Touched Shard stable Ritual 73.120 17,205 813 22.2% +6% 18.0k 72 watching" [ref=e169]:
+            - cell "Raven-Touched Shard stable" [ref=e170]:
+              - generic [ref=e171]:
+                - text: Raven-Touched Shard
+                - generic [ref=e172]: stable
+            - cell "Ritual" [ref=e173]
+            - cell "73.120" [ref=e174]
+            - cell "17,205" [ref=e175]
+            - cell "813" [ref=e176]
+            - cell "22.2%" [ref=e177]:
+              - generic [ref=e178]: 22.2%
+            - cell "+6%" [ref=e179]
+            - cell "18.0k" [ref=e180]
+            - cell "72" [ref=e181]
+            - cell "watching" [ref=e182]
+          - row "Omen of Light Ritual 8.260 1,944 92 22.2% +52% 108.0k 70 watching" [ref=e183]:
+            - cell "Omen of Light" [ref=e184]:
+              - generic [ref=e185]: Omen of Light
+            - cell "Ritual" [ref=e186]
+            - cell "8.260" [ref=e187]
+            - cell "1,944" [ref=e188]
+            - cell "92" [ref=e189]
+            - cell "22.2%" [ref=e190]:
+              - generic [ref=e191]: 22.2%
+            - cell "+52%" [ref=e192]
+            - cell "108.0k" [ref=e193]
+            - cell "70" [ref=e194]
+            - cell "watching" [ref=e195]
+          - row "Aldur's Saga stable Expedition 21.710 5,108 241 22.2% -10% 23.1k 67 watching" [ref=e196]:
+            - cell "Aldur's Saga stable" [ref=e197]:
+              - generic [ref=e198]:
+                - text: Aldur's Saga
+                - generic [ref=e199]: stable
+            - cell "Expedition" [ref=e200]
+            - cell "21.710" [ref=e201]
+            - cell "5,108" [ref=e202]
+            - cell "241" [ref=e203]
+            - cell "22.2%" [ref=e204]:
+              - generic [ref=e205]: 22.2%
+            - cell "-10%" [ref=e206]
+            - cell "23.1k" [ref=e207]
+            - cell "67" [ref=e208]
+            - cell "watching" [ref=e209]
+          - row "Jiquani's Thesis SoulCores 169.000 41,090 1,828 15.1% +168% 3.6k 66 watch" [ref=e210]:
+            - cell "Jiquani's Thesis" [ref=e211]:
+              - generic [ref=e212]:
+                - text: Jiquani's Thesis
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e213]:
+                  - img [ref=e214]
+            - cell "SoulCores" [ref=e216]
+            - cell "169.000" [ref=e217]
+            - cell "41,090" [ref=e218]
+            - cell "1,828" [ref=e219]
+            - cell "15.1%" [ref=e220]:
+              - generic [ref=e221]: 15.1%
+            - cell "+168%" [ref=e222]
+            - cell "3.6k" [ref=e223]
+            - cell "66" [ref=e224]
+            - cell "watch" [ref=e225]:
+              - button "watch" [ref=e226] [cursor=pointer]:
+                - img [ref=e227]
+                - text: watch
+          - row "Omen of Whittling stable Ritual 4.380 1,031 49 22.2% +25% 75.2k 65 watch" [ref=e228]:
+            - cell "Omen of Whittling stable" [ref=e229]:
+              - generic [ref=e230]:
+                - text: Omen of Whittling
+                - generic [ref=e231]: stable
+            - cell "Ritual" [ref=e232]
+            - cell "4.380" [ref=e233]
+            - cell "1,031" [ref=e234]
+            - cell "49" [ref=e235]
+            - cell "22.2%" [ref=e236]:
+              - generic [ref=e237]: 22.2%
+            - cell "+25%" [ref=e238]
+            - cell "75.2k" [ref=e239]
+            - cell "65" [ref=e240]
+            - cell "watch" [ref=e241]:
+              - button "watch" [ref=e242] [cursor=pointer]:
+                - img [ref=e243]
+                - text: watch
+          - row "Omen of Sinistral Erasure Ritual 8.360 1,967 93 22.2% +60% 29.1k 64 watch" [ref=e244]:
+            - cell "Omen of Sinistral Erasure" [ref=e245]:
+              - generic [ref=e246]: Omen of Sinistral Erasure
+            - cell "Ritual" [ref=e247]
+            - cell "8.360" [ref=e248]
+            - cell "1,967" [ref=e249]
+            - cell "93" [ref=e250]
+            - cell "22.2%" [ref=e251]:
+              - generic [ref=e252]: 22.2%
+            - cell "+60%" [ref=e253]
+            - cell "29.1k" [ref=e254]
+            - cell "64" [ref=e255]
+            - cell "watch" [ref=e256]:
+              - button "watch" [ref=e257] [cursor=pointer]:
+                - img [ref=e258]
+                - text: watch
+          - row "Omen of Sinistral Annulment Ritual 8.210 1,932 91 22.2% +47% 24.1k 63 watch" [ref=e259]:
+            - cell "Omen of Sinistral Annulment" [ref=e260]:
+              - generic [ref=e261]: Omen of Sinistral Annulment
+            - cell "Ritual" [ref=e262]
+            - cell "8.210" [ref=e263]
+            - cell "1,932" [ref=e264]
+            - cell "91" [ref=e265]
+            - cell "22.2%" [ref=e266]:
+              - generic [ref=e267]: 22.2%
+            - cell "+47%" [ref=e268]
+            - cell "24.1k" [ref=e269]
+            - cell "63" [ref=e270]
+            - cell "watch" [ref=e271]:
+              - button "watch" [ref=e272] [cursor=pointer]:
+                - img [ref=e273]
+                - text: watch
+          - row "Carved Majesty SoulCores 64.850 15,767 702 15.1% +75% 3.5k 62 watch" [ref=e274]:
+            - cell "Carved Majesty" [ref=e275]:
+              - generic [ref=e276]: Carved Majesty
+            - cell "SoulCores" [ref=e277]
+            - cell "64.850" [ref=e278]
+            - cell "15,767" [ref=e279]
+            - cell "702" [ref=e280]
+            - cell "15.1%" [ref=e281]:
+              - generic [ref=e282]: 15.1%
+            - cell "+75%" [ref=e283]
+            - cell "3.5k" [ref=e284]
+            - cell "62" [ref=e285]
+            - cell "watch" [ref=e286]:
+              - button "watch" [ref=e287] [cursor=pointer]:
+                - img [ref=e288]
+                - text: watch
+          - row "Fracturing Orb Currency 5.380 1,266 60 22.2% +40% 27.4k 61 watch" [ref=e289]:
+            - cell "Fracturing Orb" [ref=e290]:
+              - generic [ref=e291]: Fracturing Orb
+            - cell "Currency" [ref=e292]
+            - cell "5.380" [ref=e293]
+            - cell "1,266" [ref=e294]
+            - cell "60" [ref=e295]
+            - cell "22.2%" [ref=e296]:
+              - generic [ref=e297]: 22.2%
+            - cell "+40%" [ref=e298]
+            - cell "27.4k" [ref=e299]
+            - cell "61" [ref=e300]
+            - cell "watch" [ref=e301]:
+              - button "watch" [ref=e302] [cursor=pointer]:
+                - img [ref=e303]
+                - text: watch
+          - row "Perfect Flux stable Expedition 22.380 5,266 249 22.2% -5% 5.5k 60 watching" [ref=e304]:
+            - cell "Perfect Flux stable" [ref=e305]:
+              - generic [ref=e306]:
+                - text: Perfect Flux
+                - generic [ref=e307]: stable
+            - cell "Expedition" [ref=e308]
+            - cell "22.380" [ref=e309]
+            - cell "5,266" [ref=e310]
+            - cell "249" [ref=e311]
+            - cell "22.2%" [ref=e312]:
+              - generic [ref=e313]: 22.2%
+            - cell "-5%" [ref=e314]
+            - cell "5.5k" [ref=e315]
+            - cell "60" [ref=e316]
+            - cell "watching" [ref=e317]
+          - row "Azmeri Reliquary Key stable Fragments 112.700 27,402 1,219 15.1% +20% 1.5k 60 watching" [ref=e318]:
+            - cell "Azmeri Reliquary Key stable" [ref=e319]:
+              - generic [ref=e320]:
+                - text: Azmeri Reliquary Key
+                - generic [ref=e321]: stable
+            - cell "Fragments" [ref=e322]
+            - cell "112.700" [ref=e323]
+            - cell "27,402" [ref=e324]
+            - cell "1,219" [ref=e325]
+            - cell "15.1%" [ref=e326]:
+              - generic [ref=e327]: 15.1%
+            - cell "+20%" [ref=e328]
+            - cell "1.5k" [ref=e329]
+            - cell "60" [ref=e330]
+            - cell "watching" [ref=e331]
+          - row "The Trialmaster's Reliquary Key Fragments 238.600 59,260 2,533 10.5% +133% 954 60 watching" [ref=e332]:
+            - cell "The Trialmaster's Reliquary Key" [ref=e333]:
+              - generic [ref=e334]:
+                - text: The Trialmaster's Reliquary Key
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e335]:
+                  - img [ref=e336]
+            - cell "Fragments" [ref=e338]
+            - cell "238.600" [ref=e339]
+            - cell "59,260" [ref=e340]
+            - cell "2,533" [ref=e341]
+            - cell "10.5%" [ref=e342]:
+              - generic [ref=e343]: 10.5%
+            - cell "+133%" [ref=e344]
+            - cell "954" [ref=e345]
+            - cell "60" [ref=e346]
+            - cell "watching" [ref=e347]
+          - row "Perfect Chaos Orb Currency 3.880 913 43 22.2% +62% 25.4k 59 watch" [ref=e348]:
+            - cell "Perfect Chaos Orb" [ref=e349]:
+              - generic [ref=e350]: Perfect Chaos Orb
+            - cell "Currency" [ref=e351]
+            - cell "3.880" [ref=e352]
+            - cell "913" [ref=e353]
+            - cell "43" [ref=e354]
+            - cell "22.2%" [ref=e355]:
+              - generic [ref=e356]: 22.2%
+            - cell "+62%" [ref=e357]
+            - cell "25.4k" [ref=e358]
+            - cell "59" [ref=e359]
+            - cell "watch" [ref=e360]:
+              - button "watch" [ref=e361] [cursor=pointer]:
+                - img [ref=e362]
+                - text: watch
+          - row "Kurgal's Gaze Abyss 38.940 9,468 421 15.1% +288% 2.7k 58 watching" [ref=e363]:
+            - cell "Kurgal's Gaze" [ref=e364]:
+              - generic [ref=e365]:
+                - text: Kurgal's Gaze
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e366]:
+                  - img [ref=e367]
+            - cell "Abyss" [ref=e369]
+            - cell "38.940" [ref=e370]
+            - cell "9,468" [ref=e371]
+            - cell "421" [ref=e372]
+            - cell "15.1%" [ref=e373]:
+              - generic [ref=e374]: 15.1%
+            - cell "+288%" [ref=e375]
+            - cell "2.7k" [ref=e376]
+            - cell "58" [ref=e377]
+            - cell "watching" [ref=e378]
+          - row "Perfect Exalted Orb stable Currency 2.860 673 32 22.2% +28% 22.9k 57 watch" [ref=e379]:
+            - cell "Perfect Exalted Orb stable" [ref=e380]:
+              - generic [ref=e381]:
+                - text: Perfect Exalted Orb
+                - generic [ref=e382]: stable
+            - cell "Currency" [ref=e383]
+            - cell "2.860" [ref=e384]
+            - cell "673" [ref=e385]
+            - cell "32" [ref=e386]
+            - cell "22.2%" [ref=e387]:
+              - generic [ref=e388]: 22.2%
+            - cell "+28%" [ref=e389]
+            - cell "22.9k" [ref=e390]
+            - cell "57" [ref=e391]
+            - cell "watch" [ref=e392]:
+              - button "watch" [ref=e393] [cursor=pointer]:
+                - img [ref=e394]
+                - text: watch
+          - row "Omen of Dextral Erasure stable Ritual 4.580 1,078 51 22.2% +22% 13.5k 57 watch" [ref=e395]:
+            - cell "Omen of Dextral Erasure stable" [ref=e396]:
+              - generic [ref=e397]:
+                - text: Omen of Dextral Erasure
+                - generic [ref=e398]: stable
+            - cell "Ritual" [ref=e399]
+            - cell "4.580" [ref=e400]
+            - cell "1,078" [ref=e401]
+            - cell "51" [ref=e402]
+            - cell "22.2%" [ref=e403]:
+              - generic [ref=e404]: 22.2%
+            - cell "+22%" [ref=e405]
+            - cell "13.5k" [ref=e406]
+            - cell "57" [ref=e407]
+            - cell "watch" [ref=e408]:
+              - button "watch" [ref=e409] [cursor=pointer]:
+                - img [ref=e410]
+                - text: watch
+          - row "Omen of Dextral Annulment Ritual 4.620 1,087 51 22.2% +33% 12.2k 57 watch" [ref=e411]:
+            - cell "Omen of Dextral Annulment" [ref=e412]:
+              - generic [ref=e413]: Omen of Dextral Annulment
+            - cell "Ritual" [ref=e414]
+            - cell "4.620" [ref=e415]
+            - cell "1,087" [ref=e416]
+            - cell "51" [ref=e417]
+            - cell "22.2%" [ref=e418]:
+              - generic [ref=e419]: 22.2%
+            - cell "+33%" [ref=e420]
+            - cell "12.2k" [ref=e421]
+            - cell "57" [ref=e422]
+            - cell "watch" [ref=e423]:
+              - button "watch" [ref=e424] [cursor=pointer]:
+                - img [ref=e425]
+                - text: watch
+          - row "Astrid's Creativity Runes 7.210 1,696 80 22.2% -32% 6.0k 55 watching" [ref=e426]:
+            - cell "Astrid's Creativity" [ref=e427]:
+              - generic [ref=e428]:
+                - text: Astrid's Creativity
+                - generic "down >20% 7d" [ref=e429]:
+                  - img [ref=e430]
+            - cell "Runes" [ref=e432]
+            - cell "7.210" [ref=e433]
+            - cell "1,696" [ref=e434]
+            - cell "80" [ref=e435]
+            - cell "22.2%" [ref=e436]:
+              - generic [ref=e437]: 22.2%
+            - cell "-32%" [ref=e438]
+            - cell "6.0k" [ref=e439]
+            - cell "55" [ref=e440]
+            - cell "watching" [ref=e441]
+          - row "Uncut Skill Gem (Level 20) stable UncutGems 4.640 1,092 52 22.2% -1% 8.4k 55 watch" [ref=e442]:
+            - cell "Uncut Skill Gem (Level 20) stable" [ref=e443]:
+              - generic [ref=e444]:
+                - text: Uncut Skill Gem (Level 20)
+                - generic [ref=e445]: stable
+            - cell "UncutGems" [ref=e446]
+            - cell "4.640" [ref=e447]
+            - cell "1,092" [ref=e448]
+            - cell "52" [ref=e449]
+            - cell "22.2%" [ref=e450]:
+              - generic [ref=e451]: 22.2%
+            - cell "-1%" [ref=e452]
+            - cell "8.4k" [ref=e453]
+            - cell "55" [ref=e454]
+            - cell "watch" [ref=e455]:
+              - button "watch" [ref=e456] [cursor=pointer]:
+                - img [ref=e457]
+                - text: watch
+          - row "Simulacrum Fragments 2.540 598 28 22.2% -48% 14.4k 55 watch" [ref=e458]:
+            - cell "Simulacrum" [ref=e459]:
+              - generic [ref=e460]:
+                - text: Simulacrum
+                - generic "down >20% 7d" [ref=e461]:
+                  - img [ref=e462]
+            - cell "Fragments" [ref=e464]
+            - cell "2.540" [ref=e465]
+            - cell "598" [ref=e466]
+            - cell "28" [ref=e467]
+            - cell "22.2%" [ref=e468]:
+              - generic [ref=e469]: 22.2%
+            - cell "-48%" [ref=e470]
+            - cell "14.4k" [ref=e471]
+            - cell "55" [ref=e472]
+            - cell "watch" [ref=e473]:
+              - button "watch" [ref=e474] [cursor=pointer]:
+                - img [ref=e475]
+                - text: watch
+          - row "Omen of Chance stable Ritual 8.900 2,164 96 15.1% +4% 4.4k 53 watch" [ref=e476]:
+            - cell "Omen of Chance stable" [ref=e477]:
+              - generic [ref=e478]:
+                - text: Omen of Chance
+                - generic [ref=e479]: stable
+            - cell "Ritual" [ref=e480]
+            - cell "8.900" [ref=e481]
+            - cell "2,164" [ref=e482]
+            - cell "96" [ref=e483]
+            - cell "15.1%" [ref=e484]:
+              - generic [ref=e485]: 15.1%
+            - cell "+4%" [ref=e486]
+            - cell "4.4k" [ref=e487]
+            - cell "53" [ref=e488]
+            - cell "watch" [ref=e489]:
+              - button "watch" [ref=e490] [cursor=pointer]:
+                - img [ref=e491]
+                - text: watch
+          - row "Origin Core stable Fragments 4.720 1,111 52 22.2% -24% 5.4k 53 watch" [ref=e492]:
+            - cell "Origin Core stable" [ref=e493]:
+              - generic [ref=e494]:
+                - text: Origin Core
+                - generic "down >20% 7d" [ref=e495]:
+                  - img [ref=e496]
+                - generic [ref=e498]: stable
+            - cell "Fragments" [ref=e499]
+            - cell "4.720" [ref=e500]
+            - cell "1,111" [ref=e501]
+            - cell "52" [ref=e502]
+            - cell "22.2%" [ref=e503]:
+              - generic [ref=e504]: 22.2%
+            - cell "-24%" [ref=e505]
+            - cell "5.4k" [ref=e506]
+            - cell "53" [ref=e507]
+            - cell "watch" [ref=e508]:
+              - button "watch" [ref=e509] [cursor=pointer]:
+                - img [ref=e510]
+                - text: watch
+          - row "Faded Crisis Fragment Fragments 3.790 892 42 22.2% +60% 5.8k 52 watch" [ref=e511]:
+            - cell "Faded Crisis Fragment" [ref=e512]:
+              - generic [ref=e513]: Faded Crisis Fragment
+            - cell "Fragments" [ref=e514]
+            - cell "3.790" [ref=e515]
+            - cell "892" [ref=e516]
+            - cell "42" [ref=e517]
+            - cell "22.2%" [ref=e518]:
+              - generic [ref=e519]: 22.2%
+            - cell "+60%" [ref=e520]
+            - cell "5.8k" [ref=e521]
+            - cell "52" [ref=e522]
+            - cell "watch" [ref=e523]:
+              - button "watch" [ref=e524] [cursor=pointer]:
+                - img [ref=e525]
+                - text: watch
+          - row "Orb of Annulment Currency 0.619 146 7 22.2% +44% 30.6k 51 watching" [ref=e526]:
+            - cell "Orb of Annulment" [ref=e527]:
+              - generic [ref=e528]: Orb of Annulment
+            - cell "Currency" [ref=e529]
+            - cell "0.619" [ref=e530]
+            - cell "146" [ref=e531]
+            - cell "7" [ref=e532]
+            - cell "22.2%" [ref=e533]:
+              - generic [ref=e534]: 22.2%
+            - cell "+44%" [ref=e535]
+            - cell "30.6k" [ref=e536]
+            - cell "51" [ref=e537]
+            - cell "watching" [ref=e538]
+          - row "Chaos Orb Currency 0.099 23 1 22.2% +35% 182.9k 51 watch" [ref=e539]:
+            - cell "Chaos Orb" [ref=e540]:
+              - generic [ref=e541]: Chaos Orb
+            - cell "Currency" [ref=e542]
+            - cell "0.099" [ref=e543]
+            - cell "23" [ref=e544]
+            - cell "1" [ref=e545]
+            - cell "22.2%" [ref=e546]:
+              - generic [ref=e547]: 22.2%
+            - cell "+35%" [ref=e548]
+            - cell "182.9k" [ref=e549]
+            - cell "51" [ref=e550]
+            - cell "watch" [ref=e551]:
+              - button "watch" [ref=e552] [cursor=pointer]:
+                - img [ref=e553]
+                - text: watch
+          - 'row "Zarokh''s Reliquary Key: Against the Darkness stable Fragments 72.680 18,051 772 10.5% +15% 376 50 watch" [ref=e554]':
+            - 'cell "Zarokh''s Reliquary Key: Against the Darkness stable" [ref=e555]':
+              - generic [ref=e556]:
+                - text: "Zarokh's Reliquary Key: Against the Darkness"
+                - generic [ref=e557]: stable
+            - cell "Fragments" [ref=e558]
+            - cell "72.680" [ref=e559]
+            - cell "18,051" [ref=e560]
+            - cell "772" [ref=e561]
+            - cell "10.5%" [ref=e562]:
+              - generic [ref=e563]: 10.5%
+            - cell "+15%" [ref=e564]
+            - cell "376" [ref=e565]
+            - cell "50" [ref=e566]
+            - cell "watch" [ref=e567]:
+              - button "watch" [ref=e568] [cursor=pointer]:
+                - img [ref=e569]
+                - text: watch
+          - row "Emergent Possibility stable SoulCores 18.160 4,415 196 15.1% +16% 1.0k 49 watch" [ref=e570]:
+            - cell "Emergent Possibility stable" [ref=e571]:
+              - generic [ref=e572]:
+                - text: Emergent Possibility
+                - generic [ref=e573]: stable
+            - cell "SoulCores" [ref=e574]
+            - cell "18.160" [ref=e575]
+            - cell "4,415" [ref=e576]
+            - cell "196" [ref=e577]
+            - cell "15.1%" [ref=e578]:
+              - generic [ref=e579]: 15.1%
+            - cell "+16%" [ref=e580]
+            - cell "1.0k" [ref=e581]
+            - cell "49" [ref=e582]
+            - cell "watch" [ref=e583]:
+              - button "watch" [ref=e584] [cursor=pointer]:
+                - img [ref=e585]
+                - text: watch
+          - row "Ancient Jawbone Abyss 1.710 402 19 22.2% -80% 7.4k 49 watch" [ref=e586]:
+            - cell "Ancient Jawbone" [ref=e587]:
+              - generic [ref=e588]:
+                - text: Ancient Jawbone
+                - generic "down >20% 7d" [ref=e589]:
+                  - img [ref=e590]
+            - cell "Abyss" [ref=e592]
+            - cell "1.710" [ref=e593]
+            - cell "402" [ref=e594]
+            - cell "19" [ref=e595]
+            - cell "22.2%" [ref=e596]:
+              - generic [ref=e597]: 22.2%
+            - cell "-80%" [ref=e598]
+            - cell "7.4k" [ref=e599]
+            - cell "49" [ref=e600]
+            - cell "watch" [ref=e601]:
+              - button "watch" [ref=e602] [cursor=pointer]:
+                - img [ref=e603]
+                - text: watch
+          - row "Breachlord Sac stable Fragments 3.860 939 42 15.1% -14% 4.3k 49 watch" [ref=e604]:
+            - cell "Breachlord Sac stable" [ref=e605]:
+              - generic [ref=e606]:
+                - text: Breachlord Sac
+                - generic [ref=e607]: stable
+            - cell "Fragments" [ref=e608]
+            - cell "3.860" [ref=e609]
+            - cell "939" [ref=e610]
+            - cell "42" [ref=e611]
+            - cell "15.1%" [ref=e612]:
+              - generic [ref=e613]: 15.1%
+            - cell "-14%" [ref=e614]
+            - cell "4.3k" [ref=e615]
+            - cell "49" [ref=e616]
+            - cell "watch" [ref=e617]:
+              - button "watch" [ref=e618] [cursor=pointer]:
+                - img [ref=e619]
+                - text: watch
+          - row "Ancient Collarbone Abyss 1.870 440 21 22.2% -86% 6.0k 49 watching" [ref=e620]:
+            - cell "Ancient Collarbone" [ref=e621]:
+              - generic [ref=e622]:
+                - text: Ancient Collarbone
+                - generic "down >20% 7d" [ref=e623]:
+                  - img [ref=e624]
+            - cell "Abyss" [ref=e626]
+            - cell "1.870" [ref=e627]
+            - cell "440" [ref=e628]
+            - cell "21" [ref=e629]
+            - cell "22.2%" [ref=e630]:
+              - generic [ref=e631]: 22.2%
+            - cell "-86%" [ref=e632]
+            - cell "6.0k" [ref=e633]
+            - cell "49" [ref=e634]
+            - cell "watching" [ref=e635]
+          - row "Uncut Spirit Gem (Level 20) stable UncutGems 4.750 1,155 51 15.1% +2% 3.2k 49 watch" [ref=e636]:
+            - cell "Uncut Spirit Gem (Level 20) stable" [ref=e637]:
+              - generic [ref=e638]:
+                - text: Uncut Spirit Gem (Level 20)
+                - generic [ref=e639]: stable
+            - cell "UncutGems" [ref=e640]
+            - cell "4.750" [ref=e641]
+            - cell "1,155" [ref=e642]
+            - cell "51" [ref=e643]
+            - cell "15.1%" [ref=e644]:
+              - generic [ref=e645]: 15.1%
+            - cell "+2%" [ref=e646]
+            - cell "3.2k" [ref=e647]
+            - cell "49" [ref=e648]
+            - cell "watch" [ref=e649]:
+              - button "watch" [ref=e650] [cursor=pointer]:
+                - img [ref=e651]
+                - text: watch
+          - row "Preserved Cranium Abyss 1.420 334 16 22.2% +58% 5.3k 47 watch" [ref=e652]:
+            - cell "Preserved Cranium" [ref=e653]:
+              - generic [ref=e654]: Preserved Cranium
+            - cell "Abyss" [ref=e655]
+            - cell "1.420" [ref=e656]
+            - cell "334" [ref=e657]
+            - cell "16" [ref=e658]
+            - cell "22.2%" [ref=e659]:
+              - generic [ref=e660]: 22.2%
+            - cell "+58%" [ref=e661]
+            - cell "5.3k" [ref=e662]
+            - cell "47" [ref=e663]
+            - cell "watch" [ref=e664]:
+              - button "watch" [ref=e665] [cursor=pointer]:
+                - img [ref=e666]
+                - text: watch
+          - row "Vaal Cultivation Orb Currency 2.330 567 25 15.1% +132% 3.6k 46 watch" [ref=e667]:
+            - cell "Vaal Cultivation Orb" [ref=e668]:
+              - generic [ref=e669]:
+                - text: Vaal Cultivation Orb
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e670]:
+                  - img [ref=e671]
+            - cell "Currency" [ref=e673]
+            - cell "2.330" [ref=e674]
+            - cell "567" [ref=e675]
+            - cell "25" [ref=e676]
+            - cell "15.1%" [ref=e677]:
+              - generic [ref=e678]: 15.1%
+            - cell "+132%" [ref=e679]
+            - cell "3.6k" [ref=e680]
+            - cell "46" [ref=e681]
+            - cell "watch" [ref=e682]:
+              - button "watch" [ref=e683] [cursor=pointer]:
+                - img [ref=e684]
+                - text: watch
+          - row "Origin Cradle stable Fragments 2.820 686 31 15.1% -18% 2.9k 46 watch" [ref=e685]:
+            - cell "Origin Cradle stable" [ref=e686]:
+              - generic [ref=e687]:
+                - text: Origin Cradle
+                - generic [ref=e688]: stable
+            - cell "Fragments" [ref=e689]
+            - cell "2.820" [ref=e690]
+            - cell "686" [ref=e691]
+            - cell "31" [ref=e692]
+            - cell "15.1%" [ref=e693]:
+              - generic [ref=e694]: 15.1%
+            - cell "-18%" [ref=e695]
+            - cell "2.9k" [ref=e696]
+            - cell "46" [ref=e697]
+            - cell "watch" [ref=e698]:
+              - button "watch" [ref=e699] [cursor=pointer]:
+                - img [ref=e700]
+                - text: watch
+          - row "Architect's Orb Currency 2.390 581 26 15.1% +153% 3.2k 45 watch" [ref=e701]:
+            - cell "Architect's Orb" [ref=e702]:
+              - generic [ref=e703]:
+                - text: Architect's Orb
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e704]:
+                  - img [ref=e705]
+            - cell "Currency" [ref=e707]
+            - cell "2.390" [ref=e708]
+            - cell "581" [ref=e709]
+            - cell "26" [ref=e710]
+            - cell "15.1%" [ref=e711]:
+              - generic [ref=e712]: 15.1%
+            - cell "+153%" [ref=e713]
+            - cell "3.2k" [ref=e714]
+            - cell "45" [ref=e715]
+            - cell "watch" [ref=e716]:
+              - button "watch" [ref=e717] [cursor=pointer]:
+                - img [ref=e718]
+                - text: watch
+          - row "Soul Core of Quipolatl stable SoulCores 5.230 1,272 57 15.1% +16% 1.3k 45 watch" [ref=e719]:
+            - cell "Soul Core of Quipolatl stable" [ref=e720]:
+              - generic [ref=e721]:
+                - text: Soul Core of Quipolatl
+                - generic [ref=e722]: stable
+            - cell "SoulCores" [ref=e723]
+            - cell "5.230" [ref=e724]
+            - cell "1,272" [ref=e725]
+            - cell "57" [ref=e726]
+            - cell "15.1%" [ref=e727]:
+              - generic [ref=e728]: 15.1%
+            - cell "+16%" [ref=e729]
+            - cell "1.3k" [ref=e730]
+            - cell "45" [ref=e731]
+            - cell "watch" [ref=e732]:
+              - button "watch" [ref=e733] [cursor=pointer]:
+                - img [ref=e734]
+                - text: watch
+          - row "Tangmazu's Reliquary Key stable Fragments 16.490 4,096 175 10.5% +1% 558 44 watch" [ref=e735]:
+            - cell "Tangmazu's Reliquary Key stable" [ref=e736]:
+              - generic [ref=e737]:
+                - text: Tangmazu's Reliquary Key
+                - generic [ref=e738]: stable
+            - cell "Fragments" [ref=e739]
+            - cell "16.490" [ref=e740]
+            - cell "4,096" [ref=e741]
+            - cell "175" [ref=e742]
+            - cell "10.5%" [ref=e743]:
+              - generic [ref=e744]: 10.5%
+            - cell "+1%" [ref=e745]
+            - cell "558" [ref=e746]
+            - cell "44" [ref=e747]
+            - cell "watch" [ref=e748]:
+              - button "watch" [ref=e749] [cursor=pointer]:
+                - img [ref=e750]
+                - text: watch
+          - row "Omen of Abyssal Echoes stable Ritual 0.427 100 5 22.2% -12% 10.5k 44 watch" [ref=e751]:
+            - cell "Omen of Abyssal Echoes stable" [ref=e752]:
+              - generic [ref=e753]:
+                - text: Omen of Abyssal Echoes
+                - generic [ref=e754]: stable
+            - cell "Ritual" [ref=e755]
+            - cell "0.427" [ref=e756]
+            - cell "100" [ref=e757]
+            - cell "5" [ref=e758]
+            - cell "22.2%" [ref=e759]:
+              - generic [ref=e760]: 22.2%
+            - cell "-12%" [ref=e761]
+            - cell "10.5k" [ref=e762]
+            - cell "44" [ref=e763]
+            - cell "watch" [ref=e764]:
+              - button "watch" [ref=e765] [cursor=pointer]:
+                - img [ref=e766]
+                - text: watch
+          - row "Refined Reaver Catalyst stable Breach 1.890 460 20 15.1% +1% 3.4k 44 watching" [ref=e767]:
+            - cell "Refined Reaver Catalyst stable" [ref=e768]:
+              - generic [ref=e769]:
+                - text: Refined Reaver Catalyst
+                - generic [ref=e770]: stable
+            - cell "Breach" [ref=e771]
+            - cell "1.890" [ref=e772]
+            - cell "460" [ref=e773]
+            - cell "20" [ref=e774]
+            - cell "15.1%" [ref=e775]:
+              - generic [ref=e776]: 15.1%
+            - cell "+1%" [ref=e777]
+            - cell "3.4k" [ref=e778]
+            - cell "44" [ref=e779]
+            - cell "watching" [ref=e780]
+          - row "Greater Chaos Orb Currency 0.293 69 3 22.2% +34% 13.5k 44 watch" [ref=e781]:
+            - cell "Greater Chaos Orb" [ref=e782]:
+              - generic [ref=e783]: Greater Chaos Orb
+            - cell "Currency" [ref=e784]
+            - cell "0.293" [ref=e785]
+            - cell "69" [ref=e786]
+            - cell "3" [ref=e787]
+            - cell "22.2%" [ref=e788]:
+              - generic [ref=e789]: 22.2%
+            - cell "+34%" [ref=e790]
+            - cell "13.5k" [ref=e791]
+            - cell "44" [ref=e792]
+            - cell "watch" [ref=e793]:
+              - button "watch" [ref=e794] [cursor=pointer]:
+                - img [ref=e795]
+                - text: watch
+          - row "Refined Sibilant Catalyst Breach 1.740 423 19 15.1% +160% 3.2k 44 watching" [ref=e796]:
+            - cell "Refined Sibilant Catalyst" [ref=e797]:
+              - generic [ref=e798]:
+                - text: Refined Sibilant Catalyst
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e799]:
+                  - img [ref=e800]
+            - cell "Breach" [ref=e802]
+            - cell "1.740" [ref=e803]
+            - cell "423" [ref=e804]
+            - cell "19" [ref=e805]
+            - cell "15.1%" [ref=e806]:
+              - generic [ref=e807]: 15.1%
+            - cell "+160%" [ref=e808]
+            - cell "3.2k" [ref=e809]
+            - cell "44" [ref=e810]
+            - cell "watching" [ref=e811]
+          - row "Guatelitzi's Thesis stable SoulCores 16.380 4,068 174 10.5% -1% 306 42 watch" [ref=e812]:
+            - cell "Guatelitzi's Thesis stable" [ref=e813]:
+              - generic [ref=e814]:
+                - text: Guatelitzi's Thesis
+                - generic [ref=e815]: stable
+            - cell "SoulCores" [ref=e816]
+            - cell "16.380" [ref=e817]
+            - cell "4,068" [ref=e818]
+            - cell "174" [ref=e819]
+            - cell "10.5%" [ref=e820]:
+              - generic [ref=e821]: 10.5%
+            - cell "-1%" [ref=e822]
+            - cell "306" [ref=e823]
+            - cell "42" [ref=e824]
+            - cell "watch" [ref=e825]:
+              - button "watch" [ref=e826] [cursor=pointer]:
+                - img [ref=e827]
+                - text: watch
+          - row "Celestial Alloy Verisium 2.260 549 24 15.1% -69% 1.5k 41 watch" [ref=e828]:
+            - cell "Celestial Alloy" [ref=e829]:
+              - generic [ref=e830]:
+                - text: Celestial Alloy
+                - generic "down >20% 7d" [ref=e831]:
+                  - img [ref=e832]
+            - cell "Verisium" [ref=e834]
+            - cell "2.260" [ref=e835]
+            - cell "549" [ref=e836]
+            - cell "24" [ref=e837]
+            - cell "15.1%" [ref=e838]:
+              - generic [ref=e839]: 15.1%
+            - cell "-69%" [ref=e840]
+            - cell "1.5k" [ref=e841]
+            - cell "41" [ref=e842]
+            - cell "watch" [ref=e843]:
+              - button "watch" [ref=e844] [cursor=pointer]:
+                - img [ref=e845]
+                - text: watch
+          - row "Expedition Logbook stable Expedition 0.921 224 10 15.1% +5% 3.5k 41 watch" [ref=e846]:
+            - cell "Expedition Logbook stable" [ref=e847]:
+              - generic [ref=e848]:
+                - text: Expedition Logbook
+                - generic [ref=e849]: stable
+            - cell "Expedition" [ref=e850]
+            - cell "0.921" [ref=e851]
+            - cell "224" [ref=e852]
+            - cell "10" [ref=e853]
+            - cell "15.1%" [ref=e854]:
+              - generic [ref=e855]: 15.1%
+            - cell "+5%" [ref=e856]
+            - cell "3.5k" [ref=e857]
+            - cell "41" [ref=e858]
+            - cell "watch" [ref=e859]:
+              - button "watch" [ref=e860] [cursor=pointer]:
+                - img [ref=e861]
+                - text: watch
+          - row "Soul Core of Azcapa SoulCores 5.500 1,366 58 10.5% +130% 770 41 watch" [ref=e862]:
+            - cell "Soul Core of Azcapa" [ref=e863]:
+              - generic [ref=e864]:
+                - text: Soul Core of Azcapa
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e865]:
+                  - img [ref=e866]
+            - cell "SoulCores" [ref=e868]
+            - cell "5.500" [ref=e869]
+            - cell "1,366" [ref=e870]
+            - cell "58" [ref=e871]
+            - cell "10.5%" [ref=e872]:
+              - generic [ref=e873]: 10.5%
+            - cell "+130%" [ref=e874]
+            - cell "770" [ref=e875]
+            - cell "41" [ref=e876]
+            - cell "watch" [ref=e877]:
+              - button "watch" [ref=e878] [cursor=pointer]:
+                - img [ref=e879]
+                - text: watch
+          - row "Head of the King stable Ritual 1.050 255 11 15.1% -11% 2.5k 40 watch" [ref=e880]:
+            - cell "Head of the King stable" [ref=e881]:
+              - generic [ref=e882]:
+                - text: Head of the King
+                - generic [ref=e883]: stable
+            - cell "Ritual" [ref=e884]
+            - cell "1.050" [ref=e885]
+            - cell "255" [ref=e886]
+            - cell "11" [ref=e887]
+            - cell "15.1%" [ref=e888]:
+              - generic [ref=e889]: 15.1%
+            - cell "-11%" [ref=e890]
+            - cell "2.5k" [ref=e891]
+            - cell "40" [ref=e892]
+            - cell "watch" [ref=e893]:
+              - button "watch" [ref=e894] [cursor=pointer]:
+                - img [ref=e895]
+                - text: watch
+          - row "Crystallised Corruption Currency 1.640 399 18 15.1% +134% 1.5k 40 watch" [ref=e896]:
+            - cell "Crystallised Corruption" [ref=e897]:
+              - generic [ref=e898]:
+                - text: Crystallised Corruption
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e899]:
+                  - img [ref=e900]
+            - cell "Currency" [ref=e902]
+            - cell "1.640" [ref=e903]
+            - cell "399" [ref=e904]
+            - cell "18" [ref=e905]
+            - cell "15.1%" [ref=e906]:
+              - generic [ref=e907]: 15.1%
+            - cell "+134%" [ref=e908]
+            - cell "1.5k" [ref=e909]
+            - cell "40" [ref=e910]
+            - cell "watch" [ref=e911]:
+              - button "watch" [ref=e912] [cursor=pointer]:
+                - img [ref=e913]
+                - text: watch
+          - row "Vaal Catalysing Infuser stable Currency 1.630 396 18 15.1% -13% 1.3k 39 watch" [ref=e914]:
+            - cell "Vaal Catalysing Infuser stable" [ref=e915]:
+              - generic [ref=e916]:
+                - text: Vaal Catalysing Infuser
+                - generic [ref=e917]: stable
+            - cell "Currency" [ref=e918]
+            - cell "1.630" [ref=e919]
+            - cell "396" [ref=e920]
+            - cell "18" [ref=e921]
+            - cell "15.1%" [ref=e922]:
+              - generic [ref=e923]: 15.1%
+            - cell "-13%" [ref=e924]
+            - cell "1.3k" [ref=e925]
+            - cell "39" [ref=e926]
+            - cell "watch" [ref=e927]:
+              - button "watch" [ref=e928] [cursor=pointer]:
+                - img [ref=e929]
+                - text: watch
+          - row "Core Destabiliser Currency 1.200 292 13 15.1% +179% 1.7k 39 watch" [ref=e930]:
+            - cell "Core Destabiliser" [ref=e931]:
+              - generic [ref=e932]:
+                - text: Core Destabiliser
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e933]:
+                  - img [ref=e934]
+            - cell "Currency" [ref=e936]
+            - cell "1.200" [ref=e937]
+            - cell "292" [ref=e938]
+            - cell "13" [ref=e939]
+            - cell "15.1%" [ref=e940]:
+              - generic [ref=e941]: 15.1%
+            - cell "+179%" [ref=e942]
+            - cell "1.7k" [ref=e943]
+            - cell "39" [ref=e944]
+            - cell "watch" [ref=e945]:
+              - button "watch" [ref=e946] [cursor=pointer]:
+                - img [ref=e947]
+                - text: watch
+          - row "Ancient Rib Abyss 0.748 182 8 15.1% -81% 2.5k 38 watch" [ref=e948]:
+            - cell "Ancient Rib" [ref=e949]:
+              - generic [ref=e950]:
+                - text: Ancient Rib
+                - generic "down >20% 7d" [ref=e951]:
+                  - img [ref=e952]
+            - cell "Abyss" [ref=e954]
+            - cell "0.748" [ref=e955]
+            - cell "182" [ref=e956]
+            - cell "8" [ref=e957]
+            - cell "15.1%" [ref=e958]:
+              - generic [ref=e959]: 15.1%
+            - cell "-81%" [ref=e960]
+            - cell "2.5k" [ref=e961]
+            - cell "38" [ref=e962]
+            - cell "watch" [ref=e963]:
+              - button "watch" [ref=e964] [cursor=pointer]:
+                - img [ref=e965]
+                - text: watch
+          - row "Kulemak's Invitation Fragments 0.710 173 8 15.1% +789% 2.6k 38 watch" [ref=e966]:
+            - cell "Kulemak's Invitation" [ref=e967]:
+              - generic [ref=e968]:
+                - text: Kulemak's Invitation
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e969]:
+                  - img [ref=e970]
+            - cell "Fragments" [ref=e972]
+            - cell "0.710" [ref=e973]
+            - cell "173" [ref=e974]
+            - cell "8" [ref=e975]
+            - cell "15.1%" [ref=e976]:
+              - generic [ref=e977]: 15.1%
+            - cell "+789%" [ref=e978]
+            - cell "2.6k" [ref=e979]
+            - cell "38" [ref=e980]
+            - cell "watch" [ref=e981]:
+              - button "watch" [ref=e982] [cursor=pointer]:
+                - img [ref=e983]
+                - text: watch
+          - row "Reaver Catalyst stable Breach 0.359 87 4 15.1% -6% 4.6k 38 watch" [ref=e984]:
+            - cell "Reaver Catalyst stable" [ref=e985]:
+              - generic [ref=e986]:
+                - text: Reaver Catalyst
+                - generic [ref=e987]: stable
+            - cell "Breach" [ref=e988]
+            - cell "0.359" [ref=e989]
+            - cell "87" [ref=e990]
+            - cell "4" [ref=e991]
+            - cell "15.1%" [ref=e992]:
+              - generic [ref=e993]: 15.1%
+            - cell "-6%" [ref=e994]
+            - cell "4.6k" [ref=e995]
+            - cell "38" [ref=e996]
+            - cell "watch" [ref=e997]:
+              - button "watch" [ref=e998] [cursor=pointer]:
+                - img [ref=e999]
+                - text: watch
+          - row "Perfect Jeweller's Orb Currency 0.411 100 4 15.1% -33% 3.8k 38 watch" [ref=e1000]:
+            - cell "Perfect Jeweller's Orb" [ref=e1001]:
+              - generic [ref=e1002]:
+                - text: Perfect Jeweller's Orb
+                - generic "down >20% 7d" [ref=e1003]:
+                  - img [ref=e1004]
+            - cell "Currency" [ref=e1006]
+            - cell "0.411" [ref=e1007]
+            - cell "100" [ref=e1008]
+            - cell "4" [ref=e1009]
+            - cell "15.1%" [ref=e1010]:
+              - generic [ref=e1011]: 15.1%
+            - cell "-33%" [ref=e1012]
+            - cell "3.8k" [ref=e1013]
+            - cell "38" [ref=e1014]
+            - cell "watch" [ref=e1015]:
+              - button "watch" [ref=e1016] [cursor=pointer]:
+                - img [ref=e1017]
+                - text: watch
+          - row "Origin Spark stable Fragments 1.190 289 13 15.1% +11% 1.1k 37 watch" [ref=e1018]:
+            - cell "Origin Spark stable" [ref=e1019]:
+              - generic [ref=e1020]:
+                - text: Origin Spark
+                - generic [ref=e1021]: stable
+            - cell "Fragments" [ref=e1022]
+            - cell "1.190" [ref=e1023]
+            - cell "289" [ref=e1024]
+            - cell "13" [ref=e1025]
+            - cell "15.1%" [ref=e1026]:
+              - generic [ref=e1027]: 15.1%
+            - cell "+11%" [ref=e1028]
+            - cell "1.1k" [ref=e1029]
+            - cell "37" [ref=e1030]
+            - cell "watch" [ref=e1031]:
+              - button "watch" [ref=e1032] [cursor=pointer]:
+                - img [ref=e1033]
+                - text: watch
+          - row "Cowardly Fate Fragments 2.390 594 25 10.5% +46% 764 37 watch" [ref=e1034]:
+            - cell "Cowardly Fate" [ref=e1035]:
+              - generic [ref=e1036]: Cowardly Fate
+            - cell "Fragments" [ref=e1037]
+            - cell "2.390" [ref=e1038]
+            - cell "594" [ref=e1039]
+            - cell "25" [ref=e1040]
+            - cell "10.5%" [ref=e1041]:
+              - generic [ref=e1042]: 10.5%
+            - cell "+46%" [ref=e1043]
+            - cell "764" [ref=e1044]
+            - cell "37" [ref=e1045]
+            - cell "watch" [ref=e1046]:
+              - button "watch" [ref=e1047] [cursor=pointer]:
+                - img [ref=e1048]
+                - text: watch
+          - row "Deadly Fate Fragments 2.390 594 25 10.5% +44% 728 36 watch" [ref=e1049]:
+            - cell "Deadly Fate" [ref=e1050]:
+              - generic [ref=e1051]: Deadly Fate
+            - cell "Fragments" [ref=e1052]
+            - cell "2.390" [ref=e1053]
+            - cell "594" [ref=e1054]
+            - cell "25" [ref=e1055]
+            - cell "10.5%" [ref=e1056]:
+              - generic [ref=e1057]: 10.5%
+            - cell "+44%" [ref=e1058]
+            - cell "728" [ref=e1059]
+            - cell "36" [ref=e1060]
+            - cell "watch" [ref=e1061]:
+              - button "watch" [ref=e1062] [cursor=pointer]:
+                - img [ref=e1063]
+                - text: watch
+          - row "Victorious Fate Fragments 2.360 586 25 10.5% +43% 720 36 watch" [ref=e1064]:
+            - cell "Victorious Fate" [ref=e1065]:
+              - generic [ref=e1066]: Victorious Fate
+            - cell "Fragments" [ref=e1067]
+            - cell "2.360" [ref=e1068]
+            - cell "586" [ref=e1069]
+            - cell "25" [ref=e1070]
+            - cell "10.5%" [ref=e1071]:
+              - generic [ref=e1072]: 10.5%
+            - cell "+43%" [ref=e1073]
+            - cell "720" [ref=e1074]
+            - cell "36" [ref=e1075]
+            - cell "watch" [ref=e1076]:
+              - button "watch" [ref=e1077] [cursor=pointer]:
+                - img [ref=e1078]
+                - text: watch
+          - row "Vaal Armourer's Infuser Currency 0.478 116 5 15.1% +63% 1.6k 34 watch" [ref=e1079]:
+            - cell "Vaal Armourer's Infuser" [ref=e1080]:
+              - generic [ref=e1081]: Vaal Armourer's Infuser
+            - cell "Currency" [ref=e1082]
+            - cell "0.478" [ref=e1083]
+            - cell "116" [ref=e1084]
+            - cell "5" [ref=e1085]
+            - cell "15.1%" [ref=e1086]:
+              - generic [ref=e1087]: 15.1%
+            - cell "+63%" [ref=e1088]
+            - cell "1.6k" [ref=e1089]
+            - cell "34" [ref=e1090]
+            - cell "watch" [ref=e1091]:
+              - button "watch" [ref=e1092] [cursor=pointer]:
+                - img [ref=e1093]
+                - text: watch
+          - row "Cadigan's Epiphany Runes 1.980 492 21 10.5% -72% 480 33 watch" [ref=e1094]:
+            - cell "Cadigan's Epiphany" [ref=e1095]:
+              - generic [ref=e1096]:
+                - text: Cadigan's Epiphany
+                - generic "down >20% 7d" [ref=e1097]:
+                  - img [ref=e1098]
+            - cell "Runes" [ref=e1100]
+            - cell "1.980" [ref=e1101]
+            - cell "492" [ref=e1102]
+            - cell "21" [ref=e1103]
+            - cell "10.5%" [ref=e1104]:
+              - generic [ref=e1105]: 10.5%
+            - cell "-72%" [ref=e1106]
+            - cell "480" [ref=e1107]
+            - cell "33" [ref=e1108]
+            - cell "watch" [ref=e1109]:
+              - button "watch" [ref=e1110] [cursor=pointer]:
+                - img [ref=e1111]
+                - text: watch
+          - row "Exalted Orb Currency 0.004 0.90 0.04 22.2% -46% 121.0k 33 watch" [ref=e1112]:
+            - cell "Exalted Orb" [ref=e1113]:
+              - generic [ref=e1114]:
+                - text: Exalted Orb
+                - generic "down >20% 7d" [ref=e1115]:
+                  - img [ref=e1116]
+            - cell "Currency" [ref=e1118]
+            - cell "0.004" [ref=e1119]
+            - cell "0.90" [ref=e1120]
+            - cell "0.04" [ref=e1121]
+            - cell "22.2%" [ref=e1122]:
+              - generic [ref=e1123]: 22.2%
+            - cell "-46%" [ref=e1124]
+            - cell "121.0k" [ref=e1125]
+            - cell "33" [ref=e1126]
+            - cell "watch" [ref=e1127]:
+              - button "watch" [ref=e1128] [cursor=pointer]:
+                - img [ref=e1129]
+                - text: watch
+          - row "The Arbiter's Reliquary Key stable Fragments 7.300 1,851 76 6.2% +17% 201 33 watch" [ref=e1130]:
+            - cell "The Arbiter's Reliquary Key stable" [ref=e1131]:
+              - generic [ref=e1132]:
+                - text: The Arbiter's Reliquary Key
+                - generic [ref=e1133]: stable
+            - cell "Fragments" [ref=e1134]
+            - cell "7.300" [ref=e1135]
+            - cell "1,851" [ref=e1136]
+            - cell "76" [ref=e1137]
+            - cell "6.2%" [ref=e1138]:
+              - generic [ref=e1139]: 6.2%
+            - cell "+17%" [ref=e1140]
+            - cell "201" [ref=e1141]
+            - cell "33" [ref=e1142]
+            - cell "watch" [ref=e1143]:
+              - button "watch" [ref=e1144] [cursor=pointer]:
+                - img [ref=e1145]
+                - text: watch
+          - row "Altered Collarbone stable Abyss 1.330 330 14 10.5% -26% 621 33 watch" [ref=e1146]:
+            - cell "Altered Collarbone stable" [ref=e1147]:
+              - generic [ref=e1148]:
+                - text: Altered Collarbone
+                - generic "down >20% 7d" [ref=e1149]:
+                  - img [ref=e1150]
+                - generic [ref=e1152]: stable
+            - cell "Abyss" [ref=e1153]
+            - cell "1.330" [ref=e1154]
+            - cell "330" [ref=e1155]
+            - cell "14" [ref=e1156]
+            - cell "10.5%" [ref=e1157]:
+              - generic [ref=e1158]: 10.5%
+            - cell "-26%" [ref=e1159]
+            - cell "621" [ref=e1160]
+            - cell "33" [ref=e1161]
+            - cell "watch" [ref=e1162]:
+              - button "watch" [ref=e1163] [cursor=pointer]:
+                - img [ref=e1164]
+                - text: watch
+          - row "Ancient Crisis Fragment Fragments 0.747 185 8 10.5% +61% 937 32 watch" [ref=e1165]:
+            - cell "Ancient Crisis Fragment" [ref=e1166]:
+              - generic [ref=e1167]: Ancient Crisis Fragment
+            - cell "Fragments" [ref=e1168]
+            - cell "0.747" [ref=e1169]
+            - cell "185" [ref=e1170]
+            - cell "8" [ref=e1171]
+            - cell "10.5%" [ref=e1172]:
+              - generic [ref=e1173]: 10.5%
+            - cell "+61%" [ref=e1174]
+            - cell "937" [ref=e1175]
+            - cell "32" [ref=e1176]
+            - cell "watch" [ref=e1177]:
+              - button "watch" [ref=e1178] [cursor=pointer]:
+                - img [ref=e1179]
+                - text: watch
+          - row "Omen of Chaotic Quantity Ritual 0.186 45 2 15.1% +153% 2.6k 32 watch" [ref=e1180]:
+            - cell "Omen of Chaotic Quantity" [ref=e1181]:
+              - generic [ref=e1182]:
+                - text: Omen of Chaotic Quantity
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e1183]:
+                  - img [ref=e1184]
+            - cell "Ritual" [ref=e1186]
+            - cell "0.186" [ref=e1187]
+            - cell "45" [ref=e1188]
+            - cell "2" [ref=e1189]
+            - cell "15.1%" [ref=e1190]:
+              - generic [ref=e1191]: 15.1%
+            - cell "+153%" [ref=e1192]
+            - cell "2.6k" [ref=e1193]
+            - cell "32" [ref=e1194]
+            - cell "watch" [ref=e1195]:
+              - button "watch" [ref=e1196] [cursor=pointer]:
+                - img [ref=e1197]
+                - text: watch
+          - row "Sibilant Catalyst stable Breach 0.203 49 2 15.1% +9% 2.3k 32 watch" [ref=e1198]:
+            - cell "Sibilant Catalyst stable" [ref=e1199]:
+              - generic [ref=e1200]:
+                - text: Sibilant Catalyst
+                - generic [ref=e1201]: stable
+            - cell "Breach" [ref=e1202]
+            - cell "0.203" [ref=e1203]
+            - cell "49" [ref=e1204]
+            - cell "2" [ref=e1205]
+            - cell "15.1%" [ref=e1206]:
+              - generic [ref=e1207]: 15.1%
+            - cell "+9%" [ref=e1208]
+            - cell "2.3k" [ref=e1209]
+            - cell "32" [ref=e1210]
+            - cell "watch" [ref=e1211]:
+              - button "watch" [ref=e1212] [cursor=pointer]:
+                - img [ref=e1213]
+                - text: watch
+          - row "Perfect Iron Rune stable Runes 0.879 218 9 10.5% +1% 627 31 watch" [ref=e1214]:
+            - cell "Perfect Iron Rune stable" [ref=e1215]:
+              - generic [ref=e1216]:
+                - text: Perfect Iron Rune
+                - generic [ref=e1217]: stable
+            - cell "Runes" [ref=e1218]
+            - cell "0.879" [ref=e1219]
+            - cell "218" [ref=e1220]
+            - cell "9" [ref=e1221]
+            - cell "10.5%" [ref=e1222]:
+              - generic [ref=e1223]: 10.5%
+            - cell "+1%" [ref=e1224]
+            - cell "627" [ref=e1225]
+            - cell "31" [ref=e1226]
+            - cell "watch" [ref=e1227]:
+              - button "watch" [ref=e1228] [cursor=pointer]:
+                - img [ref=e1229]
+                - text: watch
+          - row "Uhtred's Saga Expedition 0.658 163 7 10.5% +86% 829 31 watch" [ref=e1230]:
+            - cell "Uhtred's Saga" [ref=e1231]:
+              - generic [ref=e1232]: Uhtred's Saga
+            - cell "Expedition" [ref=e1233]
+            - cell "0.658" [ref=e1234]
+            - cell "163" [ref=e1235]
+            - cell "7" [ref=e1236]
+            - cell "10.5%" [ref=e1237]:
+              - generic [ref=e1238]: 10.5%
+            - cell "+86%" [ref=e1239]
+            - cell "829" [ref=e1240]
+            - cell "31" [ref=e1241]
+            - cell "watch" [ref=e1242]:
+              - button "watch" [ref=e1243] [cursor=pointer]:
+                - img [ref=e1244]
+                - text: watch
+          - row "Masterwork Rune Runes 0.318 77 3 15.1% +50% 1.1k 30 watch" [ref=e1245]:
+            - cell "Masterwork Rune" [ref=e1246]:
+              - generic [ref=e1247]: Masterwork Rune
+            - cell "Runes" [ref=e1248]
+            - cell "0.318" [ref=e1249]
+            - cell "77" [ref=e1250]
+            - cell "3" [ref=e1251]
+            - cell "15.1%" [ref=e1252]:
+              - generic [ref=e1253]: 15.1%
+            - cell "+50%" [ref=e1254]
+            - cell "1.1k" [ref=e1255]
+            - cell "30" [ref=e1256]
+            - cell "watch" [ref=e1257]:
+              - button "watch" [ref=e1258] [cursor=pointer]:
+                - img [ref=e1259]
+                - text: watch
+          - row "Weathered Crisis Fragment Fragments 0.597 148 6 10.5% +134% 759 30 watch" [ref=e1260]:
+            - cell "Weathered Crisis Fragment" [ref=e1261]:
+              - generic [ref=e1262]:
+                - text: Weathered Crisis Fragment
+                - generic "spiked >100% 7d — wide spreads, risky to hold" [ref=e1263]:
+                  - img [ref=e1264]
+            - cell "Fragments" [ref=e1266]
+            - cell "0.597" [ref=e1267]
+            - cell "148" [ref=e1268]
+            - cell "6" [ref=e1269]
+            - cell "10.5%" [ref=e1270]:
+              - generic [ref=e1271]: 10.5%
+            - cell "+134%" [ref=e1272]
+            - cell "759" [ref=e1273]
+            - cell "30" [ref=e1274]
+            - cell "watch" [ref=e1275]:
+              - button "watch" [ref=e1276] [cursor=pointer]:
+                - img [ref=e1277]
+                - text: watch
+          - row "Quipolatl's Thesis SoulCores 6.730 1,707 70 6.2% +79% 100 29 watch" [ref=e1278]:
+            - cell "Quipolatl's Thesis" [ref=e1279]:
+              - generic [ref=e1280]: Quipolatl's Thesis
+            - cell "SoulCores" [ref=e1281]
+            - cell "6.730" [ref=e1282]
+            - cell "1,707" [ref=e1283]
+            - cell "70" [ref=e1284]
+            - cell "6.2%" [ref=e1285]:
+              - generic [ref=e1286]: 6.2%
+            - cell "+79%" [ref=e1287]
+            - cell "100" [ref=e1288]
+            - cell "29" [ref=e1289]
+            - cell "watch" [ref=e1290]:
+              - button "watch" [ref=e1291] [cursor=pointer]:
+                - img [ref=e1292]
+                - text: watch
+          - row "Xesht's Reliquary Key stable Fragments 6.960 1,765 72 6.2% +1% 87 29 watch" [ref=e1293]:
+            - cell "Xesht's Reliquary Key stable" [ref=e1294]:
+              - generic [ref=e1295]:
+                - text: Xesht's Reliquary Key
+                - generic [ref=e1296]: stable
+            - cell "Fragments" [ref=e1297]
+            - cell "6.960" [ref=e1298]
+            - cell "1,765" [ref=e1299]
+            - cell "72" [ref=e1300]
+            - cell "6.2%" [ref=e1301]:
+              - generic [ref=e1302]: 6.2%
+            - cell "+1%" [ref=e1303]
+            - cell "87" [ref=e1304]
+            - cell "29" [ref=e1305]
+            - cell "watch" [ref=e1306]:
+              - button "watch" [ref=e1307] [cursor=pointer]:
+                - img [ref=e1308]
+                - text: watch
+          - row "Refined Necrotic Catalyst stable Breach 0.487 121 5 10.5% -19% 652 28 watch" [ref=e1309]:
+            - cell "Refined Necrotic Catalyst stable" [ref=e1310]:
+              - generic [ref=e1311]:
+                - text: Refined Necrotic Catalyst
+                - generic [ref=e1312]: stable
+            - cell "Breach" [ref=e1313]
+            - cell "0.487" [ref=e1314]
+            - cell "121" [ref=e1315]
+            - cell "5" [ref=e1316]
+            - cell "10.5%" [ref=e1317]:
+              - generic [ref=e1318]: 10.5%
+            - cell "-19%" [ref=e1319]
+            - cell "652" [ref=e1320]
+            - cell "28" [ref=e1321]
+            - cell "watch" [ref=e1322]:
+              - button "watch" [ref=e1323] [cursor=pointer]:
+                - img [ref=e1324]
+                - text: watch
+          - row "Essence of Hysteria Essences 0.654 163 7 10.5% +94% 410 27 watching" [ref=e1325]:
+            - cell "Essence of Hysteria" [ref=e1326]:
+              - generic [ref=e1327]: Essence of Hysteria
+            - cell "Essences" [ref=e1328]
+            - cell "0.654" [ref=e1329]
+            - cell "163" [ref=e1330]
+            - cell "7" [ref=e1331]
+            - cell "10.5%" [ref=e1332]:
+              - generic [ref=e1333]: 10.5%
+            - cell "+94%" [ref=e1334]
+            - cell "410" [ref=e1335]
+            - cell "27" [ref=e1336]
+            - cell "watching" [ref=e1337]
+          - row "Carved Cunning stable SoulCores 3.600 913 37 6.2% +2% 121 27 watch" [ref=e1338]:
+            - cell "Carved Cunning stable" [ref=e1339]:
+              - generic [ref=e1340]:
+                - text: Carved Cunning
+                - generic [ref=e1341]: stable
+            - cell "SoulCores" [ref=e1342]
+            - cell "3.600" [ref=e1343]
+            - cell "913" [ref=e1344]
+            - cell "37" [ref=e1345]
+            - cell "6.2%" [ref=e1346]:
+              - generic [ref=e1347]: 6.2%
+            - cell "+2%" [ref=e1348]
+            - cell "121" [ref=e1349]
+            - cell "27" [ref=e1350]
+            - cell "watch" [ref=e1351]:
+              - button "watch" [ref=e1352] [cursor=pointer]:
+                - img [ref=e1353]
+                - text: watch
+          - row "Olroth's Crest of the Sun stable Verisium 0.666 166 7 10.5% +16% 315 26 watch" [ref=e1354]:
+            - cell "Olroth's Crest of the Sun stable" [ref=e1355]:
+              - generic [ref=e1356]:
+                - text: Olroth's Crest of the Sun
+                - generic [ref=e1357]: stable
+            - cell "Verisium" [ref=e1358]
+            - cell "0.666" [ref=e1359]
+            - cell "166" [ref=e1360]
+            - cell "7" [ref=e1361]
+            - cell "10.5%" [ref=e1362]:
+              - generic [ref=e1363]: 10.5%
+            - cell "+16%" [ref=e1364]
+            - cell "315" [ref=e1365]
+            - cell "26" [ref=e1366]
+            - cell "watch" [ref=e1367]:
+              - button "watch" [ref=e1368] [cursor=pointer]:
+                - img [ref=e1369]
+                - text: watch
+          - row "Vaal Blacksmith's Infuser stable Currency 0.332 83 4 10.5% -23% 529 25 watch" [ref=e1370]:
+            - cell "Vaal Blacksmith's Infuser stable" [ref=e1371]:
+              - generic [ref=e1372]:
+                - text: Vaal Blacksmith's Infuser
+                - generic "down >20% 7d" [ref=e1373]:
+                  - img [ref=e1374]
+                - generic [ref=e1376]: stable
+            - cell "Currency" [ref=e1377]
+            - cell "0.332" [ref=e1378]
+            - cell "83" [ref=e1379]
+            - cell "4" [ref=e1380]
+            - cell "10.5%" [ref=e1381]:
+              - generic [ref=e1382]: 10.5%
+            - cell "-23%" [ref=e1383]
+            - cell "529" [ref=e1384]
+            - cell "25" [ref=e1385]
+            - cell "watch" [ref=e1386]:
+              - button "watch" [ref=e1387] [cursor=pointer]:
+                - img [ref=e1388]
+                - text: watch
+          - row "Tecrod's Gaze stable Abyss 1.200 304 12 6.2% +1% 194 24 watch" [ref=e1389]:
+            - cell "Tecrod's Gaze stable" [ref=e1390]:
+              - generic [ref=e1391]:
+                - text: Tecrod's Gaze
+                - generic [ref=e1392]: stable
+            - cell "Abyss" [ref=e1393]
+            - cell "1.200" [ref=e1394]
+            - cell "304" [ref=e1395]
+            - cell "12" [ref=e1396]
+            - cell "6.2%" [ref=e1397]:
+              - generic [ref=e1398]: 6.2%
+            - cell "+1%" [ref=e1399]
+            - cell "194" [ref=e1400]
+            - cell "24" [ref=e1401]
+            - cell "watch" [ref=e1402]:
+              - button "watch" [ref=e1403] [cursor=pointer]:
+                - img [ref=e1404]
+                - text: watch
+      - paragraph [ref=e42]: Click a column to sort. Buy/Sell = recommended order prices (offset scales with volume). Score = margin × turnover (0–100 vs others). flame = spiking, wide spreads, risky to hold · down-arrow = falling · stable = |7d| <30%.
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - heading "Watchlist — tracked spreads" [level=2] [ref=e45]
+        - generic [ref=e46]: click a row → flip plan
+      - table [ref=e48]:
+        - rowgroup [ref=e49]:
+          - row "Item Mid (Div) Buy (Ex) Sell (Ch) Margin 7d Vol Score ▼ Mode" [ref=e50]:
+            - columnheader "Item" [ref=e1405] [cursor=pointer]: Item
+            - columnheader "Mid (Div)" [ref=e1406] [cursor=pointer]: Mid (Div)
+            - columnheader "Buy (Ex)" [ref=e1407] [cursor=pointer]: Buy (Ex)
+            - columnheader "Sell (Ch)" [ref=e1408] [cursor=pointer]: Sell (Ch)
+            - columnheader "Margin" [ref=e1409] [cursor=pointer]: Margin
+            - columnheader "7d" [ref=e1410] [cursor=pointer]: 7d
+            - columnheader "Vol" [ref=e1411] [cursor=pointer]: Vol
+            - columnheader "Score ▼" [ref=e1412] [cursor=pointer]
+            - columnheader "Mode" [ref=e59]
+        - rowgroup [ref=e60]:
+          - row "Currency Mirror of Kalandra 3651.000 859,059 40,604 22.2% +47% 113.8k 100 est" [ref=e1413] [cursor=pointer]:
+            - cell "Currency Mirror of Kalandra" [ref=e1414]:
+              - generic [ref=e1415]:
+                - generic "Currency" [ref=e1416]
+                - text: Mirror of Kalandra
+            - cell "3651.000" [ref=e1417]
+            - cell "859,059" [ref=e1418]
+            - cell "40,604" [ref=e1419]
+            - cell "22.2%" [ref=e1420]:
+              - generic [ref=e1421]: 22.2%
+            - cell "+47%" [ref=e1422]
+            - cell "113.8k" [ref=e1423]
+            - cell "100" [ref=e1424]
+            - cell "est" [ref=e1425]
+          - row "Currency Hinekora's Lock 579.900 136,447 6,449 22.2% +134% 71.4k 89 est" [ref=e1426] [cursor=pointer]:
+            - cell "Currency Hinekora's Lock" [ref=e1427]:
+              - generic [ref=e1428]:
+                - generic "Currency" [ref=e1429]
+                - text: Hinekora's Lock
+                - generic "spiking" [ref=e1430]:
+                  - img [ref=e1431]
+            - cell "579.900" [ref=e1433]
+            - cell "136,447" [ref=e1434]
+            - cell "6,449" [ref=e1435]
+            - cell "22.2%" [ref=e1436]:
+              - generic [ref=e1437]: 22.2%
+            - cell "+134%" [ref=e1438]
+            - cell "71.4k" [ref=e1439]
+            - cell "89" [ref=e1440]
+            - cell "est" [ref=e1441]
+          - row "Runes Aldur's Legacy 193.700 45,576 2,154 22.2% -8% 32.5k 80 est" [ref=e1442] [cursor=pointer]:
+            - cell "Runes Aldur's Legacy" [ref=e1443]:
+              - generic [ref=e1444]:
+                - generic "Runes" [ref=e1445]
+                - text: Aldur's Legacy
+            - cell "193.700" [ref=e1446]
+            - cell "45,576" [ref=e1447]
+            - cell "2,154" [ref=e1448]
+            - cell "22.2%" [ref=e1449]:
+              - generic [ref=e1450]: 22.2%
+            - cell "-8%" [ref=e1451]
+            - cell "32.5k" [ref=e1452]
+            - cell "80" [ref=e1453]
+            - cell "est" [ref=e1454]
+          - row "Ritual Raven-Touched Shard 73.120 17,205 813 22.2% +6% 18.0k 72 est" [ref=e1455] [cursor=pointer]:
+            - cell "Ritual Raven-Touched Shard" [ref=e1456]:
+              - generic [ref=e1457]:
+                - generic "Ritual" [ref=e1458]
+                - text: Raven-Touched Shard
+            - cell "73.120" [ref=e1459]
+            - cell "17,205" [ref=e1460]
+            - cell "813" [ref=e1461]
+            - cell "22.2%" [ref=e1462]:
+              - generic [ref=e1463]: 22.2%
+            - cell "+6%" [ref=e1464]
+            - cell "18.0k" [ref=e1465]
+            - cell "72" [ref=e1466]
+            - cell "est" [ref=e1467]
+          - row "Ritual Omen of Light 8.260 1,944 92 22.2% +52% 108.0k 70 est" [ref=e1468] [cursor=pointer]:
+            - cell "Ritual Omen of Light" [ref=e1469]:
+              - generic [ref=e1470]:
+                - generic "Ritual" [ref=e1471]
+                - text: Omen of Light
+            - cell "8.260" [ref=e1472]
+            - cell "1,944" [ref=e1473]
+            - cell "92" [ref=e1474]
+            - cell "22.2%" [ref=e1475]:
+              - generic [ref=e1476]: 22.2%
+            - cell "+52%" [ref=e1477]
+            - cell "108.0k" [ref=e1478]
+            - cell "70" [ref=e1479]
+            - cell "est" [ref=e1480]
+          - row "Expedition Aldur's Saga 21.710 5,108 241 22.2% -10% 23.1k 67 est" [ref=e1481] [cursor=pointer]:
+            - cell "Expedition Aldur's Saga" [ref=e1482]:
+              - generic [ref=e1483]:
+                - generic "Expedition" [ref=e1484]
+                - text: Aldur's Saga
+            - cell "21.710" [ref=e1485]
+            - cell "5,108" [ref=e1486]
+            - cell "241" [ref=e1487]
+            - cell "22.2%" [ref=e1488]:
+              - generic [ref=e1489]: 22.2%
+            - cell "-10%" [ref=e1490]
+            - cell "23.1k" [ref=e1491]
+            - cell "67" [ref=e1492]
+            - cell "est" [ref=e1493]
+          - row "Expedition Perfect Flux 22.380 5,266 249 22.2% -5% 5.5k 60 est" [ref=e1494] [cursor=pointer]:
+            - cell "Expedition Perfect Flux" [ref=e1495]:
+              - generic [ref=e1496]:
+                - generic "Expedition" [ref=e1497]
+                - text: Perfect Flux
+            - cell "22.380" [ref=e1498]
+            - cell "5,266" [ref=e1499]
+            - cell "249" [ref=e1500]
+            - cell "22.2%" [ref=e1501]:
+              - generic [ref=e1502]: 22.2%
+            - cell "-5%" [ref=e1503]
+            - cell "5.5k" [ref=e1504]
+            - cell "60" [ref=e1505]
+            - cell "est" [ref=e1506]
+          - row "Fragments Azmeri Reliquary Key 112.700 27,402 1,219 15.1% +20% 1.5k 60 est" [ref=e1507] [cursor=pointer]:
+            - cell "Fragments Azmeri Reliquary Key" [ref=e1508]:
+              - generic [ref=e1509]:
+                - generic "Fragments" [ref=e1510]
+                - text: Azmeri Reliquary Key
+            - cell "112.700" [ref=e1511]
+            - cell "27,402" [ref=e1512]
+            - cell "1,219" [ref=e1513]
+            - cell "15.1%" [ref=e1514]:
+              - generic [ref=e1515]: 15.1%
+            - cell "+20%" [ref=e1516]
+            - cell "1.5k" [ref=e1517]
+            - cell "60" [ref=e1518]
+            - cell "est" [ref=e1519]
+          - row "Fragments The Trialmaster's Reliquary Key 238.600 59,260 2,533 10.5% +133% 954 60 est" [ref=e1520] [cursor=pointer]:
+            - cell "Fragments The Trialmaster's Reliquary Key" [ref=e1521]:
+              - generic [ref=e1522]:
+                - generic "Fragments" [ref=e1523]
+                - text: The Trialmaster's Reliquary Key
+                - generic "spiking" [ref=e1524]:
+                  - img [ref=e1525]
+            - cell "238.600" [ref=e1527]
+            - cell "59,260" [ref=e1528]
+            - cell "2,533" [ref=e1529]
+            - cell "10.5%" [ref=e1530]:
+              - generic [ref=e1531]: 10.5%
+            - cell "+133%" [ref=e1532]
+            - cell "954" [ref=e1533]
+            - cell "60" [ref=e1534]
+            - cell "est" [ref=e1535]
+          - row "Abyss Kurgal's Gaze 38.940 9,468 421 15.1% +288% 2.7k 58 est" [ref=e1536] [cursor=pointer]:
+            - cell "Abyss Kurgal's Gaze" [ref=e1537]:
+              - generic [ref=e1538]:
+                - generic "Abyss" [ref=e1539]
+                - text: Kurgal's Gaze
+                - generic "spiking" [ref=e1540]:
+                  - img [ref=e1541]
+            - cell "38.940" [ref=e1543]
+            - cell "9,468" [ref=e1544]
+            - cell "421" [ref=e1545]
+            - cell "15.1%" [ref=e1546]:
+              - generic [ref=e1547]: 15.1%
+            - cell "+288%" [ref=e1548]
+            - cell "2.7k" [ref=e1549]
+            - cell "58" [ref=e1550]
+            - cell "est" [ref=e1551]
+          - row "Runes Astrid's Creativity 7.210 1,696 80 22.2% -32% 6.0k 55 est" [ref=e1552] [cursor=pointer]:
+            - cell "Runes Astrid's Creativity" [ref=e1553]:
+              - generic [ref=e1554]:
+                - generic "Runes" [ref=e1555]
+                - text: Astrid's Creativity
+                - generic "falling" [ref=e1556]:
+                  - img [ref=e1557]
+            - cell "7.210" [ref=e1559]
+            - cell "1,696" [ref=e1560]
+            - cell "80" [ref=e1561]
+            - cell "22.2%" [ref=e1562]:
+              - generic [ref=e1563]: 22.2%
+            - cell "-32%" [ref=e1564]
+            - cell "6.0k" [ref=e1565]
+            - cell "55" [ref=e1566]
+            - cell "est" [ref=e1567]
+          - row "Currency Orb of Annulment 0.619 140 6 14.0% +44% 30.6k 49 real" [ref=e1568] [cursor=pointer]:
+            - cell "Currency Orb of Annulment" [ref=e1569]:
+              - generic [ref=e1570]:
+                - generic "Currency" [ref=e1571]
+                - text: Orb of Annulment
+            - cell "0.619" [ref=e1572]
+            - cell "140" [ref=e1573]
+            - cell "6" [ref=e1574]
+            - cell "14.0%" [ref=e1575]:
+              - generic [ref=e1576]: 14.0%
+            - cell "+44%" [ref=e1577]
+            - cell "30.6k" [ref=e1578]
+            - cell "49" [ref=e1579]
+            - cell "real" [ref=e1580]:
+              - generic [ref=e1581]: real
+          - row "Abyss Ancient Collarbone 1.870 440 21 22.2% -86% 6.0k 49 est" [ref=e1583] [cursor=pointer]:
+            - cell "Abyss Ancient Collarbone" [ref=e1584]:
+              - generic [ref=e1585]:
+                - generic "Abyss" [ref=e1586]
+                - text: Ancient Collarbone
+                - generic "falling" [ref=e1587]:
+                  - img [ref=e1588]
+            - cell "1.870" [ref=e1590]
+            - cell "440" [ref=e1591]
+            - cell "21" [ref=e1592]
+            - cell "22.2%" [ref=e1593]:
+              - generic [ref=e1594]: 22.2%
+            - cell "-86%" [ref=e1595]
+            - cell "6.0k" [ref=e1596]
+            - cell "49" [ref=e1597]
+            - cell "est" [ref=e1598]
+          - row "Breach Refined Reaver Catalyst 1.890 460 20 15.1% +1% 3.4k 44 est" [ref=e1599] [cursor=pointer]:
+            - cell "Breach Refined Reaver Catalyst" [ref=e1600]:
+              - generic [ref=e1601]:
+                - generic "Breach" [ref=e1602]
+                - text: Refined Reaver Catalyst
+            - cell "1.890" [ref=e1603]
+            - cell "460" [ref=e1604]
+            - cell "20" [ref=e1605]
+            - cell "15.1%" [ref=e1606]:
+              - generic [ref=e1607]: 15.1%
+            - cell "+1%" [ref=e1608]
+            - cell "3.4k" [ref=e1609]
+            - cell "44" [ref=e1610]
+            - cell "est" [ref=e1611]
+          - row "Breach Refined Sibilant Catalyst 1.740 320 15 21.2% +160% 3.2k 44 real" [ref=e1612] [cursor=pointer]:
+            - cell "Breach Refined Sibilant Catalyst" [ref=e1613]:
+              - generic [ref=e1614]:
+                - generic "Breach" [ref=e1615]
+                - text: Refined Sibilant Catalyst
+                - generic "spiking" [ref=e1616]:
+                  - img [ref=e1617]
+            - cell "1.740" [ref=e1619]
+            - cell "320" [ref=e1620]
+            - cell "15" [ref=e1621]
+            - cell "21.2%" [ref=e1622]:
+              - generic [ref=e1623]: 21.2%
+            - cell "+160%" [ref=e1624]
+            - cell "3.2k" [ref=e1625]
+            - cell "44" [ref=e1626]
+            - cell "real" [ref=e1627]:
+              - generic [ref=e1628]: real
+          - row "Essences Essence of Hysteria 0.654 163 7 10.5% +94% 410 27 est" [ref=e1630] [cursor=pointer]:
+            - cell "Essences Essence of Hysteria" [ref=e1631]:
+              - generic [ref=e1632]:
+                - generic "Essences" [ref=e1633]
+                - text: Essence of Hysteria
+            - cell "0.654" [ref=e1634]
+            - cell "163" [ref=e1635]
+            - cell "7" [ref=e1636]
+            - cell "10.5%" [ref=e1637]:
+              - generic [ref=e1638]: 10.5%
+            - cell "+94%" [ref=e1639]
+            - cell "410" [ref=e1640]
+            - cell "27" [ref=e1641]
+            - cell "est" [ref=e1642]
+          - row "Essences Essence of Horror 0.229 58 2 6.2% +149% 121 14 est" [ref=e1643] [cursor=pointer]:
+            - cell "Essences Essence of Horror" [ref=e1644]:
+              - generic [ref=e1645]:
+                - generic "Essences" [ref=e1646]
+                - text: Essence of Horror
+                - generic "spiking" [ref=e1647]:
+                  - img [ref=e1648]
+            - cell "0.229" [ref=e1650]
+            - cell "58" [ref=e1651]
+            - cell "2" [ref=e1652]
+            - cell "6.2%" [ref=e1653]:
+              - generic [ref=e1654]: 6.2%
+            - cell "+149%" [ref=e1655]
+            - cell "121" [ref=e1656]
+            - cell "14" [ref=e1657]
+            - cell "est" [ref=e1658]
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - heading "Flip Plan" [level=2] [ref=e66]
+          - paragraph [ref=e67]: click a row in the watchlist to see its full flip plan
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - heading "Flip History" [level=2] [ref=e70]
+            - button "export CSV" [ref=e71] [cursor=pointer]
+          - generic [ref=e72]:
+            - generic [ref=e73]:
+              - generic [ref=e74]: Profit (Div)
+              - generic [ref=e75]: "0.00"
+            - generic [ref=e76]:
+              - generic [ref=e77]: Profit (Ch)
+              - generic [ref=e78]: "0.00"
+            - generic [ref=e79]:
+              - generic [ref=e80]: Flips
+              - generic [ref=e81]: "0"
+            - generic [ref=e82]:
+              - generic [ref=e83]: Best (Div)
+              - generic [ref=e84]: "0.00"
+          - generic [ref=e85]:
+            - textbox "item" [ref=e86]
+            - textbox "qty" [ref=e87]: "1"
+            - textbox "buy" [ref=e88]
+            - combobox [ref=e89]:
+              - option "Ex" [selected]
+              - option "Ch"
+              - option "Div"
+            - textbox "sell" [ref=e90]
+            - combobox [ref=e91]:
+              - option "Ch" [selected]
+              - option "Ex"
+              - option "Div"
+            - button "log flip" [ref=e92] [cursor=pointer]
+          - table [ref=e93]:
+            - rowgroup [ref=e94]:
+              - row "Item Qty Buy Sell Profit" [ref=e95]:
+                - columnheader "Item" [ref=e96]
+                - columnheader "Qty" [ref=e97]
+                - columnheader "Buy" [ref=e98]
+                - columnheader "Sell" [ref=e99]
+                - columnheader "Profit" [ref=e100]
+                - columnheader [ref=e101]
+            - rowgroup [ref=e102]:
+              - row "no flips logged — log one above or hit “log flip” in a Flip Plan" [ref=e103]:
+                - cell "no flips logged — log one above or hit “log flip” in a Flip Plan" [ref=e104]
+      - generic [ref=e106]:
+        - heading "Watchlist" [level=2] [ref=e107]
+        - paragraph [ref=e108]: Items tracked for spreads & alerts. Add from Top Flips (+ watch), or use seed top 2/category there to auto-pick the highest flip-score items per category. Set your real Ange buy/sell below to get the true spread.
+        - generic [ref=e109]:
+          - textbox "item id (e.g. exalted)" [ref=e110]
+          - textbox "display name" [ref=e111]
+          - combobox [ref=e112]:
+            - option "Currency" [selected]
+            - option "Fragments"
+            - option "Runes"
+            - option "Essences"
+            - option "Breach"
+            - option "Expedition"
+            - option "Abyss"
+            - option "Ritual"
+            - option "UncutGems"
+            - option "SoulCores"
+            - option "Idols"
+            - option "Verisium"
+          - button "add" [ref=e113] [cursor=pointer]
+        - list [ref=e114]:
+          - listitem [ref=e1659]:
+            - generic [ref=e1660]:
+              - generic [ref=e1661]:
+                - text: Aldur's Legacy
+                - generic [ref=e1662]: (aldurs-legacy)
+              - button "remove" [ref=e1663] [cursor=pointer]
+            - generic [ref=e1664]:
+              - generic [ref=e1665]: "Ange:"
+              - textbox "buy Ex" [ref=e1666]
+              - textbox "sell Ch" [ref=e1667]
+              - button "save" [ref=e1668] [cursor=pointer]
+          - listitem [ref=e1669]:
+            - generic [ref=e1670]:
+              - generic [ref=e1671]:
+                - text: Aldur's Saga
+                - generic [ref=e1672]: (aldurs-saga)
+              - button "remove" [ref=e1673] [cursor=pointer]
+            - generic [ref=e1674]:
+              - generic [ref=e1675]: "Ange:"
+              - textbox "buy Ex" [ref=e1676]
+              - textbox "sell Ch" [ref=e1677]
+              - button "save" [ref=e1678] [cursor=pointer]
+          - listitem [ref=e1679]:
+            - generic [ref=e1680]:
+              - generic [ref=e1681]:
+                - text: Ancient Collarbone
+                - generic [ref=e1682]: (ancient-collarbone)
+              - button "remove" [ref=e1683] [cursor=pointer]
+            - generic [ref=e1684]:
+              - generic [ref=e1685]: "Ange:"
+              - textbox "buy Ex" [ref=e1686]
+              - textbox "sell Ch" [ref=e1687]
+              - button "save" [ref=e1688] [cursor=pointer]
+          - listitem [ref=e1689]:
+            - generic [ref=e1690]:
+              - generic [ref=e1691]:
+                - text: Astrid's Creativity
+                - generic [ref=e1692]: (astrids-creativity)
+              - button "remove" [ref=e1693] [cursor=pointer]
+            - generic [ref=e1694]:
+              - generic [ref=e1695]: "Ange:"
+              - textbox "buy Ex" [ref=e1696]
+              - textbox "sell Ch" [ref=e1697]
+              - button "save" [ref=e1698] [cursor=pointer]
+          - listitem [ref=e1699]:
+            - generic [ref=e1700]:
+              - generic [ref=e1701]:
+                - text: Azmeri Reliquary Key
+                - generic [ref=e1702]: (azmeri-reliquary-key)
+              - button "remove" [ref=e1703] [cursor=pointer]
+            - generic [ref=e1704]:
+              - generic [ref=e1705]: "Ange:"
+              - textbox "buy Ex" [ref=e1706]
+              - textbox "sell Ch" [ref=e1707]
+              - button "save" [ref=e1708] [cursor=pointer]
+          - listitem [ref=e1709]:
+            - generic [ref=e1710]:
+              - generic [ref=e1711]:
+                - text: Essence of Horror
+                - generic [ref=e1712]: (essence-of-horror)
+              - button "remove" [ref=e1713] [cursor=pointer]
+            - generic [ref=e1714]:
+              - generic [ref=e1715]: "Ange:"
+              - textbox "buy Ex" [ref=e1716]
+              - textbox "sell Ch" [ref=e1717]
+              - button "save" [ref=e1718] [cursor=pointer]
+          - listitem [ref=e1719]:
+            - generic [ref=e1720]:
+              - generic [ref=e1721]:
+                - text: Essence of Hysteria
+                - generic [ref=e1722]: (essence-of-hysteria)
+              - button "remove" [ref=e1723] [cursor=pointer]
+            - generic [ref=e1724]:
+              - generic [ref=e1725]: "Ange:"
+              - textbox "buy Ex" [ref=e1726]
+              - textbox "sell Ch" [ref=e1727]
+              - button "save" [ref=e1728] [cursor=pointer]
+          - listitem [ref=e1729]:
+            - generic [ref=e1730]:
+              - generic [ref=e1731]:
+                - text: Hinekora's Lock
+                - generic [ref=e1732]: (hinekoras-lock)
+              - button "remove" [ref=e1733] [cursor=pointer]
+            - generic [ref=e1734]:
+              - generic [ref=e1735]: "Ange:"
+              - textbox "buy Ex" [ref=e1736]
+              - textbox "sell Ch" [ref=e1737]
+              - button "save" [ref=e1738] [cursor=pointer]
+          - listitem [ref=e1739]:
+            - generic [ref=e1740]:
+              - generic [ref=e1741]:
+                - text: Kurgal's Gaze
+                - generic [ref=e1742]: (kurgals-gaze)
+              - button "remove" [ref=e1743] [cursor=pointer]
+            - generic [ref=e1744]:
+              - generic [ref=e1745]: "Ange:"
+              - textbox "buy Ex" [ref=e1746]
+              - textbox "sell Ch" [ref=e1747]
+              - button "save" [ref=e1748] [cursor=pointer]
+          - listitem [ref=e1749]:
+            - generic [ref=e1750]:
+              - generic [ref=e1751]:
+                - text: Mirror of Kalandra
+                - generic [ref=e1752]: (mirror)
+              - button "remove" [ref=e1753] [cursor=pointer]
+            - generic [ref=e1754]:
+              - generic [ref=e1755]: "Ange:"
+              - textbox "buy Ex" [ref=e1756]
+              - textbox "sell Ch" [ref=e1757]
+              - button "save" [ref=e1758] [cursor=pointer]
+          - listitem [ref=e1759]:
+            - generic [ref=e1760]:
+              - generic [ref=e1761]:
+                - text: Omen of Light
+                - generic [ref=e1762]: (omen-of-light)
+              - button "remove" [ref=e1763] [cursor=pointer]
+            - generic [ref=e1764]:
+              - generic [ref=e1765]: "Ange:"
+              - textbox "buy Ex" [ref=e1766]
+              - textbox "sell Ch" [ref=e1767]
+              - button "save" [ref=e1768] [cursor=pointer]
+          - listitem [ref=e1769]:
+            - generic [ref=e1770]:
+              - generic [ref=e1771]:
+                - text: Orb of Annulment
+                - generic [ref=e1772]: (annul)
+              - button "remove" [ref=e1773] [cursor=pointer]
+            - generic [ref=e1774]:
+              - generic [ref=e1775]: "Ange:"
+              - textbox "buy Ex" [ref=e1776]: "140"
+              - textbox "sell Ch" [ref=e1777]: "6.17"
+              - button "save" [ref=e1778] [cursor=pointer]
+              - button "clear" [ref=e1779] [cursor=pointer]
+          - listitem [ref=e1780]:
+            - generic [ref=e1781]:
+              - generic [ref=e1782]:
+                - text: Perfect Flux
+                - generic [ref=e1783]: (perfect-flux)
+              - button "remove" [ref=e1784] [cursor=pointer]
+            - generic [ref=e1785]:
+              - generic [ref=e1786]: "Ange:"
+              - textbox "buy Ex" [ref=e1787]
+              - textbox "sell Ch" [ref=e1788]
+              - button "save" [ref=e1789] [cursor=pointer]
+          - listitem [ref=e1790]:
+            - generic [ref=e1791]:
+              - generic [ref=e1792]:
+                - text: Raven-Touched Shard
+                - generic [ref=e1793]: (raven-touched-shard)
+              - button "remove" [ref=e1794] [cursor=pointer]
+            - generic [ref=e1795]:
+              - generic [ref=e1796]: "Ange:"
+              - textbox "buy Ex" [ref=e1797]
+              - textbox "sell Ch" [ref=e1798]
+              - button "save" [ref=e1799] [cursor=pointer]
+          - listitem [ref=e1800]:
+            - generic [ref=e1801]:
+              - generic [ref=e1802]:
+                - text: Refined Reaver Catalyst
+                - generic [ref=e1803]: (refined-reaver-catalyst)
+              - button "remove" [ref=e1804] [cursor=pointer]
+            - generic [ref=e1805]:
+              - generic [ref=e1806]: "Ange:"
+              - textbox "buy Ex" [ref=e1807]
+              - textbox "sell Ch" [ref=e1808]
+              - button "save" [ref=e1809] [cursor=pointer]
+          - listitem [ref=e1810]:
+            - generic [ref=e1811]:
+              - generic [ref=e1812]:
+                - text: Refined Sibilant Catalyst
+                - generic [ref=e1813]: (refined-sibilant-catalyst)
+              - button "remove" [ref=e1814] [cursor=pointer]
+            - generic [ref=e1815]:
+              - generic [ref=e1816]: "Ange:"
+              - textbox "buy Ex" [ref=e1817]: "320"
+              - textbox "sell Ch" [ref=e1818]: "15"
+              - button "save" [ref=e1819] [cursor=pointer]
+              - button "clear" [ref=e1820] [cursor=pointer]
+          - listitem [ref=e1821]:
+            - generic [ref=e1822]:
+              - generic [ref=e1823]:
+                - text: The Trialmaster's Reliquary Key
+                - generic [ref=e1824]: (the-trialmasters-reliquary-key)
+              - button "remove" [ref=e1825] [cursor=pointer]
+            - generic [ref=e1826]:
+              - generic [ref=e1827]: "Ange:"
+              - textbox "buy Ex" [ref=e1828]
+              - textbox "sell Ch" [ref=e1829]
+              - button "save" [ref=e1830] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e1836] [cursor=pointer]:
+    - img [ref=e1837]
+  - alert [ref=e1840]

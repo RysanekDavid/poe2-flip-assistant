@@ -1,0 +1,128 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - heading "PoE2 Flip Assistant" [level=1] [ref=e4]
+    - generic [ref=e5]: Currency Exchange · Ange
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - heading "Top Flips — whole market" [level=2] [ref=e9]
+        - generic [ref=e10]: · 0 items
+      - generic [ref=e11]:
+        - button "+ seed top 2/category" [ref=e12] [cursor=pointer]
+        - generic [ref=e13]:
+          - checkbox "hide falling (↓)" [ref=e14]
+          - text: hide falling (↓)
+    - textbox "search item… (e.g. kulemak, rune, reliquary)" [ref=e15]
+    - table [ref=e17]:
+      - rowgroup [ref=e18]:
+        - row "Item Cat Mid (Div) Buy (Ex) Sell (Ch) Margin 7d Vol Flip score ▼" [ref=e19]:
+          - columnheader "Item" [ref=e20] [cursor=pointer]: Item
+          - columnheader "Cat" [ref=e21] [cursor=pointer]: Cat
+          - columnheader "Mid (Div)" [ref=e22] [cursor=pointer]: Mid (Div)
+          - columnheader "Buy (Ex)" [ref=e23] [cursor=pointer]: Buy (Ex)
+          - columnheader "Sell (Ch)" [ref=e24] [cursor=pointer]: Sell (Ch)
+          - columnheader "Margin" [ref=e25] [cursor=pointer]: Margin
+          - columnheader "7d" [ref=e26] [cursor=pointer]: 7d
+          - columnheader "Vol" [ref=e27] [cursor=pointer]: Vol
+          - columnheader "Flip score ▼" [ref=e28] [cursor=pointer]
+          - columnheader [ref=e29]
+      - rowgroup [ref=e30]:
+        - row "no candidates — run a poll first" [ref=e31]:
+          - cell "no candidates — run a poll first" [ref=e32]
+    - paragraph [ref=e33]: Click a column to sort. Buy/Sell = recommended order prices (offset scales with volume). 🔥 hot = spiking, wide spreads, risky to hold · ↓ = falling · stable = |7d| <30%.
+  - generic [ref=e34]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - heading "Watchlist — tracked spreads" [level=2] [ref=e38]
+          - generic [ref=e39]: click a row → flip plan
+        - table [ref=e41]:
+          - rowgroup [ref=e42]:
+            - row "Item Mid (Div) Buy (Ex) Sell (Ch) Margin 7d Vol Flip ▼ Mode" [ref=e43]:
+              - columnheader "Item" [ref=e44] [cursor=pointer]: Item
+              - columnheader "Mid (Div)" [ref=e45] [cursor=pointer]: Mid (Div)
+              - columnheader "Buy (Ex)" [ref=e46] [cursor=pointer]: Buy (Ex)
+              - columnheader "Sell (Ch)" [ref=e47] [cursor=pointer]: Sell (Ch)
+              - columnheader "Margin" [ref=e48] [cursor=pointer]: Margin
+              - columnheader "7d" [ref=e49] [cursor=pointer]: 7d
+              - columnheader "Vol" [ref=e50] [cursor=pointer]: Vol
+              - columnheader "Flip ▼" [ref=e51] [cursor=pointer]
+              - columnheader "Mode" [ref=e52]
+          - rowgroup [ref=e53]:
+            - row "empty — add items from “Top Flips” (+ watch / seed), then enter your real Ange prices" [ref=e54]:
+              - cell "empty — add items from “Top Flips” (+ watch / seed), then enter your real Ange prices" [ref=e55]
+      - generic [ref=e56]:
+        - heading "Flip Plan" [level=2] [ref=e57]
+        - paragraph [ref=e58]: click a row in the watchlist to see its full flip plan
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - heading "Flip History" [level=2] [ref=e61]
+          - button "export CSV" [ref=e62] [cursor=pointer]
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - generic [ref=e65]: Profit (Div)
+            - generic [ref=e66]: "0.00"
+          - generic [ref=e67]:
+            - generic [ref=e68]: Profit (Ch)
+            - generic [ref=e69]: "0.00"
+          - generic [ref=e70]:
+            - generic [ref=e71]: Flips
+            - generic [ref=e72]: "0"
+          - generic [ref=e73]:
+            - generic [ref=e74]: Best (Div)
+            - generic [ref=e75]: "0.00"
+        - generic [ref=e76]:
+          - textbox "item" [ref=e77]
+          - textbox "qty" [ref=e78]: "1"
+          - textbox "buy" [ref=e79]
+          - combobox [ref=e80]:
+            - option "EXALT" [selected]
+            - option "CHAOS"
+            - option "DIVINE"
+          - textbox "sell" [ref=e81]
+          - combobox [ref=e82]:
+            - option "CHAOS" [selected]
+            - option "EXALT"
+            - option "DIVINE"
+          - button "log flip" [ref=e83] [cursor=pointer]
+        - table [ref=e84]:
+          - rowgroup [ref=e85]:
+            - row "Item Qty Buy Sell Profit" [ref=e86]:
+              - columnheader "Item" [ref=e87]
+              - columnheader "Qty" [ref=e88]
+              - columnheader "Buy" [ref=e89]
+              - columnheader "Sell" [ref=e90]
+              - columnheader "Profit" [ref=e91]
+              - columnheader [ref=e92]
+          - rowgroup [ref=e93]:
+            - row "no flips logged — log one above or hit “log flip” in a Flip Plan" [ref=e94]:
+              - cell "no flips logged — log one above or hit “log flip” in a Flip Plan" [ref=e95]
+    - generic [ref=e96]:
+      - generic [ref=e97]:
+        - heading "Swap Rates" [level=2] [ref=e98]
+        - paragraph [ref=e99]: no rates yet — poll first
+      - generic [ref=e100]:
+        - heading "Alerts" [level=2] [ref=e102]
+        - list [ref=e103]:
+          - listitem [ref=e104]: no alerts yet
+      - generic [ref=e105]:
+        - heading "Watchlist" [level=2] [ref=e106]
+        - generic [ref=e107]:
+          - textbox "item id (e.g. exalted)" [ref=e108]
+          - textbox "display name" [ref=e109]
+          - combobox [ref=e110]:
+            - option "Currency" [selected]
+            - option "Fragments"
+            - option "Runes"
+            - option "Essences"
+            - option "Breach"
+            - option "Expedition"
+            - option "Abyss"
+            - option "Ritual"
+            - option "UncutGems"
+            - option "SoulCores"
+            - option "Idols"
+            - option "Verisium"
+          - button "add" [ref=e111] [cursor=pointer]
+        - list [ref=e112]:
+          - listitem [ref=e113]: watchlist empty

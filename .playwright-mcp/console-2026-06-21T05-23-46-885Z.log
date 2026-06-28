@@ -1,0 +1,84 @@
+[     968ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:25630
+[    1206ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/favicon.ico:0
+[  611761ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  613957ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  614149ms] [LOG] [Fast Refresh] done in 192ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  615099ms] [LOG] [Fast Refresh] done in 1142ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  623791ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  624448ms] [LOG] [Fast Refresh] done in 656ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  633771ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  634010ms] [LOG] [Fast Refresh] done in 238ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  652493ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  652804ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  652827ms] [LOG] [Fast Refresh] done in 23ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  653718ms] [LOG] [Fast Refresh] done in 913ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  660141ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  660367ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  660395ms] [LOG] [Fast Refresh] done in 28ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  660870ms] [ERROR] The final argument passed to %s changed size between renders. The order and size of this array must remain constant.
+
+Previous: %s
+Incoming: %s useEffect [()=>{
+            const term = query.trim();
+            const url = "/api/discover?limit=80".concat(term ? "&q=".concat(encodeURIComponent(term)) : "");
+            return fetch(url).then({
+                "DiscoverTable.useCallback[load]": (r)=>r.json()
+            }["DiscoverTable.useCallback[load]"]).then({
+                "DiscoverTable.useCallback[load]": (d)=>{
+                    var _d_candidates;
+                    setRows((_d_candidates = d.candidates) !== null && _d_candidates !== void 0 ? _d_candidates : []);
+                    var _d_fetchedAt;
+                    setFetchedAt((_d_fetchedAt = d.fetchedAt) !== null && _d_fetchedAt !== void 0 ? _d_fetchedAt : null);
+                    setErr(null);
+                }
+            }["DiscoverTable.useCallback[load]"]).catch({
+                "DiscoverTable.useCallback[load]": (e)=>setErr(String(e))
+            }["DiscoverTable.useCallback[load]"]);
+        }, ()=>fetch("/api/watchlist").then({
+                "DiscoverTable.useCallback[loadWatched]": (r)=>r.json()
+            }["DiscoverTable.useCallback[loadWatched]"]).then({
+                "DiscoverTable.useCallback[loadWatched]": (d)=>{
+                    var _d_watchlist;
+                    return setWatched(new Set(((_d_watchlist = d.watchlist) !== null && _d_watchlist !== void 0 ? _d_watchlist : []).filter({
+                        "DiscoverTable.useCallback[loadWatched]": (w)=>w.active === 1
+                    }["DiscoverTable.useCallback[loadWatched]"]).map({
+                        "DiscoverTable.useCallback[loadWatched]": (w)=>w.item_id
+                    }["DiscoverTable.useCallback[loadWatched]"])));
+                }
+            }["DiscoverTable.useCallback[loadWatched]"]).catch({
+                "DiscoverTable.useCallback[loadWatched]": ()=>{}
+            }["DiscoverTable.useCallback[loadWatched]"])] [()=>{
+            const term = query.trim();
+            const url = "/api/discover?limit=80".concat(term ? "&q=".concat(encodeURIComponent(term)) : "");
+            return fetch(url).then({
+                "DiscoverTable.useCallback[load]": (r)=>r.json()
+            }["DiscoverTable.useCallback[load]"]).then({
+                "DiscoverTable.useCallback[load]": (d)=>{
+                    var _d_candidates;
+                    setRows((_d_candidates = d.candidates) !== null && _d_candidates !== void 0 ? _d_candidates : []);
+                    var _d_fetchedAt;
+                    setFetchedAt((_d_fetchedAt = d.fetchedAt) !== null && _d_fetchedAt !== void 0 ? _d_fetchedAt : null);
+                    setErr(null);
+                }
+            }["DiscoverTable.useCallback[load]"]).catch({
+                "DiscoverTable.useCallback[load]": (e)=>setErr(String(e))
+            }["DiscoverTable.useCallback[load]"]);
+        }, ()=>fetch("/api/watchlist").then({
+                "DiscoverTable.useCallback[loadWatched]": (r)=>r.json()
+            }["DiscoverTable.useCallback[loadWatched]"]).then({
+                "DiscoverTable.useCallback[loadWatched]": (d)=>{
+                    var _d_watchlist;
+                    return setWatched(new Set(((_d_watchlist = d.watchlist) !== null && _d_watchlist !== void 0 ? _d_watchlist : []).filter({
+                        "DiscoverTable.useCallback[loadWatched]": (w)=>w.active === 1
+                    }["DiscoverTable.useCallback[loadWatched]"]).map({
+                        "DiscoverTable.useCallback[loadWatched]": (w)=>w.item_id
+                    }["DiscoverTable.useCallback[loadWatched]"])));
+                }
+            }["DiscoverTable.useCallback[loadWatched]"]).catch({
+                "DiscoverTable.useCallback[loadWatched]": ()=>{}
+            }["DiscoverTable.useCallback[loadWatched]"]), essence] @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56
+[  660878ms] [LOG] [Fast Refresh] done in 511ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  666513ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  666782ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/hot-reloader/app/hot-reloader-app.js:196
+[  666815ms] [LOG] [Fast Refresh] done in 33ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
+[  667362ms] [LOG] [Fast Refresh] done in 579ms @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/dev/report-hmr-latency.js:13
