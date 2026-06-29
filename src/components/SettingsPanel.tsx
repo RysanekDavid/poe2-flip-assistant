@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KeyRound, Loader2, Check, ShieldCheck, ShieldAlert, ExternalLink } from "lucide-react";
+import { KeyRound, Loader2, Check, ShieldCheck, ShieldAlert, ExternalLink, Lock } from "lucide-react";
 
 interface PoeStatus {
   connected: boolean;
@@ -168,6 +168,97 @@ export function SettingsPanel() {
           Treat it like a password — it grants access to your account session. Logging out of the site invalidates it.
         </p>
       </details>
+      <ChangePassword />
     </section>
+  );
+}
+
+/** Change the logged-in user's password (verifies the current one server-side). */
+function ChangePassword() {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(): Promise<void> {
+    setError(null);
+    setDone(false);
+    if (next.length < 8) return setError("new password must be at least 8 characters");
+    if (next !== confirm) return setError("new passwords don't match");
+    setSaving(true);
+    try {
+      const res = await fetch("/api/auth/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current, next }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "change failed");
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+      setDone(true);
+      window.setTimeout(() => setDone(false), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-8 max-w-2xl border-t border-neutral-800 pt-6">
+      <header className="mb-3 flex items-center gap-2.5">
+        <Lock className="h-5 w-5 text-neutral-400" />
+        <h3 className="text-xl font-semibold">Change password</h3>
+      </header>
+      <div className="grid gap-4">
+        <label className="grid gap-1.5">
+          <span className="text-sm font-medium text-neutral-400">Current password</span>
+          <input
+            type="password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            autoComplete="current-password"
+            className="rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-200 outline-none focus:border-sky-500"
+          />
+        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium text-neutral-400">New password (min 8)</span>
+            <input
+              type="password"
+              value={next}
+              onChange={(e) => setNext(e.target.value)}
+              autoComplete="new-password"
+              className="rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-200 outline-none focus:border-sky-500"
+            />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium text-neutral-400">Confirm new password</span>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              autoComplete="new-password"
+              className="rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-200 outline-none focus:border-sky-500"
+            />
+          </label>
+        </div>
+        {error && <p className="text-base text-bad">{error}</p>}
+        <div>
+          <button
+            onClick={submit}
+            disabled={saving || !current || !next}
+            className="inline-flex items-center gap-2 rounded-md bg-neutral-700 px-5 py-2.5 text-lg font-medium text-white transition active:scale-[0.98] hover:bg-neutral-600 disabled:opacity-40"
+          >
+            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : done ? <Check className="h-5 w-5" /> : null}
+            {done ? "changed" : "change password"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
