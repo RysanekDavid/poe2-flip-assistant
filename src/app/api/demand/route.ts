@@ -13,14 +13,15 @@ export interface DemandRow {
   type: string;
   category: string;
   icon: string | null;
-  market: Denom; // robust median price
+  market: Denom; // current price (outlier-guarded — see scoutClient.fetchDemand)
   marketDivine: number;
   quantity: number;
   turnover: number;
   momentumPct: number;
+  spark: number[]; // daily log prices oldest→newest — row sparkline
   heat: number; // 0–100: flow + positive momentum
   trust: "ok" | "thin" | "noisy"; // price reliability — see below
-  divergePct: number; // |median − headline| / median, % — how far the aggregate is off
+  divergePct: number; // |shown − headline| / shown, % — >0 only when the outlier guard fired
   tradeUrl: string;
 }
 
@@ -43,7 +44,7 @@ export async function GET(): Promise<Response> {
         const heat = Math.round(100 * (0.6 * liqN + 0.4 * momN));
         const marketDivine = it.priceExalt / rates.exaltPerDivine;
         const divergePct = it.priceExalt > 0 ? (Math.abs(it.priceExalt - it.rawPriceExalt) / it.priceExalt) * 100 : 0;
-        // thin = too few data points / listings to trust; noisy = median far from headline (outlier-driven)
+        // thin = too few data points / listings to trust; noisy = headline was an outlier (guard fired)
         const trust: DemandRow["trust"] =
           it.samples < 3 || it.quantity < 3 ? "thin" : divergePct > 40 ? "noisy" : "ok";
         return {
@@ -57,6 +58,7 @@ export async function GET(): Promise<Response> {
           quantity: it.quantity,
           turnover: Math.round(it.turnover),
           momentumPct: it.momentumPct,
+          spark: it.sparkPrices,
           heat,
           trust,
           divergePct,

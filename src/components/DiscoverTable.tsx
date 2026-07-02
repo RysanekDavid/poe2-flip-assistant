@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { compact } from "../lib/format";
+import { compact, fmtSmart } from "../lib/format";
 import { formatDenom, type Denom } from "../core/treasury";
 import { categoryColor, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { FlameIcon, ArrowDownIcon, PlusIcon } from "./ui/icons";
+import { Sparkline } from "./ui/Sparkline";
 
 interface Candidate {
   itemId: string;
@@ -20,6 +21,7 @@ interface Candidate {
   volume: number;
   change7d: number | null;
   change24h: number | null;
+  spark: number[] | null;
   profitChaos: number;
   profitDiv: number;
   throughputDivDay: number;
@@ -177,6 +179,7 @@ export function DiscoverTable({
     .filter((r) => !topOnly || r.worthScore >= TOP_SCORE)
     .sort((a, b) => cmp(a, b, sortKey, sortDir));
   const maxOsc = shown.reduce((m, r) => Math.max(m, r.oscScore), 0);
+  const maxVol = shown.reduce((m, r) => Math.max(m, r.volume), 0);
   const topCount = rows.filter((r) => r.worthScore >= TOP_SCORE).length;
 
   const arrow = (key: SortKey) => (key === sortKey ? (sortDir === "asc" ? " ▲" : " ▼") : "");
@@ -296,7 +299,7 @@ export function DiscoverTable({
                 <td className={CELL}>
                   <span className={`rounded px-1.5 py-0.5 text-xs ${categoryColor(r.category)}`}>{r.category}</span>
                 </td>
-                <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{r.midDivine.toFixed(3)}</td>
+                <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{fmtSmart(r.midDivine)}</td>
                 <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.buyDisp)}</td>
                 <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.sellDisp)}</td>
                 <td
@@ -306,14 +309,29 @@ export function DiscoverTable({
                 >
                   {r.change24h == null ? "—" : `${r.change24h >= 0 ? "+" : ""}${r.change24h.toFixed(0)}%`}
                 </td>
-                <td
-                  className={`${CELL} text-right tabular-nums ${
-                    r.change7d == null ? "text-neutral-600" : r.change7d >= 0 ? "text-good" : "text-bad"
-                  }`}
-                >
-                  {r.change7d == null ? "—" : `${r.change7d >= 0 ? "+" : ""}${r.change7d.toFixed(0)}%`}
+                <td className={`${CELL} whitespace-nowrap text-right`}>
+                  <span className="inline-flex items-center justify-end gap-1.5">
+                    {r.spark && <Sparkline data={r.spark} />}
+                    <span
+                      className={`tabular-nums ${
+                        r.change7d == null ? "text-neutral-600" : r.change7d >= 0 ? "text-good" : "text-bad"
+                      }`}
+                    >
+                      {r.change7d == null ? "—" : `${r.change7d >= 0 ? "+" : ""}${r.change7d.toFixed(0)}%`}
+                    </span>
+                  </span>
                 </td>
-                <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{compact(r.volume)}</td>
+                <td className={`${CELL} text-right`}>
+                  <span className="inline-flex flex-col items-end gap-0.5">
+                    <span className="tabular-nums text-neutral-400">{compact(r.volume)}</span>
+                    <span className="h-0.5 w-12 overflow-hidden rounded bg-neutral-800">
+                      <span
+                        className="block h-full rounded bg-sky-500/60"
+                        style={{ width: `${maxVol > 0 ? (Math.log10(r.volume + 1) / Math.log10(maxVol + 1)) * 100 : 0}%` }}
+                      />
+                    </span>
+                  </span>
+                </td>
                 <td className={`${CELL} text-right tabular-nums ${r.throughputDivDay >= 1 ? "font-semibold text-emerald-300" : "text-neutral-500"}`}>
                   {r.throughputDivDay >= 0.1 ? compact(r.throughputDivDay) : "—"}
                 </td>

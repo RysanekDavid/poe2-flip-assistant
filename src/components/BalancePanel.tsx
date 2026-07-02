@@ -215,6 +215,11 @@ export function BalancePanel() {
               {showManual ? "close" : "manual entry"}
             </button>
           </div>
+          {!stashEnabled && (
+            <p className="text-xs text-amber-400/90">
+              “read from trade” needs your POESESSID <b>and</b> account name — set both in <b>Settings</b>.
+            </p>
+          )}
           <p className="rounded bg-sky-500/10 px-2 py-1.5 text-xs text-sky-300/90">
             reads currency from your <strong>public</strong> stash tabs (set tab → make public). Private tabs are invisible to
             trade. Read-only, never buys. No public tab? Use <strong>manual entry</strong>.

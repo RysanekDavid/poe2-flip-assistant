@@ -259,7 +259,7 @@ export function HuntPanel() {
               disabled={scanning || !liveEnabled || hunts.every((h) => !h.active)}
               className="rounded bg-sky-600/80 px-3 py-1.5 text-xs font-semibold hover:bg-sky-600 disabled:opacity-40"
             >
-              {scanning ? "scanning…" : "scan now"}
+              {scanning ? "scanning…" : "run saved searches"}
             </button>
             {msg && <span className="truncate text-xs text-neutral-400">{msg}</span>}
           </div>

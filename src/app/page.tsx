@@ -17,6 +17,7 @@ import { PositionsPanel } from "../components/PositionsPanel";
 import { FlipLog } from "../components/FlipLog";
 import { PriceChart } from "../components/PriceChart";
 import { Onboarding } from "../components/Onboarding";
+import { MarketStatus } from "../components/MarketStatus";
 import { SettingsPanel } from "../components/SettingsPanel";
 import { EmptySection } from "../components/ui/EmptySection";
 
@@ -46,9 +47,9 @@ export default function DashboardPage() {
       <Onboarding />
       <header className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-neutral-800 bg-neutral-950/85 backdrop-blur">
         <div className="flex items-center justify-between px-6 py-3">
-          <div>
+          <div className="space-y-1">
             <h1 className="text-2xl font-bold">PoE2 Flip Assistant</h1>
-            <span className="text-sm text-neutral-500">Currency Exchange · Web Trade · Ange</span>
+            <MarketStatus />
           </div>
           <TopBar />
         </div>

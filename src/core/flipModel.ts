@@ -25,6 +25,15 @@ export function change24hFromSpark(spark: number[] | null | undefined): number |
   return prev > 0 ? (last / prev - 1) * 100 : null;
 }
 
+/** Cap payload size: a row sparkline needs a shape, not ninja's full-resolution series. */
+const SPARK_POINTS = 24;
+function downsampleSpark(spark: number[] | null): number[] | null {
+  if (!spark || spark.length < 2) return null;
+  if (spark.length <= SPARK_POINTS) return spark;
+  const step = (spark.length - 1) / (SPARK_POINTS - 1);
+  return Array.from({ length: SPARK_POINTS }, (_, i) => spark[Math.round(i * step)]!);
+}
+
 /** A manual observed price: an amount in a chosen currency. */
 export interface ManualPrice {
   amount: number;
@@ -40,6 +49,7 @@ export interface FlipRow {
   volume: number;
   change7d: number | null;
   change24h: number | null; // derived from the tail of ninja's 7d sparkline
+  spark: number[] | null; // downsampled 7d sparkline (cumulative %) for row sparklines
   buyExalt: number; // Ex representation (sorting / alert text)
   sellChaos: number;
   marginPct: number;
@@ -142,6 +152,7 @@ export function scoreItem(
     volume: p.volume,
     change7d: c7,
     change24h: change24hFromSpark(p.spark7d),
+    spark: downsampleSpark(p.spark7d),
     buyExalt: divineToExalt(buyDivine, rates),
     sellChaos: divineToChaos(sellDivine, rates),
     marginPct,

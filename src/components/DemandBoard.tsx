@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { compact } from "../lib/format";
 import { formatDenom, type Denom } from "../core/treasury";
 import { categoryColor, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
+import { Sparkline } from "./ui/Sparkline";
 
 interface DemandRow {
   id: number;
@@ -16,6 +17,7 @@ interface DemandRow {
   quantity: number;
   turnover: number;
   momentumPct: number;
+  spark: number[];
   heat: number;
   trust: "ok" | "thin" | "noisy";
   divergePct: number;
@@ -103,8 +105,9 @@ export function DemandBoard() {
         <span className="text-xs text-neutral-500">poe2scout · price + flow + momentum · {shown.length} shown</span>
       </header>
       <p className="mb-3 text-xs text-neutral-600">
-        Every tradeable unique, ranked. <b>Heat</b> = turnover blended with rising price. <b>Market</b> = robust 7d median
-        (not the noisy headline) — <span className="text-warn">⚠</span> = aggregate way off (verify on trade),{" "}
+        Every tradeable unique, ranked. <b>Heat</b> = turnover blended with rising price. <b>Market</b> = current
+        poe2scout price (outlier-guarded) — <span className="text-warn">⚠</span> = headline was an outlier, showing
+        recent median (verify on trade),{" "}
         <span className="text-neutral-500">~</span> = thin data. Set <b>budget</b> to see only what you can afford. Click a
         column to sort; <span className="text-good">open →</span> opens a live buyout search.
       </p>
@@ -179,7 +182,7 @@ export function DemandBoard() {
                   <td className={`${CELL} whitespace-nowrap text-right tabular-nums text-neutral-300`}>
                     {formatDenom(r.market)}
                     {r.trust === "noisy" && (
-                      <span className="ml-1 text-warn" title={`headline price differs ~${r.divergePct.toFixed(0)}% from the robust median — verify on trade`}>
+                      <span className="ml-1 text-warn" title={`headline price was a ~${r.divergePct.toFixed(0)}% outlier vs the recent log — showing recent median, verify on trade`}>
                         ⚠
                       </span>
                     )}
@@ -191,9 +194,14 @@ export function DemandBoard() {
                   </td>
                   <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{compact(r.quantity)}</td>
                   <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{compact(r.turnover)}</td>
-                  <td className={`${CELL} text-right tabular-nums ${r.momentumPct >= 0 ? "text-good" : "text-bad"}`}>
-                    {r.momentumPct >= 0 ? "+" : ""}
-                    {r.momentumPct.toFixed(0)}%
+                  <td className={`${CELL} whitespace-nowrap text-right`}>
+                    <span className="inline-flex items-center justify-end gap-1.5">
+                      {r.spark.length >= 2 && <Sparkline data={r.spark} />}
+                      <span className={`tabular-nums ${r.momentumPct >= 0 ? "text-good" : "text-bad"}`}>
+                        {r.momentumPct >= 0 ? "+" : ""}
+                        {r.momentumPct.toFixed(0)}%
+                      </span>
+                    </span>
                   </td>
                   <td className={`${CELL} text-right font-bold tabular-nums ${worthTone(r.heat)}`}>{r.heat}</td>
                   <td className={`${CELL} text-center`}>

@@ -8,6 +8,20 @@ export function compact(n: number): string {
 }
 
 /**
+ * Human number for value cells — decimals scale with magnitude so big values get
+ * thousands separators instead of noise: 4780.001 → "4,780", 12.34 → "12.3",
+ * 0.0034 → "0.0034". Use this for any raw numeric cell (mids, Div amounts).
+ */
+export function fmtSmart(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 100) return Math.round(n).toLocaleString("en-US");
+  if (abs >= 10) return n.toFixed(1);
+  if (abs >= 1) return n.toFixed(2);
+  if (abs === 0) return "0";
+  return n.toPrecision(2);
+}
+
+/**
  * Round an order price for display. Exchange orders are placed in whole units,
  * so ≥1 rounds to a whole number (standard .5-up). Below 1 keeps 2 decimals so
  * cheap items don't collapse to "0".

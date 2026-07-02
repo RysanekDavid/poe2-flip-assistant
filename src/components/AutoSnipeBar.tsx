@@ -96,12 +96,12 @@ export function AutoSnipeBar() {
   const ex = result?.exaltPerDivine ?? 0;
 
   return (
-    <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6">
+    <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
       <header className="mb-3 flex flex-wrap items-center gap-2.5">
-        <Radar className="h-6 w-6 text-orange-400" />
-        <h2 className="text-2xl font-semibold">Auto-Snipe Scanner</h2>
+        <Radar className="h-5 w-5 text-orange-400" />
+        <h2 className="text-lg font-semibold">Auto-Snipe Scanner</h2>
         {status && (
-          <span className="flex items-center gap-1.5 text-base">
+          <span className="flex items-center gap-1.5 text-xs">
             <span className={status.enabled ? "text-good" : "text-neutral-500"}>
               {status.enabled ? `auto · every ${status.intervalMin}m` : "manual — run scans yourself"}
             </span>
@@ -117,30 +117,30 @@ export function AutoSnipeBar() {
           onClick={scanNow}
           disabled={scanning || !status?.live}
           title={status?.live ? "run one scan now" : "needs POESESSID"}
-          className="ml-auto inline-flex items-center gap-2 rounded-md bg-orange-600 px-5 py-2.5 text-lg font-medium text-white transition active:scale-[0.98] disabled:opacity-40"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-40"
         >
-          {scanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />} scan now
+          {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} scan archetypes
         </button>
       </header>
 
-      <p className="text-base text-neutral-600">
+      <p className="text-xs text-neutral-600">
         Each archetype&apos;s cheapest real listings are valued <span className="text-neutral-400">individually</span> — a
         relaxed comparable search on the item&apos;s own rolls. A listing far under its own value (worth ≥ 1 div) is a
         snipe → alert. Read-only; you buy manually.
       </p>
 
       {scanning && (
-        <p className="mt-3 flex items-center gap-2 text-base text-neutral-400">
+        <p className="mt-3 flex items-center gap-2 text-sm text-neutral-400">
           <Loader2 className="h-4 w-4 animate-spin text-orange-400" />
           scanning archetypes + valuing candidates… (rate-limited, can take a minute or two)
         </p>
       )}
 
-      {result?.error && <p className="mt-3 text-base text-amber-500">{result.error}</p>}
+      {result?.error && <p className="mt-3 text-sm text-amber-500">{result.error}</p>}
 
       {result && !result.error && (
         <div className="mt-3 space-y-4">
-          <p className="text-base text-neutral-400">
+          <p className="text-sm text-neutral-400">
             searched {result.searched}/{result.profiles} · valued {result.valuations}/{result.maxValuations} ·{" "}
             <span className={result.findings.length ? "font-semibold text-emerald-400" : "text-neutral-500"}>
               {result.findings.length} snipe(s)
@@ -151,37 +151,37 @@ export function AutoSnipeBar() {
           {/* snipes — concrete items */}
           {result.findings.length > 0 && (
             <div className="overflow-hidden rounded-md border border-emerald-900/40">
-              <table className="w-full text-base">
+              <table className="w-full text-sm">
                 <thead className="bg-emerald-950/30 text-emerald-300/80">
                   <tr className="text-left">
-                    <th className="px-4 py-3 font-medium">item</th>
-                    <th className="px-4 py-3 text-right font-medium">price</th>
-                    <th className="px-4 py-3 text-right font-medium">value</th>
-                    <th className="px-4 py-3 text-right font-medium">under</th>
-                    <th className="px-4 py-3 text-right font-medium">comps</th>
-                    <th className="px-4 py-3 font-medium">act</th>
+                    <th className="px-3 py-2 font-medium">item</th>
+                    <th className="px-3 py-2 text-right font-medium">price</th>
+                    <th className="px-3 py-2 text-right font-medium">value</th>
+                    <th className="px-3 py-2 text-right font-medium">under</th>
+                    <th className="px-3 py-2 text-right font-medium">comps</th>
+                    <th className="px-3 py-2 font-medium">act</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800/60">
                   {result.findings.map((f) => (
                     <tr key={f.listingId} className="align-top hover:bg-neutral-800/30">
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="font-medium text-neutral-200">
                           <Target className="mr-1 inline h-3 w-3 text-emerald-400" />
                           {f.itemName || "rare"}
                         </div>
-                        <div className="text-sm text-neutral-500">
+                        <div className="text-xs text-neutral-500">
                           {f.baseType}
                           {f.keyMods ? ` — ${f.keyMods}` : ""}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-emerald-300">{price(f.priceDiv, ex)}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-neutral-300">{price(f.valueDiv, ex)}</td>
-                      <td className="px-4 py-3 text-right font-semibold tabular-nums text-emerald-400">
+                      <td className="px-3 py-2 text-right tabular-nums text-emerald-300">{price(f.priceDiv, ex)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-neutral-300">{price(f.valueDiv, ex)}</td>
+                      <td className="px-3 py-2 text-right font-semibold tabular-nums text-emerald-400">
                         {Math.round(f.marginPct)}%
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-neutral-500">{f.samples}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 text-right tabular-nums text-neutral-500">{f.samples}</td>
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-1.5">
                           {f.whisper && (
                             <button
@@ -216,39 +216,39 @@ export function AutoSnipeBar() {
           {/* per-archetype diagnostics */}
           {result.diags.length > 0 && (
             <div>
-              <p className="mb-1 text-sm uppercase tracking-wide text-neutral-600">archetype scan</p>
+              <p className="mb-1 text-xs uppercase tracking-wide text-neutral-600">archetype scan</p>
               <div className="overflow-hidden rounded-md border border-neutral-800">
-                <table className="w-full text-base">
+                <table className="w-full text-sm">
                   <thead className="bg-neutral-950/60 text-neutral-500">
                     <tr className="text-left">
-                      <th className="px-4 py-3 font-medium">archetype</th>
-                      <th className="px-4 py-3 text-right font-medium">listed</th>
-                      <th className="px-4 py-3 text-right font-medium">cand</th>
-                      <th className="px-4 py-3 text-right font-medium">valued</th>
-                      <th className="px-4 py-3 text-right font-medium">snipes</th>
-                      <th className="px-4 py-3 text-right font-medium">floor</th>
+                      <th className="px-3 py-2 font-medium">archetype</th>
+                      <th className="px-3 py-2 text-right font-medium">listed</th>
+                      <th className="px-3 py-2 text-right font-medium">cand</th>
+                      <th className="px-3 py-2 text-right font-medium">valued</th>
+                      <th className="px-3 py-2 text-right font-medium">snipes</th>
+                      <th className="px-3 py-2 text-right font-medium">floor</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800/60 text-neutral-400">
                     {result.diags.map((d) => (
                       <tr key={d.key} className="hover:bg-neutral-800/20" title={d.note || undefined}>
-                        <td className="px-4 py-3 text-neutral-300">{d.label}</td>
-                        <td className={`px-4 py-3 text-right tabular-nums ${d.total >= 10000 ? "text-amber-500" : ""}`}>
+                        <td className="px-3 py-2 text-neutral-300">{d.label}</td>
+                        <td className={`px-3 py-2 text-right tabular-nums ${d.total >= 10000 ? "text-amber-500" : ""}`}>
                           {int(d.total)}
                           {d.total >= 10000 ? "+" : ""}
                         </td>
-                        <td className="px-4 py-3 text-right tabular-nums">{d.candidates}</td>
-                        <td className="px-4 py-3 text-right tabular-nums">{d.verified}</td>
-                        <td className={`px-4 py-3 text-right tabular-nums ${d.snipes ? "font-semibold text-emerald-400" : ""}`}>
+                        <td className="px-3 py-2 text-right tabular-nums">{d.candidates}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{d.verified}</td>
+                        <td className={`px-3 py-2 text-right tabular-nums ${d.snipes ? "font-semibold text-emerald-400" : ""}`}>
                           {d.snipes}
                         </td>
-                        <td className="px-4 py-3 text-right tabular-nums text-neutral-500">{price(d.floorDiv, ex)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-neutral-500">{price(d.floorDiv, ex)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="mt-1 text-sm text-neutral-600">
+              <p className="mt-1 text-xs text-neutral-600">
                 <span className="text-neutral-400">cand</span> = cheap real listings put forward ·{" "}
                 <span className="text-neutral-400">valued</span> = per-item comparable searches spent ·{" "}
                 <span className="text-neutral-400">floor</span> = archetype reference price (diagnostic only).
@@ -259,7 +259,7 @@ export function AutoSnipeBar() {
           {result.errors.length > 0 && (
             <ul className="space-y-0.5">
               {result.errors.map((e, i) => (
-                <li key={i} className="text-sm text-amber-600/80">
+                <li key={i} className="text-xs text-amber-600/80">
                   {e.profile}: {e.error}
                 </li>
               ))}

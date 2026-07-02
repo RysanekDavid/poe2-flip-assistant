@@ -8,7 +8,7 @@ import { fetchScout } from "../api/scoutClient";
  *
  * Two sources, both already in our DB so a scan does ZERO network calls:
  *   - poe.ninja: every currency-exchange item, valued LIVE from price_snapshots (poller-fresh)
- *   - poe2scout: priced uniques, cached in item_values and refreshed ~daily (refreshUniqueValues)
+ *   - poe2scout: priced uniques, cached in item_values and refreshed every ~6h (refreshUniqueValues)
  */
 export interface ItemValue {
   div: number; // total value (unit × stack)
@@ -38,10 +38,10 @@ export function buildValuer(): Valuer {
   };
 }
 
-const REFRESH_AFTER_H = 24;
+const REFRESH_AFTER_H = 6;
 
 /**
- * Refresh poe2scout unique prices into item_values, at most once per day. Returns rows
+ * Refresh poe2scout unique prices into item_values, at most once per 6 hours. Returns rows
  * written (0 if the cache is still fresh). Call before a balance scan so showcase items
  * get valued; the daily guard keeps it from hammering scout.
  */

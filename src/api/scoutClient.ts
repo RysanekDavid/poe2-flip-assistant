@@ -107,12 +107,13 @@ export interface DemandItem {
   type: string;
   category: string;
   icon: string | null;
-  priceExalt: number; // robust median of the price log (falls back to CurrentPrice)
-  rawPriceExalt: number; // poe2scout CurrentPrice as-is (the noisy headline)
+  priceExalt: number; // current price, outlier-guarded against the recent log (see fetchDemand)
+  rawPriceExalt: number; // poe2scout CurrentPrice as-is (the unguarded headline)
   quantity: number; // CurrentQuantity — live listing count
   turnover: number; // avg traded quantity across the price log — flow proxy
   momentumPct: number; // price change first→last of the log
   samples: number; // price-log points behind the median — low = untrustworthy
+  sparkPrices: number[]; // daily log prices, oldest→newest — for row sparklines
 }
 
 interface ByCategoryRaw {
@@ -124,7 +125,7 @@ interface ByCategoryRaw {
     IconUrl: string | null;
     CurrentPrice: number | null;
     CurrentQuantity: number | null;
-    PriceLogs: Array<{ Price: number | null; Quantity: number | null } | null> | null;
+    PriceLogs: Array<{ Price: number | null; Quantity: number | null; Time: string | null } | null> | null;
   }>;
 }
 
@@ -138,10 +139,14 @@ function median(xs: number[]): number {
 function summarizeLogs(logs: ByCategoryRaw["Items"][number]["PriceLogs"]): {
   turnover: number;
   momentumPct: number;
-  medianPrice: number;
+  recentPrice: number;
   samples: number;
+  prices: number[];
 } {
-  const pts = (logs ?? []).filter((l): l is { Price: number | null; Quantity: number | null } => l != null);
+  // API returns the log NEWEST-FIRST — sort oldest→newest or momentum comes out sign-flipped
+  const pts = (logs ?? [])
+    .filter((l): l is { Price: number | null; Quantity: number | null; Time: string | null } => l != null)
+    .sort((a, b) => (a.Time ?? "").localeCompare(b.Time ?? ""));
   const prices = pts.map((p) => p.Price).filter((p): p is number => p != null && p > 0);
   const qtys = pts.map((p) => p.Quantity).filter((q): q is number => q != null);
   const turnover = qtys.length ? qtys.reduce((a, b) => a + b, 0) / qtys.length : 0;
@@ -150,7 +155,15 @@ function summarizeLogs(logs: ByCategoryRaw["Items"][number]["PriceLogs"]): {
   const older = median(prices.slice(0, half));
   const newer = median(prices.slice(half));
   const momentumPct = prices.length >= 2 && older > 0 ? ((newer - older) / older) * 100 : 0;
-  return { turnover, momentumPct, medianPrice: median(prices), samples: prices.length };
+  // recent anchor = median of the LAST 3 log points, not the whole week — a full-log median
+  // lags fast movers by days (Temporalis pumped 1.4M→3.4M ex in a week; week-median said 1.5M)
+  return { turnover, momentumPct, recentPrice: median(prices.slice(-3)), samples: prices.length, prices };
+}
+
+/** Freshness of the in-process scout caches (ms epoch of the newest fetch), null if never fetched. */
+export function scoutFetchedAt(): number | null {
+  const at = Math.max(cache?.at ?? 0, demandCache?.at ?? 0);
+  return at > 0 ? at : null;
 }
 
 let demandCache: { at: number; rates: ScoutRates; items: DemandItem[] } | null = null;
@@ -177,19 +190,24 @@ export async function fetchDemand(): Promise<{ rates: ScoutRates; items: DemandI
     // "INCOMPLETE" = poe2scout's placeholder name for unreleased/unidentified uniques — not tradeable
     .filter((r) => r.CurrentPrice != null && r.Name != null && r.Name !== "INCOMPLETE")
     .map((r) => {
-      const { turnover, momentumPct, medianPrice, samples } = summarizeLogs(r.PriceLogs);
+      const { turnover, momentumPct, recentPrice, samples, prices } = summarizeLogs(r.PriceLogs);
+      // display price = CurrentPrice, unless it's a >3× outlier vs the recent log (price-fix
+      // manipulation / lone mispriced listing) — then trust the recent median instead
+      const cur = r.CurrentPrice!;
+      const outlier = recentPrice > 0 && (cur > recentPrice * 3 || cur < recentPrice / 3);
       return {
         id: r.ItemId,
         name: r.Name!,
         type: r.Type ?? "",
         category: r.CategoryApiId,
         icon: r.IconUrl,
-        priceExalt: medianPrice > 0 ? medianPrice : r.CurrentPrice!,
-        rawPriceExalt: r.CurrentPrice!,
+        priceExalt: outlier ? recentPrice : cur,
+        rawPriceExalt: cur,
         quantity: r.CurrentQuantity ?? 0,
         turnover,
         momentumPct,
         samples,
+        sparkPrices: prices,
       };
     });
 

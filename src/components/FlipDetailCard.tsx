@@ -175,6 +175,16 @@ export function FlipDetailCard({ selectedId }: { selectedId?: string }) {
     return () => window.removeEventListener("flips-changed", onFlips);
   }, []);
 
+  /** One-click prefill from the market estimate — tweak to your real Ange numbers, then save/log. */
+  const useMarket = () => {
+    if (!row) return;
+    const trim = (n: number) => (Math.abs(n) >= 1 ? String(Math.round(n)) : n.toFixed(2));
+    setBuyCcy(row.marketBuyDisp.unit as Ccy);
+    setBuy(trim(row.marketBuyDisp.amount));
+    setSellCcy(row.marketSellDisp.unit as Ccy);
+    setSell(trim(row.marketSellDisp.amount));
+  };
+
   const savePrices = (b: number | null, s: number | null) => {
     if (!selectedId) return;
     fetch("/api/watchlist", {
@@ -338,11 +348,20 @@ export function FlipDetailCard({ selectedId }: { selectedId?: string }) {
               <span>
                 your real Ange prices → <span className="text-good">true spread</span>
               </span>
-              {manual?.manual_buy_exalt != null && (
-                <button onClick={clearPrices} className="text-neutral-600 hover:text-bad">
-                  clear
+              <span className="flex items-center gap-2">
+                <button
+                  onClick={useMarket}
+                  className="text-neutral-500 hover:text-sky-300"
+                  title="prefill buy/sell from the market estimate — one click, then adjust to what Ange actually shows"
+                >
+                  use market
                 </button>
-              )}
+                {manual?.manual_buy_exalt != null && (
+                  <button onClick={clearPrices} className="text-neutral-600 hover:text-bad">
+                    clear
+                  </button>
+                )}
+              </span>
             </div>
             <div className="flex flex-wrap items-end gap-2 text-sm">
               <Field label="buy at" labelColor="text-bad" value={buy} onChange={setBuy} ccy={buyCcy} setCcy={setBuyCcy} icons={icons} />

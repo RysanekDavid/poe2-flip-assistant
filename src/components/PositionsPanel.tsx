@@ -152,6 +152,10 @@ function PositionRow({
   };
 
   const up = (p.unrealizedDiv ?? 0) >= 0;
+  // flip speed: how the position performs relative to size and hold time
+  const roiPct = p.unrealizedDiv != null && p.committedDiv > 0 ? (p.unrealizedDiv / p.committedDiv) * 100 : null;
+  const heldDays = Math.max((Date.now() - new Date(p.opened_at.replace(" ", "T") + "Z").getTime()) / 86_400_000, 0);
+  const perDay = p.unrealizedDiv != null && heldDays >= 0.02 ? p.unrealizedDiv / heldDays : null;
   return (
     <>
       <tr className="border-t border-neutral-800">
@@ -162,8 +166,14 @@ function PositionRow({
         </td>
         <td className="py-1.5 text-right tabular-nums text-neutral-300">{fmt(p.committedDiv)} Div</td>
         <td className="py-1.5 text-right tabular-nums text-neutral-400">{p.mid != null ? `${fmt(p.mid * p.qty)} Div` : "—"}</td>
-        <td className={`py-1.5 text-right font-semibold tabular-nums ${p.unrealizedDiv == null ? "text-neutral-600" : up ? "text-good" : "text-bad"}`}>
-          {p.unrealizedDiv == null ? "—" : `${up ? "+" : ""}${fmt(p.unrealizedDiv)} Div`}
+        <td className={`py-1.5 text-right tabular-nums ${p.unrealizedDiv == null ? "text-neutral-600" : up ? "text-good" : "text-bad"}`}>
+          <span className="font-semibold">{p.unrealizedDiv == null ? "—" : `${up ? "+" : ""}${fmt(p.unrealizedDiv)} Div`}</span>
+          {roiPct != null && (
+            <span className="block text-xs opacity-75">
+              {roiPct >= 0 ? "+" : ""}
+              {fmt(roiPct, 0)}%{perDay != null ? ` · ${perDay >= 0 ? "+" : ""}${fmt(perDay)} Div/d` : ""}
+            </span>
+          )}
         </td>
         <td className="py-1.5 text-right tabular-nums text-neutral-500">{holdAge(p.opened_at)}</td>
         <td className="py-1.5 text-right">
@@ -190,6 +200,18 @@ function PositionRow({
                 <option value="EXALT">Ex</option>
                 <option value="DIVINE">Div</option>
               </select>
+              {p.mid != null && p.mid > 0 && (
+                <button
+                  onClick={() => {
+                    setSell(Math.abs(p.mid!) >= 1 ? String(Math.round(p.mid!)) : p.mid!.toFixed(3));
+                    setSellCcy("DIVINE");
+                  }}
+                  className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-400 hover:border-sky-500 hover:text-sky-300"
+                  title="prefill with the current market mid (Div/unit) — adjust to your actual fill"
+                >
+                  use mid
+                </button>
+              )}
               <button onClick={submit} disabled={busy} className="rounded bg-good/80 px-3 py-1 text-xs font-semibold text-neutral-950 hover:bg-good disabled:opacity-50">
                 {busy ? "…" : "close → log flip"}
               </button>

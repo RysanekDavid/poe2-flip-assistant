@@ -71,7 +71,7 @@ systemctl enable poe2flip-web poe2flip-poller
 ## 6. First build + start
 ```bash
 cd /opt/poe2flip
-sudo -u poe2flip bash deploy/deploy.sh
+bash deploy/deploy.sh    # as root — builds as the app user, restarts services
 ```
 The owner (id=1) is seeded on first DB init using `OWNER_PASSWORD`. Provision your 2 friends
 (addUser loads `.env.local` itself via dotenv):
@@ -105,7 +105,8 @@ POESESSID. Friends do the same with their own. Done.
 
 ## Updating later
 ```bash
-cd /opt/poe2flip && git pull --ff-only && sudo -u poe2flip bash deploy/deploy.sh
+# as root:
+cd /opt/poe2flip && git pull --ff-only && bash deploy/deploy.sh
 ```
 
 ## Logs / health
