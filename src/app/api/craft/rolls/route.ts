@@ -12,13 +12,16 @@ const Body = z.object({ type: z.string().min(1), stats: z.array(Stat).min(1).max
 /**
  * Reduce a mod line to its tier-agnostic "shape" so a chosen stat ("+# to Spirit")
  * matches a real rolled line ("+58 to Spirit"). Strip the +/- sign and collapse every
- * number to "#", lowercase, squeeze whitespace.
+ * number to "#", lowercase, squeeze whitespace. Also drop the "Bonded:" prefix: the stat
+ * catalog labels rune-group mods "Bonded: …" but listing runeMods come without it, so
+ * the two sides never matched ("seen on 1" bug).
  */
 const shape = (s: string): string =>
   s
     .replace(/[+−]/g, "")
     .replace(/-?\d+(?:\.\d+)?/g, "#")
     .toLowerCase()
+    .replace(/^bonded:\s*/, "")
     .replace(/\s+/g, " ")
     .trim();
 

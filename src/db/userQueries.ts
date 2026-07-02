@@ -85,12 +85,17 @@ interface PoeCols {
   poe_account: string | null;
 }
 
-/** Save a user's trade2 credentials. Empty poesessid clears the stored cookie. */
-export function setUserPoe(id: number, poesessid: string, contact: string, account: string): void {
-  const enc = poesessid ? encryptSecret(poesessid) : null;
-  getDb()
-    .prepare("UPDATE users SET poesessid_enc = ?, poe_contact = ?, poe_account = ? WHERE id = ?")
-    .run(enc, contact || null, account || null, id);
+/** Save a user's trade2 credentials. poesessid: non-empty = replace, "" = KEEP the stored
+ *  secret (the form field is blank on every visit — saving contact/account must not wipe it),
+ *  null = explicit disconnect. */
+export function setUserPoe(id: number, poesessid: string | null, contact: string, account: string): void {
+  const db = getDb();
+  if (poesessid === "") {
+    db.prepare("UPDATE users SET poe_contact = ?, poe_account = ? WHERE id = ?").run(contact || null, account || null, id);
+    return;
+  }
+  db.prepare("UPDATE users SET poesessid_enc = ?, poe_contact = ?, poe_account = ? WHERE id = ?")
+    .run(poesessid ? encryptSecret(poesessid) : null, contact || null, account || null, id);
 }
 
 /** Decrypted trade2 cred for a user, or null if none stored / key can't decrypt it. */

@@ -45,7 +45,12 @@ export function SettingsPanel() {
       const res = await fetch("/api/settings/poe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ poesessid: clear ? "" : poesessid.trim(), contact: contact.trim(), account: account.trim() }),
+        body: JSON.stringify({
+          poesessid: clear ? "" : poesessid.trim(),
+          contact: contact.trim(),
+          account: account.trim(),
+          disconnect: clear,
+        }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? "save failed");

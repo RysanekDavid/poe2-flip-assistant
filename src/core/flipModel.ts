@@ -13,6 +13,18 @@ import { oscillationScore } from "./trendDetector";
 
 export type FlipMode = "REAL" | "RECO";
 
+/** 24h % change from ninja's 7d sparkline (cumulative % offsets vs the 7d-ago baseline):
+ *  compare the last point against the one ~1/7th from the end. */
+export function change24hFromSpark(spark: number[] | null | undefined): number | null {
+  if (!spark || spark.length < 3) return null;
+  const lastIdx = spark.length - 1;
+  const prevIdx = Math.floor(lastIdx * (6 / 7));
+  if (prevIdx >= lastIdx) return null;
+  const prev = 1 + spark[prevIdx]! / 100;
+  const last = 1 + spark[lastIdx]! / 100;
+  return prev > 0 ? (last / prev - 1) * 100 : null;
+}
+
 /** A manual observed price: an amount in a chosen currency. */
 export interface ManualPrice {
   amount: number;
@@ -27,6 +39,7 @@ export interface FlipRow {
   midDivine: number;
   volume: number;
   change7d: number | null;
+  change24h: number | null; // derived from the tail of ninja's 7d sparkline
   buyExalt: number; // Ex representation (sorting / alert text)
   sellChaos: number;
   marginPct: number;
@@ -128,6 +141,7 @@ export function scoreItem(
     midDivine: p.baseValue,
     volume: p.volume,
     change7d: c7,
+    change24h: change24hFromSpark(p.spark7d),
     buyExalt: divineToExalt(buyDivine, rates),
     sellChaos: divineToChaos(sellDivine, rates),
     marginPct,

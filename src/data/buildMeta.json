@@ -1,0 +1,328 @@
+{
+  "league": "Runes of Aldur",
+  "leagueSlug": "runesofaldur",
+  "scrapedAt": "2026-07-01T22:47:09.740Z",
+  "totalCharacters": 124303,
+  "ascendancies": [
+    {
+      "name": "Martial Artist",
+      "pct": 22.396080545119588
+    },
+    {
+      "name": "Spirit Walker",
+      "pct": 15.103416651247356
+    },
+    {
+      "name": "Gemling Legionnaire",
+      "pct": 11.992470012791324
+    },
+    {
+      "name": "Deadeye",
+      "pct": 8.810728622800736
+    },
+    {
+      "name": "Oracle",
+      "pct": 5.267773102821332
+    },
+    {
+      "name": "Stormweaver",
+      "pct": 4.99505241225071
+    },
+    {
+      "name": "Blood Mage",
+      "pct": 4.250903035324972
+    },
+    {
+      "name": "Disciple of Varashta",
+      "pct": 3.155193358165129
+    },
+    {
+      "name": "Infernalist",
+      "pct": 3.120600468210743
+    },
+    {
+      "name": "Titan",
+      "pct": 2.9942961955865908
+    },
+    {
+      "name": "Abyssal Lich",
+      "pct": 2.5204540517927967
+    },
+    {
+      "name": "Pathfinder",
+      "pct": 2.0699419965728905
+    },
+    {
+      "name": "Shaman",
+      "pct": 1.9919068727222995
+    },
+    {
+      "name": "Ritualist",
+      "pct": 1.7465386997900292
+    },
+    {
+      "name": "Witchhunter",
+      "pct": 1.6363241434237308
+    },
+    {
+      "name": "Tactician",
+      "pct": 1.6081671399724866
+    },
+    {
+      "name": "Lich",
+      "pct": 1.4665776369033732
+    },
+    {
+      "name": "Chronomancer",
+      "pct": 1.438420633452129
+    },
+    {
+      "name": "Acolyte of Chayula",
+      "pct": 1.4247443746329533
+    },
+    {
+      "name": "Amazon",
+      "pct": 0.8229889865892215
+    },
+    {
+      "name": "Smith of Kitava",
+      "pct": 0.5663580122764535
+    },
+    {
+      "name": "Warbringer",
+      "pct": 0.3700634739306372
+    },
+    {
+      "name": "Invoker",
+      "pct": 0.23732331480334345
+    },
+    {
+      "name": "Witch",
+      "pct": 0.004022429064463449
+    },
+    {
+      "name": "Mercenary",
+      "pct": 0.004022429064463449
+    },
+    {
+      "name": "Sorceress",
+      "pct": 0.0016089716257853793
+    },
+    {
+      "name": "Ranger",
+      "pct": 0.0016089716257853793
+    },
+    {
+      "name": "Warrior",
+      "pct": 0.0008044858128926897
+    },
+    {
+      "name": "Huntress",
+      "pct": 0.0008044858128926897
+    },
+    {
+      "name": "Monk",
+      "pct": 0.0008044858128926897
+    }
+  ],
+  "items": [
+    {
+      "name": "Rare Ring",
+      "pct": 96
+    },
+    {
+      "name": "Rare Jewel",
+      "pct": 95
+    },
+    {
+      "name": "Rare Boots",
+      "pct": 91
+    },
+    {
+      "name": "Rare Amulet",
+      "pct": 90
+    },
+    {
+      "name": "Magic Flask",
+      "pct": 86
+    },
+    {
+      "name": "Rare Helmet",
+      "pct": 77
+    },
+    {
+      "name": "Rare Gloves",
+      "pct": 75
+    },
+    {
+      "name": "Heart of the Well",
+      "pct": 71
+    },
+    {
+      "name": "Nascent Hope",
+      "pct": 65
+    },
+    {
+      "name": "Rare Body Armour",
+      "pct": 58
+    },
+    {
+      "name": "Lavianga's Spirits",
+      "pct": 57
+    },
+    {
+      "name": "Rite of Passage",
+      "pct": 50
+    }
+  ],
+  "mainSkills": [
+    {
+      "name": "Herald of Ice",
+      "pct": 27
+    },
+    {
+      "name": "Barrage",
+      "pct": 21
+    },
+    {
+      "name": "Hollow Focus",
+      "pct": 18
+    },
+    {
+      "name": "Herald of Thunder",
+      "pct": 17
+    },
+    {
+      "name": "Wild Protector",
+      "pct": 15
+    },
+    {
+      "name": "Pounce",
+      "pct": 14
+    },
+    {
+      "name": "Whirling Slash",
+      "pct": 14
+    },
+    {
+      "name": "Twister",
+      "pct": 13
+    },
+    {
+      "name": "Comet",
+      "pct": 13
+    },
+    {
+      "name": "Spark",
+      "pct": 13
+    },
+    {
+      "name": "Rend",
+      "pct": 12
+    },
+    {
+      "name": "Freezing Mark",
+      "pct": 12
+    }
+  ],
+  "spiritSkills": [
+    {
+      "name": "Wind Dancer",
+      "pct": 36
+    },
+    {
+      "name": "Ghost Dance",
+      "pct": 35
+    },
+    {
+      "name": "Charge Regulation",
+      "pct": 34
+    },
+    {
+      "name": "Mana Remnants",
+      "pct": 31
+    },
+    {
+      "name": "Herald of Ice",
+      "pct": 29
+    },
+    {
+      "name": "Blasphemy",
+      "pct": 25
+    },
+    {
+      "name": "Herald of Thunder",
+      "pct": 19
+    },
+    {
+      "name": "Cast on Critical",
+      "pct": 19
+    },
+    {
+      "name": "Hollow Focus",
+      "pct": 18
+    },
+    {
+      "name": "Trinity",
+      "pct": 18
+    },
+    {
+      "name": "Purity of Fire",
+      "pct": 16
+    },
+    {
+      "name": "Wild Protector",
+      "pct": 15
+    }
+  ],
+  "weaponConfig": [
+    {
+      "name": "Quarterstaff",
+      "pct": 15
+    },
+    {
+      "name": "Spear",
+      "pct": 13
+    },
+    {
+      "name": "Bow / Quiver",
+      "pct": 11
+    },
+    {
+      "name": "Unknown / Sceptre",
+      "pct": 9
+    },
+    {
+      "name": "Staff",
+      "pct": 7
+    },
+    {
+      "name": "Wand / Sceptre",
+      "pct": 6
+    },
+    {
+      "name": "Unknown",
+      "pct": 5
+    },
+    {
+      "name": "Crossbow",
+      "pct": 5
+    },
+    {
+      "name": "Wand / Focus",
+      "pct": 4
+    },
+    {
+      "name": "Sceptre / Focus",
+      "pct": 4
+    },
+    {
+      "name": "Two Handed Mace / Sceptre",
+      "pct": 3
+    },
+    {
+      "name": "Dual Unknown",
+      "pct": 3
+    }
+  ]
+}

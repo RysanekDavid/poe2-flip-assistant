@@ -5,6 +5,7 @@ import { compact } from "../lib/format";
 import { formatDenom, type Denom } from "../core/treasury";
 import { categoryColor, marginTint, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { FlameIcon, ArrowDownIcon } from "./ui/icons";
+import { EmptySection } from "./ui/EmptySection";
 
 interface FlipRow {
   itemId: string;
@@ -96,6 +97,15 @@ export function SpreadTable({
       <span className="text-good">{arrow(k)}</span>
     </th>
   );
+
+  if (rows.length === 0 && !err) {
+    return (
+      <EmptySection
+        title="Watchlist — tracked spreads"
+        hint="empty — add items from Top Flips (+ watch / seed), then enter your real Ange prices for true spreads"
+      />
+    );
+  }
 
   return (
     <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">

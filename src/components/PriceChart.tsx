@@ -65,12 +65,12 @@ function sparkSeries(spark: number[], change7d: number | null, baseValue: number
     .filter((p) => p.t >= cutoff && Number.isFinite(p.value));
 }
 
-/** Prefer our tracked snapshots when they cover ≥80% of the window; otherwise fall back to
- *  ninja's 7d curve. As the DB accrues more history, "tracked" naturally takes over. */
-function pickSeries(window: { hours: number }, db: Plot[], spark: Plot[]): { series: Plot[]; source: "tracked" | "ninja 7d" } {
-  const span = db.length >= 2 ? (db[db.length - 1]!.t - db[0]!.t) / HOUR_MS : 0;
-  if (db.length >= 2 && span >= window.hours * 0.8) return { series: db, source: "tracked" };
-  if (spark.length >= 2) return { series: spark, source: "ninja 7d" };
+/** Show whichever series covers more of the window — a partial window is fine (a 10-day-old
+ *  deploy shows 10 days on the 14d/30d chips and grows daily toward the cap). Tracked snapshots
+ *  win near-ties (10% bias): they're real 5-min observations, ninja's curve is a 7d approximation. */
+function pickSeries(db: Plot[], spark: Plot[]): { series: Plot[]; source: "tracked" | "ninja 7d" } {
+  const spanH = (s: Plot[]): number => (s.length >= 2 ? (s[s.length - 1]!.t - s[0]!.t) / HOUR_MS : 0);
+  if (spark.length >= 2 && spanH(spark) * 0.9 > spanH(db)) return { series: spark, source: "ninja 7d" };
   return { series: db, source: "tracked" };
 }
 
@@ -100,7 +100,7 @@ export function PriceChart({ itemId, itemName }: { itemId: string; itemName: str
     const win = WINDOWS.find((w) => w.id === window)!;
     const db = dbSeries(data.history ?? [], win.hours, now);
     const spark = data.spark7d ? sparkSeries(data.spark7d, data.change7d, data.baseValue ?? 0, win.hours, now) : [];
-    return pickSeries(win, db, spark);
+    return pickSeries(db, spark);
   }, [data, window]);
 
   const change7d = data?.change7d ?? null;

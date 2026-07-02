@@ -206,7 +206,7 @@ export function BalancePanel() {
             <button
               onClick={readStash}
               disabled={busy || !stashEnabled}
-              title={stashEnabled ? "read your public-tab currency via trade" : "set POESESSID + POE_ACCOUNT in .env.local"}
+              title={stashEnabled ? "read your public-tab currency via trade" : "connect POESESSID + account name in Settings"}
               className="rounded bg-sky-600/80 px-3 py-1.5 text-xs font-semibold hover:bg-sky-600 disabled:opacity-40"
             >
               {busy ? "reading…" : "read from trade"}

@@ -174,7 +174,8 @@ export async function fetchDemand(): Promise<{ rates: ScoutRates; items: DemandI
 
   const items: DemandItem[] = pages
     .flatMap((p) => p.Items)
-    .filter((r) => r.CurrentPrice != null && r.Name != null)
+    // "INCOMPLETE" = poe2scout's placeholder name for unreleased/unidentified uniques — not tradeable
+    .filter((r) => r.CurrentPrice != null && r.Name != null && r.Name !== "INCOMPLETE")
     .map((r) => {
       const { turnover, momentumPct, medianPrice, samples } = summarizeLogs(r.PriceLogs);
       return {

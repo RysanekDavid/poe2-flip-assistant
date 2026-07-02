@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "probe": "tsx src/scripts/probe.ts",
+    "scrape:builds": "tsx src/scripts/scrapeBuilds.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -40,6 +41,7 @@
     "@types/ws": "^8.18.1",
     "autoprefixer": "^10.4.0",
     "concurrently": "^8.2.2",
+    "playwright": "^1.61.1",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "tsx": "^4.16.0",

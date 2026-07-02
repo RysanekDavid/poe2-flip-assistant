@@ -2,7 +2,9 @@ node_modules/
 .next/
 out/
 dist/
-data/
+# runtime sqlite dir at repo root only — src/data/ (static scraped JSON) is committed
+/data/
+.playwright-mcp/
 *.db
 *.db-journal
 .env.local

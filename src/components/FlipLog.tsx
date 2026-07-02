@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { roundPrice } from "../lib/format";
+import { EmptySection } from "./ui/EmptySection";
 
 interface Flip {
   id: number;
@@ -67,6 +68,15 @@ export function FlipLog() {
     URL.revokeObjectURL(url);
   };
 
+  if (flips.length === 0) {
+    return (
+      <EmptySection
+        title="Flip History"
+        hint="no flips logged — set qty + prices in a Flip Plan and hit “log flip”; P&L and win-rate build here"
+      />
+    );
+  }
+
   return (
     <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
       <header className="mb-3 flex items-center justify-between">
@@ -119,13 +129,6 @@ export function FlipLog() {
               </td>
             </tr>
           ))}
-          {flips.length === 0 && (
-            <tr>
-              <td colSpan={6} className="py-3 text-center text-neutral-500">
-                no flips logged — set qty + prices in a Flip Plan above and hit “log flip”
-              </td>
-            </tr>
-          )}
         </tbody>
       </table>
     </section>

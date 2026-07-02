@@ -76,7 +76,7 @@ export function SnipeTargets() {
       )}
       <p className="mt-2 text-xs text-neutral-600">
         Click a target → live cheapest listings load here. If one sits far under the Div value it&apos;s a snipe — open
-        the search and buy it manually. (Needs POESESSID; live auto-snipe alerts come with the local agent.)
+        the search and buy it manually. (Needs your POESESSID — connect it in Settings.)
       </p>
     </section>
   );

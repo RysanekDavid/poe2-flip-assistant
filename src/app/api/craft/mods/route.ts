@@ -38,22 +38,31 @@ export async function POST(req: Request): Promise<Response> {
       return l.price && c ? toDivine(l.price.amount, c, rates) : null;
     };
 
-    // aggregate mods across the priced sample
-    const agg = new Map<string, { count: number; prices: number[] }>();
-    const preview: Array<{ priceDiv: number; mods: string[]; name: string; icon: string | null }> = [];
+    // collect the priced sample first, then drop showcase noise BEFORE aggregating: mirror-tab
+    // items with no mods, classic 9999+ troll asks, and anything priced wildly above the sample
+    // median (the "2000 Div helmet" that isn't for sale and poisons every mod's median).
+    let rows: Array<{ priceDiv: number; mods: string[]; name: string; icon: string | null }> = [];
     for (const l of listings) {
       const pd = priceDiv(l);
-      if (pd == null) continue;
-      preview.push({ priceDiv: pd, mods: l.mods, name: l.itemName, icon: l.icon });
-      for (const norm of new Set(l.mods.map(normMod))) {
+      if (pd == null || l.mods.length === 0) continue;
+      if (l.price && l.price.amount >= 9999) continue;
+      rows.push({ priceDiv: pd, mods: l.mods, name: l.itemName, icon: l.icon });
+    }
+    const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor((xs.length - 1) / 2)] ?? null;
+    const med = median(rows.map((r) => r.priceDiv));
+    if (rows.length >= 6 && med != null && med > 0) {
+      rows = rows.filter((r) => r.priceDiv <= med * 25);
+    }
+
+    const agg = new Map<string, { count: number; prices: number[] }>();
+    for (const r of rows) {
+      for (const norm of new Set(r.mods.map(normMod))) {
         const e = agg.get(norm) ?? { count: 0, prices: [] };
         e.count++;
-        e.prices.push(pd);
+        e.prices.push(r.priceDiv);
         agg.set(norm, e);
       }
     }
-
-    const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor((xs.length - 1) / 2)] ?? null;
     const modStats = [...agg.entries()]
       .map(([mod, e]) => ({ mod, count: e.count, medianDiv: median(e.prices), maxDiv: Math.max(...e.prices) }))
       .sort((a, b) => b.count - a.count || (b.medianDiv ?? 0) - (a.medianDiv ?? 0))
@@ -61,9 +70,9 @@ export async function POST(req: Request): Promise<Response> {
 
     return NextResponse.json({
       total,
-      sampled: preview.length,
+      sampled: rows.length,
       modStats,
-      preview: preview.slice(0, 12),
+      preview: rows.slice(0, 12),
     });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });

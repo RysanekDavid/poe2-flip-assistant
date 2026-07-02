@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { roundPrice } from "../lib/format";
+import { EmptySection } from "./ui/EmptySection";
 
 type Ccy = "DIVINE" | "EXALT" | "CHAOS";
 const CCY_SHORT: Record<string, string> = { DIVINE: "Div", EXALT: "Ex", CHAOS: "Ch" };
@@ -72,13 +73,10 @@ export function PositionsPanel() {
 
   if (positions.length === 0) {
     return (
-      <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-        <h2 className="mb-1 text-lg font-semibold">Open Positions</h2>
-        <p className="text-sm text-neutral-500">
-          none open — in a Flip Plan above, hit <span className="text-sky-400">“buy → open position”</span> after you
-          place a buy order. Mark-to-market + hold time show here until you sell.
-        </p>
-      </section>
+      <EmptySection
+        title="Open Positions"
+        hint="none open — in a Flip Plan, hit “buy → open position” after placing a buy order; mark-to-market shows here until you sell"
+      />
     );
   }
 

@@ -232,8 +232,8 @@ export function HuntPanel() {
 
           {!liveEnabled && (
             <p className="rounded bg-warn/10 px-2 py-1.5 text-xs text-warn">
-              live search disabled — add <code>POESESSID</code> to <code>.env.local</code>, restart. Cookie stays
-              local, read-only, never logged.
+              live search disabled — connect your <code>POESESSID</code> in <b>Settings</b>. Stored encrypted,
+              read-only, never used to buy.
             </p>
           )}
 

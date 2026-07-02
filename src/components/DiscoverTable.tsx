@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { compact } from "../lib/format";
 import { formatDenom, type Denom } from "../core/treasury";
-import { categoryColor, marginTint, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
+import { categoryColor, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { FlameIcon, ArrowDownIcon, PlusIcon } from "./ui/icons";
 
 interface Candidate {
@@ -19,6 +19,7 @@ interface Candidate {
   midDivine: number;
   volume: number;
   change7d: number | null;
+  change24h: number | null;
   profitChaos: number;
   profitDiv: number;
   throughputDivDay: number;
@@ -34,7 +35,7 @@ type SortKey =
   | "midDivine"
   | "buyExalt"
   | "sellChaos"
-  | "marginPct"
+  | "change24h"
   | "change7d"
   | "volume"
   | "throughputDivDay"
@@ -46,7 +47,7 @@ const NUMERIC: Set<SortKey> = new Set([
   "midDivine",
   "buyExalt",
   "sellChaos",
-  "marginPct",
+  "change24h",
   "change7d",
   "volume",
   "throughputDivDay",
@@ -61,7 +62,13 @@ function cmp(a: Candidate, b: Candidate, key: SortKey, dir: SortDir): number {
   return dir === "asc" ? d : -d;
 }
 
-export function DiscoverTable() {
+export function DiscoverTable({
+  selectedId,
+  onSelect,
+}: {
+  selectedId?: string;
+  onSelect?: (item: { id: string; name: string }) => void;
+}) {
   const [rows, setRows] = useState<Candidate[]>([]);
   const [watched, setWatched] = useState<Set<string>>(new Set());
   const [hideFalling, setHideFalling] = useState(false);
@@ -231,7 +238,7 @@ export function DiscoverTable() {
               <Th k="midDivine" label="Mid (Div)" right />
               <Th k="buyExalt" label="Buy" right />
               <Th k="sellChaos" label="Sell" right />
-              <Th k="marginPct" label="Margin" right />
+              <Th k="change24h" label="24h" right />
               <Th k="change7d" label="7d" right />
               <Th k="volume" label="Vol" right />
               <th
@@ -260,7 +267,12 @@ export function DiscoverTable() {
           </thead>
           <tbody>
             {shown.map((r) => (
-              <tr key={r.itemId} className={ROW_BASE}>
+              <tr
+                key={r.itemId}
+                onClick={() => onSelect?.({ id: r.itemId, name: r.item })}
+                className={`${ROW_BASE} cursor-pointer ${selectedId === r.itemId ? "bg-sky-950/40" : ""}`}
+                title="click → flip detail + price chart"
+              >
                 <td className={`${CELL} font-medium`}>
                   <span className="inline-flex items-center gap-1.5 align-middle">
                     {r.icon && (
@@ -287,10 +299,12 @@ export function DiscoverTable() {
                 <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{r.midDivine.toFixed(3)}</td>
                 <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.buyDisp)}</td>
                 <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.sellDisp)}</td>
-                <td className={`${CELL} text-right`}>
-                  <span className={`rounded px-1.5 py-0.5 text-right font-semibold tabular-nums ${marginTint(r.marginPct)}`}>
-                    {r.marginPct.toFixed(1)}%
-                  </span>
+                <td
+                  className={`${CELL} text-right font-semibold tabular-nums ${
+                    r.change24h == null ? "text-neutral-600" : r.change24h >= 0 ? "text-good" : "text-bad"
+                  }`}
+                >
+                  {r.change24h == null ? "—" : `${r.change24h >= 0 ? "+" : ""}${r.change24h.toFixed(0)}%`}
                 </td>
                 <td
                   className={`${CELL} text-right tabular-nums ${
@@ -313,7 +327,10 @@ export function DiscoverTable() {
                 <td className={`${CELL} text-center`}>
                   {watched.has(r.itemId) ? (
                     <button
-                      onClick={() => unwatch(r.itemId)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        unwatch(r.itemId);
+                      }}
                       className="group inline-flex items-center gap-1 rounded-md border border-good/40 px-2 py-1 text-xs text-good transition-colors hover:border-bad/60 hover:text-bad"
                       title="tracked — click to unwatch"
                     >
@@ -322,7 +339,10 @@ export function DiscoverTable() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => addWatch(r)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addWatch(r);
+                      }}
                       className="inline-flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-300 transition-colors hover:border-good/60 hover:text-good"
                     >
                       <PlusIcon className="h-3 w-3" />
@@ -344,8 +364,8 @@ export function DiscoverTable() {
       </div>
 
       <p className="mt-2 text-xs text-neutral-600">
-        Click a column to sort. <span className="text-good">Score</span> 0–100 = overall flip quality (45% margin + 40%
-        liquidity + 15% oscillation, −25% if risky). <span className="text-good">Margin</span> = % per round-trip ·{" "}
+        Click a row for its flip plan + price chart, a column to sort. <span className="text-good">Score</span> 0–100 =
+        overall flip quality (45% margin + 40% liquidity + 15% oscillation, −25% if risky) ·{" "}
         <span className="text-sky-300">Osc</span> = repeatability · <span className="text-warn">flame</span> = spiking,
         risky to hold.
       </p>

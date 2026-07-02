@@ -103,10 +103,12 @@ export function AutoSnipeBar() {
         {status && (
           <span className="flex items-center gap-1.5 text-base">
             <span className={status.enabled ? "text-good" : "text-neutral-500"}>
-              {status.enabled ? `auto · every ${status.intervalMin}m` : "manual (AUTOSNIPE_ENABLED off)"}
+              {status.enabled ? `auto · every ${status.intervalMin}m` : "manual — run scans yourself"}
             </span>
             <span className="text-neutral-700">·</span>
-            <span className={status.live ? "text-good" : "text-bad"}>POESESSID {status.live ? "✓" : "✗"}</span>
+            <span className={status.live ? "text-good" : "text-bad"}>
+              {status.live ? "trade connected ✓" : "not connected — set POESESSID in Settings"}
+            </span>
             <span className="text-neutral-700">·</span>
             <span className="text-neutral-500">{status.profiles.length} archetypes</span>
           </span>

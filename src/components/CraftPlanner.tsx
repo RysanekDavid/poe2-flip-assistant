@@ -5,6 +5,10 @@ import { tradeSearchUrl, type StatFilter } from "../lib/tradeLink";
 import { SearchCombo } from "./craft/SearchCombo";
 import { RollGuide } from "./craft/RollGuide";
 import { PasteRare, type ParsedRare } from "./craft/PasteRare";
+import { LinkCard } from "./craft/LinkCard";
+import { TargetBrowser } from "./craft/TargetBrowser";
+import { TargetProgress } from "./craft/TargetProgress";
+import type { WeightedTarget } from "../core/craftMeta";
 
 interface StatOption {
   id: string;
@@ -73,6 +77,8 @@ export function CraftPlanner() {
   const [scanning, setScanning] = useState(false);
   const [scanErr, setScanErr] = useState<string | null>(null);
 
+  const [activeTarget, setActiveTarget] = useState<WeightedTarget | null>(null);
+
   useEffect(() => {
     fetch("/api/craft/meta")
       .then((r) => r.json())
@@ -113,6 +119,19 @@ export function CraftPlanner() {
   const setMin = (id: string, v: string) =>
     setMods((m) => m.map((x) => (x.id === id ? { ...x, min: v.trim() === "" ? undefined : Number(v) } : x)));
   const removeMod = (id: string) => setMods((m) => m.filter((x) => x.id !== id));
+
+  // load a curated craft target: core+ideal mods become the search set; luxury stays a
+  // suggestion in the progress strip. Base type is the user's pick — targets span many bases.
+  const loadTarget = (t: WeightedTarget) => {
+    setActiveTarget(t);
+    setMods(
+      t.resolvedMods
+        .filter((m): m is (typeof m & { id: string }) => m.id !== null && m.tier !== "luxury")
+        .map((m) => ({ id: m.id, text: m.text, min: m.min })),
+    );
+  };
+  const addTargetMod = (id: string, text: string, min?: number) =>
+    setMods((m) => (m.some((x) => x.id === id) ? m : [...m, { id, text, min }]));
 
   const buyUrl =
     baseType && league
@@ -191,8 +210,28 @@ export function CraftPlanner() {
 
       {!loading && !err && (
         <div className="space-y-3">
+          {/* curated craft-target library, ranked by the scraped meta — pick a profile to plan toward */}
+          <details open className="rounded-lg border border-neutral-800 bg-neutral-800/20 p-3">
+            <summary className="cursor-pointer select-none text-sm font-semibold text-neutral-200">
+              craft targets — what&apos;s worth making this league
+            </summary>
+            <div className="pt-3">
+              <TargetBrowser activeKey={activeTarget?.key ?? null} onLoad={loadTarget} />
+            </div>
+          </details>
+
           {/* paste an in-game rare → auto-fill base + mods, then value it with the ladder below */}
           <PasteRare onLoad={loadParsed} />
+
+          {/* active target: have/missing checklist + "craft this next" suggestion */}
+          {activeTarget && (
+            <TargetProgress
+              target={activeTarget}
+              chosenIds={chosenIds}
+              onAdd={addTargetMod}
+              onClear={() => setActiveTarget(null)}
+            />
+          )}
 
           {/* base type — the search IS the field: type to search when empty, chip when picked */}
           <div className="flex flex-wrap items-end gap-3">
@@ -433,28 +472,5 @@ export function CraftPlanner() {
         </div>
       )}
     </section>
-  );
-}
-
-function LinkCard({ href, tone, title, sub }: { href: string | null; tone: "good" | "bad"; title: string; sub: string }) {
-  const cls = tone === "good" ? "text-good" : "text-bad";
-  if (!href) {
-    return (
-      <div className="rounded-lg border border-neutral-800 bg-neutral-800/20 p-3 opacity-50">
-        <div className={`text-sm font-semibold ${cls}`}>{title}</div>
-        <div className="text-xs text-neutral-600">{sub}</div>
-      </div>
-    );
-  }
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="rounded-lg border border-neutral-700 bg-neutral-800/40 p-3 transition hover:border-neutral-500 hover:bg-neutral-800/70"
-    >
-      <div className={`text-sm font-semibold ${cls}`}>{title}</div>
-      <div className="text-xs text-neutral-500">{sub}</div>
-    </a>
   );
 }

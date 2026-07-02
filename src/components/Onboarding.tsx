@@ -138,18 +138,18 @@ export function Onboarding() {
               {showSecret && (
                 <div className="mt-2 space-y-2 text-xs text-neutral-400">
                   <p>
-                    Reading your own stash and running live snipes needs a small <b>local agent</b> on your PC (it runs
-                    from your home IP — the server can't, and never holds your cookie). It authenticates with your{" "}
-                    <b>POESESSID</b>:
+                    Reading your own stash and running live snipes needs your <b>POESESSID</b> (your pathofexile.com
+                    session cookie), connected once in <b>Settings</b>:
                   </p>
                   <ol className="list-decimal space-y-1 pl-4">
                     <li>Log in at <span className="text-neutral-300">pathofexile.com</span> in your browser.</li>
                     <li>Press F12 → <span className="text-neutral-300">Application → Cookies</span> → the pathofexile.com entry.</li>
-                    <li>Copy the value of <span className="text-neutral-300">POESESSID</span> into your local agent only.</li>
+                    <li>Copy the value of <span className="text-neutral-300">POESESSID</span> into <span className="text-neutral-300">Settings → Trade Connection</span>.</li>
                   </ol>
                   <p className="rounded border border-amber-500/30 bg-amber-500/5 p-2 text-amber-300/90">
-                    ⚠️ POESESSID is a session key with full access to your account. Never paste it into any website or
-                    share it — only into your own local agent. (The agent ships in a later update.)
+                    ⚠️ POESESSID is a session key with full access to your account — treat it like a password. It&apos;s
+                    stored encrypted, used read-only for your own searches, and never shown again. Don&apos;t paste it
+                    anywhere else.
                   </p>
                 </div>
               )}

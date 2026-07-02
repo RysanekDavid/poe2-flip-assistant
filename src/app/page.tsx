@@ -18,6 +18,7 @@ import { FlipLog } from "../components/FlipLog";
 import { PriceChart } from "../components/PriceChart";
 import { Onboarding } from "../components/Onboarding";
 import { SettingsPanel } from "../components/SettingsPanel";
+import { EmptySection } from "../components/ui/EmptySection";
 
 const TABS = [
   { id: "exchange", label: "Currency Exchange", hint: "in-game Ange currency flip" },
@@ -32,8 +33,16 @@ export default function DashboardPage() {
   const [selected, setSelected] = useState<{ id: string; name: string } | null>(null);
   const [tab, setTab] = useState<TabId>("exchange");
 
+  // selecting from either table scrolls the shared detail+chart block into view
+  const selectItem = (item: { id: string; name: string }) => {
+    setSelected(item);
+    requestAnimationFrame(() =>
+      document.getElementById("flip-detail")?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+    );
+  };
+
   return (
-    <main className="mx-auto max-w-7xl space-y-4 p-6">
+    <main className="mx-auto max-w-screen-2xl space-y-4 p-6">
       <Onboarding />
       <header className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-neutral-800 bg-neutral-950/85 backdrop-blur">
         <div className="flex items-center justify-between px-6 py-3">
@@ -73,16 +82,19 @@ export default function DashboardPage() {
           {/* "what to farm now" — ranks in-game activities by how hard their drop basket is pumping */}
           <FarmAdvisor />
           {/* whole market — search + watch/unwatch + "top flips only"; replaces the old watchlist editor */}
-          <DiscoverTable />
-          <SpreadTable selectedId={selected?.id} onSelect={setSelected} />
+          <DiscoverTable selectedId={selected?.id} onSelect={selectItem} />
+          <SpreadTable selectedId={selected?.id} onSelect={selectItem} />
           {selected ? (
             // compact flip plan beside its price chart
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div id="flip-detail" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <FlipDetailCard selectedId={selected.id} />
               <PriceChart itemId={selected.id} itemName={selected.name} />
             </div>
           ) : (
-            <FlipDetailCard />
+            <EmptySection
+              title="Flip Plan"
+              hint="click a row in Top Flips or the Watchlist — full plan, market compare and price chart open here"
+            />
           )}
           {/* BUY now → SELL later loop: open positions mark-to-market until you close them */}
           <PositionsPanel />
