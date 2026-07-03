@@ -17,6 +17,6 @@ export async function GET(): Promise<Response> {
     updated_at: rt.updated_at,
     liveEnabled: cred != null,
     huntEnabled: config.hunt.enabled,
-    intervalMin: config.hunt.intervalMin,
+    scanSec: config.hunt.scanSec,
   });
 }

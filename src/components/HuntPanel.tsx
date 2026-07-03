@@ -48,7 +48,7 @@ interface Status {
   updated_at: string | null;
   liveEnabled: boolean;
   huntEnabled: boolean;
-  intervalMin: number;
+  scanSec: number;
 }
 
 /** Fire a JSON request to the hunts API with a method + body, return the response promise. */
@@ -306,7 +306,7 @@ function StatusBar({ status }: { status: Status | null }) {
   let chip = { txt: "waiting for first scan", cls: dim };
   if (!status.liveEnabled) chip = { txt: "off — set POESESSID", cls: dim };
   else if (!status.huntEnabled) chip = { txt: "paused — HUNT_ENABLED=false", cls: "bg-warn/15 text-warn" };
-  else if (status.last_scan_at) chip = { txt: `scanning every ${status.intervalMin}m ●`, cls: "bg-good/15 text-good" };
+  else if (status.last_scan_at) chip = { txt: `scanning every ${status.scanSec}s ●`, cls: "bg-good/15 text-good" };
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded border border-neutral-800 bg-neutral-950/40 px-3 py-2 text-xs">
@@ -394,8 +394,9 @@ function HitRow({ hit, flash, bait, median }: { hit: Hit; flash: boolean; bait: 
 function HuntForm({ initial, onSaved, onCancel }: { initial: Hunt | null; onSaved: () => void; onCancel: () => void }) {
   const ed = initial;
   const [label, setLabel] = useState(ed?.label ?? "");
-  const [itemName, setItemName] = useState(ed?.item_name ?? "");
-  const [baseType, setBaseType] = useState(ed?.base_type ?? "");
+  // one item concept: the text the user typed/picked + the base type a unique pick carries along
+  const [item, setItem] = useState(ed?.item_name || ed?.base_type || "");
+  const [pickedBase, setPickedBase] = useState(ed?.base_type ?? "");
   const [rarity, setRarity] = useState(ed?.rarity ?? "rare");
   const [maxAmount, setMaxAmount] = useState(ed?.max_amount != null ? String(ed.max_amount) : "");
   const [maxCcy, setMaxCcy] = useState(ed?.max_ccy ?? "exalted");
@@ -436,9 +437,9 @@ function HuntForm({ initial, onSaved, onCancel }: { initial: Hunt | null; onSave
       .map((f) => ({ id: f.id, min: Number(f.min) }));
     const payload = {
       label: label.trim(),
-      // unique hunts search by NAME; everything else by base type — one item concept, not two
-      itemName: rarity === "unique" ? itemName.trim() || null : null,
-      baseType: baseType.trim() || null,
+      // unique hunts search by NAME (base carried from the pick); everything else by base type
+      itemName: rarity === "unique" ? item.trim() || null : null,
+      baseType: (rarity === "unique" ? pickedBase.trim() : item.trim()) || null,
       rarity: rarity || null,
       stats: stats.length ? stats : null,
       maxAmount: maxAmount.trim() === "" ? null : Number(maxAmount),
@@ -458,38 +459,33 @@ function HuntForm({ initial, onSaved, onCancel }: { initial: Hunt | null; onSave
         </div>
       )}
       <div className="flex flex-wrap items-end gap-2 text-sm">
+        <Autocomplete
+          label="item — unique name or base type"
+          value={item}
+          onChange={setItem}
+          options={[
+            // one box finds BOTH: picking a unique also sets rarity + carries its base along
+            ...uniques.map((u) => ({ label: `${u.name} · ${u.type}`, value: u.name, meta: `u:${u.type}` })),
+            ...baseTypes.map((t) => ({ label: t, value: t, meta: "b" })),
+          ]}
+          onPick={(o) => {
+            setItem(o.value);
+            if (o.meta?.startsWith("u:")) {
+              setPickedBase(o.meta.slice(2));
+              setRarity("unique");
+            } else {
+              setPickedBase("");
+            }
+            setLabel((l) => l.trim() || o.value);
+          }}
+          placeholder="Coward's Legacy / Breach Ring"
+        />
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           rarity
           <select value={rarity} onChange={(e) => setRarity(e.target.value)} className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1.5">
             {["", "normal", "magic", "rare", "unique"].map((r) => <option key={r} value={r}>{r || "any"}</option>)}
           </select>
         </label>
-        {rarity === "unique" ? (
-          <Autocomplete
-            label="item"
-            value={itemName}
-            onChange={setItemName}
-            options={uniques.map((u) => ({ label: `${u.name} · ${u.type}`, value: u.name, meta: u.type }))}
-            onPick={(o) => {
-              setItemName(o.value);
-              if (o.meta) setBaseType(o.meta);
-              setLabel((l) => l.trim() || o.value);
-            }}
-            placeholder="Headhunter"
-          />
-        ) : (
-          <Autocomplete
-            label="base type"
-            value={baseType}
-            onChange={setBaseType}
-            options={baseTypes.map((t) => ({ label: t, value: t }))}
-            onPick={(o) => {
-              setBaseType(o.value);
-              setLabel((l) => l.trim() || o.value);
-            }}
-            placeholder="Breach Ring"
-          />
-        )}
         <Field label="label" value={label} set={setLabel} w="w-36" placeholder="auto from item" />
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           price ≤

@@ -120,18 +120,22 @@ function start(): void {
   // The owner's cred (stored or .env) backs the shared auto-snipe market scan.
   const ownerCred = credForUser({ id: OWNER_ID, role: "owner" });
 
-  // Hunt = periodic per-user poll-diff scan (newest listings first, de-duped by listing id).
-  // The old trade WebSocket path is gone: trade2 live sockets require a saved on-account search
-  // AND a browser TLS fingerprint — Cloudflare reaps plain Node clients seconds after connect.
-  // Polling every couple of minutes sits comfortably inside the 30-per-300s search budget.
+  // Hunt = near-live per-user poll-diff scan (newest listings first, de-duped by listing id).
+  // The trade WebSocket path is gone: trade2 live sockets require a saved on-account search AND
+  // a browser TLS fingerprint — Cloudflare reaps plain Node clients seconds after connect. A
+  // 30s poll is the honest server-side equivalent; the tick is skipped while a previous cycle
+  // is still draining through the rate limiter, so many hunts degrade gracefully to slower laps.
   if (config.hunt.enabled) {
-    const huntExpr = `*/${config.hunt.intervalMin} * * * *`;
-    console.log(`[hunt] periodic per-user scan every ${config.hunt.intervalMin}m`);
-    cron.schedule(huntExpr, () => {
+    console.log(`[hunt] per-user scan every ${config.hunt.scanSec}s`);
+    let scanning = false;
+    setInterval(() => {
+      if (scanning) return; // previous cycle still queued behind the trade2 limiter
+      scanning = true;
       scanAll()
-        .then((s) => { if (s.hits > 0) console.log(`[hunt] periodic scan: ${s.hits} new across ${s.scanned} hunt(s)`); })
-        .catch((e) => console.error("[hunt] periodic scan failed:", e instanceof Error ? e.message : e));
-    });
+        .then((s) => { if (s.hits > 0) console.log(`[hunt] scan: ${s.hits} new across ${s.scanned} hunt(s)`); })
+        .catch((e) => console.error("[hunt] scan failed:", e instanceof Error ? e.message : e))
+        .finally(() => { scanning = false; });
+    }, config.hunt.scanSec * 1000);
   }
 
   // Autonomous rare-snipe scanner — OFF unless AUTOSNIPE_ENABLED=true. Rotates the built-in

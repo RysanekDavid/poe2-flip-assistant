@@ -37,9 +37,12 @@ export const config = {
     // Background poll-diff scan: ON by default — a hunt that only fires when you press a button
     // isn't a hunt. Per-user creds; users without a stored POESESSID are simply skipped.
     enabled: (process.env.HUNT_ENABLED ?? "true").toLowerCase() === "true",
-    intervalMin: num("HUNT_INTERVAL_MIN", 2), // scan cadence; trade2 sustained budget is 1 search/10s
+    // Near-live cadence. trade2 sustained search budget = 1/10s (30 per 300s) per account+IP;
+    // the limiter's request floor spaces a big hunt list out naturally, and the poller skips a
+    // tick while the previous cycle is still draining, so we can't blow the budget.
+    scanSec: num("HUNT_SCAN_SEC", 30),
     perScan: num("HUNT_PER_SCAN", 10), // listings fetched per hunt per scan (≤10 = one fetch call)
-    minRequestMs: num("HUNT_MIN_REQUEST_MS", 5000), // floor between trade2 requests (rate-limit guard)
+    minRequestMs: num("HUNT_MIN_REQUEST_MS", 6000), // floor between trade2 requests (rate-limit guard)
     freshMinutes: num("HUNT_FRESH_MIN", 120), // a listing older than this is stale bait, not a hit
   },
   // auto net-worth read from your public tabs via trade account search (0 = off, manual only)
