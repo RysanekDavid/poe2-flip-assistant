@@ -154,14 +154,20 @@ function parseListing(r: FetchResp["result"][number]): Listing | null {
   };
 }
 
-/** POST a search and get back the queryId (reused by the live socket) + first result ids. */
+/** Sort spec: "asc"/"desc" = by price (the common case), or an explicit field map,
+ *  e.g. { indexed: "desc" } for a newest-first recency feed (confirmed supported by trade2). */
+export type TradeSort = "asc" | "desc" | Record<string, "asc" | "desc">;
+
+const toSort = (s: TradeSort): Record<string, "asc" | "desc"> => (typeof s === "string" ? { price: s } : s);
+
+/** POST a search and get back the queryId + first result ids. */
 export async function createSearch(
   q: TradeQuery,
-  sort: "asc" | "desc" = "asc",
+  sort: TradeSort = "asc",
   cred: TradeCred = configCred(),
 ): Promise<SearchResp> {
   const league = encodeURIComponent(config.league);
-  const body = { query: buildTradeQuery(q), sort: { price: sort } };
+  const body = { query: buildTradeQuery(q), sort: toSort(sort) };
   return call<SearchResp>("post", `/search/poe2/${league}?realm=poe2`, cred, body);
 }
 
@@ -178,13 +184,13 @@ export async function fetchListings(
 }
 
 /**
- * Search live listings for a query, cheapest first, and fetch up to `limit` (≤10,
- * one fetch call). Returns the market total and the parsed cheapest listings.
+ * Search live listings for a query and fetch up to `limit`. Default sort is cheapest
+ * first; pass { indexed: "desc" } for newest first. Returns the market total too.
  */
 export async function searchListings(
   q: TradeQuery,
   limit = 10,
-  sort: "asc" | "desc" = "asc",
+  sort: TradeSort = "asc",
   cred: TradeCred = configCred(),
 ): Promise<{ total: number; listings: Listing[] }> {
   const search = await createSearch(q, sort, cred);

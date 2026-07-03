@@ -6,13 +6,17 @@ import { config } from "../../../../config/env";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** GET /api/hunts/status → live-search runtime (connections, last event, error). */
+/** GET /api/hunts/status → background scan health (hunts scanned, last scan, last error). */
 export async function GET(): Promise<Response> {
   const cred = await getCallerCred();
+  const rt = getRuntime();
   return NextResponse.json({
-    ...getRuntime(),
+    scannedHunts: rt.connections, // runtime row reused: "connections" now = hunts scanned last cycle
+    last_scan_at: rt.last_event_at,
+    last_error: rt.last_error,
+    updated_at: rt.updated_at,
     liveEnabled: cred != null,
     huntEnabled: config.hunt.enabled,
-    maxConn: 20,
+    intervalMin: config.hunt.intervalMin,
   });
 }

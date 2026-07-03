@@ -3,7 +3,7 @@ import { fetchScout, type ScoutRates } from "../api/scoutClient";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
-import { recordObservation, observedPrices } from "../db/queries";
+import { recordObservation, observedPrices, saveSnipeReport } from "../db/queries";
 import { listUsers } from "../db/userQueries";
 import { toDivine } from "./huntEngine";
 import { buildStatIndex, type StatIndex, type ResolvedStat } from "./statResolver";
@@ -309,5 +309,7 @@ export async function scanAutoSnipes(cred: TradeCred): Promise<ScanReport> {
     }
   }
 
+  // persist so the UI shows the latest scan (manual or cron) without re-running one
+  saveSnipeReport(JSON.stringify(report));
   return report;
 }

@@ -180,6 +180,13 @@ CREATE TABLE IF NOT EXISTS hunt_runtime (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Last auto-snipe scan report (poller writes it, the UI reads it across processes)
+CREATE TABLE IF NOT EXISTS autosnipe_report (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  report_json TEXT NOT NULL,        -- serialized ScanReport (findings + per-archetype diags)
+  scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Balance snapshots (net-worth over time) — PER-USER, one row per currency reading.
 CREATE TABLE IF NOT EXISTS balance_snapshots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

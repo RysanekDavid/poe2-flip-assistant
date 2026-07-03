@@ -12,6 +12,7 @@ import {
   insertHit,
   recordObservation,
   observedPrices,
+  setRuntime,
   type Hunt,
 } from "../db/queries";
 import { modSignature, summarizePrices, snipeVerdict } from "./priceBook";
@@ -37,7 +38,17 @@ export function huntToQuery(h: Hunt): TradeQuery {
         ? { amount: h.max_amount, currency: h.max_ccy as "divine" | "exalted" | "chaos" }
         : undefined,
     online: true,
+    // recency feed, not a catalogue: without this, a price-asc scan surfaces week-old
+    // zombie/bait listings — a hunt is "tell me when something NEW appears under my price"
+    indexedWindow: "1day",
   };
+}
+
+/** Age of a listing in minutes from its trade `indexed` timestamp; Infinity if unknown. */
+function listingAgeMin(indexed: string | null): number {
+  if (!indexed) return Infinity;
+  const ms = Date.now() - new Date(indexed).getTime();
+  return Number.isFinite(ms) ? ms / 60_000 : Infinity;
 }
 
 export interface ScanSummary {
@@ -46,10 +57,10 @@ export interface ScanSummary {
   errors: Array<{ hunt: string; error: string }>;
 }
 
-/** Scan one hunt: fetch cheapest live listings (already ≤ trigger via the query's
- *  max-price filter), record any new ones, and desktop-alert genuine new hits. */
+/** Scan one hunt: fetch the NEWEST live listings at/under the trigger price (poll-diff —
+ *  sort indexed desc + 1-day window + de-dupe by listing id), record fresh ones, alert. */
 async function scanHunt(h: Hunt, rates: ScoutRates, cred: TradeCred): Promise<number> {
-  const { listings } = await searchListings(huntToQuery(h), config.hunt.perScan, "asc", cred);
+  const { listings } = await searchListings(huntToQuery(h), config.hunt.perScan, { indexed: "desc" }, cred);
   let newHits = 0;
 
   for (const l of listings) {
@@ -74,6 +85,10 @@ async function scanHunt(h: Hunt, rates: ScoutRates, cred: TradeCred): Promise<nu
         });
       }
     }
+
+    // only genuinely fresh listings become hits — old ones still feed the price book above,
+    // but a listing that sat unsold for hours is stale bait, not a snipe
+    if (listingAgeMin(l.indexed) > config.hunt.freshMinutes) continue;
 
     const sig = `${h.id}|${l.account}|${l.price.amount}|${l.price.currency}`;
     if (recentHitByListing(h.user_id, l.listingId) || recentHitSig(h.user_id, sig, config.alertCooldownMin)) continue;
@@ -100,16 +115,22 @@ async function scanHunt(h: Hunt, rates: ScoutRates, cred: TradeCred): Promise<nu
   }
 
   if (newHits > 0) {
-    const cheapest = listings[0]!;
+    // listings arrive newest-first — summarize on the CHEAPEST priced one, that's the headline
+    const cheapest = listings
+      .filter((l) => l.price)
+      .sort(
+        (a, b) => toDivine(a.price!.amount, a.price!.currency, rates) - toDivine(b.price!.amount, b.price!.currency, rates),
+      )[0];
+    const cheapDiv = cheapest ? toDivine(cheapest.price!.amount, cheapest.price!.currency, rates) : NaN;
     const marginTxt =
-      h.target_div != null && cheapest.price
-        ? ` (~${(((h.target_div - toDivine(cheapest.price.amount, cheapest.price.currency, rates)) / toDivine(cheapest.price.amount, cheapest.price.currency, rates)) * 100).toFixed(0)}% vs target)`
+      h.target_div != null && Number.isFinite(cheapDiv) && cheapDiv > 0
+        ? ` (~${(((h.target_div - cheapDiv) / cheapDiv) * 100).toFixed(0)}% vs target)`
         : "";
     fireAlert(h.user_id, {
       type: h.mode,
       itemId: `hunt-${h.id}`,
       itemName: h.label,
-      message: `${newHits} new — cheapest ${cheapest.price?.amount} ${cheapest.price?.currency}${marginTxt}`,
+      message: `${newHits} new — cheapest ${cheapest?.price?.amount} ${cheapest?.price?.currency}${marginTxt}`,
       value: newHits,
       threshold: 0,
     });
@@ -151,6 +172,9 @@ export async function scanAll(only?: { userId: number; cred: TradeCred }): Promi
       errors.push({ hunt: h.label, error: e instanceof Error ? e.message : String(e) });
     }
   }
+
+  // publish scan health for the UI status bar (cross-process via DB)
+  setRuntime(scanned, errors.length > 0 ? `${errors[0]!.hunt}: ${errors[0]!.error}` : null, true);
 
   return { scanned, hits, errors };
 }

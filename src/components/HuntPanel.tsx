@@ -4,15 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SCROLL_BOX } from "../lib/tableStyle";
 import { BellIcon, PlusIcon, XIcon } from "./ui/icons";
 
-type Mode = "SNIPE" | "CRAFT_BASE" | "RESELL";
-
 interface StatOpt { id: string; text: string; group: string; }
 interface StatRow { id: string; text: string; min: string; }
 
 interface Hunt {
   id: number;
   label: string;
-  mode: Mode;
+  mode: string; // legacy DB field — no longer user-facing
   item_name: string | null;
   base_type: string | null;
   rarity: string | null;
@@ -44,20 +42,14 @@ interface Hit {
 }
 
 interface Status {
-  connections: number;
-  last_event_at: string | null;
+  scannedHunts: number;
+  last_scan_at: string | null;
   last_error: string | null;
   updated_at: string | null;
   liveEnabled: boolean;
   huntEnabled: boolean;
-  maxConn: number;
+  intervalMin: number;
 }
-
-const MODE_META: Record<Mode, { label: string; cls: string; hint: string }> = {
-  SNIPE: { label: "🎯 snipe", cls: "bg-sky-500/15 text-sky-300", hint: "unique under market → resell as-is" },
-  CRAFT_BASE: { label: "🔨 craft base", cls: "bg-amber-500/15 text-amber-300", hint: "cheap clean base → craft → resell" },
-  RESELL: { label: "💰 resell", cls: "bg-emerald-500/15 text-emerald-300", hint: "finished item exit price" },
-};
 
 /** Fire a JSON request to the hunts API with a method + body, return the response promise. */
 function huntReq(method: string, url: string, body: unknown): Promise<Response> {
@@ -66,7 +58,9 @@ function huntReq(method: string, url: string, body: unknown): Promise<Response> 
 
 function ageOf(iso: string | null): string {
   if (!iso) return "—";
-  const ms = Date.now() - new Date(iso).getTime();
+  // sqlite CURRENT_TIMESTAMP is UTC without timezone marker — normalize so JS doesn't read it as local
+  const norm = /^\d{4}-\d{2}-\d{2} /.test(iso) ? iso.replace(" ", "T") + "Z" : iso;
+  const ms = Date.now() - new Date(norm).getTime();
   if (!Number.isFinite(ms) || ms < 0) return "—";
   const s = Math.floor(ms / 1000);
   if (s < 60) return `${s}s ago`;
@@ -308,20 +302,21 @@ export function HuntPanel() {
 function StatusBar({ status }: { status: Status | null }) {
   if (!status) return <div className="rounded border border-neutral-800 bg-neutral-950/40 px-3 py-2 text-xs text-neutral-500">connecting…</div>;
 
-  const conn = status.connections ?? 0;
   const dim = "bg-neutral-700/60 text-neutral-300";
-  let chip = { txt: "idle", cls: dim };
+  let chip = { txt: "waiting for first scan", cls: dim };
   if (!status.liveEnabled) chip = { txt: "off — set POESESSID", cls: dim };
   else if (!status.huntEnabled) chip = { txt: "paused — HUNT_ENABLED=false", cls: "bg-warn/15 text-warn" };
-  else if (conn > 0) chip = { txt: "live ●", cls: "bg-good/15 text-good" };
+  else if (status.last_scan_at) chip = { txt: `scanning every ${status.intervalMin}m ●`, cls: "bg-good/15 text-good" };
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded border border-neutral-800 bg-neutral-950/40 px-3 py-2 text-xs">
       <span className={`rounded px-1.5 py-0.5 font-medium ${chip.cls}`}>{chip.txt}</span>
       <span className="text-neutral-400">
-        conn <span className="font-semibold tabular-nums text-neutral-200">{conn}</span><span className="text-neutral-600">/{status.maxConn}</span>
+        last scan <span className="font-semibold text-neutral-200">{ageOf(status.last_scan_at)}</span>
       </span>
-      <span className="text-neutral-400">event {ageOf(status.last_event_at)}</span>
+      <span className="text-neutral-400">
+        searches <span className="font-semibold tabular-nums text-neutral-200">{status.scannedHunts}</span>
+      </span>
       {status.last_error && <span className="truncate text-bad" title={status.last_error}>⚠ {status.last_error}</span>}
     </div>
   );
@@ -334,7 +329,6 @@ function HuntRow({ h, editing, sound, onSound, onToggle, onEdit, onRemove }: {
   return (
     <li className={`rounded border bg-neutral-800/40 px-2 py-1.5 text-sm ${editing ? "border-sky-500/60" : "border-neutral-800"}`}>
       <div className="flex items-center gap-2">
-        <span className={`rounded px-1.5 py-0.5 text-xs ${MODE_META[h.mode].cls}`}>{MODE_META[h.mode].label}</span>
         <span className="truncate font-medium" title={h.label}>{h.label}</span>
         <button onClick={onSound} title={sound ? "sound on" : "sound off"} className={`ml-auto text-sm ${sound ? "text-good" : "text-neutral-600 hover:text-neutral-400"}`}>
           {sound ? "🔊" : "🔈"}
@@ -399,11 +393,10 @@ function HitRow({ hit, flash, bait, median }: { hit: Hit; flash: boolean; bait: 
 
 function HuntForm({ initial, onSaved, onCancel }: { initial: Hunt | null; onSaved: () => void; onCancel: () => void }) {
   const ed = initial;
-  const [mode, setMode] = useState<Mode>(ed?.mode ?? "SNIPE");
   const [label, setLabel] = useState(ed?.label ?? "");
   const [itemName, setItemName] = useState(ed?.item_name ?? "");
   const [baseType, setBaseType] = useState(ed?.base_type ?? "");
-  const [rarity, setRarity] = useState(ed?.rarity ?? "");
+  const [rarity, setRarity] = useState(ed?.rarity ?? "rare");
   const [maxAmount, setMaxAmount] = useState(ed?.max_amount != null ? String(ed.max_amount) : "");
   const [maxCcy, setMaxCcy] = useState(ed?.max_ccy ?? "exalted");
   const [targetDiv, setTargetDiv] = useState(ed?.target_div != null ? String(ed.target_div) : "");
@@ -443,8 +436,8 @@ function HuntForm({ initial, onSaved, onCancel }: { initial: Hunt | null; onSave
       .map((f) => ({ id: f.id, min: Number(f.min) }));
     const payload = {
       label: label.trim(),
-      mode,
-      itemName: itemName.trim() || null,
+      // unique hunts search by NAME; everything else by base type — one item concept, not two
+      itemName: rarity === "unique" ? itemName.trim() || null : null,
       baseType: baseType.trim() || null,
       rarity: rarity || null,
       stats: stats.length ? stats : null,
@@ -464,33 +457,40 @@ function HuntForm({ initial, onSaved, onCancel }: { initial: Hunt | null; onSave
           <button onClick={onCancel} className="text-neutral-500 hover:text-neutral-300">cancel</button>
         </div>
       )}
-      <div className="mb-2 flex flex-wrap gap-1.5">
-        {(Object.keys(MODE_META) as Mode[]).map((m) => (
-          <button key={m} onClick={() => setMode(m)} className={`rounded-full px-2.5 py-1 text-xs ${mode === m ? MODE_META[m].cls : "bg-neutral-800 text-neutral-400"}`}>
-            {MODE_META[m].label}
-          </button>
-        ))}
-        <span className="self-center text-xs text-neutral-600">{MODE_META[mode].hint}</span>
-      </div>
       <div className="flex flex-wrap items-end gap-2 text-sm">
-        <Field label="label" value={label} set={setLabel} w="w-36" placeholder="my snipe" />
-        {mode === "SNIPE" && (
-          <Autocomplete
-            label="unique name"
-            value={itemName}
-            onChange={setItemName}
-            options={uniques.map((u) => ({ label: `${u.name} · ${u.type}`, value: u.name, meta: u.type }))}
-            onPick={(o) => { setItemName(o.value); if (o.meta) setBaseType(o.meta); }}
-            placeholder="Headhunter"
-          />
-        )}
-        <Autocomplete label="base type" value={baseType} onChange={setBaseType} options={baseTypes.map((t) => ({ label: t, value: t }))} onPick={(o) => setBaseType(o.value)} placeholder="Sapphire Ring" />
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           rarity
           <select value={rarity} onChange={(e) => setRarity(e.target.value)} className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1.5">
             {["", "normal", "magic", "rare", "unique"].map((r) => <option key={r} value={r}>{r || "any"}</option>)}
           </select>
         </label>
+        {rarity === "unique" ? (
+          <Autocomplete
+            label="item"
+            value={itemName}
+            onChange={setItemName}
+            options={uniques.map((u) => ({ label: `${u.name} · ${u.type}`, value: u.name, meta: u.type }))}
+            onPick={(o) => {
+              setItemName(o.value);
+              if (o.meta) setBaseType(o.meta);
+              setLabel((l) => l.trim() || o.value);
+            }}
+            placeholder="Headhunter"
+          />
+        ) : (
+          <Autocomplete
+            label="base type"
+            value={baseType}
+            onChange={setBaseType}
+            options={baseTypes.map((t) => ({ label: t, value: t }))}
+            onPick={(o) => {
+              setBaseType(o.value);
+              setLabel((l) => l.trim() || o.value);
+            }}
+            placeholder="Breach Ring"
+          />
+        )}
+        <Field label="label" value={label} set={setLabel} w="w-36" placeholder="auto from item" />
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           price ≤
           <span className="flex items-center gap-1">

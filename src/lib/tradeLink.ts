@@ -26,6 +26,7 @@ export interface TradeQuery {
   maxPrice?: { amount: number; currency: "divine" | "exalted" | "chaos" }; // price ceiling
   ilvlMin?: number; // minimum item level (comparable gear of similar power)
   corrupted?: boolean; // restrict corrupted state; omit = either
+  indexedWindow?: "1day" | "3days" | "1week"; // only listings indexed within this window (recency feed)
   stats?: StatFilter[]; // explicit/implicit mod thresholds (AND-combined)
 }
 
@@ -53,6 +54,7 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
   if (q.maxPrice && q.maxPrice.amount > 0) {
     tradeFilters.price = { max: q.maxPrice.amount, option: q.maxPrice.currency };
   }
+  if (q.indexedWindow) tradeFilters.indexed = { option: q.indexedWindow };
   if (Object.keys(tradeFilters).length > 0) filters.trade_filters = { filters: tradeFilters };
   if (Object.keys(filters).length > 0) query.filters = filters;
 

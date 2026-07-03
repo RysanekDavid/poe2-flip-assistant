@@ -8,6 +8,8 @@ interface Status {
   live: boolean;
   intervalMin: number;
   profiles: Array<{ key: string; label: string; category: string }>;
+  lastReport?: ScanResult | null;
+  lastScanAt?: string | null;
   error?: string;
 }
 interface Finding {
@@ -49,6 +51,17 @@ interface ScanResult {
 
 const int = (n: number): string => n.toLocaleString("en", { maximumFractionDigits: 0 });
 
+/** "3m ago" from a sqlite UTC timestamp ("YYYY-MM-DD HH:MM:SS"). */
+function scanAge(ts: string): string {
+  const ms = Date.now() - new Date(ts.replace(" ", "T") + "Z").getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "just now";
+  const m = Math.floor(ms / 60_000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  return h < 48 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+}
+
 /** Render a Divine amount sensibly: ≥1 → "12.3 div", else in exalt → "45 ex", 0 → "—". */
 function price(div: number, exPerDiv: number): string {
   if (!div || div <= 0) return "—";
@@ -65,14 +78,25 @@ function price(div: number, exPerDiv: number): string {
 export function AutoSnipeBar() {
   const [status, setStatus] = useState<Status | null>(null);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [lastScanAt, setLastScanAt] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
+  // load status + the last persisted scan (cron or manual), and keep polling so
+  // background-scan results appear without pressing anything
   useEffect(() => {
-    fetch("/api/snipe/scan")
-      .then((r) => r.json())
-      .then(setStatus)
-      .catch(() => setStatus({ enabled: false, live: false, intervalMin: 0, profiles: [], error: "failed to load" }));
+    const load = () =>
+      fetch("/api/snipe/scan")
+        .then((r) => r.json())
+        .then((s: Status) => {
+          setStatus(s);
+          setLastScanAt(s.lastScanAt ?? null);
+          if (s.lastReport) setResult(s.lastReport); // manual scans persist too, so this is never stale
+        })
+        .catch(() => setStatus({ enabled: false, live: false, intervalMin: 0, profiles: [], error: "failed to load" }));
+    load();
+    const t = setInterval(load, 60_000);
+    return () => clearInterval(t);
   }, []);
 
   const scanNow = () => {
@@ -111,6 +135,12 @@ export function AutoSnipeBar() {
             </span>
             <span className="text-neutral-700">·</span>
             <span className="text-neutral-500">{status.profiles.length} archetypes</span>
+            {lastScanAt && (
+              <>
+                <span className="text-neutral-700">·</span>
+                <span className="text-neutral-500">last scan {scanAge(lastScanAt)}</span>
+              </>
+            )}
           </span>
         )}
         <button

@@ -3,6 +3,7 @@ import { scanAutoSnipes } from "../../../../core/autoSnipe";
 import { SNIPE_PROFILES } from "../../../../core/snipeProfiles";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
+import { getSnipeReport } from "../../../../db/queries";
 import { config } from "../../../../config/env";
 
 export const runtime = "nodejs";
@@ -13,11 +14,14 @@ export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const cred = await getCallerCred();
+  const last = getSnipeReport();
   return NextResponse.json({
     enabled: config.autoSnipe.enabled,
     live: cred != null,
     intervalMin: config.autoSnipe.intervalMin,
     profiles: SNIPE_PROFILES.map((p) => ({ key: p.key, label: p.label, category: p.category })),
+    lastReport: last ? JSON.parse(last.report_json) : null,
+    lastScanAt: last?.scanned_at ?? null,
   });
 }
 

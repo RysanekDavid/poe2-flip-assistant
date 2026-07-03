@@ -19,12 +19,12 @@ export async function POST(req: Request): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const b = await req.json();
-  if (!b?.label || !b?.mode) {
-    return NextResponse.json({ error: "label and mode required" }, { status: 400 });
+  if (!b?.label) {
+    return NextResponse.json({ error: "label required" }, { status: 400 });
   }
   const id = addHunt(user.id, {
     label: String(b.label),
-    mode: b.mode as HuntMode,
+    mode: (b.mode as HuntMode) ?? "SNIPE",
     item_name: b.itemName ?? null,
     base_type: b.baseType ?? null,
     rarity: b.rarity ?? null,
@@ -47,7 +47,7 @@ export async function PATCH(req: Request): Promise<Response> {
   if (b.label != null) {
     updateHunt(user.id, Number(b.id), {
       label: String(b.label),
-      mode: b.mode as HuntMode,
+      mode: (b.mode as HuntMode) ?? "SNIPE",
       item_name: b.itemName ?? null,
       base_type: b.baseType ?? null,
       rarity: b.rarity ?? null,

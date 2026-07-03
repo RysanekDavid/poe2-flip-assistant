@@ -17,7 +17,6 @@ import { deriveRates, type Currency } from "../core/priceEngine";
 import { roundPrice } from "../lib/format";
 import { analyzeTrend } from "../core/trendDetector";
 import { fireAlert } from "../core/alertEngine";
-import { startLiveHunts } from "../core/liveHunt";
 import { scanAll } from "../core/huntEngine";
 import { scanAutoSnipes } from "../core/autoSnipe";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
@@ -118,20 +117,14 @@ function start(): void {
     runCycle().catch((e) => console.error("[poll] cycle failed:", e instanceof Error ? e.message : e));
   });
 
-  // The owner's cred (stored or .env) backs the owner-scoped background jobs: the live hunt
-  // socket and the shared auto-snipe market scan. Members get the per-user REST hunt backstop.
+  // The owner's cred (stored or .env) backs the shared auto-snipe market scan.
   const ownerCred = credForUser({ id: OWNER_ID, role: "owner" });
 
-  // Live-search hunt manager — OFF unless HUNT_ENABLED=true. Opens a trade WebSocket per OWNER
-  // hunt for instant snipes (one account can't open sockets for everyone). Verify a manual scan
-  // works (POST /api/hunts/scan) before enabling, so you don't open blind connections.
+  // Hunt = periodic per-user poll-diff scan (newest listings first, de-duped by listing id).
+  // The old trade WebSocket path is gone: trade2 live sockets require a saved on-account search
+  // AND a browser TLS fingerprint — Cloudflare reaps plain Node clients seconds after connect.
+  // Polling every couple of minutes sits comfortably inside the 30-per-300s search budget.
   if (config.hunt.enabled) {
-    if (ownerCred) startLiveHunts();
-    else console.warn("[hunt] HUNT_ENABLED=true but owner POESESSID missing — live socket stays off");
-
-    // Periodic REST scan as a backstop AND the per-user path: scanAll() loops every user, using
-    // each user's own stored POESESSID and skipping those who haven't connected one. Works even
-    // if the live socket is flaky. The trade2 limiter (minTime 5s, one at a time) keeps it safe.
     const huntExpr = `*/${config.hunt.intervalMin} * * * *`;
     console.log(`[hunt] periodic per-user scan every ${config.hunt.intervalMin}m`);
     cron.schedule(huntExpr, () => {

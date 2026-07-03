@@ -34,10 +34,13 @@ export const config = {
     .map(Number)
     .filter((n) => Number.isInteger(n)),
   hunt: {
-    enabled: (process.env.HUNT_ENABLED ?? "false").toLowerCase() === "true", // background scan on/off
-    intervalMin: num("HUNT_INTERVAL_MIN", 15), // background scan cadence (keep conservative)
+    // Background poll-diff scan: ON by default — a hunt that only fires when you press a button
+    // isn't a hunt. Per-user creds; users without a stored POESESSID are simply skipped.
+    enabled: (process.env.HUNT_ENABLED ?? "true").toLowerCase() === "true",
+    intervalMin: num("HUNT_INTERVAL_MIN", 2), // scan cadence; trade2 sustained budget is 1 search/10s
     perScan: num("HUNT_PER_SCAN", 10), // listings fetched per hunt per scan (≤10 = one fetch call)
     minRequestMs: num("HUNT_MIN_REQUEST_MS", 5000), // floor between trade2 requests (rate-limit guard)
+    freshMinutes: num("HUNT_FRESH_MIN", 120), // a listing older than this is stale bait, not a hit
   },
   // auto net-worth read from your public tabs via trade account search (0 = off, manual only)
   balanceIntervalMin: num("BALANCE_INTERVAL_MIN", 0),
@@ -72,7 +75,9 @@ export const config = {
   // value each ITEM individually (relaxed comparable search on its own rolls) — not a category
   // median. A listing far under its own per-item value = snipe. Off unless enabled.
   autoSnipe: {
-    enabled: (process.env.AUTOSNIPE_ENABLED ?? "false").toLowerCase() === "true",
+    // ON by default — the scanner is worthless as a button; it exists to watch the market
+    // continuously. Runs under the owner's cred; stays off if none is stored.
+    enabled: (process.env.AUTOSNIPE_ENABLED ?? "true").toLowerCase() === "true",
     intervalMin: num("AUTOSNIPE_INTERVAL_MIN", 10), // cadence; paced further by the trade2 limiter
     fetchPerArchetype: num("AUTOSNIPE_FETCH", 20), // listings pulled per archetype to record + screen
     candidatesPerArchetype: num("AUTOSNIPE_CANDIDATES", 3), // cheapest real listings considered per archetype

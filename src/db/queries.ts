@@ -671,6 +671,24 @@ export function setRuntime(connections: number, lastError: string | null, bumpEv
     .run({ connections, lastError });
 }
 
+// --- auto-snipe scan report (cross-process: poller writes, web UI reads) ---
+
+export function saveSnipeReport(reportJson: string): void {
+  getDb()
+    .prepare(
+      `INSERT INTO autosnipe_report (id, report_json, scanned_at) VALUES (1, ?, CURRENT_TIMESTAMP)
+       ON CONFLICT(id) DO UPDATE SET report_json = excluded.report_json, scanned_at = CURRENT_TIMESTAMP`,
+    )
+    .run(reportJson);
+}
+
+export function getSnipeReport(): { report_json: string; scanned_at: string } | null {
+  const row = getDb().prepare("SELECT report_json, scanned_at FROM autosnipe_report WHERE id = 1").get() as
+    | { report_json: string; scanned_at: string }
+    | undefined;
+  return row ?? null;
+}
+
 // --- balance snapshots (net-worth tracking) ---
 
 export type BalanceSource = "trade" | "stash" | "ocr" | "manual";
