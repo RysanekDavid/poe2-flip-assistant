@@ -15,6 +15,10 @@ fi
 
 run_as_app() { runuser -u "$APP_USER" -- "$@"; }
 
+# heal ownership: past root-run npm/git leaves root-owned files the app user can't remove
+echo "==> ensuring $APP_USER owns $APP_DIR"
+chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
+
 echo "==> installing deps (incl. dev — tsx + tailwind are needed at build/runtime)"
 run_as_app npm ci
 
