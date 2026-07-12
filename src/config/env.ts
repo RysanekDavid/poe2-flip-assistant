@@ -89,6 +89,16 @@ export const config = {
     minCandidateScore: num("AUTOSNIPE_MIN_SCORE", 1), // skip listings whose mods don't resolve to anything valuable
   },
 
+  // craft-margin engine: rank curated craft recipes by live EV per attempt
+  // (hitRate × result median − base cost − materials). Legs run under the owner's cred through
+  // the shared trade2 limiter, one recipe per tick (the stalest), so the rate budget is safe.
+  craftMargin: {
+    enabled: (process.env.CRAFT_MARGIN_ENABLED ?? "true").toLowerCase() === "true",
+    intervalMin: num("CRAFT_MARGIN_INTERVAL_MIN", 10), // cadence; paced further by the trade2 limiter
+    alertMarginPct: num("CRAFT_MARGIN_ALERT_PCT", 40), // fire when EV margin ≥ this %
+    alertMinEvDiv: num("CRAFT_MARGIN_ALERT_MIN_EV_DIV", 1), // …and EV ≥ this many Divine (skip trivial edges)
+  },
+
   buyExaltDiscount: num("BUY_EXALT_DISCOUNT", 0.92),
   sellChaosBonus: num("SELL_CHAOS_BONUS", 1.08),
   minVolume: num("MIN_VOLUME", 50), // below this = illiquid (orders won't fill fast)

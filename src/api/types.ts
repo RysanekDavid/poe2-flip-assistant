@@ -64,6 +64,10 @@ export const CATEGORIES: readonly NinjaCategory[] = [
   { type: "SoulCores", endpoint: E },
   { type: "Idols", endpoint: E },
   { type: "Verisium", endpoint: E },
+  // Distilled/liquid emotions — the craft-margin engine prices Delirium instills (e.g. Liquid
+  // Contempt) from here. This is the 13th request, so it spills into the next ninja limiter
+  // window; tolerated (ninja is cached 1h, the poller isn't racing the budget).
+  { type: "Delirium", endpoint: E },
 ] as const;
 
 /**

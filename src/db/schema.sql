@@ -187,6 +187,34 @@ CREATE TABLE IF NOT EXISTS autosnipe_report (
   scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Latest craft-margin report per recipe (poller writes, the UI reads across processes) — SHARED.
+-- report_json is the full itemized RecipeMarginReport (base/result legs + materials + EV math).
+CREATE TABLE IF NOT EXISTS craft_margin_reports (
+  recipe_key TEXT PRIMARY KEY,
+  report_json TEXT NOT NULL,
+  ev_div REAL NOT NULL,
+  margin_pct REAL NOT NULL,
+  scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Craft-margin EV over time (one row per recipe per scan) — powers the margin sparkline. SHARED.
+CREATE TABLE IF NOT EXISTS craft_margin_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipe_key TEXT NOT NULL,
+  ev_div REAL NOT NULL,
+  margin_pct REAL NOT NULL,
+  scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_cmh_key ON craft_margin_history(recipe_key, scanned_at DESC);
+
+-- Single-row flag: the web POST sets requested=1, the poller consumes it (clears to 0) and runs
+-- the full refresh in-process. Keeps all trade2 traffic on the poller's rate limiter, not the web's.
+CREATE TABLE IF NOT EXISTS craft_refresh_request (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  requested INTEGER NOT NULL DEFAULT 0,
+  requested_at DATETIME
+);
+
 -- Balance snapshots (net-worth over time) — PER-USER, one row per currency reading.
 CREATE TABLE IF NOT EXISTS balance_snapshots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

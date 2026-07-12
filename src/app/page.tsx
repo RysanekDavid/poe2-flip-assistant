@@ -6,6 +6,8 @@ import { BalancePanel } from "../components/BalancePanel";
 import { DiscoverTable } from "../components/DiscoverTable";
 import { SpreadTable } from "../components/SpreadTable";
 import { CraftPlanner } from "../components/CraftPlanner";
+import { CraftMarginPanel } from "../components/CraftMarginPanel";
+import { MaterialsPanel } from "../components/MaterialsPanel";
 import { DemandBoard } from "../components/DemandBoard";
 import { HuntPanel } from "../components/HuntPanel";
 import { AutoSnipeBar } from "../components/AutoSnipeBar";
@@ -113,7 +115,15 @@ export default function DashboardPage() {
         </>
       )}
 
-      {tab === "craft" && <CraftPlanner />}
+      {tab === "craft" && (
+        <>
+          {/* ranked craft recipes by live EV/attempt — sits above the manual planner */}
+          <CraftMarginPanel />
+          <CraftPlanner />
+          {/* live prices for the recipe inputs */}
+          <MaterialsPanel />
+        </>
+      )}
 
       {tab === "wealth" && <BalancePanel />}
 

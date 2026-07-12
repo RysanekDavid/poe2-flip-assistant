@@ -10,6 +10,7 @@ import {
   priceHistory,
   manualAgeMs,
 } from "../db/queries";
+import { pruneMarginHistory, pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries";
 import { listUsers } from "../db/userQueries";
 import { credForUser } from "../auth/credForUser";
 import { scoreItem } from "../core/flipModel";
@@ -20,6 +21,8 @@ import { fireAlert } from "../core/alertEngine";
 import { scanAll } from "../core/huntEngine";
 import { scanAutoSnipes } from "../core/autoSnipe";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
+import { refreshStalestRecipe, refreshAllRecipes } from "../core/craftMargin";
+import { RECIPES } from "../core/craftRecipeData";
 import { readCurrencyFromTrade } from "../api/accountScan";
 import { refreshUniqueValues } from "../core/valuation";
 import { fetchScout } from "../api/scoutClient";
@@ -37,6 +40,7 @@ export async function runCycle(): Promise<void> {
   const stored = insertSnapshots(items);
   const pruned = pruneSnapshots(config.retentionDays);
   pruneObservations(); // age out stale price-book observations
+  pruneMarginHistory(config.retentionDays); // keep craft EV history bounded like everything else
   console.log(`[poll] stored ${stored}/${items.length} new snapshots, pruned ${pruned} > ${config.retentionDays}d`);
 
   const rates = deriveRates(items);
@@ -110,15 +114,31 @@ function start(): void {
   const expr = `*/${config.pollIntervalMin} * * * *`;
   console.log(`poller starting — cron "${expr}", league "${config.league}"`);
 
-  // Run once immediately so the dashboard has data without waiting a full interval.
-  runCycle().catch((e) => console.error("[poll] initial cycle failed:", e instanceof Error ? e.message : e));
+  // In-flight guard: a cold sweep of all ninja categories can exceed the 5-min cron interval
+  // (13 categories × rate-limited fetch), so a new tick must not stack on an unfinished one.
+  let cycleRunning = false;
+  const safeRunCycle = (reason: string): void => {
+    if (cycleRunning) {
+      console.warn(`[poll] ${reason} skipped — previous cycle still running`);
+      return;
+    }
+    cycleRunning = true;
+    runCycle()
+      .catch((e) => console.error(`[poll] ${reason} failed:`, e instanceof Error ? e.message : e))
+      .finally(() => {
+        cycleRunning = false;
+      });
+  };
 
-  cron.schedule(expr, () => {
-    runCycle().catch((e) => console.error("[poll] cycle failed:", e instanceof Error ? e.message : e));
-  });
+  // Run once immediately so the dashboard has data without waiting a full interval.
+  safeRunCycle("initial cycle");
+  cron.schedule(expr, () => safeRunCycle("cycle"));
 
   // The owner's cred (stored or .env) backs the shared auto-snipe market scan.
   const ownerCred = credForUser({ id: OWNER_ID, role: "owner" });
+
+  // Drop stored reports/history for recipes that no longer exist in code (removed/renamed keys).
+  pruneStaleRecipeReports(RECIPES.map((r) => r.key));
 
   // Hunt = near-live per-user poll-diff scan (newest listings first, de-duped by listing id).
   // The trade WebSocket path is gone: trade2 live sockets require a saved on-account search AND
@@ -155,6 +175,38 @@ function start(): void {
     });
   } else if (config.autoSnipe.enabled) {
     console.warn("[autosnipe] AUTOSNIPE_ENABLED=true but owner POESESSID missing — scanner stays off");
+  }
+
+  // Craft-margin engine — ranks curated recipes by live EV/attempt. Shared market scan under the
+  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so 2 searches + 2 fetches is
+  // the whole per-tick cost through the shared trade2 limiter.
+  if (config.craftMargin.enabled && ownerCred) {
+    const cmExpr = `*/${config.craftMargin.intervalMin} * * * *`;
+    console.log(`[craft-margin] refreshing 1/${RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
+    cron.schedule(cmExpr, () => {
+      refreshStalestRecipe(ownerCred)
+        .then((r) => {
+          if (r) console.log(`[craft-margin] ${r.key}: ${r.status} · EV ${r.evDiv.toFixed(1)} div · ${r.marginPct.toFixed(0)}%`);
+        })
+        .catch((e) => console.error("[craft-margin] refresh failed:", e instanceof Error ? e.message : e));
+    });
+
+    // Manual "refresh all" from the web POST is a flag, not an inline call — the web process shares
+    // this account+IP's rate budget, so we consume the flag here and run the sweep on THIS limiter.
+    let craftRefreshing = false;
+    setInterval(() => {
+      if (craftRefreshing || !consumeCraftRefresh()) return;
+      craftRefreshing = true;
+      console.log("[craft-margin] manual refresh dequeued — refreshing all recipes");
+      refreshAllRecipes(ownerCred)
+        .then((rs) => console.log(`[craft-margin] manual refresh done — ${rs.length} recipe(s)`))
+        .catch((e) => console.error("[craft-margin] manual refresh failed:", e instanceof Error ? e.message : e))
+        .finally(() => {
+          craftRefreshing = false;
+        });
+    }, 20_000);
+  } else if (config.craftMargin.enabled) {
+    console.warn("[craft-margin] CRAFT_MARGIN_ENABLED=true but owner POESESSID missing — engine stays off");
   }
 
   // Auto net-worth snapshot per user from their own public tabs. Off unless BALANCE_INTERVAL_MIN

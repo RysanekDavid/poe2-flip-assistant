@@ -10,6 +10,7 @@ export type AlertType =
   | "TREND"
   | "SNIPE"
   | "CRAFT_BASE"
+  | "CRAFT_MARGIN"
   | "RESELL";
 
 /**

@@ -27,6 +27,7 @@ export interface TradeQuery {
   ilvlMin?: number; // minimum item level (comparable gear of similar power)
   corrupted?: boolean; // restrict corrupted state; omit = either
   indexedWindow?: "1day" | "3days" | "1week"; // only listings indexed within this window (recency feed)
+  pdpsMin?: number; // minimum physical DPS (weapon craft result legs) → equipment_filters.pdps.min
   stats?: StatFilter[]; // explicit/implicit mod thresholds (AND-combined)
 }
 
@@ -46,6 +47,10 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
   if (Object.keys(typeFilters).length > 0) filters.type_filters = { filters: typeFilters };
   if (q.corrupted != null) {
     filters.misc_filters = { filters: { corrupted: { option: String(q.corrupted) } } };
+  }
+  // weapon DPS floor for craft result legs — a finished bow is valued by its pdps, not just mods
+  if (q.pdpsMin && q.pdpsMin > 0) {
+    filters.equipment_filters = { filters: { pdps: { min: q.pdpsMin } } };
   }
   // trade filters: buyout-only by default (skip "negotiate"/unpriced), plus optional price ceiling.
   // PoE2 uses sale_type option "priced" — the PoE1 value "priceFixed" is rejected ("Unknown sale type").

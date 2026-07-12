@@ -15,6 +15,7 @@ export const CATEGORY_COLOR: Record<string, string> = {
   SoulCores: "bg-indigo-500/15 text-indigo-300",
   Idols: "bg-yellow-500/15 text-yellow-300",
   Verisium: "bg-cyan-500/15 text-cyan-300",
+  Delirium: "bg-violet-500/15 text-violet-300",
 };
 
 export const categoryColor = (c: string): string => CATEGORY_COLOR[c] ?? "bg-neutral-700/60 text-neutral-300";
