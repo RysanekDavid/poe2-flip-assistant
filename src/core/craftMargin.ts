@@ -11,6 +11,7 @@ import {
   insertMarginHistory,
   getCraftMargins,
   getMaterialPrices,
+  getCurrencyDivMap,
   type MaterialPrice,
 } from "../db/craftQueries";
 import { RECIPES } from "./craftRecipeData";
@@ -92,21 +93,37 @@ export function legToQuery(leg: RecipeLegSpec, idx: StatIndex): { query: TradeQu
   return { query, unresolved };
 }
 
+/** Listing price → Divine. Scout rates cover div/ex/chaos; everything else (alch, aug, regal,
+ *  transmute… — exactly what the cheapest craft-base listings are priced in) falls back to the
+ *  ninja exchange value of that currency item. NaN when neither source knows it. */
+function listingDiv(amount: number, currency: string, rates: ScoutRates, currencyDiv: Map<string, number>): number {
+  const d = toDivine(amount, currency, rates);
+  if (Number.isFinite(d)) return d;
+  const unit = currencyDiv.get(currency);
+  return unit != null ? amount * unit : NaN;
+}
+
 /** Price one leg via a junk-resistant median of priced+online comparables. Throws (→ "leg-failed",
  *  naming the leg) when too few survive the outlier filter, so a 0/NaN price never reaches EV. */
-async function priceLeg(leg: RecipeLegSpec, idx: StatIndex, rates: ScoutRates, cred: TradeCred): Promise<LegReport> {
+async function priceLeg(
+  leg: RecipeLegSpec,
+  idx: StatIndex,
+  rates: ScoutRates,
+  cred: TradeCred,
+  currencyDiv: Map<string, number>,
+): Promise<LegReport> {
   const { query, unresolved } = legToQuery(leg, idx);
   const { total, listings, searchUrl } = await searchListingsLinked(query, 10, cred);
-  const divs = listings
-    .filter((l) => l.price && l.online)
-    .map((l) => toDivine(l.price!.amount, l.price!.currency, rates));
+  const priced = listings.filter((l) => l.price && l.online);
+  const divs = priced.map((l) => listingDiv(l.price!.amount, l.price!.currency, rates, currencyDiv));
   const { value, kept, dropped } = robustValue(divs);
   if (kept < MIN_SAMPLES) {
     throw new Error(
       `${leg.label}: only ${kept} usable comparable(s) after outlier filter (need ${MIN_SAMPLES}); ${total} listed, ${dropped} bait dropped`,
     );
   }
-  return { priceDiv: value, samples: kept, total, searchUrl, outliersDropped: dropped, unresolvedStats: unresolved };
+  const icon = priced.find((l) => l.icon)?.icon ?? null; // real item art for the recipe card
+  return { priceDiv: value, samples: kept, total, searchUrl, outliersDropped: dropped, unresolvedStats: unresolved, icon };
 }
 
 /**
@@ -167,6 +184,7 @@ async function buildReport(
   rates: ScoutRates,
   cred: TradeCred,
   prices: Map<string, MaterialPrice>,
+  currencyDiv: Map<string, number>,
 ): Promise<RecipeMarginReport> {
   const { lines, missing } = priceMaterials(recipe, prices);
   const materialsDiv = lines.reduce((s, l) => s + (l.totalDiv ?? 0), 0);
@@ -190,8 +208,8 @@ async function buildReport(
     };
   }
   try {
-    const base = await priceLeg(recipe.base, idx, rates, cred);
-    const result = await priceLeg(recipe.result, idx, rates, cred);
+    const base = await priceLeg(recipe.base, idx, rates, cred, currencyDiv);
+    const result = await priceLeg(recipe.result, idx, rates, cred, currencyDiv);
     const { evDiv, marginPct } = computeMargin(base.priceDiv, result.priceDiv, materialsDiv, recipe.hitRate);
     return { ...shell, base, result, evDiv, marginPct };
   } catch (e) {
@@ -260,7 +278,7 @@ export async function refreshStalestRecipe(cred: TradeCred): Promise<RecipeMargi
   const { stats } = await fetchTradeMeta();
   const idx = buildStatIndex(stats);
   const prices = getMaterialPrices(recipe.materials.map((m) => m.material.id));
-  const report = await buildReport(recipe, idx, rates, cred, prices);
+  const report = await buildReport(recipe, idx, rates, cred, prices, getCurrencyDivMap());
   persist(recipe, report);
   return report;
 }
@@ -272,11 +290,12 @@ export async function refreshAllRecipes(cred: TradeCred): Promise<RecipeMarginRe
   const { stats } = await fetchTradeMeta();
   const idx = buildStatIndex(stats);
   const prices = getMaterialPrices(ALL_MATERIALS.map((m) => m.id));
+  const currencyDiv = getCurrencyDivMap();
   const reports: RecipeMarginReport[] = [];
   for (const recipe of RECIPES) {
     let report: RecipeMarginReport;
     try {
-      report = await buildReport(recipe, idx, rates, cred, prices);
+      report = await buildReport(recipe, idx, rates, cred, prices, currencyDiv);
     } catch (e) {
       report = {
         key: recipe.key,

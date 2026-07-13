@@ -1,196 +1,207 @@
 import { MATS } from "./craftMaterials";
+import { GUIDES } from "./craftGuideData";
 import type { CraftRecipe } from "./craftRecipes";
 
 /**
- * The five curated recipes. Kept in their own module (data, not logic) so craftRecipes.ts stays
- * a small types file well under the line cap. Material ids are verified against the live ninja
- * economy; hitRate / qtyPerAttempt / stat mins are market-research estimates — see each `note`.
+ * The five curated recipes, transcribed from the user's guide collection (crafting chat +
+ * Fubgun / XTheFarmerX videos). Kept in their own module (data, not logic) so craftRecipes.ts
+ * stays a small types file. Material ids are verified against the live ninja economy;
+ * hitRate / qtyPerAttempt / stat mins are guide-derived estimates — see each `note`.
+ *
+ * qtyPerAttempt is EXPECTED consumption per attempt (probabilistic re-tries folded in);
+ * materials a guide only spends after a hit are either excluded (paid out of profit, noted)
+ * or included when they dominate the attempt cost.
  */
 export const RECIPES: CraftRecipe[] = [
-  // 1) Delirium suffix push on a Time-Lost jewel. The guide transcript ("projít Contempt → +1
-  //    suffix → cranium → annul") is the source; the exact Contempt tier is uncertain, so the
-  //    liquid is priced at Potent tier, qty 2 (~50% proc), and carries a manual fallback until
-  //    the Delirium category has been polled at least once.
+  // 1) +1-suffix push on a caster Time-Lost Sapphire (chat transcript: Contempt → +1 suffix →
+  //    cranium → annul → safe chaos phase).
   {
     key: "jewel_suffix_push",
-    label: "Time-Lost Sapphire · +1 suffix push",
-    source: "guide transcript (Contempt → +1 suffix → cranium → annul)",
+    domain: "jewel",
+    // user preference: the emerald jewel art reads better on the card than the sapphire
+    heroIcon:
+      "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvSmV3ZWxzL1NwZWNpYWxFbWVyYWxkSmV3ZWwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/9acdb9443b/SpecialEmeraldJewel.png",
+    label: "Time-Lost jewel · +1 suffix push",
+    source: "crafting chat (Contempt → +1 suffix → cranium → annul → chaos prefixes)",
     base: {
-      label: "Magic Time-Lost Sapphire",
+      label: "Sapphire · caster suffix",
       type: "Time-Lost Sapphire",
-      rarity: "magic",
-      stats: [],
-      note: "Buy a magic Time-Lost Sapphire that already carries one wanted suffix. Base search is by type only — magic-jewel roll quality varies, treat the cheapest as a rough floor.",
+      // Time-Lost jewel mods are the "Notable Passive Skills in Radius also grant …" variants;
+      // numeric mins on them return 0 results (roll value isn't indexed) — filter by presence only.
+      stats: [{ text: "Notable Passive Skills in Radius also grant #% increased Critical Hit Chance for Spells" }],
+      note: "Cheapest Time-Lost Sapphire with the crit-for-spells grant, 2 caster suffixes + ≤1 junk prefix ideal (search can't see affix structure — eyeball). Must be RARE for the Ancient liquids — regal a magic one.",
     },
     result: {
-      label: "Rare Time-Lost Sapphire (multi-suffix)",
+      label: "Rare Sapphire · crit spell dmg grant",
       type: "Time-Lost Sapphire",
       rarity: "rare",
-      stats: [],
-      note: "Result valued as a rare Time-Lost Sapphire (median of the cheapest priced comparables). Specific desirable-suffix combos sell higher — this is a conservative floor, no stat filter applied.",
+      stats: [{ text: "Notable Passive Skills in Radius also grant #% increased Critical Spell Damage Bonus" }],
+      note: "Valued as a rare Sapphire granting Critical Spell Damage Bonus (jewel roll mins aren't searchable; double-caster-suffix pieces were <5 listed — too thin to price). Finished 5-mod jewels sell above this floor; run the guide's market check by hand via the trade link.",
     },
     materials: [
       {
-        material: MATS.potentLiquidContempt,
-        qtyPerAttempt: 2,
-        manualPriceDiv: 0.02,
-        note: "Contempt emotion/tier uncertain — Potent tier assumed, ~50% proc → qty 2. manualPriceDiv is a placeholder until the Delirium category is polled; then the live price overrides it.",
+        material: MATS.ancientPotentLiquidContempt,
+        qtyPerAttempt: 1,
+        note: "Ancient tier — the only one that works on (rare) Time-Lost jewels. Removes a random mod + grants '+1 Suffix Modifier allowed' OR the prefix version; prefix result = discard the base (loss lives in hitRate).",
       },
-      { material: MATS.preservedCranium, qtyPerAttempt: 1, note: "Adds a suffix; assumes one cranium per successful push." },
-      { material: MATS.annul, qtyPerAttempt: 1, note: "Remove an off-mod to finish. Annul risk is folded into hitRate, not extra qty." },
+      {
+        material: MATS.ancientPotentLiquidFerocity,
+        qtyPerAttempt: 1,
+        note: "Removes a random mod + grants (40–60)% increased Effect of Suffixes — eats the junk prefix and buffs your suffixes in one slam.",
+      },
+      { material: MATS.omenDextralNecromancy, qtyPerAttempt: 1, note: "Forces the cranium's desecration onto a suffix." },
+      { material: MATS.preservedCranium, qtyPerAttempt: 1 },
+      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "One reroll of the three reveal options — insurance, not a guarantee." },
+      { material: MATS.omenSinistralAnnulment, qtyPerAttempt: 0.5, note: "Fail path only: annul a bad desecrated mod and desecrate again (~half the runs)." },
+      { material: MATS.annul, qtyPerAttempt: 0.5, note: "Fail path only, pairs with the annulment omen." },
+      { material: MATS.exalted, qtyPerAttempt: 2, note: "Fill open prefixes — exalts only ADD; PoE2 chaos removes a random existing mod and can eat a suffix." },
+      { material: MATS.divine, qtyPerAttempt: 1, note: "Final rolls — rerolls ALL values incl. suffixes." },
     ],
     hitRate: 0.35,
-    steps: [
-      "Buy a magic Time-Lost Sapphire with one desired suffix",
-      "Apply Potent Liquid Contempt to push toward +1 suffix",
-      "Preserved Cranium to add the extra suffix",
-      "Annul the off-mod, keep the wanted suffixes",
-    ],
+    guide: GUIDES.jewel_suffix_push!,
   },
 
-  // 2) Amanamu's Gaze abyssal bow. Result is a weapon → valued by physical DPS (pdpsMin) via the
-  //    new equipment_filters extension, not by mods alone.
+  // 2) Guaranteed-attack-speed phys bow: essence crit + Liege-forced Amanamu suffix.
   {
     key: "bow_amanamu",
-    label: "Bow · Amanamu's Gaze phys",
-    source: "abyssal-bone bow craft (Amanamu's Gaze)",
+    domain: "weapon",
+    label: "Bow · phys crit + Amanamu AS",
+    source: "Fubgun bow craft (Seeking → Liege jawbone → echoes unveil → greater exalt)",
     base: {
-      label: "White high-tier bow base",
+      label: "%phys bow base (Obliterator/Warmonger)",
       category: "weapon.bow",
-      rarity: "normal",
-      ilvlMin: 80,
-      stats: [],
-      note: "Base is a white ilvl80+ bow with an abyssal socket. Priced by category (bow bases vary); the cheapest white base is the intended buy.",
+      ilvlMin: 75,
+      stats: [{ text: "#% increased Physical Damage", min: 60 }],
+      note: "Magic/rare %phys base, ilvl 75+ (82 for T1 %phys, pricier). Obliterator > Warmonger. AUG a one-mod magic base first for double essence effect.",
     },
     result: {
-      label: "Rare bow · high pdps",
+      label: "Rare bow · 400+ pdps",
       category: "weapon.bow",
-      rarity: "rare",
-      ilvlMin: 80,
-      pdpsMin: 250,
-      stats: [{ text: "#% increased Physical Damage", min: 100 }],
-      note: "Valued as a rare bow at ≥250 pdps. pdps floor is an estimate — adjust to the league's sellable threshold.",
-    },
-    materials: [
-      { material: MATS.amanamusGaze, qtyPerAttempt: 1, note: "Socketed abyssal bone that seeds the phys-DPS mods." },
-      { material: MATS.perfectEssenceAbrasion, qtyPerAttempt: 1, note: "Guarantees a physical mod; Perfect tier assumed for the top phys roll." },
-      { material: MATS.exalted, qtyPerAttempt: 4, note: "Expected exalts to fill remaining affixes across re-tries." },
-    ],
-    hitRate: 0.25,
-    steps: [
-      "Buy a white ilvl80+ bow base with an abyssal socket",
-      "Socket Amanamu's Gaze",
-      "Perfect Essence of Abrasion for the guaranteed physical mod",
-      "Exalt-slam the remaining affixes toward the pdps threshold",
-    ],
-  },
-
-  // 3) Catalysed exalt slam on a ring — Omen of Catalysing Exaltation makes the slam favour the
-  //    catalyst-boosted mod type.
-  {
-    key: "ring_catalysing_exalt",
-    label: "Ring · catalysed exalt slam",
-    source: "Omen of Catalysing Exaltation ring craft",
-    base: {
-      label: "Rare ring (open affix)",
-      type: "Sapphire Ring",
       rarity: "rare",
       ilvlMin: 75,
+      pdpsMin: 400,
       stats: [],
-      note: "Buy a near-finished rare ring with an open affix and quality from catalysts. Base type is an example (Sapphire Ring) — swap to the league's chase ring base.",
-    },
-    result: {
-      label: "Rare ring · attributes",
-      type: "Sapphire Ring",
-      rarity: "rare",
-      ilvlMin: 75,
-      stats: [{ text: "# to all Attributes", min: 10 }],
-      note: "Valued as a rare Sapphire Ring with +all-attributes. Real value depends on the full affix set — floor estimate.",
+      note: "Valued by physical DPS floor (400 = the guide's sellable line for crit-swap bows). Attack-speed tier and crit push real sales above this.",
     },
     materials: [
-      { material: MATS.adaptiveCatalyst, qtyPerAttempt: 10, note: "Catalyst quality raises the targeted mod-type weight; ~10 to reach useful quality." },
-      { material: MATS.omenCatalysingExaltation, qtyPerAttempt: 1, note: "Biases the exalt slam toward the catalysed mod type." },
-      { material: MATS.exalted, qtyPerAttempt: 1, note: "The slam itself." },
-    ],
-    hitRate: 0.4,
-    steps: [
-      "Buy a rare ring with an open affix",
-      "Apply Adaptive Catalysts to raise quality on the wanted mod type",
-      "Slam with Exalted Orb under Omen of Catalysing Exaltation",
-    ],
-  },
-
-  // 4) Fracture a +3 amulet, then reforge the rest. Crystallisation omen biases which side is
-  //    protected during the fracture step.
-  {
-    key: "amulet_fracture_plus3",
-    label: "Amulet · fracture +3, reforge",
-    source: "Fracturing Orb + Crystallisation omen amulet craft",
-    base: {
-      label: "Rare amulet with +3 skills",
-      type: "Stellar Amulet",
-      rarity: "rare",
-      ilvlMin: 80,
-      stats: [{ text: "# to Level of all Spell Skills", min: 3 }],
-      note: "Buy a rare amulet that already rolled +3 to a skill group. Stellar Amulet is an example base — use the league's meta amulet.",
-    },
-    result: {
-      label: "Rare amulet · fractured +3 + reforged suffixes",
-      type: "Stellar Amulet",
-      rarity: "rare",
-      ilvlMin: 80,
-      stats: [{ text: "# to Level of all Spell Skills", min: 3 }],
-      note: "Valued as a rare amulet carrying +3 skills. A fractured +3 with good reforged mods sells well above the bare-+3 floor used here.",
-    },
-    materials: [
-      { material: MATS.fracturing, qtyPerAttempt: 1, note: "Fractures a random mod; the +3 surviving is baked into hitRate." },
-      {
-        material: MATS.omenDextralCrystallisation,
-        qtyPerAttempt: 1,
-        note: "Crystallisation omen protects one side during the fracture. Dextral vs Sinistral depends on the +3 affix position — verify per item.",
-      },
-      { material: MATS.greaterChaos, qtyPerAttempt: 5, note: "Expected greater-chaos reforges of the non-fractured mods across re-tries." },
-    ],
-    hitRate: 0.2,
-    steps: [
-      "Buy a rare amulet with +3 to a skill group",
-      "Fracture the +3 with a Fracturing Orb under the correct Crystallisation omen",
-      "Greater Chaos the remaining mods until the suffixes land",
-    ],
-  },
-
-  // 5) Putrefaction-omen boots. Omen of Putrefaction shapes the essence outcome toward the
-  //    chaos/movement mod pool.
-  {
-    key: "boots_putrefaction",
-    label: "Boots · putrefaction MS",
-    source: "Omen of Putrefaction essence boots craft",
-    base: {
-      label: "White boots base (ES/evasion)",
-      category: "armour.boots",
-      rarity: "normal",
-      ilvlMin: 80,
-      stats: [],
-      note: "Base is a white ilvl80+ boots base — priced by category (boots bases vary); the cheapest white base is the intended buy.",
-    },
-    result: {
-      label: "Rare boots · 30%+ movement speed",
-      category: "armour.boots",
-      rarity: "rare",
-      ilvlMin: 80,
-      stats: [{ text: "#% increased Movement Speed", min: 30 }],
-      note: "Valued as rare boots with ≥30% movement speed. Extra resistances/life stack value above this floor.",
-    },
-    materials: [
-      { material: MATS.omenPutrefaction, qtyPerAttempt: 1, note: "Shapes the essence roll toward the wanted mod pool." },
-      { material: MATS.greaterEssenceHaste, qtyPerAttempt: 1, note: "Seeds movement/attack speed; Greater tier assumed for a usable MS roll." },
-      { material: MATS.exalted, qtyPerAttempt: 3, note: "Expected exalts to fill the remaining affixes." },
+      { material: MATS.greaterEssenceSeeking, qtyPerAttempt: 1, note: "Guaranteed crit mod (crit-swap enabler)." },
+      { material: MATS.omenDextralNecromancy, qtyPerAttempt: 1, note: "Jawbone desecration → suffix." },
+      { material: MATS.omenTheLiege, qtyPerAttempt: 1, note: "Forces an Amanamu mod — attack speed is the jackpot of its 3-mod pool." },
+      { material: MATS.preservedJawbone, qtyPerAttempt: 1, note: "Ancient tier on expensive bases only." },
+      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "Unveil flat phys (best) or high flat ele." },
+      { material: MATS.omenGreaterExaltation, qtyPerAttempt: 1 },
+      { material: MATS.greaterExalted, qtyPerAttempt: 1, note: "Applies twice under the omen." },
+      { material: MATS.artificers, qtyPerAttempt: 2, note: "Sockets for iron runes (runes ~1 ex each, not tracked)." },
     ],
     hitRate: 0.3,
-    steps: [
-      "Buy a white ilvl80+ boots base",
-      "Essence of Haste under Omen of Putrefaction for the movement-speed roll",
-      "Exalt-slam the remaining affixes (resists / life)",
+    guide: GUIDES.bow_amanamu!,
+  },
+
+  // 3) Catalysed double exalt slam fishing flat cold on a fire/lightning-flat magic ring.
+  {
+    key: "ring_catalysing_exalt",
+    domain: "jewellery",
+    label: "Ring · Tul's catalysed exalt",
+    source: "XTheFarmerX ring craft (Tul's 20% → catalysing + greater exaltation → collarbone)",
+    base: {
+      label: "Magic ring · T1 flat fire/lightning",
+      category: "accessory.ring",
+      rarity: "magic",
+      ilvlMin: 75,
+      stats: [{ text: "Adds # to # Fire Damage to Attacks", min: 20 }],
+      note: "T1 flat FIRE or LIGHTNING (never cold — you're slamming for cold; owning it blocks the hit). Search shows the fire variant; lightning equivalents count. Open suffix or good res roll, ≤2 div.",
+    },
+    result: {
+      label: "Rare ring · double flat + rarity",
+      category: "accessory.ring",
+      rarity: "rare",
+      ilvlMin: 75,
+      stats: [
+        { text: "Adds # to # Cold Damage to Attacks", min: 15 },
+        { text: "#% increased Rarity of Items found", min: 20 },
+      ],
+      note: "Valued as flat-cold + rarity rare ring — the weighted-sum comparable from the guide. Double-flat + res pieces sell well above.",
+    },
+    materials: [
+      { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Open-suffix bases: fish rarity/res before essencing." },
+      { material: MATS.greaterEssenceOpulence, qtyPerAttempt: 1, note: "Guaranteed T1 rarity (or Insulation for T3 res when rarity already rolled)." },
+      { material: MATS.tulsCatalyst, qtyPerAttempt: 24, note: "~20 to reach 20% quality + 4 to re-catalyse for listing. Cold tag: 2× slam weight at 20%, no brick mods in pool." },
+      { material: MATS.omenCatalysingExaltation, qtyPerAttempt: 1, note: "Applies to BOTH exalts under greater exaltation." },
+      { material: MATS.omenGreaterExaltation, qtyPerAttempt: 1 },
+      { material: MATS.greaterExalted, qtyPerAttempt: 1 },
+      { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 0.4, note: "Prefix desecration — only spent on slams that hit (~1/3), expected qty." },
+      { material: MATS.preservedCollarbone, qtyPerAttempt: 0.4, note: "Same — hit-gated." },
+      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 0.4, note: "Same — hit-gated." },
     ],
+    hitRate: 0.3,
+    guide: GUIDES.ring_catalysing_exalt!,
+  },
+
+  // 4) Fracture the +3-levels mod behind a desecration block (1-in-3), then finish out of profit.
+  {
+    key: "amulet_fracture_plus3",
+    domain: "jewellery",
+    label: "Amulet · fracture the +3",
+    source: "XTheFarmerX amulet craft (opulence → collarbone block → Fracturing Orb 1-in-3)",
+    base: {
+      label: "Rare amulet · +3 spell skills",
+      type: "Stellar Amulet",
+      rarity: "rare",
+      ilvlMin: 75,
+      stats: [{ text: "# to Level of all Spell Skills", min: 3 }],
+      note: "Base already rolled the +3 (that's what you're fracturing). Stellar/gold bases sell best; open prefix worth ~1 div premium.",
+    },
+    result: {
+      label: "Fractured +3 amulet",
+      type: "Stellar Amulet",
+      rarity: "rare",
+      ilvlMin: 75,
+      stats: [
+        { text: "# to Level of all Spell Skills", min: 3 },
+        { text: "# to maximum Life", min: 40 },
+      ],
+      note: "trade2 query can't filter 'fractured' — proxied as +3 + life, an UNDERestimate: a real fractured +3 is a permanent craft base and sells well above this comparable (+3+rarity pieces were <5 listed, too thin to price).",
+    },
+    materials: [
+      { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Only on open-prefix bases." },
+      { material: MATS.greaterEssenceOpulence, qtyPerAttempt: 1, note: "Guaranteed T1 rarity." },
+      { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 1, note: "Prefix desecration — the desecrated mod can't be fractured, blocking one of three slots." },
+      { material: MATS.preservedCollarbone, qtyPerAttempt: 1 },
+      { material: MATS.fracturing, qtyPerAttempt: 1, note: "The 1-in-3. Miss = base survives as a normal +3 (resellable), only the orb is burned." },
+    ],
+    hitRate: 0.33,
+    guide: GUIDES.amulet_fracture_plus3!,
+  },
+
+  // 5) Putrefaction slot machine on cheap rare boots — quality+sockets BEFORE the corrupting omen.
+  {
+    key: "boots_putrefaction",
+    domain: "armour",
+    label: "Boots · putrefaction reveal",
+    source: "XTheFarmerX putrefaction craft (scraps+sockets FIRST → omen+rib → reveal discipline)",
+    base: {
+      label: "Cheap rare boots (not desecrated)",
+      category: "armour.boots",
+      rarity: "rare",
+      ilvlMin: 82,
+      stats: [],
+      note: "Cheapest rare ilvl75+ boots. MUST be non-corrupted and non-desecrated — trade can't filter desecration, eyeball each base. Mod count irrelevant (putrefies to 6).",
+    },
+    result: {
+      label: "Rare boots · 35% MS + ES",
+      category: "armour.boots",
+      rarity: "rare",
+      ilvlMin: 82,
+      stats: [{ text: "#% increased Movement Speed", min: 35 }],
+      note: "Valued at the 35% MS chase floor. 30% MS misses still sell 1–2 div with good suffixes (not priced here).",
+    },
+    materials: [
+      { material: MATS.scrap, qtyPerAttempt: 14, note: "~14 scraps avg to 20% quality — BEFORE the omen (it corrupts)." },
+      { material: MATS.artificers, qtyPerAttempt: 2, note: "Both sockets BEFORE the omen." },
+      { material: MATS.omenPutrefaction, qtyPerAttempt: 1 },
+      { material: MATS.gnawedRib, qtyPerAttempt: 1, note: "All 6 mods → hidden desecrated reveals." },
+    ],
+    hitRate: 0.3,
+    guide: GUIDES.boots_putrefaction!,
   },
 ];

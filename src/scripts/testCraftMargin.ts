@@ -32,6 +32,7 @@ const ok = (name: string, cond: boolean, extra = "") => {
   const recipe: CraftRecipe = {
     key: "t",
     label: "t",
+    domain: "jewel",
     source: "t",
     base: { label: "b", stats: [], note: "" },
     result: { label: "r", stats: [], note: "" },
@@ -41,10 +42,10 @@ const ok = (name: string, cond: boolean, extra = "") => {
       { material: { id: "nonexistent-mat", label: "X", group: "currency" }, qtyPerAttempt: 1 }, // missing
     ],
     hitRate: 0.5,
-    steps: [],
+    guide: { goal: "", shopping: "", marketCheck: "", phases: [], brick: "" },
   };
   const prices = new Map<string, MaterialPrice>([
-    ["exalted", { itemId: "exalted", itemName: "Exalted Orb", priceDiv: 0.005, change7d: null, spark7d: null, ageMin: 1 }],
+    ["exalted", { itemId: "exalted", itemName: "Exalted Orb", priceDiv: 0.005, icon: null, change7d: null, spark7d: null, ageMin: 1 }],
   ]);
   const { lines, missing } = priceMaterials(recipe, prices);
   ok("missing lists the unpriced material", missing.length === 1 && missing[0] === "nonexistent-mat", missing.join(","));
@@ -62,10 +63,12 @@ const ok = (name: string, cond: boolean, extra = "") => {
   const idx = buildStatIndex(CATALOG);
   const bow = RECIPES.find((r) => r.key === "bow_amanamu")!;
   const { query: q, unresolved } = legToQuery(bow.result, idx);
-  ok("bow result carries pdpsMin 250", q.pdpsMin === 250, String(q.pdpsMin));
+  ok("bow result carries pdpsMin 400", q.pdpsMin === 400, String(q.pdpsMin));
   ok("bow result category weapon.bow", q.category === "weapon.bow", q.category);
-  ok("bow result resolved its phys stat", (q.stats ?? []).length === 1, String((q.stats ?? []).length));
   ok("bow result reports no unresolved stats", unresolved.length === 0, unresolved.join(","));
+  // the %phys stat lives on the BASE leg (you buy a %phys base; the result is valued by pdps)
+  const baseLeg = legToQuery(bow.base, idx);
+  ok("bow base resolved its phys stat", (baseLeg.query.stats ?? []).length === 1, String((baseLeg.query.stats ?? []).length));
   // an unresolvable target text must be surfaced (so alerts suppress + UI warns), not silently dropped
   const widened = legToQuery(
     { label: "x", category: "weapon.bow", stats: [{ text: "#% increased Physical Damage", min: 100 }, { text: "totally fake stat", min: 1 }], note: "" },

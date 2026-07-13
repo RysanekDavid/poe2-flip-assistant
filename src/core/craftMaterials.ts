@@ -29,9 +29,16 @@ export const MATS = {
   omenDextralAnnulment: { id: "omen-of-dextral-annulment", label: "Omen of Dextral Annulment", group: "omen" },
   omenSinistralAnnulment: { id: "omen-of-sinistral-annulment", label: "Omen of Sinistral Annulment", group: "omen" },
   omenWhittling: { id: "omen-of-whittling", label: "Omen of Whittling", group: "omen" },
+  omenSinistralNecromancy: { id: "omen-of-sinistral-necromancy", label: "Omen of Sinistral Necromancy", group: "omen" },
+  omenDextralNecromancy: { id: "omen-of-dextral-necromancy", label: "Omen of Dextral Necromancy", group: "omen" },
+  omenAbyssalEchoes: { id: "omen-of-abyssal-echoes", label: "Omen of Abyssal Echoes", group: "omen" },
+  omenSinistralErasure: { id: "omen-of-sinistral-erasure", label: "Omen of Sinistral Erasure", group: "omen" },
 
   // --- abyssal bones + gazes (ninja category "Abyss") ---
   preservedCranium: { id: "preserved-cranium", label: "Preserved Cranium", group: "bone" },
+  preservedJawbone: { id: "preserved-jawbone", label: "Preserved Jawbone", group: "bone" },
+  ancientJawbone: { id: "ancient-jawbone", label: "Ancient Jawbone", group: "bone" },
+  preservedCollarbone: { id: "preserved-collarbone", label: "Preserved Collarbone", group: "bone" },
   amanamusGaze: { id: "amanamus-gaze", label: "Amanamu's Gaze", group: "bone" },
   ancientRib: { id: "ancient-rib", label: "Ancient Rib", group: "bone" },
   gnawedRib: { id: "gnawed-rib", label: "Gnawed Rib", group: "bone" },
@@ -47,6 +54,10 @@ export const MATS = {
   greaterEssenceHaste: { id: "greater-essence-of-haste", label: "Greater Essence of Haste", group: "essence" },
   greaterEssenceBattle: { id: "greater-essence-of-battle", label: "Greater Essence of Battle", group: "essence" },
   greaterEssenceTheBody: { id: "greater-essence-of-the-body", label: "Greater Essence of the Body", group: "essence" },
+  greaterEssenceSeeking: { id: "greater-essence-of-seeking", label: "Greater Essence of Seeking", group: "essence" },
+  greaterEssenceOpulence: { id: "greater-essence-of-opulence", label: "Greater Essence of Opulence", group: "essence" },
+  greaterEssenceInsulation: { id: "greater-essence-of-insulation", label: "Greater Essence of Insulation", group: "essence" },
+  perfectEssenceEnhancement: { id: "perfect-essence-of-enhancement", label: "Perfect Essence of Enhancement", group: "essence" },
 
   // --- currency (ninja category "Currency") ---
   divine: { id: "divine", label: "Divine Orb", group: "currency" },
@@ -62,6 +73,7 @@ export const MATS = {
   greaterChaos: { id: "greater-chaos-orb", label: "Greater Chaos Orb", group: "currency" },
   regal: { id: "regal", label: "Regal Orb", group: "currency" },
   aug: { id: "aug", label: "Orb of Augmentation", group: "currency" },
+  perfectAug: { id: "perfect-orb-of-augmentation", label: "Perfect Orb of Augmentation", group: "currency" },
   transmute: { id: "transmute", label: "Orb of Transmutation", group: "currency" },
   vaal: { id: "vaal", label: "Vaal Orb", group: "currency" },
   chance: { id: "chance", label: "Orb of Chance", group: "currency" },
@@ -70,6 +82,9 @@ export const MATS = {
   // Only the Potent tier of "Contempt" exists on the exchange (no plain "Liquid Contempt").
   potentLiquidContempt: { id: "potent-liquid-contempt", label: "Potent Liquid Contempt", group: "delirium" },
   ancientPotentLiquidContempt: { id: "ancient-potent-liquid-contempt", label: "Ancient Potent Liquid Contempt", group: "delirium" },
+  potentLiquidFerocity: { id: "potent-liquid-ferocity", label: "Potent Liquid Ferocity", group: "delirium" },
+  // Ancient-prefixed liquids are the ONLY tier that works on (rare) Time-Lost jewels.
+  ancientPotentLiquidFerocity: { id: "ancient-potent-liquid-ferocity", label: "Ancient Potent Liquid Ferocity", group: "delirium" },
 } as const satisfies Record<string, CraftMaterial>;
 
 export type MaterialKey = keyof typeof MATS;

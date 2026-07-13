@@ -139,6 +139,8 @@ CREATE TABLE IF NOT EXISTS hunts (
   mode TEXT NOT NULL,            -- 'SNIPE' | 'CRAFT_BASE' | 'RESELL'
   item_name TEXT,               -- unique name (SNIPE) or null
   base_type TEXT,               -- base type, e.g. 'Sapphire Ring'
+  category TEXT,                -- trade2 category, e.g. 'weapon.bow' (when no single base type applies)
+  ilvl_min INTEGER,             -- minimum item level (craft bases care)
   rarity TEXT,                  -- 'normal' | 'magic' | 'rare' | 'unique' | null (any)
   stats_json TEXT,              -- JSON StatFilter[] (id+min) for craft/resell targeting
   max_amount REAL,              -- price trigger ceiling (only listings at/below)
@@ -198,6 +200,22 @@ CREATE TABLE IF NOT EXISTS craft_margin_reports (
 );
 
 -- Craft-margin EV over time (one row per recipe per scan) — powers the margin sparkline. SHARED.
+-- Craft P&L: one row per real craft attempt the user logs — PER-USER. Costs snapshot what was
+-- actually paid; outcome + sold close the loop so real hit-rate/EV can be compared to the model.
+CREATE TABLE IF NOT EXISTS craft_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL DEFAULT 1,
+  recipe_key TEXT NOT NULL,
+  base_cost_div REAL NOT NULL DEFAULT 0,
+  mats_cost_div REAL NOT NULL DEFAULT 0,
+  outcome TEXT NOT NULL DEFAULT 'open',  -- 'open' | 'hit' | 'brick'
+  sold_div REAL,                         -- realized sale in Divine (brick salvage counts too)
+  note TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  closed_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_craft_attempts_user ON craft_attempts(user_id, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS craft_margin_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   recipe_key TEXT NOT NULL,

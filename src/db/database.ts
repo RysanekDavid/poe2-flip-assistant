@@ -45,6 +45,11 @@ export function getDb(): Database.Database {
     ["seller_online", "INTEGER"],
     ["listed_at", "TEXT"],
   ]);
+  // Craft-base hunts filter by trade2 category + item level when no single base type applies.
+  ensureColumns(conn, "hunts", [
+    ["category", "TEXT"],
+    ["ilvl_min", "INTEGER"],
+  ]);
   ensureColumns(conn, "balance_snapshots", [["other_div", "REAL NOT NULL DEFAULT 0"]]);
   ensureColumns(conn, "balance_tabs", [["unpriced", "INTEGER NOT NULL DEFAULT 0"]]);
   // Per-user trade2 credentials: encrypted POESESSID + identifying contact + account name.

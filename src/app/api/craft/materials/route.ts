@@ -20,6 +20,7 @@ export async function GET(): Promise<Response> {
       id: m.id,
       label: m.label,
       group: m.group,
+      icon: p?.icon ?? null,
       priceDiv: p?.priceDiv ?? null,
       change7d: p?.change7d ?? null,
       spark7d: p?.spark7d ?? null,

@@ -508,6 +508,8 @@ export interface Hunt {
   mode: HuntMode;
   item_name: string | null;
   base_type: string | null;
+  category: string | null; // trade2 category (e.g. "weapon.bow") when no single base type applies
+  ilvl_min: number | null;
   rarity: string | null;
   stats_json: string | null;
   max_amount: number | null;
@@ -541,8 +543,8 @@ export function addHunt(
 ): number {
   const info = getDb()
     .prepare(
-      `INSERT INTO hunts (user_id, label, mode, item_name, base_type, rarity, stats_json, max_amount, max_ccy, target_div)
-       VALUES (@userId, @label, @mode, @item_name, @base_type, @rarity, @stats_json, @max_amount, @max_ccy, @target_div)`,
+      `INSERT INTO hunts (user_id, label, mode, item_name, base_type, category, ilvl_min, rarity, stats_json, max_amount, max_ccy, target_div)
+       VALUES (@userId, @label, @mode, @item_name, @base_type, @category, @ilvl_min, @rarity, @stats_json, @max_amount, @max_ccy, @target_div)`,
     )
     .run({ ...h, userId });
   return Number(info.lastInsertRowid);
@@ -558,7 +560,7 @@ export function updateHunt(
   id: number,
   h: Partial<Omit<Hunt, "id" | "user_id" | "active" | "last_scan_at" | "last_hit_at" | "created_at">>,
 ): void {
-  const cols = ["label", "mode", "item_name", "base_type", "rarity", "stats_json", "max_amount", "max_ccy", "target_div"] as const;
+  const cols = ["label", "mode", "item_name", "base_type", "category", "ilvl_min", "rarity", "stats_json", "max_amount", "max_ccy", "target_div"] as const;
   const sets: string[] = [];
   const vals: Record<string, unknown> = { id, userId };
   for (const c of cols) {

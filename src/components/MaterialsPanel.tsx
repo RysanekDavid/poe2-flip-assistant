@@ -6,11 +6,13 @@ import { Sparkline } from "./ui/Sparkline";
 import { PriceChart } from "./PriceChart";
 import { SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { MATERIAL_GROUPS, type MaterialGroup } from "../core/craftMaterials";
+import { MatIcon } from "./craft/MarginBreakdown";
 
 interface MaterialRow {
   id: string;
   label: string;
   group: MaterialGroup;
+  icon: string | null;
   priceDiv: number | null;
   change7d: number | null;
   spark7d: number[] | null;
@@ -116,11 +118,6 @@ export function MaterialsPanel() {
         </div>
       )}
 
-      <p className="mt-2 text-xs text-neutral-600">
-        Click a material for its price history. Prices come from the same poe.ninja pipeline as the
-        exchange — <span className="text-violet-300">Delirium</span> instills need one poll cycle after
-        the category was added before they show.
-      </p>
     </section>
   );
 }
@@ -153,7 +150,12 @@ function GroupRows({
           className={`${ROW_BASE} cursor-pointer ${selectedId === m.id ? "bg-sky-950/40" : ""}`}
           title="click → price history"
         >
-          <td className={`${CELL} font-medium text-neutral-200`}>{m.label}</td>
+          <td className={`${CELL} font-medium text-neutral-200`}>
+            <span className="inline-flex items-center gap-2">
+              <MatIcon icon={m.icon} size={6} />
+              {m.label}
+            </span>
+          </td>
           <td className={`${CELL} whitespace-nowrap text-right tabular-nums text-neutral-300`}>{priceDiv(m.priceDiv, ex)}</td>
           <td className={`${CELL} text-right`}>
             <span className="inline-flex items-center justify-end gap-1.5">

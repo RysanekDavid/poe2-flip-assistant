@@ -13,6 +13,8 @@ interface Hunt {
   mode: string; // legacy DB field — no longer user-facing
   item_name: string | null;
   base_type: string | null;
+  category: string | null;
+  ilvl_min: number | null;
   rarity: string | null;
   stats_json: string | null;
   max_amount: number | null;
@@ -325,7 +327,8 @@ function StatusBar({ status }: { status: Status | null }) {
 function HuntRow({ h, editing, sound, onSound, onToggle, onEdit, onRemove }: {
   h: Hunt; editing: boolean; sound: boolean; onSound: () => void; onToggle: () => void; onEdit: () => void; onRemove: () => void;
 }) {
-  const crit = [h.item_name, h.base_type, h.rarity].filter(Boolean).join(" · ") || "any item";
+  const crit =
+    [h.item_name, h.base_type, h.category, h.ilvl_min ? `ilvl ${h.ilvl_min}+` : null, h.rarity].filter(Boolean).join(" · ") || "any item";
   return (
     <li className={`rounded border bg-neutral-800/40 px-2 py-1.5 text-sm ${editing ? "border-sky-500/60" : "border-neutral-800"}`}>
       <div className="flex items-center gap-2">

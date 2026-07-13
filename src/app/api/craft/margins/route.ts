@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
-import { getCraftMargins, getMarginHistory, requestCraftRefresh } from "../../../../db/craftQueries";
+import { getCraftMargins, getMarginHistory, requestCraftRefresh, getMaterialPrices } from "../../../../db/craftQueries";
+import { ALL_MATERIALS } from "../../../../core/craftMaterials";
 import { latestSnapshots } from "../../../../db/queries";
 import { deriveRates } from "../../../../core/priceEngine";
 import { RECIPES, RecipeMarginReportSchema, type RecipeMarginReport } from "../../../../core/craftRecipes";
@@ -16,8 +17,10 @@ function recipeMeta(key: string) {
   if (!r) return null;
   return {
     label: r.label,
+    domain: r.domain,
+    heroIcon: r.heroIcon ?? null,
     source: r.source,
-    steps: r.steps,
+    guide: r.guide,
     hitRate: r.hitRate,
     baseSpec: { label: r.base.label, note: r.base.note },
     resultSpec: { label: r.result.label, note: r.result.note },
@@ -61,11 +64,17 @@ export async function GET(): Promise<Response> {
   });
 
   const rates = deriveRates(latestSnapshots());
+  // Item art for every registered material — chips/checklists render the actual item icons.
+  const icons: Record<string, string> = {};
+  for (const [id, p] of getMaterialPrices(ALL_MATERIALS.map((m) => m.id))) {
+    if (p.icon) icons[id] = p.icon;
+  }
   return NextResponse.json({
     enabled: config.craftMargin.enabled,
     intervalMin: config.craftMargin.intervalMin,
     canRefresh: user.role === "owner" && cred != null,
     exaltPerDivine: rates?.exaltPerDivine ?? null,
+    icons,
     recipes,
   });
 }

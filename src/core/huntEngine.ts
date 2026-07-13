@@ -31,6 +31,8 @@ export function huntToQuery(h: Hunt): TradeQuery {
   return {
     name: h.item_name ?? undefined,
     type: h.base_type ?? undefined,
+    category: h.category ?? undefined,
+    ilvlMin: h.ilvl_min ?? undefined,
     rarity: (h.rarity as Rarity | null) ?? undefined,
     stats,
     maxPrice:

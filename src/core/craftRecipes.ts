@@ -39,15 +39,50 @@ export interface RecipeMaterialLine {
   note?: string;
 }
 
+/**
+ * One step of the craft playbook. `mats` lists the materials touched in the step so the UI can
+ * show live prices inline; `warning` marks the get-this-wrong-and-it-bricks checks; `onFail`
+ * says what to do when the step doesn't proc (discard base, sell as-is, continue anyway…).
+ */
+export interface GuideStep {
+  do: string;
+  why?: string;
+  mats?: CraftMaterial[];
+  warning?: string;
+  onFail?: string;
+  pick?: string[]; // at reveal/unveil steps: the exact mods to look for, best first
+  check?: string; // what the item must look like after this step — the player's verification
+}
+
+export interface GuidePhase {
+  title: string;
+  steps: GuideStep[];
+}
+
+/** The full how-to for a recipe: what to buy, what to aim for, phase-by-phase, brick handling. */
+export interface CraftGuide {
+  goal: string; // what the finished item must look like to sell
+  shopping: string; // exactly what base to buy — and what to avoid
+  marketCheck: string; // the go/no-go price check before spending anything
+  phases: GuidePhase[];
+  brick: string; // when to stop / what a failed attempt is still worth
+}
+
+/** Item domain a recipe belongs to — each domain gets its own crafting window in the UI,
+ *  because the procedures (and the player's mental model) differ per item class. */
+export type CraftDomain = "jewel" | "weapon" | "jewellery" | "armour";
+
 export interface CraftRecipe {
   key: string;
   label: string;
+  domain: CraftDomain;
+  heroIcon?: string; // static poecdn art override for the recipe card (else live comparable art)
   source: string; // where the method came from (guide/creator), for provenance
   base: RecipeLegSpec;
   result: RecipeLegSpec;
   materials: RecipeMaterialLine[];
   hitRate: number; // 0..1 probability an attempt yields the sellable result — shown in the UI
-  steps: string[];
+  guide: CraftGuide;
 }
 
 // Report types are zod schemas (not bare interfaces) because reports are persisted as JSON and
@@ -74,6 +109,7 @@ export const LegReportSchema = z.object({
   searchUrl: z.string(),
   outliersDropped: z.number(), // bait listings discarded before valuation
   unresolvedStats: z.array(z.string()), // target mod texts the catalog couldn't resolve (search widened)
+  icon: z.string().nullable().catch(null), // item art from a live comparable (catch: pre-icon rows parse as null)
 });
 export type LegReport = z.infer<typeof LegReportSchema>;
 

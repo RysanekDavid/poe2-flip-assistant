@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import iconExchange from "../assets/Currency_exchange.png";
+import iconMarket from "../assets/Web_market.png";
+import iconCraft from "../assets/Craft.png";
+import iconWealth from "../assets/Wealth.png";
+import iconSettings from "../assets/settings.png";
 import { TopBar } from "../components/TopBar";
 import { BalancePanel } from "../components/BalancePanel";
 import { DiscoverTable } from "../components/DiscoverTable";
 import { SpreadTable } from "../components/SpreadTable";
-import { CraftPlanner } from "../components/CraftPlanner";
 import { CraftMarginPanel } from "../components/CraftMarginPanel";
+import { CraftTopPicks } from "../components/CraftTopPicks";
+import { CraftPnlPanel } from "../components/CraftPnlPanel";
 import { MaterialsPanel } from "../components/MaterialsPanel";
 import { DemandBoard } from "../components/DemandBoard";
 import { HuntPanel } from "../components/HuntPanel";
@@ -24,11 +31,11 @@ import { SettingsPanel } from "../components/SettingsPanel";
 import { EmptySection } from "../components/ui/EmptySection";
 
 const TABS = [
-  { id: "exchange", label: "Currency Exchange", hint: "in-game Ange currency flip" },
-  { id: "market", label: "Web Market", hint: "trade site · uniques · snipe" },
-  { id: "craft", label: "Craft", hint: "base → mods → resell" },
-  { id: "wealth", label: "Wealth", hint: "net worth · realized profit" },
-  { id: "settings", label: "Settings", hint: "your trade2 connection (POESESSID)" },
+  { id: "exchange", label: "Currency Exchange", hint: "in-game Ange currency flip", icon: iconExchange },
+  { id: "market", label: "Web Market", hint: "trade site · uniques · snipe", icon: iconMarket },
+  { id: "craft", label: "Craft", hint: "recipes · sessions · P&L", icon: iconCraft },
+  { id: "wealth", label: "Wealth", hint: "net worth · realized profit", icon: iconWealth },
+  { id: "settings", label: "Settings", hint: "your trade2 connection (POESESSID)", icon: iconSettings },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -65,12 +72,18 @@ export default function DashboardPage() {
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 title={t.hint}
-                className={`relative -mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                className={`relative -mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "border-sky-500 text-neutral-100"
                     : "border-transparent text-neutral-500 hover:text-neutral-300"
                 }`}
               >
+                <Image
+                  src={t.icon}
+                  alt=""
+                  className={`h-9 w-9 object-contain transition-opacity ${active ? "opacity-100" : "opacity-60"}`}
+                  priority={t.id === "exchange"}
+                />
                 {t.label}
               </button>
             );
@@ -117,9 +130,15 @@ export default function DashboardPage() {
 
       {tab === "craft" && (
         <>
-          {/* ranked craft recipes by live EV/attempt — sits above the manual planner */}
-          <CraftMarginPanel />
-          <CraftPlanner />
+          {/* what pays TODAY, across all domains */}
+          <CraftTopPicks />
+          {/* one crafting window per item domain — the procedures differ per class */}
+          <CraftMarginPanel domain="jewel" showRefresh />
+          <CraftMarginPanel domain="weapon" />
+          <CraftMarginPanel domain="jewellery" />
+          <CraftMarginPanel domain="armour" />
+          {/* real attempts logged against the model (hit rate + net) */}
+          <CraftPnlPanel />
           {/* live prices for the recipe inputs */}
           <MaterialsPanel />
         </>
