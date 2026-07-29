@@ -22,11 +22,15 @@ export interface RecipeStatSpec {
 /** A leg to price via a live trade2 search — either the base you buy or the finished item you sell. */
 export interface RecipeLegSpec {
   label: string;
+  name?: string; // unique item name, e.g. "Rathpith Globe" (unique-gamble recipes)
   type?: string; // base type name, e.g. "Time-Lost Sapphire"
   category?: string; // trade2 category, e.g. "weapon.bow" (when no single base type applies)
   rarity?: Rarity;
   ilvlMin?: number;
   pdpsMin?: number; // weapon result legs are valued by physical DPS, not just mods
+  esMin?: number; // armour legs: select ES (caster) bases
+  evMin?: number; // armour legs: select evasion (attack) bases
+  corrupted?: boolean | "any"; // default false; "any" = don't filter (vaal-gamble outputs mix both)
   stats: RecipeStatSpec[];
   note: string; // approximation caveat shown in the UI
 }
@@ -127,4 +131,9 @@ export const RecipeMarginReportSchema = z.object({
 });
 export type RecipeMarginReport = z.infer<typeof RecipeMarginReportSchema>;
 
-export { RECIPES } from "./craftRecipeData";
+import { RECIPES as CORE_RECIPES } from "./craftRecipeData";
+import { RECIPES_2 } from "./craftRecipeData2";
+
+/** All curated recipes — the original batch (craftRecipeData) plus the creator-video batch
+ *  (craftRecipeData2), split across two data files to respect the 500-line cap. */
+export const RECIPES: CraftRecipe[] = [...CORE_RECIPES, ...RECIPES_2];

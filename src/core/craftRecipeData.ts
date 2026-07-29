@@ -12,6 +12,24 @@ import type { CraftRecipe } from "./craftRecipes";
  * materials a guide only spends after a hit are either excluded (paid out of profit, noted)
  * or included when they dominate the attempt cost.
  */
+// Shared bill of materials for both putrefaction boot variants AND the body-armour variant in
+// craftRecipeData2.ts — the process is identical, only the base's defence pool differs.
+export const PUTREFACTION_MATS: CraftRecipe["materials"] = [
+  { material: MATS.scrap, qtyPerAttempt: 14, note: "~14 scraps avg to 20% quality — BEFORE the omen (it corrupts)." },
+  { material: MATS.artificers, qtyPerAttempt: 2, note: "Both sockets BEFORE the omen." },
+  { material: MATS.omenPutrefaction, qtyPerAttempt: 1 },
+  {
+    material: MATS.preservedRib,
+    qtyPerAttempt: 1,
+    note: "Preserved tier — Gnawed Rib caps at item level 64 and FAILS on the ilvl 82+ bases this craft needs ('Item Level is too high').",
+  },
+  {
+    material: MATS.omenAbyssalEchoes,
+    qtyPerAttempt: 0.3,
+    note: "Optional reroll insurance — activate only when a reveal offers junk on an already-good item (~1 in 3 runs).",
+  },
+];
+
 export const RECIPES: CraftRecipe[] = [
   // 1) +1-suffix push on a caster Time-Lost Sapphire (chat transcript: Contempt → +1 suffix →
   //    cranium → annul → safe chaos phase).
@@ -52,8 +70,9 @@ export const RECIPES: CraftRecipe[] = [
       { material: MATS.omenDextralNecromancy, qtyPerAttempt: 1, note: "Forces the cranium's desecration onto a suffix." },
       { material: MATS.preservedCranium, qtyPerAttempt: 1 },
       { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "One reroll of the three reveal options — insurance, not a guarantee." },
-      { material: MATS.omenSinistralAnnulment, qtyPerAttempt: 0.5, note: "Fail path only: annul a bad desecrated mod and desecrate again (~half the runs)." },
-      { material: MATS.annul, qtyPerAttempt: 0.5, note: "Fail path only, pairs with the annulment omen." },
+      { material: MATS.omenSinistralAnnulment, qtyPerAttempt: 1, note: "Core step: restricts the Annulment to prefixes — pulls the '+1 Suffix Modifier allowed' mod so the prefixes can be exalted (suffixes stay over-cap)." },
+      { material: MATS.omenLight, qtyPerAttempt: 0.5, note: "Fail path only: makes the Annulment strip ONLY the revealed desecrated mod, then desecrate again (~half the runs)." },
+      { material: MATS.annul, qtyPerAttempt: 1.5, note: "1× the +1-suffix pull + ~0.5× the Omen-of-Light fail path." },
       { material: MATS.exalted, qtyPerAttempt: 2, note: "Fill open prefixes — exalts only ADD; PoE2 chaos removes a random existing mod and can eat a suffix." },
       { material: MATS.divine, qtyPerAttempt: 1, note: "Final rolls — rerolls ALL values incl. suffixes." },
     ],
@@ -126,7 +145,7 @@ export const RECIPES: CraftRecipe[] = [
       { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Open-suffix bases: fish rarity/res before essencing." },
       { material: MATS.greaterEssenceOpulence, qtyPerAttempt: 1, note: "Guaranteed T1 rarity (or Insulation for T3 res when rarity already rolled)." },
       { material: MATS.tulsCatalyst, qtyPerAttempt: 24, note: "~20 to reach 20% quality + 4 to re-catalyse for listing. Cold tag: 2× slam weight at 20%, no brick mods in pool." },
-      { material: MATS.omenCatalysingExaltation, qtyPerAttempt: 1, note: "Applies to BOTH exalts under greater exaltation." },
+      { material: MATS.omenCatalysingExaltation, qtyPerAttempt: 1, note: "Biases the FIRST of Greater Exaltation's two mods only (player-confirmed, wiki disputed)." },
       { material: MATS.omenGreaterExaltation, qtyPerAttempt: 1 },
       { material: MATS.greaterExalted, qtyPerAttempt: 1 },
       { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 0.4, note: "Prefix desecration — only spent on slams that hit (~1/3), expected qty." },
@@ -173,35 +192,99 @@ export const RECIPES: CraftRecipe[] = [
     guide: GUIDES.amulet_fracture_plus3!,
   },
 
-  // 5) Putrefaction slot machine on cheap rare boots — quality+sockets BEFORE the corrupting omen.
+  // 5) Rathpith Globe unique gamble ("wrath pit" from the Blood Mage video, decoded): Vaal
+  //    Cultivation Orb re-rolls the unique until the double per-100-Mana lines land. Mechanic
+  //    detail is partially UNVERIFIED — the guide says to test one cheap copy first.
+  {
+    key: "focus_rathpith_gamble",
+    domain: "weapon",
+    label: "Rathpith Globe · cultivation gamble",
+    source: "Blood Mage showcase video (double-mana “wrath pit”) + KB economy-meta research",
+    base: {
+      label: "Rathpith Globe (corrupted)",
+      name: "Rathpith Globe",
+      corrupted: true,
+      stats: [],
+      note: "Vaal Cultivation only works on CORRUPTED Vaal uniques — buy the cheapest corrupted copies. Mods vary per copy; one wanted mana line already present = better start.",
+    },
+    result: {
+      label: "Rathpith · double per-100-Mana lines",
+      name: "Rathpith Globe",
+      corrupted: "any",
+      stats: [
+        { text: "Non-Channelling Spells deal #% increased Damage per 100 maximum Mana" },
+        { text: "Non-Channelling Spells have #% increased Critical Hit Chance per 100 maximum Mana" },
+      ],
+      note: "Valued at the visible double-line floor (thin market). Reddit-reported: clean double-mana no-life-cost pieces ~600 div; players also report 300+ div spent dry — the tail is NOT in this number.",
+    },
+    materials: [
+      {
+        material: MATS.vaalCultivation,
+        qtyPerAttempt: 1,
+        note: "The bet (~3 div): replaces 1–2 mods with cultivated-pool mods (Life Cost Efficiency 8–15%, Ailment Magnitude per 100 Life, Damage per 100 Mana, Crit per 100 Mana).",
+      },
+      { material: MATS.divine, qtyPerAttempt: 0.1, note: "Value reroll on hits only." },
+    ],
+    hitRate: 0.05,
+    guide: GUIDES.focus_rathpith_gamble!,
+  },
+
+  // 6) Putrefaction slot machine on cheap rare boots — quality+sockets BEFORE the corrupting omen.
+  //    Two variants sharing the process: ES bases (caster buyers) and EV bases (attack buyers) —
+  //    the EV ranking decides which one pays today.
   {
     key: "boots_putrefaction",
     domain: "armour",
-    label: "Boots · putrefaction reveal",
+    label: "Boots · putrefaction ES (caster)",
     source: "XTheFarmerX putrefaction craft (scraps+sockets FIRST → omen+rib → reveal discipline)",
     base: {
-      label: "Cheap rare boots (not desecrated)",
+      label: "Cheap rare ES boots (not desecrated)",
       category: "armour.boots",
       rarity: "rare",
       ilvlMin: 82,
+      esMin: 1,
       stats: [],
-      note: "Cheapest rare ilvl75+ boots. MUST be non-corrupted and non-desecrated — trade can't filter desecration, eyeball each base. Mod count irrelevant (putrefies to 6).",
+      note: "Cheapest rare ilvl82+ boots on an ES/ES-hybrid base (desecrated prefixes follow the base's defence type). Non-corrupted, non-desecrated — trade can't filter desecration, eyeball each base. Existing mods irrelevant (putrefies to 6).",
     },
     result: {
       label: "Rare boots · 35% MS + ES",
       category: "armour.boots",
       rarity: "rare",
       ilvlMin: 82,
+      esMin: 60,
       stats: [{ text: "#% increased Movement Speed", min: 35 }],
-      note: "Valued at the 35% MS chase floor. 30% MS misses still sell 1–2 div with good suffixes (not priced here).",
+      note: "Valued at the 35% MS + ES floor. 30% MS misses still sell 1–2 div with good suffixes (not priced here).",
     },
-    materials: [
-      { material: MATS.scrap, qtyPerAttempt: 14, note: "~14 scraps avg to 20% quality — BEFORE the omen (it corrupts)." },
-      { material: MATS.artificers, qtyPerAttempt: 2, note: "Both sockets BEFORE the omen." },
-      { material: MATS.omenPutrefaction, qtyPerAttempt: 1 },
-      { material: MATS.gnawedRib, qtyPerAttempt: 1, note: "All 6 mods → hidden desecrated reveals." },
-    ],
+    materials: PUTREFACTION_MATS,
     hitRate: 0.3,
     guide: GUIDES.boots_putrefaction!,
+  },
+
+  {
+    key: "boots_putrefaction_ev",
+    domain: "armour",
+    label: "Boots · putrefaction EV (attack)",
+    source: "XTheFarmerX putrefaction craft — evasion variant for the attack meta",
+    base: {
+      label: "Cheap rare evasion boots (not desecrated)",
+      category: "armour.boots",
+      rarity: "rare",
+      ilvlMin: 82,
+      evMin: 1,
+      stats: [],
+      note: "Cheapest rare ilvl82+ boots on an EVASION/EV-hybrid base. Non-corrupted, non-desecrated — trade can't filter desecration, eyeball each base. Existing mods irrelevant (putrefies to 6).",
+    },
+    result: {
+      label: "Rare boots · 35% MS + evasion",
+      category: "armour.boots",
+      rarity: "rare",
+      ilvlMin: 82,
+      evMin: 300,
+      stats: [{ text: "#% increased Movement Speed", min: 35 }],
+      note: "Valued at the 35% MS + evasion floor — attack builds (Deadeye/Amazon) are the buyers. 30% MS misses still sell 1–2 div.",
+    },
+    materials: PUTREFACTION_MATS,
+    hitRate: 0.3,
+    guide: GUIDES.boots_putrefaction_ev!,
   },
 ];

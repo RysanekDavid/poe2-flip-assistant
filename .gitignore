@@ -4,6 +4,13 @@ out/
 dist/
 # runtime sqlite dir at repo root only — src/data/ (static scraped JSON) is committed
 /data/
+/backups/
+/releases/
+/.cache/
+/.npm/
+/current
+/.current-*
+/.deployed-revision
 .playwright-mcp/
 *.db
 *.db-journal

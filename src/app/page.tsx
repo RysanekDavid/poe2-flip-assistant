@@ -6,6 +6,7 @@ import iconExchange from "../assets/Currency_exchange.png";
 import iconMarket from "../assets/Web_market.png";
 import iconCraft from "../assets/Craft.png";
 import iconWealth from "../assets/Wealth.png";
+import iconCoach from "../assets/Coach.png";
 import iconSettings from "../assets/settings.png";
 import { TopBar } from "../components/TopBar";
 import { BalancePanel } from "../components/BalancePanel";
@@ -28,6 +29,7 @@ import { PriceChart } from "../components/PriceChart";
 import { Onboarding } from "../components/Onboarding";
 import { MarketStatus } from "../components/MarketStatus";
 import { SettingsPanel } from "../components/SettingsPanel";
+import { CoachPanel } from "../components/coach/CoachPanel";
 import { EmptySection } from "../components/ui/EmptySection";
 
 const TABS = [
@@ -37,7 +39,7 @@ const TABS = [
   { id: "wealth", label: "Wealth", hint: "net worth · realized profit", icon: iconWealth },
   { id: "settings", label: "Settings", hint: "your trade2 connection (POESESSID)", icon: iconSettings },
 ] as const;
-type TabId = (typeof TABS)[number]["id"];
+type TabId = (typeof TABS)[number]["id"] | "coach";
 
 export default function DashboardPage() {
   const [selected, setSelected] = useState<{ id: string; name: string } | null>(null);
@@ -64,7 +66,7 @@ export default function DashboardPage() {
         </div>
 
         {/* domain tabs — keep the in-game currency flip and the web-trade market separate */}
-        <nav className="flex gap-1 px-6" data-tour="tabs">
+        <nav className="flex items-end gap-1 px-6" data-tour="tabs">
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
@@ -74,7 +76,7 @@ export default function DashboardPage() {
                 title={t.hint}
                 className={`relative -mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
                   active
-                    ? "border-sky-500 text-neutral-100"
+                    ? "border-neutral-200 text-neutral-100"
                     : "border-transparent text-neutral-500 hover:text-neutral-300"
                 }`}
               >
@@ -88,6 +90,22 @@ export default function DashboardPage() {
               </button>
             );
           })}
+          <button
+            onClick={() => setTab("coach")}
+            title="market · craft · ověřené zdroje"
+            className={`mb-1 ml-auto flex shrink-0 items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+              tab === "coach"
+                ? "border-amber-500/35 bg-amber-950/25 text-amber-100"
+                : "border-neutral-800 bg-neutral-900/45 text-neutral-400 hover:border-amber-500/25 hover:text-neutral-200"
+            }`}
+          >
+            <Image
+              src={iconCoach}
+              alt=""
+              className={`h-9 w-9 object-contain transition-opacity ${tab === "coach" ? "opacity-100" : "opacity-65"}`}
+            />
+            Coach
+          </button>
         </nav>
       </header>
 
@@ -145,6 +163,9 @@ export default function DashboardPage() {
       )}
 
       {tab === "wealth" && <BalancePanel />}
+
+      {/* Keep the chat mounted while switching tabs so the active conversation is not lost. */}
+      <CoachPanel active={tab === "coach"} />
 
       {tab === "settings" && <SettingsPanel />}
     </main>

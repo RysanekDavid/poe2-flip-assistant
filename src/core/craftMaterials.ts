@@ -27,12 +27,13 @@ export const MATS = {
   omenDextralExaltation: { id: "omen-of-dextral-exaltation", label: "Omen of Dextral Exaltation", group: "omen" },
   omenSinistralExaltation: { id: "omen-of-sinistral-exaltation", label: "Omen of Sinistral Exaltation", group: "omen" },
   omenDextralAnnulment: { id: "omen-of-dextral-annulment", label: "Omen of Dextral Annulment", group: "omen" },
-  omenSinistralAnnulment: { id: "omen-of-sinistral-annulment", label: "Omen of Sinistral Annulment", group: "omen" },
   omenWhittling: { id: "omen-of-whittling", label: "Omen of Whittling", group: "omen" },
   omenSinistralNecromancy: { id: "omen-of-sinistral-necromancy", label: "Omen of Sinistral Necromancy", group: "omen" },
   omenDextralNecromancy: { id: "omen-of-dextral-necromancy", label: "Omen of Dextral Necromancy", group: "omen" },
   omenAbyssalEchoes: { id: "omen-of-abyssal-echoes", label: "Omen of Abyssal Echoes", group: "omen" },
   omenSinistralErasure: { id: "omen-of-sinistral-erasure", label: "Omen of Sinistral Erasure", group: "omen" },
+  omenLight: { id: "omen-of-light", label: "Omen of Light", group: "omen" },
+  omenSinistralAnnulment: { id: "omen-of-sinistral-annulment", label: "Omen of Sinistral Annulment", group: "omen" },
 
   // --- abyssal bones + gazes (ninja category "Abyss") ---
   preservedCranium: { id: "preserved-cranium", label: "Preserved Cranium", group: "bone" },
@@ -42,11 +43,15 @@ export const MATS = {
   amanamusGaze: { id: "amanamus-gaze", label: "Amanamu's Gaze", group: "bone" },
   ancientRib: { id: "ancient-rib", label: "Ancient Rib", group: "bone" },
   gnawedRib: { id: "gnawed-rib", label: "Gnawed Rib", group: "bone" },
+  preservedRib: { id: "preserved-rib", label: "Preserved Rib", group: "bone" },
 
   // --- catalysts (ninja category "Breach") ---
   adaptiveCatalyst: { id: "adaptive-catalyst", label: "Adaptive Catalyst", group: "catalyst" },
   refinedAdaptiveCatalyst: { id: "refined-adaptive-catalyst", label: "Refined Adaptive Catalyst", group: "catalyst" },
   tulsCatalyst: { id: "tuls-catalyst", label: "Tul's Catalyst", group: "catalyst" },
+  // Fire (Xoph's) / Lightning (Esh's) — the giga-spirit amulet biases toward these res rolls (never Cold).
+  xophsCatalyst: { id: "xophs-catalyst", label: "Xoph's Catalyst", group: "catalyst" },
+  eshsCatalyst: { id: "eshs-catalyst", label: "Esh's Catalyst", group: "catalyst" },
 
   // --- essences (ninja category "Essences") ---
   greaterEssenceAbrasion: { id: "greater-essence-of-abrasion", label: "Greater Essence of Abrasion", group: "essence" },
@@ -58,6 +63,12 @@ export const MATS = {
   greaterEssenceOpulence: { id: "greater-essence-of-opulence", label: "Greater Essence of Opulence", group: "essence" },
   greaterEssenceInsulation: { id: "greater-essence-of-insulation", label: "Greater Essence of Insulation", group: "essence" },
   perfectEssenceEnhancement: { id: "perfect-essence-of-enhancement", label: "Perfect Essence of Enhancement", group: "essence" },
+  // Base tier only on the exchange — no Greater/Perfect "Hysteria" (the +2-projectile gloves suffix 50/50).
+  essenceOfHysteria: { id: "essence-of-hysteria", label: "Essence of Hysteria", group: "essence" },
+  // Converts an existing mod into a "Mark of the Abyssal Lord" that a Jawbone turns into a Desecrated slot.
+  essenceOfTheAbyss: { id: "essence-of-the-abyss", label: "Essence of the Abyss", group: "essence" },
+  // Replaces a designated mod with the breach quality mod (the attack-ring craft's whittle shuttle).
+  essenceOfTheBreach: { id: "essence-of-the-breach", label: "Essence of the Breach", group: "essence" },
 
   // --- currency (ninja category "Currency") ---
   divine: { id: "divine", label: "Divine Orb", group: "currency" },
@@ -76,14 +87,20 @@ export const MATS = {
   perfectAug: { id: "perfect-orb-of-augmentation", label: "Perfect Orb of Augmentation", group: "currency" },
   transmute: { id: "transmute", label: "Orb of Transmutation", group: "currency" },
   vaal: { id: "vaal", label: "Vaal Orb", group: "currency" },
+  vaalCultivation: { id: "vaal-cultivation-orb", label: "Vaal Cultivation Orb", group: "currency" },
   chance: { id: "chance", label: "Orb of Chance", group: "currency" },
+  // Force-converts a prefix into the alloy's guaranteed near-min-tier mod (e.g. cast speed) under a
+  // Crystallisation omen. Ninja lists it under "Verisium", priced through the same snapshot pipeline.
+  transcendentAlloy: { id: "transcendent-alloy", label: "Transcendent Alloy", group: "currency" },
+  // The "additional crafted modifier" orb (auto-captioned "Acid's Creativity" in the source video).
+  astridsCreativity: { id: "astrids-creativity", label: "Astrid's Creativity", group: "currency" },
 
   // --- delirium instills (ninja category "Delirium") ---
-  // Only the Potent tier of "Contempt" exists on the exchange (no plain "Liquid Contempt").
+  // Non-Ancient Potent Contempt works on rare BASIC jewels but grants a FIXED damage prefix
+  // (Sapphire→chaos, Ruby→phys, Emerald→ele) — NOT the "+1 Modifier allowed" mod. That one comes
+  // only from the Ancient tier, and Ancient liquids apply ONLY to rare Time-Lost jewels.
   potentLiquidContempt: { id: "potent-liquid-contempt", label: "Potent Liquid Contempt", group: "delirium" },
   ancientPotentLiquidContempt: { id: "ancient-potent-liquid-contempt", label: "Ancient Potent Liquid Contempt", group: "delirium" },
-  potentLiquidFerocity: { id: "potent-liquid-ferocity", label: "Potent Liquid Ferocity", group: "delirium" },
-  // Ancient-prefixed liquids are the ONLY tier that works on (rare) Time-Lost jewels.
   ancientPotentLiquidFerocity: { id: "ancient-potent-liquid-ferocity", label: "Ancient Potent Liquid Ferocity", group: "delirium" },
 } as const satisfies Record<string, CraftMaterial>;
 

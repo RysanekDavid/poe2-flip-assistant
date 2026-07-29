@@ -20,7 +20,7 @@ interface MarginsResp {
 /** Each craft domain gets its own window — the procedures differ per item class. */
 export const CRAFT_DOMAINS: Record<CraftDomain, { title: string; blurb: string; icon: LucideIcon; tint: string }> = {
   jewel: { title: "Jewel craft", blurb: "Time-Lost suffix pushes", icon: Gem, tint: "text-sky-400" },
-  weapon: { title: "Weapon craft", blurb: "bows / spears / staves", icon: Sword, tint: "text-amber-400" },
+  weapon: { title: "Weapon craft", blurb: "bows / spears / foci", icon: Sword, tint: "text-amber-400" },
   jewellery: { title: "Jewellery craft", blurb: "rings & amulets", icon: Diamond, tint: "text-fuchsia-400" },
   armour: { title: "Armour craft", blurb: "boots / body / helmets", icon: Shield, tint: "text-emerald-400" },
 };

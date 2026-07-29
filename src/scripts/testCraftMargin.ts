@@ -3,7 +3,7 @@
 import "../config/env";
 import { computeMargin, priceMaterials, legToQuery, robustValue } from "../core/craftMargin";
 import { MATS, ALL_MATERIALS } from "../core/craftMaterials";
-import { RECIPES } from "../core/craftRecipeData";
+import { RECIPES } from "../core/craftRecipes";
 import { buildStatIndex } from "../core/statResolver";
 import { buildTradeQuery } from "../lib/tradeLink";
 import { getDb } from "../db/database";
@@ -97,9 +97,9 @@ const ok = (name: string, cond: boolean, extra = "") => {
   ok("thin leg keeps only its 2 survivors (caller rejects < 3)", thin.kept === 2, String(thin.kept));
 }
 
-// --- recipe integrity: 5 recipes, valid hitRate, every material has a positive expected qty ---
+// --- recipe integrity: 14 recipes, valid hitRate, every material has a positive expected qty ---
 {
-  ok("5 curated recipes", RECIPES.length === 5, String(RECIPES.length));
+  ok("14 curated recipes", RECIPES.length === 14, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));

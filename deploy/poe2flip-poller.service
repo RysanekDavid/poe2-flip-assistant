@@ -6,12 +6,12 @@ After=network.target poe2flip-web.service
 Type=simple
 User=poe2flip
 Group=poe2flip
-WorkingDirectory=/opt/poe2flip
+WorkingDirectory=/opt/poe2flip/current
 EnvironmentFile=/opt/poe2flip/.env.local
 Environment=NODE_ENV=production
 Environment=PATH=/usr/bin:/usr/local/bin
 # tsx runs the TypeScript entrypoint directly; argv must contain "poller" for it to self-start.
-ExecStart=/usr/bin/npx tsx src/scheduler/poller.ts
+ExecStart=/opt/poe2flip/current/node_modules/.bin/tsx src/scheduler/poller.ts
 Restart=on-failure
 RestartSec=10
 

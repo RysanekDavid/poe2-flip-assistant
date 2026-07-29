@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n web,poll -c cyan,magenta \"next dev\" \"tsx watch src/scheduler/poller.ts\"",
+    "dev": "concurrently -n web,poll,coach -c cyan,magenta,yellow \"next dev\" \"tsx watch src/scheduler/poller.ts\" \"uv --cache-dir services/coach/.uv-cache --directory services/coach run uvicorn src.api:app --reload --port 8000\"",
     "dev:web": "next dev",
     "dev:poll": "tsx watch src/scheduler/poller.ts",
+    "dev:coach": "uv --cache-dir services/coach/.uv-cache --directory services/coach run uvicorn src.api:app --reload --port 8000",
     "build": "next build",
     "start": "next start",
     "probe": "tsx src/scripts/probe.ts",
+    "test:coach": "tsx src/scripts/testCoach.ts",
     "scrape:builds": "tsx src/scripts/scrapeBuilds.ts",
+    "scrape:poe2db": "tsx src/scripts/scrapePoe2db.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"

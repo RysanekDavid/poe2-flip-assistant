@@ -10,6 +10,30 @@ import type { PricedItem } from "../api/types";
  * FARM_LABELS maps a ninja category → the human activity + a how-to hint. Edit freely as the
  * meta shifts; an unmapped category falls back to its raw name.
  */
+/**
+ * ninja's category ≠ drop source for some items — omens sit in the "Ritual" category but several
+ * drop from other mechanics in 0.5. Items listed here are re-bucketed to the activity that
+ * actually drops them before ranking. Keyed by ninja item id.
+ */
+const SOURCE_OVERRIDES: Record<string, string> = {
+  // The Lichborn-omen family drops ONLY from rare Abyss monsters carrying Amanamu's Void /
+  // Kurgal's Final Gasp / Ulaman's Legion mods (Abyss Precursor Tablets boost density) — NOT
+  // from Ritual altars. Verified 2026-07-15, docs/kb/drop-sources.md. Quirks: Omen of Light
+  // needs the Void rare killed OUTSIDE its smoke cloud; Omen of the Liege killed INSIDE it.
+  "omen-of-light": "Abyss",
+  "omen-of-abyssal-echoes": "Abyss",
+  "omen-of-sinistral-necromancy": "Abyss",
+  "omen-of-dextral-necromancy": "Abyss",
+  "omen-of-putrefaction": "Abyss",
+  "omen-of-the-liege": "Abyss",
+  "omen-of-the-sovereign": "Abyss",
+  "omen-of-the-blackblooded": "Abyss",
+  // Essence-imprisoned monster spawning at an Abyss pit — an Abyss farm, not essence hunting.
+  "essence-of-the-abyss": "Abyss",
+  // Verisium Remnant runeword product — an Expedition-mechanic output, not an Aldur rune drop.
+  "astrids-creativity": "Expedition",
+};
+
 const FARM_LABELS: Record<string, { label: string; hint: string }> = {
   Abyss: { label: "Abyss", hint: "spawn & re-run Abyssal bosses (Abyssal Bones)" },
   Breach: { label: "Breach", hint: "open Breaches, bank Catalysts" },
@@ -49,9 +73,10 @@ export function rankFarms(items: PricedItem[]): FarmRank[] {
   const byCat = new Map<string, PricedItem[]>();
   for (const it of items) {
     if (it.baseValue <= 0 || it.volume < MIN_VOLUME || it.change7d == null) continue;
-    const arr = byCat.get(it.category) ?? [];
+    const cat = SOURCE_OVERRIDES[it.itemId] ?? it.category; // true drop source beats ninja taxonomy
+    const arr = byCat.get(cat) ?? [];
     arr.push(it);
-    byCat.set(it.category, arr);
+    byCat.set(cat, arr);
   }
 
   const ranks: FarmRank[] = [];

@@ -21,6 +21,11 @@ export const config = {
   authSecret: process.env.AUTH_SECRET ?? "", // HMAC key for session cookies; REQUIRED in production
   secretKey: process.env.SECRET_KEY ?? "", // AES key material for encrypting stored secrets (per-user POESESSID); falls back to AUTH_SECRET
   ownerName: process.env.OWNER_NAME ?? "Davosso", // seeded owner (id=1) that existing data backfills onto
+  coach: {
+    apiUrl: process.env.COACH_API_URL ?? "http://127.0.0.1:8000",
+    timeoutMs: num("COACH_TIMEOUT_MS", 90_000),
+    threadSecret: process.env.COACH_THREAD_SECRET ?? process.env.AUTH_SECRET ?? "",
+  },
   // --- live trade2 hunt (read-only price-check / snipe finder) ---
   poesessid: process.env.POESESSID ?? "", // session cookie for your own account; empty disables live search
   poeContact: process.env.POE_CONTACT ?? "", // your email — GGG asks third-party tools to identify themselves

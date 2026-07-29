@@ -22,7 +22,7 @@ import { scanAll } from "../core/huntEngine";
 import { scanAutoSnipes } from "../core/autoSnipe";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
 import { refreshStalestRecipe, refreshAllRecipes } from "../core/craftMargin";
-import { RECIPES } from "../core/craftRecipeData";
+import { RECIPES } from "../core/craftRecipes";
 import { readCurrencyFromTrade } from "../api/accountScan";
 import { refreshUniqueValues } from "../core/valuation";
 import { fetchScout } from "../api/scoutClient";

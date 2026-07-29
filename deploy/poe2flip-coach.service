@@ -1,0 +1,27 @@
+[Unit]
+Description=PoE2 Flip Assistant - internal AI Coach
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=poe2flip
+Group=poe2flip
+WorkingDirectory=/opt/poe2flip/current/services/coach
+EnvironmentFile=/opt/poe2flip/.env.local
+Environment=HOME=/opt/poe2flip
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/poe2flip/current/services/coach/.venv/bin/uvicorn src.api:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/poe2flip/data
+
+[Install]
+WantedBy=multi-user.target
