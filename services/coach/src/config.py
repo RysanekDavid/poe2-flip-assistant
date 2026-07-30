@@ -1,0 +1,103 @@
+"""Runtime configuration with explicit secret boundaries."""
+
+import os
+from functools import lru_cache
+from pathlib import Path
+
+from dotenv import load_dotenv
+from pydantic import AliasChoices, Field, SecretStr, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+APP_ROOT = BACKEND_DIR.parents[1]
+load_dotenv(APP_ROOT / ".env.local", override=False)
+os.environ["LANGGRAPH_STRICT_MSGPACK"] = "true"
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables or backend/.env."""
+
+    model_config = SettingsConfigDict(
+        env_file=APP_ROOT / ".env.local",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+        populate_by_name=True,
+    )
+
+    openai_api_key: SecretStr | None = None
+    tavily_api_key: SecretStr | None = None
+    langsmith_api_key: SecretStr | None = None
+    langsmith_tracing: bool = False
+    langsmith_project: str = "poe2-flip-coach"
+
+    chat_model: str = "gpt-5.4-mini"
+    embedding_model: str = "text-embedding-3-small"
+    league_name: str = "Runes of Aldur"
+
+    configured_db_path: Path = Field(
+        default=Path("data/poe2flip.db"),
+        validation_alias=AliasChoices("POE_DB_PATH", "DB_PATH"),
+    )
+    configured_checkpoint_path: Path = Field(
+        default=Path("data/coach-checkpoints.db"),
+        validation_alias="COACH_CHECKPOINT_DB_PATH",
+    )
+    corpus_dir: Path = APP_ROOT
+    qdrant_collection: str = "poe2_knowledge"
+
+    request_timeout_seconds: float = 25.0
+    max_tool_iterations: int = 8
+    chat_requests_per_minute: int = Field(
+        default=20,
+        ge=1,
+        le=120,
+        validation_alias="COACH_REQUESTS_PER_MINUTE",
+    )
+
+    @field_validator(
+        "openai_api_key", "tavily_api_key", "langsmith_api_key", mode="before"
+    )
+    @classmethod
+    def empty_secret_is_missing(cls, value: object) -> object:
+        """Treat blank optional secret entries like absent environment variables."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @property
+    def poe_db_path(self) -> Path:
+        """Resolve the shared application database from the repository root."""
+        return _app_path(self.configured_db_path)
+
+    @property
+    def checkpoint_db_path(self) -> Path:
+        """Resolve the internal LangGraph checkpoint database."""
+        return _app_path(self.configured_checkpoint_path)
+
+    def require_openai_key(self) -> str:
+        """Return the OpenAI key or fail with an actionable configuration error."""
+        if self.openai_api_key is None:
+            raise RuntimeError("OPENAI_API_KEY is required for chat and dense retrieval")
+        return self.openai_api_key.get_secret_value()
+
+    def require_tavily_key(self) -> str:
+        """Return the Tavily key or fail with an actionable configuration error."""
+        if self.tavily_api_key is None:
+            raise RuntimeError("TAVILY_API_KEY is required for current web search")
+        return self.tavily_api_key.get_secret_value()
+
+    @property
+    def has_tavily_key(self) -> bool:
+        """Return whether recent public-web search can be registered."""
+        return self.tavily_api_key is not None
+
+
+def _app_path(path: Path) -> Path:
+    return path if path.is_absolute() else (APP_ROOT / path).resolve()
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Return the process-wide immutable settings instance."""
+    return Settings()

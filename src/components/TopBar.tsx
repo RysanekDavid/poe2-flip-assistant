@@ -2,17 +2,17 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { BookOpen, LogOut } from "lucide-react";
 import { BellIcon, XIcon } from "./ui/icons";
-import { TreasuryPanel } from "./TreasuryPanel";
 import { AlertsPanel } from "./AlertFeed";
-import swapOrbs from "../assets/swap_orbs.png";
 
-type Panel = "swap" | "alerts";
+const DIVINE_ART =
+  "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png";
 
-/** Header toolbar — Swap Rates & Alerts live behind icon buttons, opening as popovers. */
+/** Header toolbar — net-worth chip, Alerts popover, user menu. (The old swap/treasury popover is
+ *  gone: rates + converter live in the header strip, holdings live in the Wealth tab.) */
 export function TopBar() {
-  const [open, setOpen] = useState<Panel | null>(null);
+  const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -33,29 +33,66 @@ export function TopBar() {
 
   return (
     <div className="relative flex items-center gap-3">
-      <IconButton label="Swap rates" active={open === "swap"} onClick={() => setOpen((o) => (o === "swap" ? null : "swap"))}>
-        <Image src={swapOrbs} alt="" className="h-9 w-auto" priority />
-      </IconButton>
-      <IconButton label="Alerts" square active={open === "alerts"} badge={unread} onClick={() => setOpen((o) => (o === "alerts" ? null : "alerts"))}>
-        <BellIcon className="h-8 w-8 text-amber-300" />
+      <IconButton label="Alerts" square active={open} badge={unread} onClick={() => setOpen((o) => !o)}>
+        <BellIcon className="h-5 w-5 text-amber-300" />
       </IconButton>
       <UserMenu />
 
       {open && (
         <>
-          <div className="fixed inset-0 z-20" onClick={() => setOpen(null)} />
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full z-30 mt-2 w-[420px] max-w-[92vw] rounded-lg border border-neutral-800 bg-neutral-900 p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-base font-semibold">{open === "swap" ? "Currency & Treasury" : "Alerts"}</h3>
-              <button onClick={() => setOpen(null)} className="text-neutral-500 hover:text-neutral-200">
+              <h3 className="text-base font-semibold">Alerts</h3>
+              <button onClick={() => setOpen(false)} className="text-neutral-500 hover:text-neutral-200">
                 <XIcon className="h-4 w-4" />
               </button>
             </div>
-            {open === "swap" ? <TreasuryPanel /> : <AlertsPanel />}
+            <AlertsPanel />
           </div>
         </>
       )}
     </div>
+  );
+}
+
+/** Global net worth next to the profile — the latest Wealth snapshot, always in sight. */
+function WealthChip() {
+  const [data, setData] = useState<{ netWorthDiv: number | null; change24hPct: number | null } | null>(null);
+
+  useEffect(() => {
+    const load = () =>
+      fetch("/api/balance/summary")
+        .then((r) => r.json())
+        .then(setData)
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 120_000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (data?.netWorthDiv == null) return null;
+  const chg = data.change24hPct;
+  return (
+    <span
+      title="net worth (latest Wealth snapshot) · 24h change — details in the Wealth tab"
+      className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-gradient-to-b from-amber-950/50 to-neutral-900 px-2 py-1 shadow-sm"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- poecdn currency art */}
+      <img src={DIVINE_ART} alt="Divine Orb" className="h-5 w-5 object-contain" />
+      <span className="flex flex-col leading-tight">
+        <span className="text-[9px] font-medium uppercase tracking-wider text-amber-500/80">net worth</span>
+        <span className="text-xs font-semibold tabular-nums text-amber-100">
+          {Math.round(data.netWorthDiv).toLocaleString("en")}
+          {chg != null && (
+            <span className={`ml-1 font-normal ${chg >= 0 ? "text-good" : "text-bad"}`}>
+              {chg >= 0 ? "+" : ""}
+              {chg.toFixed(1)}%
+            </span>
+          )}
+        </span>
+      </span>
+    </span>
   );
 }
 
@@ -79,23 +116,35 @@ function UserMenu() {
 
   if (!name) return null;
   return (
-    <div className="flex items-center gap-2 pl-1" data-tour="account">
-      <button
-        onClick={() => window.dispatchEvent(new CustomEvent("open-guide"))}
-        title="open the setup guide / tour"
-        className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 hover:border-sky-500 hover:text-neutral-100"
+    <div className="relative flex items-center gap-3 rounded-lg border border-neutral-800 px-3 py-1.5" data-tour="account">
+      {/* fieldset-style legend sitting on the border */}
+      <span className="absolute -top-2 left-2.5 bg-neutral-950 px-1.5 text-[9px] font-medium uppercase tracking-widest text-neutral-500">
+        profile
+      </span>
+      <WealthChip />
+      <span
+        title="signed-in account"
+        className="bg-gradient-to-b from-amber-100 to-amber-300 bg-clip-text text-base font-semibold tracking-wide text-transparent"
       >
-        Guide
-      </button>
-      <span className="text-sm text-neutral-400" title="signed-in account">
         {name}
       </span>
-      <button
-        onClick={logout}
-        className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 hover:border-neutral-500 hover:text-neutral-100"
-      >
-        Sign out
-      </button>
+      {/* compact action stack to the right of the nick */}
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-guide"))}
+          title="open the setup guide / tour"
+          className="inline-flex items-center gap-1 rounded border border-neutral-700 bg-neutral-800/40 px-2 py-0.5 text-[11px] font-medium text-neutral-300 transition hover:border-amber-400/60 hover:text-amber-200"
+        >
+          <BookOpen className="h-3 w-3" /> Guide
+        </button>
+        <button
+          onClick={logout}
+          title="sign out"
+          className="inline-flex items-center gap-1 rounded border border-red-900/60 bg-red-950/30 px-2 py-0.5 text-[11px] font-medium text-red-300 transition hover:border-red-500/70 hover:bg-red-900/40 hover:text-red-200"
+        >
+          <LogOut className="h-3 w-3" /> Sign out
+        </button>
+      </div>
     </div>
   );
 }
@@ -120,7 +169,7 @@ function IconButton({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`relative flex h-[58px] items-center justify-center rounded-lg border p-3 shadow-sm transition-all active:scale-95 ${
+      className={`relative flex h-9 items-center justify-center rounded-lg border p-2 shadow-sm transition-all active:scale-95 ${
         square ? "aspect-square" : ""
       } ${
         active

@@ -28,6 +28,8 @@ export interface TradeQuery {
   corrupted?: boolean; // restrict corrupted state; omit = either
   indexedWindow?: "1day" | "3days" | "1week"; // only listings indexed within this window (recency feed)
   pdpsMin?: number; // minimum physical DPS (weapon craft result legs) → equipment_filters.pdps.min
+  esMin?: number; // minimum energy shield — selects ES-base armour (caster gear)
+  evMin?: number; // minimum evasion rating — selects EV-base armour (attack gear)
   stats?: StatFilter[]; // explicit/implicit mod thresholds (AND-combined)
 }
 
@@ -48,10 +50,13 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
   if (q.corrupted != null) {
     filters.misc_filters = { filters: { corrupted: { option: String(q.corrupted) } } };
   }
-  // weapon DPS floor for craft result legs — a finished bow is valued by its pdps, not just mods
-  if (q.pdpsMin && q.pdpsMin > 0) {
-    filters.equipment_filters = { filters: { pdps: { min: q.pdpsMin } } };
-  }
+  // equipment floors — a finished bow is valued by pdps; armour base pools are selected by their
+  // defence type (es = caster bases, ev = attack bases)
+  const equipFilters: Record<string, unknown> = {};
+  if (q.pdpsMin && q.pdpsMin > 0) equipFilters.pdps = { min: q.pdpsMin };
+  if (q.esMin && q.esMin > 0) equipFilters.es = { min: q.esMin };
+  if (q.evMin && q.evMin > 0) equipFilters.ev = { min: q.evMin };
+  if (Object.keys(equipFilters).length > 0) filters.equipment_filters = { filters: equipFilters };
   // trade filters: buyout-only by default (skip "negotiate"/unpriced), plus optional price ceiling.
   // PoE2 uses sale_type option "priced" — the PoE1 value "priceFixed" is rejected ("Unknown sale type").
   const tradeFilters: Record<string, unknown> = {};

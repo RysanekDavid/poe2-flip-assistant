@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LogIn, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -64,8 +65,9 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={busy || !name || !password}
-          className="w-full rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-40"
+          className="flex w-full items-center justify-center gap-2 rounded-md border border-emerald-600/60 bg-gradient-to-b from-emerald-700 to-emerald-800 px-3 py-2 text-sm font-semibold text-white transition hover:from-emerald-600 hover:to-emerald-700 active:scale-[0.99] disabled:opacity-40"
         >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>

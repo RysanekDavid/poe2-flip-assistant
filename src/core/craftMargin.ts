@@ -14,14 +14,14 @@ import {
   getCurrencyDivMap,
   type MaterialPrice,
 } from "../db/craftQueries";
-import { RECIPES } from "./craftRecipeData";
 import { ALL_MATERIALS } from "./craftMaterials";
-import type {
-  CraftRecipe,
-  RecipeLegSpec,
-  RecipeMarginReport,
-  LegReport,
-  MaterialReportLine,
+import {
+  RECIPES,
+  type CraftRecipe,
+  type RecipeLegSpec,
+  type RecipeMarginReport,
+  type LegReport,
+  type MaterialReportLine,
 } from "./craftRecipes";
 import type { StatFilter, TradeQuery } from "../lib/tradeLink";
 
@@ -81,12 +81,17 @@ export function legToQuery(leg: RecipeLegSpec, idx: StatIndex): { query: TradeQu
     filters.push({ id: pick.id, min: s.min });
   }
   const query: TradeQuery = {
+    name: leg.name,
     type: leg.type,
     category: leg.category,
     rarity: leg.rarity,
     ilvlMin: leg.ilvlMin,
     pdpsMin: leg.pdpsMin,
-    corrupted: false, // comparables should be uncorrupted (a corrupted result isn't reforge-able)
+    esMin: leg.esMin,
+    evMin: leg.evMin,
+    // comparables default to uncorrupted (a corrupted result isn't reforge-able) — vaal-gamble
+    // recipes override per leg ("any" = both, their outputs mix corrupted and clean)
+    corrupted: leg.corrupted === "any" ? undefined : (leg.corrupted ?? false),
     online: true,
     stats: filters,
   };

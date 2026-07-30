@@ -1,7 +1,65 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowRightLeft } from "lucide-react";
 import { fmtSmart } from "../lib/format";
+
+type CcyKey = "div" | "ex" | "chaos";
+const CCY_LABEL: Record<CcyKey, string> = { div: "Div", ex: "Ex", chaos: "Chaos" };
+
+/** Inline converter: type an amount in any currency, the other two appear as chips. */
+function Converter({ rates }: { rates: { exaltPerDivine: number; chaosPerDivine: number } }) {
+  const [amount, setAmount] = useState("");
+  const [ccy, setCcy] = useState<CcyKey>("ex");
+  const n = Number(amount.replace(",", "."));
+  const div = !Number.isFinite(n) || n <= 0 ? null : ccy === "div" ? n : ccy === "ex" ? n / rates.exaltPerDivine : n / rates.chaosPerDivine;
+  const others = (["div", "ex", "chaos"] as CcyKey[]).filter((c) => c !== ccy);
+  const valueIn = (c: CcyKey): number => (c === "div" ? div! : c === "ex" ? div! * rates.exaltPerDivine : div! * rates.chaosPerDivine);
+
+  return (
+    <span
+      title="currency converter — live ninja rates"
+      className="inline-flex items-center gap-2 rounded-md border border-amber-500/25 bg-neutral-900/80 py-1 pl-2 pr-1.5 text-sm shadow-sm"
+    >
+      <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-amber-500/70" />
+      <input
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        placeholder="convert…"
+        // width follows the typed value — a fixed width leaves an ugly gap after short numbers
+        style={{ width: amount ? `${Math.max(2, amount.length + 1)}ch` : "9ch" }}
+        className="bg-transparent tabular-nums text-neutral-100 outline-none placeholder:text-neutral-600"
+      />
+      <Ccy icon={CCY_ICON[ccy]} alt={CCY_LABEL[ccy]} />
+      <select
+        value={ccy}
+        onChange={(e) => setCcy(e.target.value as CcyKey)}
+        className="bg-transparent text-neutral-400 outline-none"
+      >
+        {(["div", "ex", "chaos"] as CcyKey[]).map((c) => (
+          <option key={c} value={c} className="bg-neutral-900">
+            {CCY_LABEL[c]}
+          </option>
+        ))}
+      </select>
+      {div != null && (
+        <>
+          <span className="text-neutral-600">=</span>
+          {/* each converted currency in its own segment — readable at a glance */}
+          {others.map((c) => (
+            <span
+              key={c}
+              className="inline-flex items-center gap-1.5 rounded bg-neutral-800/80 px-2 py-1 tabular-nums text-neutral-100"
+            >
+              {fmtSmart(valueIn(c))}
+              <Ccy icon={CCY_ICON[c]} alt={CCY_LABEL[c]} />
+            </span>
+          ))}
+        </>
+      )}
+    </span>
+  );
+}
 
 interface Health {
   ninjaFetchedAt: string | null; // sqlite UTC "YYYY-MM-DD HH:MM:SS"
@@ -104,6 +162,7 @@ export function MarketStatus() {
             right={{ qty: fmtSmart(r.exaltPerDivine / r.chaosPerDivine), icon: CCY_ICON.ex, alt: "Exalted Orb" }}
             inverse={`1 Ex = ${fmtSmart(r.chaosPerDivine / r.exaltPerDivine)} Ch`}
           />
+          <Converter rates={r} />
         </>
       )}
     </div>

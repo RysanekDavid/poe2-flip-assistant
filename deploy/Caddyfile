@@ -1,5 +1,5 @@
 # Caddy reverse proxy for PoE2 Flip Assistant.
-# Caddy terminates TLS and proxies to the Next.js server on localhost:3000.
+# Caddy terminates TLS and proxies to the Next.js server on 127.0.0.1:3000.
 #
 # SITE_ADDRESS is read from the environment (set it in /etc/default/caddy or the systemd
 # drop-in). Pick ONE of the two modes below by what you set SITE_ADDRESS to:
@@ -14,7 +14,7 @@
 
 {$SITE_ADDRESS} {
 	encode gzip
-	reverse_proxy localhost:3000
+	reverse_proxy 127.0.0.1:3000
 
 	# Uncomment ONLY for mode B (IP, self-signed). Leave commented for a real domain.
 	# tls internal

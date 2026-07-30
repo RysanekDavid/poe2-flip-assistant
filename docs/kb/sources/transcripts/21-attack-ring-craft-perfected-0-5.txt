@@ -1,0 +1,17 @@
+Attack ring craft PERFECTED! PoE 2 - 0.5
+(user-pasted transcript, 2026-07-14; URL not provided)
+
+Okay, boys. Today we are going over the updated Ringcraft. [...] The idea here is to make it for a little bit cheaper. Disclaimer: the ring market sucks right now — later in the league, people are switching off attack builds, so this is a really bad profit craft late-league. There's a lot of variance because we're whittling a lot — you could spend 600-700 divines unlucky, or get it done in 200. Going rate for the rings is like 4-500 divs late league — not worth it now. Early league, when whittles are 3-4 div, this ring prints money.
+
+METHOD:
+1) Base: item level 82 GOLD ring with a FRACTURED T1 flat elemental (cold preferred). Search: ilvl 82, not corrupted, not sanctified. Check the TIER — 40% quality can make a tier-2 look bigger. Must be tier one fractured prefix. (~60-70 div base)
+2) Chaos-spam for a SECOND tier-one flat elemental — cannot be phys (phys has higher weighting and must stay as an "out" for the Omen of Light later). Average ~400-600 chaos (~50-70 div). Take fire OR lightning, whichever hits — don't roll over one looking for a specific one (someone burned 2,000 chaos doing that).
+3) Add a suffix: suffix-designating omen (Dextral Exaltation) + Exalted Orb — doesn't matter what it hits, even a good one gets rolled over.
+4) Breach essence (Essence of the Breach) + Omen of Dextral Crystallisation — eats the just-slammed suffix and puts on the breach QUALITY mod.
+5) Catalysts: fire or lightning ONLY (never cold) + Perfect Exalted Orbs with Omen of Catalysing Exaltation, SINGLE slams (not Greater double — singles give two separate chances at a T1 res; a double saves a perfect exalt but pushes toward all-res). Hitting a T1 res off a slam saves ~5-7 whittles.
+6) CRITICAL: re-apply attack (catalyst) QUALITY after the slams BEFORE whittling off the breach quality mod — "quality slam, quality slam, quality" — forgetting this bricked three rings.
+7) Whittle phase (~20-26 Omens of Whittling + chaos orbs): whittle the breach quality mod until it returns as a SUFFIX (50/50 per whittle). Tiny full-brick chance here (~1 in 80-200).
+8) Desecrate (Preserved Collarbone + Omen of Light rerolls at the abyss pit): fish ANY item-level-75 modifier for the open prefix (T1 mana, flats, T1 %damage). The ilvl-75 desecrated prefix SHIELDS the prefixes — whittles (lowest modifier level) then only target suffixes ("whittle in peace"). An ilvl-65 pick works temporarily until whittles start targeting the prefix again, then Omen of Light until an ilvl-75 mod lands.
+9) Whittle suffixes to TWO tier-one resistances (ilvl 82 → blocked, safe from whittles once landed; ~1 in 5 per whittle to hit a T1 res). Third suffix = settle: all-res or rarity best; T1 single res, T1 chaos res (ilvl 81), or "damage leeched as mana" all sell to attack builds. NO BRICKS on suffix whittles — an ilvl-75 mana regen can be forced off via the suffix-chaos omen + whittle.
+10) Final prefix: Omens of Light + collarbones (~10-15 of each) rerolling the desecrated prefix into T1 phys flat, T1 fire flat, or rarity (each ~1/30-1/60 per reveal, but each reveal shows 3 options twice with the Light).
+ECONOMICS: whole craft ~300-400 div expected. Sells 550-625 (late-league comp seen at 625, 1 hour listed) up to 800-900 early league. Result priced by weighted flat total + res package (all-res sells at premium — pairs with mirrored Kalandra ring for 90 res).

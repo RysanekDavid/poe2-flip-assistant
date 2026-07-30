@@ -1,0 +1,160 @@
+"""Read-only analytics over the application's shared live market database."""
+
+import json
+import sqlite3
+from contextlib import closing
+from pathlib import Path
+from statistics import fmean
+
+from langchain_core.tools import tool
+
+from src.config import get_settings
+from src.tools.evidence import evidence_id
+
+_REQUIRED_COLUMNS = {
+    "item_id",
+    "item_name",
+    "category",
+    "chaos_equiv",
+    "volume",
+    "fetched_at",
+}
+
+
+@tool
+def analyze_market_history(items: list[str], days: int) -> str:
+    """Analyze 1-5 items over 1-30 days from the application's price history.
+
+    Values are in Divine Orbs, not executable bid/ask quotes.
+    """
+    names = _validated_items(items)
+    if not 1 <= days <= 30:
+        raise ValueError("days must be between 1 and 30")
+    with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
+        results = [_analyze_item(connection, name, days) for name in names]
+    sources = [_market_source(result) for result in results]
+    return json.dumps({"unit": "Divine Orb", "items": results, "sources": sources})
+
+
+def current_market_values(items: list[str]) -> tuple[list[dict[str, object]], str]:
+    """Return latest locally polled values for validated item names."""
+    names = _validated_items(items)
+    with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
+        results = [_current_item(connection, name) for name in names]
+    timestamp = max(str(result["fetched_at"]) for result in results)
+    return results, timestamp
+
+
+def market_ready(path: Path | None = None) -> bool:
+    """Validate the shared database schema without reading private tables."""
+    target = path or get_settings().poe_db_path
+    if not target.is_file():
+        return False
+    try:
+        with closing(_connect_read_only(target)) as connection:
+            columns = {
+                str(row["name"])
+                for row in connection.execute("PRAGMA table_info(price_snapshots)").fetchall()
+            }
+            if not columns >= _REQUIRED_COLUMNS:
+                return False
+            row = connection.execute(
+                """SELECT item_id, chaos_equiv, fetched_at FROM price_snapshots
+                WHERE category = 'Currency' LIMIT 1"""
+            ).fetchone()
+            return row is not None and float(row["chaos_equiv"]) > 0 and bool(row["fetched_at"])
+    except (sqlite3.Error, TypeError, ValueError):
+        return False
+
+
+def _connect_read_only(path: Path) -> sqlite3.Connection:
+    if not path.is_file():
+        raise FileNotFoundError(f"Application database does not exist: {path}")
+    connection = sqlite3.connect(f"{path.as_uri()}?mode=ro", uri=True)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA query_only=ON")
+    return connection
+
+
+def _validated_items(items: list[str]) -> list[str]:
+    cleaned = [item.strip() for item in items if item.strip()]
+    if not 1 <= len(cleaned) <= 5:
+        raise ValueError("items must contain between 1 and 5 non-empty names")
+    return cleaned
+
+
+def _analyze_item(
+    connection: sqlite3.Connection, requested: str, days: int
+) -> dict[str, object]:
+    canonical = _resolve_name(connection, requested)
+    rows = connection.execute(
+        """
+        SELECT chaos_equiv AS value_div, volume, fetched_at
+        FROM price_snapshots
+        WHERE item_name = ? AND category = 'Currency'
+          AND datetime(fetched_at) >= datetime(
+            (SELECT MAX(fetched_at) FROM price_snapshots WHERE category = 'Currency'), ?
+          )
+        ORDER BY fetched_at ASC
+        """,
+        (canonical, f"-{days} days"),
+    ).fetchall()
+    if not rows:
+        raise LookupError(f"No market observations found for {canonical!r} over {days} days")
+    values = [float(row["value_div"]) for row in rows]
+    volumes = [float(row["volume"]) for row in rows]
+    change_pct = ((values[-1] / values[0]) - 1) * 100 if values[0] else 0.0
+    return {
+        "title": f"{canonical} market history",
+        "item_name": canonical,
+        "days": days,
+        "start_value_div": round(values[0], 8),
+        "latest_value_div": round(values[-1], 8),
+        "min_value_div": round(min(values), 8),
+        "max_value_div": round(max(values), 8),
+        "average_value_div": round(fmean(values), 8),
+        "change_pct": round(change_pct, 2),
+        "average_volume": round(fmean(volumes), 2),
+        "sample_count": len(rows),
+        "data_timestamp": rows[-1]["fetched_at"],
+    }
+
+
+def _current_item(connection: sqlite3.Connection, requested: str) -> dict[str, object]:
+    canonical = _resolve_name(connection, requested)
+    row = connection.execute(
+        """
+        SELECT item_name, chaos_equiv AS value_div, volume, fetched_at
+        FROM price_snapshots
+        WHERE item_name = ? AND category = 'Currency'
+        ORDER BY id DESC LIMIT 1
+        """,
+        (canonical,),
+    ).fetchone()
+    if row is None:
+        raise LookupError(f"No current market value found for {canonical!r}")
+    return dict(row)
+
+
+def _resolve_name(connection: sqlite3.Connection, requested: str) -> str:
+    row = connection.execute(
+        """
+        SELECT item_name FROM price_snapshots
+        WHERE category = 'Currency'
+          AND (lower(item_name) = lower(?) OR lower(item_name) LIKE lower(?))
+        GROUP BY item_name
+        ORDER BY CASE WHEN lower(item_name) = lower(?) THEN 0 ELSE 1 END, item_name
+        LIMIT 1
+        """,
+        (requested, f"%{requested}%", requested),
+    ).fetchone()
+    if row is None:
+        raise LookupError(f"Unknown market item: {requested!r}")
+    return str(row["item_name"])
+
+
+def _market_source(result: dict[str, object]) -> dict[str, object]:
+    identity = f"{result['item_name']}|{result['days']}|{result['data_timestamp']}"
+    source_id = evidence_id("M", identity)
+    result["id"] = source_id
+    return {"id": source_id, "type": "market", "title": result["title"], "url": None}

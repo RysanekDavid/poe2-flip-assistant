@@ -12,7 +12,7 @@ export const GUIDES: Record<string, CraftGuide> = {
   jewel_suffix_push: {
     goal: "5-mod caster jewel: Crit Chance for Spells + Crit Damage Bonus suffixes, Spell Damage prefixes, high rolls.",
     shopping:
-      "RARE Time-Lost jewel (Ancient liquids only work on rare — regal a magic one) with 2 caster suffixes + max ONE junk prefix. Buy several — bases die on bad liquid rolls. Emerald = attack variant, same structure.",
+      "RARE Time-Lost jewel (Ancient liquids only work on rare — regal a magic one) with 2 caster suffixes + max ONE junk prefix, decent item level (Alt tooltip). Buy several — bases die on bad liquid rolls. Emerald = attack variant, same structure.",
     marketCheck:
       "Price FINISHED 5-mod caster jewels first (cheapest asks). 100+ div → craft. 20–30 div → saturated market, don't craft.",
     phases: [
@@ -46,7 +46,7 @@ export const GUIDES: Record<string, CraftGuide> = {
               "% increased Cast Speed",
             ],
             onFail:
-              "Both option sets bad → annul the desecrated mod away (Omen of Sinistral/Dextral Annulment for its side + Orb of Annulment) and desecrate again with a fresh cranium.",
+              "Both option sets bad → Omen of Light + Orb of Annulment strips JUST the revealed desecrated mod (rest of the item untouched), then desecrate again with a fresh cranium.",
             check: "3 caster suffixes + the +1-suffix mod.",
           },
         ],
@@ -66,6 +66,12 @@ export const GUIDES: Record<string, CraftGuide> = {
       {
         title: "Fill prefixes",
         steps: [
+          {
+            do: "Omen of Sinistral Annulment + Orb of Annulment — pull the “+1 Suffix Modifier allowed” mod out.",
+            why: "It sits on the PREFIX side; Sinistral restricts the annul to prefixes, so it can't touch your suffixes. The 4 suffixes stay (over-cap is kept) and the prefix slots open up for exalts.",
+            mats: [MATS.omenSinistralAnnulment, MATS.annul],
+            check: "All 4 suffixes intact, “+1 Suffix Modifier allowed” gone, prefixes open.",
+          },
           {
             do: "Fill the open prefixes with Exalted Orbs, fishing Spell Damage / Elemental Damage.",
             why: "Exalts only ADD mods. PoE2 Chaos removes a random EXISTING mod first — it can eat a suffix; reroll a bad prefix only under Omen of Sinistral Erasure.",
@@ -139,7 +145,7 @@ export const GUIDES: Record<string, CraftGuide> = {
   ring_catalysing_exalt: {
     goal: "Double-flat ele + rarity/res ring. Comparables sold 10–80 div by roll.",
     shopping:
-      "MAGIC rings, T1 flat FIRE or LIGHTNING (never cold — you slam for cold; not phys — dilutes pool). Open suffix ~1 div. Buy 3–5, it's a numbers game.",
+      "MAGIC rings, ITEM LEVEL 75+ (Alt tooltip / trade ilvl filter — non-negotiable), T1 flat FIRE or LIGHTNING (never cold — you slam for cold; not phys — dilutes pool). Open suffix ~1 div. Buy 3–5, it's a numbers game.",
     marketCheck: "Weighted-sum filter on finished rings (flat total + rarity), cheapest ask = your sale price minus a div or two.",
     phases: [
       {
@@ -147,7 +153,9 @@ export const GUIDES: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Open suffix? Perfect Orb of Augmentation first.",
+            why: "Perfect Aug rolls mods of level 70+ (floors are per-currency: Perfect Exalt is 50, Greater Aug 44). The floor is soft — a family whose top tier sits below it stays eligible.",
             mats: [MATS.perfectAug],
+            warning: "Augmentation only works on a MAGIC item with an open affix — a rare or 2-mod ring refuses it. And a low-ilvl base guts the level-70+ pool; buy ilvl 75+.",
           },
           {
             do: "Res roll → Essence of Opulence (T1 rarity). Rarity roll → Essence of Insulation (fire res).",
@@ -166,7 +174,7 @@ export const GUIDES: Record<string, CraftGuide> = {
           },
           {
             do: "Omen of Catalysing Exaltation + Omen of Greater Exaltation → one Greater Exalted Orb.",
-            why: "The catalyst bias applies to BOTH exalts under greater exaltation.",
+            why: "Catalyst bias (5× at 20% quality) applies to the FIRST of the two added mods only — the second is unbiased (player-confirmed; the wiki's 'both' claim is disputed). Budget accordingly.",
             mats: [MATS.omenCatalysingExaltation, MATS.omenGreaterExaltation, MATS.greaterExalted],
             onFail: "T1/T2 mana instead of cold (happens a lot) → skip the desecration, sell the ring, next base.",
           },
@@ -199,7 +207,8 @@ export const GUIDES: Record<string, CraftGuide> = {
 
   amulet_fracture_plus3: {
     goal: "FRACTURED +3 skills amulet = permanent craft base, ~40–60 div on hit.",
-    shopping: "Rare amulet that already rolled the +levels mod. Stellar/gold base sells best; open prefix worth ~1 div extra.",
+    shopping:
+      "Rare amulet ITEM LEVEL 75+ that already rolled the +levels mod. Stellar/gold base sells best; open prefix worth ~1 div extra. Low ilvl guts the pool for Perfect currency (Perfect Aug floor = mod level 70, Perfect Exalt = 50).",
     marketCheck: "Check fractured +3 asks NOW. Under ~30 div → fracture EV collapses (1-in-3 hit must cover orb + base ×3).",
     phases: [
       {
@@ -238,7 +247,7 @@ export const GUIDES: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Fire/Lightning catalysts + Catalysing & Greater Exaltation omens + Perfect Exalted Orb.",
-            why: "Perfect Exalted Orb has a modifier-level floor of 50 (Greater = 35). The guide runs fire/lightning catalysts here; the claimed cold-res tier leak is unverified — check poe2db before deviating.",
+            why: "Perfect Exalted Orb has a modifier-level floor of 50 (Greater Exalt = 35; floors are soft — a family's top tier below the floor stays eligible). The guide runs fire/lightning catalysts; the claimed cold-res tier leak is unverified — check poe2db before deviating.",
             mats: [MATS.omenCatalysingExaltation, MATS.omenGreaterExaltation, MATS.perfectExalted],
           },
           {
@@ -250,10 +259,46 @@ export const GUIDES: Record<string, CraftGuide> = {
     brick: "Miss = sell the +3 unfractured, most of the base comes back.",
   },
 
+  focus_rathpith_gamble: {
+    goal: "God-roll Rathpith Globe: both per-100-Mana damage/crit cultivated lines (mana-stacker caster shield) — reddit-reported ~600 div for a clean double; the video called mirror-tier for perfect ones.",
+    shopping:
+      "Cheapest CORRUPTED Rathpith Globes (it's a Vaal unique — cultivation only works on corrupted Vaal uniques; an UNCORRUPTED copy would be a wasted 3-div orb, tooltip-confirmed trap). A copy that already rolled one mana line is worth a premium.",
+    marketCheck:
+      "Vaal Cultivation Orb ~3 div — the orb IS the bet, and reddit reports 300+ div dry streaks. Price double-line Rathpiths first (trade link on the result leg); the ~600 div tail is what pays, mids only soften variance.",
+    phases: [
+      {
+        title: "The gamble",
+        steps: [
+          {
+            do: "Slam a Vaal Cultivation Orb on the CORRUPTED Rathpith.",
+            why: "Randomly replaces 1–2 existing mods with cultivated-pool mods: Life Cost Efficiency (8–15%, nerfed in 0.5.0), Ailment Magnitude per 100 Life, or the chase — Damage per 100 Mana / Crit per 100 Mana (these replace the base per-100-Life lines). Repeat slams chase both mana lines.",
+            mats: [MATS.vaalCultivation],
+            warning: "On a NON-corrupted unique the orb instead transforms it into a random different corrupted unique of the class — documented 2-div+ losses. Corrupted Vaal unique ONLY.",
+            onFail: "Bad cultivated roll → slam again or sell the husk; the orb cost dominates, so decide per copy how deep you gamble.",
+            check: "Both “per 100 maximum Mana” lines present, NO “costs an additional % of maximum Life” line.",
+          },
+        ],
+      },
+      {
+        title: "Polish + sell",
+        steps: [
+          {
+            do: "Divine only a hit — it rerolls ALL variable values at once.",
+            mats: [MATS.divine],
+          },
+          {
+            do: "List against the double-line comparables; undercut the 2-div mids, hold true god rolls for offers.",
+          },
+        ],
+      },
+    ],
+    brick: "Most slams brick — that's the shape of the trade. The tail (clean double-mana god roll) carried mirror-tier prices in the source video; the EV shown here prices only the visible floor, not the tail.",
+  },
+
   boots_putrefaction: {
     goal: "35% Movement Speed + ES/res boots. 30% MS is the floor, 35% the chase.",
     shopping:
-      "Cheap RARE boots ilvl 82+ (the 35% MS roll needs it), NOT corrupted, NOT desecrated (trade can't filter that — eyeball each). Mod count irrelevant.",
+      "Cheap RARE boots ilvl 82+ (the 35% MS roll needs it) on an ES or ES-hybrid base — desecrated prefixes follow the base's defence type, and the money picks are flat/% ES. Not corrupted (trade filters that), not desecrated (eyeball). Existing mods are irrelevant — they all get wiped.",
     marketCheck: "~0.6 div all-in per try. One 35% MS sale pays the batch — confirm this week's asks first.",
     phases: [
       {
@@ -271,9 +316,9 @@ export const GUIDES: Record<string, CraftGuide> = {
         title: "Putrefy",
         steps: [
           {
-            do: "Omen of Putrefaction active, slam a Rib.",
-            why: "All mods become hidden desecrated reveals — six slots, effectively nine prefix shots.",
-            mats: [MATS.omenPutrefaction, MATS.gnawedRib],
+            do: "Omen of Putrefaction active, slam a Preserved Rib.",
+            why: "All mods become hidden desecrated reveals — six slots. Preserved tier is mandatory: Gnawed caps at ilvl 64 and fails on an 82+ base with “Item Level is too high”.",
+            mats: [MATS.omenPutrefaction, MATS.preservedRib],
             check: "Item corrupted, all mods show as unrevealed.",
           },
         ],
@@ -283,11 +328,15 @@ export const GUIDES: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Well of Souls, reveal one slot at a time — pick as you go.",
+            why: "A sellable result = 35% MS + life or a solid defence flat + two 30%+ resistances.",
             pick: [
-              "prefix: 35% Movement Speed",
-              "prefix: flat Energy Shield",
-              "prefix: % Energy Shield",
-              "suffix: ele res > chaos res > rarity",
+              "prefix: 35% Movement Speed (30% = sellable floor)",
+              "prefix: flat Life (+100+)",
+              "prefix: flat ES / Evasion (match the base)",
+              "prefix: % ES / Evasion — multiplies the flat",
+              "suffix: fire/cold/lightning res 30%+",
+              "suffix: chaos res 15%+",
+              "suffix: rarity > attributes (the rest is vendor filler)",
             ],
           },
           {
@@ -296,11 +345,80 @@ export const GUIDES: Record<string, CraftGuide> = {
             onFail: "No MS ≥30 in the reveals → junk, sell for scraps, next base.",
           },
           {
+            do: "Keep 1–2 Omens of Abyssal Echoes in reserve — activate ONE only when a good item hits a junk option set.",
+            why: "Echoes rerolls the three offered options once (~0.25 div). Worth it late, when the item already carries 35% MS + good mods; a waste on a fresh 1-ex base. Never blanket every reveal — that triples the attempt cost.",
+            mats: [MATS.omenAbyssalEchoes],
+          },
+          {
             do: "Good flat ES → Iron Rune; junk ES → res runes. List immediately, undercut over hours.",
           },
         ],
       },
     ],
     brick: "~1 in 3 hits 35% MS. Misses with 30% + res still sell 1–2 div. Same slot machine works on gloves/helmets/bodies.",
+  },
+
+  // Attack-build variant of the boots slot machine — same process, EV base + EV prefix targets.
+  boots_putrefaction_ev: {
+    goal: "35% Movement Speed + evasion/res boots for attack builds (Deadeye/Amazon meta). 30% MS is the floor.",
+    shopping:
+      "Cheap RARE boots ilvl 82+ on an EVASION or EV-hybrid base — desecrated prefixes follow the base's defence type. Not corrupted (trade filters that), not desecrated (eyeball). Existing mods are irrelevant — they all get wiped.",
+    marketCheck: "~0.6 div all-in per try. Attack meta is the bigger ladder share — confirm this week's asks for 35% MS evasion boots first.",
+    phases: [
+      {
+        title: "Prep (BEFORE the omen!)",
+        steps: [
+          {
+            do: "Armourer's Scraps to 20% + Artificer sockets — on EVERY base first.",
+            why: "Putrefaction corrupts. Quality and sockets can't be added after.",
+            mats: [MATS.scrap, MATS.artificers],
+            warning: "Quality + sockets FIRST. The omen corrupts. No exceptions.",
+          },
+        ],
+      },
+      {
+        title: "Putrefy",
+        steps: [
+          {
+            do: "Omen of Putrefaction active, slam a Preserved Rib.",
+            why: "All mods become hidden desecrated reveals — six slots. Preserved tier is mandatory: Gnawed caps at ilvl 64 and fails on an 82+ base with “Item Level is too high”.",
+            mats: [MATS.omenPutrefaction, MATS.preservedRib],
+            check: "Item corrupted, all mods show as unrevealed.",
+          },
+        ],
+      },
+      {
+        title: "Reveal discipline",
+        steps: [
+          {
+            do: "Well of Souls, reveal one slot at a time — pick as you go.",
+            why: "A sellable result = 35% MS + high evasion or life + two 30%+ resistances.",
+            pick: [
+              "prefix: 35% Movement Speed (30% = sellable floor)",
+              "prefix: flat Evasion Rating (high roll)",
+              "prefix: % Evasion — multiplies the flat",
+              "prefix: flat Life (+100+)",
+              "suffix: fire/cold/lightning res 30%+",
+              "suffix: chaos res 15%+",
+              "suffix: rarity > attributes (the rest is vendor filler)",
+            ],
+          },
+          {
+            do: "Do NOT settle for low MS early — hold out; take 30% only late in the reveals.",
+            warning: "Settling early on 25% MS is the classic value leak. (Whether a taken mod blocks its family from later reveals is unconfirmed — test on a cheap base.)",
+            onFail: "No MS ≥30 in the reveals → junk, sell for scraps, next base.",
+          },
+          {
+            do: "Keep 1–2 Omens of Abyssal Echoes in reserve — activate ONE only when a good item hits a junk option set.",
+            why: "Echoes rerolls the three offered options once (~0.25 div). Worth it late on an already-good item; a waste on a fresh 1-ex base.",
+            mats: [MATS.omenAbyssalEchoes],
+          },
+          {
+            do: "Socket res runes (evasion has no flat-scaling rune play like ES). List immediately, undercut over hours.",
+          },
+        ],
+      },
+    ],
+    brick: "~1 in 3 hits 35% MS. Misses with 30% + res still sell 1–2 div to leveling attack builds.",
   },
 };
