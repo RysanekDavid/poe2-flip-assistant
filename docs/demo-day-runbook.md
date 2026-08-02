@@ -49,7 +49,7 @@ run `bash deploy/deploy.sh <PREVIOUS_FULL_SHA>` after verifying the SHA.
 
 ## 4. Browser and health smoke
 
-- [ ] `https://<DOMAIN>/` returns a relative 307 `Location: /login`, never localhost.
+- [ ] `https://<DOMAIN>/` returns 307 to `https://<DOMAIN>/login`, never localhost.
 - [ ] `/login` loads without a certificate warning in a clean anonymous browser.
 - [ ] Anonymous `/api/health` and `/api/coach/health` return 401.
 - [ ] Authenticated `/api/health` shows the expected build and fresh ninja timestamp.

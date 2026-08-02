@@ -12,6 +12,7 @@ function request(path: string, headers?: HeadersInit): NextRequest {
 
 async function main(): Promise<void> {
   process.env.AUTH_SECRET = TEST_SECRET;
+  process.env.APP_ORIGIN = "https://app.example.test";
   const root = await middleware(
     request("/", {
       host: "attacker.example",
@@ -20,11 +21,11 @@ async function main(): Promise<void> {
     }),
   );
   assert.equal(root.status, 307);
-  assert.equal(root.headers.get("location"), "/login");
+  assert.equal(root.headers.get("location"), "https://app.example.test/login");
   assert.doesNotMatch(root.headers.get("location") ?? "", /localhost|attacker/i);
 
   const publicRoot = await middleware(new NextRequest("https://flip.example.test/"));
-  assert.equal(publicRoot.headers.get("location"), "/login");
+  assert.equal(publicRoot.headers.get("location"), "https://app.example.test/login");
 
   const api = await middleware(request("/api/health"));
   assert.equal(api.status, 401);
@@ -34,7 +35,10 @@ async function main(): Promise<void> {
 
   const forged = request("/");
   forged.cookies.set(SESSION_COOKIE, signedToken(1, Date.now() + 60_000, "wrong-secret"));
-  assert.equal((await middleware(forged)).headers.get("location"), "/login");
+  assert.equal(
+    (await middleware(forged)).headers.get("location"),
+    "https://app.example.test/login",
+  );
   const forgedApi = request("/api/health");
   forgedApi.cookies.set(SESSION_COOKIE, signedToken(1, Date.now() + 60_000, "wrong-secret"));
   assert.equal((await middleware(forgedApi)).status, 401);
