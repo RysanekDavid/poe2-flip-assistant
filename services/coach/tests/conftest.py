@@ -39,6 +39,12 @@ def market_db(tmp_path: Path) -> Path:
             fetched_at TEXT NOT NULL
             )"""
         )
+        connection.execute(
+            """CREATE TABLE item_spark (
+            item_id TEXT PRIMARY KEY,
+            updated_at TEXT NOT NULL
+            )"""
+        )
         latest = datetime.now(UTC).replace(microsecond=0)
         prior = latest - timedelta(days=1)
         connection.executemany(
@@ -48,6 +54,10 @@ def market_db(tmp_path: Path) -> Path:
                 (2, "chaos", "Chaos Orb", "Currency", 0.02, 120, latest.isoformat()),
                 (3, "divine", "Divine Orb", "Currency", 1.0, 80, latest.isoformat()),
             ],
+        )
+        connection.executemany(
+            "INSERT INTO item_spark VALUES (?, ?)",
+            [("chaos", latest.isoformat()), ("divine", latest.isoformat())],
         )
     return path
 
