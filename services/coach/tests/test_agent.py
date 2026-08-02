@@ -12,4 +12,5 @@ def test_agent_uses_chat_completions_for_tool_round_trips() -> None:
     model = build_chat_model(settings)
 
     assert model.use_responses_api is False
+    assert model.reasoning_effort == "medium"
     assert model.output_version != "responses/v1"

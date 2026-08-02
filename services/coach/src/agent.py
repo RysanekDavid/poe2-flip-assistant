@@ -60,6 +60,7 @@ def build_chat_model(settings: Settings) -> ChatOpenAI:
         model=settings.chat_model,
         api_key=settings.require_openai_key(),
         use_responses_api=False,
+        reasoning_effort="medium",
         timeout=settings.request_timeout_seconds,
         max_retries=2,
     )
