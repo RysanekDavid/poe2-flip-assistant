@@ -3,11 +3,14 @@
 import json
 from pathlib import Path
 
+import httpx
+import pytest
 from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessage, ToolMessage
+from openai import BadRequestError
 from pydantic import SecretStr
 
-from src.api import create_app
+from src.api import AgentProvider, create_app
 from src.config import APP_ROOT, Settings
 from src.demo_policy import DEMO_PROMPT
 from src.tools import get_tools
@@ -51,6 +54,24 @@ class DemoAgent:
             "messages": [*values["messages"], tool, AIMessage(content=answer)],
             "required_tools": ["retrieve_knowledge"],
         }
+
+
+class BadRequestAgent:
+    """Raise one provider 400, then allow the same thread to continue."""
+
+    def __init__(self, message: str) -> None:
+        self.calls = 0
+        self.message = message
+
+    async def ainvoke(
+        self, values: dict[str, object], config: dict[str, object]
+    ) -> dict[str, object]:
+        self.calls += 1
+        if self.calls == 1:
+            request = httpx.Request("POST", "https://api.openai.com/v1/responses")
+            response = httpx.Response(400, request=request)
+            raise BadRequestError(self.message, response=response, body={})
+        return {"messages": [*values["messages"], AIMessage(content="Recovered answer")]}
 
 
 def test_blank_optional_keys_are_not_configured() -> None:
@@ -157,3 +178,63 @@ def test_demo_prompt_enforces_mocked_tool_source_and_disclaimer(
     assert "exact sequence remains unverified" in payload["answer"]
     assert "this over-cap Time—Lost interaction is safe" not in payload["answer"]
     assert "Verify prices in-game" in payload["answer"]
+
+
+def test_orphaned_responses_tool_call_resets_conversation(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = Settings(
+        _env_file=None,
+        openai_api_key=SecretStr("test-key"),
+        configured_db_path=market_db,
+        configured_checkpoint_path=tmp_path / "checkpoints.db",
+        configured_item_catalog_path=item_catalog_manifest,
+        corpus_dir=APP_ROOT,
+    )
+    agent = BadRequestAgent("No tool output found for function call call_test.")
+    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: agent)
+    deleted: list[str] = []
+
+    async def track_delete(_provider: AgentProvider, thread_id: str) -> None:
+        deleted.append(thread_id)
+
+    monkeypatch.setattr(AgentProvider, "delete_thread", track_delete)
+    prompt = (
+        "I want a Dueling Wand for Blood Mage with spell damage, +all spell skills, "
+        "maximum mana, extra cold damage, spell critical chance, and cast speed. "
+        "How do I craft it?"
+    )
+
+    with TestClient(app) as client:
+        failed = client.post("/chat", json={"message": prompt, "thread_id": THREAD_ID})
+        recovered = client.post("/chat", json={"message": prompt, "thread_id": THREAD_ID})
+
+    assert failed.status_code == 409
+    assert "Conversation state was reset" in failed.json()["detail"]
+    assert recovered.status_code == 200
+    assert recovered.json()["answer"].startswith("Recovered answer")
+    assert deleted == [THREAD_ID]
+
+
+def test_unrelated_openai_bad_request_remains_a_502(
+    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
+) -> None:
+    settings = Settings(
+        _env_file=None,
+        openai_api_key=SecretStr("test-key"),
+        configured_db_path=market_db,
+        configured_checkpoint_path=tmp_path / "checkpoints.db",
+        configured_item_catalog_path=item_catalog_manifest,
+        corpus_dir=APP_ROOT,
+    )
+    agent = BadRequestAgent("Unsupported parameter")
+    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: agent)
+
+    with TestClient(app) as client:
+        response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
+
+    assert response.status_code == 502
+    assert "Agent execution failed" in response.json()["detail"]

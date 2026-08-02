@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 
 const DEV_THREAD_SECRET = "poe2-coach-local-development-only";
+const THREAD_NAMESPACE = "chat-completions-v1";
 
 /** Convert a browser conversation id into a user-scoped UUID accepted by LangGraph. */
 export function deriveCoachThreadId(
@@ -10,7 +11,7 @@ export function deriveCoachThreadId(
 ): string {
   const secret = configuredSecret || developmentSecret();
   const bytes = createHmac("sha256", secret)
-    .update(`${userId}:${conversationId}`)
+    .update(`${THREAD_NAMESPACE}:${userId}:${conversationId}`)
     .digest()
     .subarray(0, 16);
   bytes[6] = (bytes[6]! & 0x0f) | 0x40;
@@ -27,6 +28,11 @@ export function coachEndpoint(apiUrl: string, path: string): string {
     throw new Error("COACH_API_URL must be an HTTP(S) origin without embedded credentials");
   }
   return endpoint.toString();
+}
+
+/** Preserve expected user-action statuses and hide other upstream failures behind 502. */
+export function coachPublicStatus(status: number): number {
+  return [400, 409, 429, 503].includes(status) ? status : 502;
 }
 
 function developmentSecret(): string {
