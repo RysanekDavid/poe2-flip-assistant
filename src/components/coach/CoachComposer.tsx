@@ -48,7 +48,7 @@ export function CoachComposer({ disabled, error, notice, onSend }: CoachComposer
             value={value}
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={onKeyDown}
-            maxLength={2_000}
+            maxLength={8_000}
             rows={2}
             placeholder="Ask about the market, farming, crafting, or paste an item…"
             className="min-h-12 flex-1 resize-y bg-transparent px-2 py-2 text-sm leading-6 text-neutral-100 outline-none placeholder:text-neutral-600 disabled:cursor-not-allowed disabled:opacity-50"

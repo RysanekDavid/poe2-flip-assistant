@@ -5,7 +5,7 @@
  */
 import dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local" });
+if (process.env.APP_DISABLE_DOTENV !== "1") dotenv.config({ path: ".env.local" });
 
 function num(key: string, fallback: number): number {
   const v = process.env[key];

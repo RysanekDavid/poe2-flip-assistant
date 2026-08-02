@@ -1,27 +1,29 @@
 import "../config/env"; // load .env.local (AUTH_SECRET, DB_PATH) before touching the DB
 import { createUser, getUserByName } from "../db/userQueries";
+import { parsePasswordInput, parseProvisionArgs } from "./addUserInput";
 
 /**
  * Provision a user (you manage the accounts manually for now).
- *   npx tsx src/scripts/addUser.ts <name> <password> [owner|member]
- * Prints the agent api_key once — the local agent uses it as a Bearer token to push
- * balance/hunt data. Treat it like a password.
+ * Password input is piped from a shell's non-echoing read; it is never accepted in argv.
+ * The generated agent API key stays in the database and is never printed by this workflow.
  */
-function main(): void {
-  const [name, password, role] = process.argv.slice(2);
-  if (!name || !password) {
-    console.error("usage: tsx src/scripts/addUser.ts <name> <password> [owner|member]");
-    process.exit(1);
+async function main(): Promise<void> {
+  const { name, role } = parseProvisionArgs(process.argv.slice(2));
+  if (process.stdin.isTTY) {
+    throw new Error("refusing echoed password input; pipe one line from a shell read -s command");
   }
+  let input = "";
+  for await (const chunk of process.stdin) input += String(chunk);
+  const password = parsePasswordInput(input);
   if (getUserByName(name)) {
-    console.error(`user "${name}" already exists`);
-    process.exit(1);
+    throw new Error(`user "${name}" already exists`);
   }
-  const roleVal = role === "owner" ? "owner" : "member";
-  const u = createUser(name, password, roleVal);
+  const u = createUser(name, password, role);
   console.log(`created user #${u.id} "${u.name}" (${u.role})`);
-  console.log(`agent api_key: ${u.api_key}`);
-  console.log("give this key to that user's local agent; it won't be shown again.");
+  console.log("No API key or password was printed. POESESSID remains unset.");
 }
 
-main();
+main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+});

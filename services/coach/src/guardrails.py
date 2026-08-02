@@ -30,7 +30,8 @@ _SECRET_PATTERNS = (
     ),
     re.compile(
         r"(?:reveal|show|print|dump|return)\s+(?:me\s+)?"
-        r"(?:your|the|stored|server)\s+(?:api\s*key|poesessid|token|secret)",
+        r"(?:(?:your|the|stored|server)\s+){1,3}"
+        r"(?:api\s*key|poesessid|token|secret)",
         re.I,
     ),
 )

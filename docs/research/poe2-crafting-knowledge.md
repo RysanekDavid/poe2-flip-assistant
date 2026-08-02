@@ -61,17 +61,18 @@ Sources: poe2wiki Fracturing_Orb (edit history through 0.5.1), timesaver 0.5.4, 
 | Fire/Cold/Light res (T1, +41–45%) | of Tzteosh/Haast/Ephij | **82** | CONFIRMED (poe2db+wiki tables) |
 | Ele res T2 (+36–40%) | of Magma etc. | **71** | CONFIRMED |
 | Chaos res top (+24–27%, of Bameth) | 6 tiers, ~5.3× rarer than ele res | **81** | CONFIRMED |
-| Boots % Movement Speed | T1 35% @ **82**, T2 30% @ **65**, T3 25% @ 46 | data-mined | CONFIRMED (scrape:poe2db) |
-| Ring flat fire/cold/light to Attacks | T1 @ **75** (9 tiers) | data-mined | CONFIRMED (scrape:poe2db) |
+| Boots % Movement Speed | T1 35% @ **82**, T2 30% @ **65**, T3 25% @ 46 | data-mined | CONFIRMED (RePoE snapshot) |
+| Ring flat fire/cold/light to Attacks | T1 @ **75** (9 tiers) | data-mined | CONFIRMED (RePoE snapshot) |
 
-**The authority for ALL tier/ilvl gates is now `src/data/poe2dbTiers.json`** — 2,851 mod
-families across 16 item-class pages, scraped straight from poe2db (data-mined game files) via
-`npm run scrape:poe2db`. Re-run per patch. Prose sources got these wrong repeatedly; the
+**The authority for tier/ilvl gates is the complete versioned RePoE snapshot under
+`src/data/poe2/repoe/`.** Refresh it with `npm run sync:poe2-data`. It includes all base items,
+modifiers, base mappings, classes, skills, augments, tags and uniques rather than selected HTML
+pages. Re-run per patch. Prose sources got these wrong repeatedly; the
 earlier "82/70 for all bases" guide claim resolves to 82/65.
 
 → ilvl-81 base can top chaos res but never top ele res. PoE2 in-game tier numbers count
-UPWARD — "T1" in this doc = highest tier (PoE1 vernacular). A systematic poe2db scrape of
-headline mods (MS, T1 life, %phys, flat ele) is still needed (open question).
+UPWARD — "T1" in this doc = highest tier (PoE1 vernacular). Headline-mod coverage now comes from
+the complete RePoE modifier and base-mapping exports rather than a selected PoE2DB HTML scrape.
 
 ## 4. Omens (verified subset)
 
@@ -191,8 +192,7 @@ Source: creator league review (single-source, practitioner-grade — the "zero t
 ## 10. Open questions (next research round)
 
 1. Greater/Perfect Regal & Chaos floors (poe2db lookup).
-2. Per-base ilvl breakpoints for headline mods (systematic poe2db scrape — candidate for a
-   `scrape:poe2db` script feeding this KB).
+2. Verify per-base ilvl breakpoints for headline mods against each new RePoE snapshot.
 3. Well of Souls reveal ordering + family-blocking.
 4. Omen compatibility matrix beyond documented pairs.
 5. Vaal corruption outcome table; rune tiers/values; soul cores (nothing survived verification).

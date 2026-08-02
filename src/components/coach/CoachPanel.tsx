@@ -10,9 +10,12 @@ import { CoachMessage } from "./CoachMessage";
 import { useCoachSession } from "./useCoachSession";
 
 const PROMPTS = [
-  { eyebrow: "MARKET", prompt: "Compare current Divine Orb and Chaos Orb prices with the last 7 days." },
-  { eyebrow: "FARM", prompt: "What is worth farming right now, and which sources support it?" },
-  { eyebrow: "MECHANIC", prompt: "How do I farm and use Omen of Light?" },
+  {
+    eyebrow: "DEMO",
+    prompt: "On a desecrated Time-Lost jewel, when should I use Omen of Light versus Omen of Sinistral Annulment? Use only verified knowledge-base evidence; do not discuss drop sources or current prices.",
+  },
+  { eyebrow: "MARKET", prompt: "Show observed Divine Orb market history, its timestamp, and the main limitation." },
+  { eyebrow: "ITEM", prompt: "Paste an item's complete in-game clipboard text here for deterministic inspection." },
 ] as const;
 
 export function CoachPanel({ active }: { active: boolean }) {
@@ -105,7 +108,7 @@ function CoachHeader({ health, healthError, onReset }: {
         <div>
           <h2 className="font-['Palatino_Linotype','Book_Antiqua',serif] text-lg font-semibold tracking-wide text-neutral-100">PoE2 Coach</h2>
           <p className="text-[11px] text-neutral-500">
-            market · craft · verified knowledge base
+            market · craft · evidence-linked knowledge base
             {health?.web_search_ready ? " · recent web" : ""}
           </p>
         </div>
@@ -135,7 +138,7 @@ function EmptyCoach({ disabled, onPrompt, webReady }: {
         Make decisions from data, not trade chat.
       </h3>
       <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-500">
-        Coach combines market history, live poe.ninja data, and our verified knowledge base.
+        Coach combines observed market history, locally polled poe.ninja data, and a curated knowledge base.
         {webReady ? " It checks recent web sources when needed." : ""}
       </p>
       <div className="mt-8 grid w-full gap-3 md:grid-cols-3">
@@ -160,26 +163,32 @@ function Health({ health, failed }: { health: CoachHealth | null; failed: boolea
     return <Status label="Coach unavailable" title="The local Coach service is not running." tone="error" />;
   }
   if (!health) return <Status label="checking…" title="Checking source readiness." tone="muted" />;
-  if (!health.model_ready) {
-    return <Status label="AI key missing" title="Add OPENAI_API_KEY to .env.local." tone="warning" />;
+  if (!health.model_configured) {
+    return <Status label="AI not configured" title="Configure the isolated Coach environment." tone="warning" />;
+  }
+  if (!health.item_data_ready) {
+    return <Status label="item data missing" title="Run npm run sync:poe2-data and restart Coach." tone="error" />;
   }
   if (!health.market_ready || !health.knowledge_ready) {
     return <Status label="sources unavailable" title="The market database or knowledge base is unavailable." tone="error" />;
   }
   const title = health.web_search_ready
-    ? "Recent web search is available."
-    : "The market database and verified knowledge base are ready.";
-  return <Status label="ready" title={title} tone="ready" />;
+    ? "Local sources are ready and recent web is configured; the first chat verifies model connectivity."
+    : "Local sources are ready; the first chat verifies model connectivity.";
+  return <Status label="sources ready" title={title} tone="ready" />;
 }
 
 function coachAvailability(health: CoachHealth | null, failed: boolean) {
   if (failed) return { ready: false, reason: "The local Coach service is not running." } as const;
   if (!health) return { ready: false, reason: "Checking Coach service readiness…" } as const;
-  if (!health.model_ready) {
+  if (!health.model_configured) {
     return {
       ready: false,
-      reason: "Add OPENAI_API_KEY to the root .env.local, then restart npm run dev.",
+      reason: "Configure the isolated Coach process environment, then restart Coach.",
     } as const;
+  }
+  if (!health.item_data_ready) {
+    return { ready: false, reason: "The local PoE2 item catalog is missing or invalid." } as const;
   }
   if (!health.market_ready || !health.knowledge_ready) {
     return { ready: false, reason: "The market database or knowledge base is unavailable." } as const;

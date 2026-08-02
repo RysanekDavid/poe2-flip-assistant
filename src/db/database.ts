@@ -1,7 +1,6 @@
 import Database from "better-sqlite3";
 import { readFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { randomBytes } from "node:crypto";
 import { config } from "../config/env";
 import { hashPassword, genApiKey } from "../auth/auth";
 
@@ -87,16 +86,13 @@ export function getDb(): Database.Database {
 function seedOwner(conn: Database.Database): void {
   const has = (conn.prepare("SELECT COUNT(*) c FROM users").get() as { c: number }).c;
   if (has > 0) return;
-  const pw = process.env.OWNER_PASSWORD || randomBytes(6).toString("hex");
+  const pw = process.env.OWNER_PASSWORD;
+  if (!pw) {
+    throw new Error("OWNER_PASSWORD is required to initialize an empty database");
+  }
   conn
     .prepare("INSERT INTO users (id, name, password_hash, api_key, role) VALUES (1, ?, ?, ?, 'owner')")
     .run(config.ownerName, hashPassword(pw), genApiKey());
-  if (!process.env.OWNER_PASSWORD) {
-    console.warn(
-      `[auth] seeded owner "${config.ownerName}" with TEMP password: ${pw}\n` +
-        `       log in and change it, or set OWNER_PASSWORD before first run.`,
-    );
-  }
 }
 
 /** watchlist shipped with an inline `item_id UNIQUE` (global) — rebuild to per-user uniqueness. */

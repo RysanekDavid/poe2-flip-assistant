@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       conversationId: parsed.data.conversationId,
       answer: response.answer,
       toolsUsed: response.tools_used,
+      processorsUsed: response.processors_used,
       sources: response.sources,
     });
   } catch (error: unknown) {

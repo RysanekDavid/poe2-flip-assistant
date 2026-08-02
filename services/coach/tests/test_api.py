@@ -1,13 +1,15 @@
-"""Internal API and optional-tool tests."""
+"""Internal API, deterministic routing, and optional-tool tests."""
 
+import json
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, ToolMessage
 from pydantic import SecretStr
 
 from src.api import create_app
 from src.config import APP_ROOT, Settings
+from src.demo_policy import DEMO_PROMPT
 from src.tools import get_tools
 
 THREAD_ID = "00000000-0000-4000-8000-000000000001"
@@ -20,6 +22,35 @@ class FakeAgent:
         self, values: dict[str, object], config: dict[str, object]
     ) -> dict[str, object]:
         return {"messages": [*values["messages"], AIMessage(content="Local answer")]}
+
+
+class DemoAgent:
+    """Mock a correctly routed knowledge turn without an external model."""
+
+    async def ainvoke(
+        self, values: dict[str, object], config: dict[str, object]
+    ) -> dict[str, object]:
+        source = {
+            "id": "K0123456789ab",
+            "type": "knowledge",
+            "title": "desecration-abyss — deterministic scope",
+            "url": None,
+        }
+        answer = (
+            "Omen of Light targets a Desecrated modifier, while Omen of Sinistral "
+            "Annulment limits removal to a prefix modifier. The tooltip cannot prove "
+            "the exact Time-Lost over-cap interaction. "
+            "[K0123456789ab]"
+        )
+        tool = ToolMessage(
+            content=json.dumps({"sources": [source]}),
+            name="retrieve_knowledge",
+            tool_call_id="demo-tool-call",
+        )
+        return {
+            "messages": [*values["messages"], tool, AIMessage(content=answer)],
+            "required_tools": ["retrieve_knowledge"],
+        }
 
 
 def test_blank_optional_keys_are_not_configured() -> None:
@@ -35,16 +66,21 @@ def test_blank_optional_keys_are_not_configured() -> None:
     assert settings.langsmith_api_key is None
 
 
-def test_internal_api_works_without_tavily(market_db: Path, tmp_path: Path) -> None:
+def test_internal_api_works_without_tavily(
+    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
+) -> None:
     settings = Settings(
         _env_file=None,
         openai_api_key=SecretStr("test-key"),
         tavily_api_key=None,
         configured_db_path=market_db,
         configured_checkpoint_path=tmp_path / "checkpoints.db",
+        configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
-    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: FakeAgent())
+    app = create_app(
+        settings=settings, agent_factory=lambda _cp, _settings: FakeAgent()
+    )
 
     with TestClient(app) as client:
         health = client.get("/health")
@@ -52,7 +88,8 @@ def test_internal_api_works_without_tavily(market_db: Path, tmp_path: Path) -> N
 
     assert health.status_code == 200
     assert health.json()["status"] == "ok"
-    assert health.json()["model_ready"] is True
+    assert health.json()["model_configured"] is True
+    assert health.json()["item_data_ready"] is True
     assert health.json()["web_search_ready"] is False
     assert chat.status_code == 200
     assert "Local answer" in chat.json()["answer"]
@@ -60,21 +97,71 @@ def test_internal_api_works_without_tavily(market_db: Path, tmp_path: Path) -> N
 
 
 def test_chat_without_openai_key_returns_actionable_503(
-    market_db: Path, tmp_path: Path
+    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
 ) -> None:
     settings = Settings(
         _env_file=None,
         openai_api_key=None,
         configured_db_path=market_db,
         configured_checkpoint_path=tmp_path / "checkpoints.db",
+        configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
-    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: FakeAgent())
+    app = create_app(
+        settings=settings, agent_factory=lambda _cp, _settings: FakeAgent()
+    )
 
     with TestClient(app) as client:
-        response = client.post(
-            "/chat", json={"message": "Hi", "thread_id": THREAD_ID}
-        )
+        response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
 
     assert response.status_code == 503
     assert "OPENAI_API_KEY" in response.json()["detail"]
+
+
+def test_health_is_degraded_without_item_catalog(
+    market_db: Path, tmp_path: Path
+) -> None:
+    settings = Settings(
+        _env_file=None,
+        openai_api_key=SecretStr("test-key"),
+        configured_db_path=market_db,
+        configured_checkpoint_path=tmp_path / "checkpoints.db",
+        configured_item_catalog_path=tmp_path / "missing-manifest.json",
+        corpus_dir=APP_ROOT,
+    )
+    app = create_app(
+        settings=settings, agent_factory=lambda _cp, _settings: FakeAgent()
+    )
+
+    with TestClient(app) as client:
+        health = client.get("/health")
+
+    assert health.status_code == 200
+    assert health.json()["status"] == "degraded"
+    assert health.json()["item_data_ready"] is False
+
+
+def test_demo_prompt_enforces_mocked_tool_source_and_disclaimer(
+    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
+) -> None:
+    settings = Settings(
+        _env_file=None,
+        openai_api_key=SecretStr("test-key"),
+        configured_db_path=market_db,
+        configured_checkpoint_path=tmp_path / "checkpoints.db",
+        configured_item_catalog_path=item_catalog_manifest,
+        corpus_dir=APP_ROOT,
+    )
+    app = create_app(settings=settings, agent_factory=lambda _cp, _s: DemoAgent())
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat", json={"message": DEMO_PROMPT, "thread_id": THREAD_ID}
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["tools_used"] == ["retrieve_knowledge"]
+    assert payload["processors_used"] == []
+    assert payload["sources"][0]["type"] == "knowledge"
+    assert "Verify prices in-game" in payload["answer"]

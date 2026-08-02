@@ -1,27 +1,21 @@
 # Caddy reverse proxy for PoE2 Flip Assistant.
 # Caddy terminates TLS and proxies to the Next.js server on 127.0.0.1:3000.
 #
-# SITE_ADDRESS is read from the environment (set it in /etc/default/caddy or the systemd
-# drop-in). Pick ONE of the two modes below by what you set SITE_ADDRESS to:
-#
-#   A) DOMAIN (recommended — real, trusted HTTPS via Let's Encrypt, no browser warning):
-#        SITE_ADDRESS=flip.example.com
-#      Point an A record at the server IP first. Caddy auto-provisions the cert.
-#
-#   B) IP ONLY (early testing — encrypted but self-signed, browser shows a one-time warning):
-#        SITE_ADDRESS=https://46.225.228.108
-#      Requires the `tls internal` line below (uncomment it).
+# SITE_ADDRESS must be a public DNS name. Caddy's default Automatic HTTPS obtains and renews a
+# publicly trusted certificate. IP/internal-CA testing has a separate Caddyfile.ip-test so it
+# cannot be enabled accidentally in production.
 
 {$SITE_ADDRESS} {
 	encode gzip
 	reverse_proxy 127.0.0.1:3000
-
-	# Uncomment ONLY for mode B (IP, self-signed). Leave commented for a real domain.
-	# tls internal
 
 	# POESESSID cookies pass through here — keep proxy local-only (localhost), never expose :3000.
 	header {
 		Strict-Transport-Security "max-age=31536000;"
 		X-Content-Type-Options "nosniff"
 	}
+}
+
+www.{$SITE_ADDRESS} {
+	redir https://{$SITE_ADDRESS}{uri} permanent
 }

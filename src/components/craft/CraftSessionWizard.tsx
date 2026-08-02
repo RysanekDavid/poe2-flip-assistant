@@ -29,7 +29,8 @@ export function loadSavedSession(): Saved | null {
   try {
     const raw = localStorage.getItem(LS_KEY);
     return raw ? (JSON.parse(raw) as Saved) : null;
-  } catch {
+  } catch (error: unknown) {
+    console.error("[craft-session] saved session is invalid", error);
     return null;
   }
 }
@@ -77,17 +78,25 @@ export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number
     setScreen({ kind: "shop" }); // inline: a finished/abandoned session resets to the shopping list
   };
 
-  const start = (): void => {
+  const start = async (): Promise<void> => {
     // Log the attempt at today's scanned costs so P&L reflects what this run actually cost.
-    fetch("/api/craft/attempts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recipeKey: r.key, prefill: true }),
-    })
-      .then((res) => res.json() as Promise<{ id?: number }>)
-      .then((d) => setAttemptId(d.id ?? null))
-      .catch(() => setAttemptId(null));
-    setScreen({ kind: "step", idx: 0, failed: false });
+    setMsg(null);
+    try {
+      const response = await fetch("/api/craft/attempts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeKey: r.key, prefill: true }),
+      });
+      const result = (await response.json()) as { id?: number; error?: string };
+      if (!response.ok || result.id == null) {
+        throw new Error(result.error ?? `attempt log failed (${response.status})`);
+      }
+      setAttemptId(result.id);
+      setScreen({ kind: "step", idx: 0, failed: false });
+    } catch (error: unknown) {
+      setAttemptId(null);
+      setMsg(`⚠ ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   const saveOutcome = (brick: boolean): void => {
@@ -101,7 +110,13 @@ export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: attemptId, outcome: brick ? "brick" : "hit", soldDiv }),
     })
-      .then(() => finish("close"))
+      .then(async (response) => {
+        if (!response.ok) {
+          const result = (await response.json()) as { error?: string };
+          throw new Error(result.error ?? `outcome save failed (${response.status})`);
+        }
+        finish("close");
+      })
       .catch((e: unknown) => setMsg(`⚠ ${e instanceof Error ? e.message : String(e)}`));
   };
 
@@ -227,7 +242,7 @@ export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number
                   {/* the button tells you where you are: gathering → ready. Always clickable — an
                       expert who has everything in the stash shouldn't be forced to tick boxes. */}
                   <button
-                    onClick={start}
+                    onClick={() => void start()}
                     className={`w-full rounded-md px-3 py-2.5 text-sm font-semibold text-white transition ${
                       allBought
                         ? "animate-pulse bg-emerald-600 hover:animate-none hover:bg-emerald-500"

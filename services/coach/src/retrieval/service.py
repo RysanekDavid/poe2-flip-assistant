@@ -36,10 +36,10 @@ class RetrievalService:
 
     @property
     def ready(self) -> bool:
-        """Validate that the corpus can be parsed without calling external services."""
+        """Build and validate the local lexical index without external services."""
         try:
             with self._lock:
-                self._load_documents_unlocked()
+                self._ensure_local_index_unlocked()
             return True
         except (OSError, RuntimeError, ValueError):
             return False
@@ -67,7 +67,7 @@ class RetrievalService:
         with self._lock:
             if self._dense is not None:
                 return
-            documents = self._load_documents_unlocked()
+            documents = self._ensure_local_index_unlocked()
             embeddings = OpenAIEmbeddings(
                 model=self._settings.embedding_model,
                 api_key=self._settings.require_openai_key(),
@@ -79,7 +79,18 @@ class RetrievalService:
                 collection_name=self._settings.qdrant_collection,
                 retrieval_mode=RetrievalMode.DENSE,
             )
+
+    def _ensure_local_index_unlocked(self) -> list[Document]:
+        documents = self._load_documents_unlocked()
+        evidence_ids = [_evidence_key(document) for document in documents]
+        chunk_ids = [str(document.metadata.get("chunk_id", "")) for document in documents]
+        if not evidence_ids or not all(evidence_ids) or not all(chunk_ids):
+            raise RuntimeError("Knowledge corpus has missing evidence or chunk IDs")
+        if len(chunk_ids) != len(set(chunk_ids)):
+            raise RuntimeError("Knowledge corpus has duplicate chunk IDs")
+        if self._bm25 is None:
             self._bm25 = BM25Okapi([_tokens(doc.page_content) for doc in documents])
+        return documents
 
     def _load_documents_unlocked(self) -> list[Document]:
         if self._documents is None:

@@ -98,11 +98,12 @@ restore_unit() {
 env_path() {
   local key=$1
   local fallback=$2
+  local env_file=${3:-$APP_DIR/.env.local}
   run_in_release node -e '
 const path = require("node:path");
 require("dotenv").config({ path: process.argv[1] });
 process.stdout.write(path.resolve(process.env[process.argv[2]] || process.argv[3]));
-' "$APP_DIR/.env.local" "$key" "$fallback"
+' "$env_file" "$key" "$fallback"
 }
 
 was_active() {
@@ -194,7 +195,7 @@ rollback() {
   exit "$status"
 }
 
-for command in curl df git mv node npm sqlite3 systemctl tar; do
+for command in curl date df git mv node npm sqlite3 stat systemctl tar; do
   require_command "$command"
 done
 if [[ ! -x /usr/local/bin/uv ]]; then
@@ -207,12 +208,30 @@ if [[ ! -f .env.local ]]; then
   echo "missing $APP_DIR/.env.local" >&2
   exit 1
 fi
-for key in AUTH_SECRET SECRET_KEY OPENAI_API_KEY COACH_THREAD_SECRET; do
+if [[ ! -f .coach.env ]]; then
+  echo "missing $APP_DIR/.coach.env" >&2
+  exit 1
+fi
+if [[ $(stat -c '%a' .env.local) != 600 ]]; then
+  echo "$APP_DIR/.env.local must have mode 600" >&2
+  exit 1
+fi
+for key in AUTH_SECRET SECRET_KEY COACH_THREAD_SECRET; do
   if ! grep -Eq "^${key}=.+$" .env.local; then
     echo "missing required value for $key in $APP_DIR/.env.local" >&2
     exit 1
   fi
 done
+for key in OPENAI_API_KEY POE_DB_PATH COACH_CHECKPOINT_DB_PATH POE2_DATA_MANIFEST; do
+  if ! grep -Eq "^${key}=.+$" .coach.env; then
+    echo "missing required value for $key in $APP_DIR/.coach.env" >&2
+    exit 1
+  fi
+done
+if [[ $(stat -c '%a' .coach.env) != 600 ]]; then
+  echo "$APP_DIR/.coach.env must have mode 600" >&2
+  exit 1
+fi
 git_status=$(git status --porcelain)
 dirty=$(printf '%s\n' "$git_status" | grep -Ev '^\?\? (\.cache/|\.npm/|backups/|releases/|current$|\.current-|\.deployed-revision$)' || true)
 if [[ -n "$dirty" ]]; then
@@ -249,6 +268,8 @@ install -d -o "$APP_USER" -g "$APP_USER" -m 0750 "$APP_DIR/releases" "$RELEASE_D
 install -d -o "$APP_USER" -g "$APP_USER" -m 0700 "$APP_DIR/data" "$APP_DIR/backups"
 install -d -o "$APP_USER" -g "$APP_USER" -m 0750 "$APP_DIR/.cache/uv" "$APP_DIR/.cache/uv-python"
 git archive "$TARGET_SHA" | tar -x -C "$RELEASE_DIR"
+printf 'APP_COMMIT_SHA=%s\n' "${TARGET_SHA:0:12}" > "$RELEASE_DIR/.release.env"
+chmod 0644 "$RELEASE_DIR/.release.env"
 ln -s "$APP_DIR/.env.local" "$RELEASE_DIR/.env.local"
 ln -s "$APP_DIR/data" "$RELEASE_DIR/data"
 chown -R "$APP_USER":"$APP_USER" "$RELEASE_DIR" "$APP_DIR/.cache"
@@ -259,10 +280,11 @@ run_in_release env \
   UV_CACHE_DIR="$APP_DIR/.cache/uv" \
   UV_PYTHON_INSTALL_DIR="$APP_DIR/.cache/uv-python" \
   /usr/local/bin/uv sync --locked --no-dev --python 3.13 --project "$RELEASE_DIR/services/coach"
+run_in_release npm run verify:poe2-data
 run_in_release npm run build
 
 PRODUCT_DB=$(env_path DB_PATH "$RELEASE_DIR/data/poe2flip.db")
-CHECKPOINT_DB=$(env_path COACH_CHECKPOINT_DB_PATH "$RELEASE_DIR/data/coach-checkpoints.db")
+CHECKPOINT_DB=$(env_path COACH_CHECKPOINT_DB_PATH "$RELEASE_DIR/data/coach-checkpoints.db" "$APP_DIR/.coach.env")
 [[ -f "$PRODUCT_DB" ]] && PRODUCT_EXISTED=1
 [[ -f "$CHECKPOINT_DB" ]] && CHECKPOINT_EXISTED=1
 if [[ ! -f "$PRODUCT_DB" ]] && ! grep -Eq '^OWNER_PASSWORD=.+$' "$APP_DIR/.env.local"; then
@@ -319,7 +341,7 @@ let body = "";
 process.stdin.on("data", chunk => body += chunk);
 process.stdin.on("end", () => {
   const health = JSON.parse(body);
-  if (health.status !== "ok" || !health.market_ready || !health.knowledge_ready || !health.model_ready) {
+  if (health.status !== "ok" || !health.market_ready || !health.knowledge_ready || !health.model_configured) {
     console.error("Coach health is degraded", health);
     process.exit(1);
   }
@@ -341,17 +363,50 @@ process.stdin.on("end", () => {
   const health = JSON.parse(body);
   if (health.status !== "ok") process.exit(1);
 });'
-curl --fail --silent --max-time 120 \
+curl --fail --silent --max-time 10 \
+  --cookie "poe2flip_session=$SESSION_TOKEN" \
+  http://127.0.0.1:3000/api/health | node -e '
+let body = "";
+process.stdin.on("data", chunk => body += chunk);
+process.stdin.on("end", () => {
+  const expected = process.argv[1];
+  const health = JSON.parse(body);
+  if (health.build !== expected) {
+    console.error(`deployed build mismatch: expected ${expected}, received ${health.build}`);
+    process.exit(1);
+  }
+});' "${TARGET_SHA:0:12}"
+CHAT_STARTED_MS=$(date +%s%3N)
+CHAT_RESPONSE=$(curl --fail --silent --max-time 120 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
   --header 'Content-Type: application/json' \
-  --data "{\"message\":\"According to the verified knowledge base, what drops Omen of Light? Answer briefly.\",\"conversationId\":\"$CONVERSATION_ID\"}" \
-  http://127.0.0.1:3000/api/coach/chat | node -e '
+  --data "{\"message\":\"On a desecrated Time-Lost jewel, when should I use Omen of Light versus Omen of Sinistral Annulment? Use only verified knowledge-base evidence; do not discuss drop sources or current prices.\",\"conversationId\":\"$CONVERSATION_ID\"}" \
+  http://127.0.0.1:3000/api/coach/chat)
+CHAT_ELAPSED_MS=$(($(date +%s%3N) - CHAT_STARTED_MS))
+printf '%s' "$CHAT_RESPONSE" | node -e '
 let body = "";
 process.stdin.on("data", chunk => body += chunk);
 process.stdin.on("end", () => {
   const response = JSON.parse(body);
-  if (typeof response.answer !== "string" || response.answer.length === 0) process.exit(1);
-});'
+  const answer = typeof response.answer === "string" ? response.answer : "";
+  const lowered = answer.toLowerCase();
+  const terms = ["omen of light", "desecrated modifier", "omen of sinistral annulment", "prefix modifier", "cannot", "time-lost"];
+  const sources = Array.isArray(response.sources) ? response.sources : [];
+  const exactTools = JSON.stringify(response.toolsUsed) === JSON.stringify(["retrieve_knowledge"]);
+  const exactSources = sources.length > 0 && sources.every(source => source.type === "knowledge" && /desecration-abyss/i.test(source.title) && /deterministic scope/i.test(source.title));
+  const cited = sources.some(source => answer.includes(`[${source.id}]`));
+  const processors = Array.isArray(response.processorsUsed) && response.processorsUsed.length === 0;
+  const forbidden = ["drop source", "drops from", "current price"].some(term => lowered.includes(term));
+  const associations = [
+    /omen of light(?:(?!omen of sinistral annulment)[\s\S]){0,200}desecrated modifier/i,
+    /omen of sinistral annulment(?:(?!omen of light)[\s\S]){0,200}prefix modifier/i,
+  ];
+  if (!exactTools || !exactSources || !cited || !processors || forbidden || !terms.every(term => lowered.includes(term)) || !associations.every(pattern => pattern.test(answer)) || !answer.includes("Verify prices in-game before trading.")) {
+    console.error("Coach demo contract failed");
+    process.exit(1);
+  }
+});' "$CHAT_ELAPSED_MS"
+echo "Coach demo latency: ${CHAT_ELAPSED_MS}ms"
 
 echo "==> starting poller"
 systemctl start poe2flip-poller

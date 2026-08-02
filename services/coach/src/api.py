@@ -12,11 +12,14 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from src.agent import build_agent
 from src.config import Settings, get_settings
+from src.demo_policy import validate_demo_answer, validate_required_tools
 from src.guardrails import inspect_input
+from src.items import catalog_ready
+from src.items.models import ItemInspection
 from src.rate_limit import RateLimitExceeded, SlidingWindowRateLimiter
 from src.response import citations_are_valid, final_answer, turn_trace
 from src.retrieval import RetrievalService
-from src.schemas import ChatRequest, ChatResponse, HealthResponse
+from src.schemas import ChatRequest, ChatResponse, EvidenceSource, HealthResponse
 from src.tools.market import market_ready
 
 logger = logging.getLogger(__name__)
@@ -36,7 +39,9 @@ AgentFactory = Callable[[object, Settings], AgentRunner]
 class AgentProvider:
     """Lazily create one graph while keeping the checkpointer long-lived."""
 
-    def __init__(self, checkpointer: object, settings: Settings, factory: AgentFactory) -> None:
+    def __init__(
+        self, checkpointer: object, settings: Settings, factory: AgentFactory
+    ) -> None:
         self._checkpointer = checkpointer
         self._settings = settings
         self._factory = factory
@@ -86,7 +91,9 @@ def _lifespan(
         async with AsyncSqliteSaver.from_conn_string(
             str(settings.checkpoint_db_path)
         ) as checkpointer:
-            app.state.agent_provider = AgentProvider(checkpointer, settings, agent_factory)
+            app.state.agent_provider = AgentProvider(
+                checkpointer, settings, agent_factory
+            )
             yield
 
     return lifespan
@@ -118,12 +125,18 @@ def _register_routes(
 def _health_response(settings: Settings, retrieval: RetrievalService) -> HealthResponse:
     market_is_ready = market_ready(settings.poe_db_path)
     knowledge_ready = retrieval.ready
+    item_data_ready = catalog_ready(settings.item_catalog_path)
     configured = settings.openai_api_key is not None
     return HealthResponse(
-        status="ok" if market_is_ready and knowledge_ready and configured else "degraded",
+        status=(
+            "ok"
+            if market_is_ready and knowledge_ready and item_data_ready and configured
+            else "degraded"
+        ),
         market_ready=market_is_ready,
         knowledge_ready=knowledge_ready,
-        model_ready=configured,
+        item_data_ready=item_data_ready,
+        model_configured=configured,
         web_search_ready=settings.tavily_api_key is not None,
         model=settings.chat_model,
     )
@@ -140,13 +153,15 @@ async def _chat_response(
         raise HTTPException(
             status_code=503,
             detail=(
-                "Coach needs OPENAI_API_KEY in the root .env.local; "
-                "restart npm run dev after adding it."
+                "Coach needs OPENAI_API_KEY in its isolated process environment; "
+                "restart the Coach service after configuring it."
             ),
         )
     decision = inspect_input(payload.message)
     if not decision.allowed:
-        raise HTTPException(status_code=400, detail=decision.reason or "Request blocked")
+        raise HTTPException(
+            status_code=400, detail=decision.reason or "Request blocked"
+        )
     provider: AgentProvider = request.app.state.agent_provider
     try:
         agent = await provider.get()
@@ -159,20 +174,26 @@ async def _chat_response(
         )
         messages = _validated_messages(result)
         tools, sources = turn_trace(messages)
+        processors: list[str] = []
+        validate_required_tools(result.get("required_tools"), tools)
+        _merge_item_inspection(result, processors, sources)
         answer = final_answer(messages)
         if not citations_are_valid(answer, sources):
             await provider.delete_thread(str(payload.thread_id))
             raise RuntimeError("Agent returned an ungrounded citation set")
+        validate_demo_answer(payload.message, answer, sources)
         return ChatResponse(
             thread_id=payload.thread_id,
             answer=answer,
             tools_used=tools,
+            processors_used=processors,
             sources=sources,
         )
     except (FileNotFoundError, LookupError, RuntimeError, ValueError) as error:
         logger.exception("Chat request failed")
         raise HTTPException(
-            status_code=503, detail="Chat service is temporarily unavailable; check server logs."
+            status_code=503,
+            detail="Chat service is temporarily unavailable; check server logs.",
         ) from error
     except Exception as error:
         logger.exception("Unexpected chat failure")
@@ -189,6 +210,29 @@ def _validated_messages(result: dict[str, object]) -> list[BaseMessage]:
     if len(messages) != len(raw_messages):
         raise RuntimeError("Agent returned an invalid message entry")
     return messages
+
+
+def _merge_item_inspection(
+    result: dict[str, object], processors: list[str], sources: list[EvidenceSource]
+) -> None:
+    raw = result.get("item_inspection")
+    if raw is None:
+        return
+    inspection = ItemInspection.model_validate(raw)
+    if not inspection.evidence_id or not inspection.base_name:
+        return
+    processor = "deterministic_item_inspection"
+    if processor not in processors:
+        processors.append(processor)
+    source = {
+        "id": inspection.evidence_id,
+        "type": "game_data",
+        "title": f"RePoE {inspection.catalog_version} — {inspection.base_name}",
+        "url": "https://repoe-fork.github.io/poe2/",
+    }
+    validated = EvidenceSource.model_validate(source)
+    if all(getattr(existing, "id", None) != validated.id for existing in sources):
+        sources.append(validated)
 
 
 app = create_app()

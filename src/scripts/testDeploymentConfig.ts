@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const read = (path: string): string => readFileSync(path, "utf8");
+const caddy = read("deploy/Caddyfile");
+const ipTest = read("deploy/Caddyfile.ip-test");
+const webUnit = read("deploy/poe2flip-web.service");
+const coachUnit = read("deploy/poe2flip-coach.service");
+const deploy = read("deploy/deploy.sh");
+
+assert.match(caddy, /\{\$SITE_ADDRESS\}/);
+assert.match(caddy, /reverse_proxy 127\.0\.0\.1:3000/);
+assert.match(caddy, /www\.\{\$SITE_ADDRESS\}/);
+assert.match(caddy, /redir https:\/\/\{\$SITE_ADDRESS\}\{uri\} permanent/);
+assert.doesNotMatch(caddy, /tls internal|0\.0\.0\.0/);
+assert.match(ipTest, /tls internal/);
+assert.match(webUnit, /EnvironmentFile=\/opt\/poe2flip\/current\/\.release\.env/);
+assert.match(webUnit, /--hostname 127\.0\.0\.1/);
+assert.match(coachUnit, /--host 127\.0\.0\.1/);
+assert.match(coachUnit, /EnvironmentFile=\/opt\/poe2flip\/\.coach\.env/);
+assert.doesNotMatch(coachUnit, /EnvironmentFile=.*\.env\.local/);
+assert.match(coachUnit, /InaccessiblePaths=.*\.env\.local/);
+assert.match(deploy, /APP_COMMIT_SHA=%s/);
+assert.match(deploy, /health\.build !== expected/);
+assert.match(deploy, /"\$\{TARGET_SHA:0:12\}"/);
+assert.match(deploy, /npm run verify:poe2-data/);
+assert.match(deploy, /\.env\.local must have mode 600/);
+assert.match(deploy, /Omen of Sinistral Annulment/);
+
+console.log("ALL PASS — domain TLS, loopback services, and deployment provenance");

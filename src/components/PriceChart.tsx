@@ -77,17 +77,24 @@ function pickSeries(db: Plot[], spark: Plot[]): { series: Plot[]; source: "track
 export function PriceChart({ itemId, itemName }: { itemId: string; itemName: string }) {
   const [data, setData] = useState<ChartResp | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [window, setWindow] = useState<WindowId>("7d");
 
   useEffect(() => {
     if (!itemId) return;
     let alive = true;
     setLoading(true);
+    setError(null);
     setData(null); // drop the previous item's series so its chart doesn't flash under the new title
     fetch(`/api/prices?item=${encodeURIComponent(itemId)}`)
-      .then((r) => r.json())
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`price history failed (${response.status})`);
+        return (await response.json()) as ChartResp;
+      })
       .then((d: ChartResp) => alive && setData(d))
-      .catch(() => alive && setData(null))
+      .catch((reason: unknown) => {
+        if (alive) setError(String(reason));
+      })
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
@@ -133,6 +140,7 @@ export function PriceChart({ itemId, itemName }: { itemId: string; itemName: str
           </div>
         </div>
       </header>
+      {error && <p role="alert" className="mb-2 text-sm text-bad">error: {error}</p>}
 
       {loading ? (
         <div className="flex min-h-[240px] flex-1 flex-col items-center justify-center gap-3 py-12">

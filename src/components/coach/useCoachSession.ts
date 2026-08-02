@@ -9,6 +9,7 @@ export interface CoachMessage {
   role: "user" | "assistant";
   content: string;
   toolsUsed: string[];
+  processorsUsed: string[];
   sources: CoachSource[];
 }
 
@@ -40,6 +41,7 @@ export function useCoachSession() {
         {
           ...chatMessage("assistant", response.answer),
           toolsUsed: response.toolsUsed,
+          processorsUsed: response.processorsUsed,
           sources: response.sources,
         },
       ]);
@@ -63,7 +65,9 @@ export function useCoachSession() {
 }
 
 function chatMessage(role: CoachMessage["role"], content: string): CoachMessage {
-  return { id: crypto.randomUUID(), role, content, toolsUsed: [], sources: [] };
+  return {
+    id: crypto.randomUUID(), role, content, toolsUsed: [], processorsUsed: [], sources: [],
+  };
 }
 
 function errorMessage(error: unknown): string {

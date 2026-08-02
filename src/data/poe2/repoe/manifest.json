@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "payload_schema_version": 1,
+  "repoe_version": "4.5.4.7",
+  "synced_at": "2026-07-30T13:10:43.123Z",
+  "upstream": "https://repoe-fork.github.io/poe2",
+  "artifact": "catalog-75a23d387f288921.json.gz",
+  "artifact_bytes": 4961595,
+  "artifact_sha256": "75a23d387f288921061a4ec1feda80ed9c1858de551daa1b9de2b674559161c8",
+  "source_count": 24,
+  "sources": {
+    "active_skill_types": {
+      "url": "https://repoe-fork.github.io/poe2/active_skill_types.min.json",
+      "bytes": 5414,
+      "records": 290,
+      "sha256": "ac7fb31001944b930fb9e0f472ea20a1653a12f95165ad0e246380b73a655f2e"
+    },
+    "ascendancies": {
+      "url": "https://repoe-fork.github.io/poe2/ascendancies.min.json",
+      "bytes": 4076621,
+      "records": 37,
+      "sha256": "f8650e52b1edfebbe6436e0290b2cb6d4b38a57708839ba342e911d7f2b1bf7a"
+    },
+    "audio": {
+      "url": "https://repoe-fork.github.io/poe2/audio.min.json",
+      "bytes": 12150368,
+      "records": 41421,
+      "sha256": "687dfa9d3bb8ef8bb25e603acf85aead5d7129c408130a14631386af0173112d"
+    },
+    "augments": {
+      "url": "https://repoe-fork.github.io/poe2/augments.min.json",
+      "bytes": 200284,
+      "records": 295,
+      "sha256": "306a664565933a4a113a18b376994adc348fc27c8264789d692d2ad47eb2ce10"
+    },
+    "base_items": {
+      "url": "https://repoe-fork.github.io/poe2/base_items.min.json",
+      "bytes": 2971423,
+      "records": 5246,
+      "sha256": "046299aeb60b69b004c69bb452b3f69b4abc6089960162eec9736effaa4a0584"
+    },
+    "buff_visuals": {
+      "url": "https://repoe-fork.github.io/poe2/buff_visuals.min.json",
+      "bytes": 558170,
+      "records": 2858,
+      "sha256": "c1379ecea2da77fe490464fbafa92f064bc03a15afef6cfaedcdd9f6e465891c"
+    },
+    "buffs": {
+      "url": "https://repoe-fork.github.io/poe2/buffs.min.json",
+      "bytes": 847865,
+      "records": 3217,
+      "sha256": "0c692d9c016fece3d7104f5e8b33c9a41340b32617ce18050b77b300ced1625b"
+    },
+    "characters": {
+      "url": "https://repoe-fork.github.io/poe2/characters.min.json",
+      "bytes": 5600,
+      "records": 12,
+      "sha256": "4d198f5ac6d1077d5a2d46626d9efc88007e3d31102a113141f04f90ed4ca28d"
+    },
+    "cost_types": {
+      "url": "https://repoe-fork.github.io/poe2/cost_types.min.json",
+      "bytes": 1426,
+      "records": 18,
+      "sha256": "d3b1d7d901e038fb2813e20d1fc4419c0a9f8814c81202767caec94b699d8751"
+    },
+    "default_monster_stats": {
+      "url": "https://repoe-fork.github.io/poe2/default_monster_stats.min.json",
+      "bytes": 13270,
+      "records": 100,
+      "sha256": "cc6a9b8c29b34ad1cc1dd122082a39f43ea7f711802a21751498a2494ac85ff2"
+    },
+    "flavour": {
+      "url": "https://repoe-fork.github.io/poe2/flavour.min.json",
+      "bytes": 420649,
+      "records": 3590,
+      "sha256": "641e62b99fc76d435893c0aa2bbe5e726210221b910d78dc74b65725b3ef605a"
+    },
+    "gem_tags": {
+      "url": "https://repoe-fork.github.io/poe2/gem_tags.min.json",
+      "bytes": 1442,
+      "records": 67,
+      "sha256": "2f64de8d35b9572a090577ec93674355c5701d6cf60b05de303d235f870c98f7"
+    },
+    "item_classes": {
+      "url": "https://repoe-fork.github.io/poe2/item_classes.min.json",
+      "bytes": 8668,
+      "records": 117,
+      "sha256": "184de04b0414c3648fa9bdc09d53598e5c9d2193804ffa47a368a13d1450be6e"
+    },
+    "keywords": {
+      "url": "https://repoe-fork.github.io/poe2/keywords.min.json",
+      "bytes": 237338,
+      "records": 1026,
+      "sha256": "51ec50d5959caafe00240d60bfdd9299ec10394f9a23088594a9bb1c9844d67a"
+    },
+    "mods": {
+      "url": "https://repoe-fork.github.io/poe2/mods.min.json",
+      "bytes": 8655621,
+      "records": 16678,
+      "sha256": "905888352409dd32b4b0875287b7c1083ed149a962104fa3f909996ab5564226"
+    },
+    "mods_by_base": {
+      "url": "https://repoe-fork.github.io/poe2/mods_by_base.min.json",
+      "bytes": 3315766,
+      "records": 74,
+      "sha256": "6b7eaf9783ed07e5225fb9a5310f6455f4208f61908ad1ff3440ee13d031ff17"
+    },
+    "skill_gems": {
+      "url": "https://repoe-fork.github.io/poe2/skill_gems.min.json",
+      "bytes": 961093,
+      "records": 1191,
+      "sha256": "cac0cfc6f1b038d57237261689a909b60aab7f0d53c485ae875dc3d5e3efdac2"
+    },
+    "skills": {
+      "url": "https://repoe-fork.github.io/poe2/skills.min.json",
+      "bytes": 14380617,
+      "records": 8347,
+      "sha256": "83b3dda5f1fc8640ab1673776bdd3e32d5cfed6c656f0bc7c866dd81527a736f"
+    },
+    "stat_value_handlers": {
+      "url": "https://repoe-fork.github.io/poe2/stat_value_handlers.min.json",
+      "bytes": 289410,
+      "records": 74,
+      "sha256": "f72b26caa3fefbbf508305079ed7a809ec036b2356b470abd3175f4843f2416f"
+    },
+    "stats_by_file": {
+      "url": "https://repoe-fork.github.io/poe2/stats_by_file.min.json",
+      "bytes": 9513714,
+      "records": 26112,
+      "sha256": "b2ca579c468a214337118e3d72a977ee4ef9bdf9ceeed133351e276e75bbf987"
+    },
+    "tag_details": {
+      "url": "https://repoe-fork.github.io/poe2/tag_details.min.json",
+      "bytes": 73895,
+      "records": 1327,
+      "sha256": "7125dc8e92b9e140faca27f3e7040a4cf0d3eb5bcf37eb17c0717ce667820944"
+    },
+    "tags": {
+      "url": "https://repoe-fork.github.io/poe2/tags.min.json",
+      "bytes": 24667,
+      "records": 1327,
+      "sha256": "3718514164e26d06ac32d339c60ab8848308baba6509d48ecca068b373aaab7a"
+    },
+    "uniques": {
+      "url": "https://repoe-fork.github.io/poe2/uniques.min.json",
+      "bytes": 114983,
+      "records": 449,
+      "sha256": "66b7ef63b533f79eb315e979dc30aa643b205dd82a7625f00d419e73ec0ddfd6"
+    },
+    "world_areas": {
+      "url": "https://repoe-fork.github.io/poe2/world_areas.min.json",
+      "bytes": 1079713,
+      "records": 444,
+      "sha256": "296bef1f7ee34852d1c1b91ba8e32b8c2930992292e9ed6c6aca0c5cfade46d1"
+    }
+  }
+}
