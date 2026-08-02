@@ -20,6 +20,7 @@ _REQUIRED_COLUMNS = {
     "volume",
     "fetched_at",
 }
+_HEARTBEAT_COLUMNS = {"item_id", "updated_at"}
 _READINESS_MAX_AGE = timedelta(minutes=30)
 
 
@@ -56,7 +57,7 @@ def current_market_values(items: list[str]) -> tuple[list[dict[str, object]], st
 
 
 def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bool:
-    """Validate schema and require a recent public currency observation."""
+    """Validate schema and require a recent successful local market refresh cycle."""
     target = path or get_settings().poe_db_path
     if not target.is_file():
         return False
@@ -70,14 +71,30 @@ def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bo
             }
             if not columns >= _REQUIRED_COLUMNS:
                 return False
+            heartbeat_columns = {
+                str(row["name"])
+                for row in connection.execute(
+                    "PRAGMA table_info(item_spark)"
+                ).fetchall()
+            }
+            if not heartbeat_columns >= _HEARTBEAT_COLUMNS:
+                return False
             row = connection.execute(
-                """SELECT item_id, chaos_equiv, fetched_at FROM price_snapshots
-                WHERE category = 'Currency' ORDER BY datetime(fetched_at) DESC LIMIT 1"""
+                """SELECT snapshot.item_id, snapshot.chaos_equiv, spark.updated_at
+                FROM price_snapshots AS snapshot
+                JOIN (
+                    SELECT item_id, MAX(id) AS max_id
+                    FROM price_snapshots
+                    WHERE category = 'Currency'
+                    GROUP BY item_id
+                ) AS latest ON latest.max_id = snapshot.id
+                JOIN item_spark AS spark ON spark.item_id = snapshot.item_id
+                WHERE snapshot.category = 'Currency' AND snapshot.chaos_equiv > 0
+                ORDER BY datetime(spark.updated_at) DESC LIMIT 1"""
             ).fetchone()
             return (
                 row is not None
-                and float(row["chaos_equiv"]) > 0
-                and _is_fresh(str(row["fetched_at"]), now or datetime.now(UTC))
+                and _is_fresh(str(row["updated_at"]), now or datetime.now(UTC))
             )
     except (sqlite3.Error, TypeError, ValueError):
         return False

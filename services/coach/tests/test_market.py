@@ -32,9 +32,33 @@ def test_history_and_current_values_use_shared_database(
     assert market.market_ready(market_db)
 
 
-def test_market_readiness_rejects_stale_observations(market_db: Path) -> None:
+def test_market_readiness_accepts_fresh_poll_with_unchanged_prices(
+    market_db: Path,
+) -> None:
     stale = datetime.now(UTC) - timedelta(hours=1)
     with sqlite3.connect(market_db) as connection:
         connection.execute("UPDATE price_snapshots SET fetched_at = ?", (stale.isoformat(),))
+
+    assert market.market_ready(market_db) is True
+
+
+def test_market_readiness_ignores_zero_value_row_with_tied_heartbeat(
+    market_db: Path,
+) -> None:
+    latest = datetime.now(UTC).replace(microsecond=0).isoformat()
+    with sqlite3.connect(market_db) as connection:
+        connection.execute(
+            "INSERT INTO price_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (4, "zero", "Zero Value", "Currency", 0, 1, latest),
+        )
+        connection.execute("INSERT INTO item_spark VALUES (?, ?)", ("zero", latest))
+
+    assert market.market_ready(market_db) is True
+
+
+def test_market_readiness_rejects_stale_poll_heartbeat(market_db: Path) -> None:
+    stale = datetime.now(UTC) - timedelta(hours=1)
+    with sqlite3.connect(market_db) as connection:
+        connection.execute("UPDATE item_spark SET updated_at = ?", (stale.isoformat(),))
 
     assert market.market_ready(market_db) is False
