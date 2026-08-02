@@ -9,6 +9,7 @@ from typing import Protocol
 from fastapi import FastAPI, HTTPException, Request
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from openai import BadRequestError
 
 from src.agent import build_agent
 from src.config import Settings, get_settings
@@ -27,6 +28,7 @@ from src.schemas import ChatRequest, ChatResponse, EvidenceSource, HealthRespons
 from src.tools.market import market_ready
 
 logger = logging.getLogger(__name__)
+_MISSING_TOOL_OUTPUT = "No tool output found for function call"
 
 
 class AgentRunner(Protocol):
@@ -170,24 +172,20 @@ async def _chat_response(
                 "recursion_limit": settings.max_tool_iterations * 2 + 4,
             },
         )
-        messages = _validated_messages(result)
-        tools, sources = turn_trace(messages)
-        processors: list[str] = []
-        validate_required_tools(result.get("required_tools"), tools)
-        _merge_item_inspection(result, processors, sources)
-        model_answer = final_answer(messages)
-        answer = deterministic_demo_answer(payload.message, sources) or model_answer
-        if not citations_are_valid(answer, sources):
-            await provider.delete_thread(str(payload.thread_id))
-            raise RuntimeError("Agent returned an ungrounded citation set")
-        validate_demo_answer(payload.message, answer, sources)
-        return ChatResponse(
-            thread_id=payload.thread_id,
-            answer=answer,
-            tools_used=tools,
-            processors_used=processors,
-            sources=sources,
-        )
+        return await _completed_response(result, payload, provider)
+    except BadRequestError as error:
+        if await _reset_orphaned_tool_call(error, provider, str(payload.thread_id)):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Conversation state was reset after an invalid tool-call checkpoint. "
+                    "Send the message again."
+                ),
+            ) from error
+        logger.exception("OpenAI rejected the Coach request")
+        raise HTTPException(
+            status_code=502, detail="Agent execution failed; check server logs."
+        ) from error
     except (FileNotFoundError, LookupError, RuntimeError, ValueError) as error:
         logger.exception("Chat request failed")
         raise HTTPException(
@@ -199,6 +197,41 @@ async def _chat_response(
         raise HTTPException(
             status_code=502, detail="Agent execution failed; check server logs."
         ) from error
+
+
+async def _completed_response(
+    result: dict[str, object], payload: ChatRequest, provider: AgentProvider
+) -> ChatResponse:
+    """Validate one graph result and expose only grounded evidence."""
+    messages = _validated_messages(result)
+    tools, sources = turn_trace(messages)
+    processors: list[str] = []
+    validate_required_tools(result.get("required_tools"), tools)
+    _merge_item_inspection(result, processors, sources)
+    model_answer = final_answer(messages)
+    answer = deterministic_demo_answer(payload.message, sources) or model_answer
+    if not citations_are_valid(answer, sources):
+        await provider.delete_thread(str(payload.thread_id))
+        raise RuntimeError("Agent returned an ungrounded citation set")
+    validate_demo_answer(payload.message, answer, sources)
+    return ChatResponse(
+        thread_id=payload.thread_id,
+        answer=answer,
+        tools_used=tools,
+        processors_used=processors,
+        sources=sources,
+    )
+
+
+async def _reset_orphaned_tool_call(
+    error: BadRequestError, provider: AgentProvider, thread_id: str
+) -> bool:
+    """Discard only a checkpoint proven to contain an unmatched Responses tool call."""
+    if _MISSING_TOOL_OUTPUT not in str(error):
+        return False
+    logger.warning("Resetting thread after an orphaned Responses API tool call")
+    await provider.delete_thread(thread_id)
+    return True
 
 
 def _validated_messages(result: dict[str, object]) -> list[BaseMessage]:

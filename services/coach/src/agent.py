@@ -35,14 +35,7 @@ def build_agent(checkpointer: object, settings: Settings) -> CompiledStateGraph:
     """Compile the shallow guard → agent ⇄ tools graph."""
     tools = get_tools(settings)
     catalog = get_item_catalog(settings.item_catalog_path)
-    model = ChatOpenAI(
-        model=settings.chat_model,
-        api_key=settings.require_openai_key(),
-        use_responses_api=True,
-        output_version="responses/v1",
-        timeout=settings.request_timeout_seconds,
-        max_retries=2,
-    )
+    model = build_chat_model(settings)
     model_with_tools = model.bind_tools(tools, strict=True)
 
     guard = _guard_node(catalog)
@@ -59,6 +52,17 @@ def build_agent(checkpointer: object, settings: Settings) -> CompiledStateGraph:
     builder.add_conditional_edges("agent", tools_condition)
     builder.add_edge("tools", "agent")
     return builder.compile(checkpointer=checkpointer)
+
+
+def build_chat_model(settings: Settings) -> ChatOpenAI:
+    """Use stateless Chat Completions because LangGraph owns conversation state."""
+    return ChatOpenAI(
+        model=settings.chat_model,
+        api_key=settings.require_openai_key(),
+        use_responses_api=False,
+        timeout=settings.request_timeout_seconds,
+        max_retries=2,
+    )
 
 
 def _guard_node(catalog: ItemCatalog) -> AgentNode:

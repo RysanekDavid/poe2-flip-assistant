@@ -1,20 +1,32 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { parseCoachMarkdown, parseInline } from "../components/coach/markdownParser";
 import { coachBrowserRequestSchema, coachBrowserResponseSchema } from "../lib/coachContract";
-import { coachEndpoint, deriveCoachThreadId } from "../lib/coachServer";
+import {
+  coachEndpoint,
+  coachPublicStatus,
+  deriveCoachThreadId,
+} from "../lib/coachServer";
 import { buildIdentifier } from "../lib/buildInfo";
 
 const conversationId = "00000000-0000-4000-8000-000000000001";
 const first = deriveCoachThreadId(1, conversationId, "test-secret");
 const repeated = deriveCoachThreadId(1, conversationId, "test-secret");
 const otherUser = deriveCoachThreadId(2, conversationId, "test-secret");
+const legacyThreadHex = createHmac("sha256", "test-secret")
+  .update(`1:${conversationId}`)
+  .digest("hex")
+  .slice(0, 32);
 
 assert.match(first, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 assert.equal(first, repeated);
 assert.notEqual(first, otherUser);
+assert.notEqual(first.replaceAll("-", ""), legacyThreadHex);
 
 assert.equal(coachEndpoint("https://coach.example/", "/chat"), "https://coach.example/chat");
 assert.throws(() => coachEndpoint("file:///tmp/coach", "/chat"));
+assert.equal(coachPublicStatus(409), 409);
+assert.equal(coachPublicStatus(500), 502);
 assert.equal(
   buildIdentifier({ APP_COMMIT_SHA: "ABCDEF0123456789", NODE_ENV: "production" }),
   "abcdef012345",

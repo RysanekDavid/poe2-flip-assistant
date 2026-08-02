@@ -5,7 +5,11 @@ import {
   coachBrowserRequestSchema,
   coachUpstreamResponseSchema,
 } from "../../../../lib/coachContract";
-import { coachEndpoint, deriveCoachThreadId } from "../../../../lib/coachServer";
+import {
+  coachEndpoint,
+  coachPublicStatus,
+  deriveCoachThreadId,
+} from "../../../../lib/coachServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,7 +57,7 @@ class CoachUpstreamError extends Error {
   public constructor(message: string, status: number) {
     super(message);
     this.name = "CoachUpstreamError";
-    this.publicStatus = status === 400 || status === 429 || status === 503 ? status : 502;
+    this.publicStatus = coachPublicStatus(status);
   }
 }
 
