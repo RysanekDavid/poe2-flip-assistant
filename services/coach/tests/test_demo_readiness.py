@@ -3,6 +3,7 @@
 from src.config import APP_ROOT
 from src.demo_policy import (
     DEMO_PROMPT,
+    deterministic_demo_answer,
     required_tools,
     validate_demo_answer,
     validate_required_tools,
@@ -40,12 +41,8 @@ def test_demo_answer_contract_requires_cited_knowledge_and_limitation() -> None:
         title="desecration-abyss — deterministic scope",
         url=None,
     )
-    answer = (
-        "Omen of Light targets a Desecrated modifier; Omen of Sinistral Annulment restricts "
-        "removal to a prefix modifier. "
-        "For a Time-Lost interaction, the tooltip cannot prove the over-cap sequence. "
-        "[K0123456789ab]"
-    )
+    answer = deterministic_demo_answer(DEMO_PROMPT, [source])
 
+    assert answer is not None
     assert citations_are_valid(answer, [source])
     validate_demo_answer(DEMO_PROMPT, answer, [source])

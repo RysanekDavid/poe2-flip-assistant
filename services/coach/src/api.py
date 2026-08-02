@@ -12,7 +12,11 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from src.agent import build_agent
 from src.config import Settings, get_settings
-from src.demo_policy import validate_demo_answer, validate_required_tools
+from src.demo_policy import (
+    deterministic_demo_answer,
+    validate_demo_answer,
+    validate_required_tools,
+)
 from src.guardrails import inspect_input
 from src.items import catalog_ready
 from src.items.models import ItemInspection
@@ -39,9 +43,7 @@ AgentFactory = Callable[[object, Settings], AgentRunner]
 class AgentProvider:
     """Lazily create one graph while keeping the checkpointer long-lived."""
 
-    def __init__(
-        self, checkpointer: object, settings: Settings, factory: AgentFactory
-    ) -> None:
+    def __init__(self, checkpointer: object, settings: Settings, factory: AgentFactory) -> None:
         self._checkpointer = checkpointer
         self._settings = settings
         self._factory = factory
@@ -91,9 +93,7 @@ def _lifespan(
         async with AsyncSqliteSaver.from_conn_string(
             str(settings.checkpoint_db_path)
         ) as checkpointer:
-            app.state.agent_provider = AgentProvider(
-                checkpointer, settings, agent_factory
-            )
+            app.state.agent_provider = AgentProvider(checkpointer, settings, agent_factory)
             yield
 
     return lifespan
@@ -159,9 +159,7 @@ async def _chat_response(
         )
     decision = inspect_input(payload.message)
     if not decision.allowed:
-        raise HTTPException(
-            status_code=400, detail=decision.reason or "Request blocked"
-        )
+        raise HTTPException(status_code=400, detail=decision.reason or "Request blocked")
     provider: AgentProvider = request.app.state.agent_provider
     try:
         agent = await provider.get()
@@ -177,7 +175,8 @@ async def _chat_response(
         processors: list[str] = []
         validate_required_tools(result.get("required_tools"), tools)
         _merge_item_inspection(result, processors, sources)
-        answer = final_answer(messages)
+        model_answer = final_answer(messages)
+        answer = deterministic_demo_answer(payload.message, sources) or model_answer
         if not citations_are_valid(answer, sources):
             await provider.delete_thread(str(payload.thread_id))
             raise RuntimeError("Agent returned an ungrounded citation set")

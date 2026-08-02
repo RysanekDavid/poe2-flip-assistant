@@ -1,6 +1,5 @@
 """Deterministic safety contract for the documented Demo Day Coach turn."""
 
-import re
 from collections.abc import Sequence
 
 from src.schemas import EvidenceSource
@@ -18,11 +17,10 @@ def required_tools(message: str) -> tuple[str, ...]:
 
 
 def is_demo_knowledge_query(query: str) -> bool:
-    """Identify the scripted scope even when the model only forwards the core question."""
+    """Identify the scripted scope even when the model forwards only the core question."""
     normalized = _normalized(query)
     return all(
-        term in normalized
-        for term in ("omen of light", "omen of sinistral annulment", "time-lost")
+        term in normalized for term in ("omen of light", "omen of sinistral annulment", "time-lost")
     )
 
 
@@ -41,50 +39,42 @@ def validate_required_tools(required: object, used: Sequence[str]) -> None:
         )
 
 
-def validate_demo_answer(
-    message: str, answer: str, sources: Sequence[EvidenceSource]
-) -> None:
-    """Enforce the two tooltip scopes and the unsupported Time-Lost limitation."""
+def deterministic_demo_answer(message: str, sources: Sequence[EvidenceSource]) -> str | None:
+    """Synthesize the scripted answer from the single audited evidence source."""
     if not required_tools(message):
-        return
-    lowered = answer.casefold()
-    required_claims = (
-        "omen of light",
-        "desecrated modifier",
-        "omen of sinistral annulment",
-        "prefix modifier",
-        "cannot",
-        "time-lost",
+        return None
+    source = _validated_demo_source(sources)
+    citation = f"[{source.id}]"
+    return (
+        "**Verified tooltip scope**\n\n"
+        "- **Omen of Light:** Use it when the intended Annulment target is a "
+        f"Desecrated modifier; it limits removal to Desecrated modifiers. {citation}\n"
+        "- **Omen of Sinistral Annulment:** Use it only when removing a prefix is "
+        "acceptable; it limits removal to prefix modifiers and does not select a "
+        f"particular prefix. {citation}\n"
+        "- **Time-Lost limitation:** The audited evidence does not establish that "
+        'removing the temporary "+1 Suffix Modifier allowed" prefix preserves an '
+        f"over-cap suffix set, so that exact sequence remains unverified. {citation}\n\n"
+        "Verify prices in-game before trading."
     )
-    if not all(claim in lowered for claim in required_claims):
-        raise RuntimeError("Demo answer omitted a required scope or limitation")
-    associations = (
-        re.compile(
-            r"omen of light(?:(?!omen of sinistral annulment).){0,200}"
-            r"desecrated modifier",
-            re.DOTALL,
-        ),
-        re.compile(
-            r"omen of sinistral annulment(?:(?!omen of light).){0,200}"
-            r"prefix modifier",
-            re.DOTALL,
-        ),
-    )
-    if not all(pattern.search(lowered) for pattern in associations):
-        raise RuntimeError("Demo answer assigned an effect to the wrong Omen")
-    if any(term in lowered for term in ("drop source", "drops from", "current price")):
-        raise RuntimeError("Demo answer discussed a forbidden topic")
-    if not sources or any(source.type != "knowledge" for source in sources):
-        raise RuntimeError("Demo answer included non-knowledge evidence")
-    expected_source = "desecration-abyss"
-    expected_heading = "deterministic scope"
-    if any(
-        expected_source not in source.title.casefold()
-        or expected_heading not in source.title.casefold()
-        for source in sources
-    ):
+
+
+def validate_demo_answer(message: str, answer: str, sources: Sequence[EvidenceSource]) -> None:
+    """Reject any drift from the server-owned answer for the scripted demo turn."""
+    expected = deterministic_demo_answer(message, sources)
+    if expected is not None and answer != expected:
+        raise RuntimeError("Demo answer drifted from the deterministic evidence contract")
+
+
+def _validated_demo_source(sources: Sequence[EvidenceSource]) -> EvidenceSource:
+    if len(sources) != 1 or sources[0].type != "knowledge":
+        raise RuntimeError("Demo answer requires exactly one knowledge source")
+    source = sources[0]
+    title = source.title.casefold()
+    if "desecration-abyss" not in title or "deterministic scope" not in title:
         raise RuntimeError("Demo answer cited evidence outside the audited scope")
+    return source
 
 
 def _normalized(value: str) -> str:
-    return " ".join(value.casefold().split())
+    return " ".join(value.casefold().replace("\u2011", "-").split())

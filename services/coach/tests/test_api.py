@@ -37,9 +37,9 @@ class DemoAgent:
             "url": None,
         }
         answer = (
-            "Omen of Light targets a Desecrated modifier, while Omen of Sinistral "
-            "Annulment limits removal to a prefix modifier. The tooltip cannot prove "
-            "the exact Time-Lost over-cap interaction. "
+            "Omen of Light targets the revealed Desecrated mods, while Omen of Sinistral "
+            "Annulment limits removal to prefix mods. The evidence does not establish "
+            "that this over-cap Time\u2014Lost interaction is safe. "
             "[K0123456789ab]"
         )
         tool = ToolMessage(
@@ -78,9 +78,7 @@ def test_internal_api_works_without_tavily(
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
-    app = create_app(
-        settings=settings, agent_factory=lambda _cp, _settings: FakeAgent()
-    )
+    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: FakeAgent())
 
     with TestClient(app) as client:
         health = client.get("/health")
@@ -107,9 +105,7 @@ def test_chat_without_openai_key_returns_actionable_503(
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
-    app = create_app(
-        settings=settings, agent_factory=lambda _cp, _settings: FakeAgent()
-    )
+    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: FakeAgent())
 
     with TestClient(app) as client:
         response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
@@ -118,9 +114,7 @@ def test_chat_without_openai_key_returns_actionable_503(
     assert "OPENAI_API_KEY" in response.json()["detail"]
 
 
-def test_health_is_degraded_without_item_catalog(
-    market_db: Path, tmp_path: Path
-) -> None:
+def test_health_is_degraded_without_item_catalog(market_db: Path, tmp_path: Path) -> None:
     settings = Settings(
         _env_file=None,
         openai_api_key=SecretStr("test-key"),
@@ -129,9 +123,7 @@ def test_health_is_degraded_without_item_catalog(
         configured_item_catalog_path=tmp_path / "missing-manifest.json",
         corpus_dir=APP_ROOT,
     )
-    app = create_app(
-        settings=settings, agent_factory=lambda _cp, _settings: FakeAgent()
-    )
+    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: FakeAgent())
 
     with TestClient(app) as client:
         health = client.get("/health")
@@ -155,13 +147,13 @@ def test_demo_prompt_enforces_mocked_tool_source_and_disclaimer(
     app = create_app(settings=settings, agent_factory=lambda _cp, _s: DemoAgent())
 
     with TestClient(app) as client:
-        response = client.post(
-            "/chat", json={"message": DEMO_PROMPT, "thread_id": THREAD_ID}
-        )
+        response = client.post("/chat", json={"message": DEMO_PROMPT, "thread_id": THREAD_ID})
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["tools_used"] == ["retrieve_knowledge"]
     assert payload["processors_used"] == []
     assert payload["sources"][0]["type"] == "knowledge"
+    assert "exact sequence remains unverified" in payload["answer"]
+    assert "this over-cap Time—Lost interaction is safe" not in payload["answer"]
     assert "Verify prices in-game" in payload["answer"]
