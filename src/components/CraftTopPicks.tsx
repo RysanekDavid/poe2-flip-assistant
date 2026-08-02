@@ -16,13 +16,21 @@ interface Resp {
  */
 export function CraftTopPicks() {
   const [data, setData] = useState<Resp | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = () =>
       fetch("/api/craft/margins")
-        .then((r) => r.json() as Promise<Resp>)
-        .then((d) => !d.error && setData(d))
-        .catch(() => {});
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`craft data failed (${response.status})`);
+          return (await response.json()) as Resp;
+        })
+        .then((result) => {
+          if (result.error) throw new Error(result.error);
+          setData(result);
+          setError(null);
+        })
+        .catch((reason: unknown) => setError(String(reason)));
     load();
     const t = setInterval(load, 60_000);
     return () => clearInterval(t);
@@ -32,6 +40,7 @@ export function CraftTopPicks() {
     .filter((r) => r.report?.status === "ok")
     .sort((a, b) => (b.report?.evDiv ?? -Infinity) - (a.report?.evDiv ?? -Infinity))
     .slice(0, 3);
+  if (error) return <p role="alert" className="text-sm text-bad">craft ranking unavailable: {error}</p>;
   if (ranked.length === 0) return null;
   const ex = data?.exaltPerDivine ?? null;
   const anyProfit = ranked.some((r) => (r.report?.evDiv ?? 0) > 0);
@@ -58,6 +67,7 @@ export function CraftTopPicks() {
         );
       })}
       {!anyProfit && <span className="text-xs text-neutral-600">every recipe is negative at current prices — flip, don't craft</span>}
+      <span className="text-xs text-neutral-600">modelled EV · curated hit rates · observed asks</span>
     </section>
   );
 }

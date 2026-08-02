@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 from pydantic import UUID4, BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
 
 MessageText = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2_000)
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=8_000)
 ]
 
 
@@ -22,7 +22,7 @@ class EvidenceSource(BaseModel):
     """A source surfaced by one of the agent tools."""
 
     id: str = Field(min_length=1)
-    type: Literal["market", "live", "knowledge", "web"]
+    type: Literal["market", "live", "knowledge", "web", "game_data"]
     title: str = Field(min_length=1)
     url: HttpUrl | None = None
 
@@ -33,6 +33,7 @@ class ChatResponse(BaseModel):
     thread_id: UUID4
     answer: str = Field(min_length=1)
     tools_used: list[str]
+    processors_used: list[str]
     sources: list[EvidenceSource]
 
 
@@ -42,6 +43,7 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
     market_ready: bool
     knowledge_ready: bool
-    model_ready: bool
+    item_data_ready: bool
+    model_configured: bool
     web_search_ready: bool
     model: str

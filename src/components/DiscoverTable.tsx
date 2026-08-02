@@ -64,6 +64,11 @@ function cmp(a: Candidate, b: Candidate, key: SortKey, dir: SortDir): number {
   return dir === "asc" ? d : -d;
 }
 
+async function responseJson<T>(response: Response, label: string): Promise<T> {
+  if (!response.ok) throw new Error(`${label} failed (${response.status})`);
+  return (await response.json()) as T;
+}
+
 export function DiscoverTable({
   selectedId,
   onSelect,
@@ -86,11 +91,11 @@ export function DiscoverTable({
   const loadWatched = useCallback(
     () =>
       fetch("/api/watchlist")
-        .then((r) => r.json())
+        .then((response) => responseJson<{ watchlist?: Array<{ item_id: string; active: number }> }>(response, "watchlist"))
         .then((d: { watchlist?: Array<{ item_id: string; active: number }> }) =>
           setWatched(new Set((d.watchlist ?? []).filter((w) => w.active === 1).map((w) => w.item_id))),
         )
-        .catch(() => {}),
+        .catch((error: unknown) => setErr(`watchlist failed: ${String(error)}`)),
     [],
   );
 
@@ -98,7 +103,7 @@ export function DiscoverTable({
     const term = query.trim();
     const url = `/api/discover?limit=1000${term ? `&q=${encodeURIComponent(term)}` : ""}`;
     return fetch(url)
-      .then((r) => r.json())
+      .then((response) => responseJson<{ candidates?: Candidate[]; fetchedAt?: string | null }>(response, "discover"))
       .then((d) => {
         setRows(d.candidates ?? []);
         setFetchedAt(d.fetchedAt ?? null);
@@ -140,8 +145,10 @@ export function DiscoverTable({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ itemId: c.itemId, itemName: c.item, category: c.category }),
     })
+      .then((response) => responseJson<unknown>(response, "add watch"))
       .then(loadWatched)
-      .then(notifyChange);
+      .then(notifyChange)
+      .catch((error: unknown) => setErr(String(error)));
 
   const unwatch = (itemId: string) =>
     fetch("/api/watchlist", {
@@ -149,8 +156,10 @@ export function DiscoverTable({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ itemId }),
     })
+      .then((response) => responseJson<unknown>(response, "remove watch"))
       .then(loadWatched)
-      .then(notifyChange);
+      .then(notifyChange)
+      .catch((error: unknown) => setErr(String(error)));
 
   const seedTop = () => {
     setSeeding(true);
@@ -159,9 +168,10 @@ export function DiscoverTable({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ perCategory: 2 }),
     })
-      .then((r) => r.json())
+      .then((response) => responseJson<unknown>(response, "seed top flips"))
       .then(() => loadWatched())
       .then(notifyChange)
+      .catch((error: unknown) => setErr(String(error)))
       .finally(() => setSeeding(false));
   };
 
@@ -198,6 +208,12 @@ export function DiscoverTable({
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-baseline gap-2">
           <h2 className="text-lg font-semibold">Top Flips — whole market</h2>
+          <span
+            className="rounded border border-amber-900/50 bg-amber-950/20 px-1.5 py-0.5 text-[10px] text-amber-300"
+            title="Risk-adjusted score from observed prices, liquidity and oscillation; not a live bid or ask."
+          >
+            heuristic · not executable
+          </span>
           {dataAge && (
             <span className="text-xs text-neutral-500" title="poe.ninja refreshes ~hourly, so prices move slowly">
               · data {dataAge}

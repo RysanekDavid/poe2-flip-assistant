@@ -9,7 +9,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMe
 from src.guardrails import enforce_disclaimer
 from src.schemas import EvidenceSource
 
-_CITATION = re.compile(r"\[([MLKW][0-9a-f]{12})\]")
+_CITATION = re.compile(r"\[([MLKWD][0-9a-f]{12})\]")
 
 
 def final_answer(messages: Sequence[BaseMessage]) -> str:
@@ -22,7 +22,9 @@ def final_answer(messages: Sequence[BaseMessage]) -> str:
     raise RuntimeError("Agent completed without a final textual response")
 
 
-def turn_trace(messages: Sequence[BaseMessage]) -> tuple[list[str], list[EvidenceSource]]:
+def turn_trace(
+    messages: Sequence[BaseMessage],
+) -> tuple[list[str], list[EvidenceSource]]:
     """Extract tools and evidence produced after the most recent human message."""
     turn = _latest_turn(messages)
     tools: list[str] = []

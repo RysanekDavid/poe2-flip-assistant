@@ -4,21 +4,24 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from dotenv import load_dotenv
 from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 APP_ROOT = BACKEND_DIR.parents[1]
-load_dotenv(APP_ROOT / ".env.local", override=False)
+_PRODUCTION = os.environ.get("NODE_ENV", "").casefold() == "production"
+_LOCAL_ENV_VALUE = os.environ.get("COACH_ENV_FILE", "").strip()
+if _PRODUCTION and _LOCAL_ENV_VALUE:
+    raise RuntimeError("COACH_ENV_FILE is local-development only in production")
+_LOCAL_ENV_FILE = Path(_LOCAL_ENV_VALUE).resolve() if _LOCAL_ENV_VALUE else None
 os.environ["LANGGRAPH_STRICT_MSGPACK"] = "true"
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables or backend/.env."""
+    """Settings from process environment, with explicit local-only file opt-in."""
 
     model_config = SettingsConfigDict(
-        env_file=APP_ROOT / ".env.local",
+        env_file=_LOCAL_ENV_FILE,
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
@@ -42,6 +45,10 @@ class Settings(BaseSettings):
     configured_checkpoint_path: Path = Field(
         default=Path("data/coach-checkpoints.db"),
         validation_alias="COACH_CHECKPOINT_DB_PATH",
+    )
+    configured_item_catalog_path: Path = Field(
+        default=Path("src/data/poe2/repoe/manifest.json"),
+        validation_alias="POE2_DATA_MANIFEST",
     )
     corpus_dir: Path = APP_ROOT
     qdrant_collection: str = "poe2_knowledge"
@@ -75,10 +82,17 @@ class Settings(BaseSettings):
         """Resolve the internal LangGraph checkpoint database."""
         return _app_path(self.configured_checkpoint_path)
 
+    @property
+    def item_catalog_path(self) -> Path:
+        """Resolve the committed RePoE catalog manifest from the repository root."""
+        return _app_path(self.configured_item_catalog_path)
+
     def require_openai_key(self) -> str:
         """Return the OpenAI key or fail with an actionable configuration error."""
         if self.openai_api_key is None:
-            raise RuntimeError("OPENAI_API_KEY is required for chat and dense retrieval")
+            raise RuntimeError(
+                "OPENAI_API_KEY is required for chat and dense retrieval"
+            )
         return self.openai_api_key.get_secret_value()
 
     def require_tavily_key(self) -> str:

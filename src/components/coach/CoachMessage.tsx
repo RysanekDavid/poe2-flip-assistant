@@ -12,6 +12,7 @@ const SOURCE_LABELS = {
   live: "Live",
   knowledge: "Knowledge",
   web: "Web",
+  game_data: "Game data",
 } as const satisfies Record<CoachSource["type"], string>;
 
 const TOOL_LABELS: Record<string, string> = {
@@ -19,6 +20,12 @@ const TOOL_LABELS: Record<string, string> = {
   fetch_live_prices: "Current prices",
   retrieve_knowledge: "Knowledge base",
   search_recent_poe2: "Recent web",
+  inspect_poe2_item: "Item inspection",
+  lookup_poe2_game_data: "Game data lookup",
+};
+
+const PROCESSOR_LABELS: Record<string, string> = {
+  deterministic_item_inspection: "Deterministic item inspection",
 };
 
 export function CoachMessage({ message }: { message: Message }) {
@@ -35,11 +42,16 @@ function AssistantMessage({ message }: { message: Message }) {
       <div className="min-w-0 flex-1">
         <div className="mb-1.5 flex items-baseline gap-2 px-1">
           <span className="font-['Palatino_Linotype','Book_Antiqua',serif] text-sm font-semibold tracking-wide text-amber-100">Coach</span>
-          <span className="text-[10px] uppercase tracking-[0.14em] text-neutral-600">verified answer</span>
+          <span className="text-[10px] uppercase tracking-[0.14em] text-neutral-600">evidence-linked answer</span>
         </div>
         <div className="overflow-hidden rounded-xl rounded-tl-sm border border-neutral-800 bg-gradient-to-br from-neutral-900/95 to-neutral-950/95 px-5 py-4 shadow-lg shadow-black/10">
           <CoachMarkdown content={message.content} sources={message.sources} />
-          <Evidence tools={message.toolsUsed} sources={message.sources} />
+          <Evidence
+            processors={message.processorsUsed}
+            tools={message.toolsUsed}
+            sources={message.sources}
+          />
+          <p className="mt-3 text-[10px] text-neutral-600">Read-only guidance · verify prices and item state in-game before acting.</p>
         </div>
       </div>
     </article>
@@ -62,15 +74,18 @@ function UserMessage({ message }: { message: Message }) {
   );
 }
 
-function Evidence({ tools, sources }: { tools: string[]; sources: CoachSource[] }) {
-  if (tools.length === 0 && sources.length === 0) return null;
+function Evidence({ processors, tools, sources }: {
+  processors: string[];
+  tools: string[];
+  sources: CoachSource[];
+}) {
   return (
     <details open className="group mt-5 border-t border-dashed border-neutral-800 pt-3">
       <summary className="flex cursor-pointer list-none items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500 hover:text-neutral-300">
         <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
         Evidence
         <span className="font-normal normal-case tracking-normal text-neutral-600">
-          {sources.length} sources · {tools.length} tools
+          {sources.length} sources · {tools.length} tools · {processors.length} processors
         </span>
       </summary>
       <div className="mt-3 space-y-3">
@@ -83,7 +98,19 @@ function Evidence({ tools, sources }: { tools: string[]; sources: CoachSource[] 
             ))}
           </div>
         )}
+        {processors.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {processors.map((processor) => (
+              <span key={processor} className="rounded-full border border-sky-900/60 bg-sky-950/20 px-2.5 py-1 text-[10px] text-sky-300">
+                {PROCESSOR_LABELS[processor] ?? processor}
+              </span>
+            ))}
+          </div>
+        )}
         {sources.length > 0 && <SourceList sources={sources} />}
+        {tools.length === 0 && processors.length === 0 && sources.length === 0 && (
+          <p className="text-xs text-amber-400">No external tools or sources were used for this response.</p>
+        )}
       </div>
     </details>
   );

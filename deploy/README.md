@@ -46,22 +46,31 @@ chown -R poe2flip:poe2flip /opt/poe2flip
 git config --global --add safe.directory /opt/poe2flip
 ```
 
+Before merging a game-data update, run `npm run sync:poe2-data` on the development machine and
+commit both `src/data/poe2/repoe/manifest.json` and the referenced content-addressed `.json.gz`
+artifact. Deployment deliberately does not download mutable game data: if that snapshot is absent
+or corrupt, the Coach health check fails and the atomic deploy rolls back.
+
 ## 4. Environment + secrets
-The env file is named **`.env.local`** (single source for both systemd and the standalone
-scripts — `db:migrate`/`addUser` load it via dotenv).
+Web/poller settings live in **`.env.local`**; standalone TypeScript scripts load that file.
+Coach receives a separate strict allowlist from **`.coach.env`**. Its systemd sandbox makes the
+product env paths inaccessible; Coach tools never query user credential columns, and the shared
+database contains POESESSID only as ciphertext without the product decryption key.
 ```bash
 cd /opt/poe2flip
 cp deploy/.env.production.example .env.local
+cp deploy/coach.env.example .coach.env
 # generate three DIFFERENT secrets:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"   # -> AUTH_SECRET
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"   # -> SECRET_KEY
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"   # -> COACH_THREAD_SECRET
-nano .env.local         # also set OWNER_PASSWORD and OPENAI_API_KEY; Tavily is optional
-chmod 600 .env.local
-chown poe2flip:poe2flip .env.local
+nano .env.local         # product auth/encryption/database settings only
+nano .coach.env         # model key, optional Tavily key, Coach database/catalog paths
+chmod 600 .env.local .coach.env
+chown poe2flip:poe2flip .env.local .coach.env
 ```
 
-On an existing server, edit the current `.env.local` and add only the new Coach variables.
+On an existing server, preserve `.env.local` and create `.coach.env` from its dedicated example.
 **Never overwrite it from the example:** preserving `AUTH_SECRET` keeps sessions valid and
 preserving `SECRET_KEY` keeps the stored POESESSIDs decryptable. Rotate any API key that has
 appeared in terminal transcripts before putting it into production.
@@ -74,28 +83,53 @@ bash deploy/deploy.sh HEAD
 The deploy script installs and enables all systemd units itself. It builds under a new versioned
 `releases/` directory and switches `current` only after the build and database backup succeed.
 
-The owner (id=1) is seeded on first DB init using `OWNER_PASSWORD`. Provision your 2 friends
-(addUser loads `.env.local` itself via dotenv):
+The owner (id=1) is seeded on first DB init using `OWNER_PASSWORD`. Create a dedicated demo user
+without putting its password in shell history or process arguments:
 ```bash
-sudo -u poe2flip bash -c 'cd /opt/poe2flip/current && npx tsx src/scripts/addUser.ts <name> <password> member'
+read -rsp 'Demo password: ' DEMO_PASSWORD; printf '\n'
+printf '%s\n' "$DEMO_PASSWORD" | sudo -u poe2flip bash -c \
+  'cd /opt/poe2flip/current && npx tsx src/scripts/addUser.ts demo member'
+unset DEMO_PASSWORD
 ```
-(Run it twice, once per friend. They can change the password after first login.)
+The script refuses a password on the command line, refuses an echoed TTY, never prints the
+generated application API key, and does not require POESESSID. Shared market and Craft data work;
+user-specific Wealth, positions, alerts and hunts begin empty.
 After the owner login works, clear `OWNER_PASSWORD` from `.env.local`; it is needed only to seed an
 empty database.
 
-## 6. Caddy (TLS reverse proxy)
+## 6. DNS and Caddy (trusted TLS reverse proxy)
+
+Create an `A` record from the public hostname to the server IPv4 address. Add `AAAA` only when
+IPv6 routing and firewalling are configured. Wait until both an external resolver and the server
+resolve the hostname to the intended address:
+
+```bash
+dig +short A flip.example.com @1.1.1.1
+getent ahostsv4 flip.example.com
+```
+
+Production uses the domain-only `deploy/Caddyfile`. It has no `tls internal` directive, so Caddy
+Automatic HTTPS obtains and renews a publicly trusted certificate. The separate
+`deploy/Caddyfile.ip-test` is only for temporary IP/self-signed testing and must not be used for
+Demo Day.
+
 ```bash
 cp /opt/poe2flip/current/deploy/Caddyfile /etc/caddy/Caddyfile
-# set the site address for Caddy (pick A or B):
 systemctl edit caddy
 #   [Service]
-#   Environment=SITE_ADDRESS=flip.example.com           # A) domain — real HTTPS (recommended)
-#   Environment=SITE_ADDRESS=https://<server-ip>        # B) IP only — self-signed (early testing)
-# For mode B, also uncomment `tls internal` in /etc/caddy/Caddyfile.
-# Validate with the SAME value used above, because the shell cannot see Caddy's systemd env.
+#   Environment=SITE_ADDRESS=flip.example.com
+systemctl daemon-reload
+# An interactive shell does not inherit the systemd override; pass the same address to validate.
 SITE_ADDRESS=flip.example.com caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-systemctl restart caddy
+systemctl reload caddy
+curl --fail --silent --show-error --location https://flip.example.com/login >/dev/null
+openssl s_client -connect flip.example.com:443 -servername flip.example.com </dev/null 2>/dev/null \
+  | openssl x509 -noout -subject -issuer -dates
 ```
+
+The Caddy upstream is `127.0.0.1:3000`; Coach is `127.0.0.1:8000` behind authenticated Next
+routes. Never bind either service publicly. Root redirects use relative `Location: /login`, so
+neither the internal upstream nor an attacker-controlled Host header can produce a localhost URL.
 
 ## 7. Firewall
 ```bash
@@ -103,8 +137,8 @@ ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw --force enable
 # NOTE: never open 3000 or 8000 — both services stay on loopback behind Next.js/Caddy.
 ```
 
-Open `https://<your-domain-or-ip>`, log in as owner, go to **Settings**, paste your fresh
-POESESSID. Friends do the same with their own. Done.
+Open the domain in a clean browser and log in. Connecting a personal PoE account is optional and
+must never be done or shown during a recorded demo.
 
 ---
 
@@ -118,6 +152,7 @@ deploy_script=$(mktemp /root/poe2flip-deploy.XXXXXX)
 trap 'unlink "$deploy_script"' EXIT
 git show origin/master:deploy/deploy.sh > "$deploy_script"
 test -s "$deploy_script"
+expected_sha=$(git rev-parse origin/master)
 bash "$deploy_script" origin/master
 # Only move the server checkout after the release passed all health checks.
 git merge --ff-only origin/master
@@ -131,6 +166,12 @@ releases/backups are intentionally not auto-deleted; prune them manually only af
 The site-specific `/etc/caddy/Caddyfile` is intentionally not overwritten during app updates;
 copy, validate and restart it separately only when the repository Caddy config actually changes.
 
+Each release contains a non-secret `.release.env` generated from the exact target commit. The web
+unit exposes only its twelve-character build identifier in authenticated `/api/health`, and the
+deploy smoke test requires it to equal `${expected_sha:0:12}` before succeeding. Because the file
+lives inside the versioned release, an automatic or manual symlink rollback restores the matching
+identifier as well.
+
 ## Logs / health
 ```bash
 journalctl -u poe2flip-web -f
@@ -138,6 +179,7 @@ journalctl -u poe2flip-poller -f      # watch "[poll]" / "[hunt]" / "[balance]" 
 journalctl -u poe2flip-coach -f
 systemctl status poe2flip-web poe2flip-poller poe2flip-coach caddy
 curl -sS http://127.0.0.1:8000/health
+# Authenticated browser check: /api/health must show the expected short build identifier.
 ```
 
 ## Notes

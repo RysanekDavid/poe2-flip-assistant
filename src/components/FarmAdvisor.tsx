@@ -37,14 +37,23 @@ function SignalMark({ signal }: { signal: Farm["signal"] }) {
 /** "What to farm now" — ranks in-game activities by how hard their tradeable basket is pumping. */
 export function FarmAdvisor() {
   const [farms, setFarms] = useState<Farm[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const load = () =>
       fetch("/api/farm")
-        .then((r) => r.json())
-        .then((d) => setFarms(d.farms ?? []))
-        .catch(() => {});
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`farm data failed (${response.status})`);
+          return (await response.json()) as { farms?: Farm[]; fetchedAt?: string | null };
+        })
+        .then((data) => {
+          setFarms(data.farms ?? []);
+          setFetchedAt(data.fetchedAt ?? null);
+          setError(null);
+        })
+        .catch((reason: unknown) => setError(String(reason)));
     load();
     const id = setInterval(load, 60_000);
     return () => clearInterval(id);
@@ -58,7 +67,7 @@ export function FarmAdvisor() {
       <header className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <div className="flex items-baseline gap-2">
           <h2 className="text-lg font-semibold">What to farm now</h2>
-          <span className="text-xs text-neutral-500">activities ranked by basket heat (7d momentum × value × liquidity)</span>
+          <span className="text-xs text-neutral-500">basket heat (7d momentum × value × liquidity) · not Div/hour</span>
         </div>
         {farms.length > 6 && (
           <button onClick={() => setShowAll((v) => !v)} className="text-xs text-neutral-400 hover:text-neutral-100">
@@ -66,6 +75,9 @@ export function FarmAdvisor() {
           </button>
         )}
       </header>
+
+      {error && <p role="alert" className="mb-2 text-sm text-bad">error: {error}</p>}
+      {fetchedAt && <p className="mb-2 text-xs text-neutral-600">market snapshot: {fetchedAt} UTC</p>}
 
       {farms.length === 0 ? (
         <p className="text-sm text-neutral-500">no data yet — poll prices first</p>
@@ -110,8 +122,8 @@ export function FarmAdvisor() {
         </div>
       )}
       <p className="mt-2 text-xs text-neutral-600">
-        Categories = the in-game source. A hot basket means those drops are spiking — grind that activity and sell into
-        the pump. Edit the activity hints in <code className="text-neutral-500">src/core/farmAdvisor.ts</code>.
+        Categories = the curated in-game source. Heat ranks observed basket momentum and liquidity;
+        it is not a measured farming return or guaranteed sale price.
       </p>
     </section>
   );

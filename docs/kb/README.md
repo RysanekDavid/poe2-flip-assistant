@@ -44,8 +44,8 @@ docs/research/
 3. **On demand**: any in-game "burn" (failed currency application, unexpected mechanic) gets
    written into the matching domain file's Wallet warnings the same day — live play is the
    highest-grade source we have.
-4. **Deterministic data** (mod tiers per base, ilvl gates): prefer scraping poe2db over prose
-   sources — planned `scrape:poe2db` script, same offline pattern as `scrape:builds`.
+4. **Deterministic data** (mod tiers per base, ilvl gates): refresh the committed RePoE snapshot
+   with `npm run sync:poe2-data`; never rebuild the database from a page allowlist.
 
 ## Feeding the LLM agent (Phase 5)
 

@@ -1,4 +1,10 @@
-# PoE2 Flip Assistant — Claude Code Spec
+# PoE2 Flip Assistant — obsolete historical bootstrap spec
+
+> **STOP:** the material below is an early bootstrap transcript and is not an implementation
+> contract. It contains obsolete units, architecture, endpoints, and security assumptions. Follow
+> `AGENTS.md`, the root `README.md`, `deploy/README.md`, and current code/tests instead. In
+> particular: `primaryValue` is Divine per item and must not be inverted; authentication is
+> mandatory; POESESSID is per-user encrypted data; no automated trade action is supported.
 
 ## Co to dělá
 

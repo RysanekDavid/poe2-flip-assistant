@@ -97,7 +97,7 @@ function LegBlock({ title, leg, note, ex }: { title: string; leg: LegReport | nu
         <span className="text-lg font-semibold tabular-nums text-neutral-100">{priceLabel(leg?.priceDiv ?? null, ex)}</span>
         {leg && (
           <span className="text-xs text-neutral-500">
-            median of {leg.samples} · {leg.total.toLocaleString("en")} listed
+            observed ask median of {leg.samples} · {leg.total.toLocaleString("en")} listed · not a guaranteed sale
             {leg.outliersDropped > 0 ? ` · ${leg.outliersDropped} bait dropped` : ""}
           </span>
         )}

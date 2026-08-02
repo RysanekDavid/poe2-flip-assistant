@@ -1,6 +1,8 @@
 """Product market-tool tests against the application database shape."""
 
 import json
+import sqlite3
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -21,6 +23,18 @@ def test_history_and_current_values_use_shared_database(
 
     assert history["items"][0]["start_value_div"] == 0.01
     assert history["items"][0]["latest_value_div"] == 0.02
+    assert history["observation_kind"] == "historical_observation"
+    assert history["executable"] is False
     assert current["items"][0]["value_div"] == 0.02
-    assert current["items"][0]["fetched_at"] == "2026-07-16 00:00:00"
+    assert current["observation_kind"] == "locally_polled_reference_mid"
+    assert current["executable"] is False
+    assert current["items"][0]["fetched_at"] == history["items"][0]["data_timestamp"]
     assert market.market_ready(market_db)
+
+
+def test_market_readiness_rejects_stale_observations(market_db: Path) -> None:
+    stale = datetime.now(UTC) - timedelta(hours=1)
+    with sqlite3.connect(market_db) as connection:
+        connection.execute("UPDATE price_snapshots SET fetched_at = ?", (stale.isoformat(),))
+
+    assert market.market_ready(market_db) is False

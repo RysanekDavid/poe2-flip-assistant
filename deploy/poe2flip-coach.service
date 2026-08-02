@@ -8,7 +8,8 @@ Type=simple
 User=poe2flip
 Group=poe2flip
 WorkingDirectory=/opt/poe2flip/current/services/coach
-EnvironmentFile=/opt/poe2flip/.env.local
+# Deliberately isolated from web auth, encryption, account and POE session configuration.
+EnvironmentFile=/opt/poe2flip/.coach.env
 Environment=HOME=/opt/poe2flip
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1
@@ -21,6 +22,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
+InaccessiblePaths=/opt/poe2flip/.env.local /opt/poe2flip/current/.env.local
 ReadWritePaths=/opt/poe2flip/data
 
 [Install]

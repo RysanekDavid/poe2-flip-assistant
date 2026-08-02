@@ -12,9 +12,11 @@ dist/
 /.current-*
 /.deployed-revision
 .playwright-mcp/
+.build-sandbox/
 *.db
 *.db-journal
 .env.local
+/.coach.env
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts

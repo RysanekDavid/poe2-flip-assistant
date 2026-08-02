@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { parseCoachMarkdown, parseInline } from "../components/coach/markdownParser";
 import { coachBrowserRequestSchema, coachBrowserResponseSchema } from "../lib/coachContract";
 import { coachEndpoint, deriveCoachThreadId } from "../lib/coachServer";
+import { buildIdentifier } from "../lib/buildInfo";
 
 const conversationId = "00000000-0000-4000-8000-000000000001";
 const first = deriveCoachThreadId(1, conversationId, "test-secret");
@@ -14,6 +15,12 @@ assert.notEqual(first, otherUser);
 
 assert.equal(coachEndpoint("https://coach.example/", "/chat"), "https://coach.example/chat");
 assert.throws(() => coachEndpoint("file:///tmp/coach", "/chat"));
+assert.equal(
+  buildIdentifier({ APP_COMMIT_SHA: "ABCDEF0123456789", NODE_ENV: "production" }),
+  "abcdef012345",
+);
+assert.equal(buildIdentifier({ NODE_ENV: "development" }), "development");
+assert.throws(() => buildIdentifier({ NODE_ENV: "production" }), /APP_COMMIT_SHA/);
 
 assert.equal(
   coachBrowserRequestSchema.parse({ message: "  current price  ", conversationId }).message,
@@ -24,6 +31,7 @@ assert.equal(
     conversationId,
     answer: "Answer",
     toolsUsed: ["fetch_live_prices"],
+    processorsUsed: [],
     sources: [{ id: "L1", type: "live", title: "poe.ninja", url: "https://poe.ninja" }],
   }).sources.length,
   1,

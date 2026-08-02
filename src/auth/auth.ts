@@ -1,5 +1,11 @@
 import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypto";
 import { config } from "../config/env";
+import {
+  decodeSessionPayload,
+  parseSessionToken,
+  SESSION_COOKIE,
+  SESSION_TTL_MS,
+} from "./sessionContract";
 
 /**
  * Auth primitives — dependency-free (node:crypto only).
@@ -10,8 +16,6 @@ import { config } from "../config/env";
  * Secret comes from AUTH_SECRET. We fail loud in production if it's missing so sessions
  * can never be forged against an empty/guessable key.
  */
-
-const SESSION_TTL_MS = 30 * 24 * 3600_000; // 30 days
 
 function secret(): string {
   if (config.authSecret) return config.authSecret;
@@ -54,21 +58,14 @@ export function signSession(userId: number, ttlMs: number = SESSION_TTL_MS): str
 /** Verify a session token. Returns the user id, or null if invalid/expired/tampered. */
 export function verifySession(token: string | undefined | null): number | null {
   if (!token) return null;
-  const dot = token.indexOf(".");
-  if (dot < 0) return null;
-  const payload = token.slice(0, dot);
-  const sig = token.slice(dot + 1);
+  const parsed = parseSessionToken(token);
+  if (!parsed) return null;
+  const { payload, signature: sig } = parsed;
   const want = b64url(createHmac("sha256", secret()).update(payload).digest());
   const a = Buffer.from(sig);
   const b = Buffer.from(want);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  try {
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as { uid?: number; exp?: number };
-    if (typeof data.uid !== "number" || typeof data.exp !== "number" || data.exp < Date.now()) return null;
-    return data.uid;
-  } catch {
-    return null;
-  }
+  return decodeSessionPayload(payload)?.uid ?? null;
 }
 
-export const SESSION_COOKIE = "poe2flip_session";
+export { SESSION_COOKIE };

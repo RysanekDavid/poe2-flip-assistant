@@ -3,13 +3,14 @@
 import json
 import sqlite3
 from contextlib import closing
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from statistics import fmean
 
 from langchain_core.tools import tool
 
 from src.config import get_settings
-from src.tools.evidence import evidence_id
+from src.evidence import evidence_id
 
 _REQUIRED_COLUMNS = {
     "item_id",
@@ -19,6 +20,7 @@ _REQUIRED_COLUMNS = {
     "volume",
     "fetched_at",
 }
+_READINESS_MAX_AGE = timedelta(minutes=30)
 
 
 @tool
@@ -33,7 +35,15 @@ def analyze_market_history(items: list[str], days: int) -> str:
     with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
         results = [_analyze_item(connection, name, days) for name in names]
     sources = [_market_source(result) for result in results]
-    return json.dumps({"unit": "Divine Orb", "items": results, "sources": sources})
+    return json.dumps(
+        {
+            "unit": "Divine Orb",
+            "observation_kind": "historical_observation",
+            "executable": False,
+            "items": results,
+            "sources": sources,
+        }
+    )
 
 
 def current_market_values(items: list[str]) -> tuple[list[dict[str, object]], str]:
@@ -45,8 +55,8 @@ def current_market_values(items: list[str]) -> tuple[list[dict[str, object]], st
     return results, timestamp
 
 
-def market_ready(path: Path | None = None) -> bool:
-    """Validate the shared database schema without reading private tables."""
+def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bool:
+    """Validate schema and require a recent public currency observation."""
     target = path or get_settings().poe_db_path
     if not target.is_file():
         return False
@@ -54,17 +64,32 @@ def market_ready(path: Path | None = None) -> bool:
         with closing(_connect_read_only(target)) as connection:
             columns = {
                 str(row["name"])
-                for row in connection.execute("PRAGMA table_info(price_snapshots)").fetchall()
+                for row in connection.execute(
+                    "PRAGMA table_info(price_snapshots)"
+                ).fetchall()
             }
             if not columns >= _REQUIRED_COLUMNS:
                 return False
             row = connection.execute(
                 """SELECT item_id, chaos_equiv, fetched_at FROM price_snapshots
-                WHERE category = 'Currency' LIMIT 1"""
+                WHERE category = 'Currency' ORDER BY datetime(fetched_at) DESC LIMIT 1"""
             ).fetchone()
-            return row is not None and float(row["chaos_equiv"]) > 0 and bool(row["fetched_at"])
+            return (
+                row is not None
+                and float(row["chaos_equiv"]) > 0
+                and _is_fresh(str(row["fetched_at"]), now or datetime.now(UTC))
+            )
     except (sqlite3.Error, TypeError, ValueError):
         return False
+
+
+def _is_fresh(timestamp: str, now: datetime) -> bool:
+    parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    current = now if now.tzinfo is not None else now.replace(tzinfo=UTC)
+    age = current.astimezone(UTC) - parsed.astimezone(UTC)
+    return timedelta(0) <= age <= _READINESS_MAX_AGE
 
 
 def _connect_read_only(path: Path) -> sqlite3.Connection:
@@ -100,7 +125,9 @@ def _analyze_item(
         (canonical, f"-{days} days"),
     ).fetchall()
     if not rows:
-        raise LookupError(f"No market observations found for {canonical!r} over {days} days")
+        raise LookupError(
+            f"No market observations found for {canonical!r} over {days} days"
+        )
     values = [float(row["value_div"]) for row in rows]
     volumes = [float(row["volume"]) for row in rows]
     change_pct = ((values[-1] / values[0]) - 1) * 100 if values[0] else 0.0

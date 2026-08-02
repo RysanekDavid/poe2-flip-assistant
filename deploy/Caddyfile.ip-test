@@ -1,0 +1,9 @@
+# Early IP-only test mode. This intentionally uses Caddy's internal CA and is not production TLS.
+{$SITE_ADDRESS} {
+	tls internal
+	encode gzip
+	reverse_proxy 127.0.0.1:3000
+	header {
+		X-Content-Type-Options "nosniff"
+	}
+}

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { latestSnapshots, latestFetchedAt } from "../../../db/queries";
 import { deriveRates } from "../../../core/priceEngine";
 import { scoutFetchedAt, fetchScout } from "../../../api/scoutClient";
+import { buildIdentifier } from "../../../lib/buildInfo";
+import { getCurrentUser } from "../../../auth/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,16 +18,21 @@ const SCOUT_REFRESH_AFTER_MS = 30 * 60_000;
  * ninja freshness comes from the DB (poller writes it, works across processes);
  * scout freshness is this web process's in-memory cache (null until first fetch).
  */
-export function GET(): Response {
+export async function GET(): Promise<Response> {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const prices = latestSnapshots();
   const rates = deriveRates(prices);
   const scoutAt = scoutFetchedAt();
   if (scoutAt == null || Date.now() - scoutAt > SCOUT_REFRESH_AFTER_MS) {
-    void fetchScout().catch(() => {}); // fire-and-forget; next poll reads the fresh timestamp
+    void fetchScout().catch((error: unknown) => {
+      console.error("[health] scout refresh failed", error);
+    }); // fire-and-forget; next poll reads the fresh timestamp
   }
   return NextResponse.json({
     ninjaFetchedAt: latestFetchedAt(),
     scoutFetchedAt: scoutAt,
     rates,
+    build: buildIdentifier(),
   });
 }

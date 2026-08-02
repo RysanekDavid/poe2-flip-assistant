@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from tavily import TavilyClient
 
 from src.config import get_settings
-from src.tools.evidence import evidence_id
+from src.evidence import evidence_id
 
 
 @tool

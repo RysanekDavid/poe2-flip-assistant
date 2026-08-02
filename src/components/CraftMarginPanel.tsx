@@ -72,8 +72,11 @@ export function CraftMarginPanel({ domain, showRefresh = false }: { domain: Craf
   const load = useCallback(
     () =>
       fetch("/api/craft/margins")
-        .then((r) => r.json())
-        .then((d: MarginsResp) => (d.error ? setErr(d.error) : (setData(d), setErr(null))))
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`craft data failed (${response.status})`);
+          return (await response.json()) as MarginsResp;
+        })
+        .then((d) => (d.error ? setErr(d.error) : (setData(d), setErr(null))))
         .catch((e) => setErr(String(e))),
     [],
   );
@@ -146,8 +149,8 @@ export function CraftMarginPanel({ domain, showRefresh = false }: { domain: Craf
 
       {showRefresh && (
         <p className="mb-3 text-xs text-neutral-600">
-          EV per attempt = <span className="text-neutral-400">hit rate × result median − base − materials</span>. Result and
-          base legs are live trade2 comparables; materials are priced free from poe.ninja. Read-only — you craft manually.
+          Modelled EV = <span className="text-neutral-400">curated hit rate × observed result median − base − materials</span>.
+          Trade2 comparables are observed listings, not guaranteed sale prices. Read-only — you craft manually.
         </p>
       )}
 
