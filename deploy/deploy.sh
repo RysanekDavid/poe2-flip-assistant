@@ -158,13 +158,12 @@ wait_for_http() {
 }
 
 coach_health_ok() {
-  curl --fail --silent --max-time 3 http://127.0.0.1:8000/health | node -e '
-let body = "";
-process.stdin.on("data", chunk => body += chunk);
-process.stdin.on("end", () => {
-  const health = JSON.parse(body);
+  local body
+  body=$(curl --fail --silent --max-time 3 http://127.0.0.1:8000/health) || return 1
+  node -e '
+  const health = JSON.parse(process.argv[1]);
   if (health.status !== "ok") process.exit(1);
-});'
+' "$body"
 }
 
 wait_for_coach_health() {
@@ -400,16 +399,14 @@ for _ in {1..30}; do
   curl --fail --silent --max-time 2 http://127.0.0.1:8000/health >/dev/null && break
   sleep 1
 done
-curl --fail --silent --max-time 10 http://127.0.0.1:8000/health | node -e '
-let body = "";
-process.stdin.on("data", chunk => body += chunk);
-process.stdin.on("end", () => {
-  const health = JSON.parse(body);
+COACH_HEALTH=$(curl --fail --silent --max-time 10 http://127.0.0.1:8000/health)
+node -e '
+  const health = JSON.parse(process.argv[1]);
   if (health.status !== "ok" || !health.market_ready || !health.knowledge_ready || !health.model_configured) {
     console.error("Coach health is degraded", health);
     process.exit(1);
   }
-});'
+' "$COACH_HEALTH"
 echo "==> starting web"
 systemctl start poe2flip-web
 for _ in {1..30}; do
@@ -418,28 +415,24 @@ for _ in {1..30}; do
 done
 SESSION_TOKEN=$(run_in_release "$RELEASE_DIR/node_modules/.bin/tsx" -e 'import { signSession } from "./src/auth/auth"; console.log(signSession(1, 60_000));')
 CONVERSATION_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
-curl --fail --silent --max-time 30 \
+WEB_COACH_HEALTH=$(curl --fail --silent --max-time 30 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
-  http://127.0.0.1:3000/api/coach/health | node -e '
-let body = "";
-process.stdin.on("data", chunk => body += chunk);
-process.stdin.on("end", () => {
-  const health = JSON.parse(body);
+  http://127.0.0.1:3000/api/coach/health)
+node -e '
+  const health = JSON.parse(process.argv[1]);
   if (health.status !== "ok") process.exit(1);
-});'
-curl --fail --silent --max-time 10 \
+' "$WEB_COACH_HEALTH"
+APP_HEALTH=$(curl --fail --silent --max-time 10 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
-  http://127.0.0.1:3000/api/health | node -e '
-let body = "";
-process.stdin.on("data", chunk => body += chunk);
-process.stdin.on("end", () => {
-  const expected = process.argv[1];
-  const health = JSON.parse(body);
+  http://127.0.0.1:3000/api/health)
+node -e '
+  const health = JSON.parse(process.argv[1]);
+  const expected = process.argv[2];
   if (health.build !== expected) {
     console.error(`deployed build mismatch: expected ${expected}, received ${health.build}`);
     process.exit(1);
   }
-});' "${TARGET_SHA:0:12}"
+' "$APP_HEALTH" "${TARGET_SHA:0:12}"
 CHAT_STARTED_MS=$(date +%s%3N)
 CHAT_RESPONSE=$(curl --fail --silent --max-time 120 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
@@ -447,11 +440,8 @@ CHAT_RESPONSE=$(curl --fail --silent --max-time 120 \
   --data "{\"message\":\"On a desecrated Time-Lost jewel, when should I use Omen of Light versus Omen of Sinistral Annulment? Use only verified knowledge-base evidence; do not discuss drop sources or current prices.\",\"conversationId\":\"$CONVERSATION_ID\"}" \
   http://127.0.0.1:3000/api/coach/chat)
 CHAT_ELAPSED_MS=$(($(date +%s%3N) - CHAT_STARTED_MS))
-printf '%s' "$CHAT_RESPONSE" | node -e '
-let body = "";
-process.stdin.on("data", chunk => body += chunk);
-process.stdin.on("end", () => {
-  const response = JSON.parse(body);
+node -e '
+  const response = JSON.parse(process.argv[1]);
   const answer = typeof response.answer === "string" ? response.answer : "";
   const lowered = answer.toLowerCase();
   const sources = Array.isArray(response.sources) ? response.sources : [];
@@ -464,7 +454,7 @@ process.stdin.on("end", () => {
     console.error("Coach demo contract failed");
     process.exit(1);
   }
-});' "$CHAT_ELAPSED_MS"
+' "$CHAT_RESPONSE"
 echo "Coach demo latency: ${CHAT_ELAPSED_MS}ms"
 
 echo "==> starting poller"
