@@ -280,7 +280,7 @@ if [[ $(stat -c '%a' .env.local) != 600 ]]; then
   echo "$APP_DIR/.env.local must have mode 600" >&2
   exit 1
 fi
-for key in AUTH_SECRET SECRET_KEY COACH_THREAD_SECRET; do
+for key in AUTH_SECRET SECRET_KEY COACH_THREAD_SECRET APP_ORIGIN; do
   if ! grep -Eq "^${key}=.+$" .env.local; then
     echo "missing required value for $key in $APP_DIR/.env.local" >&2
     exit 1

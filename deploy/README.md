@@ -128,8 +128,8 @@ openssl s_client -connect flip.example.com:443 -servername flip.example.com </de
 ```
 
 The Caddy upstream is `127.0.0.1:3000`; Coach is `127.0.0.1:8000` behind authenticated Next
-routes. Never bind either service publicly. Root redirects use relative `Location: /login`, so
-neither the internal upstream nor an attacker-controlled Host header can produce a localhost URL.
+routes. Never bind either service publicly. Set `APP_ORIGIN=https://<DOMAIN>` in `.env.local`;
+auth redirects use that validated origin instead of the internal upstream or untrusted Host headers.
 
 ## 7. Firewall
 ```bash

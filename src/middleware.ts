@@ -18,9 +18,24 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (pathname.startsWith("/api")) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  // A relative Location is intentional: building an absolute URL from req.nextUrl would leak
-  // the internal localhost upstream, while trusting Host/X-Forwarded-Host enables open redirects.
-  return new NextResponse(null, { status: 307, headers: { Location: "/login" } });
+  return NextResponse.redirect(loginUrl(req));
+}
+
+function loginUrl(req: NextRequest): URL {
+  const configured = process.env.APP_ORIGIN;
+  if (!configured) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("APP_ORIGIN is required for production redirects");
+    }
+    return new URL("/login", req.url);
+  }
+  const origin = new URL(configured);
+  const invalidShape = origin.username !== "" || origin.password !== "" ||
+    origin.pathname !== "/" || origin.search !== "" || origin.hash !== "";
+  if (invalidShape || (process.env.NODE_ENV === "production" && origin.protocol !== "https:")) {
+    throw new Error("APP_ORIGIN must be a bare HTTPS origin in production");
+  }
+  return new URL("/login", origin);
 }
 
 async function verifyEdgeSession(token: string, secret: string | undefined): Promise<boolean> {
