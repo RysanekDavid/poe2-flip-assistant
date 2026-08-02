@@ -14,7 +14,7 @@
     "test:middleware": "tsx src/scripts/testMiddleware.ts",
     "test:demo-user": "tsx src/scripts/testAddUser.ts",
     "test:demo": "tsx src/scripts/testDemoReadiness.ts",
-    "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts",
+    "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts && tsx src/scripts/testDeployShell.ts",
     "test:craft": "tsx src/scripts/runWithTestEnv.ts craft",
     "test:db": "tsx src/scripts/runWithTestEnv.ts db",
     "test:valuation": "tsx src/scripts/testValuation.ts",

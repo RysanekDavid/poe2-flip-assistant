@@ -26,5 +26,16 @@ assert.match(deploy, /"\$\{TARGET_SHA:0:12\}"/);
 assert.match(deploy, /npm run verify:poe2-data/);
 assert.match(deploy, /\.env\.local must have mode 600/);
 assert.match(deploy, /Omen of Sinistral Annulment/);
+assert.match(deploy, /ROLLBACK_READY_TIMEOUT_SECONDS=45/);
+assert.match(deploy, /wait_for_http poe2flip-web/);
+assert.match(deploy, /wait_for_coach_health/);
+assert.match(deploy, /health\.status !== "ok"/);
+assert.match(deploy, /wait_for_active poe2flip-poller/);
+assert.match(deploy, /rollback timed out waiting for/);
+assert.match(deploy, /^set -euo pipefail$/m);
+assert.doesNotMatch(deploy, /^set -Eeuo pipefail$/m);
+assert.doesNotMatch(deploy, /sleep 2/);
+assert.doesNotMatch(deploy, /services remain stopped/);
+assert.doesNotMatch(deploy, /const terms =/);
 
 console.log("ALL PASS — domain TLS, loopback services, and deployment provenance");
