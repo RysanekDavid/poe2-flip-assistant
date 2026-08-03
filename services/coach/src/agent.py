@@ -3,7 +3,13 @@
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Literal
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, MessagesState, StateGraph
@@ -55,12 +61,15 @@ def build_agent(checkpointer: object, settings: Settings) -> CompiledStateGraph:
 
 
 def build_chat_model(settings: Settings) -> ChatOpenAI:
-    """Use stateless Chat Completions because LangGraph owns conversation state."""
+    """Use Responses reasoning with provider state scoped to active tool turns."""
     return ChatOpenAI(
         model=settings.chat_model,
         api_key=settings.require_openai_key(),
-        use_responses_api=False,
-        reasoning_effort="medium",
+        use_responses_api=True,
+        output_version="responses/v1",
+        reasoning={"effort": "medium"},
+        use_previous_response_id=False,
+        store=True,
         timeout=settings.request_timeout_seconds,
         max_retries=2,
     )
@@ -106,25 +115,92 @@ def _guard_node(catalog: ItemCatalog) -> AgentNode:
 
 def _model_node(model: Runnable[object, BaseMessage]) -> AgentNode:
     async def call_model(state: AgentState) -> dict[str, object]:
-        messages = [SystemMessage(content=system_prompt())]
-        context = state.get("item_inspection")
-        if context is not None:
-            messages.append(SystemMessage(content=_inspection_prompt(context)))
-        mandatory = state.get("required_tools", [])
-        if mandatory:
-            messages.append(
-                SystemMessage(
-                    content=(
-                        "This turn must call these tools before answering: "
-                        f"{', '.join(mandatory)}. For retrieve_knowledge, pass the user's "
-                        "complete current question as the query. Do not call any other tool."
-                    )
-                )
+        messages, previous_response_id = _model_request(state)
+        if previous_response_id is None:
+            response = await model.ainvoke(messages)
+        else:
+            response = await model.ainvoke(
+                messages, previous_response_id=previous_response_id
             )
-        messages.extend(_recent_messages(state["messages"]))
-        response = await model.ainvoke(messages)
         return {"messages": [response]}
     return call_model
+
+
+def _model_request(state: AgentState) -> tuple[list[BaseMessage], str | None]:
+    """Continue provider state only while returning outputs for an active tool call."""
+    history = _recent_messages(state["messages"])
+    instructions = _turn_instructions(state)
+    continuation = _tool_continuation(history)
+    if continuation is not None:
+        response_id, tool_outputs = continuation
+        return [*instructions, *tool_outputs], response_id
+    messages = [SystemMessage(content=system_prompt()), *instructions]
+    messages.extend(_visible_history(history))
+    return messages, None
+
+
+def _turn_instructions(state: AgentState) -> list[BaseMessage]:
+    turn_instructions: list[BaseMessage] = []
+    context = state.get("item_inspection")
+    if context is not None:
+        turn_instructions.append(SystemMessage(content=_inspection_prompt(context)))
+    mandatory = state.get("required_tools", [])
+    if mandatory:
+        turn_instructions.append(SystemMessage(content=_required_tools_prompt(mandatory)))
+    return turn_instructions
+
+
+def _tool_continuation(
+    history: Sequence[BaseMessage],
+) -> tuple[str, list[BaseMessage]] | None:
+    if not history or not isinstance(history[-1], ToolMessage):
+        return None
+    for index in range(len(history) - 1, -1, -1):
+        message = history[index]
+        if not isinstance(message, AIMessage) or not message.tool_calls:
+            continue
+        response_id = str(message.response_metadata.get("id", ""))
+        outputs = list(history[index + 1 :])
+        if response_id.startswith("resp_") and all(
+            isinstance(output, ToolMessage) for output in outputs
+        ):
+            return response_id, outputs
+        return None
+    return None
+
+
+def _visible_history(history: Sequence[BaseMessage]) -> list[BaseMessage]:
+    """Replay bounded visible dialogue without old provider IDs or tool protocol."""
+    visible: list[BaseMessage] = []
+    for message in history:
+        if isinstance(message, HumanMessage):
+            visible.append(message)
+        elif isinstance(message, AIMessage) and not message.tool_calls:
+            text = _message_text(message.content)
+            if text:
+                visible.append(AIMessage(content=text))
+    return visible
+
+
+def _message_text(content: object) -> str:
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    parts = [
+        block["text"]
+        for block in content
+        if isinstance(block, dict) and isinstance(block.get("text"), str)
+    ]
+    return "\n".join(parts).strip()
+
+
+def _required_tools_prompt(mandatory: Sequence[str]) -> str:
+    return (
+        "This turn must call these tools before answering: "
+        f"{', '.join(mandatory)}. For retrieve_knowledge, pass the user's "
+        "complete current question as the query. Do not call any other tool."
+    )
 
 
 def _route_after_guard(state: AgentState) -> Literal["blocked", "incomplete", "agent"]:

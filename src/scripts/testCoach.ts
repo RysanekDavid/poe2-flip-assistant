@@ -13,14 +13,13 @@ const conversationId = "00000000-0000-4000-8000-000000000001";
 const first = deriveCoachThreadId(1, conversationId, "test-secret");
 const repeated = deriveCoachThreadId(1, conversationId, "test-secret");
 const otherUser = deriveCoachThreadId(2, conversationId, "test-secret");
-const legacyThreadHex = createHmac("sha256", "test-secret")
-  .update(`1:${conversationId}`)
-  .digest("hex")
-  .slice(0, 32);
+const chatCompletionsThreadHex = expectedThreadHex("chat-completions-v1");
+const legacyThreadHex = expectedThreadHex(null);
 
 assert.match(first, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 assert.equal(first, repeated);
 assert.notEqual(first, otherUser);
+assert.notEqual(first.replaceAll("-", ""), chatCompletionsThreadHex);
 assert.notEqual(first.replaceAll("-", ""), legacyThreadHex);
 
 assert.equal(coachEndpoint("https://coach.example/", "/chat"), "https://coach.example/chat");
@@ -61,5 +60,16 @@ assert.deepEqual(markdown.map((block) => block.kind), [
 assert.equal(parseInline("[unsafe](javascript:alert(1))")[0]?.kind, "text");
 assert.equal(parseInline("https://poe2db.tw")[0]?.kind, "link");
 assert.equal(parseInline("[M0123456789ab]")[0]?.kind, "citation");
+
+function expectedThreadHex(namespace: string | null): string {
+  const prefix = namespace === null ? "" : `${namespace}:`;
+  const bytes = createHmac("sha256", "test-secret")
+    .update(`${prefix}1:${conversationId}`)
+    .digest()
+    .subarray(0, 16);
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  return bytes.toString("hex");
+}
 
 console.log("ALL PASS — coach contract, thread IDs and safe Markdown parser");

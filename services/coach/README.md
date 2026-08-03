@@ -10,6 +10,14 @@ Python/LangGraph sidecar used only through the authenticated Next.js `/api/coach
 - Does not expose or use `POESESSID`, receives no product decryption key, and cannot perform
   in-game actions.
 
+Reasoning tool calls use the OpenAI Responses API with `store=true` only to link an active
+function call to its output. Each new user turn starts a fresh provider-side chain and replays at
+most eight visible local turns. OpenAI response objects are stored for 30 days by default; deleting
+the local SQLite checkpoint does not delete that provider-side data. Do not paste passwords,
+session cookies, API keys, `POESESSID`, or private account data into Coach. See OpenAI's
+[data controls](https://developers.openai.com/api/docs/guides/your-data) and
+[conversation-state](https://developers.openai.com/api/docs/guides/conversation-state) guidance.
+
 Pasted items are inspected before the model runs. Unknown display lines remain `unmatched`,
 multiple equally valid modifier matches remain `ambiguous`, and impossible affix counts mark the
 inspection incomplete. In that state the service returns the deterministic inspection boundary

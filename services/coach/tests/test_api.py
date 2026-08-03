@@ -59,9 +59,10 @@ class DemoAgent:
 class BadRequestAgent:
     """Raise one provider 400, then allow the same thread to continue."""
 
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: str, body: dict[str, object] | None = None) -> None:
         self.calls = 0
         self.message = message
+        self.body = body or {}
 
     async def ainvoke(
         self, values: dict[str, object], config: dict[str, object]
@@ -70,7 +71,7 @@ class BadRequestAgent:
         if self.calls == 1:
             request = httpx.Request("POST", "https://api.openai.com/v1/responses")
             response = httpx.Response(400, request=request)
-            raise BadRequestError(self.message, response=response, body={})
+            raise BadRequestError(self.message, response=response, body=self.body)
         return {"messages": [*values["messages"], AIMessage(content="Recovered answer")]}
 
 
@@ -238,3 +239,42 @@ def test_unrelated_openai_bad_request_remains_a_502(
 
     assert response.status_code == 502
     assert "Agent execution failed" in response.json()["detail"]
+
+
+def test_missing_previous_response_resets_conversation(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = Settings(
+        _env_file=None,
+        openai_api_key=SecretStr("test-key"),
+        configured_db_path=market_db,
+        configured_checkpoint_path=tmp_path / "checkpoints.db",
+        configured_item_catalog_path=item_catalog_manifest,
+        corpus_dir=APP_ROOT,
+    )
+    message = "Previous response with id 'resp_expired' not found."
+    body = {
+        "error": {
+            "message": message,
+            "type": "invalid_request_error",
+            "param": "previous_response_id",
+            "code": None,
+        }
+    }
+    agent = BadRequestAgent(message, body)
+    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: agent)
+    deleted: list[str] = []
+
+    async def track_delete(_provider: AgentProvider, thread_id: str) -> None:
+        deleted.append(thread_id)
+
+    monkeypatch.setattr(AgentProvider, "delete_thread", track_delete)
+    with TestClient(app) as client:
+        response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
+
+    assert response.status_code == 409
+    assert "Conversation state was reset" in response.json()["detail"]
+    assert deleted == [THREAD_ID]

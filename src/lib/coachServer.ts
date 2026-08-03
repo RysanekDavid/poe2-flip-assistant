@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 
 const DEV_THREAD_SECRET = "poe2-coach-local-development-only";
-const THREAD_NAMESPACE = "chat-completions-v1";
+const THREAD_NAMESPACE = "responses-v2";
 
 /** Convert a browser conversation id into a user-scoped UUID accepted by LangGraph. */
 export function deriveCoachThreadId(
