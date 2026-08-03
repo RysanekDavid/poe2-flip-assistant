@@ -56,6 +56,49 @@ def test_market_readiness_ignores_zero_value_row_with_tied_heartbeat(
     assert market.market_ready(market_db) is True
 
 
+def test_market_readiness_does_not_use_non_currency_heartbeat(
+    market_db: Path,
+) -> None:
+    latest = datetime.now(UTC).replace(microsecond=0)
+    stale = latest - timedelta(hours=1)
+    with sqlite3.connect(market_db) as connection:
+        connection.execute(
+            "UPDATE item_spark SET updated_at = ?", (stale.isoformat(),)
+        )
+        connection.execute(
+            "INSERT INTO price_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (4, "other", "Other Item", "Omen", 1, 1, latest.isoformat()),
+        )
+        connection.execute(
+            "INSERT INTO item_spark VALUES (?, ?)", ("other", latest.isoformat())
+        )
+
+    assert market.market_ready(market_db) is False
+
+
+def test_market_readiness_rejects_latest_zero_currency_value(
+    market_db: Path,
+) -> None:
+    latest = datetime.now(UTC).replace(microsecond=0)
+    stale = latest - timedelta(hours=1)
+    with sqlite3.connect(market_db) as connection:
+        connection.execute("DELETE FROM price_snapshots")
+        connection.execute("DELETE FROM item_spark")
+        connection.executemany(
+            "INSERT INTO price_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [
+                (1, "currency", "Currency", "Currency", 1, 1, stale.isoformat()),
+                (2, "currency", "Currency", "Currency", 0, 1, latest.isoformat()),
+            ],
+        )
+        connection.execute(
+            "INSERT INTO item_spark VALUES (?, ?)",
+            ("currency", latest.isoformat()),
+        )
+
+    assert market.market_ready(market_db) is False
+
+
 def test_market_readiness_rejects_stale_poll_heartbeat(market_db: Path) -> None:
     stale = datetime.now(UTC) - timedelta(hours=1)
     with sqlite3.connect(market_db) as connection:
