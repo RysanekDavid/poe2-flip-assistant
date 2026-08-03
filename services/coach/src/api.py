@@ -29,6 +29,7 @@ from src.tools.market import market_ready
 
 logger = logging.getLogger(__name__)
 _MISSING_TOOL_OUTPUT = "No tool output found for function call"
+_MISSING_PREVIOUS_RESPONSE = "previous response with id"
 
 
 class AgentRunner(Protocol):
@@ -174,7 +175,7 @@ async def _chat_response(
         )
         return await _completed_response(result, payload, provider)
     except BadRequestError as error:
-        if await _reset_orphaned_tool_call(error, provider, str(payload.thread_id)):
+        if await _reset_invalid_response_state(error, provider, str(payload.thread_id)):
             raise HTTPException(
                 status_code=409,
                 detail=(
@@ -223,13 +224,23 @@ async def _completed_response(
     )
 
 
-async def _reset_orphaned_tool_call(
+async def _reset_invalid_response_state(
     error: BadRequestError, provider: AgentProvider, thread_id: str
 ) -> bool:
-    """Discard only a checkpoint proven to contain an unmatched Responses tool call."""
-    if _MISSING_TOOL_OUTPUT not in str(error):
+    """Discard only a checkpoint proven to reference unusable Responses state."""
+    message = str(error)
+    lowered = message.lower()
+    missing_tool_output = _MISSING_TOOL_OUTPUT in message
+    missing_previous_response = (
+        "not found" in lowered
+        and (
+            _MISSING_PREVIOUS_RESPONSE in lowered
+            or "previous_response_id" in lowered
+        )
+    )
+    if not missing_tool_output and not missing_previous_response:
         return False
-    logger.warning("Resetting thread after an orphaned Responses API tool call")
+    logger.warning("Resetting thread after invalid Responses API continuation state")
     await provider.delete_thread(thread_id)
     return True
 
