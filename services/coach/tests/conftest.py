@@ -45,6 +45,10 @@ def market_db(tmp_path: Path) -> Path:
             updated_at TEXT NOT NULL
             )"""
         )
+        connection.execute(
+            """CREATE INDEX idx_snapshots_item_time
+            ON price_snapshots(item_id, fetched_at DESC)"""
+        )
         latest = datetime.now(UTC).replace(microsecond=0)
         prior = latest - timedelta(days=1)
         connection.executemany(

@@ -79,22 +79,28 @@ def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bo
             }
             if not heartbeat_columns >= _HEARTBEAT_COLUMNS:
                 return False
-            row = connection.execute(
-                """SELECT snapshot.item_id, snapshot.chaos_equiv, spark.updated_at
-                FROM price_snapshots AS snapshot
-                JOIN (
-                    SELECT item_id, MAX(id) AS max_id
-                    FROM price_snapshots
-                    WHERE category = 'Currency'
-                    GROUP BY item_id
-                ) AS latest ON latest.max_id = snapshot.id
-                JOIN item_spark AS spark ON spark.item_id = snapshot.item_id
-                WHERE snapshot.category = 'Currency' AND snapshot.chaos_equiv > 0
-                ORDER BY datetime(spark.updated_at) DESC LIMIT 1"""
+            heartbeat = connection.execute(
+                """SELECT MAX(datetime(spark.updated_at)) AS updated_at
+                FROM item_spark AS spark
+                WHERE COALESCE((
+                    SELECT CASE
+                        WHEN snapshot.category = 'Currency'
+                             AND snapshot.chaos_equiv > 0 THEN 1
+                        ELSE 0
+                    END
+                    FROM price_snapshots AS snapshot
+                    INDEXED BY idx_snapshots_item_time
+                    WHERE snapshot.item_id = spark.item_id
+                    ORDER BY snapshot.fetched_at DESC
+                    LIMIT 1
+                ), 0) = 1"""
             ).fetchone()
             return (
-                row is not None
-                and _is_fresh(str(row["updated_at"]), now or datetime.now(UTC))
+                heartbeat is not None
+                and heartbeat["updated_at"] is not None
+                and _is_fresh(
+                    str(heartbeat["updated_at"]), now or datetime.now(UTC)
+                )
             )
     except (sqlite3.Error, TypeError, ValueError):
         return False
