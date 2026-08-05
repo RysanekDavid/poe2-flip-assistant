@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 
+from langchain_core.utils.function_calling import convert_to_openai_tool
+
 from src.agent import _incomplete_item_answer
 from src.config import Settings
 from src.items import get_item_catalog, inspect_item_text, looks_like_item_text
@@ -217,10 +219,32 @@ def test_complete_catalog_lookup_exposes_item_description(
         tool for tool in get_tools(settings) if tool.name == "lookup_poe2_game_data"
     )
 
-    result = json.loads(tool.invoke({"query": "Omen of Light", "limit": 3}))
+    result = json.loads(tool.invoke({"query": "Omen of Light"}))
 
     assert result["hits"][0]["data"]["name"] == "Omen of Light"
     assert (
         "Desecrated modifier" in result["hits"][0]["data"]["properties"]["description"]
     )
     assert result["evidence_id"].startswith("D")
+
+
+def test_game_data_tool_does_not_expose_a_model_controlled_limit(
+    item_catalog_manifest: Path,
+) -> None:
+    settings = Settings(
+        _env_file=None, configured_item_catalog_path=item_catalog_manifest
+    )
+    tool = next(
+        tool for tool in get_tools(settings) if tool.name == "lookup_poe2_game_data"
+    )
+
+    provider_tool = convert_to_openai_tool(tool, strict=True)["function"]
+    schema = provider_tool["parameters"]
+
+    assert provider_tool["strict"] is True
+    assert schema["additionalProperties"] is False
+    assert schema["required"] == ["query"]
+    assert set(schema["properties"]) == {"query"}
+    assert schema["properties"]["query"]["type"] == "string"
+    assert "minLength" not in schema["properties"]["query"]
+    assert "maxLength" not in schema["properties"]["query"]
