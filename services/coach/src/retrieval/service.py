@@ -54,10 +54,7 @@ class RetrievalService:
         candidate_limit = max(limit * 5, 20)
         dense = _unique_evidence(self._dense_ranked(query, candidate_limit))
         if mode == "dense":
-            hits = [
-                RetrievalHit(document=doc, score=1 / rank)
-                for rank, doc in enumerate(dense, 1)
-            ]
+            hits = [RetrievalHit(document=doc, score=1 / rank) for rank, doc in enumerate(dense, 1)]
             return hits[:limit]
         return self._hybrid_ranked(query, dense, limit)
 
@@ -71,6 +68,8 @@ class RetrievalService:
             embeddings = OpenAIEmbeddings(
                 model=self._settings.embedding_model,
                 api_key=self._settings.require_openai_key(),
+                timeout=self._settings.request_timeout_seconds,
+                max_retries=0,
             )
             self._dense = QdrantVectorStore.from_documents(
                 documents=documents,
@@ -102,9 +101,7 @@ class RetrievalService:
             raise RuntimeError("Dense index was not initialized")
         return self._dense.similarity_search(query, k=limit)
 
-    def _hybrid_ranked(
-        self, query: str, dense: list[Document], limit: int
-    ) -> list[RetrievalHit]:
+    def _hybrid_ranked(self, query: str, dense: list[Document], limit: int) -> list[RetrievalHit]:
         if self._documents is None or self._bm25 is None:
             raise RuntimeError("Hybrid indexes were not initialized")
         bm25_scores = self._bm25.get_scores(_tokens(query))

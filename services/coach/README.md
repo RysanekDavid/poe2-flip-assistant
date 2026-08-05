@@ -18,6 +18,12 @@ session cookies, API keys, `POESESSID`, or private account data into Coach. See 
 [data controls](https://developers.openai.com/api/docs/guides/your-data) and
 [conversation-state](https://developers.openai.com/api/docs/guides/conversation-state) guidance.
 
+Each provider call has a 20-second timeout with automatic SDK retries disabled. A turn permits at
+most two tool rounds and three model calls; after the second tool round the final model call cannot
+request more tools. The Coach stops waiting after 70 seconds, clears its checkpoint, and returns
+HTTP 504 before the authenticated web proxy reaches its 90-second deadline. Synchronous provider
+work is also given a 20-second network timeout so executor cleanup remains bounded.
+
 Pasted items are inspected before the model runs. Unknown display lines remain `unmatched`,
 multiple equally valid modifier matches remain `ambiguous`, and impossible affix counts mark the
 inspection incomplete. In that state the service returns the deterministic inspection boundary

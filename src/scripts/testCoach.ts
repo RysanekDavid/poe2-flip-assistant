@@ -25,6 +25,7 @@ assert.notEqual(first.replaceAll("-", ""), legacyThreadHex);
 assert.equal(coachEndpoint("https://coach.example/", "/chat"), "https://coach.example/chat");
 assert.throws(() => coachEndpoint("file:///tmp/coach", "/chat"));
 assert.equal(coachPublicStatus(409), 409);
+assert.equal(coachPublicStatus(504), 504);
 assert.equal(coachPublicStatus(500), 502);
 assert.equal(
   buildIdentifier({ APP_COMMIT_SHA: "ABCDEF0123456789", NODE_ENV: "production" }),

@@ -4,12 +4,14 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from typing import Protocol
+from time import monotonic
+from typing import NoReturn, Protocol
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-from openai import BadRequestError
+from openai import APITimeoutError, BadRequestError
 
 from src.agent import build_agent
 from src.config import Settings, get_settings
@@ -164,40 +166,135 @@ async def _chat_response(
     if not decision.allowed:
         raise HTTPException(status_code=400, detail=decision.reason or "Request blocked")
     provider: AgentProvider = request.app.state.agent_provider
+    request_id = uuid4().hex[:16]
+    started = monotonic()
     try:
-        agent = await provider.get()
-        result = await agent.ainvoke(
-            {"messages": [HumanMessage(content=payload.message)]},
-            {
-                "configurable": {"thread_id": str(payload.thread_id)},
-                "recursion_limit": settings.max_tool_iterations * 2 + 4,
-            },
-        )
-        return await _completed_response(result, payload, provider)
+        response = await _invoke_agent(payload, provider, settings, request_id)
+        _log_request_timing(request_id, started, "ok")
+        return response
+    except asyncio.CancelledError:
+        await _cleanup_cancelled_request(provider, str(payload.thread_id), request_id)
+        _log_request_timing(request_id, started, "cancelled")
+        raise
+    except (TimeoutError, APITimeoutError) as error:
+        await _raise_timeout(error, payload, provider, request_id, started)
     except BadRequestError as error:
-        if await _reset_invalid_response_state(error, provider, str(payload.thread_id)):
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    "Conversation state was reset after an invalid tool-call checkpoint. "
-                    "Send the message again."
-                ),
-            ) from error
-        logger.exception("OpenAI rejected the Coach request")
-        raise HTTPException(
-            status_code=502, detail="Agent execution failed; check server logs."
-        ) from error
+        _log_request_timing(request_id, started, "provider_error")
+        await _raise_bad_request(error, payload, provider)
     except (FileNotFoundError, LookupError, RuntimeError, ValueError) as error:
+        _log_request_timing(request_id, started, "service_error")
         logger.exception("Chat request failed")
         raise HTTPException(
             status_code=503,
             detail="Chat service is temporarily unavailable; check server logs.",
         ) from error
     except Exception as error:
+        _log_request_timing(request_id, started, "error")
         logger.exception("Unexpected chat failure")
         raise HTTPException(
             status_code=502, detail="Agent execution failed; check server logs."
         ) from error
+
+
+async def _invoke_agent(
+    payload: ChatRequest,
+    provider: AgentProvider,
+    settings: Settings,
+    request_id: str,
+) -> ChatResponse:
+    agent = await provider.get()
+    async with asyncio.timeout(settings.total_request_timeout_seconds):
+        result = await agent.ainvoke(
+            {"messages": [HumanMessage(content=payload.message)], "request_id": request_id},
+            {
+                "configurable": {"thread_id": str(payload.thread_id)},
+                "recursion_limit": settings.max_tool_iterations * 2 + 4,
+            },
+        )
+        return await _completed_response(result, payload, provider)
+
+
+async def _raise_timeout(
+    error: BaseException,
+    payload: ChatRequest,
+    provider: AgentProvider,
+    request_id: str,
+    started: float,
+) -> NoReturn:
+    reset = await _cleanup_timed_out_request(provider, str(payload.thread_id), request_id)
+    _log_request_timing(request_id, started, "timeout" if reset else "cleanup_error")
+    if not reset:
+        raise HTTPException(
+            status_code=503,
+            detail="Coach timed out and its conversation state could not be cleared.",
+        ) from error
+    raise HTTPException(
+        status_code=504,
+        detail="Coach timed out while checking its sources. Start a new request.",
+    ) from error
+
+
+async def _raise_bad_request(
+    error: BadRequestError, payload: ChatRequest, provider: AgentProvider
+) -> NoReturn:
+    if await _reset_invalid_response_state(error, provider, str(payload.thread_id)):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Conversation state was reset after an invalid tool-call checkpoint. "
+                "Send the message again."
+            ),
+        ) from error
+    logger.exception("OpenAI rejected the Coach request")
+    raise HTTPException(
+        status_code=502, detail="Agent execution failed; check server logs."
+    ) from error
+
+
+async def _cleanup_timed_out_request(
+    provider: AgentProvider, thread_id: str, request_id: str
+) -> bool:
+    try:
+        async with asyncio.timeout(5):
+            await provider.delete_thread(thread_id)
+    except Exception:
+        logger.exception(
+            "coach_cleanup request_id=%s step=checkpoint round=0 duration_ms=0 "
+            "outcome=error tool_count=0",
+            request_id,
+        )
+        return False
+    return True
+
+
+async def _cleanup_cancelled_request(
+    provider: AgentProvider, thread_id: str, request_id: str
+) -> None:
+    try:
+        async with asyncio.timeout(5):
+            await provider.delete_thread(thread_id)
+    except asyncio.CancelledError:
+        logger.warning(
+            "coach_cleanup request_id=%s step=checkpoint round=0 duration_ms=0 "
+            "outcome=cancelled tool_count=0",
+            request_id,
+        )
+    except Exception:
+        logger.exception(
+            "coach_cleanup request_id=%s step=checkpoint round=0 duration_ms=0 "
+            "outcome=error tool_count=0",
+            request_id,
+        )
+
+
+def _log_request_timing(request_id: str, started: float, outcome: str) -> None:
+    duration_ms = max(0, round((monotonic() - started) * 1000))
+    logger.info(
+        "coach_timing request_id=%s step=request round=0 duration_ms=%d outcome=%s tool_count=0",
+        request_id,
+        duration_ms,
+        outcome,
+    )
 
 
 async def _completed_response(
@@ -231,12 +328,8 @@ async def _reset_invalid_response_state(
     message = str(error)
     lowered = message.lower()
     missing_tool_output = _MISSING_TOOL_OUTPUT in message
-    missing_previous_response = (
-        "not found" in lowered
-        and (
-            _MISSING_PREVIOUS_RESPONSE in lowered
-            or "previous_response_id" in lowered
-        )
+    missing_previous_response = "not found" in lowered and (
+        _MISSING_PREVIOUS_RESPONSE in lowered or "previous_response_id" in lowered
     )
     if not missing_tool_output and not missing_previous_response:
         return False

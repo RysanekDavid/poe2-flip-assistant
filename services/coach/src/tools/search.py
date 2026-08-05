@@ -28,6 +28,7 @@ def search_recent_poe2(query: str) -> str:
         max_results=5,
         include_answer=False,
         include_raw_content=False,
+        timeout=settings.request_timeout_seconds,
     )
     return json.dumps(_normalized_results(response), ensure_ascii=False)
 
@@ -65,7 +66,5 @@ def _normalized_results(response: object) -> dict[str, object]:
                 "score": result.score,
             }
         )
-        sources.append(
-            {"id": source_id, "type": "web", "title": result.title, "url": url}
-        )
+        sources.append({"id": source_id, "type": "web", "title": result.title, "url": url})
     return {"results": items, "sources": sources}

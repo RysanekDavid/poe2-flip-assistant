@@ -1,18 +1,22 @@
 """Internal API, deterministic routing, and optional-tool tests."""
 
+import asyncio
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessage, ToolMessage
-from openai import BadRequestError
+from openai import APITimeoutError, BadRequestError
 from pydantic import SecretStr
 
-from src.api import AgentProvider, create_app
+from src.api import AgentProvider, _chat_response, create_app
 from src.config import APP_ROOT, Settings
 from src.demo_policy import DEMO_PROMPT
+from src.schemas import ChatRequest
 from src.tools import get_tools
 
 THREAD_ID = "00000000-0000-4000-8000-000000000001"
@@ -73,6 +77,39 @@ class BadRequestAgent:
             response = httpx.Response(400, request=request)
             raise BadRequestError(self.message, response=response, body=self.body)
         return {"messages": [*values["messages"], AIMessage(content="Recovered answer")]}
+
+
+class TimeoutAgent:
+    """Fail exactly as the OpenAI SDK does after its configured read deadline."""
+
+    async def ainvoke(
+        self, values: dict[str, object], config: dict[str, object]
+    ) -> dict[str, object]:
+        request = httpx.Request("POST", "https://api.openai.com/v1/responses")
+        raise APITimeoutError(request=request)
+
+
+class CancelledAgent:
+    """Expose request cancellation without converting it into an HTTP error."""
+
+    async def ainvoke(
+        self, values: dict[str, object], config: dict[str, object]
+    ) -> dict[str, object]:
+        raise asyncio.CancelledError
+
+
+class BlockingAgent:
+    """Wait until the request task is cancelled by its caller."""
+
+    def __init__(self, started: asyncio.Event) -> None:
+        self.started = started
+
+    async def ainvoke(
+        self, values: dict[str, object], config: dict[str, object]
+    ) -> dict[str, object]:
+        self.started.set()
+        await asyncio.Event().wait()
+        raise AssertionError("blocking agent unexpectedly resumed")
 
 
 def test_blank_optional_keys_are_not_configured() -> None:
@@ -278,3 +315,144 @@ def test_missing_previous_response_resets_conversation(
     assert response.status_code == 409
     assert "Conversation state was reset" in response.json()["detail"]
     assert deleted == [THREAD_ID]
+
+
+def test_provider_timeout_clears_checkpoint_and_returns_504(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    app = create_app(settings=settings, agent_factory=lambda _cp, _s: TimeoutAgent())
+    deleted: list[str] = []
+
+    async def track_delete(_provider: AgentProvider, thread_id: str) -> None:
+        deleted.append(thread_id)
+
+    monkeypatch.setattr(AgentProvider, "delete_thread", track_delete)
+    with TestClient(app) as client:
+        response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
+
+    assert response.status_code == 504
+    assert response.json()["detail"] == (
+        "Coach timed out while checking its sources. Start a new request."
+    )
+    assert deleted == [THREAD_ID]
+
+
+def test_timeout_cleanup_failure_returns_503_without_claiming_reset(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    app = create_app(settings=settings, agent_factory=lambda _cp, _s: TimeoutAgent())
+
+    async def fail_delete(_provider: AgentProvider, thread_id: str) -> None:
+        raise OSError("test checkpoint failure")
+
+    monkeypatch.setattr(AgentProvider, "delete_thread", fail_delete)
+    with TestClient(app) as client:
+        response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "Coach timed out and its conversation state could not be cleared."
+    )
+    assert "reset" not in response.json()["detail"].casefold()
+
+
+def test_successful_request_uses_configured_total_deadline(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    app = create_app(settings=settings, agent_factory=lambda _cp, _s: FakeAgent())
+    real_timeout = asyncio.timeout
+    deadlines: list[float] = []
+
+    def track_timeout(seconds: float) -> asyncio.Timeout:
+        deadlines.append(seconds)
+        return real_timeout(seconds)
+
+    monkeypatch.setattr(asyncio, "timeout", track_timeout)
+    with TestClient(app) as client:
+        response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
+
+    assert response.status_code == 200
+    assert deadlines == [70.0]
+
+
+@pytest.mark.asyncio
+async def test_cancellation_cleans_checkpoint_then_reraises(
+    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
+) -> None:
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    deleted: list[str] = []
+
+    class CancelledProvider:
+        async def get(self) -> CancelledAgent:
+            return CancelledAgent()
+
+        async def delete_thread(self, thread_id: str) -> None:
+            deleted.append(thread_id)
+
+    app = SimpleNamespace(state=SimpleNamespace(agent_provider=CancelledProvider()))
+    request = Request({"type": "http", "app": app})
+    payload = ChatRequest(message="Hi", thread_id=THREAD_ID)
+
+    with pytest.raises(asyncio.CancelledError):
+        await _chat_response(payload, request, settings)
+
+    assert deleted == [THREAD_ID]
+
+
+@pytest.mark.asyncio
+async def test_repeated_cancellation_cannot_leave_detached_checkpoint_cleanup(
+    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
+) -> None:
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    agent_started = asyncio.Event()
+    cleanup_started = asyncio.Event()
+    cleanup_cancelled = asyncio.Event()
+
+    class BlockingProvider:
+        async def get(self) -> BlockingAgent:
+            return BlockingAgent(agent_started)
+
+        async def delete_thread(self, thread_id: str) -> None:
+            cleanup_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                cleanup_cancelled.set()
+                raise
+
+    app = SimpleNamespace(state=SimpleNamespace(agent_provider=BlockingProvider()))
+    request = Request({"type": "http", "app": app})
+    payload = ChatRequest(message="Hi", thread_id=THREAD_ID)
+    task = asyncio.create_task(_chat_response(payload, request, settings))
+
+    await agent_started.wait()
+    task.cancel()
+    await cleanup_started.wait()
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert cleanup_cancelled.is_set()
+
+
+def _test_settings(market_db: Path, item_catalog_manifest: Path, tmp_path: Path) -> Settings:
+    return Settings(
+        _env_file=None,
+        openai_api_key=SecretStr("test-key"),
+        configured_db_path=market_db,
+        configured_checkpoint_path=tmp_path / "checkpoints.db",
+        configured_item_catalog_path=item_catalog_manifest,
+        corpus_dir=APP_ROOT,
+    )

@@ -1,6 +1,9 @@
 """LangGraph orchestration for the PoE2 coach."""
 
+import asyncio
+import logging
 from collections.abc import Awaitable, Callable, Sequence
+from time import monotonic
 from typing import Literal
 
 from langchain_core.messages import (
@@ -14,7 +17,7 @@ from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.prebuilt import ToolNode
 
 from src.config import Settings
 from src.demo_policy import required_tools
@@ -24,6 +27,12 @@ from src.items.catalog import ItemCatalog
 from src.prompts import system_prompt
 from src.tools import get_tools
 
+logger = logging.getLogger(__name__)
+_FINAL_ANSWER_INSTRUCTION = (
+    "The tool budget is exhausted. Answer now using only evidence already returned. "
+    "Do not request another tool. Explicitly state any remaining limitation."
+)
+
 
 class AgentState(MessagesState):
     """Conversation messages plus deterministic safety and item context."""
@@ -32,31 +41,40 @@ class AgentState(MessagesState):
     item_incomplete: bool
     item_inspection: dict[str, object] | None
     required_tools: list[str]
+    request_id: str
 
 
 AgentNode = Callable[[AgentState], Awaitable[dict[str, object]]]
 
 
 def build_agent(checkpointer: object, settings: Settings) -> CompiledStateGraph:
-    """Compile the shallow guard → agent ⇄ tools graph."""
+    """Compile a bounded guard → model ⇄ tools graph with a forced final answer."""
     tools = get_tools(settings)
     catalog = get_item_catalog(settings.item_catalog_path)
     model = build_chat_model(settings)
     model_with_tools = model.bind_tools(tools, strict=True)
 
     guard = _guard_node(catalog)
-    call_model = _model_node(model_with_tools)
+    call_model = _model_node(model_with_tools, "model")
+    call_final_model = _model_node(model, "final_model", force_final=True)
+    call_tools = _tools_node(ToolNode(tools, handle_tool_errors=False))
 
     builder = StateGraph(AgentState)
     builder.add_node("guard", guard)
     builder.add_node("agent", call_model)
-    builder.add_node("tools", ToolNode(tools, handle_tool_errors=False))
+    builder.add_node("tools", call_tools)
+    builder.add_node("final", call_final_model)
     builder.add_edge(START, "guard")
     builder.add_conditional_edges(
         "guard", _route_after_guard, {"blocked": END, "incomplete": END, "agent": "agent"}
     )
-    builder.add_conditional_edges("agent", tools_condition)
-    builder.add_edge("tools", "agent")
+    builder.add_conditional_edges("agent", _route_after_model, {"tools": "tools", "end": END})
+    builder.add_conditional_edges(
+        "tools",
+        lambda state: _route_after_tools(state, settings.max_tool_iterations),
+        {"agent": "agent", "final": "final"},
+    )
+    builder.add_edge("final", END)
     return builder.compile(checkpointer=checkpointer)
 
 
@@ -71,7 +89,7 @@ def build_chat_model(settings: Settings) -> ChatOpenAI:
         use_previous_response_id=False,
         store=True,
         timeout=settings.request_timeout_seconds,
-        max_retries=2,
+        max_retries=0,
     )
 
 
@@ -110,20 +128,51 @@ def _guard_node(catalog: ItemCatalog) -> AgentNode:
             "required_tools": [],
             "messages": [AIMessage(content=decision.reason or "Blocked.")],
         }
+
     return guard
 
 
-def _model_node(model: Runnable[object, BaseMessage]) -> AgentNode:
+def _model_node(
+    model: Runnable[object, BaseMessage], step: str, *, force_final: bool = False
+) -> AgentNode:
     async def call_model(state: AgentState) -> dict[str, object]:
+        started = monotonic()
+        outcome = "ok"
         messages, previous_response_id = _model_request(state)
-        if previous_response_id is None:
-            response = await model.ainvoke(messages)
-        else:
-            response = await model.ainvoke(
-                messages, previous_response_id=previous_response_id
-            )
-        return {"messages": [response]}
+        if force_final:
+            messages.insert(0, SystemMessage(content=_FINAL_ANSWER_INSTRUCTION))
+        try:
+            if previous_response_id is None:
+                response = await model.ainvoke(messages)
+            else:
+                response = await model.ainvoke(messages, previous_response_id=previous_response_id)
+            return {"messages": [response]}
+        except BaseException as error:
+            outcome = "cancelled" if isinstance(error, asyncio.CancelledError) else "error"
+            raise
+        finally:
+            _log_timing(state, step, _tool_round_count(state) + 1, started, outcome, 0)
+
     return call_model
+
+
+def _tools_node(node: ToolNode) -> AgentNode:
+    async def call_tools(state: AgentState) -> dict[str, object]:
+        started = monotonic()
+        outcome = "ok"
+        tool_count = _pending_tool_count(state)
+        try:
+            result = await node.ainvoke(state)
+            if not isinstance(result, dict):
+                raise RuntimeError("Tool node returned an invalid state update")
+            return result
+        except BaseException as error:
+            outcome = "cancelled" if isinstance(error, asyncio.CancelledError) else "error"
+            raise
+        finally:
+            _log_timing(state, "tools", _tool_round_count(state), started, outcome, tool_count)
+
+    return call_tools
 
 
 def _model_request(state: AgentState) -> tuple[list[BaseMessage], str | None]:
@@ -209,6 +258,52 @@ def _route_after_guard(state: AgentState) -> Literal["blocked", "incomplete", "a
     return "incomplete" if state.get("item_incomplete", False) else "agent"
 
 
+def _route_after_model(state: AgentState) -> Literal["tools", "end"]:
+    return "tools" if _pending_tool_count(state) > 0 else "end"
+
+
+def _route_after_tools(state: AgentState, max_tool_rounds: int = 2) -> Literal["agent", "final"]:
+    return "final" if _tool_round_count(state) >= max_tool_rounds else "agent"
+
+
+def _tool_round_count(state: AgentState) -> int:
+    """Count tool-requesting model messages in only the active human turn."""
+    count = 0
+    for message in reversed(state["messages"]):
+        if isinstance(message, HumanMessage):
+            break
+        if isinstance(message, AIMessage) and message.tool_calls:
+            count += 1
+    return count
+
+
+def _pending_tool_count(state: AgentState) -> int:
+    messages = state["messages"]
+    if not messages or not isinstance(messages[-1], AIMessage):
+        return 0
+    return len(messages[-1].tool_calls)
+
+
+def _log_timing(
+    state: AgentState,
+    step: str,
+    round_number: int,
+    started: float,
+    outcome: str,
+    tool_count: int,
+) -> None:
+    duration_ms = max(0, round((monotonic() - started) * 1000))
+    logger.info(
+        "coach_timing request_id=%s step=%s round=%d duration_ms=%d outcome=%s tool_count=%d",
+        state.get("request_id", "missing"),
+        step,
+        round_number,
+        duration_ms,
+        outcome,
+        tool_count,
+    )
+
+
 def _last_human_text(state: AgentState) -> str:
     for message in reversed(state["messages"]):
         if isinstance(message, HumanMessage):
@@ -223,9 +318,7 @@ def _recent_messages(
     if max_human_turns < 1:
         raise ValueError("max_human_turns must be positive")
     human_indexes = [
-        index
-        for index, message in enumerate(messages)
-        if isinstance(message, HumanMessage)
+        index for index, message in enumerate(messages) if isinstance(message, HumanMessage)
     ]
     if len(human_indexes) <= max_human_turns:
         return list(messages)
