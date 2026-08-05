@@ -75,6 +75,14 @@ On an existing server, preserve `.env.local` and create `.coach.env` from its de
 preserving `SECRET_KEY` keeps the stored POESESSIDs decryptable. Rotate any API key that has
 appeared in terminal transcripts before putting it into production.
 
+The deploy preflight validates the non-secret latency policy in
+`deploy/runtime-timeouts.env` before it stops any service. Both systemd units load that policy
+through the atomic `current` symlink after their private environment files. The new release uses
+the approved 45/140/160-second hierarchy, while rollback automatically restores the previous
+release's compatible policy. Do not copy these timeout values into the private environment
+templates; existing legacy timeout lines may remain because the later systemd overlay wins only
+for releases that support it.
+
 ## 5. First build + start
 ```bash
 cd /opt/poe2flip
@@ -177,6 +185,7 @@ identifier as well.
 journalctl -u poe2flip-web -f
 journalctl -u poe2flip-poller -f      # watch "[poll]" / "[hunt]" / "[balance]" lines
 journalctl -u poe2flip-coach -f
+journalctl -u poe2flip-coach --since "15 minutes ago" --no-pager | grep coach_timing
 systemctl status poe2flip-web poe2flip-poller poe2flip-coach caddy
 curl -sS http://127.0.0.1:8000/health
 # Authenticated browser check: /api/health must show the expected short build identifier.

@@ -27,7 +27,7 @@ from src.items.catalog import ItemCatalog
 from src.prompts import system_prompt
 from src.tools import get_tools
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 _FINAL_ANSWER_INSTRUCTION = (
     "The tool budget is exhausted. Answer now using only evidence already returned. "
     "Do not request another tool. Explicitly state any remaining limitation."

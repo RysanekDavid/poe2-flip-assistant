@@ -29,7 +29,7 @@ from src.retrieval import RetrievalService
 from src.schemas import ChatRequest, ChatResponse, EvidenceSource, HealthResponse
 from src.tools.market import market_ready
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 _MISSING_TOOL_OUTPUT = "No tool output found for function call"
 _MISSING_PREVIOUS_RESPONSE = "previous response with id"
 
