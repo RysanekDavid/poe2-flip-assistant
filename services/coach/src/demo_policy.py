@@ -25,12 +25,14 @@ def is_demo_knowledge_query(query: str) -> bool:
 
 
 def validate_required_tools(required: object, used: Sequence[str]) -> None:
-    """Reject a model turn that ignored deterministic routing requirements."""
+    """Reject only scripted turns that ignored deterministic routing requirements."""
     if required is None:
         return
     if not isinstance(required, list) or not all(isinstance(name, str) for name in required):
         raise RuntimeError("Agent returned an invalid required-tools contract")
     expected = set(required)
+    if not expected:
+        return
     actual = set(used)
     if expected != actual or len(used) != len(actual):
         raise RuntimeError(
