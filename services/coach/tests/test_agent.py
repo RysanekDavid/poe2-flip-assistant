@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 
 from src.agent import (
     AgentState,
@@ -29,8 +29,32 @@ def test_agent_uses_responses_api_for_reasoning_tool_round_trips() -> None:
     assert model.output_version == "responses/v1"
     assert model.use_previous_response_id is False
     assert model.store is True
-    assert model.request_timeout == 20.0
+    assert model.request_timeout == 45.0
     assert model.max_retries == 0
+
+
+def test_timeout_budget_tracks_configured_tool_rounds() -> None:
+    settings = Settings(_env_file=None, max_tool_iterations=1)
+
+    assert settings.request_timeout_seconds == 45.0
+    assert settings.total_request_timeout_seconds == 140.0
+    assert settings.max_tool_iterations == 1
+    assert settings.chat_model == "gpt-5.4"
+    legacy = Settings(
+        _env_file=None,
+        request_timeout_seconds=20,
+        total_request_timeout_seconds=70,
+        max_tool_iterations=2,
+    )
+    assert legacy.request_timeout_seconds == 20
+    assert legacy.total_request_timeout_seconds == 70
+    with pytest.raises(ValidationError, match="cover every model call"):
+        Settings(
+            _env_file=None,
+            request_timeout_seconds=45,
+            max_tool_iterations=2,
+            total_request_timeout_seconds=139,
+        )
 
 
 def test_second_tool_round_forces_final_model_without_another_tool_node() -> None:
@@ -125,7 +149,7 @@ async def test_compiled_graph_runs_two_tool_rounds_then_unbound_final_model(
 def test_timing_log_never_serializes_conversation_or_tool_arguments(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    caplog.set_level(logging.INFO, logger="src.agent")
+    caplog.set_level(logging.INFO, logger="uvicorn.error")
     secret = "private-prompt-and-tool-argument"
     state = _state(
         [

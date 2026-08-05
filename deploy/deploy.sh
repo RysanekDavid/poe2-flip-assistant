@@ -107,6 +107,45 @@ process.stdout.write(path.resolve(process.env[process.argv[2]] || process.argv[3
 ' "$env_file" "$key" "$fallback"
 }
 
+validate_timeout_hierarchy() {
+  local runtime_env=$1
+  node -e '
+const fs = require("node:fs");
+const runtime = fs.readFileSync(process.argv[1], "utf8");
+function singleValue(source, key) {
+  const matches = [...source.matchAll(new RegExp(`^${key}=([^\\r\\n]*)$`, "gm"))];
+  if (matches.length !== 1) throw new Error(`${key} must appear exactly once`);
+  return matches[0][1];
+}
+function numeric(source, key) {
+  const raw = singleValue(source, key);
+  if (!/^\d+(?:\.\d+)?$/.test(raw)) throw new Error(`${key} must be numeric`);
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) throw new Error(`${key} must be positive`);
+  return value;
+}
+if (singleValue(runtime, "CHAT_MODEL") !== "gpt-5.4") {
+  throw new Error("CHAT_MODEL must equal gpt-5.4");
+}
+const providerSeconds = numeric(runtime, "COACH_MODEL_TIMEOUT_SECONDS");
+const totalSeconds = numeric(runtime, "COACH_TOTAL_TIMEOUT_SECONDS");
+const toolRounds = numeric(runtime, "COACH_MAX_TOOL_ROUNDS");
+const webMilliseconds = numeric(runtime, "COACH_TIMEOUT_MS");
+if (providerSeconds !== 45 || totalSeconds !== 140 || toolRounds !== 2) {
+  throw new Error("Coach backend timeouts must match the approved release budget");
+}
+if (webMilliseconds !== 160000) throw new Error("Coach web timeout must equal 160000ms");
+if (!Number.isInteger(toolRounds) || toolRounds > 2) throw new Error("invalid tool-round cap");
+if (totalSeconds < providerSeconds * (toolRounds + 1) + 5) {
+  throw new Error("Coach total timeout does not cover its provider-call budget");
+}
+if (webMilliseconds <= totalSeconds * 1000 || webMilliseconds >= 180000) {
+  throw new Error("Coach web timeout must sit between backend and deployment deadlines");
+}
+console.log("Coach timeout hierarchy OK");
+' "$runtime_env"
+}
+
 was_active() {
   systemctl is-active --quiet "$1" && printf '1' || printf '0'
 }
@@ -331,6 +370,7 @@ install -d -o "$APP_USER" -g "$APP_USER" -m 0750 "$APP_DIR/releases" "$RELEASE_D
 install -d -o "$APP_USER" -g "$APP_USER" -m 0700 "$APP_DIR/data" "$APP_DIR/backups"
 install -d -o "$APP_USER" -g "$APP_USER" -m 0750 "$APP_DIR/.cache/uv" "$APP_DIR/.cache/uv-python"
 git archive "$TARGET_SHA" | tar -x -C "$RELEASE_DIR"
+validate_timeout_hierarchy "$RELEASE_DIR/deploy/runtime-timeouts.env"
 printf 'APP_COMMIT_SHA=%s\n' "${TARGET_SHA:0:12}" > "$RELEASE_DIR/.release.env"
 chmod 0644 "$RELEASE_DIR/.release.env"
 ln -s "$APP_DIR/.env.local" "$RELEASE_DIR/.env.local"
@@ -434,7 +474,7 @@ node -e '
   }
 ' "$APP_HEALTH" "${TARGET_SHA:0:12}"
 CHAT_STARTED_MS=$(date +%s%3N)
-CHAT_RESPONSE=$(curl --fail --silent --max-time 120 \
+CHAT_RESPONSE=$(curl --fail --silent --max-time 180 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
   --header 'Content-Type: application/json' \
   --data "{\"message\":\"On a desecrated Time-Lost jewel, when should I use Omen of Light versus Omen of Sinistral Annulment? Use only verified knowledge-base evidence; do not discuss drop sources or current prices.\",\"conversationId\":\"$CONVERSATION_ID\"}" \

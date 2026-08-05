@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     langsmith_tracing: bool = False
     langsmith_project: str = "poe2-flip-coach"
 
-    chat_model: str = "gpt-5.4-mini"
+    chat_model: str = "gpt-5.4"
     embedding_model: str = "text-embedding-3-small"
     league_name: str = "Runes of Aldur"
 
@@ -54,10 +54,10 @@ class Settings(BaseSettings):
     qdrant_collection: str = "poe2_knowledge"
 
     request_timeout_seconds: float = Field(
-        default=20.0, ge=5.0, le=25.0, validation_alias="COACH_MODEL_TIMEOUT_SECONDS"
+        default=45.0, ge=5.0, le=45.0, validation_alias="COACH_MODEL_TIMEOUT_SECONDS"
     )
     total_request_timeout_seconds: float = Field(
-        default=70.0, ge=30.0, le=80.0, validation_alias="COACH_TOTAL_TIMEOUT_SECONDS"
+        default=140.0, ge=30.0, le=150.0, validation_alias="COACH_TOTAL_TIMEOUT_SECONDS"
     )
     max_tool_iterations: int = Field(
         default=2, ge=1, le=2, validation_alias="COACH_MAX_TOOL_ROUNDS"
@@ -78,12 +78,12 @@ class Settings(BaseSettings):
         return value
 
     @model_validator(mode="after")
-    def timeout_budget_covers_three_model_calls(self) -> "Settings":
-        """Keep the backend deadline inside the web limit with room for three calls."""
-        minimum_budget = self.request_timeout_seconds * 3 + 5
+    def timeout_budget_covers_model_calls(self) -> "Settings":
+        """Budget every possible model call plus deterministic cleanup headroom."""
+        minimum_budget = self.request_timeout_seconds * (self.max_tool_iterations + 1) + 5
         if self.total_request_timeout_seconds < minimum_budget:
             raise ValueError(
-                "total_request_timeout_seconds must cover three model calls plus 5 seconds"
+                "total_request_timeout_seconds must cover every model call plus 5 seconds"
             )
         return self
 

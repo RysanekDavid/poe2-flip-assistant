@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -384,7 +385,27 @@ def test_successful_request_uses_configured_total_deadline(
         response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
 
     assert response.status_code == 200
-    assert deadlines == [70.0]
+    assert deadlines == [140.0]
+
+
+def test_request_timing_log_omits_prompt_and_thread(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    app = create_app(settings=settings, agent_factory=lambda _cp, _s: FakeAgent())
+    private_prompt = "my-private-build-note"
+    caplog.set_level(logging.INFO, logger="uvicorn.error")
+
+    with TestClient(app) as client:
+        response = client.post("/chat", json={"message": private_prompt, "thread_id": THREAD_ID})
+
+    assert response.status_code == 200
+    assert "coach_timing" in caplog.text
+    assert private_prompt not in caplog.text
+    assert THREAD_ID not in caplog.text
 
 
 @pytest.mark.asyncio

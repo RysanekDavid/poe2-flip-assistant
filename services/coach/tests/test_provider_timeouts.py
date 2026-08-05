@@ -41,7 +41,7 @@ def test_embeddings_use_model_timeout_without_sdk_retries(
 
     service._ensure_indexes()
 
-    assert captured["timeout"] == 20.0
+    assert captured["timeout"] == 45.0
     assert captured["max_retries"] == 0
 
 
@@ -67,4 +67,4 @@ def test_tavily_search_uses_model_timeout(monkeypatch: pytest.MonkeyPatch) -> No
     result = search_recent_poe2.invoke({"query": "current patch"})
 
     assert result == '{"results": [], "sources": []}'
-    assert captured["timeout"] == 20.0
+    assert captured["timeout"] == 45.0

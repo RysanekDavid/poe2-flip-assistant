@@ -10,6 +10,8 @@ Group=poe2flip
 WorkingDirectory=/opt/poe2flip/current/services/coach
 # Deliberately isolated from web auth, encryption, account and POE session configuration.
 EnvironmentFile=/opt/poe2flip/.coach.env
+# Release-managed non-secret policy overrides legacy timeout values safely.
+EnvironmentFile=/opt/poe2flip/current/deploy/runtime-timeouts.env
 Environment=HOME=/opt/poe2flip
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1
