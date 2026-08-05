@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     langsmith_tracing: bool = False
     langsmith_project: str = "poe2-flip-coach"
 
-    chat_model: str = "gpt-5.4"
+    chat_model: str = "gpt-5.4-mini"
     embedding_model: str = "text-embedding-3-small"
     league_name: str = "Runes of Aldur"
 

@@ -39,7 +39,7 @@ def test_timeout_budget_tracks_configured_tool_rounds() -> None:
     assert settings.request_timeout_seconds == 45.0
     assert settings.total_request_timeout_seconds == 140.0
     assert settings.max_tool_iterations == 1
-    assert settings.chat_model == "gpt-5.4"
+    assert settings.chat_model == "gpt-5.4-mini"
     legacy = Settings(
         _env_file=None,
         request_timeout_seconds=20,
