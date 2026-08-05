@@ -25,6 +25,10 @@ def test_demo_requires_exact_tool_set() -> None:
         validate_required_tools(["retrieve_knowledge"], ["retrieve_knowledge", "fetch_live_prices"])
 
 
+def test_unscripted_turn_allows_model_selected_tools() -> None:
+    validate_required_tools([], ["lookup_poe2_game_data", "retrieve_knowledge"])
+
+
 def test_demo_answer_is_deterministic_and_cited() -> None:
     answer = deterministic_demo_answer(DEMO_PROMPT, [SOURCE])
 

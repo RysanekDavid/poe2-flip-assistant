@@ -48,6 +48,13 @@ assert.match(deploy, /wait_for_coach_health/);
 assert.match(deploy, /health\.status !== "ok"/);
 assert.match(deploy, /--max-time 180/);
 assert.match(deploy, /validate_timeout_hierarchy/);
+assert.match(deploy, /signSession\(1, 420_000\)/);
+assert.match(deploy, /I want a Dueling Wand for a Blood Mage/);
+assert.match(deploy, /PRESENTATION_ELAPSED_MS/);
+assert.match(deploy, /tools\.includes\("lookup_poe2_game_data"\)/);
+assert.match(deploy, /source\.type === "game_data"/);
+assert.match(deploy, /answer\.includes\(`\[\$\{source\.id\}\]`\)/);
+assert.doesNotMatch(deploy, /date \+%s%3N/);
 assert.doesNotMatch(productEnv, /^COACH_TIMEOUT_MS=/m);
 assert.doesNotMatch(
   coachEnv,
