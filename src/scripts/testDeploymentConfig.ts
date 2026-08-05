@@ -53,7 +53,7 @@ assert.doesNotMatch(
   coachEnv,
   /^(?:CHAT_MODEL|COACH_MODEL_TIMEOUT_SECONDS|COACH_TOTAL_TIMEOUT_SECONDS|COACH_MAX_TOOL_ROUNDS)=/m,
 );
-assert.match(runtimeTimeouts, /^CHAT_MODEL=gpt-5\.4$/m);
+assert.match(runtimeTimeouts, /^CHAT_MODEL=gpt-5\.4-mini$/m);
 assert.match(runtimeTimeouts, /^COACH_MODEL_TIMEOUT_SECONDS=45$/m);
 assert.match(runtimeTimeouts, /^COACH_TOTAL_TIMEOUT_SECONDS=140$/m);
 assert.match(runtimeTimeouts, /^COACH_MAX_TOOL_ROUNDS=2$/m);
@@ -74,7 +74,7 @@ assert.doesNotMatch(deploy, /services remain stopped/);
 assert.doesNotMatch(deploy, /const terms =/);
 
 const validRuntime = [
-  "CHAT_MODEL=gpt-5.4",
+  "CHAT_MODEL=gpt-5.4-mini",
   "COACH_MODEL_TIMEOUT_SECONDS=45",
   "COACH_TOTAL_TIMEOUT_SECONDS=140",
   "COACH_MAX_TOOL_ROUNDS=2",
@@ -82,8 +82,8 @@ const validRuntime = [
 ].join("\n");
 assert.equal(runTimeoutValidator(validRuntime), 0);
 assert.notEqual(runTimeoutValidator(`${validRuntime}\nCOACH_TOTAL_TIMEOUT_SECONDS=70`), 0);
-assert.notEqual(runTimeoutValidator(`${validRuntime}\nCHAT_MODEL=gpt-5.4-mini`), 0);
-assert.notEqual(runTimeoutValidator(validRuntime.replace("gpt-5.4", "gpt-5.4-mini")), 0);
+assert.notEqual(runTimeoutValidator(`${validRuntime}\nCHAT_MODEL=gpt-5.4`), 0);
+assert.notEqual(runTimeoutValidator(validRuntime.replace("gpt-5.4-mini", "gpt-5.4")), 0);
 
 function runTimeoutValidator(runtime: string): number | null {
   const directory = mkdtempSync(join(tmpdir(), "poe2-timeout-validator-"));

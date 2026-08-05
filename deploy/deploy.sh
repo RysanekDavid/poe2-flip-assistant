@@ -124,8 +124,8 @@ function numeric(source, key) {
   if (!Number.isFinite(value) || value <= 0) throw new Error(`${key} must be positive`);
   return value;
 }
-if (singleValue(runtime, "CHAT_MODEL") !== "gpt-5.4") {
-  throw new Error("CHAT_MODEL must equal gpt-5.4");
+if (singleValue(runtime, "CHAT_MODEL") !== "gpt-5.4-mini") {
+  throw new Error("CHAT_MODEL must equal gpt-5.4-mini");
 }
 const providerSeconds = numeric(runtime, "COACH_MODEL_TIMEOUT_SECONDS");
 const totalSeconds = numeric(runtime, "COACH_TOTAL_TIMEOUT_SECONDS");
