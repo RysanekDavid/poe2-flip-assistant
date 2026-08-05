@@ -4,7 +4,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -53,8 +53,15 @@ class Settings(BaseSettings):
     corpus_dir: Path = APP_ROOT
     qdrant_collection: str = "poe2_knowledge"
 
-    request_timeout_seconds: float = 25.0
-    max_tool_iterations: int = 8
+    request_timeout_seconds: float = Field(
+        default=20.0, ge=5.0, le=25.0, validation_alias="COACH_MODEL_TIMEOUT_SECONDS"
+    )
+    total_request_timeout_seconds: float = Field(
+        default=70.0, ge=30.0, le=80.0, validation_alias="COACH_TOTAL_TIMEOUT_SECONDS"
+    )
+    max_tool_iterations: int = Field(
+        default=2, ge=1, le=2, validation_alias="COACH_MAX_TOOL_ROUNDS"
+    )
     chat_requests_per_minute: int = Field(
         default=20,
         ge=1,
@@ -62,15 +69,23 @@ class Settings(BaseSettings):
         validation_alias="COACH_REQUESTS_PER_MINUTE",
     )
 
-    @field_validator(
-        "openai_api_key", "tavily_api_key", "langsmith_api_key", mode="before"
-    )
+    @field_validator("openai_api_key", "tavily_api_key", "langsmith_api_key", mode="before")
     @classmethod
     def empty_secret_is_missing(cls, value: object) -> object:
         """Treat blank optional secret entries like absent environment variables."""
         if isinstance(value, str) and not value.strip():
             return None
         return value
+
+    @model_validator(mode="after")
+    def timeout_budget_covers_three_model_calls(self) -> "Settings":
+        """Keep the backend deadline inside the web limit with room for three calls."""
+        minimum_budget = self.request_timeout_seconds * 3 + 5
+        if self.total_request_timeout_seconds < minimum_budget:
+            raise ValueError(
+                "total_request_timeout_seconds must cover three model calls plus 5 seconds"
+            )
+        return self
 
     @property
     def poe_db_path(self) -> Path:
@@ -90,9 +105,7 @@ class Settings(BaseSettings):
     def require_openai_key(self) -> str:
         """Return the OpenAI key or fail with an actionable configuration error."""
         if self.openai_api_key is None:
-            raise RuntimeError(
-                "OPENAI_API_KEY is required for chat and dense retrieval"
-            )
+            raise RuntimeError("OPENAI_API_KEY is required for chat and dense retrieval")
         return self.openai_api_key.get_secret_value()
 
     def require_tavily_key(self) -> str:

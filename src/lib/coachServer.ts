@@ -32,7 +32,7 @@ export function coachEndpoint(apiUrl: string, path: string): string {
 
 /** Preserve expected user-action statuses and hide other upstream failures behind 502. */
 export function coachPublicStatus(status: number): number {
-  return [400, 409, 429, 503].includes(status) ? status : 502;
+  return [400, 409, 429, 503, 504].includes(status) ? status : 502;
 }
 
 function developmentSecret(): string {
