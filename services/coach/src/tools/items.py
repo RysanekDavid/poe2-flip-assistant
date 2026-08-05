@@ -5,9 +5,18 @@ import json
 from pathlib import Path
 
 from langchain_core.tools import BaseTool, tool
+from pydantic import BaseModel, ConfigDict
 
 from src.evidence import evidence_id
 from src.items import get_item_catalog, inspect_item_text
+
+
+class GameDataLookupInput(BaseModel):
+    """Strict model-facing contract for one bounded catalog lookup."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    query: str
 
 
 def build_item_tool(manifest_path: Path) -> BaseTool:
@@ -44,14 +53,14 @@ def build_game_data_tool(manifest_path: Path) -> BaseTool:
     """Bind a complete local catalog lookup tool to one snapshot."""
     catalog = get_item_catalog(manifest_path)
 
-    @tool("lookup_poe2_game_data")
-    def lookup_poe2_game_data(query: str, limit: int = 5) -> str:
+    @tool("lookup_poe2_game_data", args_schema=GameDataLookupInput)
+    def lookup_poe2_game_data(query: str) -> str:
         """Look up exact PoE2 bases, modifiers, items, skills, augments, tags, or uniques.
 
         Use this local datamined catalog before web search for exact game-data descriptions.
         Spawn weights are compatibility markers, not trustworthy outcome probabilities.
         """
-        hits = catalog.search(query, limit)
+        hits = catalog.search(query, 5)
         identity = hashlib.sha256(json.dumps(hits, sort_keys=True).encode()).hexdigest()
         source_id = evidence_id("D", f"{catalog.version}|{query}|{identity}")
         source = {
