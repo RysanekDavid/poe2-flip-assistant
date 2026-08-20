@@ -4,20 +4,17 @@ import asyncio
 import json
 import logging
 from pathlib import Path
-from types import SimpleNamespace
 
 import httpx
 import pytest
-from fastapi import Request
 from fastapi.testclient import TestClient
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from openai import APITimeoutError, BadRequestError
 from pydantic import SecretStr
 
-from src.api import AgentProvider, _chat_response, create_app
+from src.api import create_app
 from src.config import APP_ROOT, Settings
 from src.demo_policy import DEMO_PROMPT
-from src.schemas import ChatRequest
 from src.tools import get_tools
 
 THREAD_ID = "00000000-0000-4000-8000-000000000001"
@@ -90,27 +87,17 @@ class TimeoutAgent:
         raise APITimeoutError(request=request)
 
 
-class CancelledAgent:
-    """Expose request cancellation without converting it into an HTTP error."""
+class CapturingAgent:
+    """Capture trusted history without invoking a provider."""
+
+    def __init__(self) -> None:
+        self.messages: list[object] = []
 
     async def ainvoke(
         self, values: dict[str, object], config: dict[str, object]
     ) -> dict[str, object]:
-        raise asyncio.CancelledError
-
-
-class BlockingAgent:
-    """Wait until the request task is cancelled by its caller."""
-
-    def __init__(self, started: asyncio.Event) -> None:
-        self.started = started
-
-    async def ainvoke(
-        self, values: dict[str, object], config: dict[str, object]
-    ) -> dict[str, object]:
-        self.started.set()
-        await asyncio.Event().wait()
-        raise AssertionError("blocking agent unexpectedly resumed")
+        self.messages = list(values["messages"])
+        return {"messages": [*self.messages, AIMessage(content="History answer")]}
 
 
 def test_blank_optional_keys_are_not_configured() -> None:
@@ -134,11 +121,10 @@ def test_internal_api_works_without_tavily(
         openai_api_key=SecretStr("test-key"),
         tavily_api_key=None,
         configured_db_path=market_db,
-        configured_checkpoint_path=tmp_path / "checkpoints.db",
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
-    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: FakeAgent())
+    app = create_app(settings=settings, agent_factory=lambda _settings: FakeAgent())
 
     with TestClient(app) as client:
         health = client.get("/health")
@@ -149,9 +135,73 @@ def test_internal_api_works_without_tavily(
     assert health.json()["model_configured"] is True
     assert health.json()["item_data_ready"] is True
     assert health.json()["web_search_ready"] is False
+    assert health.json()["recommendations_ready"] is False
+    assert health.json()["status"] == "ok"
     assert chat.status_code == 200
     assert "Local answer" in chat.json()["answer"]
     assert "search_recent_poe2" not in {tool.name for tool in get_tools(settings)}
+
+
+@pytest.mark.parametrize(
+    "history",
+    [
+        [{"role": "assistant", "content": "wrong first role"}],
+        [
+            {"role": "user", "content": "one"},
+            {"role": "user", "content": "wrong alternation"},
+        ],
+        [
+            {"role": role, "content": f"message-{index}"}
+            for index, role in enumerate(["user", "assistant"] * 8)
+        ],
+    ],
+)
+def test_chat_rejects_untrusted_history_shapes(
+    history: list[dict[str, str]],
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+) -> None:
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    app = create_app(settings=settings, agent_factory=lambda _s: FakeAgent())
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat", json={"message": "Hi", "thread_id": THREAD_ID, "history": history}
+        )
+
+    assert response.status_code == 422
+
+
+def test_chat_passes_last_seven_completed_turns_before_current_prompt(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    agent = CapturingAgent()
+    app = create_app(settings=settings, agent_factory=lambda _s: agent)
+    history = [
+        {"role": role, "content": f"history-{index}"}
+        for index, role in enumerate(["user", "assistant"] * 7)
+    ]
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat",
+            json={"message": "current", "thread_id": THREAD_ID, "history": history},
+        )
+
+    assert response.status_code == 200
+    assert len(agent.messages) == 15
+    assert [type(message) for message in agent.messages] == [
+        *[HumanMessage, AIMessage] * 7,
+        HumanMessage,
+    ]
+    assert agent.messages[-1].content == "current"
+    assert not list(tmp_path.rglob("coach-checkpoints.db"))
 
 
 def test_chat_without_openai_key_returns_actionable_503(
@@ -161,17 +211,16 @@ def test_chat_without_openai_key_returns_actionable_503(
         _env_file=None,
         openai_api_key=None,
         configured_db_path=market_db,
-        configured_checkpoint_path=tmp_path / "checkpoints.db",
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
-    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: FakeAgent())
+    app = create_app(settings=settings, agent_factory=lambda _settings: FakeAgent())
 
     with TestClient(app) as client:
         response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
 
     assert response.status_code == 503
-    assert "OPENAI_API_KEY" in response.json()["detail"]
+    assert response.json()["error"]["code"] == "internal"
 
 
 def test_health_is_degraded_without_item_catalog(market_db: Path, tmp_path: Path) -> None:
@@ -179,11 +228,10 @@ def test_health_is_degraded_without_item_catalog(market_db: Path, tmp_path: Path
         _env_file=None,
         openai_api_key=SecretStr("test-key"),
         configured_db_path=market_db,
-        configured_checkpoint_path=tmp_path / "checkpoints.db",
         configured_item_catalog_path=tmp_path / "missing-manifest.json",
         corpus_dir=APP_ROOT,
     )
-    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: FakeAgent())
+    app = create_app(settings=settings, agent_factory=lambda _settings: FakeAgent())
 
     with TestClient(app) as client:
         health = client.get("/health")
@@ -200,11 +248,10 @@ def test_demo_prompt_enforces_mocked_tool_source_and_disclaimer(
         _env_file=None,
         openai_api_key=SecretStr("test-key"),
         configured_db_path=market_db,
-        configured_checkpoint_path=tmp_path / "checkpoints.db",
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
-    app = create_app(settings=settings, agent_factory=lambda _cp, _s: DemoAgent())
+    app = create_app(settings=settings, agent_factory=lambda _s: DemoAgent())
 
     with TestClient(app) as client:
         response = client.post("/chat", json={"message": DEMO_PROMPT, "thread_id": THREAD_ID})
@@ -219,28 +266,20 @@ def test_demo_prompt_enforces_mocked_tool_source_and_disclaimer(
     assert "Verify prices in-game" in payload["answer"]
 
 
-def test_orphaned_responses_tool_call_resets_conversation(
+def test_orphaned_responses_tool_call_is_stateless_and_retryable(
     market_db: Path,
     item_catalog_manifest: Path,
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     settings = Settings(
         _env_file=None,
         openai_api_key=SecretStr("test-key"),
         configured_db_path=market_db,
-        configured_checkpoint_path=tmp_path / "checkpoints.db",
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
     agent = BadRequestAgent("No tool output found for function call call_test.")
-    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: agent)
-    deleted: list[str] = []
-
-    async def track_delete(_provider: AgentProvider, thread_id: str) -> None:
-        deleted.append(thread_id)
-
-    monkeypatch.setattr(AgentProvider, "delete_thread", track_delete)
+    app = create_app(settings=settings, agent_factory=lambda _settings: agent)
     prompt = (
         "I want a Dueling Wand for Blood Mage with spell damage, +all spell skills, "
         "maximum mana, extra cold damage, spell critical chance, and cast speed. "
@@ -251,11 +290,10 @@ def test_orphaned_responses_tool_call_resets_conversation(
         failed = client.post("/chat", json={"message": prompt, "thread_id": THREAD_ID})
         recovered = client.post("/chat", json={"message": prompt, "thread_id": THREAD_ID})
 
-    assert failed.status_code == 409
-    assert "Conversation state was reset" in failed.json()["detail"]
+    assert failed.status_code == 502
+    assert failed.json()["error"]["reset_conversation"] is False
     assert recovered.status_code == 200
     assert recovered.json()["answer"].startswith("Recovered answer")
-    assert deleted == [THREAD_ID]
 
 
 def test_unrelated_openai_bad_request_remains_a_502(
@@ -265,31 +303,28 @@ def test_unrelated_openai_bad_request_remains_a_502(
         _env_file=None,
         openai_api_key=SecretStr("test-key"),
         configured_db_path=market_db,
-        configured_checkpoint_path=tmp_path / "checkpoints.db",
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
     agent = BadRequestAgent("Unsupported parameter")
-    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: agent)
+    app = create_app(settings=settings, agent_factory=lambda _settings: agent)
 
     with TestClient(app) as client:
         response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
 
     assert response.status_code == 502
-    assert "Agent execution failed" in response.json()["detail"]
+    assert response.json()["error"]["code"] == "provider_rejected"
 
 
-def test_missing_previous_response_resets_conversation(
+def test_missing_previous_response_is_stateless_provider_rejection(
     market_db: Path,
     item_catalog_manifest: Path,
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     settings = Settings(
         _env_file=None,
         openai_api_key=SecretStr("test-key"),
         configured_db_path=market_db,
-        configured_checkpoint_path=tmp_path / "checkpoints.db",
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )
@@ -303,66 +338,27 @@ def test_missing_previous_response_resets_conversation(
         }
     }
     agent = BadRequestAgent(message, body)
-    app = create_app(settings=settings, agent_factory=lambda _cp, _settings: agent)
-    deleted: list[str] = []
-
-    async def track_delete(_provider: AgentProvider, thread_id: str) -> None:
-        deleted.append(thread_id)
-
-    monkeypatch.setattr(AgentProvider, "delete_thread", track_delete)
+    app = create_app(settings=settings, agent_factory=lambda _settings: agent)
     with TestClient(app) as client:
         response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
 
-    assert response.status_code == 409
-    assert "Conversation state was reset" in response.json()["detail"]
-    assert deleted == [THREAD_ID]
+    assert response.status_code == 502
+    assert response.json()["error"]["reset_conversation"] is False
 
 
-def test_provider_timeout_clears_checkpoint_and_returns_504(
+def test_provider_timeout_returns_stateless_504(
     market_db: Path,
     item_catalog_manifest: Path,
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
-    app = create_app(settings=settings, agent_factory=lambda _cp, _s: TimeoutAgent())
-    deleted: list[str] = []
-
-    async def track_delete(_provider: AgentProvider, thread_id: str) -> None:
-        deleted.append(thread_id)
-
-    monkeypatch.setattr(AgentProvider, "delete_thread", track_delete)
+    app = create_app(settings=settings, agent_factory=lambda _s: TimeoutAgent())
     with TestClient(app) as client:
         response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
 
     assert response.status_code == 504
-    assert response.json()["detail"] == (
-        "Coach timed out while checking its sources. Start a new request."
-    )
-    assert deleted == [THREAD_ID]
-
-
-def test_timeout_cleanup_failure_returns_503_without_claiming_reset(
-    market_db: Path,
-    item_catalog_manifest: Path,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
-    app = create_app(settings=settings, agent_factory=lambda _cp, _s: TimeoutAgent())
-
-    async def fail_delete(_provider: AgentProvider, thread_id: str) -> None:
-        raise OSError("test checkpoint failure")
-
-    monkeypatch.setattr(AgentProvider, "delete_thread", fail_delete)
-    with TestClient(app) as client:
-        response = client.post("/chat", json={"message": "Hi", "thread_id": THREAD_ID})
-
-    assert response.status_code == 503
-    assert response.json()["detail"] == (
-        "Coach timed out and its conversation state could not be cleared."
-    )
-    assert "reset" not in response.json()["detail"].casefold()
+    assert response.json()["error"]["code"] == "provider_timeout"
+    assert response.json()["error"]["reset_conversation"] is False
 
 
 def test_successful_request_uses_configured_total_deadline(
@@ -372,7 +368,7 @@ def test_successful_request_uses_configured_total_deadline(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
-    app = create_app(settings=settings, agent_factory=lambda _cp, _s: FakeAgent())
+    app = create_app(settings=settings, agent_factory=lambda _s: FakeAgent())
     real_timeout = asyncio.timeout
     deadlines: list[float] = []
 
@@ -395,7 +391,7 @@ def test_request_timing_log_omits_prompt_and_thread(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
-    app = create_app(settings=settings, agent_factory=lambda _cp, _s: FakeAgent())
+    app = create_app(settings=settings, agent_factory=lambda _s: FakeAgent())
     private_prompt = "my-private-build-note"
     caplog.set_level(logging.INFO, logger="uvicorn.error")
 
@@ -408,72 +404,11 @@ def test_request_timing_log_omits_prompt_and_thread(
     assert THREAD_ID not in caplog.text
 
 
-@pytest.mark.asyncio
-async def test_cancellation_cleans_checkpoint_then_reraises(
-    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
-) -> None:
-    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
-    deleted: list[str] = []
-
-    class CancelledProvider:
-        async def get(self) -> CancelledAgent:
-            return CancelledAgent()
-
-        async def delete_thread(self, thread_id: str) -> None:
-            deleted.append(thread_id)
-
-    app = SimpleNamespace(state=SimpleNamespace(agent_provider=CancelledProvider()))
-    request = Request({"type": "http", "app": app})
-    payload = ChatRequest(message="Hi", thread_id=THREAD_ID)
-
-    with pytest.raises(asyncio.CancelledError):
-        await _chat_response(payload, request, settings)
-
-    assert deleted == [THREAD_ID]
-
-
-@pytest.mark.asyncio
-async def test_repeated_cancellation_cannot_leave_detached_checkpoint_cleanup(
-    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
-) -> None:
-    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
-    agent_started = asyncio.Event()
-    cleanup_started = asyncio.Event()
-    cleanup_cancelled = asyncio.Event()
-
-    class BlockingProvider:
-        async def get(self) -> BlockingAgent:
-            return BlockingAgent(agent_started)
-
-        async def delete_thread(self, thread_id: str) -> None:
-            cleanup_started.set()
-            try:
-                await asyncio.Event().wait()
-            except asyncio.CancelledError:
-                cleanup_cancelled.set()
-                raise
-
-    app = SimpleNamespace(state=SimpleNamespace(agent_provider=BlockingProvider()))
-    request = Request({"type": "http", "app": app})
-    payload = ChatRequest(message="Hi", thread_id=THREAD_ID)
-    task = asyncio.create_task(_chat_response(payload, request, settings))
-
-    await agent_started.wait()
-    task.cancel()
-    await cleanup_started.wait()
-    task.cancel()
-
-    with pytest.raises(asyncio.CancelledError):
-        await task
-    assert cleanup_cancelled.is_set()
-
-
 def _test_settings(market_db: Path, item_catalog_manifest: Path, tmp_path: Path) -> Settings:
     return Settings(
         _env_file=None,
         openai_api_key=SecretStr("test-key"),
         configured_db_path=market_db,
-        configured_checkpoint_path=tmp_path / "checkpoints.db",
         configured_item_catalog_path=item_catalog_manifest,
         corpus_dir=APP_ROOT,
     )

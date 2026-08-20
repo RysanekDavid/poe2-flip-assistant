@@ -5,7 +5,6 @@ description = "Internal LangGraph coach for the PoE2 trading application."
 requires-python = ">=3.13"
 dependencies = [
     "langgraph>=1.2.0,<2.0.0",
-    "langgraph-checkpoint-sqlite>=3.1.0,<4.0.0",
     "langchain>=1.3.0,<2.0.0",
     "langchain-openai>=1.3.0,<2.0.0",
     "langchain-qdrant>=1.1.0,<2.0.0",

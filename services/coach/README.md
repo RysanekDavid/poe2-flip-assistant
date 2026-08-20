@@ -6,21 +6,21 @@ Python/LangGraph sidecar used only through the authenticated Next.js `/api/coach
 - Loads the integrity-checked, versioned RePoE catalog from `src/data/poe2/repoe/` for exact base,
   modifier, tier, affix-side, implicit, skill, and special-outcome inspection.
 - Builds RAG directly from an explicit allowlist under `docs/kb/` and `docs/research/`.
-- Stores thread checkpoints in `data/coach-checkpoints.db`.
+- Uses the authenticated application's SQLite history as the only conversational memory.
 - Does not expose or use `POESESSID`, receives no product decryption key, and cannot perform
   in-game actions.
 
 Reasoning tool calls use the OpenAI Responses API with `store=true` only to link an active
 function call to its output. Each new user turn starts a fresh provider-side chain and replays at
-most eight visible local turns. OpenAI response objects are stored for 30 days by default; deleting
-the local SQLite checkpoint does not delete that provider-side data. Do not paste passwords,
+most seven completed turns supplied by the authenticated application. OpenAI response objects are
+stored for 30 days by default. Do not paste passwords,
 session cookies, API keys, `POESESSID`, or private account data into Coach. See OpenAI's
 [data controls](https://developers.openai.com/api/docs/guides/your-data) and
 [conversation-state](https://developers.openai.com/api/docs/guides/conversation-state) guidance.
 
 Each provider call has a 45-second timeout with automatic SDK retries disabled. A turn permits at
 most two tool rounds and three model calls; after the second tool round the final model call cannot
-request more tools. The Coach stops waiting after 140 seconds, clears its checkpoint, and returns
+request more tools. The Coach stops waiting after 140 seconds and returns
 HTTP 504 before the authenticated web proxy reaches its 160-second deadline. The deployment probe
 allows 180 seconds. Synchronous provider work uses the same 45-second network timeout.
 

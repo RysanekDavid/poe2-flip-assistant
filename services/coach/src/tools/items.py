@@ -7,6 +7,7 @@ from pathlib import Path
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, ConfigDict
 
+from src.errors import ToolInvalidInput
 from src.evidence import evidence_id
 from src.items import get_item_catalog, inspect_item_text
 
@@ -60,7 +61,10 @@ def build_game_data_tool(manifest_path: Path) -> BaseTool:
         Use this local datamined catalog before web search for exact game-data descriptions.
         Spawn weights are compatibility markers, not trustworthy outcome probabilities.
         """
-        hits = catalog.search(query, 5)
+        normalized = query.strip()
+        if len(normalized) < 2:
+            raise ToolInvalidInput("game-data query must contain at least two characters")
+        hits = catalog.search(normalized, 5)
         identity = hashlib.sha256(json.dumps(hits, sort_keys=True).encode()).hexdigest()
         source_id = evidence_id("D", f"{catalog.version}|{query}|{identity}")
         source = {

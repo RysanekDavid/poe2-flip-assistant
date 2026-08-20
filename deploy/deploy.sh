@@ -10,9 +10,7 @@ TARGET_REF=${1:-HEAD}
 CURRENT_LINK="$APP_DIR/current"
 SERVICES_STOPPED=0
 PRODUCT_BACKUP=""
-CHECKPOINT_BACKUP=""
 PRODUCT_EXISTED=0
-CHECKPOINT_EXISTED=0
 WEB_UNIT_EXISTED=0
 POLLER_UNIT_EXISTED=0
 COACH_UNIT_EXISTED=0
@@ -22,6 +20,9 @@ PREVIOUS_WEB_ENABLED=0
 PREVIOUS_POLLER_ENABLED=0
 PREVIOUS_COACH_ENABLED=0
 ROLLBACK_READY_TIMEOUT_SECONDS=45
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=deploy-helpers.sh
+source "$SCRIPT_DIR/deploy-helpers.sh"
 
 if [[ $(id -u) -ne 0 ]]; then
   echo "run this as root: release setup and systemd require root" >&2
@@ -32,20 +33,6 @@ run_as_app() { runuser -u "$APP_USER" -- "$@"; }
 
 run_in_release() {
   runuser -u "$APP_USER" -- sh -c 'cd "$1" && shift && exec "$@"' sh "$RELEASE_DIR" "$@"
-}
-
-require_command() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    echo "missing required command: $1" >&2
-    exit 1
-  fi
-}
-
-switch_current() {
-  local target=$1
-  local temporary="$APP_DIR/.current-$RELEASE_ID-$$-$RANDOM"
-  ln -s "$target" "$temporary"
-  mv -Tf "$temporary" "$CURRENT_LINK"
 }
 
 quick_check() {
@@ -105,45 +92,6 @@ const path = require("node:path");
 require("dotenv").config({ path: process.argv[1] });
 process.stdout.write(path.resolve(process.env[process.argv[2]] || process.argv[3]));
 ' "$env_file" "$key" "$fallback"
-}
-
-validate_timeout_hierarchy() {
-  local runtime_env=$1
-  node -e '
-const fs = require("node:fs");
-const runtime = fs.readFileSync(process.argv[1], "utf8");
-function singleValue(source, key) {
-  const matches = [...source.matchAll(new RegExp(`^${key}=([^\\r\\n]*)$`, "gm"))];
-  if (matches.length !== 1) throw new Error(`${key} must appear exactly once`);
-  return matches[0][1];
-}
-function numeric(source, key) {
-  const raw = singleValue(source, key);
-  if (!/^\d+(?:\.\d+)?$/.test(raw)) throw new Error(`${key} must be numeric`);
-  const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) throw new Error(`${key} must be positive`);
-  return value;
-}
-if (singleValue(runtime, "CHAT_MODEL") !== "gpt-5.4-mini") {
-  throw new Error("CHAT_MODEL must equal gpt-5.4-mini");
-}
-const providerSeconds = numeric(runtime, "COACH_MODEL_TIMEOUT_SECONDS");
-const totalSeconds = numeric(runtime, "COACH_TOTAL_TIMEOUT_SECONDS");
-const toolRounds = numeric(runtime, "COACH_MAX_TOOL_ROUNDS");
-const webMilliseconds = numeric(runtime, "COACH_TIMEOUT_MS");
-if (providerSeconds !== 45 || totalSeconds !== 140 || toolRounds !== 2) {
-  throw new Error("Coach backend timeouts must match the approved release budget");
-}
-if (webMilliseconds !== 160000) throw new Error("Coach web timeout must equal 160000ms");
-if (!Number.isInteger(toolRounds) || toolRounds > 2) throw new Error("invalid tool-round cap");
-if (totalSeconds < providerSeconds * (toolRounds + 1) + 5) {
-  throw new Error("Coach total timeout does not cover its provider-call budget");
-}
-if (webMilliseconds <= totalSeconds * 1000 || webMilliseconds >= 180000) {
-  throw new Error("Coach web timeout must sit between backend and deployment deadlines");
-}
-console.log("Coach timeout hierarchy OK");
-' "$runtime_env"
 }
 
 was_active() {
@@ -275,12 +223,6 @@ rollback() {
     elif [[ $PRODUCT_EXISTED -eq 0 ]]; then
       quarantine_db "$PRODUCT_DB" || rollback_ok=0
     fi
-    if [[ -n "$CHECKPOINT_BACKUP" ]]; then
-      run_as_app sqlite3 "$CHECKPOINT_DB" ".restore '$CHECKPOINT_BACKUP'" || rollback_ok=0
-      quick_check "$CHECKPOINT_DB" || rollback_ok=0
-    elif [[ $CHECKPOINT_EXISTED -eq 0 ]]; then
-      quarantine_db "$CHECKPOINT_DB" || rollback_ok=0
-    fi
     restore_unit poe2flip-web.service "$WEB_UNIT_EXISTED" || rollback_ok=0
     restore_unit poe2flip-poller.service "$POLLER_UNIT_EXISTED" || rollback_ok=0
     restore_unit poe2flip-coach.service "$COACH_UNIT_EXISTED" || rollback_ok=0
@@ -300,6 +242,7 @@ rollback() {
 for command in curl date df git mv node npm sqlite3 stat systemctl tar; do
   require_command "$command"
 done
+validate_node_version
 if [[ ! -x /usr/local/bin/uv ]]; then
   echo "missing /usr/local/bin/uv; install uv first (see deploy/README.md)" >&2
   exit 1
@@ -318,18 +261,31 @@ if [[ $(stat -c '%a' .env.local) != 600 ]]; then
   echo "$APP_DIR/.env.local must have mode 600" >&2
   exit 1
 fi
-for key in AUTH_SECRET SECRET_KEY COACH_THREAD_SECRET APP_ORIGIN; do
+for key in AUTH_SECRET SECRET_KEY COACH_THREAD_SECRET COACH_PROXY_SECRET APP_ORIGIN; do
   if ! grep -Eq "^${key}=.+$" .env.local; then
     echo "missing required value for $key in $APP_DIR/.env.local" >&2
     exit 1
   fi
 done
-for key in OPENAI_API_KEY POE_DB_PATH COACH_CHECKPOINT_DB_PATH POE2_DATA_MANIFEST; do
+patch_notes_enabled=$(awk -F= '$1 == "PATCH_NOTES_ENABLED" { value=substr($0, index($0, "=") + 1) } END { print value }' .env.local)
+if [[ -z "$patch_notes_enabled" || "${patch_notes_enabled,,}" == "true" ]]; then
+  if ! grep -Eq '^DATA_SOURCE_CONTACT=[^[:space:]].*$' .env.local; then
+    echo "DATA_SOURCE_CONTACT is required when PATCH_NOTES_ENABLED is true or omitted" >&2
+    exit 1
+  fi
+fi
+for key in OPENAI_API_KEY COACH_PROXY_SECRET POE_DB_PATH POE2_DATA_MANIFEST; do
   if ! grep -Eq "^${key}=.+$" .coach.env; then
     echo "missing required value for $key in $APP_DIR/.coach.env" >&2
     exit 1
   fi
 done
+web_proxy_secret=$(awk -F= '$1 == "COACH_PROXY_SECRET" { print substr($0, index($0, "=") + 1) }' .env.local)
+coach_proxy_secret=$(awk -F= '$1 == "COACH_PROXY_SECRET" { print substr($0, index($0, "=") + 1) }' .coach.env)
+if [[ "$web_proxy_secret" != "$coach_proxy_secret" ]]; then
+  echo "COACH_PROXY_SECRET must match in .env.local and .coach.env" >&2
+  exit 1
+fi
 if [[ $(stat -c '%a' .coach.env) != 600 ]]; then
   echo "$APP_DIR/.coach.env must have mode 600" >&2
   exit 1
@@ -387,9 +343,7 @@ run_in_release npm run verify:poe2-data
 run_in_release npm run build
 
 PRODUCT_DB=$(env_path DB_PATH "$RELEASE_DIR/data/poe2flip.db")
-CHECKPOINT_DB=$(env_path COACH_CHECKPOINT_DB_PATH "$RELEASE_DIR/data/coach-checkpoints.db" "$APP_DIR/.coach.env")
 [[ -f "$PRODUCT_DB" ]] && PRODUCT_EXISTED=1
-[[ -f "$CHECKPOINT_DB" ]] && CHECKPOINT_EXISTED=1
 if [[ ! -f "$PRODUCT_DB" ]] && ! grep -Eq '^OWNER_PASSWORD=.+$' "$APP_DIR/.env.local"; then
   echo "OWNER_PASSWORD is required when creating the first product database" >&2
   exit 1
@@ -418,11 +372,8 @@ for service in poe2flip-poller poe2flip-web poe2flip-coach; do
 done
 
 product_backup_candidate="$APP_DIR/backups/poe2flip-$RELEASE_ID.db"
-checkpoint_backup_candidate="$APP_DIR/backups/coach-checkpoints-$RELEASE_ID.db"
 backup_db "$PRODUCT_DB" "$product_backup_candidate"
 [[ -f "$product_backup_candidate" ]] && PRODUCT_BACKUP="$product_backup_candidate"
-backup_db "$CHECKPOINT_DB" "$checkpoint_backup_candidate"
-[[ -f "$checkpoint_backup_candidate" ]] && CHECKPOINT_BACKUP="$checkpoint_backup_candidate"
 
 run_in_release npm run db:migrate
 quick_check "$PRODUCT_DB"

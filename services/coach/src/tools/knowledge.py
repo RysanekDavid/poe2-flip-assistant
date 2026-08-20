@@ -5,6 +5,7 @@ import json
 from langchain_core.tools import tool
 
 from src.demo_policy import is_demo_knowledge_query
+from src.errors import ToolInvalidInput, ToolNoResult
 from src.evidence import evidence_id
 from src.retrieval import get_retrieval_service
 
@@ -17,7 +18,7 @@ def retrieve_knowledge(query: str) -> str:
     """
     normalized = query.strip()
     if not normalized:
-        raise ValueError("query must not be empty")
+        raise ToolInvalidInput("query must not be empty")
     scripted = is_demo_knowledge_query(normalized)
     hits = get_retrieval_service().search(normalized, mode="hybrid", limit=12 if scripted else 4)
     if scripted:
@@ -28,7 +29,7 @@ def retrieve_knowledge(query: str) -> str:
             and "desecration-abyss" in str(hit.document.metadata.get("source", "")).casefold()
         ]
         if not hits:
-            raise LookupError("Audited Omen comparison evidence is missing from the corpus")
+            raise ToolNoResult("Audited Omen comparison evidence is missing from the corpus")
         hits = hits[:1]
     passages = []
     sources = []

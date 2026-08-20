@@ -17,7 +17,6 @@ from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.prebuilt import ToolNode
 
 from src.config import Settings
 from src.demo_policy import required_tools
@@ -25,6 +24,7 @@ from src.guardrails import inspect_input
 from src.items import get_item_catalog, inspect_item_text, looks_like_item_text
 from src.items.catalog import ItemCatalog
 from src.prompts import system_prompt
+from src.tool_execution import tool_node
 from src.tools import get_tools
 
 logger = logging.getLogger("uvicorn.error")
@@ -47,7 +47,7 @@ class AgentState(MessagesState):
 AgentNode = Callable[[AgentState], Awaitable[dict[str, object]]]
 
 
-def build_agent(checkpointer: object, settings: Settings) -> CompiledStateGraph:
+def build_agent(settings: Settings) -> CompiledStateGraph:
     """Compile a bounded guard → model ⇄ tools graph with a forced final answer."""
     tools = get_tools(settings)
     catalog = get_item_catalog(settings.item_catalog_path)
@@ -57,7 +57,7 @@ def build_agent(checkpointer: object, settings: Settings) -> CompiledStateGraph:
     guard = _guard_node(catalog)
     call_model = _model_node(model_with_tools, "model")
     call_final_model = _model_node(model, "final_model", force_final=True)
-    call_tools = _tools_node(ToolNode(tools, handle_tool_errors=False))
+    call_tools = _tools_node(tool_node(tools))
 
     builder = StateGraph(AgentState)
     builder.add_node("guard", guard)
@@ -75,7 +75,7 @@ def build_agent(checkpointer: object, settings: Settings) -> CompiledStateGraph:
         {"agent": "agent", "final": "final"},
     )
     builder.add_edge("final", END)
-    return builder.compile(checkpointer=checkpointer)
+    return builder.compile()
 
 
 def build_chat_model(settings: Settings) -> ChatOpenAI:
@@ -156,13 +156,13 @@ def _model_node(
     return call_model
 
 
-def _tools_node(node: ToolNode) -> AgentNode:
+def _tools_node(node: AgentNode) -> AgentNode:
     async def call_tools(state: AgentState) -> dict[str, object]:
         started = monotonic()
         outcome = "ok"
         tool_count = _pending_tool_count(state)
         try:
-            result = await node.ainvoke(state)
+            result = await node(state)
             if not isinstance(result, dict):
                 raise RuntimeError("Tool node returned an invalid state update")
             return result

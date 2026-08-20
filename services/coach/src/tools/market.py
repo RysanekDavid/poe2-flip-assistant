@@ -6,10 +6,12 @@ from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from statistics import fmean
+from typing import NoReturn
 
 from langchain_core.tools import tool
 
 from src.config import get_settings
+from src.errors import ToolInvalidInput, ToolNoResult, ToolSourceUnavailable
 from src.evidence import evidence_id
 
 _REQUIRED_COLUMNS = {
@@ -22,6 +24,15 @@ _REQUIRED_COLUMNS = {
 }
 _HEARTBEAT_COLUMNS = {"item_id", "updated_at"}
 _READINESS_MAX_AGE = timedelta(minutes=30)
+_UNAVAILABLE_SQLITE_CODES = {
+    sqlite3.SQLITE_BUSY,
+    sqlite3.SQLITE_LOCKED,
+    sqlite3.SQLITE_CANTOPEN,
+    sqlite3.SQLITE_IOERR,
+    sqlite3.SQLITE_CORRUPT,
+    sqlite3.SQLITE_NOTADB,
+    sqlite3.SQLITE_READONLY,
+}
 
 
 @tool
@@ -32,9 +43,12 @@ def analyze_market_history(items: list[str], days: int) -> str:
     """
     names = _validated_items(items)
     if not 1 <= days <= 30:
-        raise ValueError("days must be between 1 and 30")
-    with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
-        results = [_analyze_item(connection, name, days) for name in names]
+        raise ToolInvalidInput("days must be between 1 and 30")
+    try:
+        with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
+            results = [_analyze_item(connection, name, days) for name in names]
+    except sqlite3.Error as error:
+        _raise_market_source_error(error)
     sources = [_market_source(result) for result in results]
     return json.dumps(
         {
@@ -50,8 +64,11 @@ def analyze_market_history(items: list[str], days: int) -> str:
 def current_market_values(items: list[str]) -> tuple[list[dict[str, object]], str]:
     """Return latest locally polled values for validated item names."""
     names = _validated_items(items)
-    with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
-        results = [_current_item(connection, name) for name in names]
+    try:
+        with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
+            results = [_current_item(connection, name) for name in names]
+    except sqlite3.Error as error:
+        _raise_market_source_error(error)
     timestamp = max(str(result["fetched_at"]) for result in results)
     return results, timestamp
 
@@ -65,17 +82,13 @@ def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bo
         with closing(_connect_read_only(target)) as connection:
             columns = {
                 str(row["name"])
-                for row in connection.execute(
-                    "PRAGMA table_info(price_snapshots)"
-                ).fetchall()
+                for row in connection.execute("PRAGMA table_info(price_snapshots)").fetchall()
             }
             if not columns >= _REQUIRED_COLUMNS:
                 return False
             heartbeat_columns = {
                 str(row["name"])
-                for row in connection.execute(
-                    "PRAGMA table_info(item_spark)"
-                ).fetchall()
+                for row in connection.execute("PRAGMA table_info(item_spark)").fetchall()
             }
             if not heartbeat_columns >= _HEARTBEAT_COLUMNS:
                 return False
@@ -98,9 +111,7 @@ def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bo
             return (
                 heartbeat is not None
                 and heartbeat["updated_at"] is not None
-                and _is_fresh(
-                    str(heartbeat["updated_at"]), now or datetime.now(UTC)
-                )
+                and _is_fresh(str(heartbeat["updated_at"]), now or datetime.now(UTC))
             )
     except (sqlite3.Error, TypeError, ValueError):
         return False
@@ -127,13 +138,32 @@ def _connect_read_only(path: Path) -> sqlite3.Connection:
 def _validated_items(items: list[str]) -> list[str]:
     cleaned = [item.strip() for item in items if item.strip()]
     if not 1 <= len(cleaned) <= 5:
-        raise ValueError("items must contain between 1 and 5 non-empty names")
+        raise ToolInvalidInput("items must contain between 1 and 5 non-empty names")
     return cleaned
 
 
-def _analyze_item(
-    connection: sqlite3.Connection, requested: str, days: int
-) -> dict[str, object]:
+def _raise_market_source_error(error: sqlite3.Error) -> NoReturn:
+    code = getattr(error, "sqlite_errorcode", None)
+    if isinstance(code, int):
+        if code & 0xFF in _UNAVAILABLE_SQLITE_CODES:
+            raise ToolSourceUnavailable("Market database is temporarily unavailable") from error
+        raise error
+    unavailable = (
+        "unable to open database",
+        "database is locked",
+        "database table is locked",
+        "database is busy",
+        "disk i/o error",
+        "database disk image is malformed",
+        "file is not a database",
+        "readonly database",
+    )
+    if any(marker in str(error).casefold() for marker in unavailable):
+        raise ToolSourceUnavailable("Market database is temporarily unavailable") from error
+    raise error
+
+
+def _analyze_item(connection: sqlite3.Connection, requested: str, days: int) -> dict[str, object]:
     canonical = _resolve_name(connection, requested)
     rows = connection.execute(
         """
@@ -148,9 +178,7 @@ def _analyze_item(
         (canonical, f"-{days} days"),
     ).fetchall()
     if not rows:
-        raise LookupError(
-            f"No market observations found for {canonical!r} over {days} days"
-        )
+        raise ToolNoResult(f"No market observations found for {canonical!r} over {days} days")
     values = [float(row["value_div"]) for row in rows]
     volumes = [float(row["volume"]) for row in rows]
     change_pct = ((values[-1] / values[0]) - 1) * 100 if values[0] else 0.0
@@ -182,7 +210,7 @@ def _current_item(connection: sqlite3.Connection, requested: str) -> dict[str, o
         (canonical,),
     ).fetchone()
     if row is None:
-        raise LookupError(f"No current market value found for {canonical!r}")
+        raise ToolNoResult(f"No current market value found for {canonical!r}")
     return dict(row)
 
 
@@ -199,7 +227,7 @@ def _resolve_name(connection: sqlite3.Connection, requested: str) -> str:
         (requested, f"%{requested}%", requested),
     ).fetchone()
     if row is None:
-        raise LookupError(f"Unknown market item: {requested!r}")
+        raise ToolNoResult(f"Unknown market item: {requested!r}")
     return str(row["item_name"])
 
 

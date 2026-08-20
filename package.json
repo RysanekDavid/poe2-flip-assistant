@@ -2,6 +2,9 @@
   "name": "poe2-flip-assistant",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.18.1"
+  },
   "scripts": {
     "dev": "concurrently -n web,poll,coach -c cyan,magenta,yellow \"next dev\" \"tsx watch src/scheduler/poller.ts\" \"uv --cache-dir services/coach/.uv-cache --directory services/coach run uvicorn src.api:app --reload --port 8000\"",
     "dev:web": "next dev",
@@ -10,7 +13,7 @@
     "build": "next build",
     "start": "next start",
     "probe": "tsx src/scripts/probe.ts",
-    "test:coach": "tsx src/scripts/testCoach.ts",
+    "test:coach": "tsx src/scripts/testCoach.ts && tsx src/scripts/testCoachHistory.ts",
     "test:middleware": "tsx src/scripts/testMiddleware.ts",
     "test:demo-user": "tsx src/scripts/testAddUser.ts",
     "test:demo": "tsx src/scripts/testDemoReadiness.ts",
@@ -22,6 +25,9 @@
     "scrape:builds": "tsx src/scripts/scrapeBuilds.ts",
     "sync:poe2-data": "tsx src/scripts/syncPoe2GameData.ts",
     "verify:poe2-data": "tsx src/scripts/syncPoe2GameData.ts --verify",
+    "patch:sync": "tsx src/scripts/syncPatchNotes.ts",
+    "patch:review": "tsx src/scripts/reviewPatch.ts",
+    "test:patch": "tsx src/scripts/testPatchNotes.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "lint": "tsx src/scripts/lintPolicy.ts",
     "typecheck": "tsc --noEmit"
@@ -30,6 +36,7 @@
     "axios": "^1.7.0",
     "better-sqlite3": "^11.0.0",
     "bottleneck": "^2.19.5",
+    "cheerio": "^1.2.0",
     "date-fns": "^3.0.0",
     "dotenv": "^16.4.0",
     "driver.js": "^1.5.0",

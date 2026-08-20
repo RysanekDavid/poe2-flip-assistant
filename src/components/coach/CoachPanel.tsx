@@ -6,6 +6,7 @@ import { LoaderCircle, RotateCcw } from "lucide-react";
 import iconCoach from "../../assets/Coach.png";
 import { fetchCoachHealth, type CoachHealth } from "./api";
 import { CoachComposer } from "./CoachComposer";
+import { CoachHistorySidebar } from "./CoachHistorySidebar";
 import { CoachMessage } from "./CoachMessage";
 import { useCoachSession } from "./useCoachSession";
 
@@ -21,30 +22,31 @@ const PROMPTS = [
 export function CoachPanel({ active }: { active: boolean }) {
   // Keep the editorial type treatment scoped to Coach; the data-heavy dashboard stays compact.
   const session = useCoachSession();
-  const [health, setHealth] = useState<CoachHealth | null>(null);
-  const [healthError, setHealthError] = useState(false);
-  const checkedRef = useRef(false);
+  const { health, healthError } = useCoachHealth(active);
   const scrollRef = useRef<HTMLDivElement>(null);
   const availability = coachAvailability(health, healthError);
   useCoachScroll(active, scrollRef, session.messages.at(-1)?.id ?? null, session.isLoading);
-
-  useEffect(() => {
-    if (!active || checkedRef.current) return;
-    checkedRef.current = true;
-    fetchCoachHealth()
-      .then((result) => setHealth(result))
-      .catch(() => setHealthError(true));
-  }, [active]);
 
   return (
     <section className={`${active ? "flex" : "hidden"} h-[calc(100vh-225px)] min-h-[620px] flex-col overflow-hidden rounded-xl border border-neutral-800 bg-[radial-gradient(circle_at_top,rgba(120,83,22,0.08),transparent_38%)] font-['Segoe_UI_Variable','Segoe_UI',sans-serif] shadow-2xl shadow-black/20`}>
       <CoachHeader
         health={health}
         healthError={healthError}
-        onReset={session.reset}
+        onReset={session.newChat}
       />
 
-      <div ref={scrollRef} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-6">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <CoachHistorySidebar
+          conversations={session.conversations}
+          activeId={session.conversationId}
+          disabled={session.isLoading || session.isHistoryLoading}
+          onDelete={session.remove}
+          onNew={session.newChat}
+          onOpen={session.open}
+          onRename={session.rename}
+        />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div ref={scrollRef} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-6">
         {session.messages.length === 0 ? (
           <EmptyCoach
             disabled={!availability.ready}
@@ -59,16 +61,35 @@ export function CoachPanel({ active }: { active: boolean }) {
             Checking market data and verifying sources…
           </div>
         )}
-      </div>
+          </div>
 
-      <CoachComposer
-        disabled={!session.ready || session.isLoading || !availability.ready}
-        error={session.error}
-        notice={availability.reason}
-        onSend={session.send}
-      />
+          <CoachComposer
+            disabled={!session.ready || session.isLoading || !availability.ready}
+            error={session.error}
+            notice={availability.reason}
+            onSend={session.send}
+            onRecover={session.recover}
+          />
+        </div>
+      </div>
     </section>
   );
+}
+
+function useCoachHealth(active: boolean) {
+  const [health, setHealth] = useState<CoachHealth | null>(null);
+  const [healthError, setHealthError] = useState(false);
+  const checkedRef = useRef(false);
+
+  useEffect(() => {
+    if (!active || checkedRef.current) return;
+    checkedRef.current = true;
+    fetchCoachHealth()
+      .then((result) => setHealth(result))
+      .catch(() => setHealthError(true));
+  }, [active]);
+
+  return { health, healthError };
 }
 
 function useCoachScroll(
@@ -171,6 +192,12 @@ function Health({ health, failed }: { health: CoachHealth | null; failed: boolea
   }
   if (!health.market_ready || !health.knowledge_ready) {
     return <Status label="sources unavailable" title="The market database or knowledge base is unavailable." tone="error" />;
+  }
+  if (!health.recommendations_ready) {
+    const title = health.patch_monitor_ready
+      ? `${health.pending_patch_reviews} official patch review(s) are pending; Coach remains available with stale-recommendation warnings.`
+      : "Official patch monitoring is missing or stale; Coach remains available, but recommendations may be stale.";
+    return <Status label="patch review needed" title={title} tone="warning" />;
   }
   const title = health.web_search_ready
     ? "Local sources are ready and recent web is configured; the first chat verifies model connectivity."

@@ -18,7 +18,7 @@ Next.js routes.
 
 ## 2. System setup (as root)
 ```bash
-# Node 20 (NodeSource)
+# Node 20.18.1 or newer (NodeSource)
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get install -y nodejs build-essential sqlite3
 
@@ -69,6 +69,10 @@ nano .coach.env         # model key, optional Tavily key, Coach database/catalog
 chmod 600 .env.local .coach.env
 chown poe2flip:poe2flip .env.local .coach.env
 ```
+
+Set `DATA_SOURCE_CONTACT` in `.env.local` to a monitored email address or operator contact URL.
+The official patch watcher is enabled by default and the deployment preflight rejects a blank
+contact while it is enabled.
 
 On an existing server, preserve `.env.local` and create `.coach.env` from its dedicated example.
 **Never overwrite it from the example:** preserving `AUTH_SECRET` keeps sessions valid and
@@ -200,6 +204,6 @@ curl -sS http://127.0.0.1:8000/health
   the per-user REST scan. Per-user live sockets are a future enhancement.
 - **Coach rate limit:** requests arrive from the authenticated Next.js proxy, so the Python limit
   is a global spend cap for the box, not a separate limit per browser user.
-- **Backups:** `deploy.sh` uses SQLite's consistent `.backup` operation for the product DB and
-  Coach checkpoints. Backups contain private user and trading data: keep them mode `600`, off Git,
+- **Backups:** `deploy.sh` uses SQLite's consistent `.backup` operation for the product DB, which
+  includes canonical Coach history. Backups contain private user and trading data: keep them mode `600`, off Git,
   and copy them to encrypted off-box storage periodically.

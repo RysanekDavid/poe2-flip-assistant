@@ -3,6 +3,7 @@ import { readFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { config } from "../config/env";
 import { hashPassword, genApiKey } from "../auth/auth";
+import { migratePatchProvenance } from "./sourceMigrations";
 
 let db: Database.Database | null = null;
 
@@ -19,6 +20,7 @@ export function getDb(): Database.Database {
 
   const schema = readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8");
   conn.exec(schema);
+  migratePatchProvenance(conn);
 
   // Additive migrations — CREATE TABLE IF NOT EXISTS won't add columns to an existing DB,
   // so backfill any columns added after a table first shipped.

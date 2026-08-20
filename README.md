@@ -59,7 +59,7 @@ curated hit rate plus observed asks. Players must verify item state and prices i
 
 ## Local setup
 
-Requirements: Node.js 20+, npm, SQLite, and `uv`. Copy the web/poller template to `.env.local`
+Requirements: Node.js 20.18.1+, npm, SQLite, and `uv`. Copy the web/poller template to `.env.local`
 and the isolated Coach template to a private local path. Never commit or print either file.
 
 ```bash
