@@ -5,13 +5,12 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from time import monotonic
-from typing import NoReturn, Protocol
-from uuid import uuid4
+from typing import Protocol
 
-from fastapi import FastAPI, HTTPException, Request
-from langchain_core.messages import BaseMessage, HumanMessage
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-from openai import APITimeoutError, BadRequestError
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError
 
 from src.agent import build_agent
 from src.config import Settings, get_settings
@@ -20,18 +19,34 @@ from src.demo_policy import (
     validate_demo_answer,
     validate_required_tools,
 )
+from src.errors import ContractViolation, PublicCoachError
+from src.failure_handling import (
+    log_request_timing,
+    raise_bad_request,
+    raise_fatal,
+    raise_provider_status,
+    raise_timeout,
+)
 from src.guardrails import inspect_input
 from src.items import catalog_ready
 from src.items.models import ItemInspection
+from src.patch_readiness import read_patch_readiness
 from src.rate_limit import RateLimitExceeded, SlidingWindowRateLimiter
+from src.request_auth import InvalidProxyIdentity, actor_id, request_id
 from src.response import citations_are_valid, final_answer, turn_trace
 from src.retrieval import RetrievalService
-from src.schemas import ChatRequest, ChatResponse, EvidenceSource, HealthResponse
+from src.schemas import (
+    ChatRequest,
+    ChatResponse,
+    CoachErrorDetail,
+    CoachErrorResponse,
+    EvidenceSource,
+    HealthResponse,
+)
+from src.thread_locks import ThreadBusy, ThreadLockPool
 from src.tools.market import market_ready
 
 logger = logging.getLogger("uvicorn.error")
-_MISSING_TOOL_OUTPUT = "No tool output found for function call"
-_MISSING_PREVIOUS_RESPONSE = "previous response with id"
 
 
 class AgentRunner(Protocol):
@@ -42,18 +57,18 @@ class AgentRunner(Protocol):
     ) -> dict[str, object]: ...
 
 
-AgentFactory = Callable[[object, Settings], AgentRunner]
+AgentFactory = Callable[[Settings], AgentRunner]
 
 
 class AgentProvider:
-    """Lazily create one graph while keeping the checkpointer long-lived."""
+    """Lazily create one stateless graph and guard each conversation in-process."""
 
-    def __init__(self, checkpointer: object, settings: Settings, factory: AgentFactory) -> None:
-        self._checkpointer = checkpointer
+    def __init__(self, settings: Settings, factory: AgentFactory) -> None:
         self._settings = settings
         self._factory = factory
         self._agent: AgentRunner | None = None
         self._lock = asyncio.Lock()
+        self._thread_locks = ThreadLockPool()
 
     async def get(self) -> AgentRunner:
         """Return the graph or create it once on the first chat request."""
@@ -61,17 +76,12 @@ class AgentProvider:
             return self._agent
         async with self._lock:
             if self._agent is None:
-                self._agent = self._factory(self._checkpointer, self._settings)
+                self._agent = self._factory(self._settings)
         return self._agent
 
-    async def delete_thread(self, thread_id: str) -> None:
-        """Remove a thread whose generated response failed the public contract."""
-        setup = getattr(self._checkpointer, "setup", None)
-        delete_thread = getattr(self._checkpointer, "adelete_thread", None)
-        if not callable(setup) or not callable(delete_thread):
-            raise RuntimeError("Checkpointer cannot delete an invalid thread")
-        await setup()
-        await delete_thread(thread_id)
+    def thread_scope(self, thread_id: str) -> AbstractAsyncContextManager[None]:
+        """Keep one in-process request active per conversation."""
+        return self._thread_locks.hold(thread_id)
 
 
 def create_app(
@@ -85,6 +95,7 @@ def create_app(
         version="0.1.0",
         lifespan=_lifespan(active_settings, agent_factory),
     )
+    app.add_exception_handler(PublicCoachError, _public_error_handler)
     _register_routes(app, active_settings, retrieval_readiness)
     return app
 
@@ -94,12 +105,8 @@ def _lifespan(
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        settings.checkpoint_db_path.parent.mkdir(parents=True, exist_ok=True)
-        async with AsyncSqliteSaver.from_conn_string(
-            str(settings.checkpoint_db_path)
-        ) as checkpointer:
-            app.state.agent_provider = AgentProvider(checkpointer, settings, agent_factory)
-            yield
+        app.state.agent_provider = AgentProvider(settings, agent_factory)
+        yield
 
     return lifespan
 
@@ -116,15 +123,82 @@ def _register_routes(
 
     @app.post("/chat", response_model=ChatResponse)
     async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
+        correlation_id = _verified_correlation_id(request, settings)
         try:
-            await rate_limiter.check(_client_id(request))
-        except RateLimitExceeded as error:
-            raise HTTPException(
-                status_code=429,
-                detail=str(error),
-                headers={"Retry-After": "60"},
+            actor = actor_id(request, settings)
+        except InvalidProxyIdentity as error:
+            logger.warning(
+                "coach_request request_id=%s outcome=proxy_auth_error exception=%s",
+                correlation_id,
+                type(error).__name__,
+            )
+            raise PublicCoachError(
+                "internal",
+                "Coach proxy authentication failed.",
+                403,
+                correlation_id,
+                False,
+                False,
             ) from error
-        return await _chat_response(payload, request, settings)
+        try:
+            await rate_limiter.check(actor)
+        except RateLimitExceeded as error:
+            logger.warning(
+                "coach_request request_id=%s outcome=rate_limited exception=%s",
+                correlation_id,
+                type(error).__name__,
+            )
+            raise PublicCoachError(
+                "rate_limited",
+                "Too many Coach requests. Try again in a minute.",
+                429,
+                correlation_id,
+                True,
+                False,
+            ) from error
+        return await _chat_response(payload, request, settings, correlation_id)
+
+
+async def _public_error_handler(_request: Request, error: Exception) -> JSONResponse:
+    if not isinstance(error, PublicCoachError):
+        raise error
+    body = CoachErrorResponse(
+        error=CoachErrorDetail(
+            code=error.code,
+            message=error.message,
+            request_id=error.request_id,
+            retryable=error.retryable,
+            reset_conversation=error.reset_conversation,
+        )
+    )
+    headers = {"Retry-After": "60"} if error.code == "rate_limited" else None
+    return JSONResponse(
+        status_code=error.status_code,
+        content=body.model_dump(mode="json"),
+        headers=headers,
+    )
+
+
+def _verified_correlation_id(request: Request, settings: Settings) -> str:
+    try:
+        return request_id(request, settings)
+    except InvalidProxyIdentity as error:
+        import secrets
+
+        correlation_id = secrets.token_hex(12)
+        logger.warning(
+            "coach_request request_id=%s outcome=request_id_error exception=%s",
+            correlation_id,
+            type(error).__name__,
+        )
+        raise PublicCoachError(
+            "internal",
+            "Coach request authentication failed.",
+            403,
+            correlation_id,
+            False,
+            False,
+        ) from error
 
 
 def _health_response(settings: Settings, retrieval: RetrievalService) -> HealthResponse:
@@ -132,6 +206,12 @@ def _health_response(settings: Settings, retrieval: RetrievalService) -> HealthR
     knowledge_ready = retrieval.ready
     item_data_ready = catalog_ready(settings.item_catalog_path)
     configured = settings.openai_api_key is not None
+    patch = read_patch_readiness(
+        settings.patch_coverage_path,
+        settings.item_catalog_path,
+        settings.poe_db_path,
+        settings.patch_notes_max_ready_age_min,
+    )
     return HealthResponse(
         status=(
             "ok"
@@ -144,56 +224,91 @@ def _health_response(settings: Settings, retrieval: RetrievalService) -> HealthR
         model_configured=configured,
         web_search_ready=settings.tavily_api_key is not None,
         model=settings.chat_model,
+        patch_monitor_ready=patch.patch_monitor_ready,
+        game_data_patch=patch.game_data_patch,
+        latest_official_patch=patch.latest_official_patch,
+        recommendations_ready=patch.recommendations_ready,
+        patch_checked_at=patch.patch_checked_at,
+        pending_patch_reviews=patch.pending_patch_reviews,
     )
 
 
-def _client_id(request: Request) -> str:
-    return request.client.host if request.client is not None else "unknown-client"
-
-
 async def _chat_response(
-    payload: ChatRequest, request: Request, settings: Settings
+    payload: ChatRequest,
+    request: Request,
+    settings: Settings,
+    request_id: str = "local000000000000000000000",
 ) -> ChatResponse:
     if settings.openai_api_key is None:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Coach needs OPENAI_API_KEY in its isolated process environment; "
-                "restart the Coach service after configuring it."
-            ),
+        raise PublicCoachError(
+            "internal", "Coach is not configured.", 503, request_id, False, False
         )
     decision = inspect_input(payload.message)
     if not decision.allowed:
-        raise HTTPException(status_code=400, detail=decision.reason or "Request blocked")
+        logger.info(
+            "coach_request request_id=%s outcome=request_rejected exception=none",
+            request_id,
+        )
+        raise PublicCoachError(
+            "request_rejected",
+            decision.reason or "This request cannot be processed safely.",
+            400,
+            request_id,
+            False,
+            False,
+        )
     provider: AgentProvider = request.app.state.agent_provider
-    request_id = uuid4().hex[:16]
+    thread_id = str(payload.thread_id)
     started = monotonic()
     try:
+        async with provider.thread_scope(thread_id):
+            return await _locked_chat_response(
+                payload, provider, settings, request_id, thread_id, started
+            )
+    except ThreadBusy as error:
+        logger.info(
+            "coach_request request_id=%s outcome=thread_busy exception=%s",
+            request_id,
+            type(error).__name__,
+        )
+        raise PublicCoachError(
+            "thread_busy",
+            "This conversation is already processing a request.",
+            409,
+            request_id,
+            True,
+            False,
+        ) from error
+
+
+async def _locked_chat_response(
+    payload: ChatRequest,
+    provider: AgentProvider,
+    settings: Settings,
+    request_id: str,
+    thread_id: str,
+    started: float,
+) -> ChatResponse:
+    try:
         response = await _invoke_agent(payload, provider, settings, request_id)
-        _log_request_timing(request_id, started, "ok")
+        log_request_timing(request_id, started, "ok")
         return response
     except asyncio.CancelledError:
-        await _cleanup_cancelled_request(provider, str(payload.thread_id), request_id)
-        _log_request_timing(request_id, started, "cancelled")
+        log_request_timing(request_id, started, "cancelled")
         raise
     except (TimeoutError, APITimeoutError) as error:
-        await _raise_timeout(error, payload, provider, request_id, started)
+        raise_timeout(error, request_id, started)
+    except APIConnectionError as error:
+        raise_timeout(error, request_id, started)
     except BadRequestError as error:
-        _log_request_timing(request_id, started, "provider_error")
-        await _raise_bad_request(error, payload, provider)
-    except (FileNotFoundError, LookupError, RuntimeError, ValueError) as error:
-        _log_request_timing(request_id, started, "service_error")
-        logger.exception("Chat request failed")
-        raise HTTPException(
-            status_code=503,
-            detail="Chat service is temporarily unavailable; check server logs.",
-        ) from error
+        log_request_timing(request_id, started, "provider_error")
+        raise_bad_request(error, request_id)
+    except APIStatusError as error:
+        raise_provider_status(error, request_id, started)
+    except ContractViolation as error:
+        raise_fatal(error, request_id, started, "contract_violation")
     except Exception as error:
-        _log_request_timing(request_id, started, "error")
-        logger.exception("Unexpected chat failure")
-        raise HTTPException(
-            status_code=502, detail="Agent execution failed; check server logs."
-        ) from error
+        raise_fatal(error, request_id, started, "internal")
 
 
 async def _invoke_agent(
@@ -204,138 +319,52 @@ async def _invoke_agent(
 ) -> ChatResponse:
     agent = await provider.get()
     async with asyncio.timeout(settings.total_request_timeout_seconds):
+        history = [
+            HumanMessage(content=message.content)
+            if message.role == "user"
+            else AIMessage(content=message.content)
+            for message in payload.history
+        ]
         result = await agent.ainvoke(
-            {"messages": [HumanMessage(content=payload.message)], "request_id": request_id},
+            {
+                "messages": [*history, HumanMessage(content=payload.message)],
+                "request_id": request_id,
+            },
             {
                 "configurable": {"thread_id": str(payload.thread_id)},
                 "recursion_limit": settings.max_tool_iterations * 2 + 4,
             },
         )
-        return await _completed_response(result, payload, provider)
+        return _completed_response(result, payload, request_id)
 
 
-async def _raise_timeout(
-    error: BaseException,
-    payload: ChatRequest,
-    provider: AgentProvider,
-    request_id: str,
-    started: float,
-) -> NoReturn:
-    reset = await _cleanup_timed_out_request(provider, str(payload.thread_id), request_id)
-    _log_request_timing(request_id, started, "timeout" if reset else "cleanup_error")
-    if not reset:
-        raise HTTPException(
-            status_code=503,
-            detail="Coach timed out and its conversation state could not be cleared.",
-        ) from error
-    raise HTTPException(
-        status_code=504,
-        detail="Coach timed out while checking its sources. Start a new request.",
-    ) from error
-
-
-async def _raise_bad_request(
-    error: BadRequestError, payload: ChatRequest, provider: AgentProvider
-) -> NoReturn:
-    if await _reset_invalid_response_state(error, provider, str(payload.thread_id)):
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "Conversation state was reset after an invalid tool-call checkpoint. "
-                "Send the message again."
-            ),
-        ) from error
-    logger.exception("OpenAI rejected the Coach request")
-    raise HTTPException(
-        status_code=502, detail="Agent execution failed; check server logs."
-    ) from error
-
-
-async def _cleanup_timed_out_request(
-    provider: AgentProvider, thread_id: str, request_id: str
-) -> bool:
-    try:
-        async with asyncio.timeout(5):
-            await provider.delete_thread(thread_id)
-    except Exception:
-        logger.exception(
-            "coach_cleanup request_id=%s step=checkpoint round=0 duration_ms=0 "
-            "outcome=error tool_count=0",
-            request_id,
-        )
-        return False
-    return True
-
-
-async def _cleanup_cancelled_request(
-    provider: AgentProvider, thread_id: str, request_id: str
-) -> None:
-    try:
-        async with asyncio.timeout(5):
-            await provider.delete_thread(thread_id)
-    except asyncio.CancelledError:
-        logger.warning(
-            "coach_cleanup request_id=%s step=checkpoint round=0 duration_ms=0 "
-            "outcome=cancelled tool_count=0",
-            request_id,
-        )
-    except Exception:
-        logger.exception(
-            "coach_cleanup request_id=%s step=checkpoint round=0 duration_ms=0 "
-            "outcome=error tool_count=0",
-            request_id,
-        )
-
-
-def _log_request_timing(request_id: str, started: float, outcome: str) -> None:
-    duration_ms = max(0, round((monotonic() - started) * 1000))
-    logger.info(
-        "coach_timing request_id=%s step=request round=0 duration_ms=%d outcome=%s tool_count=0",
-        request_id,
-        duration_ms,
-        outcome,
-    )
-
-
-async def _completed_response(
-    result: dict[str, object], payload: ChatRequest, provider: AgentProvider
+def _completed_response(
+    result: dict[str, object], payload: ChatRequest, request_id: str
 ) -> ChatResponse:
     """Validate one graph result and expose only grounded evidence."""
-    messages = _validated_messages(result)
-    tools, sources = turn_trace(messages)
-    processors: list[str] = []
-    validate_required_tools(result.get("required_tools"), tools)
-    _merge_item_inspection(result, processors, sources)
-    model_answer = final_answer(messages)
-    answer = deterministic_demo_answer(payload.message, sources) or model_answer
-    if not citations_are_valid(answer, sources):
-        await provider.delete_thread(str(payload.thread_id))
-        raise RuntimeError("Agent returned an ungrounded citation set")
-    validate_demo_answer(payload.message, answer, sources)
+    try:
+        messages = _validated_messages(result)
+        tools, sources = turn_trace(messages)
+        processors: list[str] = []
+        validate_required_tools(result.get("required_tools"), tools)
+        _merge_item_inspection(result, processors, sources)
+        model_answer = final_answer(messages)
+        answer = deterministic_demo_answer(payload.message, sources) or model_answer
+        if not citations_are_valid(answer, sources):
+            raise ContractViolation("Agent returned an ungrounded citation set")
+        validate_demo_answer(payload.message, answer, sources)
+    except ContractViolation:
+        raise
+    except (LookupError, RuntimeError, ValueError) as error:
+        raise ContractViolation("Agent result failed validation") from error
     return ChatResponse(
         thread_id=payload.thread_id,
+        request_id=request_id,
         answer=answer,
         tools_used=tools,
         processors_used=processors,
         sources=sources,
     )
-
-
-async def _reset_invalid_response_state(
-    error: BadRequestError, provider: AgentProvider, thread_id: str
-) -> bool:
-    """Discard only a checkpoint proven to reference unusable Responses state."""
-    message = str(error)
-    lowered = message.lower()
-    missing_tool_output = _MISSING_TOOL_OUTPUT in message
-    missing_previous_response = "not found" in lowered and (
-        _MISSING_PREVIOUS_RESPONSE in lowered or "previous_response_id" in lowered
-    )
-    if not missing_tool_output and not missing_previous_response:
-        return False
-    logger.warning("Resetting thread after invalid Responses API continuation state")
-    await provider.delete_thread(thread_id)
-    return True
 
 
 def _validated_messages(result: dict[str, object]) -> list[BaseMessage]:

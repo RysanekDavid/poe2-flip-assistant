@@ -3,10 +3,11 @@
 import json
 
 from langchain_core.tools import tool
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError
 from tavily import TavilyClient
 
 from src.config import get_settings
+from src.errors import ToolInvalidInput, ToolSourceUnavailable
 from src.evidence import evidence_id
 
 
@@ -18,7 +19,7 @@ def search_recent_poe2(query: str) -> str:
     """
     normalized = query.strip()
     if not normalized:
-        raise ValueError("query must not be empty")
+        raise ToolInvalidInput("query must not be empty")
     settings = get_settings()
     client = TavilyClient(api_key=settings.require_tavily_key())
     response = client.search(
@@ -51,7 +52,10 @@ class TavilyResponse(BaseModel):
 
 
 def _normalized_results(response: object) -> dict[str, object]:
-    validated = TavilyResponse.model_validate(response)
+    try:
+        validated = TavilyResponse.model_validate(response)
+    except ValidationError as error:
+        raise ToolSourceUnavailable("Web search returned an invalid response") from error
     items = []
     sources = []
     for result in validated.results:

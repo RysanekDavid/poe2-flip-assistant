@@ -23,7 +23,9 @@ const BULLET = /^\s*[-*]\s+(.+)$/;
 const ORDERED = /^\s*\d+[.)]\s+(.+)$/;
 const QUOTE = /^\s*>\s?(.*)$/;
 const RULE = /^\s*([-*_])(?:\s*\1){2,}\s*$/;
-const INLINE_TOKEN = /\[[MLKW][0-9a-f]{12}\]|`[^`\n]+`|\[[^\]\n]+\]\(https?:\/\/[^)\s]+\)|\*\*[^*\n]+\*\*|~~[^~\n]+~~|\*[^*\n]+\*|https?:\/\/[^\s<]+/gi;
+// Citation prefixes must match the server grammar in services/coach/src/response.py
+// (_CITATION): M=market, L=live, K=knowledge, W=web, D=game data.
+const INLINE_TOKEN = /\[[MLKWD][0-9a-f]{12}\]|`[^`\n]+`|\[[^\]\n]+\]\(https?:\/\/[^)\s]+\)|\*\*[^*\n]+\*\*|~~[^~\n]+~~|\*[^*\n]+\*|https?:\/\/[^\s<]+/gi;
 
 export function parseCoachMarkdown(source: string): MarkdownBlock[] {
   const lines = source.replace(/\r/g, "").split("\n");
@@ -74,7 +76,7 @@ export function parseInline(value: string): MarkdownInline[] {
 }
 
 function inlineToken(token: string): MarkdownInline {
-  if (/^\[[MLKW][0-9a-f]{12}\]$/i.test(token)) {
+  if (/^\[[MLKWD][0-9a-f]{12}\]$/i.test(token)) {
     return { kind: "citation", id: token.slice(1, -1) };
   }
   if (token.startsWith("`")) return { kind: "code", value: token.slice(1, -1) };

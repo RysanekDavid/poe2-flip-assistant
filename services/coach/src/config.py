@@ -14,7 +14,6 @@ _LOCAL_ENV_VALUE = os.environ.get("COACH_ENV_FILE", "").strip()
 if _PRODUCTION and _LOCAL_ENV_VALUE:
     raise RuntimeError("COACH_ENV_FILE is local-development only in production")
 _LOCAL_ENV_FILE = Path(_LOCAL_ENV_VALUE).resolve() if _LOCAL_ENV_VALUE else None
-os.environ["LANGGRAPH_STRICT_MSGPACK"] = "true"
 
 
 class Settings(BaseSettings):
@@ -33,6 +32,7 @@ class Settings(BaseSettings):
     langsmith_api_key: SecretStr | None = None
     langsmith_tracing: bool = False
     langsmith_project: str = "poe2-flip-coach"
+    coach_proxy_secret: SecretStr | None = None
 
     chat_model: str = "gpt-5.4-mini"
     embedding_model: str = "text-embedding-3-small"
@@ -42,13 +42,16 @@ class Settings(BaseSettings):
         default=Path("data/poe2flip.db"),
         validation_alias=AliasChoices("POE_DB_PATH", "DB_PATH"),
     )
-    configured_checkpoint_path: Path = Field(
-        default=Path("data/coach-checkpoints.db"),
-        validation_alias="COACH_CHECKPOINT_DB_PATH",
-    )
     configured_item_catalog_path: Path = Field(
         default=Path("src/data/poe2/repoe/manifest.json"),
         validation_alias="POE2_DATA_MANIFEST",
+    )
+    configured_patch_coverage_path: Path = Field(
+        default=Path("src/data/poe2/patch-coverage.json"),
+        validation_alias="POE2_PATCH_COVERAGE",
+    )
+    patch_notes_max_ready_age_min: int = Field(
+        default=90, gt=0, validation_alias="PATCH_NOTES_MAX_READY_AGE_MIN"
     )
     corpus_dir: Path = APP_ROOT
     qdrant_collection: str = "poe2_knowledge"
@@ -69,7 +72,9 @@ class Settings(BaseSettings):
         validation_alias="COACH_REQUESTS_PER_MINUTE",
     )
 
-    @field_validator("openai_api_key", "tavily_api_key", "langsmith_api_key", mode="before")
+    @field_validator(
+        "openai_api_key", "tavily_api_key", "langsmith_api_key", "coach_proxy_secret", mode="before"
+    )
     @classmethod
     def empty_secret_is_missing(cls, value: object) -> object:
         """Treat blank optional secret entries like absent environment variables."""
@@ -93,14 +98,14 @@ class Settings(BaseSettings):
         return _app_path(self.configured_db_path)
 
     @property
-    def checkpoint_db_path(self) -> Path:
-        """Resolve the internal LangGraph checkpoint database."""
-        return _app_path(self.configured_checkpoint_path)
-
-    @property
     def item_catalog_path(self) -> Path:
         """Resolve the committed RePoE catalog manifest from the repository root."""
         return _app_path(self.configured_item_catalog_path)
+
+    @property
+    def patch_coverage_path(self) -> Path:
+        """Resolve the committed patch-to-catalog coverage boundary."""
+        return _app_path(self.configured_patch_coverage_path)
 
     def require_openai_key(self) -> str:
         """Return the OpenAI key or fail with an actionable configuration error."""
@@ -118,6 +123,19 @@ class Settings(BaseSettings):
     def has_tavily_key(self) -> bool:
         """Return whether recent public-web search can be registered."""
         return self.tavily_api_key is not None
+
+    @property
+    def production(self) -> bool:
+        """Return whether internal proxy authentication must fail closed."""
+        return _PRODUCTION
+
+    def require_proxy_secret(self) -> str:
+        """Return the shared internal proxy key or a local-only fallback."""
+        if self.coach_proxy_secret is not None:
+            return self.coach_proxy_secret.get_secret_value()
+        if self.production:
+            raise RuntimeError("COACH_PROXY_SECRET is required in production")
+        return "poe2-coach-local-proxy-only"
 
 
 def _app_path(path: Path) -> Path:

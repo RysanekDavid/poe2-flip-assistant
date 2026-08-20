@@ -17,6 +17,7 @@ from src.agent import (
     build_chat_model,
 )
 from src.config import Settings
+from src.errors import ToolNoResult
 
 
 def test_agent_uses_responses_api_for_reasoning_tool_round_trips() -> None:
@@ -135,7 +136,7 @@ async def test_compiled_graph_runs_two_tool_rounds_then_unbound_final_model(
     )
     monkeypatch.setattr("src.agent.get_tools", lambda _settings: [scripted_lookup])
     monkeypatch.setattr("src.agent.build_chat_model", lambda _settings: ScriptedModel())
-    graph = build_agent(None, settings)
+    graph = build_agent(settings)
 
     result = await graph.ainvoke(
         {"messages": [HumanMessage(content="complex request")], "request_id": "test-request"},
@@ -144,6 +145,65 @@ async def test_compiled_graph_runs_two_tool_rounds_then_unbound_final_model(
 
     assert calls == {"bound": 2, "final": 1, "tools": 2}
     assert result["messages"][-1].content == "forced final answer"
+
+
+@pytest.mark.asyncio
+async def test_compiled_graph_continues_after_safe_no_result_tool_error(
+    item_catalog_manifest: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = {"model": 0, "tool": 0}
+
+    @tool
+    def missing_lookup(query: str) -> str:
+        """Return a typed no-result signal for a valid lookup."""
+        calls["tool"] += 1
+        raise ToolNoResult(f"No evidence for {query}")
+
+    class LimitationModel:
+        def bind_tools(self, tools: object, *, strict: bool) -> "LimitationModel":
+            assert strict is True
+            return self
+
+        async def ainvoke(self, messages: object, **kwargs: object) -> AIMessage:
+            calls["model"] += 1
+            if calls["model"] == 1:
+                return AIMessage(
+                    content="",
+                    tool_calls=[
+                        {
+                            "name": "missing_lookup",
+                            "args": {"query": "unknown mechanic"},
+                            "id": "call-missing",
+                            "type": "tool_call",
+                        }
+                    ],
+                    response_metadata={"id": "resp_missing"},
+                )
+            assert _contains_safe_tool_error(messages)
+            return AIMessage(content="I could not find evidence, so this remains unverified.")
+
+    settings = Settings(
+        _env_file=None,
+        openai_api_key=SecretStr("test-key"),
+        configured_item_catalog_path=item_catalog_manifest,
+    )
+    monkeypatch.setattr("src.agent.get_tools", lambda _settings: [missing_lookup])
+    monkeypatch.setattr("src.agent.build_chat_model", lambda _settings: LimitationModel())
+    graph = build_agent(settings)
+
+    result = await graph.ainvoke(
+        {
+            "messages": [HumanMessage(content="Explain an unknown mechanic")],
+            "request_id": "test-request",
+        },
+        {"recursion_limit": 8},
+    )
+    tool_messages = [message for message in result["messages"] if isinstance(message, ToolMessage)]
+
+    assert calls == {"model": 2, "tool": 1}
+    assert len(tool_messages) == 1
+    assert tool_messages[0].status == "error"
+    assert result["messages"][-1].content.startswith("I could not find evidence")
 
 
 def test_timing_log_never_serializes_conversation_or_tool_arguments(
@@ -249,6 +309,12 @@ def _state(messages: list[BaseMessage], required_tools: list[str] | None = None)
         item_inspection=None,
         required_tools=required_tools or [],
         request_id="opaque-test-request",
+    )
+
+
+def _contains_safe_tool_error(messages: object) -> bool:
+    return isinstance(messages, list) and any(
+        isinstance(message, ToolMessage) and message.status == "error" for message in messages
     )
 
 

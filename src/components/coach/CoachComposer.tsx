@@ -2,15 +2,17 @@
 
 import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { Send } from "lucide-react";
+import type { CoachSessionFailure } from "./useCoachSession";
 
 interface CoachComposerProps {
   disabled: boolean;
-  error: string | null;
+  error: CoachSessionFailure | null;
   notice: string | null;
   onSend: (message: string) => Promise<void>;
+  onRecover: () => void;
 }
 
-export function CoachComposer({ disabled, error, notice, onSend }: CoachComposerProps) {
+export function CoachComposer({ disabled, error, notice, onSend, onRecover }: CoachComposerProps) {
   const [value, setValue] = useState("");
 
   const submit = async (): Promise<void> => {
@@ -35,7 +37,7 @@ export function CoachComposer({ disabled, error, notice, onSend }: CoachComposer
   return (
     <div className="border-t border-neutral-800 bg-neutral-950/90 px-4 py-3 backdrop-blur sm:px-6">
       <div className="mx-auto max-w-5xl">
-        {error && <div role="alert" className="mb-2 rounded-lg border border-red-900/60 bg-red-950/25 px-3 py-2 text-xs text-red-300">{error}</div>}
+        {error && <RecoveryError error={error} onRecover={onRecover} />}
         {notice && (
           <div role="status" className="mb-2 rounded-lg border border-amber-900/50 bg-amber-950/20 px-3 py-2 text-xs text-amber-300">
             {notice}
@@ -66,6 +68,27 @@ export function CoachComposer({ disabled, error, notice, onSend }: CoachComposer
           <span>AI guidance · you always confirm the trade</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function RecoveryError({ error, onRecover }: {
+  error: CoachSessionFailure;
+  onRecover: () => void;
+}) {
+  const reference = error.requestId !== "unknown"
+    ? ` Reference: ${error.requestId.slice(0, 8)}.`
+    : "";
+  return (
+    <div role="alert" className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-red-900/60 bg-red-950/25 px-3 py-2 text-xs text-red-300">
+      <span>{error.message}{reference}</span>
+      <button
+        type="button"
+        onClick={onRecover}
+        className="shrink-0 rounded border border-red-700/70 px-2 py-1 font-medium hover:bg-red-900/40"
+      >
+        {error.retryable ? "Retry" : "New chat"}
+      </button>
     </div>
   );
 }

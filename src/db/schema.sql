@@ -9,6 +9,53 @@ CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Persisted public Coach history. Only completed user/assistant turns are stored; tool protocol,
+-- reasoning traces, provider ids and partial attempts never enter the application database.
+CREATE TABLE IF NOT EXISTS coach_conversations (
+  user_id INTEGER NOT NULL,
+  id TEXT NOT NULL CHECK (length(id) = 36),
+  title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 80),
+  turn_count INTEGER NOT NULL DEFAULT 0 CHECK (turn_count BETWEEN 0 AND 50),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_message_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS coach_turns (
+  user_id INTEGER NOT NULL,
+  conversation_id TEXT NOT NULL CHECK (length(conversation_id) = 36),
+  turn_id TEXT NOT NULL CHECK (length(turn_id) = 36),
+  ordinal INTEGER NOT NULL CHECK (ordinal BETWEEN 1 AND 50),
+  user_message TEXT NOT NULL CHECK (length(user_message) BETWEEN 1 AND 8000),
+  assistant_answer TEXT NOT NULL CHECK (length(assistant_answer) BETWEEN 1 AND 64000),
+  tools_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(tools_json) AND json_type(tools_json) = 'array'),
+  processors_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(processors_json) AND json_type(processors_json) = 'array'),
+  sources_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(sources_json) AND json_type(sources_json) = 'array'),
+  completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, conversation_id, turn_id),
+  UNIQUE (user_id, conversation_id, ordinal),
+  FOREIGN KEY (user_id, conversation_id)
+    REFERENCES coach_conversations(user_id, id) ON DELETE CASCADE
+);
+
+-- A lease deliberately references only the user. First-turn leases must not create an empty
+-- conversation row, and a successful atomic completion creates that row together with the turn.
+CREATE TABLE IF NOT EXISTS coach_conversation_leases (
+  user_id INTEGER NOT NULL,
+  conversation_id TEXT NOT NULL CHECK (length(conversation_id) = 36),
+  turn_id TEXT NOT NULL CHECK (length(turn_id) = 36),
+  expires_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, conversation_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_coach_conversations_recent
+  ON coach_conversations(user_id, last_message_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_coach_leases_expiry
+  ON coach_conversation_leases(expires_at);
+
 -- Price snapshots (one row per item per fetch) — SHARED across all users (market data).
 CREATE TABLE IF NOT EXISTS price_snapshots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -279,8 +326,114 @@ CREATE TABLE IF NOT EXISTS balance_tabs (
   unpriced INTEGER NOT NULL DEFAULT 0 -- items with no market value and no usable listing price
 );
 
+-- Provenance registry and immutable official-source snapshots. Artifacts live on disk; only
+-- verified relative paths and their raw-content hashes are committed to SQLite.
+CREATE TABLE IF NOT EXISTS source_registry (
+  source_id TEXT PRIMARY KEY,
+  owner TEXT NOT NULL,
+  authority TEXT NOT NULL CHECK (authority IN ('official', 'datamined', 'third_party', 'curated', 'anecdotal')),
+  acquisition TEXT NOT NULL,
+  base_url TEXT NOT NULL,
+  parser_name TEXT NOT NULL,
+  parser_version TEXT NOT NULL,
+  terms_url TEXT NOT NULL,
+  check_cadence_min INTEGER NOT NULL CHECK (check_cadence_min > 0),
+  legal_review_status TEXT NOT NULL CHECK (legal_review_status IN ('pending_review', 'approved', 'rejected')),
+  legal_reviewed_at TEXT,
+  enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS source_snapshot (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_id TEXT NOT NULL REFERENCES source_registry(source_id),
+  snapshot_kind TEXT NOT NULL CHECK (snapshot_kind IN ('index', 'thread')),
+  external_id TEXT NOT NULL,
+  source_url TEXT NOT NULL,
+  http_status INTEGER NOT NULL,
+  etag TEXT,
+  last_modified TEXT,
+  content_sha256 TEXT NOT NULL,
+  artifact_path TEXT NOT NULL,
+  content_bytes INTEGER NOT NULL,
+  valid INTEGER NOT NULL CHECK (valid IN (0, 1)),
+  parse_error TEXT,
+  parser_name TEXT NOT NULL,
+  parser_version TEXT NOT NULL,
+  validation_policy TEXT NOT NULL,
+  retrieved_at DATETIME NOT NULL,
+  UNIQUE(
+    source_id, snapshot_kind, external_id, content_sha256,
+    parser_name, parser_version, validation_policy
+  )
+);
+
+CREATE TABLE IF NOT EXISTS source_sync_state (
+  source_id TEXT PRIMARY KEY REFERENCES source_registry(source_id),
+  index_etag TEXT,
+  index_last_modified TEXT,
+  last_checked_at DATETIME,
+  last_success_at DATETIME,
+  last_valid_index_snapshot_id INTEGER REFERENCES source_snapshot(id),
+  valid_index_parser_version TEXT,
+  valid_index_validation_policy TEXT,
+  last_error TEXT,
+  consecutive_failures INTEGER NOT NULL DEFAULT 0,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS evidence_link (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  snapshot_id INTEGER NOT NULL REFERENCES source_snapshot(id),
+  entity_kind TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  relation TEXT NOT NULL DEFAULT 'supports',
+  location_json TEXT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(snapshot_id, entity_kind, entity_id, relation)
+);
+
+CREATE TABLE IF NOT EXISTS official_patch (
+  thread_id INTEGER PRIMARY KEY,
+  source_id TEXT NOT NULL REFERENCES source_registry(source_id),
+  source_order INTEGER NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  version_text TEXT NOT NULL,
+  published_at TEXT,
+  published_text TEXT NOT NULL,
+  source_url TEXT NOT NULL,
+  index_snapshot_id INTEGER NOT NULL REFERENCES source_snapshot(id),
+  body_snapshot_id INTEGER REFERENCES source_snapshot(id),
+  body_valid INTEGER NOT NULL DEFAULT 0 CHECK (body_valid IN (0, 1)),
+  headings_json TEXT,
+  list_items_json TEXT,
+  body_text TEXT,
+  first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pending_patch_effect (
+  thread_id INTEGER PRIMARY KEY REFERENCES official_patch(thread_id),
+  disposition TEXT NOT NULL DEFAULT 'pending'
+    CHECK (disposition IN ('pending', 'no_gameplay_impact', 'data_refreshed')),
+  reviewer TEXT,
+  review_note TEXT,
+  reviewed_at TEXT,
+  catalog_sha256 TEXT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (
+    (disposition = 'pending' AND reviewer IS NULL AND review_note IS NULL AND reviewed_at IS NULL AND catalog_sha256 IS NULL)
+    OR (disposition = 'no_gameplay_impact' AND reviewer IS NOT NULL AND review_note IS NOT NULL AND reviewed_at IS NOT NULL AND catalog_sha256 IS NULL)
+    OR (disposition = 'data_refreshed' AND reviewer IS NOT NULL AND review_note IS NOT NULL AND reviewed_at IS NOT NULL AND catalog_sha256 IS NOT NULL)
+  )
+);
+
 -- Indexes that reference user_id are created in database.ts AFTER the multi-tenant migration,
 -- because on an existing DB the column doesn't exist yet when this file is exec'd.
 CREATE INDEX IF NOT EXISTS idx_balance_tabs_snap ON balance_tabs(snapshot_id);
 CREATE INDEX IF NOT EXISTS idx_hunt_hits_sig ON hunt_hits(sig, found_at DESC);
 CREATE INDEX IF NOT EXISTS idx_snapshots_item_time ON price_snapshots(item_id, fetched_at DESC);
+CREATE INDEX IF NOT EXISTS idx_source_snapshot_lookup ON source_snapshot(source_id, snapshot_kind, external_id, id DESC);
+CREATE INDEX IF NOT EXISTS idx_official_patch_order ON official_patch(source_order DESC);
+CREATE INDEX IF NOT EXISTS idx_pending_patch_disposition ON pending_patch_effect(disposition, thread_id DESC);

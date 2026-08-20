@@ -25,10 +25,12 @@ export const config = {
     apiUrl: process.env.COACH_API_URL ?? "http://127.0.0.1:8000",
     timeoutMs: num("COACH_TIMEOUT_MS", 160_000),
     threadSecret: process.env.COACH_THREAD_SECRET ?? process.env.AUTH_SECRET ?? "",
+    proxySecret: process.env.COACH_PROXY_SECRET ?? "",
   },
   // --- live trade2 hunt (read-only price-check / snipe finder) ---
   poesessid: process.env.POESESSID ?? "", // session cookie for your own account; empty disables live search
   poeContact: process.env.POE_CONTACT ?? "", // your email — GGG asks third-party tools to identify themselves
+  dataSourceContact: process.env.DATA_SOURCE_CONTACT ?? process.env.POE_CONTACT ?? "",
   poeAccount: process.env.POE_ACCOUNT ?? "", // your account name — needed to read your own stash (balance tracking)
   poeRealm: process.env.POE_REALM ?? "poe2", // realm for stash reads ('poe2' | 'pc')
   // optional explicit currency-tab indices "0,3"; empty = auto-find the currency-type tab
@@ -53,6 +55,13 @@ export const config = {
   // auto net-worth read from your public tabs via trade account search (0 = off, manual only)
   balanceIntervalMin: num("BALANCE_INTERVAL_MIN", 0),
   pollIntervalMin: num("POLL_INTERVAL_MIN", 5),
+  patchNotes: {
+    enabled: (process.env.PATCH_NOTES_ENABLED ?? "true").toLowerCase() === "true",
+    intervalMin: num("PATCH_NOTES_INTERVAL_MIN", 30),
+    maxReadyAgeMin: num("PATCH_NOTES_MAX_READY_AGE_MIN", 90),
+    minIndexEntries: num("PATCH_NOTES_MIN_ENTRIES", 3),
+    maxResponseBytes: num("PATCH_NOTES_MAX_BYTES", 2_000_000),
+  },
   retentionDays: num("RETENTION_DAYS", 30), // price_snapshots older than this are pruned each poll
   // snipe finder: a listing is a snipe if priced this far below the price-book median, with
   // at least this many observed samples (volume confidence). Tune with real data.
