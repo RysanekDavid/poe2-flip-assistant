@@ -20,7 +20,10 @@ def pytest_configure(config: pytest.Config) -> None:
     """Isolate temp roots so Windows accounts cannot inherit another runner's ACLs."""
     if config.option.basetemp is None:
         run_id = f"{os.getpid()}-{uuid.uuid4().hex}"
-        config.option.basetemp = str(Path(".test-tmp") / f"pytest-{run_id}")
+        base = Path(".test-tmp") / f"pytest-{run_id}"
+        # pytest does not create the basetemp parent; a fresh checkout (CI) lacks it.
+        base.parent.mkdir(exist_ok=True)
+        config.option.basetemp = str(base)
 
 
 @pytest.fixture
