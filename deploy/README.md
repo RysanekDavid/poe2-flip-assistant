@@ -184,6 +184,34 @@ deploy smoke test requires it to equal `${expected_sha:0:12}` before succeeding.
 lives inside the versioned release, an automatic or manual symlink rollback restores the matching
 identifier as well.
 
+## Automated deploy (GitHub Actions)
+
+`.github/workflows/deploy.yml` runs the full test matrix on every push to `master` and, when
+green, triggers the server's standard update flow over SSH. The SSH key is dedicated to CI and
+restricted on the server to the forced command `/root/ci-deploy.sh` (see `deploy/ci-deploy.sh`),
+so it cannot open a shell. One-time setup:
+
+```bash
+# 1. Anywhere: generate a dedicated keypair (no passphrase; it lives only in GitHub secrets)
+ssh-keygen -t ed25519 -f ci_deploy_key -N "" -C "github-actions-deploy"
+
+# 2. On the server: install the forced-command script and authorize the key
+#    (copy deploy/ci-deploy.sh from the repo)
+install -m 700 /opt/poe2flip/deploy/ci-deploy.sh /root/ci-deploy.sh
+printf 'command="/root/ci-deploy.sh",restrict %s\n' "$(cat ci_deploy_key.pub)" \
+  >> /root/.ssh/authorized_keys
+
+# 3. In the repo: store the secrets
+gh secret set DEPLOY_HOST --body "<SERVER_IP>"
+gh secret set DEPLOY_SSH_KEY < ci_deploy_key
+ssh-keyscan -t ed25519 <SERVER_IP> | gh secret set DEPLOY_KNOWN_HOSTS
+rm ci_deploy_key ci_deploy_key.pub
+```
+
+Secrets on the box (`.env.local`, `.coach.env`, `COACH_PROXY_SECRET`) stay manual by design —
+the pipeline never sees them. Manual runs: Actions → Deploy → Run workflow. The existing
+`deploy.sh` health checks and automatic rollback apply unchanged.
+
 ## Logs / health
 ```bash
 journalctl -u poe2flip-web -f
