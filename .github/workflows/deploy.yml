@@ -1,0 +1,56 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# One deploy at a time; a queued deploy waits instead of cancelling a running one,
+# because deploy.sh must never be interrupted mid-release.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:coach
+      - run: npm run test:deploy-config
+      - run: npm run build
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Python tests
+        run: uv --directory services/coach run pytest
+
+      - name: Python lint
+        run: uv --directory services/coach run ruff check .
+
+  deploy:
+    needs: checks
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Configure SSH
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      # The server key is restricted to a forced command (/root/ci-deploy.sh), so the
+      # remote command text below is ignored; a stolen key can only trigger a deploy.
+      - name: Trigger server deploy
+        run: ssh -o BatchMode=yes "root@${{ secrets.DEPLOY_HOST }}" deploy
