@@ -329,6 +329,8 @@ async def _invoke_agent(
             {
                 "messages": [*history, HumanMessage(content=payload.message)],
                 "request_id": request_id,
+                # Per-request league from the Next.js proxy; settings stay the fallback.
+                "league": payload.league or settings.league_name,
             },
             {
                 "configurable": {"thread_id": str(payload.thread_id)},

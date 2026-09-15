@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchDemand } from "../../../api/scoutClient";
-import { config } from "../../../config/env";
+import { getActiveLeague } from "../../../core/leagueState";
 import { tradeSearchUrl } from "../../../lib/tradeLink";
 import { denominate, type Denom } from "../../../core/treasury";
 
@@ -62,7 +62,7 @@ export async function GET(): Promise<Response> {
           heat,
           trust,
           divergePct,
-          tradeUrl: tradeSearchUrl(config.league, { name: it.name, type: it.type }),
+          tradeUrl: tradeSearchUrl(getActiveLeague(), { name: it.name, type: it.type }),
         };
       })
       .sort((a, b) => b.heat - a.heat);

@@ -5,12 +5,12 @@
  * Confirms the endpoint, league name, and response shape before the rest of the
  * app is trusted to depend on them. Prints a few sample priced items.
  */
-import { config } from "../config/env";
 import { CATEGORIES } from "../api/types";
 import { fetchCategory, normalize } from "../api/ninjaClient";
+import { getActiveLeague } from "../core/leagueState";
 
 async function main(): Promise<void> {
-  const league = config.league;
+  const league = getActiveLeague();
   console.log(`Probing poe.ninja PoE2 — league="${league}"\n`);
 
   for (const cat of CATEGORIES) {

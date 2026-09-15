@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
 import Bottleneck from "bottleneck";
 import { config } from "../config/env";
+import { getActiveLeague } from "../core/leagueState";
 import { buildTradeQuery, type TradeQuery } from "../lib/tradeLink";
 
 /**
@@ -166,7 +167,7 @@ export async function createSearch(
   sort: TradeSort = "asc",
   cred: TradeCred = configCred(),
 ): Promise<SearchResp> {
-  const league = encodeURIComponent(config.league);
+  const league = encodeURIComponent(getActiveLeague());
   const body = { query: buildTradeQuery(q), sort: toSort(sort) };
   return call<SearchResp>("post", `/search/poe2/${league}?realm=poe2`, cred, body);
 }
@@ -209,7 +210,7 @@ export async function searchListings(
  * the only deep-link that actually prefills the search.
  */
 function searchPageUrl(id: string): string {
-  return `https://www.pathofexile.com/trade2/search/poe2/${encodeURIComponent(config.league)}/${id}`;
+  return `https://www.pathofexile.com/trade2/search/poe2/${encodeURIComponent(getActiveLeague())}/${id}`;
 }
 
 /**
@@ -242,7 +243,7 @@ export async function searchAccountListings(
   limit = 200,
   cred: TradeCred = configCred(),
 ): Promise<{ total: number; listings: Listing[] }> {
-  const league = encodeURIComponent(config.league);
+  const league = encodeURIComponent(getActiveLeague());
   const body = {
     query: { filters: { trade_filters: { filters: { account: { input: account } } } } },
     sort: { price: "asc" },

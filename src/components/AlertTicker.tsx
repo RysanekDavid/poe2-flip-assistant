@@ -13,6 +13,7 @@ const TYPE_TONE: Record<string, string> = {
   SNIPE: "text-orange-400",
   CRAFT_BASE: "text-orange-400",
   RESELL: "text-orange-400",
+  LEAGUE: "text-amber-200",
 };
 
 /** Live alert strip for the Exchange tab. Owns browser notifications (notify=true) and a

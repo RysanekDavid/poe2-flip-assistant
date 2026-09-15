@@ -30,6 +30,7 @@ jobs:
       - run: npm run lint
       - run: npm run test:coach
       - run: npm run test:deploy-config
+      - run: npm run test:league
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5

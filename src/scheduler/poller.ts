@@ -29,6 +29,8 @@ import { fetchScout } from "../api/scoutClient";
 import { insertBalance, insertTabs } from "../db/queries";
 import type { PricedItem } from "../api/types";
 import { startPatchNotesWatcher } from "../sources/patchNotes/watcher";
+import { startLeagueWatcher } from "./leagueWatcher";
+import { getActiveLeague } from "../core/leagueState";
 
 const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under the owner's cred
 
@@ -113,8 +115,9 @@ export async function runCycle(): Promise<void> {
 
 function start(): void {
   const expr = `*/${config.pollIntervalMin} * * * *`;
-  console.log(`poller starting — cron "${expr}", league "${config.league}"`);
+  console.log(`poller starting — cron "${expr}", league "${getActiveLeague()}"`);
   startPatchNotesWatcher();
+  startLeagueWatcher();
 
   // In-flight guard: a cold sweep of all ninja categories can exceed the 5-min cron interval
   // (13 categories × rate-limited fetch), so a new tick must not stack on an unfinished one.

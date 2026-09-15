@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchScout } from "../../../api/scoutClient";
-import { config } from "../../../config/env";
+import { getActiveLeague } from "../../../core/leagueState";
 import { tradeSearchUrl } from "../../../lib/tradeLink";
 import { denominate, type Denom } from "../../../core/treasury";
 
@@ -57,7 +57,7 @@ export async function GET(req: Request): Promise<Response> {
         marketDivine,
         market: denominate(marketDivine, rates),
         buy: denominate(marketDivine * SNIPE_DISCOUNT, rates),
-        tradeUrl: tradeSearchUrl(config.league, { name: it.name, type: it.type }),
+        tradeUrl: tradeSearchUrl(getActiveLeague(), { name: it.name, type: it.type }),
       }));
 
     const categories = [...new Set(items.map((i) => i.category))].sort();

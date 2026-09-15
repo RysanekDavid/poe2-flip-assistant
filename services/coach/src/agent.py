@@ -42,6 +42,7 @@ class AgentState(MessagesState):
     item_inspection: dict[str, object] | None
     required_tools: list[str]
     request_id: str
+    league: str
 
 
 AgentNode = Callable[[AgentState], Awaitable[dict[str, object]]]
@@ -55,8 +56,8 @@ def build_agent(settings: Settings) -> CompiledStateGraph:
     model_with_tools = model.bind_tools(tools, strict=True)
 
     guard = _guard_node(catalog)
-    call_model = _model_node(model_with_tools, "model")
-    call_final_model = _model_node(model, "final_model", force_final=True)
+    call_model = _model_node(model_with_tools, "model", settings.league_name)
+    call_final_model = _model_node(model, "final_model", settings.league_name, force_final=True)
     call_tools = _tools_node(tool_node(tools))
 
     builder = StateGraph(AgentState)
@@ -133,12 +134,16 @@ def _guard_node(catalog: ItemCatalog) -> AgentNode:
 
 
 def _model_node(
-    model: Runnable[object, BaseMessage], step: str, *, force_final: bool = False
+    model: Runnable[object, BaseMessage],
+    step: str,
+    default_league: str,
+    *,
+    force_final: bool = False,
 ) -> AgentNode:
     async def call_model(state: AgentState) -> dict[str, object]:
         started = monotonic()
         outcome = "ok"
-        messages, previous_response_id = _model_request(state)
+        messages, previous_response_id = _model_request(state, default_league)
         if force_final:
             messages.insert(0, SystemMessage(content=_FINAL_ANSWER_INSTRUCTION))
         try:
@@ -175,7 +180,7 @@ def _tools_node(node: AgentNode) -> AgentNode:
     return call_tools
 
 
-def _model_request(state: AgentState) -> tuple[list[BaseMessage], str | None]:
+def _model_request(state: AgentState, default_league: str) -> tuple[list[BaseMessage], str | None]:
     """Continue provider state only while returning outputs for an active tool call."""
     history = _recent_messages(state["messages"])
     instructions = _turn_instructions(state)
@@ -183,7 +188,8 @@ def _model_request(state: AgentState) -> tuple[list[BaseMessage], str | None]:
     if continuation is not None:
         response_id, tool_outputs = continuation
         return [*instructions, *tool_outputs], response_id
-    messages = [SystemMessage(content=system_prompt()), *instructions]
+    league = state.get("league") or default_league
+    messages = [SystemMessage(content=system_prompt(league)), *instructions]
     messages.extend(_visible_history(history))
     return messages, None
 

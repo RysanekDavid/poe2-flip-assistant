@@ -41,6 +41,16 @@ export type NinjaLine = z.infer<typeof NinjaLineSchema>;
 export type NinjaItem = z.infer<typeof NinjaItemSchema>;
 export type NinjaResponse = z.infer<typeof NinjaResponseSchema>;
 
+/**
+ * One league as a source reports it, in the source's own order. `current` is null when that
+ * source exposes no current/active flag — poe2scout sets IsCurrent, poe.ninja has no flag at
+ * all and is read by order instead (see leagueWatcher's two pickers).
+ */
+export interface LeagueOption {
+  name: string;
+  current: boolean | null;
+}
+
 /** Category descriptor — `type` is the API query param value. */
 export interface NinjaCategory {
   type: string;
