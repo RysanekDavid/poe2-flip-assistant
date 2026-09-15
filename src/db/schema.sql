@@ -429,6 +429,23 @@ CREATE TABLE IF NOT EXISTS pending_patch_effect (
   )
 );
 
+-- Runtime app settings (key/value) — league switching without a redeploy lives here.
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Detected PoE2 league (single row). `alerted_league` dedupes the "new league" alert so a
+-- detection that repeats every 6h only ever fires once per league.
+CREATE TABLE IF NOT EXISTS league_state (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  detected_current TEXT,
+  detected_at TEXT,
+  sources_json TEXT CHECK (sources_json IS NULL OR json_valid(sources_json)),
+  alerted_league TEXT
+);
+
 -- Indexes that reference user_id are created in database.ts AFTER the multi-tenant migration,
 -- because on an existing DB the column doesn't exist yet when this file is exec'd.
 CREATE INDEX IF NOT EXISTS idx_balance_tabs_snap ON balance_tabs(snapshot_id);

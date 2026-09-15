@@ -88,15 +88,17 @@ class TimeoutAgent:
 
 
 class CapturingAgent:
-    """Capture trusted history without invoking a provider."""
+    """Capture trusted history and request context without invoking a provider."""
 
     def __init__(self) -> None:
         self.messages: list[object] = []
+        self.league: object = None
 
     async def ainvoke(
         self, values: dict[str, object], config: dict[str, object]
     ) -> dict[str, object]:
         self.messages = list(values["messages"])
+        self.league = values.get("league")
         return {"messages": [*self.messages, AIMessage(content="History answer")]}
 
 
@@ -202,6 +204,60 @@ def test_chat_passes_last_seven_completed_turns_before_current_prompt(
     ]
     assert agent.messages[-1].content == "current"
     assert not list(tmp_path.rglob("coach-checkpoints.db"))
+
+
+def test_chat_uses_the_league_supplied_by_the_proxy(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    agent = CapturingAgent()
+    app = create_app(settings=settings, agent_factory=lambda _s: agent)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat",
+            json={"message": "current", "thread_id": THREAD_ID, "league": "  Forbidden Rites  "},
+        )
+
+    assert response.status_code == 200
+    assert agent.league == "Forbidden Rites"
+
+
+def test_chat_without_a_league_falls_back_to_the_configured_league(
+    market_db: Path,
+    item_catalog_manifest: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    agent = CapturingAgent()
+    app = create_app(settings=settings, agent_factory=lambda _s: agent)
+
+    with TestClient(app) as client:
+        response = client.post("/chat", json={"message": "current", "thread_id": THREAD_ID})
+
+    assert response.status_code == 200
+    assert agent.league == settings.league_name
+
+
+def test_chat_rejects_an_over_long_league(
+    market_db: Path, item_catalog_manifest: Path, tmp_path: Path
+) -> None:
+    settings = _test_settings(market_db, item_catalog_manifest, tmp_path)
+    app = create_app(settings=settings, agent_factory=lambda _s: FakeAgent())
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat",
+            json={"message": "Hi", "thread_id": THREAD_ID, "league": "L" * 61},
+        )
+
+    assert response.status_code == 422
 
 
 def test_chat_without_openai_key_returns_actionable_503(

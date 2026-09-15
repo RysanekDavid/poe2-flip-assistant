@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { config } from "../../../../config/env";
+import { getActiveLeague } from "../../../../core/leagueState";
 import {
   CoachHistoryError,
   beginCoachTurn,
@@ -114,7 +115,8 @@ async function callCoach(
       "X-Coach-Request-Id": requestId,
       "X-Coach-Actor": actorToken,
     },
-    body: JSON.stringify({ message, thread_id: threadId, history }),
+    // League is server-side context, not browser input — the browser contract stays unchanged.
+    body: JSON.stringify({ message, thread_id: threadId, history, league: getActiveLeague() }),
     cache: "no-store",
     signal: AbortSignal.timeout(config.coach.timeoutMs),
   });

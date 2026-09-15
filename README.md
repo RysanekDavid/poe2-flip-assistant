@@ -77,6 +77,14 @@ npm run sync:poe2-data
 npm run verify:poe2-data
 ```
 
+### Active league
+
+The tracked PoE2 league resolves as: `app_settings.league` (database, set by the owner in the
+UI) > `LEAGUE_NAME` env > built-in default. A poller job checks poe.ninja and poe2scout every
+six hours; when both sources agree a new challenge league is live, an alert fires and the
+dashboard banner offers the owner a one-click switch — no redeploy or env edit required.
+`LEAGUE_NAME` is only the cold-start fallback for a fresh database.
+
 ## Verification
 
 ```bash

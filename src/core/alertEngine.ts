@@ -11,7 +11,8 @@ export type AlertType =
   | "SNIPE"
   | "CRAFT_BASE"
   | "CRAFT_MARGIN"
-  | "RESELL";
+  | "RESELL"
+  | "LEAGUE"; // new league detected / league switched — fired by leagueAlerts, not this engine
 
 /**
  * Persist an alert and fire a desktop notification.

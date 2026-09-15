@@ -1,13 +1,15 @@
 import axios, { AxiosError } from "axios";
+import { z } from "zod";
 import {
   CATEGORIES,
   NinjaResponseSchema,
+  type LeagueOption,
   type NinjaCategory,
   type NinjaResponse,
   type PricedItem,
 } from "./types";
 import { ninjaLimiter } from "./rateLimiter";
-import { config } from "../config/env";
+import { getActiveLeague } from "../core/leagueState";
 
 const BASE = "https://poe.ninja/poe2/api/economy";
 
@@ -16,19 +18,21 @@ function leagueSlug(league: string): string {
   return league.toLowerCase().replace(/\s+/g, "");
 }
 
-const REFERER = `https://poe.ninja/poe2/economy/${leagueSlug(config.league)}/currency`;
-const BROWSER_HEADERS = {
-  Referer: REFERER,
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-};
+function browserHeaders(league: string): Record<string, string> {
+  return {
+    Referer: `https://poe.ninja/poe2/economy/${leagueSlug(league)}/currency`,
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+  };
+}
 
 /** In-memory cache; poe.ninja updates ~hourly, so 1h TTL is safe. */
 const CACHE_TTL_MS = 60 * 60 * 1000;
 const cache = new Map<string, { at: number; data: NinjaResponse }>();
 
-function cacheKey(c: NinjaCategory): string {
-  return `${c.endpoint}|${c.type}`;
+/** League is part of the key — a runtime switch must not serve the old league's prices. */
+function cacheKey(c: NinjaCategory, league: string): string {
+  return `${league}|${c.endpoint}|${c.type}`;
 }
 
 /**
@@ -36,7 +40,8 @@ function cacheKey(c: NinjaCategory): string {
  * Throws loudly on network failure or schema mismatch — no silent fallback.
  */
 export async function fetchCategory(category: NinjaCategory): Promise<NinjaResponse> {
-  const key = cacheKey(category);
+  const league = getActiveLeague();
+  const key = cacheKey(category, league);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data;
 
@@ -44,9 +49,9 @@ export async function fetchCategory(category: NinjaCategory): Promise<NinjaRespo
   const raw = await ninjaLimiter.schedule(async () => {
     try {
       const res = await axios.get(url, {
-        params: { league: config.league, type: category.type },
+        params: { league, type: category.type },
         timeout: 20_000,
-        headers: BROWSER_HEADERS,
+        headers: browserHeaders(league),
       });
       return res.data;
     } catch (err) {
@@ -96,6 +101,50 @@ export function normalize(resp: NinjaResponse, category: string): PricedItem[] {
       icon: iconUrl(item?.image),
     };
   });
+}
+
+/**
+ * Verified live shape: a flat array of `{ id, name }` and NOTHING else — no current/active
+ * flag, e.g. [{"id":"Forbidden Rites",...},{"id":"Runes of Aldur",...},{"id":"HC Forbidden
+ * Rites",...},{"id":"Standard",...}]. Order carries the signal (newest league first).
+ */
+const NinjaLeaguesSchema = z.array(
+  z
+    .object({
+      id: z.string().min(1).nullish(),
+      name: z.string().min(1).nullish(),
+    })
+    .passthrough(),
+);
+
+/**
+ * Map a raw `/economy/leagues` payload to league options, ORDER PRESERVED — `current` stays
+ * null because ninja exposes no such flag. Exported so detection tests run the real response
+ * shape through the real parser without touching the network.
+ */
+export function parseNinjaLeagues(raw: unknown): LeagueOption[] {
+  const parsed = NinjaLeaguesSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error(`poe.ninja league list shape mismatch: ${JSON.stringify(raw).slice(0, 300)}`);
+  }
+  return parsed.data
+    .map((r) => ({ name: (r.name ?? r.id ?? "").trim(), current: null }))
+    .filter((l) => l.name !== "");
+}
+
+/** Leagues poe.ninja indexes, newest first — the ninja half of league-switch detection. */
+export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
+  const league = getActiveLeague();
+  const raw = await ninjaLimiter.schedule(async () => {
+    try {
+      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: browserHeaders(league) });
+      return res.data as unknown;
+    } catch (err) {
+      const ax = err as AxiosError;
+      throw new Error(`poe.ninja league fetch failed (${ax.response?.status ?? "no-status"}): ${ax.message}`);
+    }
+  });
+  return parseNinjaLeagues(raw);
 }
 
 /** Fetch + normalize all configured categories. */

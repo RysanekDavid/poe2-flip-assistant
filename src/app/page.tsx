@@ -27,6 +27,7 @@ import { PositionsPanel } from "../components/PositionsPanel";
 import { FlipLog } from "../components/FlipLog";
 import { PriceChart } from "../components/PriceChart";
 import { Onboarding } from "../components/Onboarding";
+import { LeagueBanner } from "../components/LeagueBanner";
 import { MarketStatus } from "../components/MarketStatus";
 import { SettingsPanel } from "../components/SettingsPanel";
 import { CoachPanel } from "../components/coach/CoachPanel";
@@ -56,6 +57,8 @@ export default function DashboardPage() {
   return (
     <main className="mx-auto max-w-screen-2xl space-y-4 p-6">
       <Onboarding />
+      {/* stale-league warning — every price below is wrong if this fires */}
+      <LeagueBanner />
       <header className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-neutral-800 bg-neutral-950/85 backdrop-blur">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="space-y-1">

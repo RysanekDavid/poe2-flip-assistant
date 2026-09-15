@@ -248,7 +248,8 @@ def test_followup_payload_links_tool_output_to_previous_response() -> None:
             item_incomplete=False,
             item_inspection=None,
             required_tools=["retrieve_knowledge"],
-        )
+        ),
+        "Runes of Aldur",
     )
 
     payload = model._get_request_payload(messages, previous_response_id=previous_response_id)
@@ -289,7 +290,7 @@ def test_ninth_turn_starts_a_bounded_provider_chain() -> None:
         )
     history.append(HumanMessage(content="current-turn-10"))
 
-    messages, previous_response_id = _model_request(_state(history))
+    messages, previous_response_id = _model_request(_state(history), "Runes of Aldur")
     payload = model._get_request_payload(messages)
     serialized = str(payload["input"])
 

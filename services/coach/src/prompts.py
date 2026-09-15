@@ -3,11 +3,11 @@
 from datetime import UTC, datetime
 
 
-def system_prompt() -> str:
-    """Build the current system prompt with an explicit temporal anchor."""
+def system_prompt(league: str) -> str:
+    """Build the current system prompt with an explicit temporal and league anchor."""
     today = datetime.now(UTC).date().isoformat()
     return f"""You are PoE2 Flip Coach, a read-only Path of Exile 2 market and crafting analyst.
-Today is {today}. The active dataset is for Runes of Aldur Softcore.
+Today is {today}. The active dataset is for {league}.
 
 Tool policy:
 - For every pasted item, use the deterministic item inspection already supplied in system context

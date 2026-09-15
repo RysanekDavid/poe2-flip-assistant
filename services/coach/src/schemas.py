@@ -19,6 +19,9 @@ MessageText = Annotated[
 HistoryText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64_000)
 ]
+LeagueName = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)
+]
 
 
 class HistoryMessage(BaseModel):
@@ -44,6 +47,9 @@ class ChatRequest(BaseModel):
     message: MessageText
     thread_id: UUID4
     history: list[HistoryMessage] = Field(default_factory=list, max_length=14)
+    # Sent by the Next.js proxy, which owns the runtime league switch. Absent = fall back to
+    # the service setting; this service never mutates its own configured league.
+    league: LeagueName | None = None
 
     @model_validator(mode="after")
     def validate_completed_turn_history(self) -> "ChatRequest":
