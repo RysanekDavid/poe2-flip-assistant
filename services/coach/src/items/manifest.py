@@ -53,12 +53,36 @@ def load_snapshot(manifest_path: Path) -> tuple[CatalogManifest, dict[str, Any]]
     return manifest, validated
 
 
+# Full snapshot validation gunzips and parses the entire multi-megabyte catalog. The
+# health endpoint calls snapshot_identity twice per probe and deploy polls it every
+# second, which starved a small VPS during the 2026-09-15 release (health flapped,
+# deploy rolled back). Re-validate fully only when either file's stat identity changes;
+# an unchanged (mtime_ns, size) pair on both files cannot be a normal modification.
+_IDENTITY_CACHE: dict[str, tuple[tuple[int, int, int, int], tuple[str, str]]] = {}
+
+
 def snapshot_identity(manifest_path: Path) -> tuple[str, str]:
-    """Validate files on every readiness check and return immutable cache keys."""
+    """Validate files on readiness checks and return immutable cache keys."""
     resolved = manifest_path.resolve(strict=True)
     manifest_bytes = resolved.read_bytes()
-    manifest, _ = load_snapshot(resolved)
-    return hashlib.sha256(manifest_bytes).hexdigest(), manifest.artifact_sha256
+    manifest = CatalogManifest.model_validate_json(manifest_bytes)
+    _validate_manifest(manifest)
+    artifact_path = _safe_artifact_path(resolved.parent, manifest)
+    manifest_stat = resolved.stat()
+    artifact_stat = artifact_path.stat()
+    stamp = (
+        manifest_stat.st_mtime_ns,
+        manifest_stat.st_size,
+        artifact_stat.st_mtime_ns,
+        artifact_stat.st_size,
+    )
+    cached = _IDENTITY_CACHE.get(str(resolved))
+    if cached is not None and cached[0] == stamp:
+        return cached[1]
+    validated, _ = load_snapshot(resolved)
+    identity = (hashlib.sha256(manifest_bytes).hexdigest(), validated.artifact_sha256)
+    _IDENTITY_CACHE[str(resolved)] = (stamp, identity)
+    return identity
 
 
 def _validate_manifest(manifest: CatalogManifest) -> None:
