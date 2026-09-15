@@ -3,11 +3,13 @@
 import gzip
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
 
 from src.items import catalog_ready, get_item_catalog
+from src.items import manifest as manifest_module
 
 
 def test_manifest_rejects_hash_bytes_path_version_and_count(
@@ -57,6 +59,33 @@ def test_readiness_detects_corruption_after_catalog_was_cached(
     assert catalog_ready(item_catalog_manifest) is False
     with pytest.raises(RuntimeError, match="checksum mismatch"):
         get_item_catalog(item_catalog_manifest)
+
+
+def test_snapshot_identity_revalidates_only_when_files_change(
+    item_catalog_manifest: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = {"count": 0}
+    original = manifest_module.load_snapshot
+
+    def counting(path: Path) -> tuple[object, dict[str, object]]:
+        calls["count"] += 1
+        return original(path)
+
+    monkeypatch.setattr(manifest_module, "load_snapshot", counting)
+    first = manifest_module.snapshot_identity(item_catalog_manifest)
+    second = manifest_module.snapshot_identity(item_catalog_manifest)
+    assert first == second
+    # The full gunzip+parse validation ran once; the identical stat identity was cached.
+    # Health polls every second in deploys — per-call full validation starved the VPS.
+    assert calls["count"] == 1
+
+    manifest = _manifest(item_catalog_manifest)
+    artifact = item_catalog_manifest.parent / str(manifest["artifact"])
+    stat = artifact.stat()
+    os.utime(artifact, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000))
+    third = manifest_module.snapshot_identity(item_catalog_manifest)
+    assert third == first
+    assert calls["count"] == 2
 
 
 def _manifest(path: Path) -> dict[str, object]:

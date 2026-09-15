@@ -387,7 +387,9 @@ systemctl enable poe2flip-web poe2flip-poller poe2flip-coach
 echo "==> starting and checking Coach"
 systemctl start poe2flip-coach
 for _ in {1..30}; do
-  curl --fail --silent --max-time 2 http://127.0.0.1:8000/health >/dev/null && break
+  # First probe pays a one-off full catalog validation (gunzip + parse); later probes
+  # are served from the snapshot identity cache and answer in milliseconds.
+  curl --fail --silent --max-time 5 http://127.0.0.1:8000/health >/dev/null && break
   sleep 1
 done
 COACH_HEALTH=$(curl --fail --silent --max-time 10 http://127.0.0.1:8000/health)
@@ -406,6 +408,8 @@ for _ in {1..30}; do
 done
 SESSION_TOKEN=$(run_in_release "$RELEASE_DIR/node_modules/.bin/tsx" -e 'import { signSession } from "./src/auth/auth"; console.log(signSession(1, 420_000));')
 CONVERSATION_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
+# The persisted-history contract requires a stable turn id and the expected turn count.
+CHAT_TURN_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
 WEB_COACH_HEALTH=$(curl --fail --silent --max-time 30 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
   http://127.0.0.1:3000/api/coach/health)
@@ -428,7 +432,7 @@ CHAT_STARTED_NS=$(date +%s%N)
 CHAT_RESPONSE=$(curl --fail --silent --max-time 180 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
   --header 'Content-Type: application/json' \
-  --data "{\"message\":\"On a desecrated Time-Lost jewel, when should I use Omen of Light versus Omen of Sinistral Annulment? Use only verified knowledge-base evidence; do not discuss drop sources or current prices.\",\"conversationId\":\"$CONVERSATION_ID\"}" \
+  --data "{\"message\":\"On a desecrated Time-Lost jewel, when should I use Omen of Light versus Omen of Sinistral Annulment? Use only verified knowledge-base evidence; do not discuss drop sources or current prices.\",\"conversationId\":\"$CONVERSATION_ID\",\"turnId\":\"$CHAT_TURN_ID\",\"expectedTurnCount\":0}" \
   http://127.0.0.1:3000/api/coach/chat)
 CHAT_ELAPSED_MS=$((($(date +%s%N) - CHAT_STARTED_NS) / 1000000))
 node -e '
@@ -449,11 +453,12 @@ node -e '
 echo "Coach demo latency: ${CHAT_ELAPSED_MS}ms"
 
 PRESENTATION_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
+PRESENTATION_TURN_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
 PRESENTATION_STARTED_NS=$(date +%s%N)
 PRESENTATION_RESPONSE=$(curl --fail --silent --max-time 180 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
   --header 'Content-Type: application/json' \
-  --data "{\"message\":\"I want a Dueling Wand for a Blood Mage with spell damage, level of all spell skills, maximum mana, damage as extra cold damage, critical hit chance for spells, and cast speed. How should I craft it?\",\"conversationId\":\"$PRESENTATION_ID\"}" \
+  --data "{\"message\":\"I want a Dueling Wand for a Blood Mage with spell damage, level of all spell skills, maximum mana, damage as extra cold damage, critical hit chance for spells, and cast speed. How should I craft it?\",\"conversationId\":\"$PRESENTATION_ID\",\"turnId\":\"$PRESENTATION_TURN_ID\",\"expectedTurnCount\":0}" \
   http://127.0.0.1:3000/api/coach/chat)
 PRESENTATION_ELAPSED_MS=$((($(date +%s%N) - PRESENTATION_STARTED_NS) / 1000000))
 node -e '
