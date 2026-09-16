@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getPosition, deletePosition, insertFlip, latestSnapshots } from "../../../../db/queries";
+import { getPosition, deletePosition, insertFlip } from "../../../../db/queries";
 import { getCurrentUser } from "../../../../auth/session";
-import { deriveRates, toDivine, divineToChaos, type Currency } from "../../../../core/priceEngine";
+import { toDivine, divineToChaos, type Currency } from "../../../../core/priceEngine";
+import { getActiveLeague } from "../../../../core/leagueState";
+import { resolveRates } from "../../../../core/rates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,13 +29,13 @@ export async function POST(req: Request): Promise<Response> {
 
   const pos = getPosition(user.id, parsed.data.id);
   if (!pos) return NextResponse.json({ error: "position not found" }, { status: 404 });
-  const rates = deriveRates(latestSnapshots());
-  if (!rates) return NextResponse.json({ error: "no rates yet — poll prices first" }, { status: 409 });
+  const resolved = resolveRates(getActiveLeague());
+  if (!resolved) return NextResponse.json({ error: "no rates yet — poll prices first" }, { status: 409 });
 
   const { sellPrice, sellCcy, notes } = parsed.data;
-  const sellDivUnit = toDivine(sellPrice, sellCcy as Currency, rates);
+  const sellDivUnit = toDivine(sellPrice, sellCcy as Currency, resolved.rates);
   const profitDiv = (sellDivUnit - pos.buy_div_unit) * pos.qty;
-  const profitChaos = divineToChaos(profitDiv, rates);
+  const profitChaos = divineToChaos(profitDiv, resolved.rates);
 
   const flipId = insertFlip(user.id, {
     item_id: pos.item_id,
@@ -48,5 +50,11 @@ export async function POST(req: Request): Promise<Response> {
     notes: notes ?? null,
   });
   deletePosition(user.id, pos.id);
-  return NextResponse.json({ flipId, profitDiv, profitChaos });
+  return NextResponse.json({
+    flipId,
+    profitDiv,
+    profitChaos,
+    ratesSource: resolved.source,
+    ratesFetchedAt: resolved.fetchedAt,
+  });
 }

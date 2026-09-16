@@ -3,8 +3,8 @@ import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { getCraftMargins, getMarginHistory, requestCraftRefresh, getMaterialPrices } from "../../../../db/craftQueries";
 import { ALL_MATERIALS } from "../../../../core/craftMaterials";
-import { latestSnapshots } from "../../../../db/queries";
-import { deriveRates } from "../../../../core/priceEngine";
+import { getActiveLeague } from "../../../../core/leagueState";
+import { resolveRates } from "../../../../core/rates";
 import { RECIPES, RecipeMarginReportSchema, type RecipeMarginReport } from "../../../../core/craftRecipes";
 import { config } from "../../../../config/env";
 
@@ -51,7 +51,8 @@ export async function GET(): Promise<Response> {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const cred = await getCallerCred();
 
-  const stored = new Map(getCraftMargins().map((r) => [r.recipe_key, r]));
+  const league = getActiveLeague();
+  const stored = new Map(getCraftMargins(league).map((r) => [r.recipe_key, r]));
   const recipes = RECIPES.map((r) => {
     const row = stored.get(r.key);
     return {
@@ -59,21 +60,23 @@ export async function GET(): Promise<Response> {
       key: r.key,
       report: row ? parseReport(r.key, row.report_json) : null,
       scannedAt: row?.scanned_at ?? null,
-      evHistory: getMarginHistory(r.key).map((h) => h.ev_div),
+      evHistory: getMarginHistory(league, r.key).map((h) => h.ev_div),
     };
   });
 
-  const rates = deriveRates(latestSnapshots());
+  const resolved = resolveRates(league);
   // Item art for every registered material — chips/checklists render the actual item icons.
   const icons: Record<string, string> = {};
-  for (const [id, p] of getMaterialPrices(ALL_MATERIALS.map((m) => m.id))) {
+  for (const [id, p] of getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id))) {
     if (p.icon) icons[id] = p.icon;
   }
   return NextResponse.json({
     enabled: config.craftMargin.enabled,
     intervalMin: config.craftMargin.intervalMin,
     canRefresh: user.role === "owner" && cred != null,
-    exaltPerDivine: rates?.exaltPerDivine ?? null,
+    exaltPerDivine: resolved?.rates.exaltPerDivine ?? null,
+    ratesSource: resolved?.source ?? null,
+    ratesFetchedAt: resolved?.fetchedAt ?? null,
     icons,
     recipes,
   });

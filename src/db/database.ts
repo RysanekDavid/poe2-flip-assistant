@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { config } from "../config/env";
 import { hashPassword, genApiKey } from "../auth/auth";
 import { migratePatchProvenance } from "./sourceMigrations";
+import { migrateLeagueScope } from "./leagueMigrations";
 
 let db: Database.Database | null = null;
 
@@ -67,6 +68,13 @@ export function getDb(): Database.Database {
   }
   rebuildWatchlistMultiTenant(conn);
   rebuildHoldingsMultiTenant(conn);
+
+  // League scoping: market data is per-league so a switch retains both markets instead of
+  // purging. Runs AFTER the multi-tenant rebuilds, which recreate `watchlist` from scratch and
+  // would drop a league column added before them. The per-user tables' league column is added
+  // inside the migration rather than via ensureColumns: its backfill must happen in the same
+  // step, exactly once (see TAGGED_TABLES).
+  migrateLeagueScope(conn);
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.
   conn.exec(`

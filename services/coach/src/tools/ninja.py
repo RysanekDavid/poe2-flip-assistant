@@ -29,7 +29,9 @@ def fetch_live_prices(items: list[str]) -> str:
 
 
 def _live_source(result: dict[str, object]) -> dict[str, object]:
-    source_id = evidence_id("L", f"{result['item_name']}|{result['fetched_at']}")
+    # League is part of the identity: two leagues price the same orb differently, so the same
+    # name+timestamp in each must not collapse onto one evidence id.
+    source_id = evidence_id("L", f"{result['item_name']}|{result['league']}|{result['fetched_at']}")
     result["id"] = source_id
     return {
         "id": source_id,

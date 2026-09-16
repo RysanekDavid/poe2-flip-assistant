@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { latestSnapshots, latestFetchedAt } from "../../../db/queries";
-import { deriveRates } from "../../../core/priceEngine";
+import { latestFetchedAt } from "../../../db/marketQueries";
+import { getActiveLeague } from "../../../core/leagueState";
+import { resolveRates } from "../../../core/rates";
 import { scoutFetchedAt, fetchScout } from "../../../api/scoutClient";
 import { buildIdentifier } from "../../../lib/buildInfo";
 import { getCurrentUser } from "../../../auth/session";
@@ -21,8 +22,8 @@ const SCOUT_REFRESH_AFTER_MS = 30 * 60_000;
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const prices = latestSnapshots();
-  const rates = deriveRates(prices);
+  const league = getActiveLeague();
+  const resolved = resolveRates(league);
   const scoutAt = scoutFetchedAt();
   if (scoutAt == null || Date.now() - scoutAt > SCOUT_REFRESH_AFTER_MS) {
     void fetchScout().catch((error: unknown) => {
@@ -30,9 +31,12 @@ export async function GET(): Promise<Response> {
     }); // fire-and-forget; next poll reads the fresh timestamp
   }
   return NextResponse.json({
-    ninjaFetchedAt: latestFetchedAt(),
+    league,
+    ninjaFetchedAt: latestFetchedAt(league),
     scoutFetchedAt: scoutAt,
-    rates,
+    rates: resolved?.rates ?? null,
+    ratesSource: resolved?.source ?? null,
+    ratesFetchedAt: resolved?.fetchedAt ?? null,
     build: buildIdentifier(),
   });
 }

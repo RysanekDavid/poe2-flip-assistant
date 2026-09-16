@@ -3,6 +3,7 @@ import { getDb } from "./database";
 /**
  * Craft-margin persistence — kept out of queries.ts, which is already over the file-size cap.
  * Reports are SHARED (market-derived, not per-user): the poller writes, every web client reads.
+ * They are LEAGUE-SCOPED: EV computed from one league's prices says nothing about another's.
  */
 
 export interface CraftMarginRow {
@@ -14,44 +15,58 @@ export interface CraftMarginRow {
 }
 
 /** Upsert the latest report for one recipe (poller writes it each scan). */
-export function upsertCraftMargin(key: string, reportJson: string, evDiv: number, marginPct: number): void {
+export function upsertCraftMargin(
+  league: string,
+  key: string,
+  reportJson: string,
+  evDiv: number,
+  marginPct: number,
+): void {
   getDb()
     .prepare(
-      `INSERT INTO craft_margin_reports (recipe_key, report_json, ev_div, margin_pct, scanned_at)
-       VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-       ON CONFLICT(recipe_key) DO UPDATE SET
+      `INSERT INTO craft_margin_reports (league, recipe_key, report_json, ev_div, margin_pct, scanned_at)
+       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+       ON CONFLICT(league, recipe_key) DO UPDATE SET
          report_json = excluded.report_json, ev_div = excluded.ev_div,
          margin_pct = excluded.margin_pct, scanned_at = CURRENT_TIMESTAMP`,
     )
-    .run(key, reportJson, evDiv, marginPct);
+    .run(league, key, reportJson, evDiv, marginPct);
 }
 
-/** All stored recipe reports, newest scan first. */
-export function getCraftMargins(): CraftMarginRow[] {
+/** One league's stored recipe reports, newest scan first. */
+export function getCraftMargins(league: string): CraftMarginRow[] {
   return getDb()
-    .prepare("SELECT recipe_key, report_json, ev_div, margin_pct, scanned_at FROM craft_margin_reports ORDER BY scanned_at DESC")
-    .all() as CraftMarginRow[];
+    .prepare(
+      `SELECT recipe_key, report_json, ev_div, margin_pct, scanned_at FROM craft_margin_reports
+       WHERE league = ? ORDER BY scanned_at DESC`,
+    )
+    .all(league) as CraftMarginRow[];
 }
 
 /** Append one EV point to a recipe's history (drives the margin sparkline). */
-export function insertMarginHistory(key: string, evDiv: number, marginPct: number): void {
+export function insertMarginHistory(league: string, key: string, evDiv: number, marginPct: number): void {
   getDb()
-    .prepare("INSERT INTO craft_margin_history (recipe_key, ev_div, margin_pct) VALUES (?, ?, ?)")
-    .run(key, evDiv, marginPct);
+    .prepare("INSERT INTO craft_margin_history (league, recipe_key, ev_div, margin_pct) VALUES (?, ?, ?, ?)")
+    .run(league, key, evDiv, marginPct);
 }
 
 /** A recipe's recent EV history, oldest→newest, for a sparkline. */
-export function getMarginHistory(key: string, limit = 30): Array<{ ev_div: number; scanned_at: string }> {
+export function getMarginHistory(
+  league: string,
+  key: string,
+  limit = 30,
+): Array<{ ev_div: number; scanned_at: string }> {
   return (
     getDb()
       .prepare(
-        `SELECT ev_div, scanned_at FROM craft_margin_history WHERE recipe_key = ? ORDER BY scanned_at DESC LIMIT ?`,
+        `SELECT ev_div, scanned_at FROM craft_margin_history
+         WHERE league = ? AND recipe_key = ? ORDER BY scanned_at DESC LIMIT ?`,
       )
-      .all(key, limit) as Array<{ ev_div: number; scanned_at: string }>
+      .all(league, key, limit) as Array<{ ev_div: number; scanned_at: string }>
   ).reverse();
 }
 
-/** Drop craft-margin history rows older than the retention window. Returns rows deleted. */
+/** Drop craft-margin history older than the retention window, across ALL leagues (time-based). */
 export function pruneMarginHistory(retentionDays: number): number {
   return getDb()
     .prepare(`DELETE FROM craft_margin_history WHERE scanned_at < datetime('now', ?)`)
@@ -107,15 +122,16 @@ export interface MaterialPrice {
  * currency codes (alch, aug, regal, transmute, …) match these ids, so this map converts listings
  * priced in small currencies that the scout-rate path (div/ex/chaos) can't.
  */
-export function getCurrencyDivMap(): Map<string, number> {
+export function getCurrencyDivMap(league: string): Map<string, number> {
   const rows = getDb()
     .prepare(
       `SELECT s.item_id AS id, s.chaos_equiv AS div
        FROM price_snapshots s
-       JOIN (SELECT item_id, MAX(id) AS mx FROM price_snapshots WHERE category = 'Currency' GROUP BY item_id) m
+       JOIN (SELECT item_id, MAX(id) AS mx FROM price_snapshots
+             WHERE league = ? AND category = 'Currency' GROUP BY item_id) m
          ON m.item_id = s.item_id AND m.mx = s.id`,
     )
-    .all() as Array<{ id: string; div: number }>;
+    .all(league) as Array<{ id: string; div: number }>;
   return new Map(rows.map((r) => [r.id, r.div]));
 }
 
@@ -124,7 +140,7 @@ export function getCurrencyDivMap(): Map<string, number> {
  * margin engine and the materials panel share the same source. Ids with no snapshot are absent
  * from the map (the caller decides whether that's "missing-materials" or falls back to a manual price).
  */
-export function getMaterialPrices(ids: readonly string[]): Map<string, MaterialPrice> {
+export function getMaterialPrices(league: string, ids: readonly string[]): Map<string, MaterialPrice> {
   const out = new Map<string, MaterialPrice>();
   if (ids.length === 0) return out;
   const placeholders = ids.map(() => "?").join(",");
@@ -134,11 +150,12 @@ export function getMaterialPrices(ids: readonly string[]): Map<string, MaterialP
               (julianday('now') - julianday(s.fetched_at)) * 1440 AS ageMin,
               sp.change_7d AS change7d, sp.spark_7d AS spark7dJson
        FROM price_snapshots s
-       JOIN (SELECT item_id, MAX(id) AS mx FROM price_snapshots WHERE item_id IN (${placeholders}) GROUP BY item_id) m
+       JOIN (SELECT item_id, MAX(id) AS mx FROM price_snapshots
+             WHERE league = ? AND item_id IN (${placeholders}) GROUP BY item_id) m
          ON m.item_id = s.item_id AND m.mx = s.id
-       LEFT JOIN item_spark sp ON sp.item_id = s.item_id`,
+       LEFT JOIN item_spark sp ON sp.item_id = s.item_id AND sp.league = s.league`,
     )
-    .all(...ids) as Array<{
+    .all(league, ...ids) as Array<{
     itemId: string;
     itemName: string;
     priceDiv: number;

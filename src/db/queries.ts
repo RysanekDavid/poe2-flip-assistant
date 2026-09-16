@@ -1,6 +1,14 @@
 import { getDb } from "./database";
-import { config } from "../config/env";
-import type { PricedItem } from "../api/types";
+import { getActiveLeague } from "../core/leagueState";
+
+/**
+ * Per-user application persistence (watchlist, alerts, trades, flips, positions, holdings,
+ * hunts, balances). Market tables moved to marketQueries.ts when they became league-scoped.
+ *
+ * These tables CARRY the league a row was created under. Nothing filters on it yet — per-user
+ * leagues do that — but it is written at INSERT time rather than backfilled later, because
+ * after a switch there is no way to recover which market an untagged row belonged to.
+ */
 
 export interface WatchItem {
   id: number;
@@ -52,70 +60,6 @@ export interface TradeRow {
   notes: string | null;
 }
 
-/** Bulk-insert a fetch's worth of snapshots, skipping no-op repeats.
- *
- *  poe.ninja is cached ~1h, so the 5-min poller sees identical data ~12× in a row. Writing
- *  only when an item's value actually moved (plus a ≥55-min heartbeat so flat items still
- *  mark continuity) cuts the row count ~12× with zero information loss. Returns rows written. */
-export function insertSnapshots(items: PricedItem[]): number {
-  const db = getDb();
-
-  type Last = { baseValue: number; ageMin: number };
-  const last = new Map<string, Last>();
-  for (const r of db
-    .prepare(
-      `SELECT s.item_id AS id, s.chaos_equiv AS baseValue,
-              (julianday('now') - julianday(s.fetched_at)) * 1440 AS ageMin
-       FROM price_snapshots s
-       JOIN (SELECT item_id, MAX(id) mx FROM price_snapshots GROUP BY item_id) m
-         ON m.item_id = s.item_id AND m.mx = s.id`,
-    )
-    .all() as Array<Last & { id: string }>) {
-    last.set(r.id, r);
-  }
-
-  const HEARTBEAT_MIN = 55;
-  // Dedup on PRICE only. volume and change_7d drift on almost every ninja fetch, so including
-  // them in the change test inserted a row every poll (≈12×/h of redundant data — the size bug).
-  // The hourly heartbeat still records a fresh volume point even when the price holds.
-  const changed = items.filter((r) => {
-    const p = last.get(r.itemId);
-    if (!p) return true; // never seen
-    if (p.ageMin >= HEARTBEAT_MIN) return true; // heartbeat — keep ≥1 row/hour
-    return p.baseValue !== r.baseValue;
-  });
-
-  const stmt = db.prepare(
-    `INSERT INTO price_snapshots (item_id, item_name, category, chaos_equiv, volume, icon)
-     VALUES (@itemId, @itemName, @category, @baseValue, @volume, @icon)`,
-  );
-  // spark_7d/change_7d are "latest per item" data (chart + flip model) — keep ONE upserted row in
-  // item_spark instead of duplicating the sparkline JSON into every snapshot.
-  const sparkStmt = db.prepare(
-    `INSERT INTO item_spark (item_id, spark_7d, change_7d, updated_at)
-     VALUES (@itemId, @spark7d, @change7d, CURRENT_TIMESTAMP)
-     ON CONFLICT(item_id) DO UPDATE SET
-       spark_7d = excluded.spark_7d, change_7d = excluded.change_7d, updated_at = CURRENT_TIMESTAMP`,
-  );
-
-  const tx = db.transaction((rows: PricedItem[], all: PricedItem[]) => {
-    for (const r of rows) {
-      stmt.run({ itemId: r.itemId, itemName: r.itemName, category: r.category, baseValue: r.baseValue, volume: r.volume, icon: r.icon });
-    }
-    // refresh the latest spark for EVERY item, not just the ones that got a new snapshot row
-    for (const r of all) sparkStmt.run({ itemId: r.itemId, spark7d: r.spark7d ? JSON.stringify(r.spark7d) : null, change7d: r.change7d });
-  });
-  tx(changed, items);
-  return changed.length;
-}
-
-/** Drop snapshots older than `retentionDays` — the storage ceiling. Returns rows deleted. */
-export function pruneSnapshots(retentionDays: number): number {
-  return getDb()
-    .prepare(`DELETE FROM price_snapshots WHERE fetched_at < datetime('now', ?)`)
-    .run(`-${retentionDays} days`).changes;
-}
-
 export function getWatchlist(userId: number, activeOnly = true): WatchItem[] {
   const db = getDb();
   const sql = activeOnly
@@ -136,8 +80,8 @@ export function addWatch(
 ): void {
   getDb()
     .prepare(
-      `INSERT INTO watchlist (user_id, item_id, item_name, category, buy_threshold_pct, sell_threshold_pct)
-       VALUES (@userId, @itemId, @itemName, @category, @buy, @sell)
+      `INSERT INTO watchlist (user_id, league, item_id, item_name, category, buy_threshold_pct, sell_threshold_pct)
+       VALUES (@userId, @league, @itemId, @itemName, @category, @buy, @sell)
        ON CONFLICT(user_id, item_id) DO UPDATE SET
          buy_threshold_pct = excluded.buy_threshold_pct,
          sell_threshold_pct = excluded.sell_threshold_pct,
@@ -145,6 +89,7 @@ export function addWatch(
     )
     .run({
       userId,
+      league: getActiveLeague(),
       itemId: item.itemId,
       itemName: item.itemName,
       category: item.category,
@@ -175,66 +120,6 @@ export function setManualPrices(
     .run(buyAmount, sellAmount, buyCcy, sellCcy, setAt, userId, itemId);
 }
 
-/** Search all known items by name (for the watchlist add-search). */
-export function searchItems(q: string, limit = 25): Array<{ itemId: string; itemName: string; category: string }> {
-  return getDb()
-    .prepare(
-      `SELECT item_id AS itemId, item_name AS itemName, category
-       FROM price_snapshots WHERE item_name LIKE ? COLLATE NOCASE
-       GROUP BY item_id ORDER BY item_name LIMIT ?`,
-    )
-    .all(`%${q}%`, limit) as Array<{ itemId: string; itemName: string; category: string }>;
-}
-
-/** Latest snapshot per item (for current-price views). */
-export function latestSnapshots(): PricedItem[] {
-  const rows = getDb()
-    .prepare(
-      `SELECT s.item_id AS itemId, s.item_name AS itemName, s.category,
-              s.chaos_equiv AS baseValue, s.volume, s.icon,
-              sp.change_7d AS change7d, sp.spark_7d AS spark7dJson
-       FROM price_snapshots s
-       JOIN (
-         SELECT item_id, MAX(id) AS mx FROM price_snapshots GROUP BY item_id
-       ) m ON m.item_id = s.item_id AND m.mx = s.id
-       LEFT JOIN item_spark sp ON sp.item_id = s.item_id`,
-    )
-    .all() as Array<Omit<PricedItem, "spark7d"> & { spark7dJson: string | null }>;
-  return rows.map(({ spark7dJson, ...r }) => ({
-    ...r,
-    spark7d: spark7dJson ? (JSON.parse(spark7dJson) as number[]) : null,
-  }));
-}
-
-/** Price history for one item, oldest→newest, limited. */
-export function priceHistory(itemId: string, limit = 168): Array<{ baseValue: number; volume: number; fetchedAt: string }> {
-  return getDb()
-    .prepare(
-      `SELECT chaos_equiv AS baseValue, volume, fetched_at AS fetchedAt
-       FROM price_snapshots WHERE item_id = ?
-       ORDER BY fetched_at DESC LIMIT ?`,
-    )
-    .all(itemId, limit)
-    .reverse() as Array<{ baseValue: number; volume: number; fetchedAt: string }>;
-}
-
-/** Latest ninja 7d sparkline + change + current price for one item.
- *  Lets the chart show a retroactive 7-day curve before our own DB has spanned that long. */
-export function itemSpark(itemId: string): { spark7d: number[] | null; change7d: number | null; baseValue: number | null } {
-  const db = getDb();
-  const sp = db
-    .prepare(`SELECT spark_7d AS spark7dJson, change_7d AS change7d FROM item_spark WHERE item_id = ?`)
-    .get(itemId) as { spark7dJson: string | null; change7d: number | null } | undefined;
-  const base = db
-    .prepare(`SELECT chaos_equiv AS baseValue FROM price_snapshots WHERE item_id = ? ORDER BY id DESC LIMIT 1`)
-    .get(itemId) as { baseValue: number } | undefined;
-  return {
-    spark7d: sp?.spark7dJson ? (JSON.parse(sp.spark7dJson) as number[]) : null,
-    change7d: sp?.change7d ?? null,
-    baseValue: base?.baseValue ?? null,
-  };
-}
-
 export function insertAlert(
   userId: number,
   a: {
@@ -250,10 +135,10 @@ export function insertAlert(
 ): void {
   getDb()
     .prepare(
-      `INSERT INTO alerts (user_id, type, item_id, item_name, message, value, threshold, whisper, link)
-       VALUES (@userId, @type, @itemId, @itemName, @message, @value, @threshold, @whisper, @link)`,
+      `INSERT INTO alerts (user_id, league, type, item_id, item_name, message, value, threshold, whisper, link)
+       VALUES (@userId, @league, @type, @itemId, @itemName, @message, @value, @threshold, @whisper, @link)`,
     )
-    .run({ ...a, whisper: a.whisper ?? null, link: a.link ?? null, userId });
+    .run({ ...a, whisper: a.whisper ?? null, link: a.link ?? null, userId, league: getActiveLeague() });
 }
 
 /** True if an alert for this user's item+type fired within the last `minutes` — throttles repeats. */
@@ -301,10 +186,10 @@ export interface FlipRow {
 export function insertFlip(userId: number, f: Omit<FlipRow, "id" | "user_id" | "created_at">): number {
   const info = getDb()
     .prepare(
-      `INSERT INTO flips (user_id, item_id, item_name, qty, buy_price, buy_ccy, sell_price, sell_ccy, profit_div, profit_chaos, notes)
-       VALUES (@userId, @item_id, @item_name, @qty, @buy_price, @buy_ccy, @sell_price, @sell_ccy, @profit_div, @profit_chaos, @notes)`,
+      `INSERT INTO flips (user_id, league, item_id, item_name, qty, buy_price, buy_ccy, sell_price, sell_ccy, profit_div, profit_chaos, notes)
+       VALUES (@userId, @league, @item_id, @item_name, @qty, @buy_price, @buy_ccy, @sell_price, @sell_ccy, @profit_div, @profit_chaos, @notes)`,
     )
-    .run({ ...f, userId });
+    .run({ ...f, userId, league: getActiveLeague() });
   return Number(info.lastInsertRowid);
 }
 
@@ -366,10 +251,10 @@ export interface PositionRow {
 export function insertPosition(userId: number, p: Omit<PositionRow, "id" | "user_id" | "opened_at">): PositionRow {
   const info = getDb()
     .prepare(
-      `INSERT INTO positions (user_id, item_id, item_name, qty, buy_price, buy_ccy, buy_div_unit, notes)
-       VALUES (@userId, @item_id, @item_name, @qty, @buy_price, @buy_ccy, @buy_div_unit, @notes)`,
+      `INSERT INTO positions (user_id, league, item_id, item_name, qty, buy_price, buy_ccy, buy_div_unit, notes)
+       VALUES (@userId, @league, @item_id, @item_name, @qty, @buy_price, @buy_ccy, @buy_div_unit, @notes)`,
     )
-    .run({ ...p, userId, notes: p.notes ?? null });
+    .run({ ...p, userId, league: getActiveLeague(), notes: p.notes ?? null });
   return getDb().prepare("SELECT * FROM positions WHERE id = ?").get(Number(info.lastInsertRowid)) as PositionRow;
 }
 
@@ -405,80 +290,6 @@ export function setHolding(userId: number, currency: string, amount: number): vo
     .run(userId, currency, amount);
 }
 
-// --- market valuation cache (item_values) ---
-
-/** Bulk-upsert resolved item values (e.g. scout uniques). Keyed by lowercased name. */
-export function upsertItemValues(rows: Array<{ nameKey: string; div: number; source: string }>): void {
-  if (rows.length === 0) return;
-  const stmt = getDb().prepare(
-    `INSERT INTO item_values (name_key, value_div, source, updated_at)
-     VALUES (@nameKey, @div, @source, CURRENT_TIMESTAMP)
-     ON CONFLICT(name_key) DO UPDATE SET value_div = excluded.value_div, source = excluded.source, updated_at = CURRENT_TIMESTAMP`,
-  );
-  const tx = getDb().transaction((rs: Array<{ nameKey: string; div: number; source: string }>) => {
-    for (const r of rs) stmt.run(r);
-  });
-  tx(rows);
-}
-
-/** name(lowercased) → unit Div value, from the valuation cache. */
-export function uniqueValueMap(): Map<string, number> {
-  const m = new Map<string, number>();
-  for (const r of getDb().prepare("SELECT name_key, value_div FROM item_values").all() as Array<{
-    name_key: string;
-    value_div: number;
-  }>) {
-    m.set(r.name_key, r.value_div);
-  }
-  return m;
-}
-
-/** Hours since the valuation cache was last refreshed, or null if empty. */
-export function itemValuesAgeHours(): number | null {
-  const row = getDb().prepare("SELECT MAX(updated_at) AS mx FROM item_values").get() as { mx: string | null };
-  if (!row.mx) return null;
-  return (Date.now() - new Date(row.mx.replace(" ", "T") + "Z").getTime()) / 3600_000;
-}
-
-// --- price book (observed listings for rare-item valuation / snipe detection) ---
-
-/** Record one observed listing under its signature. De-duped by listing_id (re-lists ignored). */
-export function recordObservation(sig: string, baseType: string, priceDiv: number, listingId?: string | null): void {
-  if (!(priceDiv > 0)) return;
-  getDb()
-    .prepare(
-      `INSERT INTO price_book_obs (sig, base_type, price_div, listing_id)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(listing_id) WHERE listing_id IS NOT NULL DO NOTHING`,
-    )
-    .run(sig, baseType, priceDiv, listingId ?? null);
-}
-
-/** Recent observed prices for a signature (within retention window), for valuation. */
-export function observedPrices(sig: string): number[] {
-  return (
-    getDb()
-      .prepare(
-        `SELECT price_div FROM price_book_obs
-         WHERE sig = ? AND seen_at >= datetime('now', ?)`,
-      )
-      .all(sig, `-${config.snipe.obsRetentionDays} days`) as Array<{ price_div: number }>
-  ).map((r) => r.price_div);
-}
-
-/** Drop price-book observations older than the snipe retention window. Returns rows deleted. */
-export function pruneObservations(): number {
-  return getDb()
-    .prepare(`DELETE FROM price_book_obs WHERE seen_at < datetime('now', ?)`)
-    .run(`-${config.snipe.obsRetentionDays} days`).changes;
-}
-
-/** Newest snapshot time across all items — for the "data age" indicator. */
-export function latestFetchedAt(): string | null {
-  const row = getDb().prepare("SELECT MAX(fetched_at) AS mx FROM price_snapshots").get() as { mx: string | null };
-  return row.mx ?? null;
-}
-
 export function getTrades(userId: number): TradeRow[] {
   return getDb().prepare("SELECT * FROM trades WHERE user_id = ? ORDER BY traded_at DESC").all(userId) as TradeRow[];
 }
@@ -486,10 +297,10 @@ export function getTrades(userId: number): TradeRow[] {
 export function insertTrade(userId: number, t: Omit<TradeRow, "id" | "traded_at">): number {
   const info = getDb()
     .prepare(
-      `INSERT INTO trades (user_id, item_id, item_name, side, currency, rate, quantity, total_currency, profit_chaos, notes)
-       VALUES (@userId, @item_id, @item_name, @side, @currency, @rate, @quantity, @total_currency, @profit_chaos, @notes)`,
+      `INSERT INTO trades (user_id, league, item_id, item_name, side, currency, rate, quantity, total_currency, profit_chaos, notes)
+       VALUES (@userId, @league, @item_id, @item_name, @side, @currency, @rate, @quantity, @total_currency, @profit_chaos, @notes)`,
     )
-    .run({ ...t, userId });
+    .run({ ...t, userId, league: getActiveLeague() });
   return Number(info.lastInsertRowid);
 }
 
@@ -543,10 +354,10 @@ export function addHunt(
 ): number {
   const info = getDb()
     .prepare(
-      `INSERT INTO hunts (user_id, label, mode, item_name, base_type, category, ilvl_min, rarity, stats_json, max_amount, max_ccy, target_div)
-       VALUES (@userId, @label, @mode, @item_name, @base_type, @category, @ilvl_min, @rarity, @stats_json, @max_amount, @max_ccy, @target_div)`,
+      `INSERT INTO hunts (user_id, league, label, mode, item_name, base_type, category, ilvl_min, rarity, stats_json, max_amount, max_ccy, target_div)
+       VALUES (@userId, @league, @label, @mode, @item_name, @base_type, @category, @ilvl_min, @rarity, @stats_json, @max_amount, @max_ccy, @target_div)`,
     )
-    .run({ ...h, userId });
+    .run({ ...h, userId, league: getActiveLeague() });
   return Number(info.lastInsertRowid);
 }
 
@@ -734,10 +545,10 @@ export function insertBalance(userId: number, b: BalanceInput): BalanceSnapshot 
   const net = netWorthDiv(b);
   const info = getDb()
     .prepare(
-      `INSERT INTO balance_snapshots (user_id, divine, exalted, chaos, exalt_per_div, chaos_per_div, other_div, net_worth_div, source, note)
-       VALUES (@userId, @divine, @exalted, @chaos, @exaltPerDiv, @chaosPerDiv, @otherDiv, @net, @source, @note)`,
+      `INSERT INTO balance_snapshots (user_id, league, divine, exalted, chaos, exalt_per_div, chaos_per_div, other_div, net_worth_div, source, note)
+       VALUES (@userId, @league, @divine, @exalted, @chaos, @exaltPerDiv, @chaosPerDiv, @otherDiv, @net, @source, @note)`,
     )
-    .run({ ...b, userId, otherDiv: b.otherDiv ?? 0, net, note: b.note ?? null });
+    .run({ ...b, userId, league: getActiveLeague(), otherDiv: b.otherDiv ?? 0, net, note: b.note ?? null });
   return getDb().prepare("SELECT * FROM balance_snapshots WHERE id = ?").get(Number(info.lastInsertRowid)) as BalanceSnapshot;
 }
 

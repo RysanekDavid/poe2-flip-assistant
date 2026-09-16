@@ -15,6 +15,7 @@ import {
   type MaterialPrice,
 } from "../db/craftQueries";
 import { ALL_MATERIALS } from "./craftMaterials";
+import { getActiveLeague } from "./leagueState";
 import {
   RECIPES,
   type CraftRecipe,
@@ -244,11 +245,11 @@ function maybeAlert(recipe: CraftRecipe, report: RecipeMarginReport): void {
   }
 }
 
-function persist(recipe: CraftRecipe, report: RecipeMarginReport): void {
-  upsertCraftMargin(report.key, JSON.stringify(report), report.evDiv, report.marginPct);
+function persist(league: string, recipe: CraftRecipe, report: RecipeMarginReport): void {
+  upsertCraftMargin(league, report.key, JSON.stringify(report), report.evDiv, report.marginPct);
   // Only successful scans feed the EV history — a failed/missing report's evDiv 0 would render as
   // a fake sparkline dip, misrepresenting the trend.
-  if (report.status === "ok") insertMarginHistory(report.key, report.evDiv, report.marginPct);
+  if (report.status === "ok") insertMarginHistory(league, report.key, report.evDiv, report.marginPct);
   maybeAlert(recipe, report);
 }
 
@@ -260,9 +261,9 @@ function isStaler(a: string | null, b: string | null): boolean {
 }
 
 /** The recipe whose stored report is oldest (or never scanned) — the round-robin pick. */
-function stalestRecipe(): CraftRecipe | null {
+function stalestRecipe(league: string): CraftRecipe | null {
   if (RECIPES.length === 0) return null;
-  const scanned = new Map(getCraftMargins().map((r) => [r.recipe_key, r.scanned_at]));
+  const scanned = new Map(getCraftMargins(league).map((r) => [r.recipe_key, r.scanned_at]));
   let best: CraftRecipe | null = null;
   let bestAt: string | null = null;
   for (const r of RECIPES) {
@@ -277,25 +278,27 @@ function stalestRecipe(): CraftRecipe | null {
 
 /** Refresh the single stalest recipe (the poller's per-tick unit of work). */
 export async function refreshStalestRecipe(cred: TradeCred): Promise<RecipeMarginReport | null> {
-  const recipe = stalestRecipe();
+  const league = getActiveLeague();
+  const recipe = stalestRecipe(league);
   if (!recipe) return null;
   const { rates } = await fetchScout();
   const { stats } = await fetchTradeMeta();
   const idx = buildStatIndex(stats);
-  const prices = getMaterialPrices(recipe.materials.map((m) => m.material.id));
-  const report = await buildReport(recipe, idx, rates, cred, prices, getCurrencyDivMap());
-  persist(recipe, report);
+  const prices = getMaterialPrices(league, recipe.materials.map((m) => m.material.id));
+  const report = await buildReport(recipe, idx, rates, cred, prices, getCurrencyDivMap(league));
+  persist(league, recipe, report);
   return report;
 }
 
 /** Refresh every recipe now (manual owner trigger). Per-recipe isolation: one failure never
  *  aborts the rest, it just lands as a "leg-failed" report with the error populated. */
 export async function refreshAllRecipes(cred: TradeCred): Promise<RecipeMarginReport[]> {
+  const league = getActiveLeague();
   const { rates } = await fetchScout();
   const { stats } = await fetchTradeMeta();
   const idx = buildStatIndex(stats);
-  const prices = getMaterialPrices(ALL_MATERIALS.map((m) => m.id));
-  const currencyDiv = getCurrencyDivMap();
+  const prices = getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id));
+  const currencyDiv = getCurrencyDivMap(league);
   const reports: RecipeMarginReport[] = [];
   for (const recipe of RECIPES) {
     let report: RecipeMarginReport;
@@ -315,7 +318,7 @@ export async function refreshAllRecipes(cred: TradeCred): Promise<RecipeMarginRe
         error: e instanceof Error ? e.message : String(e),
       };
     }
-    persist(recipe, report);
+    persist(league, recipe, report);
     reports.push(report);
   }
   return reports;

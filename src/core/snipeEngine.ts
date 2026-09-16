@@ -1,6 +1,7 @@
 import { modSignature, summarizePrices, snipeVerdict, type SnipeResult } from "./priceBook";
-import { observedPrices } from "../db/queries";
+import { observedPrices } from "../db/marketQueries";
 import { config } from "../config/env";
+import { getActiveLeague } from "./leagueState";
 
 export interface ItemValuation extends SnipeResult {
   baseType: string;
@@ -14,7 +15,7 @@ export interface ItemValuation extends SnipeResult {
  */
 export function evaluateItem(baseType: string, mods: string[], askDiv = 0): ItemValuation {
   const sig = modSignature(baseType, mods);
-  const stats = summarizePrices(observedPrices(sig));
+  const stats = summarizePrices(observedPrices(getActiveLeague(), sig));
   const verdict = snipeVerdict(sig, askDiv, stats);
   const snipeUnderDiv = stats.median != null ? stats.median * (1 - config.snipe.discountPct / 100) : null;
   return { ...verdict, baseType, snipeUnderDiv };

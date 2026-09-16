@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { searchListings, type Listing } from "../../../../api/tradeClient";
 import { getCallerCred } from "../../../../auth/tradeCred";
-import { latestSnapshots } from "../../../../db/queries";
-import { deriveRates, toDivine, type Currency, type ExchangeRates } from "../../../../core/priceEngine";
+import { toDivine, type Currency, type ExchangeRates } from "../../../../core/priceEngine";
+import { getActiveLeague } from "../../../../core/leagueState";
+import { resolveRates } from "../../../../core/rates";
 import type { TradeQuery } from "../../../../lib/tradeLink";
 
 export const runtime = "nodejs";
@@ -61,7 +62,7 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
-  const rates = deriveRates(latestSnapshots());
+  const rates = resolveRates(getActiveLeague())?.rates ?? null;
   if (!rates) return NextResponse.json({ error: "no rates yet — poll prices first" }, { status: 409 });
 
   try {

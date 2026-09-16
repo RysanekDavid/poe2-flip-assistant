@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
-import { getWatchlist, latestSnapshots, manualAgeMs } from "../../../db/queries";
+import { getWatchlist, manualAgeMs } from "../../../db/queries";
+import { latestSnapshots } from "../../../db/marketQueries";
 import { getCurrentUser } from "../../../auth/session";
 import { config } from "../../../config/env";
-import { deriveRates, type Currency } from "../../../core/priceEngine";
+import { type Currency } from "../../../core/priceEngine";
+import { getActiveLeague } from "../../../core/leagueState";
+import { resolveRates } from "../../../core/rates";
 import { scoreItem } from "../../../core/flipModel";
 
 export const runtime = "nodejs";
@@ -16,12 +19,13 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const prices = latestSnapshots();
-  const rates = deriveRates(prices);
+  const league = getActiveLeague();
+  const prices = latestSnapshots(league);
+  const resolved = resolveRates(league);
   const byId = new Map(prices.map((p) => [p.itemId, p]));
   const watch = getWatchlist(user.id);
 
-  if (!rates) {
+  if (!resolved) {
     return NextResponse.json({ rates: null, spreads: [], note: "no exalt/chaos price yet — poll first" });
   }
 
@@ -41,7 +45,7 @@ export async function GET() {
         stale || w.manual_sell_chaos == null
           ? null
           : { amount: w.manual_sell_chaos, ccy: (w.manual_sell_ccy ?? "CHAOS") as Currency };
-      const row = scoreItem(price, rates, mBuy, mSell);
+      const row = scoreItem(price, resolved.rates, mBuy, mSell);
       return {
         ...row,
         thresholdPct: w.buy_threshold_pct,
@@ -59,5 +63,11 @@ export async function GET() {
     CHAOS: byId.get("chaos")?.icon ?? null,
   };
 
-  return NextResponse.json({ rates, spreads, currencyIcons });
+  return NextResponse.json({
+    rates: resolved.rates,
+    ratesSource: resolved.source,
+    ratesFetchedAt: resolved.fetchedAt,
+    spreads,
+    currencyIcons,
+  });
 }

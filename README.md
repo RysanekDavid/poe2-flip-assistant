@@ -85,6 +85,13 @@ six hours; when both sources agree a new challenge league is live, an alert fire
 dashboard banner offers the owner a one-click switch — no redeploy or env edit required.
 `LEAGUE_NAME` is only the cold-start fallback for a fresh database.
 
+Market data is league-scoped, so switching **deletes nothing**: every league keeps its own
+price history, sparks, valuations, price-book observations and craft-margin reports, and
+switching back restores the full picture. On a switch the app also pulls Divine/Exalted/Chaos
+rates straight from GGG's public Currency Exchange digest, so the new league has working rates
+before the poller's first cycle. Base rates resolve `cx` (GGG, ≤2h old) → `ninja` (our own
+snapshots) → `scout` (≤24h old); the header strip names the source and its age.
+
 ## Verification
 
 ```bash
@@ -93,6 +100,9 @@ npm run typecheck
 npm run test:coach
 npm run test:middleware
 npm run test:demo-user
+npm run test:league
+npm run test:market-league
+npm run test:rates
 npm run build
 COACH_DISABLE_DOTENV=1 uv --cache-dir services/coach/.uv-cache --directory services/coach run pytest
 ```

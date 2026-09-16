@@ -90,7 +90,7 @@ async function main(): Promise<void> {
   await testSourceAgreement();
   await testAlertDedupe();
   await testActiveLeagueResolution();
-  testSwitchPurgesMarketHistory();
+  testSwitchRetainsMarketHistory();
   testSetActiveLeagueValidation();
   testCacheIsNotPoisonedByAnExplicitDb();
 }
@@ -247,47 +247,79 @@ function testSetActiveLeagueValidation(): void {
 }
 
 /**
- * Market history has no league column, so a switch must drop it in the same transaction —
- * otherwise the trend engine compares two different markets' prices for ~24h.
+ * The purge is GONE. Market tables carry a league column, so a switch must leave every row
+ * where it is — the previous behaviour emptied the dashboard and flipped the Coach to
+ * "sources unavailable" the moment the owner changed league.
  */
-function testSwitchPurgesMarketHistory(): void {
+function testSwitchRetainsMarketHistory(): void {
   clearLeagueCache();
   setActiveLeague(DETECTED, db);
-  seedMarketHistory();
-  assert.deepEqual(historyCounts(), { price_snapshots: 1, item_spark: 1, item_values: 1 });
+  seedMarketHistory(DETECTED);
+  assert.deepEqual(historyCounts(DETECTED), { price_snapshots: 1, item_spark: 1, item_values: 1 });
 
-  // Same league (differing only by surrounding space) → not a switch, history survives.
+  // Same league (differing only by surrounding space) → not a switch.
   assert.deepEqual(setActiveLeague(`  ${DETECTED}  `, db), { league: DETECTED, changed: false });
-  assert.deepEqual(historyCounts(), { price_snapshots: 1, item_spark: 1, item_values: 1 });
+  assert.deepEqual(historyCounts(DETECTED), { price_snapshots: 1, item_spark: 1, item_values: 1 });
 
-  // A real switch purges all three tables; the poller refills them on its next tick.
+  // A real switch keeps every row; the newly tracked league simply starts empty.
+  const other = "Another Test League";
   clearLeagueCache();
-  setActiveLeague("Another Test League", db);
-  assert.deepEqual(historyCounts(), { price_snapshots: 0, item_spark: 0, item_values: 0 });
-  assert.equal(getActiveLeague(db), "Another Test League");
+  setActiveLeague(other, db);
+  assert.equal(getActiveLeague(db), other);
+  assert.deepEqual(historyCounts(DETECTED), { price_snapshots: 1, item_spark: 1, item_values: 1 });
+  assert.deepEqual(historyCounts(other), { price_snapshots: 0, item_spark: 0, item_values: 0 });
 
-  // Leave the fixture on DETECTED for the checks that follow.
+  // Two leagues coexist, and a per-league read never sees the other league's rows.
+  seedMarketHistory(other);
+  assert.deepEqual(historyCounts(other), { price_snapshots: 1, item_spark: 1, item_values: 1 });
+  assert.deepEqual(historyCounts(DETECTED), { price_snapshots: 1, item_spark: 1, item_values: 1 });
+  assert.equal(
+    (db.prepare("SELECT COUNT(*) AS count FROM price_snapshots").get() as { count: number }).count,
+    2,
+  );
+
+  // The rebuilt keys are (league, item_id) / (league, name_key): the same id in a second league
+  // inserted fine above, and a repeat WITHIN one league must still collide.
+  assert.throws(() => seedSpark(DETECTED), /UNIQUE|PRIMARY KEY/i);
+  assert.throws(() => seedValue(other), /UNIQUE|PRIMARY KEY/i);
+
+  // Switching back finds the first league's history exactly as it was left.
   clearLeagueCache();
   setActiveLeague(DETECTED, db);
+  assert.deepEqual(historyCounts(DETECTED), { price_snapshots: 1, item_spark: 1, item_values: 1 });
 }
 
-function seedMarketHistory(): void {
+function seedSpark(league: string): void {
   db.prepare(
-    "INSERT INTO price_snapshots (item_id, item_name, category, chaos_equiv, volume) VALUES ('divine', 'Divine Orb', 'Currency', 1, 10)",
-  ).run();
-  db.prepare("INSERT INTO item_spark (item_id, spark_7d, change_7d) VALUES ('divine', '[1,2]', 5)").run();
-  db.prepare("INSERT INTO item_values (name_key, value_div, source) VALUES ('igniferis', 2.5, 'scout')").run();
+    "INSERT INTO item_spark (league, item_id, spark_7d, change_7d) VALUES (?, 'divine', '[1,2]', 5)",
+  ).run(league);
 }
 
-function historyCounts(): Record<string, number> {
+function seedValue(league: string): void {
+  db.prepare(
+    "INSERT INTO item_values (league, name_key, value_div, source) VALUES (?, 'igniferis', 2.5, 'scout')",
+  ).run(league);
+}
+
+function seedMarketHistory(league: string): void {
+  db.prepare(
+    `INSERT INTO price_snapshots (league, item_id, item_name, category, chaos_equiv, volume)
+     VALUES (?, 'divine', 'Divine Orb', 'Currency', 1, 10)`,
+  ).run(league);
+  seedSpark(league);
+  seedValue(league);
+}
+
+function historyCounts(league: string): Record<string, number> {
   const count = (table: string): number =>
-    (db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get() as { count: number }).count;
+    (db.prepare(`SELECT COUNT(*) AS count FROM ${table} WHERE league = ?`).get(league) as { count: number }).count;
   return {
     price_snapshots: count("price_snapshots"),
     item_spark: count("item_spark"),
     item_values: count("item_values"),
   };
 }
+
 
 /**
  * The module cache is not keyed by connection, so it must never be populated from an explicit

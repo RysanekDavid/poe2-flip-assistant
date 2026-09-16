@@ -13,11 +13,13 @@ export function fireLeagueAlert(
   database: Database.Database = getDb(),
 ): number {
   const users = database.prepare("SELECT id FROM users").all() as Array<{ id: number }>;
+  // The league being announced IS the league to tag the row with — no lookup, and correct even
+  // when this fires on a connection whose tracked league has not been re-read yet.
   const insert = database.prepare(
-    `INSERT INTO alerts (user_id, type, item_id, item_name, message, value, threshold)
-     VALUES (?, 'LEAGUE', 'league', ?, ?, NULL, NULL)`,
+    `INSERT INTO alerts (user_id, league, type, item_id, item_name, message, value, threshold)
+     VALUES (?, ?, 'LEAGUE', 'league', ?, ?, NULL, NULL)`,
   );
-  for (const u of users) insert.run(u.id, league, message);
+  for (const u of users) insert.run(u.id, league, league, message);
 
   try {
     // Callback form: on a headless box the notify backend fails ASYNCHRONOUSLY, and without a

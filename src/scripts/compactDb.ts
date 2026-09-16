@@ -6,6 +6,10 @@
  *      hourly, so sub-hour rows are redundant).
  * Then VACUUM to actually shrink the file.
  *
+ * Every grouping here is keyed by (league, item_id): market history is league-scoped, so
+ * grouping on item_id alone would treat two leagues' rows for the same orb as duplicates of
+ * each other and delete the live league's row in favour of a retired one.
+ *
  * Dry-run by default (prints the plan). Apply for real:
  *   DB_PATH=./data/poe2flip.db npx tsx src/scripts/compactDb.ts --apply
  * BACK UP / stop the poller first — this rewrites the table.
@@ -26,7 +30,8 @@ const dupHourly = (
     .prepare(
       `SELECT COUNT(*) AS c FROM price_snapshots
        WHERE id NOT IN (
-         SELECT MAX(id) FROM price_snapshots GROUP BY item_id, strftime('%Y-%m-%d %H', fetched_at)
+         SELECT MAX(id) FROM price_snapshots
+         GROUP BY league, item_id, strftime('%Y-%m-%d %H', fetched_at)
        )`,
     )
     .get() as { c: number }
@@ -49,13 +54,14 @@ console.log("\napplying…");
 // 1. preserve the latest spark per item into item_spark before we clear the column
 const migrated = db
   .prepare(
-    `INSERT INTO item_spark (item_id, spark_7d, change_7d, updated_at)
-     SELECT s.item_id, s.spark_7d, s.change_7d, CURRENT_TIMESTAMP
+    `INSERT INTO item_spark (league, item_id, spark_7d, change_7d, updated_at)
+     SELECT s.league, s.item_id, s.spark_7d, s.change_7d, CURRENT_TIMESTAMP
      FROM price_snapshots s
-     JOIN (SELECT item_id, MAX(fetched_at) AS mx FROM price_snapshots GROUP BY item_id) m
-       ON m.item_id = s.item_id AND m.mx = s.fetched_at
+     JOIN (SELECT league, item_id, MAX(fetched_at) AS mx FROM price_snapshots
+           GROUP BY league, item_id) m
+       ON m.league = s.league AND m.item_id = s.item_id AND m.mx = s.fetched_at
      WHERE s.spark_7d IS NOT NULL
-     ON CONFLICT(item_id) DO NOTHING`,
+     ON CONFLICT(league, item_id) DO NOTHING`,
   )
   .run().changes;
 console.log(`  item_spark: migrated ${migrated} item(s)`);
@@ -65,7 +71,8 @@ const deleted = db
   .prepare(
     `DELETE FROM price_snapshots
      WHERE id NOT IN (
-       SELECT MAX(id) FROM price_snapshots GROUP BY item_id, strftime('%Y-%m-%d %H', fetched_at)
+       SELECT MAX(id) FROM price_snapshots
+       GROUP BY league, item_id, strftime('%Y-%m-%d %H', fetched_at)
      )`,
   )
   .run().changes;

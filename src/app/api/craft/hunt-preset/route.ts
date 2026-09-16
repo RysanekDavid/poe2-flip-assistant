@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { addHunt } from "../../../../db/queries";
 import { getCraftMargins } from "../../../../db/craftQueries";
-import { latestSnapshots } from "../../../../db/queries";
-import { deriveRates } from "../../../../core/priceEngine";
+import { getActiveLeague } from "../../../../core/leagueState";
+import { resolveRates } from "../../../../core/rates";
 import { fetchTradeMeta } from "../../../../api/tradeMeta";
 import { buildStatIndex } from "../../../../core/statResolver";
 import { legToQuery } from "../../../../core/craftMargin";
@@ -28,7 +28,8 @@ export async function POST(req: Request): Promise<Response> {
   const recipe = RECIPES.find((r) => r.key === b.recipeKey);
   if (!recipe) return NextResponse.json({ error: "unknown recipeKey" }, { status: 400 });
 
-  const row = getCraftMargins().find((r) => r.recipe_key === recipe.key);
+  const league = getActiveLeague();
+  const row = getCraftMargins(league).find((r) => r.recipe_key === recipe.key);
   const parsed = row ? RecipeMarginReportSchema.safeParse(JSON.parse(row.report_json)) : null;
   const report = parsed?.success ? parsed.data : null;
   if (!report?.base) {
@@ -46,7 +47,7 @@ export async function POST(req: Request): Promise<Response> {
 
   // Cap in Divine when the floor is ≥1 div, otherwise in Exalted (small bases read better in ex).
   const capDiv = report.base.priceDiv * CAP_FACTOR;
-  const rates = deriveRates(latestSnapshots());
+  const rates = resolveRates(league)?.rates ?? null;
   const cap =
     capDiv >= 1 || rates == null
       ? { amount: Math.max(0.1, Math.round(capDiv * 10) / 10), ccy: "divine" }

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { getMaterialPrices } from "../../../../db/craftQueries";
-import { latestSnapshots } from "../../../../db/queries";
-import { deriveRates } from "../../../../core/priceEngine";
+import { getActiveLeague } from "../../../../core/leagueState";
+import { resolveRates } from "../../../../core/rates";
 import { ALL_MATERIALS } from "../../../../core/craftMaterials";
 
 export const runtime = "nodejs";
@@ -13,7 +13,8 @@ export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const prices = getMaterialPrices(ALL_MATERIALS.map((m) => m.id));
+  const league = getActiveLeague();
+  const prices = getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id));
   const materials = ALL_MATERIALS.map((m) => {
     const p = prices.get(m.id);
     return {
@@ -28,6 +29,11 @@ export async function GET(): Promise<Response> {
     };
   });
 
-  const rates = deriveRates(latestSnapshots());
-  return NextResponse.json({ materials, exaltPerDivine: rates?.exaltPerDivine ?? null });
+  const resolved = resolveRates(league);
+  return NextResponse.json({
+    materials,
+    exaltPerDivine: resolved?.rates.exaltPerDivine ?? null,
+    ratesSource: resolved?.source ?? null,
+    ratesFetchedAt: resolved?.fetchedAt ?? null,
+  });
 }

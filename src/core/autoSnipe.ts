@@ -3,7 +3,9 @@ import { fetchScout, type ScoutRates } from "../api/scoutClient";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
-import { recordObservation, observedPrices, saveSnipeReport } from "../db/queries";
+import { saveSnipeReport } from "../db/queries";
+import { recordObservation, observedPrices } from "../db/marketQueries";
+import { getActiveLeague } from "./leagueState";
 import { listUsers } from "../db/userQueries";
 import { toDivine } from "./huntEngine";
 import { buildStatIndex, type StatIndex, type ResolvedStat } from "./statResolver";
@@ -186,7 +188,8 @@ async function collectArchetype(
 
   // feed the price book (builds the per-signature distribution over scans → lets us short-circuit
   // known-fair items later)
-  for (const o of observations) recordObservation(o.sig, o.baseType, o.div, o.listingId);
+  const league = getActiveLeague();
+  for (const o of observations) recordObservation(league, o.sig, o.baseType, o.div, o.listingId);
   const diag: ProfileDiag = {
     key: profile.key,
     label: profile.label,
@@ -293,7 +296,7 @@ export async function scanAutoSnipes(cred: TradeCred): Promise<ScanReport> {
 
     // book short-circuit: if we've seen this exact roll-bucket enough and the ask isn't below the
     // book floor, it's a known fair price — skip the live search (saves rate budget)
-    const book = summarizePrices(observedPrices(c.sig));
+    const book = summarizePrices(observedPrices(getActiveLeague(), c.sig));
     if (book.samples >= config.snipe.minSamples && !snipeVerdict(c.sig, c.div, book).isSnipe) continue;
 
     report.valuations++;
