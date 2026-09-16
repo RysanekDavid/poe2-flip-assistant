@@ -138,7 +138,13 @@ export function parseScoutLeagues(raw: unknown): LeagueOption[] {
   const parsed = ScoutLeaguesSchema.safeParse(raw);
   if (!parsed.success) throw new Error(`poe2scout league list shape mismatch: ${JSON.stringify(raw).slice(0, 300)}`);
   return parsed.data
-    .map((l) => ({ name: l.Value.trim(), current: l.IsCurrent ?? null }))
+    .map((l) => ({
+      name: l.Value.trim(),
+      current: l.IsCurrent ?? null,
+      // Carried so a just-switched league can be given rates without a second round trip.
+      exaltPerDivine: l.DivinePrice,
+      chaosPerDivine: l.ChaosDivinePrice,
+    }))
     .filter((l) => l.name !== "");
 }
 

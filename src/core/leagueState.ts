@@ -9,15 +9,6 @@ export const LEAGUE_SETTING_KEY = "league";
 export const MAX_LEAGUE_LENGTH = 60;
 
 /**
- * Shared market history, none of which carries a league column. A league switch makes every
- * stored row a different market's price, so the rows are dropped rather than migrated — the
- * poller refills price_snapshots/item_spark on its next tick and refreshUniqueValues refills
- * item_values. Keeping them would feed cross-league deltas to the trend engine (fake SELL/SPIKE
- * alerts for ~24h) and value stashes at the dead league's prices.
- */
-const LEAGUE_SCOPED_TABLES = ["price_snapshots", "item_spark", "item_values"] as const;
-
-/**
  * The stored league is read on every ninja/scout/trade call, so the DB hit is cached for a
  * minute. A switch clears the cache immediately (same process); other processes — the poller
  * runs separately from the web server — pick the new league up within the TTL.
@@ -64,10 +55,13 @@ function normalizeLeague(league: string): string {
 }
 
 /**
- * Switch the tracked league at runtime (no redeploy) and drop the previous league's market
- * history in the SAME transaction — a half-applied switch (new league, old prices) is the one
- * state that silently produces wrong numbers. Also clears the "new league" banner by marking
- * the target as already alerted.
+ * Switch the tracked league at runtime (no redeploy). Nothing is deleted: every market table
+ * carries a `league` column, so the previous league's history stays queryable and switching
+ * back restores the full picture instantly. The earlier purge-on-switch emptied the app and
+ * flipped the Coach to "sources unavailable" — the league column exists to make that
+ * unnecessary, not to make the purge cheaper.
+ *
+ * Also clears the "new league" banner by marking the target as already alerted.
  *
  * `changed` is false when the request resolves to the league already tracked; callers use it to
  * skip the "league switched" alert. It is decided from a FRESH read, not the memoized one, so a
@@ -84,12 +78,9 @@ export function setActiveLeague(
   database.transaction(() => {
     setSetting(LEAGUE_SETTING_KEY, normalized, database);
     markLeagueAlerted(normalized, database);
-    if (changed) {
-      for (const table of LEAGUE_SCOPED_TABLES) database.prepare(`DELETE FROM ${table}`).run();
-    }
   })();
 
-  if (changed) console.log(`[league] switched ${previous} → ${normalized}; market history purged`);
+  if (changed) console.log(`[league] switched ${previous} → ${normalized}; data retained per league`);
   clearLeagueCache();
   return { league: normalized, changed };
 }

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getFlips, insertFlip, deleteFlip, latestSnapshots } from "../../../db/queries";
+import { getFlips, insertFlip, deleteFlip } from "../../../db/queries";
 import { getCurrentUser } from "../../../auth/session";
-import { deriveRates, toDivine, divineToChaos, type Currency } from "../../../core/priceEngine";
+import { toDivine, divineToChaos, type Currency } from "../../../core/priceEngine";
+import { getActiveLeague } from "../../../core/leagueState";
+import { resolveRates } from "../../../core/rates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,15 +37,15 @@ export async function POST(req: Request) {
   }
   const f = parsed.data;
 
-  const rates = deriveRates(latestSnapshots());
-  if (!rates) {
+  const resolved = resolveRates(getActiveLeague());
+  if (!resolved) {
     return NextResponse.json({ error: "no rates yet — poll first" }, { status: 409 });
   }
 
-  const buyDiv = toDivine(f.buy_price, f.buy_ccy as Currency, rates);
-  const sellDiv = toDivine(f.sell_price, f.sell_ccy as Currency, rates);
+  const buyDiv = toDivine(f.buy_price, f.buy_ccy as Currency, resolved.rates);
+  const sellDiv = toDivine(f.sell_price, f.sell_ccy as Currency, resolved.rates);
   const profitDiv = (sellDiv - buyDiv) * f.qty;
-  const profitChaos = divineToChaos(profitDiv, rates);
+  const profitChaos = divineToChaos(profitDiv, resolved.rates);
 
   const id = insertFlip(user.id, {
     item_id: f.item_id,
@@ -57,7 +59,10 @@ export async function POST(req: Request) {
     profit_chaos: profitChaos,
     notes: f.notes ?? null,
   });
-  return NextResponse.json({ id, profitDiv, profitChaos }, { status: 201 });
+  return NextResponse.json(
+    { id, profitDiv, profitChaos, ratesSource: resolved.source, ratesFetchedAt: resolved.fetchedAt },
+    { status: 201 },
+  );
 }
 
 const DeleteBody = z.object({ id: z.number().int() });

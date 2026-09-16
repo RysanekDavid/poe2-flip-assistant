@@ -1,20 +1,15 @@
 import cron from "node-cron";
 import { config } from "../config/env";
 import { fetchAll } from "../api/ninjaClient";
-import {
-  insertSnapshots,
-  pruneSnapshots,
-  pruneObservations,
-  getWatchlist,
-  latestSnapshots,
-  priceHistory,
-  manualAgeMs,
-} from "../db/queries";
+import { getWatchlist, manualAgeMs } from "../db/queries";
+import { insertSnapshots, pruneSnapshots, pruneObservations, priceHistory } from "../db/marketQueries";
+import { refreshCxRatesIfStale } from "../core/rateSync";
 import { pruneMarginHistory, pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries";
 import { listUsers } from "../db/userQueries";
 import { credForUser } from "../auth/credForUser";
 import { scoreItem } from "../core/flipModel";
-import { deriveRates, type Currency } from "../core/priceEngine";
+import { type Currency } from "../core/priceEngine";
+import { resolveRates } from "../core/rates";
 import { roundPrice } from "../lib/format";
 import { analyzeTrend } from "../core/trendDetector";
 import { fireAlert } from "../core/alertEngine";
@@ -39,16 +34,28 @@ export async function runCycle(): Promise<void> {
   const started = new Date().toISOString();
   console.log(`[poll ${started}] fetching...`);
 
-  const items = await fetchAll();
-  const stored = insertSnapshots(items);
+  // The league comes back FROM the sweep, not from a second lookup: a cold sweep outlives the
+  // 60s league cache, so re-reading it here could file a whole fetch under the wrong market.
+  const { league, items } = await fetchAll();
+  const stored = insertSnapshots(league, items);
   const pruned = pruneSnapshots(config.retentionDays);
   pruneObservations(); // age out stale price-book observations
   pruneMarginHistory(config.retentionDays); // keep craft EV history bounded like everything else
-  console.log(`[poll] stored ${stored}/${items.length} new snapshots, pruned ${pruned} > ${config.retentionDays}d`);
+  console.log(`[poll] "${league}" stored ${stored}/${items.length} new snapshots, pruned ${pruned} > ${config.retentionDays}d`);
 
-  const rates = deriveRates(items);
+  // GGG's hourly currency-exchange digest — one request covers every league, so Standard rides
+  // along free. Fail-quiet: a CDN hiccup must not abort the poll cycle that follows it.
+  await refreshCxRatesIfStale(league);
+
+  // Same ladder the UI reads, deliberately: alerting on ninja-only rates while every panel
+  // showed cx rates meant a row could read X% on screen and fire at Y%. Resolved AFTER the cx
+  // refresh above so a league with no snapshots yet can still be evaluated.
+  const resolved = resolveRates(league);
+  const rates = resolved?.rates ?? null;
   if (rates == null) {
-    console.warn("[poll] no exalted/chaos line found — skipping spread eval this cycle");
+    console.warn("[poll] no usable Div/Ex/Chaos rates — skipping spread eval this cycle");
+  } else {
+    console.log(`[poll] rates from ${resolved?.source}`);
   }
 
   const byId = new Map<string, PricedItem>(items.map((i) => [i.itemId, i]));
@@ -86,7 +93,7 @@ export async function runCycle(): Promise<void> {
       }
 
       // --- trend alert ---
-      const history = priceHistory(w.item_id, 168);
+      const history = priceHistory(league, w.item_id, 168);
       const trend = analyzeTrend(w.item_name, current.change7d, history, current.volume);
       if (trend.signal === "BUY" || trend.signal === "SELL") {
         fireAlert(u.id, {

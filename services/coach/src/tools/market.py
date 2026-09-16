@@ -15,6 +15,7 @@ from src.errors import ToolInvalidInput, ToolNoResult, ToolSourceUnavailable
 from src.evidence import evidence_id
 
 _REQUIRED_COLUMNS = {
+    "league",
     "item_id",
     "item_name",
     "category",
@@ -22,7 +23,7 @@ _REQUIRED_COLUMNS = {
     "volume",
     "fetched_at",
 }
-_HEARTBEAT_COLUMNS = {"item_id", "updated_at"}
+_HEARTBEAT_COLUMNS = {"league", "item_id", "updated_at"}
 _READINESS_MAX_AGE = timedelta(minutes=30)
 _UNAVAILABLE_SQLITE_CODES = {
     sqlite3.SQLITE_BUSY,
@@ -92,6 +93,14 @@ def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bo
             }
             if not heartbeat_columns >= _HEARTBEAT_COLUMNS:
                 return False
+            # Market data is league-scoped, so the correlated lookup joins on league as well as
+            # item_id: without it a spark row from the live league would be paired with a price
+            # row from a retired one, and readiness would be decided by a dead market.
+            #
+            # The check itself stays league-AGNOSTIC on purpose. It answers "did a poll cycle
+            # recently succeed", which is a deploy gate, not a per-request scope — pinning it to
+            # one league would make the gate flap during a league switch. Per-request league
+            # filtering of the actual tools is a separate change.
             heartbeat = connection.execute(
                 """SELECT MAX(datetime(spark.updated_at)) AS updated_at
                 FROM item_spark AS spark
@@ -103,7 +112,8 @@ def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bo
                     END
                     FROM price_snapshots AS snapshot
                     INDEXED BY idx_snapshots_item_time
-                    WHERE snapshot.item_id = spark.item_id
+                    WHERE snapshot.league = spark.league
+                      AND snapshot.item_id = spark.item_id
                     ORDER BY snapshot.fetched_at DESC
                     LIMIT 1
                 ), 0) = 1"""
@@ -163,19 +173,42 @@ def _raise_market_source_error(error: sqlite3.Error) -> NoReturn:
     raise error
 
 
+def _latest_league(connection: sqlite3.Connection, canonical: str) -> str:
+    """The league this item was most recently observed in.
+
+    Market history is retained per league rather than purged on a switch, so a plain time
+    window spans BOTH markets for a while after one. Two leagues price the same orb very
+    differently, and blending them reports a change_pct that never happened (measured: +800%).
+    Anchoring every series to the item's newest league keeps "its history" one real market's.
+    """
+    row = connection.execute(
+        """
+        SELECT league FROM price_snapshots
+        WHERE item_name = ? AND category = 'Currency'
+        ORDER BY id DESC LIMIT 1
+        """,
+        (canonical,),
+    ).fetchone()
+    if row is None:
+        raise ToolNoResult(f"No market observations found for {canonical!r}")
+    return str(row["league"])
+
+
 def _analyze_item(connection: sqlite3.Connection, requested: str, days: int) -> dict[str, object]:
     canonical = _resolve_name(connection, requested)
+    league = _latest_league(connection, canonical)
     rows = connection.execute(
         """
         SELECT chaos_equiv AS value_div, volume, fetched_at
         FROM price_snapshots
-        WHERE item_name = ? AND category = 'Currency'
+        WHERE item_name = ? AND category = 'Currency' AND league = ?
           AND datetime(fetched_at) >= datetime(
-            (SELECT MAX(fetched_at) FROM price_snapshots WHERE category = 'Currency'), ?
+            (SELECT MAX(fetched_at) FROM price_snapshots
+             WHERE category = 'Currency' AND league = ?), ?
           )
         ORDER BY fetched_at ASC
         """,
-        (canonical, f"-{days} days"),
+        (canonical, league, league, f"-{days} days"),
     ).fetchall()
     if not rows:
         raise ToolNoResult(f"No market observations found for {canonical!r} over {days} days")
@@ -185,6 +218,9 @@ def _analyze_item(connection: sqlite3.Connection, requested: str, days: int) -> 
     return {
         "title": f"{canonical} market history",
         "item_name": canonical,
+        # Named explicitly: history is retained per league, so "which market is this" is part of
+        # the answer, not context the caller can assume.
+        "league": league,
         "days": days,
         "start_value_div": round(values[0], 8),
         "latest_value_div": round(values[-1], 8),
@@ -200,14 +236,17 @@ def _analyze_item(connection: sqlite3.Connection, requested: str, days: int) -> 
 
 def _current_item(connection: sqlite3.Connection, requested: str) -> dict[str, object]:
     canonical = _resolve_name(connection, requested)
+    # Same league anchor as the history tool, stated explicitly: relying on `id DESC` alone to
+    # land in the live league is an accident of insert order, not a guarantee.
+    league = _latest_league(connection, canonical)
     row = connection.execute(
         """
-        SELECT item_name, chaos_equiv AS value_div, volume, fetched_at
+        SELECT item_name, league, chaos_equiv AS value_div, volume, fetched_at
         FROM price_snapshots
-        WHERE item_name = ? AND category = 'Currency'
+        WHERE item_name = ? AND category = 'Currency' AND league = ?
         ORDER BY id DESC LIMIT 1
         """,
-        (canonical,),
+        (canonical, league),
     ).fetchone()
     if row is None:
         raise ToolNoResult(f"No current market value found for {canonical!r}")
@@ -232,7 +271,11 @@ def _resolve_name(connection: sqlite3.Connection, requested: str) -> str:
 
 
 def _market_source(result: dict[str, object]) -> dict[str, object]:
-    identity = f"{result['item_name']}|{result['days']}|{result['data_timestamp']}"
+    # League is part of the identity: the same item over the same window in two leagues is two
+    # different observations and must not collapse onto one evidence id.
+    identity = "|".join(
+        str(result[key]) for key in ("item_name", "league", "days", "data_timestamp")
+    )
     source_id = evidence_id("M", identity)
     result["id"] = source_id
     return {"id": source_id, "type": "market", "title": result["title"], "url": None}

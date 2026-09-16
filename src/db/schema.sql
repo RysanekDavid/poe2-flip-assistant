@@ -56,9 +56,13 @@ CREATE INDEX IF NOT EXISTS idx_coach_conversations_recent
 CREATE INDEX IF NOT EXISTS idx_coach_leases_expiry
   ON coach_conversation_leases(expires_at);
 
--- Price snapshots (one row per item per fetch) — SHARED across all users (market data).
+-- Price snapshots (one row per item per fetch) — SHARED across all users (market data), but
+-- LEAGUE-SCOPED: a switch must not mix two markets' prices, and must not destroy either.
+-- The '' default exists only so the additive migration can ALTER an existing table; every row
+-- is backfilled to the tracked league immediately after (leagueMigrations asserts none remain).
 CREATE TABLE IF NOT EXISTS price_snapshots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  league TEXT NOT NULL DEFAULT '',
   item_id TEXT NOT NULL,
   item_name TEXT NOT NULL,
   category TEXT NOT NULL,
@@ -73,20 +77,24 @@ CREATE TABLE IF NOT EXISTS price_snapshots (
 -- Latest 7d sparkline + change, ONE row per item (not duplicated into every snapshot — that
 -- JSON blob was the bulk of price_snapshots). The chart/flip-model only ever read the latest.
 CREATE TABLE IF NOT EXISTS item_spark (
-  item_id TEXT PRIMARY KEY,
+  league TEXT NOT NULL DEFAULT '',
+  item_id TEXT NOT NULL,
   spark_7d TEXT,               -- JSON array, 7d cumulative %-change series
   change_7d REAL,              -- 7d % change
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (league, item_id)
 );
 
 -- Market valuation cache — SHARED. Holds a per-item Div value resolved from market sources
 -- (poe2scout uniques; poe.ninja items are valued live from price_snapshots, not stored here).
 -- Refreshed ~daily so account scans value showcase/unpriced items without re-fetching constantly.
 CREATE TABLE IF NOT EXISTS item_values (
-  name_key TEXT PRIMARY KEY,   -- lowercased item name
+  league TEXT NOT NULL DEFAULT '',
+  name_key TEXT NOT NULL,      -- lowercased item name
   value_div REAL NOT NULL,     -- unit value in Divine
   source TEXT NOT NULL,        -- 'scout' (ninja resolves live)
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (league, name_key)
 );
 
 -- Price-book observations — SHARED. One row per observed listing (base + mod-signature → ask
@@ -94,6 +102,7 @@ CREATE TABLE IF NOT EXISTS item_values (
 -- per signature. Built passively from searches we already run; a proprietary dataset.
 CREATE TABLE IF NOT EXISTS price_book_obs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  league TEXT NOT NULL DEFAULT '',
   sig TEXT NOT NULL,            -- base + normalized mod-set signature
   base_type TEXT NOT NULL,
   price_div REAL NOT NULL,      -- listed ask in Divine
@@ -108,6 +117,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_pbo_listing ON price_book_obs(listing_id) 
 CREATE TABLE IF NOT EXISTS watchlist (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL DEFAULT 1,
+  league TEXT,                  -- league the row was created under; carried, not filtered on yet
   item_id TEXT NOT NULL,
   item_name TEXT NOT NULL,
   category TEXT NOT NULL,
@@ -126,6 +136,7 @@ CREATE TABLE IF NOT EXISTS watchlist (
 CREATE TABLE IF NOT EXISTS alerts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL DEFAULT 1,
+  league TEXT,
   type TEXT NOT NULL,
   item_id TEXT NOT NULL,
   item_name TEXT,
@@ -140,6 +151,7 @@ CREATE TABLE IF NOT EXISTS alerts (
 CREATE TABLE IF NOT EXISTS trades (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL DEFAULT 1,
+  league TEXT,
   item_id TEXT NOT NULL,
   item_name TEXT NOT NULL,
   side TEXT NOT NULL,            -- 'BUY' | 'SELL'
@@ -156,6 +168,7 @@ CREATE TABLE IF NOT EXISTS trades (
 CREATE TABLE IF NOT EXISTS flips (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL DEFAULT 1,
+  league TEXT,
   item_id TEXT NOT NULL,
   item_name TEXT NOT NULL,
   qty INTEGER NOT NULL,
@@ -182,6 +195,7 @@ CREATE TABLE IF NOT EXISTS holdings (
 CREATE TABLE IF NOT EXISTS hunts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL DEFAULT 1,
+  league TEXT,
   label TEXT NOT NULL,
   mode TEXT NOT NULL,            -- 'SNIPE' | 'CRAFT_BASE' | 'RESELL'
   item_name TEXT,               -- unique name (SNIPE) or null
@@ -239,11 +253,13 @@ CREATE TABLE IF NOT EXISTS autosnipe_report (
 -- Latest craft-margin report per recipe (poller writes, the UI reads across processes) — SHARED.
 -- report_json is the full itemized RecipeMarginReport (base/result legs + materials + EV math).
 CREATE TABLE IF NOT EXISTS craft_margin_reports (
-  recipe_key TEXT PRIMARY KEY,
+  league TEXT NOT NULL DEFAULT '',
+  recipe_key TEXT NOT NULL,
   report_json TEXT NOT NULL,
   ev_div REAL NOT NULL,
   margin_pct REAL NOT NULL,
-  scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (league, recipe_key)
 );
 
 -- Craft-margin EV over time (one row per recipe per scan) — powers the margin sparkline. SHARED.
@@ -265,6 +281,7 @@ CREATE INDEX IF NOT EXISTS idx_craft_attempts_user ON craft_attempts(user_id, cr
 
 CREATE TABLE IF NOT EXISTS craft_margin_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  league TEXT NOT NULL DEFAULT '',
   recipe_key TEXT NOT NULL,
   ev_div REAL NOT NULL,
   margin_pct REAL NOT NULL,
@@ -284,6 +301,7 @@ CREATE TABLE IF NOT EXISTS craft_refresh_request (
 CREATE TABLE IF NOT EXISTS balance_snapshots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL DEFAULT 1,
+  league TEXT,
   divine REAL NOT NULL DEFAULT 0,
   exalted REAL NOT NULL DEFAULT 0,
   chaos REAL NOT NULL DEFAULT 0,
@@ -301,6 +319,7 @@ CREATE TABLE IF NOT EXISTS balance_snapshots (
 CREATE TABLE IF NOT EXISTS positions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL DEFAULT 1,
+  league TEXT,
   item_id TEXT NOT NULL,
   item_name TEXT NOT NULL,
   qty INTEGER NOT NULL,
@@ -436,6 +455,23 @@ CREATE TABLE IF NOT EXISTS app_settings (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Currency exchange rates per league, one row per (league, pair, source) — SHARED.
+-- `source` is the provenance of the number: 'cx' = GGG's public Currency Exchange digest
+-- (volume-weighted, hourly), 'scout' = poe2scout league aggregate. ninja-derived rates are
+-- computed live from price_snapshots and deliberately NOT stored here.
+CREATE TABLE IF NOT EXISTS currency_rates (
+  league TEXT NOT NULL,
+  pair TEXT NOT NULL,             -- 'exalt_per_divine' | 'chaos_per_divine' | 'exalt_per_chaos'
+  rate REAL NOT NULL,
+  rate_low REAL,                  -- hourly ratio band (cx lowest/highest_ratio), null for scout
+  rate_high REAL,
+  sample_volume INTEGER,          -- units of the denominator traded in the sampled hour
+  source TEXT NOT NULL,
+  fetched_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  hour INTEGER,                   -- unix hour the cx digest covered, null for scout
+  PRIMARY KEY (league, pair, source)
+);
+
 -- Detected PoE2 league (single row). `alerted_league` dedupes the "new league" alert so a
 -- detection that repeats every 6h only ever fires once per league.
 CREATE TABLE IF NOT EXISTS league_state (
@@ -450,7 +486,10 @@ CREATE TABLE IF NOT EXISTS league_state (
 -- because on an existing DB the column doesn't exist yet when this file is exec'd.
 CREATE INDEX IF NOT EXISTS idx_balance_tabs_snap ON balance_tabs(snapshot_id);
 CREATE INDEX IF NOT EXISTS idx_hunt_hits_sig ON hunt_hits(sig, found_at DESC);
-CREATE INDEX IF NOT EXISTS idx_snapshots_item_time ON price_snapshots(item_id, fetched_at DESC);
+-- idx_snapshots_item_time is created in leagueMigrations.ts, NOT here: this file is exec'd
+-- before the migration adds price_snapshots.league, so a legacy database that is missing the
+-- index (dropped for a rebuild, or predating it) would fail on "no such column: league" and
+-- never reach the migration at all. Its name is pinned by services/coach/src/tools/market.py.
 CREATE INDEX IF NOT EXISTS idx_source_snapshot_lookup ON source_snapshot(source_id, snapshot_kind, external_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_official_patch_order ON official_patch(source_order DESC);
 CREATE INDEX IF NOT EXISTS idx_pending_patch_disposition ON pending_patch_effect(disposition, thread_id DESC);

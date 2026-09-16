@@ -31,6 +31,8 @@ jobs:
       - run: npm run test:coach
       - run: npm run test:deploy-config
       - run: npm run test:league
+      - run: npm run test:market-league
+      - run: npm run test:rates
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5

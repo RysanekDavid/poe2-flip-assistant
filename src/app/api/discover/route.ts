@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "../../../config/env";
-import { latestSnapshots, addWatch, latestFetchedAt } from "../../../db/queries";
+import { addWatch } from "../../../db/queries";
+import { latestSnapshots, latestFetchedAt } from "../../../db/marketQueries";
 import { getCurrentUser } from "../../../auth/session";
-import { deriveRates, type ExchangeRates } from "../../../core/priceEngine";
+import { type ExchangeRates } from "../../../core/priceEngine";
+import { getActiveLeague } from "../../../core/leagueState";
+import { resolveRates } from "../../../core/rates";
 import { scoreItem, type FlipRow } from "../../../core/flipModel";
 import type { PricedItem } from "../../../api/types";
 
@@ -25,14 +28,21 @@ export function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const limit = Math.min(Number(params.get("limit")) || 40, 2000);
   const q = (params.get("q") ?? "").trim().toLowerCase();
-  const prices = latestSnapshots();
-  const rates = deriveRates(prices);
-  if (!rates) {
+  const league = getActiveLeague();
+  const prices = latestSnapshots(league);
+  const resolved = resolveRates(league);
+  if (!resolved) {
     return NextResponse.json({ rates: null, candidates: [], note: "no exalt/chaos price yet — poll first" });
   }
-  let scored = scoreAll(prices, rates);
+  let scored = scoreAll(prices, resolved.rates);
   if (q) scored = scored.filter((c) => c.item.toLowerCase().includes(q));
-  return NextResponse.json({ rates, fetchedAt: latestFetchedAt(), candidates: scored.slice(0, limit) });
+  return NextResponse.json({
+    rates: resolved.rates,
+    ratesSource: resolved.source,
+    ratesFetchedAt: resolved.fetchedAt,
+    fetchedAt: latestFetchedAt(league),
+    candidates: scored.slice(0, limit),
+  });
 }
 
 const SeedBody = z.object({ perCategory: z.number().int().positive().max(10).optional() });
@@ -44,13 +54,14 @@ export async function POST(req: Request) {
   const body = SeedBody.safeParse(await req.json().catch(() => ({})));
   const perCat = body.success ? (body.data.perCategory ?? 2) : 2;
 
-  const prices = latestSnapshots();
-  const rates = deriveRates(prices);
-  if (!rates) {
+  const league = getActiveLeague();
+  const prices = latestSnapshots(league);
+  const resolved = resolveRates(league);
+  if (!resolved) {
     return NextResponse.json({ error: "no exalt/chaos price yet — poll first" }, { status: 409 });
   }
 
-  const scored = scoreAll(prices, rates); // flipScore desc
+  const scored = scoreAll(prices, resolved.rates); // flipScore desc
   const perCount = new Map<string, number>();
   const added: Array<{ itemId: string; item: string; category: string }> = [];
 

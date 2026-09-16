@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getOpenPositions, insertPosition, deletePosition, latestSnapshots } from "../../../db/queries";
+import { getOpenPositions, insertPosition, deletePosition } from "../../../db/queries";
+import { latestSnapshots } from "../../../db/marketQueries";
 import { getCurrentUser } from "../../../auth/session";
-import { deriveRates, toDivine, type Currency } from "../../../core/priceEngine";
+import { toDivine, type Currency } from "../../../core/priceEngine";
+import { getActiveLeague } from "../../../core/leagueState";
+import { resolveRates } from "../../../core/rates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +14,7 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const prices = latestSnapshots();
+  const prices = latestSnapshots(getActiveLeague());
   const byId = new Map(prices.map((p) => [p.itemId, p]));
   const positions = getOpenPositions(user.id).map((pos) => {
     const mid = byId.get(pos.item_id)?.baseValue ?? null; // current mid in Div/unit
@@ -40,11 +43,11 @@ export async function POST(req: Request): Promise<Response> {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const parsed = OpenBody.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
-  const rates = deriveRates(latestSnapshots());
-  if (!rates) return NextResponse.json({ error: "no rates yet — poll prices first" }, { status: 409 });
+  const resolved = resolveRates(getActiveLeague());
+  if (!resolved) return NextResponse.json({ error: "no rates yet — poll prices first" }, { status: 409 });
 
   const b = parsed.data;
-  const buyDivUnit = toDivine(b.buyPrice, b.buyCcy as Currency, rates);
+  const buyDivUnit = toDivine(b.buyPrice, b.buyCcy as Currency, resolved.rates);
   const pos = insertPosition(user.id, {
     item_id: b.itemId,
     item_name: b.itemName,
@@ -54,7 +57,7 @@ export async function POST(req: Request): Promise<Response> {
     buy_div_unit: buyDivUnit,
     notes: b.notes ?? null,
   });
-  return NextResponse.json({ position: pos });
+  return NextResponse.json({ position: pos, ratesSource: resolved.source, ratesFetchedAt: resolved.fetchedAt });
 }
 
 /** DELETE /api/positions { id } → cancel a position without selling (no flip logged). */

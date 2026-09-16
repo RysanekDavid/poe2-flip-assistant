@@ -26,6 +26,18 @@ def pytest_configure(config: pytest.Config) -> None:
         config.option.basetemp = str(base)
 
 
+#: The league every market fixture row belongs to. Market tables are league-scoped, and the
+#: readiness heartbeat correlates price rows to spark rows on (league, item_id) — a fixture
+#: without the column would silently stop exercising that join.
+FIXTURE_LEAGUE = "Forbidden Rites"
+
+
+@pytest.fixture
+def market_league() -> str:
+    """The league `market_db` rows belong to, for tests that insert alongside them."""
+    return FIXTURE_LEAGUE
+
+
 @pytest.fixture
 def market_db(tmp_path: Path) -> Path:
     """Create a minimal application-shaped market database."""
@@ -34,6 +46,7 @@ def market_db(tmp_path: Path) -> Path:
         connection.execute(
             """CREATE TABLE price_snapshots (
             id INTEGER PRIMARY KEY,
+            league TEXT NOT NULL DEFAULT '',
             item_id TEXT NOT NULL,
             item_name TEXT NOT NULL,
             category TEXT NOT NULL,
@@ -44,27 +57,32 @@ def market_db(tmp_path: Path) -> Path:
         )
         connection.execute(
             """CREATE TABLE item_spark (
-            item_id TEXT PRIMARY KEY,
-            updated_at TEXT NOT NULL
+            league TEXT NOT NULL DEFAULT '',
+            item_id TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (league, item_id)
             )"""
         )
+        # Same NAME as the application index (services pin it with INDEXED BY), league-leading
+        # columns. A rename here would pass while production's INDEXED BY hint failed.
         connection.execute(
             """CREATE INDEX idx_snapshots_item_time
-            ON price_snapshots(item_id, fetched_at DESC)"""
+            ON price_snapshots(league, item_id, fetched_at DESC)"""
         )
-        latest = datetime.now(UTC).replace(microsecond=0)
-        prior = latest - timedelta(days=1)
+        latest = datetime.now(UTC).replace(microsecond=0).isoformat()
+        prior = (datetime.now(UTC).replace(microsecond=0) - timedelta(days=1)).isoformat()
+        league = FIXTURE_LEAGUE
         connection.executemany(
-            "INSERT INTO price_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO price_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                (1, "chaos", "Chaos Orb", "Currency", 0.01, 100, prior.isoformat()),
-                (2, "chaos", "Chaos Orb", "Currency", 0.02, 120, latest.isoformat()),
-                (3, "divine", "Divine Orb", "Currency", 1.0, 80, latest.isoformat()),
+                (1, league, "chaos", "Chaos Orb", "Currency", 0.01, 100, prior),
+                (2, league, "chaos", "Chaos Orb", "Currency", 0.02, 120, latest),
+                (3, league, "divine", "Divine Orb", "Currency", 1.0, 80, latest),
             ],
         )
         connection.executemany(
-            "INSERT INTO item_spark VALUES (?, ?)",
-            [("chaos", latest.isoformat()), ("divine", latest.isoformat())],
+            "INSERT INTO item_spark VALUES (?, ?, ?)",
+            [(league, "chaos", latest), (league, "divine", latest)],
         )
     return path
 

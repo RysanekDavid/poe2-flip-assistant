@@ -4,6 +4,8 @@ import { pathToFileURL } from "node:url";
 const targets = {
   craft: "src/scripts/testCraftMargin.ts",
   db: "src/scripts/testDbCompact.ts",
+  market: "src/scripts/testMarketLeague.ts",
+  rates: "src/scripts/testRates.ts",
 } as const;
 type Target = keyof typeof targets;
 

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import { latestSnapshots, latestFetchedAt } from "../../../db/queries";
+import { latestSnapshots, latestFetchedAt } from "../../../db/marketQueries";
 import { rankFarms } from "../../../core/farmAdvisor";
+import { getActiveLeague } from "../../../core/leagueState";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** GET /api/farm → ranked "what to farm now" activities by basket heat (momentum × liquidity). */
 export function GET(): Response {
-  const farms = rankFarms(latestSnapshots());
-  return NextResponse.json({ farms, fetchedAt: latestFetchedAt() });
+  const league = getActiveLeague();
+  const farms = rankFarms(latestSnapshots(league));
+  return NextResponse.json({ farms, fetchedAt: latestFetchedAt(league) });
 }

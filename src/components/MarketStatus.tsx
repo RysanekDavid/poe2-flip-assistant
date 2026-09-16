@@ -18,7 +18,7 @@ function Converter({ rates }: { rates: { exaltPerDivine: number; chaosPerDivine:
 
   return (
     <span
-      title="currency converter — live ninja rates"
+      title="currency converter — uses the base rates shown in this strip"
       className="inline-flex items-center gap-2 rounded-md border border-amber-500/25 bg-neutral-900/80 py-1 pl-2 pr-1.5 text-sm shadow-sm"
     >
       <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-amber-500/70" />
@@ -61,13 +61,50 @@ function Converter({ rates }: { rates: { exaltPerDivine: number; chaosPerDivine:
   );
 }
 
+/** Where the displayed base rates came from — the app falls back down this list in order. */
+type RatesSource = "cx" | "ninja" | "scout";
+
 interface Health {
   ninjaFetchedAt: string | null; // sqlite UTC "YYYY-MM-DD HH:MM:SS"
   scoutFetchedAt: number | null; // ms epoch
   rates: { exaltPerDivine: number; chaosPerDivine: number } | null;
+  ratesSource: RatesSource | null;
+  ratesFetchedAt: string | null; // sqlite UTC, same shape as ninjaFetchedAt
 }
 
 const STALE_MIN = 120; // red warning past this — the numbers on screen can't be trusted anymore
+
+const SOURCE_LABEL: Record<RatesSource, string> = {
+  cx: "GGG exchange",
+  ninja: "poe.ninja",
+  scout: "poe2scout",
+};
+
+/** Minutes since a sqlite UTC timestamp ("YYYY-MM-DD HH:MM:SS"), which has no zone marker. */
+function minutesSince(stamp: string | null, now: number): number | null {
+  if (!stamp) return null;
+  return Math.max(0, Math.round((now - new Date(stamp.replace(" ", "T") + "Z").getTime()) / 60000));
+}
+
+function ageLabel(mins: number | null): string {
+  if (mins == null) return "age unknown";
+  if (mins < 60) return `${mins}m old`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m old`;
+}
+
+/** Which source is behind the rate chips, and how old it is. Quiet, but never guessed at. */
+function SourceChip({ source, mins }: { source: RatesSource; mins: number | null }) {
+  return (
+    <span
+      title={`base rates from ${SOURCE_LABEL[source]} — ${ageLabel(mins)}`}
+      className="inline-flex items-center gap-1 rounded-md border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-neutral-500"
+    >
+      {SOURCE_LABEL[source]}
+      <span className="text-neutral-700">·</span>
+      <span className="tabular-nums">{ageLabel(mins)}</span>
+    </span>
+  );
+}
 
 // PoE2 currency art (poecdn) — the rate chips read like the in-game exchange.
 const CCY_ICON = {
@@ -105,8 +142,9 @@ function RateChip({
 
 /**
  * Header rate strip: the three base cross-rates with currency art, both ways (hover a rate for
- * the inverse). Source freshness stays invisible until it matters — a red chip appears only
- * when ninja data goes stale (>2h), because stale prices are the one thing worth shouting about.
+ * the inverse), plus which source produced them and how old it is. The loud red chip is still
+ * reserved for stale ninja data (>2h) — the source chip is quiet because "GGG exchange, 20m
+ * old" is context, not an alarm, but a rate whose origin is invisible is a rate you can't audit.
  */
 export function MarketStatus() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -129,9 +167,7 @@ export function MarketStatus() {
 
   if (!health) return null;
 
-  const ninjaMins = health.ninjaFetchedAt
-    ? Math.max(0, Math.round((now - new Date(health.ninjaFetchedAt.replace(" ", "T") + "Z").getTime()) / 60000))
-    : null;
+  const ninjaMins = minutesSince(health.ninjaFetchedAt, now);
   const ninjaStale = ninjaMins != null && ninjaMins >= STALE_MIN;
   const r = health.rates;
 
@@ -147,24 +183,36 @@ export function MarketStatus() {
       )}
       {r && (
         <>
-          <RateChip
-            left={{ qty: "1", icon: CCY_ICON.div, alt: "Divine Orb" }}
-            right={{ qty: fmtSmart(r.exaltPerDivine), icon: CCY_ICON.ex, alt: "Exalted Orb" }}
-            inverse={`1 Ex = ${fmtSmart(1 / r.exaltPerDivine)} Div`}
-          />
-          <RateChip
-            left={{ qty: "1", icon: CCY_ICON.div, alt: "Divine Orb" }}
-            right={{ qty: fmtSmart(r.chaosPerDivine), icon: CCY_ICON.chaos, alt: "Chaos Orb" }}
-            inverse={`1 Ch = ${fmtSmart(1 / r.chaosPerDivine)} Div`}
-          />
-          <RateChip
-            left={{ qty: "1", icon: CCY_ICON.chaos, alt: "Chaos Orb" }}
-            right={{ qty: fmtSmart(r.exaltPerDivine / r.chaosPerDivine), icon: CCY_ICON.ex, alt: "Exalted Orb" }}
-            inverse={`1 Ex = ${fmtSmart(r.chaosPerDivine / r.exaltPerDivine)} Ch`}
-          />
+          <RateChips rates={r} />
           <Converter rates={r} />
+          {health.ratesSource && (
+            <SourceChip source={health.ratesSource} mins={minutesSince(health.ratesFetchedAt, now)} />
+          )}
         </>
       )}
     </div>
+  );
+}
+
+/** The three base cross-rates, each hoverable for its inverse. */
+function RateChips({ rates: r }: { rates: { exaltPerDivine: number; chaosPerDivine: number } }) {
+  return (
+    <>
+      <RateChip
+        left={{ qty: "1", icon: CCY_ICON.div, alt: "Divine Orb" }}
+        right={{ qty: fmtSmart(r.exaltPerDivine), icon: CCY_ICON.ex, alt: "Exalted Orb" }}
+        inverse={`1 Ex = ${fmtSmart(1 / r.exaltPerDivine)} Div`}
+      />
+      <RateChip
+        left={{ qty: "1", icon: CCY_ICON.div, alt: "Divine Orb" }}
+        right={{ qty: fmtSmart(r.chaosPerDivine), icon: CCY_ICON.chaos, alt: "Chaos Orb" }}
+        inverse={`1 Ch = ${fmtSmart(1 / r.chaosPerDivine)} Div`}
+      />
+      <RateChip
+        left={{ qty: "1", icon: CCY_ICON.chaos, alt: "Chaos Orb" }}
+        right={{ qty: fmtSmart(r.exaltPerDivine / r.chaosPerDivine), icon: CCY_ICON.ex, alt: "Exalted Orb" }}
+        inverse={`1 Ex = ${fmtSmart(r.chaosPerDivine / r.exaltPerDivine)} Ch`}
+      />
+    </>
   );
 }

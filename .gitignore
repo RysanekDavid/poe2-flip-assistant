@@ -20,3 +20,11 @@ dist/
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+# local-only workspace clutter — never ship (personal session exports, caches, scrapped assets)
+/.npm-cache/
+/.test-tmp/
+/.pytest_cache/
+/docs/chat-export/
+/certification/
+/header-check.png
+/src/assets/old/

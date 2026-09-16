@@ -38,9 +38,16 @@ function cacheKey(c: NinjaCategory, league: string): string {
 /**
  * Fetch one category. Rate-limited, cached, and runtime-validated.
  * Throws loudly on network failure or schema mismatch — no silent fallback.
+ *
+ * `league` is a parameter so a multi-category sweep can pin ONE league for the whole run: the
+ * active-league lookup is memoized for only 60s, and a cold sweep of every category takes
+ * longer than that, so a switch mid-sweep would otherwise fetch the new league's prices and
+ * store them under the old league's name.
  */
-export async function fetchCategory(category: NinjaCategory): Promise<NinjaResponse> {
-  const league = getActiveLeague();
+export async function fetchCategory(
+  category: NinjaCategory,
+  league: string = getActiveLeague(),
+): Promise<NinjaResponse> {
   const key = cacheKey(category, league);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data;
@@ -147,12 +154,17 @@ export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
   return parseNinjaLeagues(raw);
 }
 
-/** Fetch + normalize all configured categories. */
-export async function fetchAll(): Promise<PricedItem[]> {
-  const out: PricedItem[] = [];
+/**
+ * Fetch + normalize all configured categories under a single pinned league, and report which
+ * league that was — the caller stores the rows against it, so guessing again afterwards could
+ * mis-attribute a whole sweep to the wrong market.
+ */
+export async function fetchAll(): Promise<{ league: string; items: PricedItem[] }> {
+  const league = getActiveLeague();
+  const items: PricedItem[] = [];
   for (const cat of CATEGORIES) {
-    const resp = await fetchCategory(cat);
-    out.push(...normalize(resp, cat.type));
+    const resp = await fetchCategory(cat, league);
+    items.push(...normalize(resp, cat.type));
   }
-  return out;
+  return { league, items };
 }
