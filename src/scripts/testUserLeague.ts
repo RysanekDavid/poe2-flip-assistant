@@ -18,7 +18,8 @@ import {
   ownLeague,
   setUserLeague,
 } from "../core/leagueUsers";
-import { switchDefaultLeague, switchViewLeague, type SwitchDeps } from "../core/leagueSwitch";
+import { orderNewestFirst, switchDefaultLeague, switchViewLeague, type SwitchDeps } from "../core/leagueSwitch";
+import { registerLeagues } from "../db/leagueQueries";
 import { addWatch, getWatchlist, getWatchlistForLeague } from "../db/watchlistQueries";
 import {
   deletePosition,
@@ -79,6 +80,33 @@ async function main(): Promise<void> {
   await testViewSwitch();
   await testFollowDefault();
   await testDefaultSwitch();
+  testNewestFirstOrdering();
+}
+
+/** Dropdown order comes from league_registry chronology, never from a source's list order. */
+function testNewestFirstOrdering(): void {
+  const put = db.prepare("INSERT OR IGNORE INTO league_registry (league, first_seen_at) VALUES (?, ?)");
+  put.run("Old League", "2025-01-01T00:00:00Z");
+  put.run("New League", "2026-01-01T00:00:00Z");
+  assert.deepEqual(orderNewestFirst(["Old League", "New League"], db), ["New League", "Old League"]);
+  // HC variants inherit their base league's position in the timeline.
+  assert.deepEqual(orderNewestFirst(["HC Old League", "HC New League"], db), [
+    "HC New League",
+    "HC Old League",
+  ]);
+  // Permanent leagues have no registry entry and sink to the bottom.
+  assert.equal(orderNewestFirst(["Standard", "New League", "Hardcore"], db)[0], "New League");
+  // The seeded real history keeps its known chronology.
+  assert.deepEqual(
+    orderNewestFirst(
+      ["Dawn of the Hunt", "Forbidden Rites", "Runes of Aldur", "Rise of the Abyssal", "Fate of the Vaal"],
+      db,
+    ),
+    ["Forbidden Rites", "Runes of Aldur", "Fate of the Vaal", "Rise of the Abyssal", "Dawn of the Hunt"],
+  );
+  // First sighting stamps once; a brand-new league immediately sorts first.
+  registerLeagues(["Brand New"], db);
+  assert.equal(orderNewestFirst(["Brand New", "Forbidden Rites"], db)[0], "Brand New");
 }
 
 function seedUser(id: number, name: string, role: string): number {

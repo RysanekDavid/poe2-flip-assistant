@@ -484,6 +484,14 @@ CREATE TABLE IF NOT EXISTS league_state (
   alerted_league TEXT
 );
 
+-- Self-maintaining league chronology: no public API exposes PoE2 league launch dates, so we
+-- record when WE first saw each name (seeded with known history in leagueMigrations). Ordering
+-- newest-first in the UI comes from here, never from a source's arbitrary list order.
+CREATE TABLE IF NOT EXISTS league_registry (
+  league TEXT PRIMARY KEY,
+  first_seen_at TEXT NOT NULL
+);
+
 -- Indexes that reference user_id are created in database.ts AFTER the multi-tenant migration,
 -- because on an existing DB the column doesn't exist yet when this file is exec'd.
 CREATE INDEX IF NOT EXISTS idx_balance_tabs_snap ON balance_tabs(snapshot_id);

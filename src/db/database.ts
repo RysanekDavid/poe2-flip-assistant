@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { config } from "../config/env";
 import { hashPassword, genApiKey } from "../auth/auth";
 import { migratePatchProvenance } from "./sourceMigrations";
-import { migrateLeagueScope } from "./leagueMigrations";
+import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
 
 let db: Database.Database | null = null;
 
@@ -79,6 +79,7 @@ export function getDb(): Database.Database {
   // inside the migration rather than via ensureColumns: its backfill must happen in the same
   // step, exactly once (see TAGGED_TABLES).
   migrateLeagueScope(conn);
+  seedLeagueRegistry(conn);
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.
   conn.exec(`

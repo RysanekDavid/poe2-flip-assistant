@@ -62,3 +62,29 @@ export function markLeagueAlerted(league: string, database: Database.Database = 
     )
     .run(league);
 }
+
+/**
+ * Record first sightings. HC/SSF variants are stored under their base league name so a
+ * variant inherits its base's position in the timeline.
+ */
+export function registerLeagues(names: readonly string[], database: Database.Database = getDb()): void {
+  const insert = database.prepare(
+    "INSERT OR IGNORE INTO league_registry (league, first_seen_at) VALUES (?, ?)",
+  );
+  const now = new Date().toISOString();
+  for (const name of names) insert.run(baseLeagueName(name), now);
+}
+
+/** First-seen timestamps keyed by lowercased base league name. */
+export function leagueFirstSeen(database: Database.Database = getDb()): Map<string, string> {
+  const rows = database.prepare("SELECT league, first_seen_at FROM league_registry").all() as Array<{
+    league: string;
+    first_seen_at: string;
+  }>;
+  return new Map(rows.map((r) => [r.league.toLowerCase(), r.first_seen_at]));
+}
+
+/** "HC Forbidden Rites" / "SSF X" / "Ruthless X" → "Forbidden Rites"; others unchanged. */
+export function baseLeagueName(name: string): string {
+  return name.replace(/^(hc|ssf|ruthless)\s+/i, "").trim();
+}

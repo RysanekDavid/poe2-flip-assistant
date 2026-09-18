@@ -149,17 +149,28 @@ function Dropdown({
         value={selected}
         disabled={pending != null}
         onChange={(e) => onPick(e.target.value)}
+        // colorScheme makes the NATIVE popup render dark: optgroup labels are painted by the
+        // browser, not by Tailwind classes, and came out white-on-white without it.
+        style={{ colorScheme: "dark" }}
         className="max-w-[220px] bg-transparent font-medium text-neutral-100 outline-none disabled:opacity-60"
       >
         <option value={FOLLOW_DEFAULT} className="bg-neutral-900">
           {settings.default} (default)
         </option>
-        {groups.challenge.length > 0 && <optgroup label="Leagues">{opts(groups.challenge)}</optgroup>}
+        {groups.challenge.length > 0 && (
+          <optgroup label="Leagues" className="bg-neutral-900 text-neutral-500">
+            {opts(groups.challenge)}
+          </optgroup>
+        )}
         {groups.variants.length > 0 && (
-          <optgroup label="Hardcore & SSF">{opts(groups.variants)}</optgroup>
+          <optgroup label="Hardcore & SSF" className="bg-neutral-900 text-neutral-500">
+            {opts(groups.variants)}
+          </optgroup>
         )}
         {groups.permanent.length > 0 && (
-          <optgroup label="Permanent">{opts(groups.permanent)}</optgroup>
+          <optgroup label="Permanent" className="bg-neutral-900 text-neutral-500">
+            {opts(groups.permanent)}
+          </optgroup>
         )}
       </select>
     </label>
