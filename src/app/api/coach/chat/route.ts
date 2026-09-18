@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { config } from "../../../../config/env";
-import { getActiveLeague } from "../../../../core/leagueState";
+import { leagueForUser } from "../../../../core/leagueUsers";
 import {
   CoachHistoryError,
   beginCoachTurn,
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         requestId,
         actorToken,
         started.history,
+        leagueForUser(user.id),
       );
       const stored = completeCoachTurn(user.id, {
         ...parsed.data,
@@ -76,17 +77,18 @@ export async function POST(request: Request) {
       throw error;
     }
   } catch (error: unknown) {
-    if (error instanceof CoachUpstreamError && error.publicStatus === 503) {
-      console.warn(`Coach unavailable: ${error.message}`);
-    } else {
-      console.error("Coach request failed", error);
-    }
-    const detail = coachError(error, requestId);
-    return NextResponse.json(
-      { error: detail },
-      { status: publicStatus(error) },
-    );
+    return coachFailure(error, requestId);
   }
+}
+
+/** Log the failure at the right level and hand the browser the public-safe detail. */
+function coachFailure(error: unknown, requestId: string): Response {
+  if (error instanceof CoachUpstreamError && error.publicStatus === 503) {
+    console.warn(`Coach unavailable: ${error.message}`);
+  } else {
+    console.error("Coach request failed", error);
+  }
+  return NextResponse.json({ error: coachError(error, requestId) }, { status: publicStatus(error) });
 }
 
 class CoachUpstreamError extends Error {
@@ -107,6 +109,7 @@ async function callCoach(
   requestId: string,
   actorToken: string,
   history: ModelHistoryMessage[],
+  league: string,
 ) {
   const response = await fetch(coachEndpoint(config.coach.apiUrl, "/chat"), {
     method: "POST",
@@ -116,7 +119,8 @@ async function callCoach(
       "X-Coach-Actor": actorToken,
     },
     // League is server-side context, not browser input — the browser contract stays unchanged.
-    body: JSON.stringify({ message, thread_id: threadId, history, league: getActiveLeague() }),
+    // It is the ASKING user's league: the Coach must answer about the market they are looking at.
+    body: JSON.stringify({ message, thread_id: threadId, history, league }),
     cache: "no-store",
     signal: AbortSignal.timeout(config.coach.timeoutMs),
   });

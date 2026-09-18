@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { getMaterialPrices } from "../../../../db/craftQueries";
-import { getActiveLeague } from "../../../../core/leagueState";
+import { leagueForUser } from "../../../../core/leagueUsers";
 import { resolveRates } from "../../../../core/rates";
 import { ALL_MATERIALS } from "../../../../core/craftMaterials";
 
@@ -13,7 +13,7 @@ export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const league = getActiveLeague();
+  const league = leagueForUser(user.id);
   const prices = getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id));
   const materials = ALL_MATERIALS.map((m) => {
     const p = prices.get(m.id);

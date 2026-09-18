@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getWatchlist, manualAgeMs } from "../../../db/queries";
+import { getWatchlistForLeague, manualAgeMs } from "../../../db/watchlistQueries";
 import { latestSnapshots } from "../../../db/marketQueries";
 import { getCurrentUser } from "../../../auth/session";
 import { config } from "../../../config/env";
 import { type Currency } from "../../../core/priceEngine";
-import { getActiveLeague } from "../../../core/leagueState";
+import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 import { scoreItem } from "../../../core/flipModel";
 
@@ -19,11 +19,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const league = getActiveLeague();
+  const league = leagueForUser(user.id);
   const prices = latestSnapshots(league);
   const resolved = resolveRates(league);
   const byId = new Map(prices.map((p) => [p.itemId, p]));
-  const watch = getWatchlist(user.id);
+  // Same rule the poller applies to alerts: a row's manual Ange prices and thresholds were
+  // recorded against ONE economy, so scoring them against another league's snapshots and rates
+  // would print a REAL-mode spread that exists in neither market.
+  const watch = getWatchlistForLeague(user.id, league);
 
   if (!resolved) {
     return NextResponse.json({ rates: null, spreads: [], note: "no exalt/chaos price yet — poll first" });

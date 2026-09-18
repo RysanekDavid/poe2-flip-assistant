@@ -6,6 +6,7 @@ const targets = {
   db: "src/scripts/testDbCompact.ts",
   market: "src/scripts/testMarketLeague.ts",
   rates: "src/scripts/testRates.ts",
+  "user-league": "src/scripts/testUserLeague.ts",
 } as const;
 type Target = keyof typeof targets;
 

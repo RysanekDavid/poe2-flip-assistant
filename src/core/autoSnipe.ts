@@ -5,7 +5,7 @@ import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
 import { saveSnipeReport } from "../db/queries";
 import { recordObservation, observedPrices } from "../db/marketQueries";
-import { getActiveLeague } from "./leagueState";
+import { getDefaultLeague } from "./leagueState";
 import { listUsers } from "../db/userQueries";
 import { toDivine } from "./huntEngine";
 import { buildStatIndex, type StatIndex, type ResolvedStat } from "./statResolver";
@@ -188,7 +188,7 @@ async function collectArchetype(
 
   // feed the price book (builds the per-signature distribution over scans → lets us short-circuit
   // known-fair items later)
-  const league = getActiveLeague();
+  const league = getDefaultLeague();
   for (const o of observations) recordObservation(league, o.sig, o.baseType, o.div, o.listingId);
   const diag: ProfileDiag = {
     key: profile.key,
@@ -234,9 +234,12 @@ async function valueAndAlert(c: Candidate, idx: StatIndex, rates: ScoutRates, cr
   };
 
   // market snipes are shared opportunities — alert every account holder (fireAlert de-dupes by
-  // listingId within the cooldown, so each user only pings once per listing)
+  // listingId within the cooldown, so each user only pings once per listing). The scan runs under
+  // ONE cred in the app default league, so that is the market these findings belong to — not
+  // whatever league each recipient happens to be viewing.
+  const league = getDefaultLeague();
   for (const u of listUsers()) {
-    fireAlert(u.id, {
+    fireAlert(u.id, league, {
       type: "SNIPE",
       itemId: finding.listingId || `auto-${c.profile.key}`,
       itemName: finding.itemName,
@@ -296,7 +299,7 @@ export async function scanAutoSnipes(cred: TradeCred): Promise<ScanReport> {
 
     // book short-circuit: if we've seen this exact roll-bucket enough and the ask isn't below the
     // book floor, it's a known fair price — skip the live search (saves rate budget)
-    const book = summarizePrices(observedPrices(getActiveLeague(), c.sig));
+    const book = summarizePrices(observedPrices(getDefaultLeague(), c.sig));
     if (book.samples >= config.snipe.minSamples && !snipeVerdict(c.sig, c.div, book).isSnipe) continue;
 
     report.valuations++;

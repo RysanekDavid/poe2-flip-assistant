@@ -17,7 +17,7 @@ type Db = Database.Database;
 /**
  * Mirrors core/leagueState's LEAGUE_SETTING_KEY, inlined rather than imported.
  *
- * db/ importing core/ is fine in general (queries.ts does it for getActiveLeague). The specific
+ * db/ importing core/ is fine in general (queries.ts does it for getDefaultLeague). The specific
  * cycle that must not exist is database.ts → leagueMigrations → leagueState → database.ts:
  * leagueState's module body reaches for getDb(), and this migration runs from inside getDb().
  */
@@ -111,7 +111,7 @@ const REBUILDS: readonly Rebuild[] = [
  * to every league-filtered read, which would look exactly like the purge this release removes.
  */
 export function migrateLeagueScope(db: Db): void {
-  // Read the tracked league BEFORE any write: the raw setting, not the memoized getActiveLeague,
+  // Read the tracked league BEFORE any write: the raw setting, not the memoized getDefaultLeague,
   // whose cache may already hold a value from a different connection.
   const league = trackedLeague(db);
 

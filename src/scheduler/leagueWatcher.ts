@@ -5,7 +5,8 @@ import type { LeagueOption } from "../api/types";
 import { getDb } from "../db/database";
 import { markLeagueAlerted, readLeagueState, recordLeagueDetection } from "../db/leagueQueries";
 import { fireLeagueAlert } from "../core/leagueAlerts";
-import { getActiveLeague } from "../core/leagueState";
+import { clearLeagueListCache } from "../core/leagueSwitch";
+import { getDefaultLeague } from "../core/leagueState";
 
 /** A new PoE2 league drops a few times a year — 6h is timely without being noise. */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -100,7 +101,7 @@ export async function checkLeagueOnce(
   }
 
   recordLeagueDetection(detection.agreed, detection.reports, database);
-  const tracked = getActiveLeague(database);
+  const tracked = getDefaultLeague(database);
   if (detection.agreed.toLowerCase() === tracked.toLowerCase()) return { agreed: detection.agreed, alerted: false };
 
   // Dedupe: the same news repeats every 6h until someone switches, so alert once per league.
@@ -109,6 +110,9 @@ export async function checkLeagueOnce(
     return { agreed: detection.agreed, alerted: false };
   }
 
+  // A league nobody has announced before is exactly when the memoized scout league list is
+  // wrong; drop it so the header dropdown offers the new league now, not up to ten minutes later.
+  clearLeagueListCache();
   fireLeagueAlert(
     detection.agreed,
     `New PoE2 league detected: ${detection.agreed} — app is tracking ${tracked}`,

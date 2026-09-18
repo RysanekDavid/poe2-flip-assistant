@@ -3,7 +3,7 @@
 import { getDb } from "../db/database";
 import { insertSnapshots, latestSnapshots, itemSpark } from "../db/marketQueries";
 import { config } from "../config/env";
-import { getActiveLeague } from "../core/leagueState";
+import { getDefaultLeague } from "../core/leagueState";
 import type { PricedItem } from "../api/types";
 
 if (!config.dbPath.includes("scratchpad") && !config.dbPath.includes("tmp") && !config.dbPath.includes("temp")) {
@@ -19,7 +19,7 @@ const ok = (name: string, cond: boolean, extra = "") => {
 
 const db = getDb();
 db.exec("DELETE FROM price_snapshots; DELETE FROM item_spark;");
-const league = getActiveLeague();
+const league = getDefaultLeague();
 
 const item = (id: string, price: number, volume: number, spark: number[] | null = [1, 2, 3], change = 5): PricedItem => ({
   itemId: id,

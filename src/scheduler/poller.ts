@@ -1,18 +1,9 @@
 import cron from "node-cron";
 import { config } from "../config/env";
-import { fetchAll } from "../api/ninjaClient";
-import { getWatchlist, manualAgeMs } from "../db/queries";
-import { insertSnapshots, pruneSnapshots, pruneObservations, priceHistory } from "../db/marketQueries";
-import { refreshCxRatesIfStale } from "../core/rateSync";
-import { pruneMarginHistory, pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries";
+import { pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries";
 import { listUsers } from "../db/userQueries";
 import { credForUser } from "../auth/credForUser";
-import { scoreItem } from "../core/flipModel";
-import { type Currency } from "../core/priceEngine";
-import { resolveRates } from "../core/rates";
-import { roundPrice } from "../lib/format";
-import { analyzeTrend } from "../core/trendDetector";
-import { fireAlert } from "../core/alertEngine";
+import { runCycle } from "./marketCycle";
 import { scanAll } from "../core/huntEngine";
 import { scanAutoSnipes } from "../core/autoSnipe";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
@@ -22,107 +13,16 @@ import { readCurrencyFromTrade } from "../api/accountScan";
 import { refreshUniqueValues } from "../core/valuation";
 import { fetchScout } from "../api/scoutClient";
 import { insertBalance, insertTabs } from "../db/queries";
-import type { PricedItem } from "../api/types";
 import { startPatchNotesWatcher } from "../sources/patchNotes/watcher";
 import { startLeagueWatcher } from "./leagueWatcher";
-import { getActiveLeague } from "../core/leagueState";
+import { getPolledLeagues } from "../core/leagueUsers";
+import { getDefaultLeague } from "../core/leagueState";
 
 const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under the owner's cred
 
-/** One poll cycle: fetch → store → evaluate watchlist → alert. */
-export async function runCycle(): Promise<void> {
-  const started = new Date().toISOString();
-  console.log(`[poll ${started}] fetching...`);
-
-  // The league comes back FROM the sweep, not from a second lookup: a cold sweep outlives the
-  // 60s league cache, so re-reading it here could file a whole fetch under the wrong market.
-  const { league, items } = await fetchAll();
-  const stored = insertSnapshots(league, items);
-  const pruned = pruneSnapshots(config.retentionDays);
-  pruneObservations(); // age out stale price-book observations
-  pruneMarginHistory(config.retentionDays); // keep craft EV history bounded like everything else
-  console.log(`[poll] "${league}" stored ${stored}/${items.length} new snapshots, pruned ${pruned} > ${config.retentionDays}d`);
-
-  // GGG's hourly currency-exchange digest — one request covers every league, so Standard rides
-  // along free. Fail-quiet: a CDN hiccup must not abort the poll cycle that follows it.
-  await refreshCxRatesIfStale(league);
-
-  // Same ladder the UI reads, deliberately: alerting on ninja-only rates while every panel
-  // showed cx rates meant a row could read X% on screen and fire at Y%. Resolved AFTER the cx
-  // refresh above so a league with no snapshots yet can still be evaluated.
-  const resolved = resolveRates(league);
-  const rates = resolved?.rates ?? null;
-  if (rates == null) {
-    console.warn("[poll] no usable Div/Ex/Chaos rates — skipping spread eval this cycle");
-  } else {
-    console.log(`[poll] rates from ${resolved?.source}`);
-  }
-
-  const byId = new Map<string, PricedItem>(items.map((i) => [i.itemId, i]));
-
-  // Watchlists are per-user, so evaluate alerts for every account separately. Market data
-  // (byId / rates) is shared; only the watched set and the resulting alert rows are per-user.
-  const users = listUsers();
-  console.log(`[poll] evaluating watchlists for ${users.length} user(s)`);
-
-  for (const u of users) {
-    const watch = getWatchlist(u.id);
-    for (const w of watch) {
-      const current = byId.get(w.item_id);
-      if (!current) continue;
-
-      // --- spread alert (REAL mode only; RECO margin is a heuristic, not a signal) ---
-      if (rates != null) {
-        const ageMs = manualAgeMs(w.manual_set_at);
-        const fresh = ageMs != null && ageMs <= config.manualStaleHours * 3600_000;
-        const mBuy = fresh && w.manual_buy_exalt != null ? { amount: w.manual_buy_exalt, ccy: (w.manual_buy_ccy ?? "EXALT") as Currency } : null;
-        const mSell = fresh && w.manual_sell_chaos != null ? { amount: w.manual_sell_chaos, ccy: (w.manual_sell_ccy ?? "CHAOS") as Currency } : null;
-        const flip = scoreItem(current, rates, mBuy, mSell);
-        // > ~200% "spread" is never a real flip — it's a bad manual price (wrong currency/typo). Skip, don't alert garbage.
-        const SANE_MAX_MARGIN = 200;
-        if (flip.mode === "REAL" && flip.marginPct >= w.buy_threshold_pct && flip.marginPct <= SANE_MAX_MARGIN) {
-          fireAlert(u.id, {
-            type: "SPREAD",
-            itemId: w.item_id,
-            itemName: w.item_name,
-            message: `${flip.marginPct.toFixed(1)}% — buy ${roundPrice(flip.buyExalt)}ex → sell ${roundPrice(flip.sellChaos)}c · market ~${flip.marketMarginPct.toFixed(0)}%`,
-            value: flip.marginPct,
-            threshold: w.buy_threshold_pct,
-          });
-        }
-      }
-
-      // --- trend alert ---
-      const history = priceHistory(league, w.item_id, 168);
-      const trend = analyzeTrend(w.item_name, current.change7d, history, current.volume);
-      if (trend.signal === "BUY" || trend.signal === "SELL") {
-        fireAlert(u.id, {
-          type: "TREND",
-          itemId: w.item_id,
-          itemName: w.item_name,
-          message: `${trend.signal}: ${trend.reason}`,
-          value: trend.change7d,
-          threshold: config.thresholds.change7dPct,
-        });
-      } else if (current.change7d != null && current.change7d >= config.thresholds.change7dPct) {
-        // price spike without a clear trend signal — still worth surfacing on a watched item
-        fireAlert(u.id, {
-          type: "SPIKE",
-          itemId: w.item_id,
-          itemName: w.item_name,
-          message: `+${current.change7d.toFixed(0)}% 7d — spiking, watch for a flip window`,
-          value: current.change7d,
-          threshold: config.thresholds.change7dPct,
-        });
-      }
-    }
-  }
-  console.log(`[poll] cycle done`);
-}
-
 function start(): void {
   const expr = `*/${config.pollIntervalMin} * * * *`;
-  console.log(`poller starting — cron "${expr}", league "${getActiveLeague()}"`);
+  console.log(`poller starting — cron "${expr}", leagues "${getPolledLeagues().join(", ")}"`);
   startPatchNotesWatcher();
   startLeagueWatcher();
 
@@ -249,7 +149,7 @@ async function snapshotBalancesAll(): Promise<void> {
     if (!cred || !cred.account) continue; // user hasn't connected POESESSID + account
     try {
       const c = await readCurrencyFromTrade(cred.account, rates, cred);
-      const snap = insertBalance(u.id, {
+      const snap = insertBalance(u.id, getDefaultLeague(), {
         divine: c.divine,
         exalted: c.exalted,
         chaos: c.chaos,

@@ -15,7 +15,7 @@ import {
   type MaterialPrice,
 } from "../db/craftQueries";
 import { ALL_MATERIALS } from "./craftMaterials";
-import { getActiveLeague } from "./leagueState";
+import { getDefaultLeague } from "./leagueState";
 import {
   RECIPES,
   type CraftRecipe,
@@ -232,8 +232,10 @@ function maybeAlert(recipe: CraftRecipe, report: RecipeMarginReport): void {
   const { alertMarginPct, alertMinEvDiv } = config.craftMargin;
   if (report.marginPct < alertMarginPct || report.evDiv < alertMinEvDiv) return;
   if (report.base.samples < MIN_SAMPLES || report.result.samples < MIN_SAMPLES) return;
+  // Recipes are scanned under the owner's cred in the app default league — tag the finding there.
+  const league = getDefaultLeague();
   for (const u of listUsers()) {
-    fireAlert(u.id, {
+    fireAlert(u.id, league, {
       type: "CRAFT_MARGIN",
       itemId: recipe.key,
       itemName: recipe.label,
@@ -278,7 +280,7 @@ function stalestRecipe(league: string): CraftRecipe | null {
 
 /** Refresh the single stalest recipe (the poller's per-tick unit of work). */
 export async function refreshStalestRecipe(cred: TradeCred): Promise<RecipeMarginReport | null> {
-  const league = getActiveLeague();
+  const league = getDefaultLeague();
   const recipe = stalestRecipe(league);
   if (!recipe) return null;
   const { rates } = await fetchScout();
@@ -293,7 +295,7 @@ export async function refreshStalestRecipe(cred: TradeCred): Promise<RecipeMargi
 /** Refresh every recipe now (manual owner trigger). Per-recipe isolation: one failure never
  *  aborts the rest, it just lands as a "leg-failed" report with the error populated. */
 export async function refreshAllRecipes(cred: TradeCred): Promise<RecipeMarginReport[]> {
-  const league = getActiveLeague();
+  const league = getDefaultLeague();
   const { rates } = await fetchScout();
   const { stats } = await fetchTradeMeta();
   const idx = buildStatIndex(stats);

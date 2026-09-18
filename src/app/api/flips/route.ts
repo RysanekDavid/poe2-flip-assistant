@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getFlips, insertFlip, deleteFlip } from "../../../db/queries";
 import { getCurrentUser } from "../../../auth/session";
 import { toDivine, divineToChaos, type Currency } from "../../../core/priceEngine";
-import { getActiveLeague } from "../../../core/leagueState";
+import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 
 export const runtime = "nodejs";
@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  return NextResponse.json({ flips: getFlips(user.id) });
+  // Per-league, like positions: cross-league P&L would add Divines from two economies.
+  return NextResponse.json({ flips: getFlips(user.id, leagueForUser(user.id)) });
 }
 
 const CCY = z.enum(["DIVINE", "EXALT", "CHAOS"]);
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   }
   const f = parsed.data;
 
-  const resolved = resolveRates(getActiveLeague());
+  const resolved = resolveRates(leagueForUser(user.id));
   if (!resolved) {
     return NextResponse.json({ error: "no rates yet — poll first" }, { status: 409 });
   }
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
   const profitDiv = (sellDiv - buyDiv) * f.qty;
   const profitChaos = divineToChaos(profitDiv, resolved.rates);
 
-  const id = insertFlip(user.id, {
+  const id = insertFlip(user.id, leagueForUser(user.id), {
     item_id: f.item_id,
     item_name: f.item_name,
     qty: f.qty,

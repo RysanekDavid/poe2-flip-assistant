@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { z } from "zod";
 import type { LeagueOption } from "./types";
-import { getActiveLeague } from "../core/leagueState";
+import { getDefaultLeague } from "../core/leagueState";
 
 /**
  * poe2scout client — the WEB-TRADE item economy (uniques/gear), which the in-game
@@ -156,7 +156,7 @@ export async function fetchScoutLeagues(): Promise<LeagueOption[]> {
 
 /** Fetch league rates + the full priced-uniques list, cached. */
 export async function fetchScout(): Promise<{ rates: ScoutRates; items: ScoutItem[] }> {
-  const league = getActiveLeague();
+  const league = getDefaultLeague();
   if (cache && cache.league === league && Date.now() - cache.at < CACHE_TTL_MS) return cache;
 
   const leagues = await get(`/${REALM}/Leagues`, ScoutLeaguesSchema);
@@ -272,7 +272,7 @@ async function fetchDemandPages(league: string): Promise<ByCategoryRaw[]> {
 
 /** Fetch flow + momentum for gear uniques across the relevant categories (one page each). */
 export async function fetchDemand(): Promise<{ rates: ScoutRates; items: DemandItem[] }> {
-  const league = getActiveLeague();
+  const league = getDefaultLeague();
   if (demandCache && demandCache.league === league && Date.now() - demandCache.at < CACHE_TTL_MS) {
     return demandCache;
   }

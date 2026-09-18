@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getWatchlist, addWatch, removeWatch, setManualPrices } from "../../../db/queries";
+import { getWatchlist, addWatch, removeWatch, setManualPrices } from "../../../db/watchlistQueries";
 import { getCurrentUser } from "../../../auth/session";
 
 export const runtime = "nodejs";

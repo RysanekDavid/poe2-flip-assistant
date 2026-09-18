@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchDemand } from "../../../api/scoutClient";
-import { getActiveLeague } from "../../../core/leagueState";
+import { getCurrentUser } from "../../../auth/session";
+import { getDefaultLeague } from "../../../core/leagueState";
 import { tradeSearchUrl } from "../../../lib/tradeLink";
 import { denominate, type Denom } from "../../../core/treasury";
 
@@ -32,6 +33,11 @@ export interface DemandRow {
  * is an honest liquidity+trend proxy, not "what players theory-craft".
  */
 export async function GET(): Promise<Response> {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // scoutClient fetches flow/momentum for the app default league — the deep links stay there
+  // too, or a row would price one economy and link into another.
+  const league = getDefaultLeague();
   try {
     const { rates, items } = await fetchDemand();
     const maxTurnover = items.reduce((m, i) => Math.max(m, i.turnover), 0);
@@ -62,12 +68,12 @@ export async function GET(): Promise<Response> {
           heat,
           trust,
           divergePct,
-          tradeUrl: tradeSearchUrl(getActiveLeague(), { name: it.name, type: it.type }),
+          tradeUrl: tradeSearchUrl(league, { name: it.name, type: it.type }),
         };
       })
       .sort((a, b) => b.heat - a.heat);
 
-    return NextResponse.json({ rows, fetchedAt: new Date().toISOString() });
+    return NextResponse.json({ rows, computedLeague: league, fetchedAt: new Date().toISOString() });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }

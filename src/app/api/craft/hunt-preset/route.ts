@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { addHunt } from "../../../../db/queries";
 import { getCraftMargins } from "../../../../db/craftQueries";
-import { getActiveLeague } from "../../../../core/leagueState";
+import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 import { fetchTradeMeta } from "../../../../api/tradeMeta";
 import { buildStatIndex } from "../../../../core/statResolver";
@@ -28,7 +28,9 @@ export async function POST(req: Request): Promise<Response> {
   const recipe = RECIPES.find((r) => r.key === b.recipeKey);
   if (!recipe) return NextResponse.json({ error: "unknown recipeKey" }, { status: 400 });
 
-  const league = getActiveLeague();
+  // Hunts and the margin scan both run under the shared owner cred in the app default league;
+  // building the preset from another league's floor would cap the hunt at a foreign price.
+  const league = getDefaultLeague();
   const row = getCraftMargins(league).find((r) => r.recipe_key === recipe.key);
   const parsed = row ? RecipeMarginReportSchema.safeParse(JSON.parse(row.report_json)) : null;
   const report = parsed?.success ? parsed.data : null;
@@ -53,7 +55,7 @@ export async function POST(req: Request): Promise<Response> {
       ? { amount: Math.max(0.1, Math.round(capDiv * 10) / 10), ccy: "divine" }
       : { amount: Math.max(1, Math.ceil(capDiv * rates.exaltPerDivine)), ccy: "exalted" };
 
-  const id = addHunt(user.id, {
+  const id = addHunt(user.id, league, {
     label: `base · ${recipe.label}`,
     mode: "CRAFT_BASE",
     item_name: null,
@@ -66,5 +68,5 @@ export async function POST(req: Request): Promise<Response> {
     max_ccy: cap.ccy,
     target_div: report.result?.priceDiv ?? null,
   });
-  return NextResponse.json({ id, cap });
+  return NextResponse.json({ id, cap, computedLeague: league });
 }

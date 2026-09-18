@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { searchListings, type Listing } from "../../../../api/tradeClient";
+import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { toDivine, type Currency, type ExchangeRates } from "../../../../core/priceEngine";
-import { getActiveLeague } from "../../../../core/leagueState";
+import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 import type { TradeQuery } from "../../../../lib/tradeLink";
 
@@ -55,6 +56,8 @@ function summarize(listings: Listing[], total: number, rates: ExchangeRates): Si
  * Read-only: searches cheapest-first and prices the sample. The user still buys manually.
  */
 export async function POST(req: Request): Promise<Response> {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const cred = await getCallerCred();
   if (!cred) {
     return NextResponse.json({ error: "POESESSID not set — add your session cookie in Settings" }, { status: 409 });
@@ -62,8 +65,11 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
-  const rates = resolveRates(getActiveLeague())?.rates ?? null;
-  if (!rates) return NextResponse.json({ error: "no rates yet — poll prices first" }, { status: 409 });
+  // tradeClient searches the app default league (one shared cred), so the listings must be
+  // converted at THAT league's rates — the viewer's league never enters a trade2 search.
+  const league = getDefaultLeague();
+  const rates = resolveRates(league)?.rates ?? null;
+  if (!rates) return NextResponse.json({ error: `no rates for "${league}" yet — poll prices first` }, { status: 409 });
 
   try {
     const run = async (q?: TradeQuery): Promise<SideStats | null> => {
@@ -92,7 +98,7 @@ export async function POST(req: Request): Promise<Response> {
 
     const top = ladder[ladder.length - 1];
     const marginDiv = buy?.minDiv != null && top?.medianDiv != null ? top.medianDiv - buy.minDiv : null;
-    return NextResponse.json({ buy, ladder, marginDiv });
+    return NextResponse.json({ buy, ladder, marginDiv, computedLeague: league });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }

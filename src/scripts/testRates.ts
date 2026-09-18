@@ -376,23 +376,23 @@ async function testPollerRefresh(): Promise<void> {
   // A CDN failure is warned about and survived, never thrown out of the poll cycle — and it
   // must NOT arm the guard, or one blip would cost an hour of rates.
   const cold = "Cold League";
-  assert.deepEqual(await refreshCxRatesIfStale(cold, sources({ digest: new Error("502 bad gateway") })), []);
+  assert.deepEqual(await refreshCxRatesIfStale([cold], sources({ digest: new Error("502 bad gateway") })), []);
   assert.equal(resolveRates(cold), null);
-  assert.deepEqual(await refreshCxRatesIfStale(cold, sources({ digest: new Error("502 again") })), []);
+  assert.deepEqual(await refreshCxRatesIfStale([cold], sources({ digest: new Error("502 again") })), []);
 
   assert.deepEqual(
-    (await refreshCxRatesIfStale(league, sources({ digest: payload }))).sort(),
+    (await refreshCxRatesIfStale([league], sources({ digest: payload }))).sort(),
     ["Poller League", "Standard"],
     "one payload covers the active league and Standard",
   );
   assert.equal(resolveRates("Standard", FIXTURE_NOW)?.source, "cx");
 
   // Fresh rows → no fetch at all on the next cycle.
-  assert.deepEqual(await refreshCxRatesIfStale(league, sources({ digest: new Error("must not be called") })), []);
+  assert.deepEqual(await refreshCxRatesIfStale([league], sources({ digest: new Error("must not be called") })), []);
 
   // A league the digest never covers stores nothing, so its cx age stays null forever. The
   // last-good-digest guard is the only thing stopping a fetch on every single poll cycle.
-  assert.deepEqual(await refreshCxRatesIfStale(cold, sources({ digest: new Error("must not be called") })), []);
+  assert.deepEqual(await refreshCxRatesIfStale([cold], sources({ digest: new Error("must not be called") })), []);
 }
 
 // --- helpers ---

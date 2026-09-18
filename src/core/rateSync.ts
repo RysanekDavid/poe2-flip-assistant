@@ -79,22 +79,29 @@ function cxAgeMs(league: string): number | null {
 let lastGoodDigestAt = 0;
 
 /**
- * Poller hook: fetch one digest when this league's stored cx rates have gone stale, and store
- * the active league plus Standard from it. Never throws.
+ * Poller hook: fetch ONE digest when any polled league's stored cx rates have gone stale, and
+ * store every one of them plus Standard from it. Never throws.
+ *
+ * The digest is a single payload covering every league GGG lists, so serving four leagues costs
+ * exactly what serving one did — which is why this takes the whole set rather than being called
+ * per league (that would re-fetch the same payload N times, or skip N−1 of them on the debounce).
  */
 export async function refreshCxRatesIfStale(
-  league: string,
+  leagues: readonly string[],
   sources: RateSources = LIVE_SOURCES,
 ): Promise<string[]> {
-  const age = cxAgeMs(league);
-  if (age != null && age < CX_STALE_AFTER_MS) return [];
+  const stale = leagues.filter((l) => {
+    const age = cxAgeMs(l);
+    return age == null || age >= CX_STALE_AFTER_MS;
+  });
+  if (stale.length === 0) return [];
   if (Date.now() - lastGoodDigestAt < CX_STALE_AFTER_MS) return [];
   try {
     const digest = await sources.digest();
     lastGoodDigestAt = Date.now();
-    const written = storeDigestRates(digest, [league, ALWAYS_TRACKED]);
+    const written = storeDigestRates(digest, [...leagues, ALWAYS_TRACKED]);
     if (written.length > 0) console.log(`[cx] rates updated for ${written.join(", ")}`);
-    else console.warn(`[cx] digest has no currency-exchange activity for "${league}" yet`);
+    else console.warn(`[cx] digest has no currency-exchange activity for ${stale.join(", ")} yet`);
     return written;
   } catch (err) {
     console.warn(`[cx] rate refresh failed: ${err instanceof Error ? err.message : String(err)}`);

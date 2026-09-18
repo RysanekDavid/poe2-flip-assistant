@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { latestFetchedAt } from "../../../db/marketQueries";
-import { getActiveLeague } from "../../../core/leagueState";
+import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 import { scoutFetchedAt, fetchScout } from "../../../api/scoutClient";
 import { buildIdentifier } from "../../../lib/buildInfo";
@@ -22,7 +22,7 @@ const SCOUT_REFRESH_AFTER_MS = 30 * 60_000;
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const league = getActiveLeague();
+  const league = leagueForUser(user.id);
   const resolved = resolveRates(league);
   const scoutAt = scoutFetchedAt();
   if (scoutAt == null || Date.now() - scoutAt > SCOUT_REFRESH_AFTER_MS) {

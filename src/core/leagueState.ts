@@ -3,7 +3,7 @@ import { config } from "../config/env";
 import { getDb } from "../db/database";
 import { getSetting, setSetting, markLeagueAlerted } from "../db/leagueQueries";
 
-/** app_settings key holding the league the app currently tracks. */
+/** app_settings key holding the app's DEFAULT league (what a user without an own league sees). */
 export const LEAGUE_SETTING_KEY = "league";
 
 export const MAX_LEAGUE_LENGTH = 60;
@@ -23,13 +23,17 @@ export function clearLeagueCache(): void {
 }
 
 /**
- * The league the app tracks right now: the runtime setting if present, else LEAGUE_NAME from env.
+ * The app's DEFAULT league: the runtime setting if present, else LEAGUE_NAME from env.
+ *
+ * This is what every credless/system context runs under — the poller's baseline league, the
+ * shared trade2 pipelines (hunts, autosnipe, craft margins) and any request with no user behind
+ * it. A logged-in user's VIEW can differ; that lives in core/leagueUsers (`leagueForUser`).
  *
  * Only the default (process) database is memoized — an explicit `database` is a test or
  * maintenance connection, and caching its value would hand the wrong league to the next
  * production caller for up to a minute.
  */
-export function getActiveLeague(database?: Database.Database): string {
+export function getDefaultLeague(database?: Database.Database): string {
   const explicit = database != null;
   if (!explicit && cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.league;
 
@@ -40,7 +44,7 @@ export function getActiveLeague(database?: Database.Database): string {
 }
 
 /** Trimmed and safe to store, or throw. The value reaches URLs and the Coach system prompt. */
-function normalizeLeague(league: string): string {
+export function normalizeLeague(league: string): string {
   const normalized = league.trim();
   if (normalized === "") throw new Error("league must not be empty");
   if (normalized.length > MAX_LEAGUE_LENGTH) {
@@ -55,7 +59,7 @@ function normalizeLeague(league: string): string {
 }
 
 /**
- * Switch the tracked league at runtime (no redeploy). Nothing is deleted: every market table
+ * Switch the app DEFAULT league at runtime (no redeploy). Nothing is deleted: every market table
  * carries a `league` column, so the previous league's history stays queryable and switching
  * back restores the full picture instantly. The earlier purge-on-switch emptied the app and
  * flipped the Coach to "sources unavailable" — the league column exists to make that
@@ -72,7 +76,7 @@ export function setActiveLeague(
   database: Database.Database = getDb(),
 ): { league: string; changed: boolean } {
   const normalized = normalizeLeague(league);
-  const previous = getActiveLeague(database);
+  const previous = getDefaultLeague(database);
   const changed = normalized !== previous;
 
   database.transaction(() => {
@@ -80,7 +84,7 @@ export function setActiveLeague(
     markLeagueAlerted(normalized, database);
   })();
 
-  if (changed) console.log(`[league] switched ${previous} → ${normalized}; data retained per league`);
+  if (changed) console.log(`[league] default switched ${previous} → ${normalized}; data retained per league`);
   clearLeagueCache();
   return { league: normalized, changed };
 }

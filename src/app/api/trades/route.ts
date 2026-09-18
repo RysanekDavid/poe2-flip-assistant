@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getTrades, insertTrade, deleteTrade } from "../../../db/queries";
 import { getCurrentUser } from "../../../auth/session";
+import { leagueForUser } from "../../../core/leagueUsers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  return NextResponse.json({ trades: getTrades(user.id) });
+  return NextResponse.json({ trades: getTrades(user.id, leagueForUser(user.id)) });
 }
 
 const TradeBody = z.object({
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
   const t = parsed.data;
-  const id = insertTrade(user.id, {
+  const id = insertTrade(user.id, leagueForUser(user.id), {
     item_id: t.item_id,
     item_name: t.item_name,
     side: t.side,
