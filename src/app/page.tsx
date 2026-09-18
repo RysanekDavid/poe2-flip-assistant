@@ -63,12 +63,12 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-neutral-800 bg-neutral-950/85 backdrop-blur">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">PoE2 Flip Assistant</h1>
-              {/* which market everything below is about — per account, switchable at any time */}
+            <h1 className="text-2xl font-bold">PoE2 Flip Assistant</h1>
+            {/* league picker sits with the rates it controls — per account, switchable anytime */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <MarketStatus />
               <LeagueSelect />
             </div>
-            <MarketStatus />
           </div>
           <TopBar />
         </div>

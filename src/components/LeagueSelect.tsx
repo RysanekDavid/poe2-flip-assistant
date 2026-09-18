@@ -22,16 +22,27 @@ const FOLLOW_DEFAULT = "";
 const PERMANENT = /^(standard|hardcore)$/i;
 const PARALLEL = /^(hc|ssf|ruthless)\s/i;
 
-function rank(name: string): number {
-  if (PERMANENT.test(name)) return 2;
-  if (PARALLEL.test(name)) return 1;
-  return 0;
+export interface LeagueGroups {
+  challenge: string[];
+  variants: string[];
+  permanent: string[];
 }
 
-/** Challenge leagues first, then HC/SSF/Ruthless variants, then Standard/Hardcore. */
-export function orderLeagues(names: readonly string[], current: string): string[] {
-  const all = names.includes(current) ? [...names] : [current, ...names];
-  return all.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+/**
+ * Bucket for the dropdown's optgroups. Within each bucket the API order is KEPT — poe2scout
+ * lists leagues newest-first, and an alphabetical sort would shuffle league history (this put
+ * Runes of Aldur in the middle of the list once; never again).
+ */
+export function groupLeagues(names: readonly string[], current: string): LeagueGroups {
+  const known = names.some((n) => n.toLowerCase() === current.toLowerCase());
+  const all = known ? names : [current, ...names];
+  const groups: LeagueGroups = { challenge: [], variants: [], permanent: [] };
+  for (const name of all) {
+    if (PERMANENT.test(name)) groups.permanent.push(name);
+    else if (PARALLEL.test(name)) groups.variants.push(name);
+    else groups.challenge.push(name);
+  }
+  return groups;
 }
 
 function errorMessage(body: unknown, fallback: string): string {
@@ -120,8 +131,14 @@ function Dropdown({
   pending: string | null;
   onPick: (league: string) => void;
 }) {
-  const options = orderLeagues(settings.available, settings.league);
+  const groups = groupLeagues(settings.available, settings.league);
   const selected = pending ?? (settings.pinned ? settings.league : FOLLOW_DEFAULT);
+  const opts = (names: string[]) =>
+    names.map((name) => (
+      <option key={name} value={name} className="bg-neutral-900">
+        {name}
+      </option>
+    ));
   return (
     <label
       title="which league you are viewing — your own setting, it changes nothing for anyone else"
@@ -137,11 +154,13 @@ function Dropdown({
         <option value={FOLLOW_DEFAULT} className="bg-neutral-900">
           {settings.default} (default)
         </option>
-        {options.map((name) => (
-          <option key={name} value={name} className="bg-neutral-900">
-            {name}
-          </option>
-        ))}
+        {groups.challenge.length > 0 && <optgroup label="Leagues">{opts(groups.challenge)}</optgroup>}
+        {groups.variants.length > 0 && (
+          <optgroup label="Hardcore & SSF">{opts(groups.variants)}</optgroup>
+        )}
+        {groups.permanent.length > 0 && (
+          <optgroup label="Permanent">{opts(groups.permanent)}</optgroup>
+        )}
       </select>
     </label>
   );
