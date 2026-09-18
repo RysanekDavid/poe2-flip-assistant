@@ -1,36 +1,18 @@
 import { getDb } from "./database";
-import { getActiveLeague } from "../core/leagueState";
 
 /**
- * Per-user application persistence (watchlist, alerts, trades, flips, positions, holdings,
- * hunts, balances). Market tables moved to marketQueries.ts when they became league-scoped.
+ * Per-user application persistence (alerts, trades, flips, positions, holdings, hunts,
+ * balances). Market tables moved to marketQueries.ts when they became league-scoped; the
+ * watchlist moved to watchlistQueries.ts when the poller started filtering it by league.
  *
- * These tables CARRY the league a row was created under. Nothing filters on it yet — per-user
- * leagues do that — but it is written at INSERT time rather than backfilled later, because
- * after a switch there is no way to recover which market an untagged row belonged to.
+ * These tables CARRY the league a row was created under, and the CALLER passes it: provenance
+ * has to name the economy the producing pipeline actually ran in, which for a user action is
+ * their view but for the shared trade2 pipelines (hunts, autosnipe, balances) is the app
+ * default. Resolving it in here would have quietly relabelled every one of those.
+ *
+ * It is written at INSERT time rather than backfilled later, because after a switch there is no
+ * way to recover which market an untagged row belonged to.
  */
-
-export interface WatchItem {
-  id: number;
-  user_id: number;
-  item_id: string;
-  item_name: string;
-  category: string;
-  buy_threshold_pct: number;
-  sell_threshold_pct: number;
-  manual_buy_exalt: number | null;
-  manual_sell_chaos: number | null;
-  manual_buy_ccy: string | null;
-  manual_sell_ccy: string | null;
-  manual_set_at: string | null;
-  active: number;
-}
-
-/** Age of manual prices in ms, or null if never set. */
-export function manualAgeMs(setAt: string | null): number | null {
-  if (!setAt) return null;
-  return Date.now() - new Date(setAt.replace(" ", "T") + "Z").getTime();
-}
 
 export interface AlertRow {
   id: number;
@@ -60,68 +42,9 @@ export interface TradeRow {
   notes: string | null;
 }
 
-export function getWatchlist(userId: number, activeOnly = true): WatchItem[] {
-  const db = getDb();
-  const sql = activeOnly
-    ? "SELECT * FROM watchlist WHERE user_id = ? AND active = 1 ORDER BY item_name"
-    : "SELECT * FROM watchlist WHERE user_id = ? ORDER BY item_name";
-  return db.prepare(sql).all(userId) as WatchItem[];
-}
-
-export function addWatch(
-  userId: number,
-  item: {
-    itemId: string;
-    itemName: string;
-    category: string;
-    buyThresholdPct?: number;
-    sellThresholdPct?: number;
-  },
-): void {
-  getDb()
-    .prepare(
-      `INSERT INTO watchlist (user_id, league, item_id, item_name, category, buy_threshold_pct, sell_threshold_pct)
-       VALUES (@userId, @league, @itemId, @itemName, @category, @buy, @sell)
-       ON CONFLICT(user_id, item_id) DO UPDATE SET
-         buy_threshold_pct = excluded.buy_threshold_pct,
-         sell_threshold_pct = excluded.sell_threshold_pct,
-         active = 1`,
-    )
-    .run({
-      userId,
-      league: getActiveLeague(),
-      itemId: item.itemId,
-      itemName: item.itemName,
-      category: item.category,
-      buy: item.buyThresholdPct ?? 15,
-      sell: item.sellThresholdPct ?? 10,
-    });
-}
-
-export function removeWatch(userId: number, itemId: string): void {
-  getDb().prepare("UPDATE watchlist SET active = 0 WHERE user_id = ? AND item_id = ?").run(userId, itemId);
-}
-
-/** Set or clear (null) real observed Ange prices for an item — drives REAL-mode spread. */
-export function setManualPrices(
-  userId: number,
-  itemId: string,
-  buyAmount: number | null,
-  buyCcy: string | null,
-  sellAmount: number | null,
-  sellCcy: string | null,
-): void {
-  const setAt = buyAmount != null && sellAmount != null ? new Date().toISOString().replace("T", " ").slice(0, 19) : null;
-  getDb()
-    .prepare(
-      `UPDATE watchlist SET manual_buy_exalt = ?, manual_sell_chaos = ?, manual_buy_ccy = ?, manual_sell_ccy = ?, manual_set_at = ?
-       WHERE user_id = ? AND item_id = ?`,
-    )
-    .run(buyAmount, sellAmount, buyCcy, sellCcy, setAt, userId, itemId);
-}
-
 export function insertAlert(
   userId: number,
+  league: string,
   a: {
     type: string;
     itemId: string;
@@ -138,7 +61,7 @@ export function insertAlert(
       `INSERT INTO alerts (user_id, league, type, item_id, item_name, message, value, threshold, whisper, link)
        VALUES (@userId, @league, @type, @itemId, @itemName, @message, @value, @threshold, @whisper, @link)`,
     )
-    .run({ ...a, whisper: a.whisper ?? null, link: a.link ?? null, userId, league: getActiveLeague() });
+    .run({ ...a, whisper: a.whisper ?? null, link: a.link ?? null, userId, league });
 }
 
 /** True if an alert for this user's item+type fired within the last `minutes` — throttles repeats. */
@@ -183,20 +106,27 @@ export interface FlipRow {
   created_at: string;
 }
 
-export function insertFlip(userId: number, f: Omit<FlipRow, "id" | "user_id" | "created_at">): number {
+export function insertFlip(
+  userId: number,
+  league: string,
+  f: Omit<FlipRow, "id" | "user_id" | "created_at">,
+): number {
   const info = getDb()
     .prepare(
       `INSERT INTO flips (user_id, league, item_id, item_name, qty, buy_price, buy_ccy, sell_price, sell_ccy, profit_div, profit_chaos, notes)
        VALUES (@userId, @league, @item_id, @item_name, @qty, @buy_price, @buy_ccy, @sell_price, @sell_ccy, @profit_div, @profit_chaos, @notes)`,
     )
-    .run({ ...f, userId, league: getActiveLeague() });
+    .run({ ...f, userId, league });
   return Number(info.lastInsertRowid);
 }
 
-export function getFlips(userId: number, limit = 200): FlipRow[] {
+/** This user's realized flips IN ONE LEAGUE. A flip belongs to the economy it was made in. */
+export function getFlips(userId: number, league: string, limit = 200): FlipRow[] {
   return getDb()
-    .prepare("SELECT * FROM flips WHERE user_id = ? ORDER BY created_at DESC LIMIT ?")
-    .all(userId, limit) as FlipRow[];
+    .prepare(
+      "SELECT * FROM flips WHERE user_id = ? AND league = ? COLLATE NOCASE ORDER BY created_at DESC LIMIT ?",
+    )
+    .all(userId, league, limit) as FlipRow[];
 }
 
 export interface PnlPoint { t: string; cum: number; }
@@ -209,12 +139,17 @@ export interface PnlSummary {
 }
 
 /** Realized profit-and-loss from logged flips — the frictionless "wealth growth" curve.
- *  No stash read needed: every flip you log feeds it. Currency-base = Divine. */
-export function realizedPnl(userId: number): PnlSummary {
+ *  No stash read needed: every flip you log feeds it. Currency-base = Divine.
+ *
+ *  Scoped to ONE league: a Divine is not the same amount of wealth in two economies, so summing
+ *  across them produces a number that describes nothing. A new league starts from zero. */
+export function realizedPnl(userId: number, league: string): PnlSummary {
   const db = getDb();
   const flips = db
-    .prepare("SELECT created_at, profit_div FROM flips WHERE user_id = ? ORDER BY created_at ASC")
-    .all(userId) as Array<{ created_at: string; profit_div: number }>;
+    .prepare(
+      "SELECT created_at, profit_div FROM flips WHERE user_id = ? AND league = ? COLLATE NOCASE ORDER BY created_at ASC",
+    )
+    .all(userId, league) as Array<{ created_at: string; profit_div: number }>;
   let cum = 0;
   const points: PnlPoint[] = flips.map((f) => {
     cum += f.profit_div;
@@ -223,8 +158,11 @@ export function realizedPnl(userId: number): PnlSummary {
   const windowed = (expr: string): number =>
     (
       db
-        .prepare("SELECT COALESCE(SUM(profit_div), 0) s FROM flips WHERE user_id = ? AND created_at >= datetime('now', ?)")
-        .get(userId, expr) as { s: number }
+        .prepare(
+          `SELECT COALESCE(SUM(profit_div), 0) s FROM flips
+           WHERE user_id = ? AND league = ? COLLATE NOCASE AND created_at >= datetime('now', ?)`,
+        )
+        .get(userId, league, expr) as { s: number }
     ).s;
   return { points, total: cum, last7d: windowed("-7 days"), last24h: windowed("-1 day"), count: flips.length };
 }
@@ -238,6 +176,8 @@ export function deleteFlip(userId: number, id: number): void {
 export interface PositionRow {
   id: number;
   user_id: number;
+  /** The market this position was opened in — it is priced and closed against THIS league. */
+  league: string | null;
   item_id: string;
   item_name: string;
   qty: number;
@@ -248,26 +188,46 @@ export interface PositionRow {
   notes: string | null;
 }
 
-export function insertPosition(userId: number, p: Omit<PositionRow, "id" | "user_id" | "opened_at">): PositionRow {
+export function insertPosition(
+  userId: number,
+  league: string,
+  p: Omit<PositionRow, "id" | "user_id" | "league" | "opened_at">,
+): PositionRow {
   const info = getDb()
     .prepare(
       `INSERT INTO positions (user_id, league, item_id, item_name, qty, buy_price, buy_ccy, buy_div_unit, notes)
        VALUES (@userId, @league, @item_id, @item_name, @qty, @buy_price, @buy_ccy, @buy_div_unit, @notes)`,
     )
-    .run({ ...p, userId, league: getActiveLeague(), notes: p.notes ?? null });
+    .run({ ...p, userId, league, notes: p.notes ?? null });
   return getDb().prepare("SELECT * FROM positions WHERE id = ?").get(Number(info.lastInsertRowid)) as PositionRow;
 }
 
-export function getOpenPositions(userId: number): PositionRow[] {
-  return getDb().prepare("SELECT * FROM positions WHERE user_id = ? ORDER BY opened_at DESC").all(userId) as PositionRow[];
+/**
+ * This user's open positions IN ONE LEAGUE.
+ *
+ * A position is a commitment in one economy: its cost basis is Divine THERE, and marking it
+ * against another league's mids would invent a profit. Filtering on read means the marks can
+ * only ever come from the position's own market. Nothing is lost — switching back shows them.
+ */
+export function getOpenPositions(userId: number, league: string): PositionRow[] {
+  return getDb()
+    .prepare(
+      "SELECT * FROM positions WHERE user_id = ? AND league = ? COLLATE NOCASE ORDER BY opened_at DESC",
+    )
+    .all(userId, league) as PositionRow[];
 }
 
-export function getPosition(userId: number, id: number): PositionRow | undefined {
-  return getDb().prepare("SELECT * FROM positions WHERE user_id = ? AND id = ?").get(userId, id) as PositionRow | undefined;
+/** One open position, and only if it belongs to `league` — a foreign id simply does not exist. */
+export function getPosition(userId: number, league: string, id: number): PositionRow | undefined {
+  return getDb()
+    .prepare("SELECT * FROM positions WHERE user_id = ? AND league = ? COLLATE NOCASE AND id = ?")
+    .get(userId, league, id) as PositionRow | undefined;
 }
 
-export function deletePosition(userId: number, id: number): void {
-  getDb().prepare("DELETE FROM positions WHERE user_id = ? AND id = ?").run(userId, id);
+export function deletePosition(userId: number, league: string, id: number): void {
+  getDb()
+    .prepare("DELETE FROM positions WHERE user_id = ? AND league = ? COLLATE NOCASE AND id = ?")
+    .run(userId, league, id);
 }
 
 export type Holdings = { DIVINE: number; EXALT: number; CHAOS: number };
@@ -290,17 +250,20 @@ export function setHolding(userId: number, currency: string, amount: number): vo
     .run(userId, currency, amount);
 }
 
-export function getTrades(userId: number): TradeRow[] {
-  return getDb().prepare("SELECT * FROM trades WHERE user_id = ? ORDER BY traded_at DESC").all(userId) as TradeRow[];
+/** This user's manual trade log IN ONE LEAGUE — same rule as flips and positions. */
+export function getTrades(userId: number, league: string): TradeRow[] {
+  return getDb()
+    .prepare("SELECT * FROM trades WHERE user_id = ? AND league = ? COLLATE NOCASE ORDER BY traded_at DESC")
+    .all(userId, league) as TradeRow[];
 }
 
-export function insertTrade(userId: number, t: Omit<TradeRow, "id" | "traded_at">): number {
+export function insertTrade(userId: number, league: string, t: Omit<TradeRow, "id" | "traded_at">): number {
   const info = getDb()
     .prepare(
       `INSERT INTO trades (user_id, league, item_id, item_name, side, currency, rate, quantity, total_currency, profit_chaos, notes)
        VALUES (@userId, @league, @item_id, @item_name, @side, @currency, @rate, @quantity, @total_currency, @profit_chaos, @notes)`,
     )
-    .run({ ...t, userId, league: getActiveLeague() });
+    .run({ ...t, userId, league });
   return Number(info.lastInsertRowid);
 }
 
@@ -350,6 +313,7 @@ export function getHuntsForUser(userId: number, activeOnly = false): Hunt[] {
 
 export function addHunt(
   userId: number,
+  league: string,
   h: Omit<Hunt, "id" | "user_id" | "active" | "last_scan_at" | "last_hit_at" | "created_at">,
 ): number {
   const info = getDb()
@@ -357,7 +321,7 @@ export function addHunt(
       `INSERT INTO hunts (user_id, league, label, mode, item_name, base_type, category, ilvl_min, rarity, stats_json, max_amount, max_ccy, target_div)
        VALUES (@userId, @league, @label, @mode, @item_name, @base_type, @category, @ilvl_min, @rarity, @stats_json, @max_amount, @max_ccy, @target_div)`,
     )
-    .run({ ...h, userId, league: getActiveLeague() });
+    .run({ ...h, userId, league });
   return Number(info.lastInsertRowid);
 }
 
@@ -541,14 +505,14 @@ export function netWorthDiv(b: {
   return b.divine + ex + ch + (b.otherDiv ?? 0);
 }
 
-export function insertBalance(userId: number, b: BalanceInput): BalanceSnapshot {
+export function insertBalance(userId: number, league: string, b: BalanceInput): BalanceSnapshot {
   const net = netWorthDiv(b);
   const info = getDb()
     .prepare(
       `INSERT INTO balance_snapshots (user_id, league, divine, exalted, chaos, exalt_per_div, chaos_per_div, other_div, net_worth_div, source, note)
        VALUES (@userId, @league, @divine, @exalted, @chaos, @exaltPerDiv, @chaosPerDiv, @otherDiv, @net, @source, @note)`,
     )
-    .run({ ...b, userId, league: getActiveLeague(), otherDiv: b.otherDiv ?? 0, net, note: b.note ?? null });
+    .run({ ...b, userId, league, otherDiv: b.otherDiv ?? 0, net, note: b.note ?? null });
   return getDb().prepare("SELECT * FROM balance_snapshots WHERE id = ?").get(Number(info.lastInsertRowid)) as BalanceSnapshot;
 }
 

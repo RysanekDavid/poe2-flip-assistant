@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "../../../config/env";
-import { addWatch } from "../../../db/queries";
+import { addWatch } from "../../../db/watchlistQueries";
 import { latestSnapshots, latestFetchedAt } from "../../../db/marketQueries";
 import { getCurrentUser } from "../../../auth/session";
 import { type ExchangeRates } from "../../../core/priceEngine";
-import { getActiveLeague } from "../../../core/leagueState";
+import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 import { scoreItem, type FlipRow } from "../../../core/flipModel";
 import type { PricedItem } from "../../../api/types";
@@ -24,11 +24,13 @@ function scoreAll(prices: PricedItem[], rates: ExchangeRates): FlipRow[] {
 }
 
 /** GET /api/discover?limit=80&q=essence → market-wide flip scan; `q` searches the WHOLE market by name. */
-export function GET(req: Request) {
+export async function GET(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const params = new URL(req.url).searchParams;
   const limit = Math.min(Number(params.get("limit")) || 40, 2000);
   const q = (params.get("q") ?? "").trim().toLowerCase();
-  const league = getActiveLeague();
+  const league = leagueForUser(user.id);
   const prices = latestSnapshots(league);
   const resolved = resolveRates(league);
   if (!resolved) {
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
   const body = SeedBody.safeParse(await req.json().catch(() => ({})));
   const perCat = body.success ? (body.data.perCategory ?? 2) : 2;
 
-  const league = getActiveLeague();
+  const league = leagueForUser(user.id);
   const prices = latestSnapshots(league);
   const resolved = resolveRates(league);
   if (!resolved) {

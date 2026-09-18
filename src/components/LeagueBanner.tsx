@@ -5,10 +5,14 @@ import { AlertTriangle } from "lucide-react";
 
 interface LeagueStatus {
   tracked: string;
+  defaultLeague: string;
   detected: string | null;
   detectedAt: string | null;
+  /** Only ever true for users who FOLLOW the default — a deliberate pin is not a mistake. */
   mismatch: boolean;
+  defaultMismatch: boolean;
   canSwitch: boolean;
+  canSetDefault: boolean;
 }
 
 function useLeagueStatus(): { status: LeagueStatus | null; reload: () => void } {
@@ -30,8 +34,20 @@ function useLeagueStatus(): { status: LeagueStatus | null; reload: () => void } 
   return { status, reload };
 }
 
-/** Owner-only action: point every price source at the detected league, no redeploy. */
-function SwitchButton({ league, onSwitched }: { league: string; onSwitched: () => void }) {
+/** PUT a league at one of the two league endpoints; reports the failure instead of swallowing it. */
+function SwitchButton({
+  league,
+  endpoint,
+  label,
+  busyLabel,
+  onSwitched,
+}: {
+  league: string;
+  endpoint: string;
+  label: string;
+  busyLabel: string;
+  onSwitched: () => void;
+}) {
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +55,7 @@ function SwitchButton({ league, onSwitched }: { league: string; onSwitched: () =
     setSwitching(true);
     setError(null);
     try {
-      const res = await fetch("/api/settings/league", {
+      const res = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ league }),
@@ -61,7 +77,7 @@ function SwitchButton({ league, onSwitched }: { league: string; onSwitched: () =
         disabled={switching}
         className="rounded border border-amber-500/50 px-2 py-1 font-medium text-amber-100 transition-colors hover:bg-amber-500/15 disabled:opacity-50"
       >
-        {switching ? "switching…" : `Switch to ${league}`}
+        {switching ? busyLabel : label}
       </button>
       {error && <span className="text-bad">{error}</span>}
     </>
@@ -69,13 +85,20 @@ function SwitchButton({ league, onSwitched }: { league: string; onSwitched: () =
 }
 
 /**
- * A new league means every price on screen belongs to a dead market, so this outranks the
- * header. The owner gets the switch button; members get the warning only — the league is
- * global state, one account must not flip it for everyone by accident.
+ * A new league means every price on screen belongs to a dead market, so this outranks the header.
+ *
+ * Two distinct actions now: anyone can move their OWN view (the same per-user switch the header
+ * dropdown performs — a view preference), while only the owner can move the app default, which is
+ * what the poller, the Coach and the shared trade2 pipelines run under for everybody else.
  */
 export function LeagueBanner() {
   const { status, reload } = useLeagueStatus();
-  if (!status || !status.mismatch || status.detected == null) return null;
+  const detected = status?.detected ?? null;
+  if (!status || detected == null) return null;
+
+  // The owner keeps seeing this after switching their own view, until the DEFAULT moves too.
+  const ownerMustAct = status.canSetDefault && status.defaultMismatch;
+  if (!status.mismatch && !ownerMustAct) return null;
 
   return (
     <div
@@ -84,13 +107,34 @@ export function LeagueBanner() {
     >
       <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
       <span>
-        New league <strong>{status.detected}</strong> detected — this app is still tracking{" "}
-        <strong>{status.tracked}</strong>.
+        New league <strong>{detected}</strong> detected —{" "}
+        {status.mismatch ? (
+          <>
+            you are viewing <strong>{status.tracked}</strong>.
+          </>
+        ) : (
+          <>
+            the app default is still <strong>{status.defaultLeague}</strong>.
+          </>
+        )}
       </span>
-      {status.canSwitch ? (
-        <SwitchButton league={status.detected} onSwitched={reload} />
-      ) : (
-        <span className="text-amber-200/70">ask the owner to switch.</span>
+      {status.mismatch && (
+        <SwitchButton
+          league={detected}
+          endpoint="/api/settings/league"
+          label={`Switch my view to ${detected}`}
+          busyLabel="switching…"
+          onSwitched={() => window.location.reload()}
+        />
+      )}
+      {ownerMustAct && (
+        <SwitchButton
+          league={detected}
+          endpoint="/api/settings/league/default"
+          label="Set as default for everyone"
+          busyLabel="saving…"
+          onSwitched={reload}
+        />
       )}
     </div>
   );

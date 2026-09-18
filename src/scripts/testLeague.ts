@@ -6,7 +6,7 @@ import { parseNinjaLeagues } from "../api/ninjaClient";
 import { parseScoutLeagues } from "../api/scoutClient";
 import type { LeagueOption } from "../api/types";
 import { config } from "../config/env";
-import { clearLeagueCache, getActiveLeague, setActiveLeague } from "../core/leagueState";
+import { clearLeagueCache, getDefaultLeague, setActiveLeague } from "../core/leagueState";
 import { readLeagueState } from "../db/leagueQueries";
 import {
   agreeOnLeague,
@@ -220,11 +220,11 @@ async function testAlertDedupe(): Promise<void> {
 
 async function testActiveLeagueResolution(): Promise<void> {
   clearLeagueCache();
-  assert.equal(getActiveLeague(db), config.league); // nothing stored → env fallback
+  assert.equal(getDefaultLeague(db), config.league); // nothing stored → env fallback
 
   clearLeagueCache();
   assert.deepEqual(setActiveLeague(`  ${DETECTED}  `, db), { league: DETECTED, changed: true });
-  assert.equal(getActiveLeague(db), DETECTED); // stored setting beats env
+  assert.equal(getDefaultLeague(db), DETECTED); // stored setting beats env
 
   // Switching clears the banner: the target league counts as already alerted…
   assert.equal(readLeagueState(db)?.alerted_league, DETECTED);
@@ -242,7 +242,7 @@ function testSetActiveLeagueValidation(): void {
   // Control characters would ride into the Coach system prompt and trade2 URLs.
   assert.throws(() => setActiveLeague("Forbidden\nRites", db), /control characters/);
   assert.throws(() => setActiveLeague(`Forbidden${String.fromCharCode(0)}Rites`, db), /control characters/);
-  assert.equal(getActiveLeague(db), DETECTED); // rejected writes changed nothing
+  assert.equal(getDefaultLeague(db), DETECTED); // rejected writes changed nothing
   assert.equal(setActiveLeague("L".repeat(60), db).league.length, 60);
 }
 
@@ -265,7 +265,7 @@ function testSwitchRetainsMarketHistory(): void {
   const other = "Another Test League";
   clearLeagueCache();
   setActiveLeague(other, db);
-  assert.equal(getActiveLeague(db), other);
+  assert.equal(getDefaultLeague(db), other);
   assert.deepEqual(historyCounts(DETECTED), { price_snapshots: 1, item_spark: 1, item_values: 1 });
   assert.deepEqual(historyCounts(other), { price_snapshots: 0, item_spark: 0, item_values: 0 });
 
@@ -332,9 +332,9 @@ function testCacheIsNotPoisonedByAnExplicitDb(): void {
   other.prepare("INSERT INTO app_settings (key, value) VALUES ('league', 'Other DB League')").run();
 
   clearLeagueCache();
-  const tracked = getActiveLeague(db);
-  assert.equal(getActiveLeague(other), "Other DB League");
-  assert.equal(getActiveLeague(db), tracked); // would be "Other DB League" if the read were cached
+  const tracked = getDefaultLeague(db);
+  assert.equal(getDefaultLeague(other), "Other DB League");
+  assert.equal(getDefaultLeague(db), tracked); // would be "Other DB League" if the read were cached
   other.close();
 }
 

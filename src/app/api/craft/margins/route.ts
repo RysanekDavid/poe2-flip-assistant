@@ -3,7 +3,7 @@ import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { getCraftMargins, getMarginHistory, requestCraftRefresh, getMaterialPrices } from "../../../../db/craftQueries";
 import { ALL_MATERIALS } from "../../../../core/craftMaterials";
-import { getActiveLeague } from "../../../../core/leagueState";
+import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 import { RECIPES, RecipeMarginReportSchema, type RecipeMarginReport } from "../../../../core/craftRecipes";
 import { config } from "../../../../config/env";
@@ -51,7 +51,10 @@ export async function GET(): Promise<Response> {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const cred = await getCallerCred();
 
-  const league = getActiveLeague();
+  // Craft margins are scanned by the poller under ONE shared POESESSID, so they exist for the
+  // app default league only. A user viewing another league still sees them, labelled with the
+  // league they were computed for rather than silently reattributed to theirs.
+  const league = getDefaultLeague();
   const stored = new Map(getCraftMargins(league).map((r) => [r.recipe_key, r]));
   const recipes = RECIPES.map((r) => {
     const row = stored.get(r.key);
@@ -72,6 +75,7 @@ export async function GET(): Promise<Response> {
   }
   return NextResponse.json({
     enabled: config.craftMargin.enabled,
+    computedLeague: league,
     intervalMin: config.craftMargin.intervalMin,
     canRefresh: user.role === "owner" && cred != null,
     exaltPerDivine: resolved?.rates.exaltPerDivine ?? null,

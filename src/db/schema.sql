@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,       -- scrypt$<salt>$<hash>
   api_key TEXT UNIQUE NOT NULL,      -- bearer token for the local agent (balance/hunt push)
   role TEXT NOT NULL DEFAULT 'member', -- 'owner' | 'member'
+  league TEXT,                       -- league this user VIEWS; NULL = follow the app default
+  league_set_at TEXT,                -- ISO stamp of the last switch — drives the poller's dwell debounce
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -117,7 +119,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_pbo_listing ON price_book_obs(listing_id) 
 CREATE TABLE IF NOT EXISTS watchlist (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL DEFAULT 1,
-  league TEXT,                  -- league the row was created under; carried, not filtered on yet
+  league TEXT,                  -- market the row was added in; alerts + spreads filter on it
   item_id TEXT NOT NULL,
   item_name TEXT NOT NULL,
   category TEXT NOT NULL,

@@ -19,6 +19,7 @@
     "test:demo": "tsx src/scripts/testDemoReadiness.ts",
     "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts && tsx src/scripts/testDeployShell.ts",
     "test:league": "tsx src/scripts/testLeague.ts && tsx src/scripts/testLeagueMigration.ts",
+    "test:user-league": "tsx src/scripts/runWithTestEnv.ts user-league",
     "test:market-league": "tsx src/scripts/runWithTestEnv.ts market",
     "test:rates": "tsx src/scripts/runWithTestEnv.ts rates",
     "test:craft": "tsx src/scripts/runWithTestEnv.ts craft",

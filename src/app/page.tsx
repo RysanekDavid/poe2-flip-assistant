@@ -28,6 +28,7 @@ import { FlipLog } from "../components/FlipLog";
 import { PriceChart } from "../components/PriceChart";
 import { Onboarding } from "../components/Onboarding";
 import { LeagueBanner } from "../components/LeagueBanner";
+import { LeagueSelect } from "../components/LeagueSelect";
 import { MarketStatus } from "../components/MarketStatus";
 import { SettingsPanel } from "../components/SettingsPanel";
 import { CoachPanel } from "../components/coach/CoachPanel";
@@ -62,7 +63,11 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-neutral-800 bg-neutral-950/85 backdrop-blur">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold">PoE2 Flip Assistant</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">PoE2 Flip Assistant</h1>
+              {/* which market everything below is about — per account, switchable at any time */}
+              <LeagueSelect />
+            </div>
             <MarketStatus />
           </div>
           <TopBar />

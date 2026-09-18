@@ -17,12 +17,18 @@ export type AlertType =
 /**
  * Persist an alert and fire a desktop notification.
  *
+ * `league` is the market the DETECTING pipeline ran in, passed by the caller — the multi-league
+ * poller alerts per league, while the shared trade2 scanners (hunts, autosnipe, craft margins)
+ * only ever run in the app default. Reading the recipient's current view here would file a
+ * default-league snipe under whatever league they happened to be looking at.
+ *
  * Throttled: the same item+type won't re-alert within ALERT_COOLDOWN_MIN (default
  * 60m) — otherwise a still-profitable item would ping every poll (5m). Desktop
  * notif is best-effort; DB failures propagate (we want to know if logging breaks).
  */
 export function fireAlert(
   userId: number,
+  league: string,
   a: {
     type: AlertType;
     itemId: string;
@@ -36,7 +42,7 @@ export function fireAlert(
 ): void {
   if (hasRecentAlert(userId, a.itemId, a.type, config.alertCooldownMin)) return;
 
-  insertAlert(userId, {
+  insertAlert(userId, league, {
     type: a.type,
     itemId: a.itemId,
     itemName: a.itemName,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchScout } from "../../../api/scoutClient";
-import { getActiveLeague } from "../../../core/leagueState";
+import { getCurrentUser } from "../../../auth/session";
+import { getDefaultLeague } from "../../../core/leagueState";
 import { tradeSearchUrl } from "../../../lib/tradeLink";
 import { denominate, type Denom } from "../../../core/treasury";
 
@@ -30,6 +31,11 @@ export interface ShopRow {
  * Query: ?cat=accessory&minDiv=1&q=text&limit=200
  */
 export async function GET(req: Request): Promise<Response> {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // scoutClient fetches prices for the app default league, so the deep links must point THERE:
+  // a trade2 URL in the viewer's league would open a market these prices never came from.
+  const league = getDefaultLeague();
   const url = new URL(req.url);
   const cat = url.searchParams.get("cat");
   const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
@@ -57,11 +63,17 @@ export async function GET(req: Request): Promise<Response> {
         marketDivine,
         market: denominate(marketDivine, rates),
         buy: denominate(marketDivine * SNIPE_DISCOUNT, rates),
-        tradeUrl: tradeSearchUrl(getActiveLeague(), { name: it.name, type: it.type }),
+        tradeUrl: tradeSearchUrl(league, { name: it.name, type: it.type }),
       }));
 
     const categories = [...new Set(items.map((i) => i.category))].sort();
-    return NextResponse.json({ rows, categories, snipeDiscount: SNIPE_DISCOUNT, fetchedAt: new Date().toISOString() });
+    return NextResponse.json({
+      rows,
+      categories,
+      snipeDiscount: SNIPE_DISCOUNT,
+      computedLeague: league,
+      fetchedAt: new Date().toISOString(),
+    });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }

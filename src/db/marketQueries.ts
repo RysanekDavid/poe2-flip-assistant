@@ -7,7 +7,7 @@ import type { PricedItem } from "../api/types";
  * market data became league-scoped.
  *
  * Every read and write here is scoped by an EXPLICIT `league` first parameter rather than
- * reaching for getActiveLeague() internally: the poller, the web process and the tests all read
+ * reaching for getDefaultLeague() internally: the poller, the web process and the tests all read
  * the setting at different moments, and a query that silently resolved its own league would mix
  * two markets' prices in one result set. Callers pass the league they mean.
  *

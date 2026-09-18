@@ -5,6 +5,7 @@ import { getCallerCred } from "../../../../auth/tradeCred";
 import { fetchScout } from "../../../../api/scoutClient";
 import { readCurrencyFromTrade } from "../../../../api/accountScan";
 import { refreshUniqueValues } from "../../../../core/valuation";
+import { getDefaultLeague } from "../../../../core/leagueState";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +31,8 @@ export async function POST(): Promise<Response> {
     await refreshUniqueValues(); // daily-guarded; makes sure showcase items can be valued
     const { rates } = await fetchScout();
     const c = await readCurrencyFromTrade(cred.account, rates, cred);
-    const snapshot = insertBalance(user.id, {
+    // scout rates + the trade2 stash read both run in the app default league.
+    const snapshot = insertBalance(user.id, getDefaultLeague(), {
       divine: c.divine,
       exalted: c.exalted,
       chaos: c.chaos,

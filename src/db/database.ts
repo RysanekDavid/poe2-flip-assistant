@@ -59,6 +59,10 @@ export function getDb(): Database.Database {
     ["poesessid_enc", "TEXT"], // AES-GCM token from secretbox; never stored plaintext
     ["poe_contact", "TEXT"], // identifying email for the trade2 User-Agent
     ["poe_account", "TEXT"], // account name for own-stash / own-listing reads
+    // Per-user league view (core/leagueUsers). NULL = follow the app default, which is what every
+    // pre-existing row means: nobody had ever chosen a league of their own.
+    ["league", "TEXT"],
+    ["league_set_at", "TEXT"], // ISO stamp of the last switch — the poller's dwell debounce reads it
   ]);
 
   // Multi-tenancy: every private table gains user_id (existing rows backfill to owner id=1).

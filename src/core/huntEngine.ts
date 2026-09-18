@@ -14,7 +14,7 @@ import {
   type Hunt,
 } from "../db/queries";
 import { recordObservation, observedPrices } from "../db/marketQueries";
-import { getActiveLeague } from "./leagueState";
+import { getDefaultLeague } from "./leagueState";
 import { modSignature, summarizePrices, snipeVerdict } from "./priceBook";
 import type { TradeQuery, StatFilter, Rarity } from "../lib/tradeLink";
 
@@ -63,7 +63,7 @@ export interface ScanSummary {
  *  sort indexed desc + 1-day window + de-dupe by listing id), record fresh ones, alert. */
 async function scanHunt(h: Hunt, rates: ScoutRates, cred: TradeCred): Promise<number> {
   const { listings } = await searchListings(huntToQuery(h), config.hunt.perScan, { indexed: "desc" }, cred);
-  const league = getActiveLeague();
+  const league = getDefaultLeague();
   let newHits = 0;
 
   for (const l of listings) {
@@ -77,7 +77,7 @@ async function scanHunt(h: Hunt, rates: ScoutRates, cred: TradeCred): Promise<nu
       const verdict = snipeVerdict(sig, priceDiv, summarizePrices(observedPrices(league, sig)));
       if (verdict.isSnipe) {
         // fireAlert de-dupes by itemId+type within the cooldown, so the same listing won't re-ping
-        fireAlert(h.user_id, {
+        fireAlert(h.user_id, league, {
           type: "SNIPE",
           itemId: l.listingId || `snipe-${sig}`,
           itemName: l.itemName,
@@ -129,7 +129,7 @@ async function scanHunt(h: Hunt, rates: ScoutRates, cred: TradeCred): Promise<nu
       h.target_div != null && Number.isFinite(cheapDiv) && cheapDiv > 0
         ? ` (~${(((h.target_div - cheapDiv) / cheapDiv) * 100).toFixed(0)}% vs target)`
         : "";
-    fireAlert(h.user_id, {
+    fireAlert(h.user_id, league, {
       type: h.mode,
       itemId: `hunt-${h.id}`,
       itemName: h.label,

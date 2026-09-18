@@ -7,10 +7,10 @@
  */
 import { CATEGORIES } from "../api/types";
 import { fetchCategory, normalize } from "../api/ninjaClient";
-import { getActiveLeague } from "../core/leagueState";
+import { getDefaultLeague } from "../core/leagueState";
 
 async function main(): Promise<void> {
-  const league = getActiveLeague();
+  const league = getDefaultLeague();
   console.log(`Probing poe.ninja PoE2 — league="${league}"\n`);
 
   for (const cat of CATEGORIES) {

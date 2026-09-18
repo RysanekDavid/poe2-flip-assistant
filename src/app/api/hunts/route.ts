@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getHuntsForUser, addHunt, updateHunt, deleteHunt, setHuntActive, type HuntMode } from "../../../db/queries";
 import { getCurrentUser } from "../../../auth/session";
 import { getCallerCred } from "../../../auth/tradeCred";
+import { getDefaultLeague } from "../../../core/leagueState";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,9 @@ export async function POST(req: Request): Promise<Response> {
   if (!b?.label) {
     return NextResponse.json({ error: "label required" }, { status: 400 });
   }
-  const id = addHunt(user.id, {
+  // Hunts are scanned by the poller against the app default league (one shared trade2 budget),
+  // so that is the market a hunt belongs to regardless of what its author is currently viewing.
+  const id = addHunt(user.id, getDefaultLeague(), {
     label: String(b.label),
     mode: (b.mode as HuntMode) ?? "SNIPE",
     item_name: b.itemName ?? null,

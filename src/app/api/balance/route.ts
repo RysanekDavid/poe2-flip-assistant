@@ -5,6 +5,8 @@ import { getCallerCred } from "../../../auth/tradeCred";
 import { accountReadEnabled } from "../../../api/tradeClient";
 import { fetchScout } from "../../../api/scoutClient";
 import { readCurrencyFromTrade } from "../../../api/accountScan";
+import { getDefaultLeague } from "../../../core/leagueState";
+import { leagueForUser } from "../../../core/leagueUsers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +21,8 @@ export async function GET(): Promise<Response> {
   return NextResponse.json({
     balances: getBalances(user.id, 500),
     stats: balanceStats(user.id),
-    pnl: realizedPnl(user.id),
+    // Realized P&L is per-league — a Divine is not the same wealth in two economies.
+    pnl: realizedPnl(user.id, leagueForUser(user.id)),
     stashEnabled: canRead,
     tabs: latestTabs(user.id),
     tabSeries: tabSeries(user.id, 60),
@@ -51,7 +54,9 @@ export async function POST(req: Request): Promise<Response> {
     }
   }
 
-  const snapshot = insertBalance(user.id, {
+  // Net worth is priced from scout rates and a trade2 stash read, both of which run in the app
+  // default league — the snapshot is provenance for THAT economy.
+  const snapshot = insertBalance(user.id, getDefaultLeague(), {
     divine,
     exalted,
     chaos,

@@ -9,7 +9,7 @@ import {
   type PricedItem,
 } from "./types";
 import { ninjaLimiter } from "./rateLimiter";
-import { getActiveLeague } from "../core/leagueState";
+import { getDefaultLeague } from "../core/leagueState";
 
 const BASE = "https://poe.ninja/poe2/api/economy";
 
@@ -46,7 +46,7 @@ function cacheKey(c: NinjaCategory, league: string): string {
  */
 export async function fetchCategory(
   category: NinjaCategory,
-  league: string = getActiveLeague(),
+  league: string = getDefaultLeague(),
 ): Promise<NinjaResponse> {
   const key = cacheKey(category, league);
   const hit = cache.get(key);
@@ -141,7 +141,7 @@ export function parseNinjaLeagues(raw: unknown): LeagueOption[] {
 
 /** Leagues poe.ninja indexes, newest first — the ninja half of league-switch detection. */
 export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
-  const league = getActiveLeague();
+  const league = getDefaultLeague();
   const raw = await ninjaLimiter.schedule(async () => {
     try {
       const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: browserHeaders(league) });
@@ -158,9 +158,12 @@ export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
  * Fetch + normalize all configured categories under a single pinned league, and report which
  * league that was — the caller stores the rows against it, so guessing again afterwards could
  * mis-attribute a whole sweep to the wrong market.
+ *
+ * The multi-league poller passes the league explicitly; anything else gets the app default.
  */
-export async function fetchAll(): Promise<{ league: string; items: PricedItem[] }> {
-  const league = getActiveLeague();
+export async function fetchAll(
+  league: string = getDefaultLeague(),
+): Promise<{ league: string; items: PricedItem[] }> {
   const items: PricedItem[] = [];
   for (const cat of CATEGORIES) {
     const resp = await fetchCategory(cat, league);

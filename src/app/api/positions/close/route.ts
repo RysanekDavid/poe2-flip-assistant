@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getPosition, deletePosition, insertFlip } from "../../../../db/queries";
 import { getCurrentUser } from "../../../../auth/session";
 import { toDivine, divineToChaos, type Currency } from "../../../../core/priceEngine";
-import { getActiveLeague } from "../../../../core/leagueState";
+import { leagueForUser } from "../../../../core/leagueUsers";
 import { resolveRates } from "../../../../core/rates";
 
 export const runtime = "nodejs";
@@ -27,9 +27,15 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
-  const pos = getPosition(user.id, parsed.data.id);
+  // A position is only closable in the league it was opened in. The list the UI renders is
+  // already filtered to that league, so a foreign id is not "forbidden", it does not exist —
+  // 404, same non-disclosure style as every other per-user lookup here. This also means the sell
+  // leg can only ever be converted at the position's OWN economy's rates.
+  const league = leagueForUser(user.id);
+  const pos = getPosition(user.id, league, parsed.data.id);
   if (!pos) return NextResponse.json({ error: "position not found" }, { status: 404 });
-  const resolved = resolveRates(getActiveLeague());
+
+  const resolved = resolveRates(league);
   if (!resolved) return NextResponse.json({ error: "no rates yet — poll prices first" }, { status: 409 });
 
   const { sellPrice, sellCcy, notes } = parsed.data;
@@ -37,7 +43,7 @@ export async function POST(req: Request): Promise<Response> {
   const profitDiv = (sellDivUnit - pos.buy_div_unit) * pos.qty;
   const profitChaos = divineToChaos(profitDiv, resolved.rates);
 
-  const flipId = insertFlip(user.id, {
+  const flipId = insertFlip(user.id, league, {
     item_id: pos.item_id,
     item_name: pos.item_name,
     qty: pos.qty,
@@ -49,11 +55,12 @@ export async function POST(req: Request): Promise<Response> {
     profit_chaos: profitChaos,
     notes: notes ?? null,
   });
-  deletePosition(user.id, pos.id);
+  deletePosition(user.id, league, pos.id);
   return NextResponse.json({
     flipId,
     profitDiv,
     profitChaos,
+    league,
     ratesSource: resolved.source,
     ratesFetchedAt: resolved.fetchedAt,
   });

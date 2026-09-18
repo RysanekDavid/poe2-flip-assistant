@@ -9,7 +9,7 @@ import {
   getCraftMargins,
 } from "../../../../db/craftQueries";
 import { RECIPES, RecipeMarginReportSchema } from "../../../../core/craftRecipes";
-import { getActiveLeague } from "../../../../core/leagueState";
+import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 
 export const runtime = "nodejs";
@@ -22,7 +22,8 @@ export async function GET(): Promise<Response> {
   const labels = Object.fromEntries(RECIPES.map((r) => [r.key, r.label]));
   const hitRates = Object.fromEntries(RECIPES.map((r) => [r.key, r.hitRate]));
   // Recipe hero art (the crafted item) from the stored margin reports, for the attempt rows.
-  const league = getActiveLeague();
+  // Margin reports exist for the app default league only (one shared POESESSID scans them).
+  const league = getDefaultLeague();
   const icons: Record<string, string> = {};
   for (const row of getCraftMargins(league)) {
     const parsed = RecipeMarginReportSchema.safeParse(JSON.parse(row.report_json));
@@ -35,6 +36,7 @@ export async function GET(): Promise<Response> {
     labels,
     hitRates,
     icons,
+    computedLeague: league,
     exaltPerDivine: resolveRates(league)?.rates.exaltPerDivine ?? null,
   });
 }
@@ -61,7 +63,7 @@ export async function POST(req: Request): Promise<Response> {
   let baseCostDiv = b.baseCostDiv != null ? Number(b.baseCostDiv) : null;
   let matsCostDiv = b.matsCostDiv != null ? Number(b.matsCostDiv) : null;
   if (b.prefill && (baseCostDiv == null || matsCostDiv == null)) {
-    const row = getCraftMargins(getActiveLeague()).find((r) => r.recipe_key === b.recipeKey);
+    const row = getCraftMargins(getDefaultLeague()).find((r) => r.recipe_key === b.recipeKey);
     const parsed = row ? RecipeMarginReportSchema.safeParse(JSON.parse(row.report_json)) : null;
     if (parsed?.success) {
       baseCostDiv = baseCostDiv ?? parsed.data.base?.priceDiv ?? 0;

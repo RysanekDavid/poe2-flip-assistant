@@ -1,6 +1,6 @@
 import { latestSnapshots, uniqueValueMap, upsertItemValues, itemValuesAgeHours } from "../db/marketQueries";
 import { fetchScout } from "../api/scoutClient";
-import { getActiveLeague } from "./leagueState";
+import { getDefaultLeague } from "./leagueState";
 
 /**
  * Market valuation: resolve any stash item to a Divine value, generically, so every tab
@@ -21,7 +21,7 @@ export interface Valuer {
 }
 
 /** Build a resolver from one league's cached DB maps (no network). ninja wins over scout. */
-export function buildValuer(league: string = getActiveLeague()): Valuer {
+export function buildValuer(league: string = getDefaultLeague()): Valuer {
   const ninja = new Map<string, number>();
   for (const s of latestSnapshots(league)) ninja.set(s.itemName.toLowerCase(), s.baseValue);
   const uniq = uniqueValueMap(league);
@@ -46,7 +46,7 @@ const REFRESH_AFTER_H = 6;
  * written (0 if the cache is still fresh). Call before a balance scan so showcase items
  * get valued; the daily guard keeps it from hammering scout.
  */
-export async function refreshUniqueValues(league: string = getActiveLeague()): Promise<number> {
+export async function refreshUniqueValues(league: string = getDefaultLeague()): Promise<number> {
   const age = itemValuesAgeHours(league);
   if (age != null && age < REFRESH_AFTER_H) return 0;
 
