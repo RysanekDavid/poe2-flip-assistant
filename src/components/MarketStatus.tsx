@@ -92,18 +92,12 @@ function ageLabel(mins: number | null): string {
   return `${Math.floor(mins / 60)}h ${mins % 60}m old`;
 }
 
-/** Which source is behind the rate chips, and how old it is. Quiet, but never guessed at. */
-function SourceChip({ source, mins }: { source: RatesSource; mins: number | null }) {
-  return (
-    <span
-      title={`base rates from ${SOURCE_LABEL[source]} — ${ageLabel(mins)}`}
-      className="inline-flex items-center gap-1 rounded-md border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-neutral-500"
-    >
-      {SOURCE_LABEL[source]}
-      <span className="text-neutral-700">·</span>
-      <span className="tabular-nums">{ageLabel(mins)}</span>
-    </span>
-  );
+/**
+ * Source + age used to be a visible chip; users called it noise. It now rides in every rate
+ * chip's tooltip instead — invisible until you ask, but a rate's origin stays auditable.
+ */
+function sourceNote(source: RatesSource | null, mins: number | null): string {
+  return source ? ` · ${SOURCE_LABEL[source]}, ${ageLabel(mins)}` : "";
 }
 
 // PoE2 currency art (poecdn) — the rate chips read like the in-game exchange.
@@ -183,35 +177,41 @@ export function MarketStatus() {
       )}
       {r && (
         <>
-          <RateChips rates={r} />
+          <RateChips
+            rates={r}
+            note={sourceNote(health.ratesSource, minutesSince(health.ratesFetchedAt, now))}
+          />
           <Converter rates={r} />
-          {health.ratesSource && (
-            <SourceChip source={health.ratesSource} mins={minutesSince(health.ratesFetchedAt, now)} />
-          )}
         </>
       )}
     </div>
   );
 }
 
-/** The three base cross-rates, each hoverable for its inverse. */
-function RateChips({ rates: r }: { rates: { exaltPerDivine: number; chaosPerDivine: number } }) {
+/** The three base cross-rates, each hoverable for its inverse plus the rates' source and age. */
+function RateChips({
+  rates: r,
+  note,
+}: {
+  rates: { exaltPerDivine: number; chaosPerDivine: number };
+  note: string;
+}) {
   return (
     <>
       <RateChip
         left={{ qty: "1", icon: CCY_ICON.div, alt: "Divine Orb" }}
         right={{ qty: fmtSmart(r.exaltPerDivine), icon: CCY_ICON.ex, alt: "Exalted Orb" }}
-        inverse={`1 Ex = ${fmtSmart(1 / r.exaltPerDivine)} Div`}
+        inverse={`1 Ex = ${fmtSmart(1 / r.exaltPerDivine)} Div${note}`}
       />
       <RateChip
         left={{ qty: "1", icon: CCY_ICON.div, alt: "Divine Orb" }}
         right={{ qty: fmtSmart(r.chaosPerDivine), icon: CCY_ICON.chaos, alt: "Chaos Orb" }}
-        inverse={`1 Ch = ${fmtSmart(1 / r.chaosPerDivine)} Div`}
+        inverse={`1 Ch = ${fmtSmart(1 / r.chaosPerDivine)} Div${note}`}
       />
       <RateChip
         left={{ qty: "1", icon: CCY_ICON.chaos, alt: "Chaos Orb" }}
         right={{ qty: fmtSmart(r.exaltPerDivine / r.chaosPerDivine), icon: CCY_ICON.ex, alt: "Exalted Orb" }}
-        inverse={`1 Ex = ${fmtSmart(r.chaosPerDivine / r.exaltPerDivine)} Ch`}
+        inverse={`1 Ex = ${fmtSmart(r.chaosPerDivine / r.exaltPerDivine)} Ch${note}`}
       />
     </>
   );
