@@ -4,6 +4,7 @@ import { fireLeagueAlert } from "./leagueAlerts";
 import { getDefaultLeague, setActiveLeague } from "./leagueState";
 import { clearUserLeague, leagueForUser, ownLeague, sameLeague, setUserLeague } from "./leagueUsers";
 import { bootstrapRatesForLeague } from "./rateSync";
+import { baseLeagueName, leagueFirstSeen, registerLeagues } from "../db/leagueQueries";
 
 /**
  * The two league switches, as functions rather than route bodies: one that moves the CALLER's
@@ -37,15 +38,34 @@ const LIVE_DEPS: SwitchDeps = {
 let listCache: { at: number; names: string[] } | null = null;
 
 /**
- * League names poe2scout knows, memoized. A FAILED fetch is not cached: the dropdown and the
- * validator both depend on this list, and serving an empty one for ten minutes because of a
- * single timeout would look like "your league no longer exists".
+ * League names poe2scout knows, memoized, in NEWEST-FIRST order. Scout's own list order is
+ * arbitrary (Standard mid-list, the second-newest league last), so ordering comes from our
+ * league_registry chronology — seeded history plus first-sighting stamps for new leagues.
+ * A FAILED fetch is not cached: the dropdown and the validator both depend on this list, and
+ * serving an empty one for ten minutes because of a single timeout would look like "your
+ * league no longer exists".
  */
 export async function cachedLeagueNames(): Promise<string[]> {
   if (listCache && Date.now() - listCache.at < LEAGUE_LIST_TTL_MS) return listCache.names;
-  const names = (await fetchScoutLeagues()).map((l) => l.name);
+  const fetched = (await fetchScoutLeagues()).map((l) => l.name);
+  registerLeagues(fetched);
+  const names = orderNewestFirst(fetched);
   listCache = { at: Date.now(), names };
   return names;
+}
+
+/**
+ * Newest league first by our own first-seen chronology; HC/SSF variants inherit their base
+ * league's position; names the registry has never seen (only the permanent Standard/Hardcore,
+ * by construction) sink to the bottom. Stable for equal stamps.
+ */
+export function orderNewestFirst(
+  names: readonly string[],
+  database?: import("better-sqlite3").Database,
+): string[] {
+  const seen = leagueFirstSeen(database);
+  const stamp = (name: string) => seen.get(baseLeagueName(name).toLowerCase()) ?? "";
+  return [...names].sort((a, b) => stamp(b).localeCompare(stamp(a)));
 }
 
 /**

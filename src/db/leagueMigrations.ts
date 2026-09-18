@@ -207,3 +207,23 @@ function assertEveryRowScoped(db: Db): void {
     }
   }
 }
+
+/**
+ * Seed the league chronology with known PoE2 history. Only relative ORDER matters (the UI
+ * sorts newest-first); dates approximate each launch. New leagues never touch this list —
+ * registerLeagues (leagueQueries) records them the moment any source first mentions them.
+ * INSERT OR IGNORE keeps every boot idempotent and never overwrites a live first-seen stamp.
+ */
+export function seedLeagueRegistry(conn: Database.Database): void {
+  const insert = conn.prepare(
+    "INSERT OR IGNORE INTO league_registry (league, first_seen_at) VALUES (?, ?)",
+  );
+  const seed: ReadonlyArray<readonly [string, string]> = [
+    ["Dawn of the Hunt", "2025-04-04T00:00:00Z"],
+    ["Rise of the Abyssal", "2025-08-29T00:00:00Z"],
+    ["Fate of the Vaal", "2025-12-12T00:00:00Z"],
+    ["Runes of Aldur", "2026-05-28T00:00:00Z"],
+    ["Forbidden Rites", "2026-09-05T00:00:00Z"],
+  ];
+  for (const [league, seenAt] of seed) insert.run(league, seenAt);
+}
