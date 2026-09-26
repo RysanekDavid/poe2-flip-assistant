@@ -2,6 +2,8 @@ import axios, { AxiosError } from "axios";
 import { z } from "zod";
 import type { LeagueOption } from "./types";
 import { getDefaultLeague } from "../core/leagueState";
+import { config } from "../config/env";
+import { sellThroughProxy } from "../core/demandHeat";
 
 /**
  * poe2scout client — the WEB-TRADE item economy (uniques/gear), which the in-game
@@ -92,15 +94,22 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // scout aggregates daily; 30min is plenty
 // Caches carry their league — a runtime league switch must invalidate them, not serve the old one.
 let cache: { at: number; league: string; rates: ScoutRates; items: ScoutItem[] } | null = null;
 
+/**
+ * Identify honestly instead of spoofing a browser: poe2scout is a FastAPI service without a
+ * Cloudflare wall, so a descriptive agent + an operator contact (env DATA_SOURCE_CONTACT /
+ * POE_CONTACT, never hardcoded — the repo is committed) lets its operator reach us instead of
+ * blocking blind. Live acceptance of this UA was NOT verifiable from the dev sandbox — confirm
+ * one request against the API before merging.
+ */
+const SCOUT_CONTACT = config.dataSourceContact;
+const SCOUT_USER_AGENT = `poe2-flip-assistant/1.0${SCOUT_CONTACT ? ` (contact: ${SCOUT_CONTACT})` : ""}`;
+
 async function get<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   let raw: unknown;
   try {
     const res = await axios.get(`${BASE}${path}`, {
       timeout: 20_000,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-      },
+      headers: { "User-Agent": SCOUT_USER_AGENT },
     });
     raw = res.data;
   } catch (err) {
@@ -198,7 +207,10 @@ export interface DemandItem {
   priceExalt: number; // current price, outlier-guarded against the recent log (see fetchDemand)
   rawPriceExalt: number; // poe2scout CurrentPrice as-is (the unguarded headline)
   quantity: number; // CurrentQuantity — live listing count
-  turnover: number; // avg traded quantity across the price log — flow proxy
+  // Log `Quantity` is how many are LISTED at each point, not how many traded — an average of it
+  // measures supply, never flow. Named for what it is so no panel mistakes it for sales.
+  listedAvg: number; // avg listing count across the price log
+  sellThrough: number; // avg per-step DROP in listing count (clipped ≥ 0) — sell-through proxy
   momentumPct: number; // price change first→last of the log
   samples: number; // price-log points behind the median — low = untrustworthy
   sparkPrices: number[]; // daily log prices, oldest→newest — for row sparklines
@@ -212,7 +224,8 @@ function median(xs: number[]): number {
 }
 
 function summarizeLogs(logs: ByCategoryRaw["Items"][number]["PriceLogs"]): {
-  turnover: number;
+  listedAvg: number;
+  sellThrough: number;
   momentumPct: number;
   recentPrice: number;
   samples: number;
@@ -224,7 +237,7 @@ function summarizeLogs(logs: ByCategoryRaw["Items"][number]["PriceLogs"]): {
     .sort((a, b) => (a.Time ?? "").localeCompare(b.Time ?? ""));
   const prices = pts.map((p) => p.Price).filter((p): p is number => p != null && p > 0);
   const qtys = pts.map((p) => p.Quantity).filter((q): q is number => q != null);
-  const turnover = qtys.length ? qtys.reduce((a, b) => a + b, 0) / qtys.length : 0;
+  const listedAvg = qtys.length ? qtys.reduce((a, b) => a + b, 0) / qtys.length : 0;
   // momentum from the median of the older vs newer half — robust to a single spike point
   const half = Math.floor(prices.length / 2);
   const older = median(prices.slice(0, half));
@@ -232,7 +245,14 @@ function summarizeLogs(logs: ByCategoryRaw["Items"][number]["PriceLogs"]): {
   const momentumPct = prices.length >= 2 && older > 0 ? ((newer - older) / older) * 100 : 0;
   // recent anchor = median of the LAST 3 log points, not the whole week — a full-log median
   // lags fast movers by days (Temporalis pumped 1.4M→3.4M ex in a week; week-median said 1.5M)
-  return { turnover, momentumPct, recentPrice: median(prices.slice(-3)), samples: prices.length, prices };
+  return {
+    listedAvg,
+    sellThrough: sellThroughProxy(qtys), // qtys follow the time-sorted points (oldest→newest)
+    momentumPct,
+    recentPrice: median(prices.slice(-3)),
+    samples: prices.length,
+    prices,
+  };
 }
 
 /** Freshness of the in-process scout caches (ms epoch of the newest fetch), null if never fetched. */
@@ -286,7 +306,7 @@ export async function fetchDemand(): Promise<{ rates: ScoutRates; items: DemandI
     // "INCOMPLETE" = poe2scout's placeholder name for unreleased/unidentified uniques — not tradeable
     .filter((r) => r.CurrentPrice != null && r.Name != null && r.Name !== "INCOMPLETE")
     .map((r) => {
-      const { turnover, momentumPct, recentPrice, samples, prices } = summarizeLogs(r.PriceLogs);
+      const { listedAvg, sellThrough, momentumPct, recentPrice, samples, prices } = summarizeLogs(r.PriceLogs);
       // display price = CurrentPrice, unless it's a >3× outlier vs the recent log (price-fix
       // manipulation / lone mispriced listing) — then trust the recent median instead
       const cur = r.CurrentPrice!;
@@ -300,7 +320,8 @@ export async function fetchDemand(): Promise<{ rates: ScoutRates; items: DemandI
         priceExalt: outlier ? recentPrice : cur,
         rawPriceExalt: cur,
         quantity: r.CurrentQuantity ?? 0,
-        turnover,
+        listedAvg,
+        sellThrough,
         momentumPct,
         samples,
         sparkPrices: prices,

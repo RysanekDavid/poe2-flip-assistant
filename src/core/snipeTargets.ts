@@ -39,21 +39,21 @@ export function rankSnipeTargets(items: DemandItem[], exaltPerDivine: number): S
         valueDiv <= maxTargetDiv &&
         it.quantity >= minListings &&
         it.quantity <= maxListings &&
-        it.turnover > 0 &&
+        it.listedAvg > 0 &&
         it.samples >= minSampleLogs,
     )
     .map(({ it, valueDiv }) => {
       // reward value × resell-speed; a mild bonus for rising price (snipe resells into a pump)
-      const score = valueDiv * Math.log10(it.turnover + 10) * (1 + Math.max(it.momentumPct, 0) / 200);
+      const score = valueDiv * Math.log10(it.listedAvg + 10) * (1 + Math.max(it.momentumPct, 0) / 200);
       return {
         name: it.name,
         type: it.type,
         valueDiv,
         quantity: it.quantity,
-        turnover: it.turnover,
+        turnover: it.listedAvg,
         momentumPct: it.momentumPct,
         score,
-        reason: `~${valueDiv.toFixed(0)} Div · ${it.quantity} listed · turns ~${it.turnover.toFixed(0)}`,
+        reason: `~${valueDiv.toFixed(0)} Div · ${it.quantity} listed · turns ~${it.listedAvg.toFixed(0)}`,
       };
     })
     .sort((a, b) => b.score - a.score);
