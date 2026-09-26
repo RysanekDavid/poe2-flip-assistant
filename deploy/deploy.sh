@@ -265,6 +265,12 @@ for key in AUTH_SECRET SECRET_KEY COACH_THREAD_SECRET COACH_PROXY_SECRET APP_ORI
     exit 1
   fi
 done
+# The middleware only degrades (logs + Host fallback) on a bad APP_ORIGIN so the site stays up;
+# the deploy is where a malformed value must fail loudly. Production requires https.
+if ! grep -Eq '^APP_ORIGIN=https://[A-Za-z0-9.-]+(:[0-9]+)?/?$' .env.local; then
+  echo "APP_ORIGIN in $APP_DIR/.env.local must be https://host[:port] with no path, quotes or spaces" >&2
+  exit 1
+fi
 patch_notes_enabled=$(awk -F= '$1 == "PATCH_NOTES_ENABLED" { value=substr($0, index($0, "=") + 1) } END { print value }' .env.local)
 if [[ -z "$patch_notes_enabled" || "${patch_notes_enabled,,}" == "true" ]]; then
   if ! grep -Eq '^DATA_SOURCE_CONTACT=[^[:space:]].*$' .env.local; then

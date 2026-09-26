@@ -153,6 +153,9 @@ production): no path, query, credentials or whitespace; a single trailing `/` is
 journal logs `[middleware] APP_ORIGIN=... is invalid` once, mutations are then accepted only when
 their `Origin` host equals the request's `Host` header, and unauthenticated page loads are served
 the login page in place instead of being redirected. Fix the value and restart `poe2flip-web`.
+`deploy.sh` refuses to deploy (before touching the release) when `.env.local` holds an
+`APP_ORIGIN` that is not an unquoted `https://host[:port]` value, so a typo fails at deploy time
+rather than silently degrading the Origin check.
 
 The Caddyfile sends HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy` and an enforcing
 Content-Security-Policy. `script-src`/`style-src` include `'unsafe-inline'` because Next.js streams

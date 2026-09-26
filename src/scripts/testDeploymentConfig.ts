@@ -111,6 +111,7 @@ assert.match(deploy, /COACH_PROXY_SECRET must match in \.env\.local and \.coach\
 assert.match(deploy, /source "\$SCRIPT_DIR\/deploy-helpers\.sh"/);
 assert.doesNotMatch(productEnv, /^POE_CONTACT=$/m);
 assert.match(deploy, /DATA_SOURCE_CONTACT is required when PATCH_NOTES_ENABLED is true or omitted/);
+assertAppOriginShapeGate();
 assert.equal(packageConfig.engines?.node, ">=20.18.1");
 assert.match(rootReadme, /Node\.js 20\.18\.1\+/);
 assert.match(deployReadme, /Node 20\.18\.1 or newer/);
@@ -165,6 +166,34 @@ function runTimeoutValidator(runtime: string): number | null {
     }).status;
   } finally {
     rmSync(directory, { force: true, recursive: true });
+  }
+}
+
+/** The deploy-time APP_ORIGIN gate must accept exactly what the production middleware accepts. */
+function assertAppOriginShapeGate(): void {
+  const gate = /if ! grep -Eq '(\^APP_ORIGIN=[^']+)' \.env\.local; then/.exec(deploy);
+  assert.ok(gate?.[1], "deploy.sh must shape-check APP_ORIGIN in .env.local");
+  assert.ok(
+    deploy.indexOf(gate[0]) > deploy.indexOf("missing required value for $key in $APP_DIR/.env.local"),
+    "shape check runs after the required-key check",
+  );
+  assert.match(deploy, /APP_ORIGIN in \$APP_DIR\/\.env\.local must be https:\/\/host\[:port\]/);
+  // Plain ERE with no POSIX classes, so JS RegExp evaluates it identically to grep -E.
+  const shape = new RegExp(gate[1]);
+  for (const good of ["https://flip.example.com", "https://flip.example.com/", "https://1.2.3.4:8443"]) {
+    assert.match(`APP_ORIGIN=${good}`, shape, `${good} must pass the deploy gate`);
+  }
+  for (const bad of [
+    "http://flip.example.com",
+    "https://flip.example.com/app",
+    "flip.example.com",
+    '"https://flip.example.com"',
+    "https://flip.example.com ",
+    "https://user@flip.example.com",
+    "https://flip.example.com?x=1",
+    "",
+  ]) {
+    assert.doesNotMatch(`APP_ORIGIN=${bad}`, shape, `${JSON.stringify(bad)} must fail the deploy gate`);
   }
 }
 
