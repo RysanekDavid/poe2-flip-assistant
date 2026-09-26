@@ -1,28 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import Image from "next/image";
 import { LoaderCircle, RotateCcw } from "lucide-react";
 import iconCoach from "../../assets/Coach.png";
-import { fetchCoachHealth, type CoachHealth } from "./api";
-import { CoachComposer } from "./CoachComposer";
+import type { CoachHealth } from "./api";
+import { CoachComposer, type ComposeRequest } from "./CoachComposer";
+import { CoachEmptyState } from "./CoachEmptyState";
 import { CoachHistorySidebar } from "./CoachHistorySidebar";
 import { CoachMessage } from "./CoachMessage";
+import { coachAvailability, useCoachHealth } from "./useCoachHealth";
 import { useCoachSession } from "./useCoachSession";
-
-const PROMPTS = [
-  {
-    eyebrow: "DEMO",
-    prompt: "On a desecrated Time-Lost jewel, when should I use Omen of Light versus Omen of Sinistral Annulment? Use only verified knowledge-base evidence; do not discuss drop sources or current prices.",
-  },
-  { eyebrow: "MARKET", prompt: "Show observed Divine Orb market history, its timestamp, and the main limitation." },
-  { eyebrow: "ITEM", prompt: "Paste an item's complete in-game clipboard text here for deterministic inspection." },
-] as const;
 
 export function CoachPanel({ active }: { active: boolean }) {
   // Keep the editorial type treatment scoped to Coach; the data-heavy dashboard stays compact.
-  const session = useCoachSession();
+  const session = useCoachSession(active);
   const { health, healthError } = useCoachHealth(active);
+  const { compose, requestCompose } = useComposeRequest();
   const scrollRef = useRef<HTMLDivElement>(null);
   const availability = coachAvailability(health, healthError);
   useCoachScroll(active, scrollRef, session.messages.at(-1)?.id ?? null, session.isLoading);
@@ -48,22 +42,19 @@ export function CoachPanel({ active }: { active: boolean }) {
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div ref={scrollRef} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-6">
         {session.messages.length === 0 ? (
-          <EmptyCoach
+          <CoachEmptyState
             disabled={!availability.ready}
+            onCompose={requestCompose}
             onPrompt={session.send}
             webReady={health?.web_search_ready === true}
           />
         ) : null}
         {session.messages.map((message) => <CoachMessage key={message.id} message={message} />)}
-        {session.isLoading && (
-          <div className="mx-auto flex w-full max-w-5xl items-center gap-3 pl-12 text-xs text-neutral-500">
-            <LoaderCircle className="h-4 w-4 animate-spin text-amber-500/70" />
-            Checking market data and verifying sources…
-          </div>
-        )}
+        {session.isLoading && <TurnInProgress />}
           </div>
 
           <CoachComposer
+            compose={compose}
             disabled={!session.ready || session.isLoading || !availability.ready}
             error={session.error}
             notice={availability.reason}
@@ -76,20 +67,21 @@ export function CoachPanel({ active }: { active: boolean }) {
   );
 }
 
-function useCoachHealth(active: boolean) {
-  const [health, setHealth] = useState<CoachHealth | null>(null);
-  const [healthError, setHealthError] = useState(false);
-  const checkedRef = useRef(false);
+function useComposeRequest() {
+  const [compose, setCompose] = useState<ComposeRequest | null>(null);
+  const requestCompose = useCallback((placeholder: string) => {
+    setCompose((current) => ({ placeholder, nonce: (current?.nonce ?? 0) + 1 }));
+  }, []);
+  return { compose, requestCompose };
+}
 
-  useEffect(() => {
-    if (!active || checkedRef.current) return;
-    checkedRef.current = true;
-    fetchCoachHealth()
-      .then((result) => setHealth(result))
-      .catch(() => setHealthError(true));
-  }, [active]);
-
-  return { health, healthError };
+function TurnInProgress() {
+  return (
+    <div className="mx-auto flex w-full max-w-5xl items-center gap-3 pl-12 text-xs text-neutral-500">
+      <LoaderCircle className="h-4 w-4 animate-spin text-amber-500/70" />
+      Checking market data and verifying sources…
+    </div>
+  );
 }
 
 function useCoachScroll(
@@ -144,41 +136,6 @@ function CoachHeader({ health, healthError, onReset }: {
   );
 }
 
-function EmptyCoach({ disabled, onPrompt, webReady }: {
-  disabled: boolean;
-  onPrompt: (prompt: string) => Promise<void>;
-  webReady: boolean;
-}) {
-  return (
-    <div className="mx-auto flex min-h-full max-w-4xl flex-col items-center justify-center py-10 text-center">
-      <div className="mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-neutral-950 shadow-[0_0_35px_rgba(245,158,11,0.08)]">
-        <Image src={iconCoach} alt="" className="h-12 w-12 object-contain" />
-      </div>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-500/65">Market intelligence</div>
-      <h3 className="mt-2 font-['Palatino_Linotype','Book_Antiqua',serif] text-2xl font-semibold tracking-wide text-neutral-100">
-        Make decisions from data, not trade chat.
-      </h3>
-      <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-500">
-        Coach combines observed market history, locally polled poe.ninja data, and a curated knowledge base.
-        {webReady ? " It checks recent web sources when needed." : ""}
-      </p>
-      <div className="mt-8 grid w-full gap-3 md:grid-cols-3">
-        {PROMPTS.map(({ eyebrow, prompt }) => (
-          <button
-            key={prompt}
-            disabled={disabled}
-            onClick={() => void onPrompt(prompt)}
-            className="group rounded-xl border border-neutral-800 bg-neutral-900/45 px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-amber-500/25 hover:bg-neutral-900/80 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <span className="text-[9px] font-semibold tracking-[0.18em] text-amber-500/55 group-hover:text-amber-400/75">{eyebrow}</span>
-            <span className="mt-2 block text-sm leading-6 text-neutral-400 group-hover:text-neutral-200">{prompt}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function Health({ health, failed }: { health: CoachHealth | null; failed: boolean }) {
   if (failed) {
     return <Status label="Coach unavailable" title="The local Coach service is not running." tone="error" />;
@@ -203,24 +160,6 @@ function Health({ health, failed }: { health: CoachHealth | null; failed: boolea
     ? "Local sources are ready and recent web is configured; the first chat verifies model connectivity."
     : "Local sources are ready; the first chat verifies model connectivity.";
   return <Status label="sources ready" title={title} tone="ready" />;
-}
-
-function coachAvailability(health: CoachHealth | null, failed: boolean) {
-  if (failed) return { ready: false, reason: "The local Coach service is not running." } as const;
-  if (!health) return { ready: false, reason: "Checking Coach service readiness…" } as const;
-  if (!health.model_configured) {
-    return {
-      ready: false,
-      reason: "Configure the isolated Coach process environment, then restart Coach.",
-    } as const;
-  }
-  if (!health.item_data_ready) {
-    return { ready: false, reason: "The local PoE2 item catalog is missing or invalid." } as const;
-  }
-  if (!health.market_ready || !health.knowledge_ready) {
-    return { ready: false, reason: "The market database or knowledge base is unavailable." } as const;
-  }
-  return { ready: true, reason: null } as const;
 }
 
 const STATUS_TONES = {

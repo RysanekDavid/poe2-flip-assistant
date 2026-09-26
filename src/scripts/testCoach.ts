@@ -6,6 +6,7 @@ import {
   coachBrowserResponseSchema,
   coachErrorResponseSchema,
   coachUpstreamErrorSchema,
+  coachUpstreamResponseSchema,
   parseCoachUpstreamError,
 } from "../lib/coachContract";
 import {
@@ -69,6 +70,23 @@ assert.equal(
     sources: [{ id: "L1", type: "live", title: "poe.ninja", url: "https://poe.ninja" }],
   }).sources.length,
   1,
+);
+
+const upstream = {
+  thread_id: conversationId,
+  request_id: "abcdef0123456789abcdef01",
+  answer: "Answer",
+  tools_used: [],
+  processors_used: [],
+  sources: [],
+  usage: { input_tokens: 10, output_tokens: 2, total_tokens: 12, model_calls: 1, duration_ms: 900 },
+};
+assert.equal(coachUpstreamResponseSchema.parse(upstream).usage.total_tokens, 12);
+// Telemetry is part of the FastAPI contract: a response without it (or with content in it) fails.
+assert.equal(coachUpstreamResponseSchema.safeParse({ ...upstream, usage: undefined }).success, false);
+assert.equal(
+  coachUpstreamResponseSchema.safeParse({ ...upstream, usage: { ...upstream.usage, prompt: "x" } }).success,
+  false,
 );
 
 const publicError = coachErrorResponseSchema.parse({

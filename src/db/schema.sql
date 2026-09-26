@@ -53,6 +53,24 @@ CREATE TABLE IF NOT EXISTS coach_conversation_leases (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Cost/latency telemetry per completed Coach turn. Deliberately content-free and NOT tied to
+-- coach_turns: conversation pruning/deletion must not erase what a turn cost. duration_ms is the
+-- FastAPI agent run; proxy_duration_ms is the whole web request (history lease → persistence).
+CREATE TABLE IF NOT EXISTS coach_usage (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  request_id TEXT NOT NULL,
+  model_calls INTEGER NOT NULL CHECK (model_calls >= 0),
+  input_tokens INTEGER NOT NULL CHECK (input_tokens >= 0),
+  output_tokens INTEGER NOT NULL CHECK (output_tokens >= 0),
+  total_tokens INTEGER NOT NULL CHECK (total_tokens >= 0),
+  duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
+  proxy_duration_ms INTEGER NOT NULL CHECK (proxy_duration_ms >= 0),
+  completed_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_coach_usage_time ON coach_usage(completed_at DESC);
+
 CREATE INDEX IF NOT EXISTS idx_coach_conversations_recent
   ON coach_conversations(user_id, last_message_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_coach_leases_expiry

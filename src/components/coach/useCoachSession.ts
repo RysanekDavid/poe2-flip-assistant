@@ -53,26 +53,17 @@ interface SessionCore {
   setError: Dispatch<SetStateAction<CoachSessionFailure | null>>;
 }
 
-export function useCoachSession() {
+/**
+ * `active` gates history restore: the panel stays mounted (hidden) on every tab, and users who
+ * never open Coach should not pay two history requests per page load.
+ */
+export function useCoachSession(active: boolean) {
   const core = useSessionCore();
   const abortRef = useRef<AbortController | null>(null);
   const conversationActions = useConversationActions(core, abortRef);
   const { remove, rename } = useConversationMutations(core, conversationActions);
   const { retry, send } = useTurnActions(core, conversationActions.refresh, abortRef);
-  const { setConversationId, setConversations, setError, setIsHistoryLoading, setMessages,
-    setTurnCount } = core;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    abortRef.current = controller;
-    void restoreLatest(controller, setConversations, setConversationId, setTurnCount, setMessages)
-      .catch((caught: unknown) => {
-        if (!controller.signal.aborted) setError(historyActionFailure(caught));
-      })
-      .finally(() => setIsHistoryLoading(false));
-    return () => controller.abort();
-  }, [setConversationId, setConversations, setError, setIsHistoryLoading, setMessages,
-    setTurnCount]);
+  useLazyRestore(active, core, abortRef);
 
   const recover = core.error?.retryable ? retry : conversationActions.newChat;
   return {
@@ -92,6 +83,43 @@ export function useCoachSession() {
     recover,
     ready: !core.isHistoryLoading,
   };
+}
+
+/**
+ * Restore the newest conversation on the first activation only. A restore interrupted by the
+ * tab closing is retried on the next activation, as is a failed one; one cancelled by
+ * "new chat" is not, or it would overwrite the conversation the user just started.
+ */
+function useLazyRestore(
+  active: boolean,
+  core: SessionCore,
+  abortRef: RefObject<AbortController | null>,
+): void {
+  const restoredRef = useRef(false);
+  const { setConversationId, setConversations, setError, setIsHistoryLoading, setMessages,
+    setTurnCount } = core;
+
+  useEffect(() => {
+    if (!active || restoredRef.current) return;
+    const controller = new AbortController();
+    let cancelledByCleanup = false;
+    abortRef.current = controller;
+    setIsHistoryLoading(true);
+    void restoreLatest(controller, setConversations, setConversationId, setTurnCount, setMessages)
+      .then(() => {
+        restoredRef.current = true;
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted) setError(historyActionFailure(caught));
+        else if (!cancelledByCleanup) restoredRef.current = true;
+      })
+      .finally(() => setIsHistoryLoading(false));
+    return () => {
+      cancelledByCleanup = true;
+      controller.abort();
+    };
+  }, [abortRef, active, setConversationId, setConversations, setError, setIsHistoryLoading,
+    setMessages, setTurnCount]);
 }
 
 function useSessionCore(): SessionCore {

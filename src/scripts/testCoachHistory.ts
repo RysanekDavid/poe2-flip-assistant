@@ -38,6 +38,7 @@ testHistoryAndLimits();
 testPruningAndActiveLease();
 testOwnershipAndStrictJson();
 testEmojiTitleRoundTrip();
+testUsageTelemetry();
 
 db.close();
 console.log("ALL PASS — persisted Coach history, leases, limits and isolation");
@@ -166,6 +167,36 @@ function testEmojiTitleRoundTrip(): void {
   assert.ok(summary);
   assert.equal([...summary.title].length, 64);
   assert.equal(getCoachConversation(1, conversationId, db).conversation.title, summary.title);
+}
+
+function testUsageTelemetry(): void {
+  const conversationId = uuid(800);
+  const usage = {
+    requestId: "abcdef0123456789abcdef01",
+    usage: { input_tokens: 900, output_tokens: 120, total_tokens: 1020, model_calls: 2, duration_ms: 4200 },
+    proxyDurationMs: 4300,
+  };
+  const input = { ...turnInput(conversationId, uuid(801), 0, "priced question", 1_960_000_000_000), usage };
+  commit(1, input);
+  // A replay of the same turn must not double-count its cost.
+  completeCoachTurn(1, input, db);
+  const rows = db.prepare("SELECT * FROM coach_usage WHERE request_id = ?").all(usage.requestId) as
+    Array<Record<string, unknown>>;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.total_tokens, 1020);
+  assert.equal(rows[0]?.proxy_duration_ms, 4300);
+  const columns = (db.prepare("PRAGMA table_info(coach_usage)").all() as Array<{ name: string }>)
+    .map((column) => column.name);
+  assert.ok(!columns.some((name) => /message|answer|prompt|content/.test(name)), "usage must stay content-free");
+  // Deleting the conversation keeps its cost on record.
+  deleteCoachConversation(1, conversationId, db);
+  assert.equal((db.prepare("SELECT COUNT(*) AS c FROM coach_usage").get() as { c: number }).c, 1);
+  const bad = { ...turnInput(uuid(802), uuid(803), 0, "bad usage", 1_960_000_000_001), usage: { ...usage, proxyDurationMs: -1 } };
+  assert.equal(beginCoachTurn(1, bad, db).kind, "acquired");
+  assert.throws(() => completeCoachTurn(1, bad, db));
+  // Invalid usage rolls the whole completion back: no turn without its telemetry row.
+  expectHistoryError(() => getCoachConversation(1, uuid(802), db), "not_found");
+  assert.equal((db.prepare("SELECT COUNT(*) AS c FROM coach_usage").get() as { c: number }).c, 1);
 }
 
 function commit(userId: number, input: CompleteCoachTurnInput): void {
