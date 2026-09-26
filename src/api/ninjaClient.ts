@@ -150,9 +150,11 @@ export function parseNinjaLeagues(raw: unknown): LeagueOption[] {
 
 /** Leagues poe.ninja indexes, newest first — the ninja half of league-switch detection. */
 export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
+  // Resolved outside the try: a DB failure here must not be reported as a poe.ninja fetch failure.
+  const league = getDefaultLeague();
   const raw = await ninjaLimiter.schedule(async () => {
     try {
-      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: ninjaHeaders(getDefaultLeague()) });
+      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: ninjaHeaders(league) });
       return res.data as unknown;
     } catch (err) {
       const ax = err as AxiosError;

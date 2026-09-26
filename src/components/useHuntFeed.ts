@@ -181,10 +181,12 @@ export function useHuntFeed(soundOn: boolean, perHuntSound: Record<number, boole
   useEffect(() => {
     loadHunts();
   }, [loadHunts]);
+  // hunts too: a manual scan's per-hunt last_error lives on the hunt rows
   const refreshFeed = useCallback(() => {
     loadHits();
     loadStatus();
-  }, [loadHits, loadStatus]);
+    loadHunts();
+  }, [loadHits, loadStatus, loadHunts]);
   const burstAfterScan = useBurstRefresh(refreshFeed);
 
   return { hunts, liveEnabled, hits, status, flashIds, feedError, loadHunts, loadHits, burstAfterScan };

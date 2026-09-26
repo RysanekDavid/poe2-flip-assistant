@@ -66,6 +66,7 @@ async function main(): Promise<void> {
   testAbsentLeagueIsNotMarked();
   await testBackfillIsBoundedAndPolite();
   await testOutageStaysRed();
+  await testNewestHourGrace();
   testLeagueViewAndStaleness();
   testRouteView();
   testRetention();
@@ -182,7 +183,47 @@ async function testOutageStaysRed(): Promise<void> {
   assert.equal(last.attempted, 0, "eventually every missing hour is backed off");
   assert.ok(last.deferred > 0);
   assert.match(cxHistoryProblem(last) ?? "", /backed off after failures, none stored/, "no flap to green during back-off");
-  assert.equal(cxHistoryProblem({ stored: 0, attempted: 0, deferred: 0, lastError: null }), null, "nothing missing is healthy");
+  assert.equal(cxHistoryProblem({ stored: 0, attempted: 0, failed: 0, deferred: 0, lastError: null }), null, "nothing missing is healthy");
+}
+
+/** Every request hour of the backfill window is available for `league` except the listed digest ids. */
+async function fillHistoryExcept(league: string, skipIds: readonly number[]): Promise<Map<number, CxDigest>> {
+  const available = new Map<number, CxDigest>();
+  for (let k = 0; k < config.cx.backfillHours; k++) {
+    if (!skipIds.includes(hourId(k))) available.set(hourId(k), digestAt(hourId(k), omenMarkets(league)));
+  }
+  resetCxIngestState(); // back-offs are keyed by hour, not league — earlier tests' would block these hours
+  const runs = Math.ceil(config.cx.backfillHours / CX_MAX_FETCHES_PER_RUN) + 1;
+  for (let i = 0; i < runs; i++) await syncCxHistory([league], sources(available, { fetched: [], slept: [] }), NOW);
+  resetCxIngestState(); // forget those runs' back-offs so each check below starts from a clean slate
+  return available;
+}
+
+/**
+ * GGG routinely has not published the newest completed hour a few minutes past the boundary, so a
+ * single failure of THAT hour stays green; a repeat failure of it, or any failure of an older
+ * hour, is red.
+ */
+async function testNewestHourGrace(): Promise<void> {
+  const newestLeague = "Grace Newest";
+  const onlyNewest = await fillHistoryExcept(newestLeague, [hourId(0)]);
+  const run = (league: string, available: Map<number, CxDigest>, at: number) =>
+    syncCxHistory([league], sources(available, { fetched: [], slept: [] }), at);
+  const once = await run(newestLeague, onlyNewest, NOW);
+  assert.deepEqual([once.attempted, once.stored, once.failed], [1, 0, 0], "newest hour tried once, not yet counted");
+  assert.equal(cxHistoryProblem(once), null, "one failed newest hour → ok");
+  assert.equal(cxHistoryProblem(await run(newestLeague, onlyNewest, NOW + 60_000)), null, "still ok while backed off");
+  const twice = await run(newestLeague, onlyNewest, NOW + 31 * 60_000); // retried after the back-off, same hour
+  assert.equal(twice.failed, 1);
+  assert.match(cxHistoryProblem(twice) ?? "", /1 digest hour\(s\) failed/, "repeated newest-hour failure → red");
+  assert.ok(cxHistoryProblem(await run(newestLeague, onlyNewest, NOW + 32 * 60_000)) != null, "and stays red while backed off");
+
+  const olderLeague = "Grace Older";
+  const onlyOlder = await fillHistoryExcept(olderLeague, [hourId(5)]);
+  const older = await run(olderLeague, onlyOlder, NOW);
+  assert.deepEqual([older.attempted, older.failed], [1, 1]);
+  assert.ok(cxHistoryProblem(older) != null, "an older hour failing even once → red");
+  resetCxIngestState();
 }
 
 function testLeagueViewAndStaleness(): void {

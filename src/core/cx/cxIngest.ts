@@ -64,15 +64,24 @@ export function absentRetryAt(seen: number, nowMs: number): number {
 const retryAt = new Map<number, number>();
 /** Request hour → how many fetches found a polled league absent. */
 const absences = new Map<number, number>();
-/** Request hours whose last fetch FAILED (as opposed to backed off because a league was absent). */
-const failedHours = new Set<number>();
+/**
+ * Request hour → consecutive failed fetches (as opposed to backing off because a league was
+ * absent). Cleared on success, so presence means "the last fetch of this hour failed".
+ */
+const failCounts = new Map<number, number>();
 const emptyWarnedAt = new Map<string, number>();
+
+/**
+ * GGG often has not published the newest completed hour a couple of minutes past the boundary
+ * (or serves the previous digest for it), so one failure of THAT hour is routine, not an outage.
+ */
+const NEWEST_HOUR_GRACE_FAILURES = 2;
 
 /** Forget retry back-off and warning throttles — test fixtures only. */
 export function resetCxIngestState(): void {
   retryAt.clear();
   absences.clear();
-  failedHours.clear();
+  failCounts.clear();
   emptyWarnedAt.clear();
 }
 
@@ -197,12 +206,12 @@ async function fetchAndIngest(
       absences.set(hour, seen);
       retryAt.set(hour, absentRetryAt(seen, nowMs));
     } else retryAt.delete(hour);
-    failedHours.delete(hour);
+    failCounts.delete(hour);
     return null;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     retryAt.set(hour, nowMs + RETRY_AFTER_MS);
-    failedHours.add(hour);
+    failCounts.set(hour, (failCounts.get(hour) ?? 0) + 1);
     console.warn(`[cx-history] hour ${hour} skipped: ${message}`);
     return message;
   }
@@ -213,9 +222,16 @@ export interface CxSyncResult {
   stored: number;
   /** Hours this run tried to fetch. */
   attempted: number;
+  /** Attempted hours whose failure counts against health (see countsAsFailure). */
+  failed: number;
   /** Missing hours skipped because their last fetch failed and they are still backed off. */
   deferred: number;
   lastError: string | null;
+}
+
+/** Every failed hour counts, except the newest request hour until it has failed repeatedly. */
+function countsAsFailure(hour: number, newestHour: number): boolean {
+  return hour !== newestHour || (failCounts.get(hour) ?? 0) >= NEWEST_HOUR_GRACE_FAILURES;
 }
 
 /**
@@ -224,8 +240,8 @@ export interface CxSyncResult {
  * Absence back-offs (a league GGG does not list) are not failures and never count here.
  */
 export function cxHistoryProblem(r: CxSyncResult): string | null {
-  if (r.stored > 0 || (r.attempted === 0 && r.deferred === 0)) return null;
-  const tried = r.attempted > 0 ? `${r.attempted} digest hour(s) failed` : "no hour attempted";
+  if (r.stored > 0 || (r.failed === 0 && r.deferred === 0)) return null;
+  const tried = r.failed > 0 ? `${r.failed} digest hour(s) failed` : "no hour attempted";
   return `${tried}, ${r.deferred} backed off after failures, none stored${r.lastError ? `: ${r.lastError}` : ""}`;
 }
 
@@ -238,20 +254,25 @@ export async function syncCxHistory(
   sources: CxHistorySources = LIVE_HISTORY_SOURCES,
   nowMs: number = Date.now(),
 ): Promise<CxSyncResult> {
+  const newest = previousCompletedHour(nowMs);
   const missing = missingRequestHours(leagues, nowMs);
   const ready = missing.filter((h) => nowMs >= (retryAt.get(h) ?? -Infinity));
   const due = ready.slice(0, CX_MAX_FETCHES_PER_RUN);
   const result: CxSyncResult = {
     stored: 0,
     attempted: due.length,
-    deferred: missing.filter((h) => failedHours.has(h) && !ready.includes(h)).length,
+    failed: 0,
+    deferred: missing.filter((h) => failCounts.has(h) && !ready.includes(h) && countsAsFailure(h, newest)).length,
     lastError: null,
   };
   for (const [i, hour] of due.entries()) {
     if (i > 0) await sources.sleep(CX_REQUEST_GAP_MS);
     const error = await fetchAndIngest(hour, leagues, sources, nowMs);
     if (error == null) result.stored++;
-    else result.lastError = error;
+    else if (countsAsFailure(hour, newest)) {
+      result.failed++;
+      result.lastError = error;
+    }
   }
   if (result.stored > 0) console.log(`[cx-history] stored ${result.stored}/${due.length} digest hour(s) for ${leagues.join(", ")}`);
   warnEmptyLeagues(leagues, nowMs);
