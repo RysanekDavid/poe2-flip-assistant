@@ -6,7 +6,8 @@ import { Sparkline } from "./ui/Sparkline";
 import { PriceChart } from "./PriceChart";
 import { SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { MATERIAL_GROUPS, type MaterialGroup } from "../core/craftMaterials";
-import { MatIcon } from "./craft/MarginBreakdown";
+import { MatIcon } from "./craft/craftView";
+import { ComputedLeague } from "./ui/ComputedLeague";
 
 interface MaterialRow {
   id: string;
@@ -19,6 +20,7 @@ interface MaterialRow {
   ageMin: number | null;
 }
 interface Resp {
+  computedLeague: string; // same league as the margin reports these materials feed
   materials: MaterialRow[];
   exaltPerDivine: number | null;
 }
@@ -72,6 +74,7 @@ export function MaterialsPanel() {
         <FlaskConical className="h-5 w-5 text-violet-400" />
         <h2 className="text-lg font-semibold">Craft Materials</h2>
         <span className="text-xs text-neutral-500">· live ninja prices for the recipe inputs</span>
+        <ComputedLeague league={data?.computedLeague} />
       </header>
 
       {err && <p className="text-sm text-bad">error: {err}</p>}

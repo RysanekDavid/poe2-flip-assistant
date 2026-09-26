@@ -13,30 +13,36 @@
     "build": "next build",
     "start": "next start",
     "probe": "tsx src/scripts/probe.ts",
-    "test:coach": "tsx src/scripts/testCoach.ts && tsx src/scripts/testCoachHistory.ts",
+    "test:coach": "tsx src/scripts/testCoach.ts && tsx src/scripts/testCoachHistory.ts && tsx src/scripts/testKbManifest.ts",
     "test:middleware": "tsx src/scripts/testMiddleware.ts",
     "test:demo-user": "tsx src/scripts/testAddUser.ts",
     "test:demo": "tsx src/scripts/testDemoReadiness.ts",
-    "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts && tsx src/scripts/testDeployShell.ts",
+    "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts && tsx src/scripts/testDeployShell.ts && tsx src/scripts/testDeploySmoke.ts",
     "test:league": "tsx src/scripts/testLeague.ts && tsx src/scripts/testLeagueMigration.ts",
     "test:user-league": "tsx src/scripts/runWithTestEnv.ts user-league",
     "test:market-league": "tsx src/scripts/runWithTestEnv.ts market",
     "test:rates": "tsx src/scripts/runWithTestEnv.ts rates",
     "test:cx": "tsx src/scripts/runWithTestEnv.ts cx",
     "test:flips": "tsx src/scripts/runWithTestEnv.ts flips",
-    "test:craft": "tsx src/scripts/runWithTestEnv.ts craft",
+    "test:craft": "tsx src/scripts/runWithTestEnv.ts craft && tsx src/scripts/runWithTestEnv.ts craft-valuation && tsx src/scripts/runWithTestEnv.ts craft-guides && tsx src/scripts/runWithTestEnv.ts balance && tsx src/scripts/runWithTestEnv.ts demand",
     "test:db": "tsx src/scripts/runWithTestEnv.ts db",
     "test:valuation": "tsx src/scripts/testValuation.ts",
     "test:auto-snipe": "tsx src/scripts/testAutoSnipe.ts",
-    "scrape:builds": "tsx src/scripts/scrapeBuilds.ts",
+    "test:snipe": "tsx src/scripts/testSnipe.ts && tsx src/scripts/runWithTestEnv.ts snipe-db",
+    "capture:trade2-fixture": "tsx src/scripts/captureTrade2Fixture.ts",
     "sync:poe2-data": "tsx src/scripts/syncPoe2GameData.ts",
     "verify:poe2-data": "tsx src/scripts/syncPoe2GameData.ts --verify",
     "patch:sync": "tsx src/scripts/syncPatchNotes.ts",
     "patch:review": "tsx src/scripts/reviewPatch.ts",
     "test:patch": "tsx src/scripts/testPatchNotes.ts",
+    "kb:check": "tsx src/scripts/kbCheck.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "lint": "tsx src/scripts/lintPolicy.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:auth": "tsx src/scripts/runWithTestEnv.ts auth",
+    "test:maintenance": "tsx src/scripts/testMaintenance.ts",
+    "db:maintain": "tsx src/db/maintenanceCli.ts vacuum",
+    "db:backup": "tsx src/db/maintenanceCli.ts backup"
   },
   "dependencies": {
     "axios": "^1.7.0",
@@ -64,10 +70,14 @@
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.0",
     "concurrently": "^8.2.2",
-    "playwright": "^1.61.1",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "^8.5.28"
+    }
   }
 }

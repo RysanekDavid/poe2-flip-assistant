@@ -1,9 +1,9 @@
 import { getDb } from "./database";
 
 /**
- * Per-user application persistence (alerts, trades, flips, positions, holdings, hunts,
- * balances). Market tables moved to marketQueries.ts when they became league-scoped; the
- * watchlist moved to watchlistQueries.ts when the poller started filtering it by league.
+ * Per-user application persistence (trades, flips, positions, holdings, balances). Market tables
+ * moved to marketQueries.ts when they became league-scoped; the watchlist moved to
+ * watchlistQueries.ts, alerts to alertQueries.ts and hunts to huntQueries.ts.
  *
  * These tables CARRY the league a row was created under, and the CALLER passes it: provenance
  * has to name the economy the producing pipeline actually ran in, which for a user action is
@@ -13,20 +13,6 @@ import { getDb } from "./database";
  * It is written at INSERT time rather than backfilled later, because after a switch there is no
  * way to recover which market an untagged row belonged to.
  */
-
-export interface AlertRow {
-  id: number;
-  type: string;
-  item_id: string;
-  item_name: string | null;
-  message: string;
-  value: number | null;
-  threshold: number | null;
-  whisper: string | null;
-  link: string | null;
-  seen: number;
-  created_at: string;
-}
 
 export interface TradeRow {
   id: number;
@@ -40,54 +26,6 @@ export interface TradeRow {
   profit_chaos: number | null;
   traded_at: string;
   notes: string | null;
-}
-
-export function insertAlert(
-  userId: number,
-  league: string,
-  a: {
-    type: string;
-    itemId: string;
-    itemName: string;
-    message: string;
-    value: number;
-    threshold: number;
-    whisper?: string | null;
-    link?: string | null;
-  },
-): void {
-  getDb()
-    .prepare(
-      `INSERT INTO alerts (user_id, league, type, item_id, item_name, message, value, threshold, whisper, link)
-       VALUES (@userId, @league, @type, @itemId, @itemName, @message, @value, @threshold, @whisper, @link)`,
-    )
-    .run({ ...a, whisper: a.whisper ?? null, link: a.link ?? null, userId, league });
-}
-
-/** True if an alert for this user's item+type fired within the last `minutes` — throttles repeats. */
-export function hasRecentAlert(userId: number, itemId: string, type: string, minutes: number): boolean {
-  const row = getDb()
-    .prepare(
-      `SELECT 1 FROM alerts WHERE user_id = ? AND item_id = ? AND type = ? AND created_at >= datetime('now', ?) LIMIT 1`,
-    )
-    .get(userId, itemId, type, `-${minutes} minutes`);
-  return row != null;
-}
-
-export function getAlerts(userId: number, unseenOnly = false, limit = 100): AlertRow[] {
-  const sql = unseenOnly
-    ? "SELECT * FROM alerts WHERE user_id = ? AND seen = 0 ORDER BY created_at DESC LIMIT ?"
-    : "SELECT * FROM alerts WHERE user_id = ? ORDER BY created_at DESC LIMIT ?";
-  return getDb().prepare(sql).all(userId, limit) as AlertRow[];
-}
-
-/** Mark alerts seen — scoped to the user so one account can't touch another's feed. */
-export function markAlertsSeen(userId: number, ids: number[]): void {
-  if (ids.length === 0) return;
-  const placeholders = ids.map(() => "?").join(",");
-  getDb()
-    .prepare(`UPDATE alerts SET seen = 1 WHERE user_id = ? AND id IN (${placeholders})`)
-    .run(userId, ...ids);
 }
 
 export interface FlipRow {
@@ -271,201 +209,6 @@ export function deleteTrade(userId: number, id: number): void {
   getDb().prepare("DELETE FROM trades WHERE user_id = ? AND id = ?").run(userId, id);
 }
 
-// --- hunts (live-search criteria) + hits ---
-
-export type HuntMode = "SNIPE" | "CRAFT_BASE" | "RESELL";
-
-export interface Hunt {
-  id: number;
-  user_id: number;
-  label: string;
-  mode: HuntMode;
-  item_name: string | null;
-  base_type: string | null;
-  category: string | null; // trade2 category (e.g. "weapon.bow") when no single base type applies
-  ilvl_min: number | null;
-  rarity: string | null;
-  stats_json: string | null;
-  max_amount: number | null;
-  max_ccy: string | null;
-  target_div: number | null;
-  active: number;
-  last_scan_at: string | null;
-  last_hit_at: string | null;
-  created_at: string;
-}
-
-/** All active hunts across every user — for the server/agent scanner. */
-export function getHunts(activeOnly = false): Hunt[] {
-  const sql = activeOnly
-    ? "SELECT * FROM hunts WHERE active = 1 ORDER BY created_at DESC"
-    : "SELECT * FROM hunts ORDER BY created_at DESC";
-  return getDb().prepare(sql).all() as Hunt[];
-}
-
-/** One user's hunts — for the UI/routes. */
-export function getHuntsForUser(userId: number, activeOnly = false): Hunt[] {
-  const sql = activeOnly
-    ? "SELECT * FROM hunts WHERE user_id = ? AND active = 1 ORDER BY created_at DESC"
-    : "SELECT * FROM hunts WHERE user_id = ? ORDER BY created_at DESC";
-  return getDb().prepare(sql).all(userId) as Hunt[];
-}
-
-export function addHunt(
-  userId: number,
-  league: string,
-  h: Omit<Hunt, "id" | "user_id" | "active" | "last_scan_at" | "last_hit_at" | "created_at">,
-): number {
-  const info = getDb()
-    .prepare(
-      `INSERT INTO hunts (user_id, league, label, mode, item_name, base_type, category, ilvl_min, rarity, stats_json, max_amount, max_ccy, target_div)
-       VALUES (@userId, @league, @label, @mode, @item_name, @base_type, @category, @ilvl_min, @rarity, @stats_json, @max_amount, @max_ccy, @target_div)`,
-    )
-    .run({ ...h, userId, league });
-  return Number(info.lastInsertRowid);
-}
-
-export function setHuntActive(userId: number, id: number, active: boolean): void {
-  getDb().prepare("UPDATE hunts SET active = ? WHERE user_id = ? AND id = ?").run(active ? 1 : 0, userId, id);
-}
-
-/** Edit a hunt's criteria in place. Only columns present in `h` are written (null = clear). */
-export function updateHunt(
-  userId: number,
-  id: number,
-  h: Partial<Omit<Hunt, "id" | "user_id" | "active" | "last_scan_at" | "last_hit_at" | "created_at">>,
-): void {
-  const cols = ["label", "mode", "item_name", "base_type", "category", "ilvl_min", "rarity", "stats_json", "max_amount", "max_ccy", "target_div"] as const;
-  const sets: string[] = [];
-  const vals: Record<string, unknown> = { id, userId };
-  for (const c of cols) {
-    if (c in h) {
-      sets.push(`${c} = @${c}`);
-      vals[c] = h[c] ?? null;
-    }
-  }
-  if (sets.length === 0) return;
-  getDb().prepare(`UPDATE hunts SET ${sets.join(", ")} WHERE user_id = @userId AND id = @id`).run(vals);
-}
-
-export function deleteHunt(userId: number, id: number): void {
-  const db = getDb();
-  db.prepare("DELETE FROM hunt_hits WHERE user_id = ? AND hunt_id = ?").run(userId, id);
-  db.prepare("DELETE FROM hunts WHERE user_id = ? AND id = ?").run(userId, id);
-}
-
-export function touchHuntScan(id: number, hadHit: boolean): void {
-  getDb()
-    .prepare(
-      `UPDATE hunts SET last_scan_at = CURRENT_TIMESTAMP${hadHit ? ", last_hit_at = CURRENT_TIMESTAMP" : ""} WHERE id = ?`,
-    )
-    .run(id);
-}
-
-export interface HuntHit {
-  id: number;
-  user_id: number;
-  hunt_id: number;
-  item_name: string;
-  base_type: string | null;
-  price_amount: number;
-  price_ccy: string;
-  price_div: number;
-  margin_pct: number | null;
-  account: string | null;
-  whisper: string | null;
-  listing_id: string | null;
-  seller_online: number | null;
-  listed_at: string | null;
-  sig: string;
-  seen: number;
-  found_at: string;
-}
-
-/** True if an identical listing was already recorded recently for this user — avoids re-alerting. */
-export function recentHitSig(userId: number, sig: string, minutes: number): boolean {
-  const row = getDb()
-    .prepare(`SELECT 1 FROM hunt_hits WHERE user_id = ? AND sig = ? AND found_at >= datetime('now', ?) LIMIT 1`)
-    .get(userId, sig, `-${minutes} minutes`);
-  return row != null;
-}
-
-/** True if this user already recorded this exact trade listing — the primary live-search dedupe. */
-export function recentHitByListing(userId: number, listingId: string): boolean {
-  if (!listingId) return false;
-  const row = getDb()
-    .prepare(`SELECT 1 FROM hunt_hits WHERE user_id = ? AND listing_id = ? LIMIT 1`)
-    .get(userId, listingId);
-  return row != null;
-}
-
-export function insertHit(userId: number, h: Omit<HuntHit, "id" | "user_id" | "seen" | "found_at">): void {
-  getDb()
-    .prepare(
-      `INSERT INTO hunt_hits (user_id, hunt_id, item_name, base_type, price_amount, price_ccy, price_div, margin_pct, account, whisper, listing_id, seller_online, listed_at, sig)
-       VALUES (@userId, @hunt_id, @item_name, @base_type, @price_amount, @price_ccy, @price_div, @margin_pct, @account, @whisper, @listing_id, @seller_online, @listed_at, @sig)`,
-    )
-    .run({ ...h, userId });
-}
-
-export function getHits(userId: number, limit = 100): HuntHit[] {
-  return getDb()
-    .prepare("SELECT * FROM hunt_hits WHERE user_id = ? ORDER BY found_at DESC LIMIT ?")
-    .all(userId, limit) as HuntHit[];
-}
-
-export function markHitsSeen(userId: number, ids: number[]): void {
-  if (ids.length === 0) return;
-  const ph = ids.map(() => "?").join(",");
-  getDb().prepare(`UPDATE hunt_hits SET seen = 1 WHERE user_id = ? AND id IN (${ph})`).run(userId, ...ids);
-}
-
-export interface HuntRuntime {
-  connections: number;
-  last_event_at: string | null;
-  last_error: string | null;
-  updated_at: string | null;
-}
-
-export function getRuntime(): HuntRuntime {
-  const row = getDb().prepare("SELECT connections, last_event_at, last_error, updated_at FROM hunt_runtime WHERE id = 1").get() as
-    | HuntRuntime
-    | undefined;
-  return row ?? { connections: 0, last_event_at: null, last_error: null, updated_at: null };
-}
-
-export function setRuntime(connections: number, lastError: string | null, bumpEvent = false): void {
-  getDb()
-    .prepare(
-      `INSERT INTO hunt_runtime (id, connections, last_error, last_event_at, updated_at)
-       VALUES (1, @connections, @lastError, ${bumpEvent ? "CURRENT_TIMESTAMP" : "NULL"}, CURRENT_TIMESTAMP)
-       ON CONFLICT(id) DO UPDATE SET
-         connections = excluded.connections,
-         last_error = excluded.last_error,
-         ${bumpEvent ? "last_event_at = CURRENT_TIMESTAMP," : ""}
-         updated_at = CURRENT_TIMESTAMP`,
-    )
-    .run({ connections, lastError });
-}
-
-// --- auto-snipe scan report (cross-process: poller writes, web UI reads) ---
-
-export function saveSnipeReport(reportJson: string): void {
-  getDb()
-    .prepare(
-      `INSERT INTO autosnipe_report (id, report_json, scanned_at) VALUES (1, ?, CURRENT_TIMESTAMP)
-       ON CONFLICT(id) DO UPDATE SET report_json = excluded.report_json, scanned_at = CURRENT_TIMESTAMP`,
-    )
-    .run(reportJson);
-}
-
-export function getSnipeReport(): { report_json: string; scanned_at: string } | null {
-  const row = getDb().prepare("SELECT report_json, scanned_at FROM autosnipe_report WHERE id = 1").get() as
-    | { report_json: string; scanned_at: string }
-    | undefined;
-  return row ?? null;
-}
-
 // --- balance snapshots (net-worth tracking) ---
 
 export type BalanceSource = "trade" | "stash" | "ocr" | "manual";
@@ -482,6 +225,10 @@ export interface BalanceSnapshot {
   source: BalanceSource;
   note: string | null;
   fetched_at: string;
+  league: string | null;
+  listed_seen: number | null; // listings trade2 returned (a trade read caps at 100)
+  listed_total: number | null; // listings trade2 says exist — > listed_seen means truncated
+  gear_at_ask_div: number | null; // part of other_div valued at the seller's own asking price
 }
 
 export interface BalanceInput {
@@ -516,68 +263,8 @@ export function insertBalance(userId: number, league: string, b: BalanceInput): 
   return getDb().prepare("SELECT * FROM balance_snapshots WHERE id = ?").get(Number(info.lastInsertRowid)) as BalanceSnapshot;
 }
 
-export function getBalances(userId: number, limit = 500): BalanceSnapshot[] {
-  return getDb()
-    .prepare("SELECT * FROM balance_snapshots WHERE user_id = ? ORDER BY fetched_at DESC LIMIT ?")
-    .all(userId, limit) as BalanceSnapshot[];
-}
-
-/** Newest snapshot at or before `agoHours` ago — for %-change baselines. */
-function balanceBefore(userId: number, agoHours: number): BalanceSnapshot | undefined {
-  return getDb()
-    .prepare(
-      `SELECT * FROM balance_snapshots WHERE user_id = ? AND fetched_at <= datetime('now', ?) ORDER BY fetched_at DESC LIMIT 1`,
-    )
-    .get(userId, `-${agoHours} hours`) as BalanceSnapshot | undefined;
-}
-
-export interface BalanceStats {
-  latest: BalanceSnapshot | null;
-  first: BalanceSnapshot | null; // earliest snapshot — all-time baseline
-  change24hPct: number | null;
-  change7dPct: number | null;
-  changeAllPct: number | null;
-  count: number;
-}
-
-function pctDelta(now: number, then: number | undefined): number | null {
-  if (then == null || !(then > 0)) return null;
-  return ((now - then) / then) * 100;
-}
-
-export function balanceStats(userId: number): BalanceStats {
-  const db = getDb();
-  const latest = db
-    .prepare("SELECT * FROM balance_snapshots WHERE user_id = ? ORDER BY fetched_at DESC LIMIT 1")
-    .get(userId) as BalanceSnapshot | undefined;
-  const first = db
-    .prepare("SELECT * FROM balance_snapshots WHERE user_id = ? ORDER BY fetched_at ASC LIMIT 1")
-    .get(userId) as BalanceSnapshot | undefined;
-  const count = (db.prepare("SELECT COUNT(*) c FROM balance_snapshots WHERE user_id = ?").get(userId) as { c: number }).c;
-  if (!latest) return { latest: null, first: null, change24hPct: null, change7dPct: null, changeAllPct: null, count: 0 };
-  const now = latest.net_worth_div;
-  return {
-    latest,
-    first: first ?? null,
-    change24hPct: pctDelta(now, balanceBefore(userId, 24)?.net_worth_div),
-    change7dPct: pctDelta(now, balanceBefore(userId, 24 * 7)?.net_worth_div),
-    changeAllPct: pctDelta(now, first?.net_worth_div),
-    count,
-  };
-}
-
 // --- per-stash-tab breakdown ---
 
-export interface TabRow {
-  tab: string;
-  divine: number;
-  exalted: number;
-  chaos: number;
-  other_div: number;
-  value_div: number;
-  items: number;
-  unpriced: number;
-}
 export interface TabInput {
   tab: string;
   divine: number;
@@ -600,39 +287,4 @@ export function insertTabs(snapshotId: number, tabs: TabInput[]): void {
     for (const r of rows) stmt.run({ ...r, snapshotId });
   });
   tx(tabs);
-}
-
-/** This user's per-tab breakdown of their most recent snapshot that has tabs, value-descending. */
-export function latestTabs(userId: number): TabRow[] {
-  const snap = getDb()
-    .prepare(
-      `SELECT bt.snapshot_id FROM balance_tabs bt
-       JOIN balance_snapshots bs ON bt.snapshot_id = bs.id
-       WHERE bs.user_id = ? ORDER BY bt.id DESC LIMIT 1`,
-    )
-    .get(userId) as { snapshot_id: number } | undefined;
-  if (!snap) return [];
-  return getDb()
-    .prepare("SELECT tab, divine, exalted, chaos, other_div, value_div, items, unpriced FROM balance_tabs WHERE snapshot_id = ? ORDER BY value_div DESC")
-    .all(snap.snapshot_id) as TabRow[];
-}
-
-export interface TabSeriesPoint {
-  tab: string;
-  fetched_at: string;
-  value_div: number;
-}
-
-/** This user's per-tab value over time (joined to snapshot timestamps) — pivot client-side for charts. */
-export function tabSeries(userId: number, limitSnapshots = 60): TabSeriesPoint[] {
-  return getDb()
-    .prepare(
-      `SELECT bt.tab, bs.fetched_at, bt.value_div
-       FROM balance_tabs bt JOIN balance_snapshots bs ON bt.snapshot_id = bs.id
-       WHERE bs.user_id = ? AND bs.id IN (
-         SELECT id FROM balance_snapshots WHERE user_id = ? ORDER BY fetched_at DESC LIMIT ?
-       )
-       ORDER BY bs.fetched_at ASC`,
-    )
-    .all(userId, userId, limitSnapshots) as TabSeriesPoint[];
 }

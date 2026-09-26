@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { tradeErrorResponse } from "../../../../lib/tradeRouteError";
 import { searchListingsLinked } from "../../../../api/tradeClient";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
@@ -42,6 +43,6 @@ export async function GET(req: Request): Promise<Response> {
       })),
     });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
+    return tradeErrorResponse(e);
   }
 }

@@ -3,9 +3,9 @@ import { config } from "../config/env";
 import { pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries";
 import { listUsers } from "../db/userQueries";
 import { credForUser } from "../auth/credForUser";
+import { POLLER_MAX_INLINE_WAIT_MS, setMaxInlineWaitMs } from "../api/tradeClient";
 import { runCycle } from "./marketCycle";
-import { scanAll } from "../core/huntEngine";
-import { scanAutoSnipes } from "../core/autoSnipe";
+import { runHuntScan, runAutoSnipe, drainScanRequests } from "./tradeScans";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
 import { refreshStalestRecipe, refreshAllRecipes } from "../core/craftMargin";
 import { RECIPES } from "../core/craftRecipes";
@@ -23,6 +23,8 @@ const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under 
 function start(): void {
   const expr = `*/${config.pollIntervalMin} * * * *`;
   console.log(`poller starting — cron "${expr}", leagues "${getPolledLeagues().join(", ")}"`);
+  // background scans may sit out the shared trade2 pace inline; web requests fail fast instead
+  setMaxInlineWaitMs(POLLER_MAX_INLINE_WAIT_MS);
   startPatchNotesWatcher();
   startLeagueWatcher();
 
@@ -59,16 +61,11 @@ function start(): void {
   // is still draining through the rate limiter, so many hunts degrade gracefully to slower laps.
   if (config.hunt.enabled) {
     console.log(`[hunt] per-user scan every ${config.hunt.scanSec}s`);
-    let scanning = false;
-    setInterval(() => {
-      if (scanning) return; // previous cycle still queued behind the trade2 limiter
-      scanning = true;
-      scanAll()
-        .then((s) => { if (s.hits > 0) console.log(`[hunt] scan: ${s.hits} new across ${s.scanned} hunt(s)`); })
-        .catch((e) => console.error("[hunt] scan failed:", e instanceof Error ? e.message : e))
-        .finally(() => { scanning = false; });
-    }, config.hunt.scanSec * 1000);
+    // runHuntScan skips the tick while the previous cycle is still queued behind the limiter
+    setInterval(() => runHuntScan("scan"), config.hunt.scanSec * 1000);
   }
+  // Manual scans from the web are queued in the DB and run HERE, on this process's limiter.
+  setInterval(() => drainScanRequests(() => credForUser({ id: OWNER_ID, role: "owner" })), 20_000);
 
   // Autonomous rare-snipe scanner — OFF unless AUTOSNIPE_ENABLED=true. Rotates the built-in
   // valuable archetypes, values each from its own search, alerts EVERY user on underpriced
@@ -76,42 +73,44 @@ function start(): void {
   // the per-IP rate budget by the user count for the same public listings).
   if (config.autoSnipe.enabled && ownerCred) {
     const asExpr = `*/${config.autoSnipe.intervalMin} * * * *`;
-    console.log(`[autosnipe] scanning ${SNIPE_PROFILES.length} archetypes every ${config.autoSnipe.intervalMin}m`);
-    cron.schedule(asExpr, () => {
-      scanAutoSnipes(ownerCred)
-        .then((r) => {
-          if (r.findings.length > 0) console.log(`[autosnipe] ${r.findings.length} snipe(s) across ${r.searched} archetypes`);
-          if (r.errors.length > 0) console.warn(`[autosnipe] ${r.errors.length} archetype error(s):`, r.errors.map((e) => `${e.profile}: ${e.error}`).join("; "));
-        })
-        .catch((e) => console.error("[autosnipe] scan failed:", e instanceof Error ? e.message : e));
-    });
+    console.log(`[autosnipe] ${config.autoSnipe.archetypesPerScan}/${SNIPE_PROFILES.length} archetypes per scan every ${config.autoSnipe.intervalMin}m`);
+    cron.schedule(asExpr, () => runAutoSnipe("cron", ownerCred));
   } else if (config.autoSnipe.enabled) {
     console.warn("[autosnipe] AUTOSNIPE_ENABLED=true but owner POESESSID missing — scanner stays off");
   }
 
   // Craft-margin engine — ranks curated recipes by live EV/attempt. Shared market scan under the
-  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so 2 searches + 2 fetches is
+  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so ≤2 searches + 8 fetches is
   // the whole per-tick cost through the shared trade2 limiter.
   if (config.craftMargin.enabled && ownerCred) {
     const cmExpr = `*/${config.craftMargin.intervalMin} * * * *`;
     console.log(`[craft-margin] refreshing 1/${RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
+    // One craft scan at a time: the tick skips while a manual sweep runs, and a queued manual
+    // sweep waits for the tick (its flag stays set until consumed), so no recipe is scanned twice.
+    let craftRefreshing = false;
     cron.schedule(cmExpr, () => {
+      if (craftRefreshing) return;
+      craftRefreshing = true;
       refreshStalestRecipe(ownerCred)
         .then((r) => {
-          if (r) console.log(`[craft-margin] ${r.key}: ${r.status} · EV ${r.evDiv.toFixed(1)} div · ${r.marginPct.toFixed(0)}%`);
+          if (!r) return;
+          if (r.kept) console.warn(`[craft-margin] ${r.key}: transient failure, kept previous report — ${r.error}`);
+          else console.log(`[craft-margin] ${r.key}: ${r.report.status} · EV ${r.report.evDiv.toFixed(1)} div · ${r.report.marginPct.toFixed(0)}%`);
         })
-        .catch((e) => console.error("[craft-margin] refresh failed:", e instanceof Error ? e.message : e));
+        .catch((e) => console.error("[craft-margin] refresh failed:", e instanceof Error ? e.message : e))
+        .finally(() => {
+          craftRefreshing = false;
+        });
     });
 
     // Manual "refresh all" from the web POST is a flag, not an inline call — the web process shares
     // this account+IP's rate budget, so we consume the flag here and run the sweep on THIS limiter.
-    let craftRefreshing = false;
     setInterval(() => {
       if (craftRefreshing || !consumeCraftRefresh()) return;
       craftRefreshing = true;
       console.log("[craft-margin] manual refresh dequeued — refreshing all recipes");
       refreshAllRecipes(ownerCred)
-        .then((rs) => console.log(`[craft-margin] manual refresh done — ${rs.length} recipe(s)`))
+        .then((rs) => console.log(`[craft-margin] manual refresh done — ${rs.length} recipe(s), ${rs.filter((r) => r.kept).length} kept previous after a transient failure`))
         .catch((e) => console.error("[craft-margin] manual refresh failed:", e instanceof Error ? e.message : e))
         .finally(() => {
           craftRefreshing = false;

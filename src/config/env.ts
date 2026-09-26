@@ -11,7 +11,24 @@ function num(key: string, fallback: number): number {
   const v = process.env[key];
   if (v == null || v === "") return fallback;
   const n = Number(v);
-  if (!Number.isFinite(n)) throw new Error(`env ${key} not a number: "${v}"`);
+  if (!Number.isFinite(n)) throw new Error(`Invalid configuration: ${key}="${v}" is not a number (default ${fallback}).`);
+  return n;
+}
+
+/**
+ * A number that must be > 0 (and ≤ `max` when given). Gate thresholds and budgets fail at BOOT
+ * when misconfigured: a 0 ask floor or 0 sample minimum silently reopens the bait-alert hole.
+ */
+export function pos(key: string, fallback: number, max = Infinity): number {
+  const n = num(key, fallback);
+  if (!(n > 0) || n > max) {
+    const range = Number.isFinite(max) ? `a number in (0, ${max}]` : "a number > 0";
+    // one line that names the key, the bad value and the fix — it lands in journalctl at boot
+    throw new Error(
+      `Invalid configuration: ${key}=${process.env[key] ?? "(unset)"} — must be ${range} (default ${fallback}). ` +
+        `Fix or remove ${key} in .env.local / the service environment and restart.`,
+    );
+  }
   return n;
 }
 
@@ -44,10 +61,12 @@ export const config = {
     // Background poll-diff scan: ON by default — a hunt that only fires when you press a button
     // isn't a hunt. Per-user creds; users without a stored POESESSID are simply skipped.
     enabled: (process.env.HUNT_ENABLED ?? "true").toLowerCase() === "true",
-    // Near-live cadence. trade2 sustained search budget = 1/10s (30 per 300s) per account+IP;
-    // the limiter's request floor spaces a big hunt list out naturally, and the poller skips a
-    // tick while the previous cycle is still draining, so we can't blow the budget.
-    scanSec: num("HUNT_SCAN_SEC", 30),
+    // Lap cadence. The binding limit is GGG's 600 searches per 6h per IP (≈1 per 36s), shared by
+    // hunts, autosnipe and craft margins; the trade2 governor paces every search to it and the
+    // poller skips a tick while the previous lap is still draining. Budget reality: ONE hunt at a
+    // 60s cadence plus autosnipe already saturates it, and each extra active hunt adds ~40s per
+    // lap — so N hunts means each is re-checked roughly every N×40s, not every scanSec.
+    scanSec: pos("HUNT_SCAN_SEC", 60),
     perScan: num("HUNT_PER_SCAN", 10), // listings fetched per hunt per scan (≤10 = one fetch call)
     minRequestMs: num("HUNT_MIN_REQUEST_MS", 6000), // floor between trade2 requests (rate-limit guard)
     freshMinutes: num("HUNT_FRESH_MIN", 120), // a listing older than this is stale bait, not a hit
@@ -63,11 +82,19 @@ export const config = {
     maxResponseBytes: num("PATCH_NOTES_MAX_BYTES", 2_000_000),
   },
   retentionDays: num("RETENTION_DAYS", 30), // price_snapshots older than this are pruned each poll
-  // snipe finder: a listing is a snipe if priced this far below the price-book median, with
-  // at least this many observed samples (volume confidence). Tune with real data.
+  // The ONE gate every SNIPE alert passes (hunt price-book verdict AND autosnipe). Before it
+  // existed, 84/109 production SNIPE alerts were "0 vs ~N Div" bait: 0/1-ex asks, zero-mod
+  // signatures, week-old listings and tiny reference samples all fired.
+  snipeGate: {
+    minAskDiv: pos("SNIPE_MIN_ASK_DIV", 0.02), // absolute ask floor — below this is a price-fixer / fat-finger
+    minAskFracOfValue: pos("SNIPE_MIN_ASK_FRAC", 0.05, 1), // ask < 5% of value is bait, not a 95%-off deal
+    minResolvedMods: pos("SNIPE_MIN_RESOLVED_MODS", 2), // a signature needs ≥2 resolved mods to mean anything
+    freshMinutes: pos("SNIPE_FRESH_MIN", 120), // older listings survived everyone else's snipe tools → stale bait
+    minSamples: pos("SNIPE_MIN_SAMPLES", 5), // reference must stand on at least this many comparables
+  },
+  // snipe finder: a listing is a snipe if priced this far below the price-book reference.
   snipe: {
-    minSamples: num("SNIPE_MIN_SAMPLES", 5),
-    discountPct: num("SNIPE_DISCOUNT_PCT", 40), // ask ≤ median × (1 - 40%) → snipe
+    discountPct: pos("SNIPE_DISCOUNT_PCT", 40, 100), // ask ≤ reference × (1 - 40%) → snipe
     obsRetentionDays: num("SNIPE_OBS_RETENTION_DAYS", 21), // price-book observations older than this are pruned
     // medium-volume sweet spot for auto-picked snipe targets (high vol = bots, low vol = can't resell)
     minListings: num("SNIPE_MIN_LISTINGS", 8),
@@ -81,10 +108,9 @@ export const config = {
   valuation: {
     relaxPct: num("VAL_RELAX_PCT", 12), // widen each stat's min down this % so near rolls still match
     ilvlSlack: num("VAL_ILVL_SLACK", 4), // comparables within this many ilvl below the item
-    topN: num("VAL_TOP_N", 10), // value = median of the cheapest N online comparables
-    minSamples: num("VAL_MIN_SAMPLES", 4), // fewer comparables than this → don't trust / don't fire snipe
+    topN: num("VAL_TOP_N", 10), // comparables fetched per valuation search (trimmed median of these)
     minComparables: num("VAL_MIN_COMPARABLES", 5), // below this the per-item search relaxes to pseudos-only
-    discountPct: num("VAL_DISCOUNT_PCT", 35), // listing ≤ value × (1 - 35%) → snipe
+    discountPct: pos("VAL_DISCOUNT_PCT", 35, 100), // listing ≤ value × (1 - 35%) → snipe
     minValueDiv: num("VAL_MIN_VALUE_DIV", 1), // don't alert snipes on items worth less than this (junk)
   },
 
@@ -96,11 +122,17 @@ export const config = {
     // continuously. Runs under the owner's cred; stays off if none is stored.
     enabled: (process.env.AUTOSNIPE_ENABLED ?? "true").toLowerCase() === "true",
     intervalMin: num("AUTOSNIPE_INTERVAL_MIN", 10), // cadence; paced further by the trade2 limiter
-    fetchPerArchetype: num("AUTOSNIPE_FETCH", 20), // listings pulled per archetype to record + screen
-    candidatesPerArchetype: num("AUTOSNIPE_CANDIDATES", 3), // cheapest real listings considered per archetype
-    maxValuations: num("AUTOSNIPE_MAX_VALUATIONS", 6), // per-item comparable searches spent per scan (rate guard)
-    minCandidateDiv: num("AUTOSNIPE_MIN_CANDIDATE_DIV", 0), // NO price floor — a god-roll dumped at 1ex must qualify
+    fetchPerArchetype: num("AUTOSNIPE_FETCH", 20), // newest listings pulled per archetype to record + screen
+    candidatesPerArchetype: num("AUTOSNIPE_CANDIDATES", 3), // most desirable listings considered per archetype
+    maxValuations: pos("AUTOSNIPE_MAX_VALUATIONS", 2), // per-item valuations per scan (≤2 searches each)
+    // Price floor for candidates (the design note's 2 Div). The old 0 default let 1-ex bait win
+    // the ranking and burn the whole valuation budget every scan.
+    minCandidateDiv: num("AUTOSNIPE_MIN_CANDIDATE_DIV", 2),
     minCandidateScore: num("AUTOSNIPE_MIN_SCORE", 1), // skip listings whose mods don't resolve to anything valuable
+    // Search-budget share. GGG allows 600 searches per 6h per IP (≈100/h) across EVERY consumer;
+    // 6 searches per 10-min scan = 36/h for autosnipe, leaving ~60/h for hunts + craft margins.
+    archetypesPerScan: pos("AUTOSNIPE_ARCHETYPES_PER_SCAN", 2),
+    maxSearchesPerScan: pos("AUTOSNIPE_MAX_SEARCHES", 6),
   },
 
   // craft-margin engine: rank curated craft recipes by live EV per attempt
@@ -143,6 +175,7 @@ export const config = {
   sellChaosBonus: num("SELL_CHAOS_BONUS", 1.08),
   minVolume: num("MIN_VOLUME", 50), // below this = illiquid (orders won't fill fast)
   alertCooldownMin: num("ALERT_COOLDOWN_MIN", 60), // same item+type alerts at most once per this window
+  desktopNotify: (process.env.DESKTOP_NOTIFY ?? "true").toLowerCase() !== "false", // OS toast per alert (tests turn it off)
   manualStaleHours: num("MANUAL_STALE_HOURS", 6), // real Ange prices expire (→ estimate) after this many hours
   thresholds: {
     spreadPct: num("ALERT_SPREAD_PCT", 15),

@@ -20,6 +20,11 @@ export interface TradeQuery {
   name?: string; // unique name, e.g. "Headhunter"
   type?: string; // base type, e.g. "Leather Belt"
   online?: boolean; // default true — only listings whose seller is online
+  // Instant Buyout only (trade2 status "securable", per /api/trade2/data/filters). Wins over
+  // `online`: Merchant listings are buyable while the seller is offline, and price-fixer bait
+  // lives mostly in whisper-only listings.
+  instantBuyout?: boolean;
+  mirrored?: boolean; // restrict mirrored state; omit = either
   buyout?: boolean; // default true — only listings with a fixed buyout price (skip negotiate/unpriced)
   rarity?: Rarity; // restrict item rarity (rare for crafted gear, normal for cheap bases)
   category?: string; // trade2 category, e.g. "armour.gloves" | "weapon.wand" — a whole gear slot
@@ -31,12 +36,13 @@ export interface TradeQuery {
   esMin?: number; // minimum energy shield — selects ES-base armour (caster gear)
   evMin?: number; // minimum evasion rating — selects EV-base armour (attack gear)
   stats?: StatFilter[]; // explicit/implicit mod thresholds (AND-combined)
+  account?: string; // restrict to one seller account (own-stash reads)
 }
 
 /** The inner `query` object — shared by the deep-link URL and the live POST search. */
 export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
   const query: Record<string, unknown> = {
-    status: { option: q.online === false ? "any" : "online" },
+    status: { option: q.instantBuyout ? "securable" : q.online === false ? "any" : "online" },
   };
   if (q.name) query.name = q.name;
   if (q.type) query.type = q.type;
@@ -47,9 +53,10 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
   if (q.category) typeFilters.category = { option: q.category };
   if (q.ilvlMin && q.ilvlMin > 0) typeFilters.ilvl = { min: q.ilvlMin };
   if (Object.keys(typeFilters).length > 0) filters.type_filters = { filters: typeFilters };
-  if (q.corrupted != null) {
-    filters.misc_filters = { filters: { corrupted: { option: String(q.corrupted) } } };
-  }
+  const miscFilters: Record<string, unknown> = {};
+  if (q.corrupted != null) miscFilters.corrupted = { option: String(q.corrupted) };
+  if (q.mirrored != null) miscFilters.mirrored = { option: String(q.mirrored) };
+  if (Object.keys(miscFilters).length > 0) filters.misc_filters = { filters: miscFilters };
   // equipment floors — a finished bow is valued by pdps; armour base pools are selected by their
   // defence type (es = caster bases, ev = attack bases)
   const equipFilters: Record<string, unknown> = {};
@@ -65,6 +72,7 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
     tradeFilters.price = { max: q.maxPrice.amount, option: q.maxPrice.currency };
   }
   if (q.indexedWindow) tradeFilters.indexed = { option: q.indexedWindow };
+  if (q.account) tradeFilters.account = { input: q.account };
   if (Object.keys(tradeFilters).length > 0) filters.trade_filters = { filters: tradeFilters };
   if (Object.keys(filters).length > 0) query.filters = filters;
 
@@ -84,6 +92,14 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
       ]
     : [];
   return query;
+}
+
+/**
+ * Trade-site page for a search id returned by a POST search. The site ignores `?q=` payloads for
+ * saved searches, so an id-based URL is the only deep link that reopens the exact query.
+ */
+export function tradeSearchPageUrl(league: string, searchId: string): string {
+  return `${TRADE2_SEARCH}/${encodeURIComponent(league)}/${searchId}`;
 }
 
 /** Build a prefilled, price-ascending live search URL for the given league. */

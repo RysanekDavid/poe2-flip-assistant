@@ -1,11 +1,26 @@
 import { NextResponse } from "next/server";
-import { getHuntsForUser, addHunt, updateHunt, deleteHunt, setHuntActive, type HuntMode } from "../../../db/queries";
+import { z } from "zod";
+import { getHuntsForUser, addHunt, updateHunt, deleteHunt, setHuntActive } from "../../../db/huntQueries";
 import { getCurrentUser } from "../../../auth/session";
 import { getCallerCred } from "../../../auth/tradeCred";
 import { getDefaultLeague } from "../../../core/leagueState";
+import { parseHuntBody } from "../../../lib/huntSchema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const IdBody = z.object({ id: z.number().int().positive() }).passthrough();
+const ToggleBody = z.object({ id: z.number().int().positive(), active: z.boolean() });
+
+async function readJson(req: Request): Promise<unknown> {
+  try {
+    return await req.json();
+  } catch {
+    return null; // not JSON → the schema below rejects it with a 400
+  }
+}
+
+const bad = (error: string): Response => NextResponse.json({ error }, { status: 400 });
 
 /** GET /api/hunts → this user's saved hunts + whether live search is configured. */
 export async function GET(): Promise<Response> {
@@ -15,59 +30,34 @@ export async function GET(): Promise<Response> {
   return NextResponse.json({ hunts: getHuntsForUser(user.id, false), liveEnabled: cred != null });
 }
 
-/** POST /api/hunts → create a hunt. */
+/** POST /api/hunts → create a hunt (zod-validated; a malformed hunt is rejected, not stored). */
 export async function POST(req: Request): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const b = await req.json();
-  if (!b?.label) {
-    return NextResponse.json({ error: "label required" }, { status: 400 });
-  }
+  const parsed = parseHuntBody(await readJson(req));
+  if (!parsed.ok) return bad(parsed.error);
   // Hunts are scanned by the poller against the app default league (one shared trade2 budget),
   // so that is the market a hunt belongs to regardless of what its author is currently viewing.
-  const id = addHunt(user.id, getDefaultLeague(), {
-    label: String(b.label),
-    mode: (b.mode as HuntMode) ?? "SNIPE",
-    item_name: b.itemName ?? null,
-    base_type: b.baseType ?? null,
-    category: b.category ?? null,
-    ilvl_min: b.ilvlMin != null ? Number(b.ilvlMin) : null,
-    rarity: b.rarity ?? null,
-    stats_json: b.stats ? JSON.stringify(b.stats) : null,
-    max_amount: b.maxAmount != null ? Number(b.maxAmount) : null,
-    max_ccy: b.maxCcy ?? null,
-    target_div: b.targetDiv != null ? Number(b.targetDiv) : null,
-  });
+  const id = addHunt(user.id, getDefaultLeague(), parsed.fields);
   return NextResponse.json({ id });
 }
 
-/** PATCH /api/hunts → toggle active (active-only body), or edit criteria (label present). */
+/** PATCH /api/hunts → toggle active ({id, active}), or edit criteria (full body with a label). */
 export async function PATCH(req: Request): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const b = await req.json();
-  if (b?.id == null) return NextResponse.json({ error: "id required" }, { status: 400 });
+  const body = await readJson(req);
+  const idParsed = IdBody.safeParse(body);
+  if (!idParsed.success) return bad("id: required positive integer");
 
-  // full-field edit when a label is supplied; otherwise it's the active toggle
-  if (b.label != null) {
-    updateHunt(user.id, Number(b.id), {
-      label: String(b.label),
-      mode: (b.mode as HuntMode) ?? "SNIPE",
-      item_name: b.itemName ?? null,
-      base_type: b.baseType ?? null,
-      category: b.category ?? null,
-      ilvl_min: b.ilvlMin != null ? Number(b.ilvlMin) : null,
-      rarity: b.rarity ?? null,
-      stats_json: b.stats ? JSON.stringify(b.stats) : null,
-      max_amount: b.maxAmount != null ? Number(b.maxAmount) : null,
-      max_ccy: b.maxCcy ?? null,
-      target_div: b.targetDiv != null ? Number(b.targetDiv) : null,
-    });
+  const toggle = ToggleBody.safeParse(body);
+  if (toggle.success) {
+    setHuntActive(user.id, toggle.data.id, toggle.data.active);
     return NextResponse.json({ ok: true });
   }
-
-  if (b.active == null) return NextResponse.json({ error: "active or label required" }, { status: 400 });
-  setHuntActive(user.id, Number(b.id), Boolean(b.active));
+  const parsed = parseHuntBody(body);
+  if (!parsed.ok) return bad(parsed.error);
+  updateHunt(user.id, idParsed.data.id, parsed.fields);
   return NextResponse.json({ ok: true });
 }
 
@@ -75,8 +65,8 @@ export async function PATCH(req: Request): Promise<Response> {
 export async function DELETE(req: Request): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const b = await req.json();
-  if (b?.id == null) return NextResponse.json({ error: "id required" }, { status: 400 });
-  deleteHunt(user.id, Number(b.id));
+  const parsed = IdBody.safeParse(await readJson(req));
+  if (!parsed.success) return bad("id: required positive integer");
+  deleteHunt(user.id, parsed.data.id);
   return NextResponse.json({ ok: true });
 }

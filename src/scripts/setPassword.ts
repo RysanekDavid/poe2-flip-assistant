@@ -3,21 +3,21 @@ import { getUserByName, setPassword } from "../db/userQueries";
 
 /**
  * Reset a user's password (e.g. owner missed the temp password on first run).
+ * Also revokes every existing session of that user.
  *   npx tsx src/scripts/setPassword.ts <name> <newPassword>
  */
-function main(): void {
+async function main(): Promise<void> {
   const [name, password] = process.argv.slice(2);
   if (!name || !password) {
-    console.error("usage: tsx src/scripts/setPassword.ts <name> <newPassword>");
-    process.exit(1);
+    throw new Error("usage: tsx src/scripts/setPassword.ts <name> <newPassword>");
   }
   const u = getUserByName(name);
-  if (!u) {
-    console.error(`no user named "${name}"`);
-    process.exit(1);
-  }
-  setPassword(u.id, password);
-  console.log(`password updated for #${u.id} "${u.name}"`);
+  if (!u) throw new Error(`no user named "${name}"`);
+  await setPassword(u.id, password);
+  console.log(`password updated for #${u.id} "${u.name}" (all sessions revoked)`);
 }
 
-main();
+main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+});

@@ -115,6 +115,10 @@ function Citation({ id, sources }: { id: string; sources: CoachSource[] }) {
     <a
       href={`#coach-source-${id}`}
       title={source?.title ?? id}
+      // Evidence is collapsed by default; open this message's panel so the jump has a target.
+      onClick={(event) => {
+        event.currentTarget.closest("article")?.querySelector("details")?.setAttribute("open", "");
+      }}
       className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-amber-500/35 bg-amber-950/35 px-1.5 align-middle text-[10px] font-semibold leading-none text-amber-300 hover:border-amber-400/60 hover:text-amber-100"
     >
       {index >= 0 ? index + 1 : "?"}

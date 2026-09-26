@@ -47,8 +47,8 @@ class ChatRequest(BaseModel):
     message: MessageText
     thread_id: UUID4
     history: list[HistoryMessage] = Field(default_factory=list, max_length=14)
-    # Sent by the Next.js proxy, which owns the runtime league switch. Absent = fall back to
-    # the service setting; this service never mutates its own configured league.
+    # The ASKING user's league, sent by the Next.js proxy. Absent (direct callers only) = the web
+    # app's default-league chain, resolved read-only in src/league.py.
     league: LeagueName | None = None
 
     @model_validator(mode="after")
@@ -71,6 +71,16 @@ class EvidenceSource(BaseModel):
     url: HttpUrl | None = None
 
 
+class TurnUsage(BaseModel):
+    """Cost and latency of one completed turn; carries no conversation content."""
+
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    total_tokens: int = Field(ge=0)
+    model_calls: int = Field(ge=0)
+    duration_ms: int = Field(ge=0)
+
+
 class ChatResponse(BaseModel):
     """A completed agent response with traceable tool evidence."""
 
@@ -80,6 +90,7 @@ class ChatResponse(BaseModel):
     tools_used: list[str]
     processors_used: list[str]
     sources: list[EvidenceSource]
+    usage: TurnUsage
 
 
 class CoachErrorDetail(BaseModel):
@@ -113,10 +124,17 @@ class HealthResponse(BaseModel):
     """Readiness state that never calls an LLM or external API."""
 
     status: Literal["ok", "degraded"]
+    # market_schema_ready AND market_fresh; kept for older consumers.
     market_ready: bool
+    # Database present with the expected tables/index: false is a configuration defect.
+    market_schema_ready: bool
+    # A poll cycle succeeded in the last 30 minutes: false is an operational condition.
+    market_fresh: bool
     knowledge_ready: bool
     item_data_ready: bool
     model_configured: bool
+    # The agent graph (model client, strict tool schemas) builds; no model call is made.
+    agent_ready: bool
     web_search_ready: bool
     model: str
     patch_monitor_ready: bool

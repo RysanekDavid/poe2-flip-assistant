@@ -1,12 +1,13 @@
 /* Synthetic-data test of the redesigned auto-snipe pure logic (no network/DB). */
-import { trimmedMedian, pickCandidates, desirability } from "../core/autoSnipe";
-import { bucketCode, rollSignature } from "../core/priceBook";
+import { pickCandidates, desirability } from "../core/autoSnipeCandidates";
+import { bucketCode, referenceValue, rollSignature } from "../core/priceBook";
 import { buildPlan } from "../core/comparableValuation";
 import { profileToQuery, SNIPE_PROFILES } from "../core/snipeProfiles";
 import { buildStatIndex, type ResolvedStat } from "../core/statResolver";
 import { parseItem } from "../core/itemParser";
+import { buildTradeQuery } from "../lib/tradeLink";
 import type { StatOption } from "../api/tradeMeta";
-import type { Listing } from "../api/tradeClient";
+import type { Listing, ListingMod } from "../api/tradeListing";
 import type { ScoutRates } from "../api/scoutClient";
 
 let fail = 0;
@@ -21,19 +22,26 @@ const mk = (div: number, online = true): Listing => ({
   price: { amount: div, currency: "divine" },
   account: "seller",
   online,
-  indexed: null,
+  instantBuyout: false,
+  indexed: new Date().toISOString(),
   whisper: "@x",
   itemName: "Rare Gloves",
   baseType: "Vaal Gauntlets",
+  rarity: "Rare",
+  itemLevel: 82,
+  corrupted: false,
+  mirrored: false,
   icon: null,
   stackSize: 0,
   mods: [],
+  modLines: [],
+  unreadableMods: 0,
   stash: null,
 });
 
-// --- trimmedMedian: drops the cheapest quartile (junk + snipes) before the median ---
-ok("trimmedMedian([3,9,10,11,12]) = 10.5", trimmedMedian([3, 9, 10, 11, 12]) === 10.5, String(trimmedMedian([3, 9, 10, 11, 12])));
-ok("trimmedMedian([]) = 0", trimmedMedian([]) === 0);
+// --- referenceValue: bait under 30% of the rest is trimmed before the median ---
+ok("referenceValue([3,9,10,11,12]) = 10.5 (3 is bait)", referenceValue([3, 9, 10, 11, 12]).valueDiv === 10.5, String(referenceValue([3, 9, 10, 11, 12]).valueDiv));
+ok("referenceValue([]) = null", referenceValue([]).valueDiv === null);
 
 // --- bucketCode: near rolls share a code, far rolls don't (the god-roll/junk separation) ---
 ok("bucketCode(0) presence-only", bucketCode(0) === "p");
@@ -59,19 +67,35 @@ const ds = (groups: string[]): number =>
 ok("desirability pseudo=1, explicit=2", ds(["pseudo", "explicit", "explicit"]) === 5, String(ds(["pseudo", "explicit", "explicit"])));
 ok("desirability empty = 0", ds([]) === 0);
 
-// --- pickCandidates: best mods-per-Divine, NO price floor (1ex god-roll qualifies), whale tier + junk excluded ---
-const idxMs = buildStatIndex([{ id: "explicit.ms", text: "#% increased Movement Speed", group: "explicit" }]);
+// --- pickCandidates: price FLOOR (design: 2 Div), desirability-ranked, whale tier + junk excluded ---
+const idxMs = buildStatIndex([
+  { id: "explicit.ms", text: "#% increased Movement Speed", group: "explicit" },
+  { id: "explicit.as", text: "#% increased Attack Speed", group: "explicit" },
+]);
 const gloves = SNIPE_PROFILES.find((p) => p.key === "gloves_melee_levels")!;
-const withMs = (div: number, online = true): Listing => ({ ...mk(div, online), listingId: `M${div}-${online}`, mods: ["35% increased Movement Speed"] });
-// 1,3,5,8 score 2 (resolve MS); 250 above maxTargetDiv 200 → skip; 0.5 offline → skip
+const MS_AS: ListingMod[] = [
+  { text: "35% increased Movement Speed", marker: "explicit", statId: null },
+  { text: "12% increased Attack Speed", marker: "explicit", statId: null },
+];
+const withMs = (div: number, online = true): Listing => ({
+  ...mk(div, online),
+  listingId: `M${div}-${online}`,
+  modLines: MS_AS,
+  mods: MS_AS.map((m) => m.text),
+});
+// all score 4 (two distinctive mods); 1 under the 2-Div floor → skip; 250 above maxTargetDiv 200 →
+// skip; 0.5 offline in-person → not buyable. The old test asserted the 1-ex listing came FIRST —
+// exactly the ranking that burned every valuation on bait.
 const lst = [withMs(1), withMs(3), withMs(5), withMs(8), withMs(250), withMs(0.5, false)];
 const pc = pickCandidates(gloves, lst, rates, idxMs);
 ok("3 candidates picked", pc.candidates.length === 3, String(pc.candidates.length));
-ok("cheapest-per-score first incl. the 1ex (no price floor) → 1,3,5", pc.candidates.map((c) => c.div).join(",") === "1,3,5", pc.candidates.map((c) => c.div).join(","));
+ok("price floor excludes the 1-Div listing; equal score → cheaper first → 3,5,8", pc.candidates.map((c) => c.div).join(",") === "3,5,8", pc.candidates.map((c) => c.div).join(","));
 ok("whale tier (>200) excluded", !pc.candidates.some((c) => c.div > 200));
-ok("observations cover all priced+online listings (5)", pc.observations.length === 5, String(pc.observations.length));
-// floor = trimmedMedian of priced divs [1,3,5,8,250] → drop cheapest 25% (1 item) → [3,5,8,250] median 6.5
+ok("observations cover all priced+buyable listings (5)", pc.observations.length === 5, String(pc.observations.length));
+// floor = referenceValue of [1,3,5,8,250] → 1 < 30% of median(3,5,8,250)=6.5 → dropped → median 6.5
 ok("floorDiv = 6.5 (diagnostic)", pc.floorDiv === 6.5, String(pc.floorDiv));
+const oneMod = pickCandidates(gloves, [{ ...withMs(5), modLines: MS_AS.slice(0, 1), mods: [MS_AS[0]!.text] }], rates, idxMs);
+ok("single resolved mod → not a candidate", oneMod.candidates.length === 0);
 
 // a listing whose mods don't resolve (score 0) is NOT a candidate
 const junk = pickCandidates(gloves, [{ ...mk(1), mods: [] }], rates, idxMs);
@@ -125,6 +149,8 @@ const gq = profileToQuery(gloves, buildStatIndex(CATALOG));
 ok("gloves category set", gq.query.category === "armour.gloves", gq.query.category);
 ok("gloves rarity rare", gq.query.rarity === "rare");
 ok("gloves resolved its stats", gq.resolved >= 1, String(gq.resolved));
+const gBody = buildTradeQuery(gq.query) as { status: { option: string }; filters: { trade_filters: { filters: { indexed?: { option: string } } } } };
+ok("archetype search = instant buyout, 1-day window", gBody.status.option === "securable" && gBody.filters.trade_filters.filters.indexed?.option === "1day");
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
 process.exit(fail === 0 ? 0 : 1);

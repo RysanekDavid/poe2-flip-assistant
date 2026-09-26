@@ -14,6 +14,7 @@ export interface Alert {
   link: string | null;
   seen: number;
   created_at: string;
+  foreign_league: string | null; // set when the alert belongs to a league other than the one viewed
 }
 
 const LS_KEY = "lastAlertNotifiedId";

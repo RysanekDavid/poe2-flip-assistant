@@ -1,39 +1,48 @@
 import { fetchTradeMeta } from "../api/tradeMeta";
-import type { ScoutRates } from "../api/scoutClient";
-import { searchListingsLinked, type Listing, type TradeCred } from "../api/tradeClient";
+import { searchListingsLinked, type TradeCred } from "../api/tradeClient";
+import { isBuyable, type Listing } from "../api/tradeListing";
 import { config } from "../config/env";
 import { buildStatIndex, resolveLine, type ResolvedStat, type StatIndex } from "./statResolver";
 import { applyPseudos, isPseudoSource } from "./pseudoRules";
-import { rollSignature } from "./priceBook";
-import { toDivine } from "./huntEngine";
+import { referenceValue, rollSignature } from "./priceBook";
+import { ratedDiv, type DivRates } from "./listingPrice";
 import { parseItem, placeholder, extractNumbers, type ParsedItem, type ParsedModLine } from "./itemParser";
 import type { TradeQuery, StatFilter } from "../lib/tradeLink";
 
 /**
- * Turn a pasted rare item into a relaxed comparable-search query, then value it from the
- * listings that search returns. This is the EE2 method end-to-end: resolve mods → pseudo-group
- * → keep the searchable mods → widen each roll's min a few % → median of the cheapest online
- * comparables = fair value. A live listing far under that value is a snipe.
+ * Turn a rare item into a relaxed comparable-search query, then value it from the listings that
+ * search returns. This is the EE2 method end-to-end: resolve mods → pseudo-group → keep the
+ * searchable mods → widen each roll's min a few % → trimmed median of instant-buyout comparables
+ * = fair value. A live listing far under that value is a snipe (decided by snipeGate).
  */
 export interface ValuationPlan {
   item: ParsedItem;
   searchStats: ResolvedStat[]; // the stats we actually searched on
-  signature: string; // base + sorted stat refs (rolls excluded) — the price-book key
+  resolvedCount: number; // item mod lines that resolved to a trade stat (the gate's mod count)
+  signature: string; // roll-aware price-book key (priceBook.rollSignature)
   query: TradeQuery;
 }
 
 export interface Valuation {
-  valueDiv: number; // median of top-N cheapest comparables, in Divine
-  p25Div: number; // cheaper quartile — the realistic "snap it up" price
-  minDiv: number; // cheapest comparable
+  valueDiv: number | null; // trimmed median of comparables (candidate excluded), null = none usable
+  minDiv: number | null; // cheapest surviving comparable
   samples: number; // comparables behind the estimate (confidence)
+  dropped: number; // cheap outliers (bait) trimmed away
+  unrated: number; // comparables priced in currencies outside the rates ladder (not counted)
   total: number; // total live listings the search reported
 }
 
-export interface SnipeCheck {
-  isSnipe: boolean;
-  marginPct: number; // how far under value the listing sits
-  reason: string;
+/** Keep only the stats worth searching on: pseudo totals + distinctive explicits (see buildPlan). */
+function selectSearchStats(resolved: ResolvedStat[], idx: StatIndex, pseudosOnly: boolean): ResolvedStat[] {
+  const pseudos = applyPseudos(resolved, idx);
+  const distinctive = pseudosOnly ? [] : resolved.filter((r) => r.group !== "explicit" || !isPseudoSource(r.ref));
+  // de-dupe by trade id (a mod and its pseudo can collide); keep the higher roll
+  const byId = new Map<string, ResolvedStat>();
+  for (const s of [...pseudos, ...distinctive]) {
+    const prev = byId.get(s.id);
+    if (!prev || s.value > prev.value) byId.set(s.id, s);
+  }
+  return [...byId.values()];
 }
 
 /**
@@ -43,13 +52,12 @@ export interface SnipeCheck {
  *
  * Mod selection (the bit that decides whether a god-roll gets valued correctly):
  *  - pseudo TOTALS always (total life, total ele res, total attributes) — what buyers filter on;
- *  - generic components a pseudo already absorbs (a single resistance / life / an attribute) are
- *    DROPPED — they over-narrow the search without adding value signal;
- *  - distinctive explicits (skill levels, spell/attack/crit/speed/spirit…) are KEPT — they are
- *    exactly what makes a rare expensive, so the comparable set must share them or it returns
- *    cheap plain-stat rares and undervalues the item.
- *  - `pseudosOnly` is the relaxation fallback: drop all explicits, search the totals only, used
- *    when the distinctive set returns too few comparables.
+ *  - generic components a pseudo already absorbs are DROPPED — they over-narrow the search;
+ *  - distinctive explicits (skill levels, spell/attack/crit/speed/spirit…) are KEPT;
+ *  - `pseudosOnly` is the relaxation fallback used when the distinctive set is too narrow.
+ *
+ * Comparables are instant-buyout only, never mirrored, in the SAME corrupted state, and above an
+ * item-level floor — a corrupted or low-ilvl listing is a different product.
  */
 export function buildPlan(
   item: ParsedItem,
@@ -57,22 +65,8 @@ export function buildPlan(
   opts: { relaxPct?: number; pseudosOnly?: boolean } = {},
 ): ValuationPlan {
   const relaxPct = opts.relaxPct ?? config.valuation.relaxPct;
-
   const resolved = item.mods.map((m) => resolveLine(m, idx)).filter((r): r is ResolvedStat => r != null);
-  const pseudos = applyPseudos(resolved, idx);
-
-  const distinctive = opts.pseudosOnly
-    ? []
-    : resolved.filter((r) => r.group !== "explicit" || !isPseudoSource(r.ref));
-  const searchStats = [...pseudos, ...distinctive];
-
-  // de-dupe by trade id (a mod and its pseudo can collide); keep the higher roll
-  const byId = new Map<string, ResolvedStat>();
-  for (const s of searchStats) {
-    const prev = byId.get(s.id);
-    if (!prev || s.value > prev.value) byId.set(s.id, s);
-  }
-  const finalStats = [...byId.values()];
+  const finalStats = selectSearchStats(resolved, idx, opts.pseudosOnly === true);
 
   const filters: StatFilter[] = finalStats.map((s) => ({
     id: s.id,
@@ -80,19 +74,17 @@ export function buildPlan(
     min: s.value > 0 ? Math.floor(s.value * (1 - relaxPct / 100)) : undefined,
   }));
 
-  // roll-aware key: same base + same mods AT A COMPARABLE ROLL HEIGHT share a price-book bucket
-  const signature = rollSignature(item.baseType, finalStats);
-
   const query: TradeQuery = {
     type: item.baseType,
     rarity: item.rarity.toLowerCase() === "unique" ? "unique" : "rare",
     ilvlMin: item.itemLevel ? Math.max(0, item.itemLevel - config.valuation.ilvlSlack) : undefined,
-    corrupted: item.corrupted ? undefined : false, // ignore corrupted comparables unless the item itself is
-    online: true,
+    corrupted: item.corrupted,
+    mirrored: false,
+    instantBuyout: true,
     stats: filters,
   };
 
-  return { item, searchStats: finalStats, signature, query };
+  return { item, searchStats: finalStats, resolvedCount: resolved.length, signature: rollSignature(item.baseType, finalStats), query };
 }
 
 /** Async wrapper: fetch (cached) catalog, build the index, plan. Used by the paste-to-value UI. */
@@ -104,13 +96,22 @@ export async function planValuation(item: ParsedItem, relaxPct = config.valuatio
 
 /** Synthesize a ParsedItem from a live trade listing so the same valuation path can price it. */
 export function listingToItem(l: Listing): ParsedItem {
-  const mods: ParsedModLine[] = l.mods.map((raw) => ({
-    raw,
-    placeholdered: placeholder(raw),
-    numbers: extractNumbers(raw),
-    marker: "explicit" as const,
+  const mods: ParsedModLine[] = l.modLines.map((m) => ({
+    raw: m.text,
+    placeholdered: placeholder(m.text),
+    numbers: extractNumbers(m.text),
+    marker: m.marker,
+    statId: m.statId,
   }));
-  return { rarity: "Rare", name: l.itemName, baseType: l.baseType, itemLevel: null, corrupted: false, mirrored: false, mods };
+  return {
+    rarity: l.rarity ?? "Rare",
+    name: l.itemName,
+    baseType: l.baseType,
+    itemLevel: l.itemLevel,
+    corrupted: l.corrupted,
+    mirrored: l.mirrored,
+    mods,
+  };
 }
 
 export interface ListingValuation {
@@ -120,15 +121,15 @@ export interface ListingValuation {
 }
 
 /**
- * Value ONE live listing by a relaxed comparable search on its ACTUAL rolls — the per-item
- * valuation that replaces the broken category median. Falls back to a pseudo-only (broader)
- * search when the distinctive set returns too few comparables, so a god-roll with a rare mod
- * still gets a price. At most two trade2 searches.
+ * Value ONE live listing by a relaxed comparable search on its ACTUAL rolls. Falls back to a
+ * pseudo-only (broader) search when the distinctive set returns too few comparables, so a
+ * god-roll with a rare mod still gets a price. At most two trade2 searches. The candidate is
+ * excluded from its own comparable set.
  */
 export async function valueListingLive(
   l: Listing,
   idx: StatIndex,
-  rates: ScoutRates,
+  rates: DivRates,
   cred?: TradeCred,
 ): Promise<ListingValuation> {
   const item = listingToItem(l);
@@ -140,58 +141,34 @@ export async function valueListingLive(
     if ((broad.query.stats ?? []).length > 0) {
       const r2 = await searchListingsLinked(broad.query, config.valuation.topN, cred);
       if (r2.total >= res.total) {
-        plan = broad;
+        plan = { ...broad, resolvedCount: plan.resolvedCount };
         res = r2;
       }
     }
   }
 
-  return { value: valueFromComparables(res.listings, res.total, rates), plan, searchUrl: res.searchUrl };
+  const value = valueFromComparables(res.listings, res.total, rates, l.listingId);
+  return { value, plan, searchUrl: res.searchUrl };
 }
 
-const median = (xs: number[]): number => {
-  if (xs.length === 0) return 0;
-  const s = [...xs].sort((a, b) => a - b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
-};
-const quantile = (sortedAsc: number[], q: number): number => {
-  if (sortedAsc.length === 0) return 0;
-  return sortedAsc[Math.min(sortedAsc.length - 1, Math.floor(q * sortedAsc.length))]!;
-};
-
-/** Value the item from comparable listings: median of the top-N cheapest online ones. */
-export function valueFromComparables(listings: Listing[], total: number, rates: ScoutRates): Valuation {
-  const prices = listings
-    .filter((l) => l.price && l.online)
-    .map((l) => toDivine(l.price!.amount, l.price!.currency, rates))
-    .filter((d) => Number.isFinite(d) && d > 0)
-    .sort((a, b) => a - b)
-    .slice(0, config.valuation.topN);
-
+/** Value the item from buyable comparables: trimmed median, candidate (`excludeListingId`) excluded. */
+export function valueFromComparables(
+  listings: Listing[],
+  total: number,
+  rates: DivRates,
+  excludeListingId: string | null = null,
+): Valuation {
+  const comps = listings.filter((l) => isBuyable(l) && !l.mirrored && (!excludeListingId || l.listingId !== excludeListingId));
+  const divs = comps.map((l) => ratedDiv(l.price, rates));
+  const rated = divs.filter((d): d is number => d != null);
+  const ref = referenceValue(rated);
   return {
-    valueDiv: median(prices),
-    p25Div: quantile(prices, 0.25),
-    minDiv: prices[0] ?? 0,
-    samples: prices.length,
+    valueDiv: ref.valueDiv,
+    minDiv: ref.minDiv,
+    samples: ref.samples,
+    dropped: ref.dropped,
+    unrated: comps.filter((l) => l.price != null).length - rated.length,
     total,
-  };
-}
-
-/** Is a candidate listing priced far enough under fair value, with enough confidence? */
-export function checkSnipe(listingDiv: number, v: Valuation): SnipeCheck {
-  const { discountPct, minSamples } = config.valuation;
-  if (v.samples < minSamples) {
-    return { isSnipe: false, marginPct: 0, reason: `thin data (${v.samples} comparables, need ${minSamples})` };
-  }
-  const marginPct = v.valueDiv > 0 ? ((v.valueDiv - listingDiv) / v.valueDiv) * 100 : 0;
-  const isSnipe = listingDiv <= v.valueDiv * (1 - discountPct / 100);
-  return {
-    isSnipe,
-    marginPct,
-    reason: isSnipe
-      ? `${marginPct.toFixed(0)}% under value (${listingDiv.toFixed(0)} vs ${v.valueDiv.toFixed(0)} Div)`
-      : `fair (${marginPct.toFixed(0)}% under value, need ${discountPct}%)`,
   };
 }
 

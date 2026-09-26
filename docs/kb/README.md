@@ -33,6 +33,18 @@ docs/research/
 - Corrections from adversarial verification are applied in place; refuted claims are kept in a
   `## Refuted` block (so they don't get re-added by the next research round).
 
+## Manifest and freshness gate
+
+`docs/kb/manifest.json` is the only list the Coach ingests. Each `corpus` entry records the
+`patch` and `league` its facts were verified against, the `stamped_at` date, and an LF-normalized
+`sha256` of the file at stamping time; the stamp travels with every retrieved chunk and citation.
+`excluded` lists `docs/kb` pages that are deliberately not player knowledge (this README).
+Research or audit notes under `docs/research/` are ingested only when listed.
+
+`npm run kb:check` runs in CI and fails when a listed file is missing, when a file changed after
+its stamp, or when a new `docs/kb/*.md` page is not classified. After re-verifying an edited file,
+set its `stamped_at` (and `patch`/`league` if they moved) and paste the `sha256` the check prints.
+
 ## Update loop (the "autonomous" part)
 
 1. **Per league / patch**: re-run the KB build workflow (research + adversarial verify per

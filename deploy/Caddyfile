@@ -11,8 +11,14 @@
 
 	# POESESSID cookies pass through here — keep proxy local-only (localhost), never expose :3000.
 	header {
-		Strict-Transport-Security "max-age=31536000;"
+		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		# Next.js App Router streams its RSC payload through inline <script> tags and React, Recharts
+		# and driver.js write inline style attributes, so both need 'unsafe-inline' (nonces would
+		# force every page dynamic). Item icons come from GGG's CDN; every fetch goes to our origin.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://web.poecdn.com https://*.poecdn.com; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 	}
 }
 

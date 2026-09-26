@@ -11,53 +11,6 @@ CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Persisted public Coach history. Only completed user/assistant turns are stored; tool protocol,
--- reasoning traces, provider ids and partial attempts never enter the application database.
-CREATE TABLE IF NOT EXISTS coach_conversations (
-  user_id INTEGER NOT NULL,
-  id TEXT NOT NULL CHECK (length(id) = 36),
-  title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 80),
-  turn_count INTEGER NOT NULL DEFAULT 0 CHECK (turn_count BETWEEN 0 AND 50),
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  last_message_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS coach_turns (
-  user_id INTEGER NOT NULL,
-  conversation_id TEXT NOT NULL CHECK (length(conversation_id) = 36),
-  turn_id TEXT NOT NULL CHECK (length(turn_id) = 36),
-  ordinal INTEGER NOT NULL CHECK (ordinal BETWEEN 1 AND 50),
-  user_message TEXT NOT NULL CHECK (length(user_message) BETWEEN 1 AND 8000),
-  assistant_answer TEXT NOT NULL CHECK (length(assistant_answer) BETWEEN 1 AND 64000),
-  tools_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(tools_json) AND json_type(tools_json) = 'array'),
-  processors_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(processors_json) AND json_type(processors_json) = 'array'),
-  sources_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(sources_json) AND json_type(sources_json) = 'array'),
-  completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, conversation_id, turn_id),
-  UNIQUE (user_id, conversation_id, ordinal),
-  FOREIGN KEY (user_id, conversation_id)
-    REFERENCES coach_conversations(user_id, id) ON DELETE CASCADE
-);
-
--- A lease deliberately references only the user. First-turn leases must not create an empty
--- conversation row, and a successful atomic completion creates that row together with the turn.
-CREATE TABLE IF NOT EXISTS coach_conversation_leases (
-  user_id INTEGER NOT NULL,
-  conversation_id TEXT NOT NULL CHECK (length(conversation_id) = 36),
-  turn_id TEXT NOT NULL CHECK (length(turn_id) = 36),
-  expires_at INTEGER NOT NULL,
-  PRIMARY KEY (user_id, conversation_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_coach_conversations_recent
-  ON coach_conversations(user_id, last_message_at DESC, id DESC);
-CREATE INDEX IF NOT EXISTS idx_coach_leases_expiry
-  ON coach_conversation_leases(expires_at);
-
 -- Price snapshots (one row per item per fetch) — SHARED across all users (market data), but
 -- LEAGUE-SCOPED: a switch must not mix two markets' prices, and must not destroy either.
 -- The '' default exists only so the additive migration can ALTER an existing table; every row
@@ -212,6 +165,7 @@ CREATE TABLE IF NOT EXISTS hunts (
   active INTEGER DEFAULT 1,
   last_scan_at DATETIME,
   last_hit_at DATETIME,
+  last_error TEXT,              -- why the last scan of this hunt failed (NULL after a clean scan)
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -224,7 +178,7 @@ CREATE TABLE IF NOT EXISTS hunt_hits (
   base_type TEXT,
   price_amount REAL NOT NULL,
   price_ccy TEXT NOT NULL,
-  price_div REAL NOT NULL,       -- normalized to Divine for ranking/margin
+  price_div REAL,                -- normalized to Divine; NULL = ask currency outside the rates ladder
   margin_pct REAL,               -- (target_div - price_div)/price_div, if target set
   account TEXT,
   whisper TEXT,
@@ -252,6 +206,14 @@ CREATE TABLE IF NOT EXISTS autosnipe_report (
   scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Last FAILED auto-snipe scan, kept apart from autosnipe_report so one transient failure (rates
+-- stale, trade2 busy) can't wipe the last good findings. The UI shows it as a banner when newer.
+CREATE TABLE IF NOT EXISTS autosnipe_failure (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  error TEXT NOT NULL,
+  failed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Latest craft-margin report per recipe (poller writes, the UI reads across processes) — SHARED.
 -- report_json is the full itemized RecipeMarginReport (base/result legs + materials + EV math).
 CREATE TABLE IF NOT EXISTS craft_margin_reports (
@@ -261,6 +223,8 @@ CREATE TABLE IF NOT EXISTS craft_margin_reports (
   ev_div REAL NOT NULL,
   margin_pct REAL NOT NULL,
   scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_error TEXT,                -- transient scan failure that did NOT replace the good report above
+  last_error_at DATETIME,
   PRIMARY KEY (league, recipe_key)
 );
 
@@ -299,6 +263,31 @@ CREATE TABLE IF NOT EXISTS craft_refresh_request (
   requested_at DATETIME
 );
 
+-- trade2 rate-limit governor state, SHARED by the web and poller processes (both call trade2 on
+-- the same account+IP budget). One row per request we issued, per endpoint kind, kept for the
+-- longest rule window; plus the latest policy GGG reported and any active restriction.
+CREATE TABLE IF NOT EXISTS trade_rate_hits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,           -- 'search' | 'fetch'
+  at_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_trade_rate_hits ON trade_rate_hits(kind, at_ms);
+CREATE TABLE IF NOT EXISTS trade_rate_policy (
+  kind TEXT PRIMARY KEY,
+  rules_json TEXT NOT NULL,     -- RateRule[] from the latest X-Rate-Limit-* headers
+  blocked_until_ms INTEGER NOT NULL DEFAULT 0
+);
+
+-- Manual trade2 scan requests (autosnipe, a user's hunts). Same idea as craft_refresh_request:
+-- the web process only queues, the poller consumes and runs the scan on ITS limiter, so one
+-- process owns the account+IP trade2 budget. user_id 0 = not user-scoped (autosnipe).
+CREATE TABLE IF NOT EXISTS scan_request (
+  kind TEXT NOT NULL,           -- 'autosnipe' | 'hunts'
+  user_id INTEGER NOT NULL DEFAULT 0,
+  requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (kind, user_id)
+);
+
 -- Balance snapshots (net-worth over time) — PER-USER, one row per currency reading.
 CREATE TABLE IF NOT EXISTS balance_snapshots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -313,7 +302,10 @@ CREATE TABLE IF NOT EXISTS balance_snapshots (
   net_worth_div REAL NOT NULL,    -- divine + exalted/exalt_per_div + chaos/chaos_per_div + other_div
   source TEXT NOT NULL,           -- 'trade' | 'stash' | 'ocr' | 'manual'
   note TEXT,
-  fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  listed_seen INTEGER,            -- trade read: listings returned (trade2 caps a search at 100)
+  listed_total INTEGER,           -- trade read: listings trade2 says exist (> seen = truncated)
+  gear_at_ask_div REAL            -- part of other_div valued at the seller's OWN asking price
 );
 
 -- open flip positions: a BUY leg placed but not yet sold (the standing-order flip loop).

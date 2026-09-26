@@ -36,7 +36,9 @@ class Settings(BaseSettings):
 
     chat_model: str = "gpt-5.4-mini"
     embedding_model: str = "text-embedding-3-small"
-    league_name: str = "Runes of Aldur"
+    # LEAGUE_NAME, exactly like the web app's env fallback. Unset means "use the app's runtime
+    # default league" (src/league.py); a hard-coded league here went stale on every switch.
+    league_name: str | None = None
 
     configured_db_path: Path = Field(
         default=Path("data/poe2flip.db"),
@@ -55,6 +57,10 @@ class Settings(BaseSettings):
     )
     corpus_dir: Path = APP_ROOT
     qdrant_collection: str = "poe2_knowledge"
+    # Embeds the corpus in a background task at start-up so no user turn pays for it.
+    warm_knowledge_on_start: bool = Field(
+        default=True, validation_alias="COACH_WARM_KNOWLEDGE_ON_START"
+    )
 
     request_timeout_seconds: float = Field(
         default=45.0, ge=5.0, le=45.0, validation_alias="COACH_MODEL_TIMEOUT_SECONDS"

@@ -54,6 +54,17 @@ export const coachBrowserRequestSchema = z.object({
   expectedTurnCount: z.number().int().min(0).max(50),
 }).strict();
 
+const tokenCountSchema = z.number().int().nonnegative();
+
+/** Per-turn cost/latency telemetry from FastAPI; carries no conversation content. */
+export const coachTurnUsageSchema = z.object({
+  input_tokens: tokenCountSchema,
+  output_tokens: tokenCountSchema,
+  total_tokens: tokenCountSchema,
+  model_calls: tokenCountSchema,
+  duration_ms: tokenCountSchema,
+}).strict();
+
 export const coachUpstreamResponseSchema = z.object({
   thread_id: coachUuidSchema,
   request_id: requestIdSchema,
@@ -64,6 +75,7 @@ export const coachUpstreamResponseSchema = z.object({
   tools_used: z.array(z.string().min(1)),
   processors_used: z.array(z.string().min(1)),
   sources: z.array(coachSourceSchema),
+  usage: coachTurnUsageSchema,
 });
 
 export const coachBrowserResponseSchema = z.object({
@@ -81,9 +93,13 @@ export const coachBrowserResponseSchema = z.object({
 export const coachHealthSchema = z.object({
   status: z.enum(["ok", "degraded"]),
   market_ready: z.boolean(),
+  // Optional: a Coach release older than this web release (rollback window) omits them.
+  market_schema_ready: z.boolean().optional(),
+  market_fresh: z.boolean().optional(),
   knowledge_ready: z.boolean(),
   item_data_ready: z.boolean(),
   model_configured: z.boolean(),
+  agent_ready: z.boolean().optional(),
   web_search_ready: z.boolean(),
   model: z.string().min(1),
   patch_monitor_ready: z.boolean(),
@@ -112,4 +128,5 @@ export function parseCoachUpstreamError(
 
 export type CoachBrowserResponse = z.infer<typeof coachBrowserResponseSchema>;
 export type CoachSource = z.infer<typeof coachSourceSchema>;
+export type CoachTurnUsage = z.infer<typeof coachTurnUsageSchema>;
 export type CoachError = z.infer<typeof coachErrorResponseSchema>["error"];

@@ -8,12 +8,21 @@ import { getUserById, getUserByApiKey, type UserRow } from "../db/userQueries";
  *  - getAgentUser:   the local agent, from a Bearer api_key (balance/hunt push)
  *
  * Both return null when unauthenticated; routes decide whether that's a 401.
+ * The edge middleware can only check signature + expiry; revocation (session_version) is
+ * enforced here, where the database is reachable.
  */
 export async function getCurrentUser(): Promise<UserRow | null> {
   const jar = await cookies();
-  const uid = verifySession(jar.get(SESSION_COOKIE)?.value);
-  if (uid == null) return null;
-  return getUserById(uid) ?? null;
+  return resolveSessionUser(jar.get(SESSION_COOKIE)?.value);
+}
+
+/** Token → user, rejecting tokens signed before the user's latest session revocation. */
+export function resolveSessionUser(token: string | undefined | null): UserRow | null {
+  const session = verifySession(token);
+  if (session == null) return null;
+  const user = getUserById(session.uid);
+  if (!user || user.session_version !== session.ver) return null;
+  return user;
 }
 
 /** Resolve the local agent from an `Authorization: Bearer pk_...` header. */

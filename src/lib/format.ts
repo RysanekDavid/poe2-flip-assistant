@@ -30,3 +30,15 @@ export function roundPrice(n: number): string {
   if (Math.abs(n) >= 1) return Math.round(n).toLocaleString("en-US");
   return n.toFixed(2);
 }
+
+/**
+ * A Divine amount the way a trader reads it: ≥1 → "12.3 div", below 1 → exalted ("45 ex"),
+ * non-positive → "—". Sub-Div asks MUST go through this — `toFixed(0)` printed a 1-ex bait
+ * listing as "0 Div", which read as a free item.
+ */
+export function fmtDivOrEx(div: number, exPerDiv: number): string {
+  if (!(div > 0)) return "—";
+  if (div >= 1 || !(exPerDiv > 0)) return `${div.toLocaleString("en", { maximumFractionDigits: 1 })} div`;
+  const ex = div * exPerDiv;
+  return `${ex.toLocaleString("en", { maximumFractionDigits: ex >= 10 ? 0 : 1 })} ex`;
+}
