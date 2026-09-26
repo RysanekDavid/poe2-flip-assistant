@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Radar, Loader2, Play, Target, Copy, Check, ExternalLink } from "lucide-react";
+import { fmtDivOrEx } from "../lib/format";
 
 interface Status {
   enabled: boolean;
@@ -10,6 +11,7 @@ interface Status {
   profiles: Array<{ key: string; label: string; category: string }>;
   lastReport?: ScanResult | null;
   lastScanAt?: string | null;
+  pending?: boolean; // a manual scan is queued for the poller
   error?: string;
 }
 interface Finding {
@@ -62,13 +64,6 @@ function scanAge(ts: string): string {
   return h < 48 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
 }
 
-/** Render a Divine amount sensibly: ≥1 → "12.3 div", else in exalt → "45 ex", 0 → "—". */
-function price(div: number, exPerDiv: number): string {
-  if (!div || div <= 0) return "—";
-  if (div >= 1) return `${div.toLocaleString("en", { maximumFractionDigits: 1 })} div`;
-  const ex = div * exPerDiv;
-  return `${ex.toLocaleString("en", { maximumFractionDigits: ex >= 10 ? 0 : 1 })} ex`;
-}
 
 /**
  * Autonomous snipe scanner control. Runs one scan now (owner), then renders the concrete snipes
@@ -81,6 +76,8 @@ export function AutoSnipeBar() {
   const [lastScanAt, setLastScanAt] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  // lastScanAt at the moment a manual scan was queued; the scan is done once a newer report lands
+  const waitingFrom = useRef<string | null | undefined>(undefined);
 
   // load status + the last persisted scan (cron or manual), and keep polling so
   // background-scan results appear without pressing anything
@@ -92,22 +89,31 @@ export function AutoSnipeBar() {
           setStatus(s);
           setLastScanAt(s.lastScanAt ?? null);
           if (s.lastReport) setResult(s.lastReport); // manual scans persist too, so this is never stale
+          if (waitingFrom.current !== undefined && !s.pending && (s.lastScanAt ?? null) !== waitingFrom.current) {
+            waitingFrom.current = undefined;
+            setScanning(false);
+          }
         })
         .catch(() => setStatus({ enabled: false, live: false, intervalMin: 0, profiles: [], error: "failed to load" }));
     load();
-    const t = setInterval(load, 60_000);
+    const t = setInterval(load, 10_000);
     return () => clearInterval(t);
   }, []);
 
+  // the poller runs the scan (it owns the trade2 limiter); this only queues it
   const scanNow = () => {
     if (scanning) return;
     setScanning(true);
-    setResult(null);
     fetch("/api/snipe/scan", { method: "POST" })
       .then((r) => r.json())
-      .then(setResult)
-      .catch(() => setResult({ profiles: 0, searched: 0, exaltPerDivine: 0, valuations: 0, maxValuations: 0, findings: [], diags: [], errors: [], error: "scan failed" }))
-      .finally(() => setScanning(false));
+      .then((b: { queued?: boolean; error?: string }) => {
+        if (b.queued) waitingFrom.current = lastScanAt;
+        else throw new Error(b.error ?? "scan was not queued");
+      })
+      .catch((e: unknown) => {
+        setScanning(false);
+        setResult({ profiles: 0, searched: 0, exaltPerDivine: 0, valuations: 0, maxValuations: 0, findings: [], diags: [], errors: [], error: `scan failed: ${e instanceof Error ? e.message : String(e)}` });
+      });
   };
 
   const copyWhisper = (id: string, whisper: string) => {
@@ -154,15 +160,15 @@ export function AutoSnipeBar() {
       </header>
 
       <p className="text-xs text-neutral-600">
-        Each archetype&apos;s cheapest real listings are valued <span className="text-neutral-400">individually</span> — a
-        relaxed comparable search on the item&apos;s own rolls. A listing far under its own value (worth ≥ 1 div) is a
-        snipe → alert. Read-only; you buy manually.
+        Each archetype&apos;s newest instant-buyout listings are valued <span className="text-neutral-400">individually</span> — a
+        relaxed comparable search on the item&apos;s own rolls. A fresh listing far under its own value (worth ≥ 1 div,
+        2+ resolved mods, not bait-cheap) is a snipe → alert. Read-only; you buy manually.
       </p>
 
       {scanning && (
         <p className="mt-3 flex items-center gap-2 text-sm text-neutral-400">
           <Loader2 className="h-4 w-4 animate-spin text-orange-400" />
-          scanning archetypes + valuing candidates… (rate-limited, can take a minute or two)
+          scan queued — the background scanner runs it next (rate-limited, can take a minute or two)
         </p>
       )}
 
@@ -205,8 +211,8 @@ export function AutoSnipeBar() {
                           {f.keyMods ? ` — ${f.keyMods}` : ""}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-emerald-300">{price(f.priceDiv, ex)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-neutral-300">{price(f.valueDiv, ex)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-emerald-300">{fmtDivOrEx(f.priceDiv, ex)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-neutral-300">{fmtDivOrEx(f.valueDiv, ex)}</td>
                       <td className="px-3 py-2 text-right font-semibold tabular-nums text-emerald-400">
                         {Math.round(f.marginPct)}%
                       </td>
@@ -272,7 +278,7 @@ export function AutoSnipeBar() {
                         <td className={`px-3 py-2 text-right tabular-nums ${d.snipes ? "font-semibold text-emerald-400" : ""}`}>
                           {d.snipes}
                         </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-neutral-500">{price(d.floorDiv, ex)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-neutral-500">{fmtDivOrEx(d.floorDiv, ex)}</td>
                       </tr>
                     ))}
                   </tbody>

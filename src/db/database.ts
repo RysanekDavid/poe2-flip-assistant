@@ -51,7 +51,9 @@ export function getDb(): Database.Database {
   ensureColumns(conn, "hunts", [
     ["category", "TEXT"],
     ["ilvl_min", "INTEGER"],
+    ["last_error", "TEXT"], // per-hunt failure reason, so a broken hunt is visible instead of silently idle
   ]);
+  relaxHuntHitPriceDiv(conn);
   ensureColumns(conn, "balance_snapshots", [["other_div", "REAL NOT NULL DEFAULT 0"]]);
   ensureColumns(conn, "balance_tabs", [["unpriced", "INTEGER NOT NULL DEFAULT 0"]]);
   // Per-user trade2 credentials: encrypted POESESSID + identifying contact + account name.
@@ -90,6 +92,7 @@ export function getDb(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_hunt_hits_user_time ON hunt_hits(user_id, found_at DESC);
     CREATE INDEX IF NOT EXISTS idx_flips_user_time ON flips(user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id, seen, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_alerts_user_item ON alerts(user_id, item_id, type);
   `);
 
   db = conn;
@@ -162,6 +165,29 @@ function rebuildHoldingsMultiTenant(conn: Database.Database): void {
       SELECT 1, currency, amount, updated_at FROM holdings_old;
     DROP TABLE holdings_old;
   `);
+}
+
+/**
+ * hunt_hits.price_div shipped NOT NULL, which forced asks in currencies outside the rates ladder
+ * to be stored as a fake 0 Div. Rebuild it nullable, keeping every column (ALTER-added ones are
+ * part of the stored CREATE text, so rewriting that text preserves them).
+ */
+export function relaxHuntHitPriceDiv(conn: Database.Database): void {
+  const row = conn.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='hunt_hits'").get() as
+    | { sql: string }
+    | undefined;
+  const notNull = /price_div\s+REAL\s+NOT\s+NULL/i;
+  if (!row || !notNull.test(row.sql)) return; // fresh schema or already relaxed
+  const createNew = row.sql
+    .replace(/CREATE TABLE\s+(?:IF NOT EXISTS\s+)?"?hunt_hits"?/i, "CREATE TABLE hunt_hits_new")
+    .replace(notNull, "price_div REAL");
+  const cols = (conn.prepare("PRAGMA table_info(hunt_hits)").all() as Array<{ name: string }>).map((c) => c.name).join(", ");
+  conn.transaction(() => {
+    conn.exec(createNew);
+    conn.exec(`INSERT INTO hunt_hits_new (${cols}) SELECT ${cols} FROM hunt_hits`);
+    conn.exec("DROP TABLE hunt_hits");
+    conn.exec("ALTER TABLE hunt_hits_new RENAME TO hunt_hits");
+  })();
 }
 
 /** Add any missing columns to a table (idempotent). */

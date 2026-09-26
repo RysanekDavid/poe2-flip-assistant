@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRuntime } from "../../../../db/queries";
+import { getRuntime } from "../../../../db/huntQueries";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { config } from "../../../../config/env";
 

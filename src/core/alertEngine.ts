@@ -1,5 +1,5 @@
 import notifier from "node-notifier";
-import { insertAlert, hasRecentAlert } from "../db/queries";
+import { insertAlert, hasRecentAlert, hasAlertEver } from "../db/alertQueries";
 import { config } from "../config/env";
 
 export type AlertType =
@@ -38,9 +38,16 @@ export function fireAlert(
     threshold: number;
     whisper?: string | null; // in-game whisper to copy (snipe alerts)
     link?: string | null; // trade-site deep link
+    // "once": alert at most once EVER per itemId+type — for listing-level snipes, where the
+    // cooldown just re-pinged the same unsold bait every hour (Sol Trail ×12).
+    dedupe?: "cooldown" | "once";
   },
 ): void {
-  if (hasRecentAlert(userId, a.itemId, a.type, config.alertCooldownMin)) return;
+  const seen =
+    a.dedupe === "once"
+      ? hasAlertEver(userId, a.itemId, a.type)
+      : hasRecentAlert(userId, a.itemId, a.type, config.alertCooldownMin);
+  if (seen) return;
 
   insertAlert(userId, league, {
     type: a.type,
@@ -53,11 +60,12 @@ export function fireAlert(
     link: a.link,
   });
 
+  if (!config.desktopNotify) return;
   try {
-    notifier.notify({
-      title: `PoE2 Flip — ${a.type}`,
-      message: `${a.itemName}: ${a.message}`,
-      sound: true,
+    // Callback form: on a headless box the backend fails ASYNCHRONOUSLY, and without a callback
+    // node-notifier surfaces that as an unhandled error (same fix as leagueAlerts).
+    notifier.notify({ title: `PoE2 Flip — ${a.type}`, message: `${a.itemName}: ${a.message}`, sound: true }, (err) => {
+      if (err) console.warn(`desktop notify failed: ${err.message}`);
     });
   } catch (err) {
     // Notif backend missing (e.g. headless) — log, don't throw.

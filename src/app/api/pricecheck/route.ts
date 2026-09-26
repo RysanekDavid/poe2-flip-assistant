@@ -24,5 +24,5 @@ export async function POST(req: Request): Promise<Response> {
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
   const { baseType, mods, askDiv } = parsed.data;
-  return NextResponse.json(evaluateItem(baseType, mods, askDiv ?? 0));
+  return NextResponse.json(await evaluateItem(baseType, mods, askDiv ?? 0));
 }

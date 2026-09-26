@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { searchListings, type Listing } from "../../../../api/tradeClient";
+import { searchListings } from "../../../../api/tradeClient";
+import type { Listing } from "../../../../api/tradeListing";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { toDivine, type Currency, type ExchangeRates } from "../../../../core/priceEngine";

@@ -2,7 +2,7 @@ import { searchListingsLinked, type TradeCred } from "../api/tradeClient";
 import { fetchScout, type ScoutRates } from "../api/scoutClient";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { buildStatIndex, type StatIndex } from "./statResolver";
-import { toDivine } from "./huntEngine";
+import { ratedDiv } from "./listingPrice";
 import { fireAlert } from "./alertEngine";
 import { config } from "../config/env";
 import { listUsers } from "../db/userQueries";
@@ -103,8 +103,8 @@ export function legToQuery(leg: RecipeLegSpec, idx: StatIndex): { query: TradeQu
  *  transmute… — exactly what the cheapest craft-base listings are priced in) falls back to the
  *  ninja exchange value of that currency item. NaN when neither source knows it. */
 function listingDiv(amount: number, currency: string, rates: ScoutRates, currencyDiv: Map<string, number>): number {
-  const d = toDivine(amount, currency, rates);
-  if (Number.isFinite(d)) return d;
+  const d = ratedDiv({ amount, currency }, rates);
+  if (d != null) return d;
   const unit = currencyDiv.get(currency);
   return unit != null ? amount * unit : NaN;
 }

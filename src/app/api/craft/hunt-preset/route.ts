@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
-import { addHunt } from "../../../../db/queries";
+import { addHunt } from "../../../../db/huntQueries";
 import { getCraftMargins } from "../../../../db/craftQueries";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";

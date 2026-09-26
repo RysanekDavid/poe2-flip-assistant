@@ -63,11 +63,19 @@ export const config = {
     maxResponseBytes: num("PATCH_NOTES_MAX_BYTES", 2_000_000),
   },
   retentionDays: num("RETENTION_DAYS", 30), // price_snapshots older than this are pruned each poll
-  // snipe finder: a listing is a snipe if priced this far below the price-book median, with
-  // at least this many observed samples (volume confidence). Tune with real data.
+  // The ONE gate every SNIPE alert passes (hunt price-book verdict AND autosnipe). Before it
+  // existed, 84/109 production SNIPE alerts were "0 vs ~N Div" bait: 0/1-ex asks, zero-mod
+  // signatures, week-old listings and tiny reference samples all fired.
+  snipeGate: {
+    minAskDiv: num("SNIPE_MIN_ASK_DIV", 0.02), // absolute ask floor — below this is a price-fixer / fat-finger
+    minAskFracOfValue: num("SNIPE_MIN_ASK_FRAC", 0.05), // ask < 5% of value is bait, not a 95%-off deal
+    minResolvedMods: num("SNIPE_MIN_RESOLVED_MODS", 2), // a signature needs ≥2 resolved mods to mean anything
+    freshMinutes: num("SNIPE_FRESH_MIN", 120), // older listings survived everyone else's snipe tools → stale bait
+    minSamples: num("SNIPE_MIN_SAMPLES", 5), // reference must stand on at least this many comparables
+  },
+  // snipe finder: a listing is a snipe if priced this far below the price-book reference.
   snipe: {
-    minSamples: num("SNIPE_MIN_SAMPLES", 5),
-    discountPct: num("SNIPE_DISCOUNT_PCT", 40), // ask ≤ median × (1 - 40%) → snipe
+    discountPct: num("SNIPE_DISCOUNT_PCT", 40), // ask ≤ reference × (1 - 40%) → snipe
     obsRetentionDays: num("SNIPE_OBS_RETENTION_DAYS", 21), // price-book observations older than this are pruned
     // medium-volume sweet spot for auto-picked snipe targets (high vol = bots, low vol = can't resell)
     minListings: num("SNIPE_MIN_LISTINGS", 8),
@@ -81,8 +89,7 @@ export const config = {
   valuation: {
     relaxPct: num("VAL_RELAX_PCT", 12), // widen each stat's min down this % so near rolls still match
     ilvlSlack: num("VAL_ILVL_SLACK", 4), // comparables within this many ilvl below the item
-    topN: num("VAL_TOP_N", 10), // value = median of the cheapest N online comparables
-    minSamples: num("VAL_MIN_SAMPLES", 4), // fewer comparables than this → don't trust / don't fire snipe
+    topN: num("VAL_TOP_N", 10), // comparables fetched per valuation search (trimmed median of these)
     minComparables: num("VAL_MIN_COMPARABLES", 5), // below this the per-item search relaxes to pseudos-only
     discountPct: num("VAL_DISCOUNT_PCT", 35), // listing ≤ value × (1 - 35%) → snipe
     minValueDiv: num("VAL_MIN_VALUE_DIV", 1), // don't alert snipes on items worth less than this (junk)
@@ -96,11 +103,17 @@ export const config = {
     // continuously. Runs under the owner's cred; stays off if none is stored.
     enabled: (process.env.AUTOSNIPE_ENABLED ?? "true").toLowerCase() === "true",
     intervalMin: num("AUTOSNIPE_INTERVAL_MIN", 10), // cadence; paced further by the trade2 limiter
-    fetchPerArchetype: num("AUTOSNIPE_FETCH", 20), // listings pulled per archetype to record + screen
-    candidatesPerArchetype: num("AUTOSNIPE_CANDIDATES", 3), // cheapest real listings considered per archetype
+    fetchPerArchetype: num("AUTOSNIPE_FETCH", 20), // newest listings pulled per archetype to record + screen
+    candidatesPerArchetype: num("AUTOSNIPE_CANDIDATES", 3), // most desirable listings considered per archetype
     maxValuations: num("AUTOSNIPE_MAX_VALUATIONS", 6), // per-item comparable searches spent per scan (rate guard)
-    minCandidateDiv: num("AUTOSNIPE_MIN_CANDIDATE_DIV", 0), // NO price floor — a god-roll dumped at 1ex must qualify
+    // Price floor for candidates (the design note's 2 Div). The old 0 default let 1-ex bait win
+    // the ranking and burn the whole valuation budget every scan.
+    minCandidateDiv: num("AUTOSNIPE_MIN_CANDIDATE_DIV", 2),
     minCandidateScore: num("AUTOSNIPE_MIN_SCORE", 1), // skip listings whose mods don't resolve to anything valuable
+    // Rate-budget share: a scan rotates through this many archetypes and stops issuing trade2
+    // requests after the request cap, so the 30s hunt cadence keeps most of the budget.
+    archetypesPerScan: num("AUTOSNIPE_ARCHETYPES_PER_SCAN", 4),
+    maxRequestsPerScan: num("AUTOSNIPE_MAX_REQUESTS", 24),
   },
 
   // craft-margin engine: rank curated craft recipes by live EV per attempt
@@ -117,6 +130,7 @@ export const config = {
   sellChaosBonus: num("SELL_CHAOS_BONUS", 1.08),
   minVolume: num("MIN_VOLUME", 50), // below this = illiquid (orders won't fill fast)
   alertCooldownMin: num("ALERT_COOLDOWN_MIN", 60), // same item+type alerts at most once per this window
+  desktopNotify: (process.env.DESKTOP_NOTIFY ?? "true").toLowerCase() !== "false", // OS toast per alert (tests turn it off)
   manualStaleHours: num("MANUAL_STALE_HOURS", 6), // real Ange prices expire (→ estimate) after this many hours
   thresholds: {
     spreadPct: num("ALERT_SPREAD_PCT", 15),

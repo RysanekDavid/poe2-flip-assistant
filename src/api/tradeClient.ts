@@ -3,6 +3,8 @@ import Bottleneck from "bottleneck";
 import { config } from "../config/env";
 import { getDefaultLeague } from "../core/leagueState";
 import { buildTradeQuery, type TradeQuery } from "../lib/tradeLink";
+import { createRateGovernor } from "./tradeRateLimit";
+import { parseFetchResponse, type Listing } from "./tradeListing";
 
 /**
  * Read-only client for the official PoE2 trade API. We search and price-check —
@@ -16,62 +18,23 @@ import { buildTradeQuery, type TradeQuery } from "../lib/tradeLink";
  */
 const BASE = "https://www.pathofexile.com/api/trade2";
 
-// One request at a time, never faster than the configured floor — protects against
-// the trade API rate limits (429). Background scans queue through this.
+// One request at a time, never faster than the configured floor. This limiter lives in the
+// POLLER process only: web routes enqueue scans (db/scanRequestQueries) instead of calling
+// trade2 themselves, so a single limiter owns the account+IP budget.
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: config.hunt.minRequestMs });
+// Live GGG rate-limit state on top of the fixed floor (restrictions, near-cap rules, 429s).
+const governor = createRateGovernor();
+// A wait longer than this fails the call instead of freezing every queued scan behind it.
+const MAX_INLINE_WAIT_MS = 120_000;
+let requestCount = 0;
 
-export interface Listing {
-  listingId: string; // unique listing hash — for de-duping across re-lists
-  price: { amount: number; currency: string } | null;
-  account: string;
-  online: boolean; // seller currently in-game
-  indexed: string | null; // when the listing was indexed (age)
-  whisper: string | null;
-  itemName: string;
-  baseType: string;
-  icon: string | null; // rendered item art (trade2 CDN url) — for showing the actual item in results
-  stackSize: number; // for currency: how many orbs in the stack (0 if N/A)
-  mods: string[]; // explicit + implicit + rune mod lines, as displayed (for mod-value scans)
-  stash: string | null; // stash tab the listing sits in (your own listings expose this)
-}
+/** Monotonic count of trade2 requests issued by this process — scans meter their budget off it. */
+export const tradeRequestCount = (): number => requestCount;
 
 export interface SearchResp {
   id: string; // queryId — reused by the live WebSocket
   result: string[];
   total: number;
-}
-interface FetchResp {
-  result: Array<{
-    id?: string;
-    listing?: {
-      indexed?: string;
-      price?: { amount?: number; currency?: string } | null;
-      account?: { name?: string; online?: unknown };
-      whisper?: string;
-      stash?: { name?: string };
-    };
-    item?: {
-      name?: string;
-      typeLine?: string;
-      baseType?: string;
-      icon?: string;
-      stackSize?: number;
-      explicitMods?: string[];
-      implicitMods?: string[];
-      runeMods?: string[];
-      craftedMods?: string[];
-      fracturedMods?: string[];
-      enchantMods?: string[];
-    };
-  } | null>;
-}
-
-/** Strip trade2 display markup: "[Resistances|Cold Resistance]" → "Cold Resistance", "[Bonded]" → "Bonded". */
-function cleanMod(m: string): string {
-  return m
-    .replace(/\[[^\]|]*\|([^\]]*)\]/g, "$1")
-    .replace(/\[([^\]]*)\]/g, "$1")
-    .trim();
 }
 
 /** Per-user trade2 credentials. Threaded through every call so users search with their own cookie. */
@@ -98,9 +61,22 @@ function authHeaders(cred: TradeCred): Record<string, string> {
   };
 }
 
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Hold the queue for the governor's wait, or fail fast when the penalty window is long. */
+async function awaitBudget(path: string): Promise<void> {
+  const wait = governor.waitMs();
+  if (wait > MAX_INLINE_WAIT_MS) {
+    throw new Error(`trade2 backing off for ${Math.ceil(wait / 1000)}s (rate-limit state) — skipped ${path.split("?")[0]}`);
+  }
+  if (wait > 0) await sleep(wait);
+}
+
 /** Wrap a trade2 call with the limiter + a clear message on the common failure modes. */
 async function call<T>(method: "get" | "post", path: string, cred: TradeCred, body?: unknown): Promise<T> {
   return limiter.schedule(async () => {
+    await awaitBudget(path);
+    requestCount++;
     try {
       const res = await axios.request<T>({
         method,
@@ -109,13 +85,15 @@ async function call<T>(method: "get" | "post", path: string, cred: TradeCred, bo
         timeout: 20_000,
         headers: authHeaders(cred),
       });
+      governor.observe(res.status, res.headers);
       return res.data;
     } catch (err) {
       const ax = err as AxiosError;
       const status = ax.response?.status;
+      if (ax.response) governor.observe(status ?? null, ax.response.headers);
       if (status === 429) {
         const retry = ax.response?.headers?.["retry-after"];
-        throw new Error(`trade2 rate-limited (429)${retry ? ` — retry after ${retry}s` : ""}. Slow the scan cadence.`);
+        throw new Error(`trade2 rate-limited (429)${retry ? ` — backing off ${retry}s` : ""}.`);
       }
       if (status === 403) {
         throw new Error("trade2 403 — POESESSID invalid/expired or Cloudflare challenge. Refresh your cookie.");
@@ -125,34 +103,6 @@ async function call<T>(method: "get" | "post", path: string, cred: TradeCred, bo
       throw new Error(`trade2 ${method.toUpperCase()} ${path} failed (${status ?? "no-status"})${body}`);
     }
   });
-}
-
-function parseListing(r: FetchResp["result"][number]): Listing | null {
-  if (!r) return null;
-  const p = r.listing?.price;
-  return {
-    listingId: r.id ?? "",
-    price: p && p.amount != null && p.currency ? { amount: p.amount, currency: p.currency } : null,
-    account: r.listing?.account?.name ?? "?",
-    online: r.listing?.account?.online != null,
-    indexed: r.listing?.indexed ?? null,
-    whisper: r.listing?.whisper ?? null,
-    itemName: r.item?.name || r.item?.baseType || r.item?.typeLine || "?",
-    baseType: r.item?.baseType || r.item?.typeLine || "",
-    icon: r.item?.icon ?? null,
-    stackSize: r.item?.stackSize ?? 0,
-    mods: [
-      ...(r.item?.implicitMods ?? []),
-      ...(r.item?.explicitMods ?? []),
-      ...(r.item?.craftedMods ?? []),
-      ...(r.item?.fracturedMods ?? []),
-      ...(r.item?.runeMods ?? []),
-      ...(r.item?.enchantMods ?? []),
-    ]
-      .filter((m): m is string => typeof m === "string")
-      .map(cleanMod),
-    stash: r.listing?.stash?.name ?? null,
-  };
 }
 
 /** Sort spec: "asc"/"desc" = by price (the common case), or an explicit field map,
@@ -180,8 +130,8 @@ export async function fetchListings(
 ): Promise<Listing[]> {
   const slice = ids.slice(0, 10);
   if (slice.length === 0) return [];
-  const fetched = await call<FetchResp>("get", `/fetch/${slice.join(",")}?query=${queryId}&realm=poe2`, cred);
-  return (fetched.result ?? []).map(parseListing).filter((l): l is Listing => l != null);
+  const fetched = await call<unknown>("get", `/fetch/${slice.join(",")}?query=${queryId}&realm=poe2`, cred);
+  return parseFetchResponse(fetched);
 }
 
 /**

@@ -212,6 +212,7 @@ CREATE TABLE IF NOT EXISTS hunts (
   active INTEGER DEFAULT 1,
   last_scan_at DATETIME,
   last_hit_at DATETIME,
+  last_error TEXT,              -- why the last scan of this hunt failed (NULL after a clean scan)
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -224,7 +225,7 @@ CREATE TABLE IF NOT EXISTS hunt_hits (
   base_type TEXT,
   price_amount REAL NOT NULL,
   price_ccy TEXT NOT NULL,
-  price_div REAL NOT NULL,       -- normalized to Divine for ranking/margin
+  price_div REAL,                -- normalized to Divine; NULL = ask currency outside the rates ladder
   margin_pct REAL,               -- (target_div - price_div)/price_div, if target set
   account TEXT,
   whisper TEXT,
@@ -297,6 +298,16 @@ CREATE TABLE IF NOT EXISTS craft_refresh_request (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   requested INTEGER NOT NULL DEFAULT 0,
   requested_at DATETIME
+);
+
+-- Manual trade2 scan requests (autosnipe, a user's hunts). Same idea as craft_refresh_request:
+-- the web process only queues, the poller consumes and runs the scan on ITS limiter, so one
+-- process owns the account+IP trade2 budget. user_id 0 = not user-scoped (autosnipe).
+CREATE TABLE IF NOT EXISTS scan_request (
+  kind TEXT NOT NULL,           -- 'autosnipe' | 'hunts'
+  user_id INTEGER NOT NULL DEFAULT 0,
+  requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (kind, user_id)
 );
 
 -- Balance snapshots (net-worth over time) — PER-USER, one row per currency reading.

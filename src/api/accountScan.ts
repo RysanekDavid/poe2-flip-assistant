@@ -1,5 +1,5 @@
 import { searchAccountListings, type TradeCred } from "./tradeClient";
-import { toDivine } from "../core/huntEngine";
+import { amountInDivine, ratedDiv } from "../core/listingPrice";
 import { buildValuer } from "../core/valuation";
 import type { ScoutRates } from "./scoutClient";
 
@@ -27,8 +27,14 @@ export interface AccountCurrency {
   tabs: TabValue[]; // per-stash-tab breakdown, value-descending
 }
 
+function ladderDiv(amount: number, currency: "exalted" | "chaos", rates: ScoutRates): number {
+  const d = amountInDivine(amount, currency, rates);
+  if (d == null) throw new Error(`rates have no usable ${currency}→Divine rate`);
+  return d;
+}
+
 const tabValue = (t: Omit<TabValue, "valueDiv">, rates: ScoutRates): number =>
-  t.divine + toDivine(t.exalted, "exalted", rates) + toDivine(t.chaos, "chaos", rates) + t.otherDiv;
+  t.divine + ladderDiv(t.exalted, "exalted", rates) + ladderDiv(t.chaos, "chaos", rates) + t.otherDiv;
 
 /**
  * Total your Divine/Exalted/Chaos (and the listed value of other gear) from your own
@@ -74,8 +80,8 @@ export async function readCurrencyFromTrade(
     if (mv) {
       acc.otherDiv += mv.div; t.otherDiv += mv.div;
     } else if (l.price) {
-      const d = toDivine(l.price.amount, l.price.currency, rates);
-      if (Number.isFinite(d)) { acc.otherDiv += d; t.otherDiv += d; }
+      const d = ratedDiv(l.price, rates);
+      if (d != null) { acc.otherDiv += d; t.otherDiv += d; }
       else { acc.unpriced++; t.unpriced++; }
     } else {
       acc.unpriced++; t.unpriced++;

@@ -1,0 +1,134 @@
+{
+  "_provenance": "SYNTHETIC fixture in the post-3.29.0 trade2 fetch shape (GGG API changelog 2026-07-21: explicitMods are ItemMod objects {description, hash, flags, mods}; crafted/fractured/desecrated folded into explicitMods). Field layout mirrors Exiled Exchange 2's real PoE2 capture renderer/specs/docs/fetchResponses2.json (commit d923d34, indexed 2026-06-18). Values are invented. A REAL capture goes to trade2-fetch-live.json via `npm run capture:trade2-fixture` and is contract-tested too.",
+  "result": [
+    {
+      "id": "fx-gloves-ib",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-25T10:00:00Z",
+        "stash": { "name": "sell", "x": 0, "y": 0 },
+        "account": { "name": "SellerOne#1234", "online": null, "lastCharacterName": "Seller" },
+        "price": { "type": "~b/o", "amount": 3, "currency": "divine" },
+        "fee": 80861,
+        "hideout_token": "eyJ0eXAiOiJKV1QifQ.synthetic.token"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "icon": "https://web.poecdn.com/gen/image/synthetic.png",
+        "league": "Forbidden Rites",
+        "id": "abc123",
+        "name": "Doom Grip",
+        "typeLine": "Vaal Gauntlets",
+        "baseType": "Vaal Gauntlets",
+        "rarity": "Rare",
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "ilvl": 82,
+        "identified": true,
+        "corrupted": false,
+        "fractured": true,
+        "desecrated": true,
+        "implicitMods": ["+25 to [Strength|Strength]"],
+        "runeMods": ["+12% to [Resistances|Cold Resistance]"],
+        "explicitMods": [
+          {
+            "description": "+95 to maximum [Life|Life]",
+            "hash": "stat.explicit.stat_3299347043",
+            "mods": [{ "name": "Virile", "tier": "P5", "level": 60, "magnitudes": [{ "min": "85", "max": "99" }] }]
+          },
+          {
+            "description": "+30% to [Resistances|Fire Resistance]",
+            "hash": "stat.explicit.stat_3372524247",
+            "mods": [{ "name": "of the Furnace", "tier": "S4", "level": 50, "magnitudes": [{ "min": "26", "max": "30" }] }]
+          },
+          {
+            "description": "14% increased [AttackSpeed|Attack Speed]",
+            "hash": "stat.fractured.stat_681332047",
+            "flags": { "fractured": true },
+            "mods": [{ "name": "of Fervour", "tier": "S2", "level": 76, "magnitudes": [{ "min": "13", "max": "16" }] }]
+          },
+          {
+            "description": "+2 to Level of all [Melee] Skills",
+            "hash": "stat.desecrated.stat_9187492",
+            "flags": { "desecrated": true },
+            "mods": [{ "name": "Abyssal", "tier": "P1", "level": 81, "magnitudes": [{ "min": "2", "max": "2" }] }]
+          }
+        ],
+        "extended": {
+          "hashes": {
+            "explicit": [["explicit.stat_3299347043", [0]], ["explicit.stat_3372524247", [1]]],
+            "fractured": [["fractured.stat_681332047", [0]]],
+            "desecrated": [["desecrated.stat_9187492", [0]]]
+          }
+        }
+      }
+    },
+    {
+      "id": "fx-ring-legacy",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-25T09:00:00Z",
+        "account": { "name": "OldFormat#1", "online": { "league": "Forbidden Rites" } },
+        "whisper": "@OldFormat Hi, I would like to buy your Gold Ring",
+        "price": { "type": "~price", "amount": 0, "currency": "exalted" }
+      },
+      "item": {
+        "name": "Rune Loop",
+        "typeLine": "Gold Ring",
+        "baseType": "Gold Ring",
+        "rarity": "Rare",
+        "ilvl": 79,
+        "explicitMods": ["+10 to all [Attributes|Attributes]", "[ShamanOnlyMods|Bonded]: +20 to maximum Mana"],
+        "craftedMods": ["+15% to [Resistances|Lightning Resistance]"]
+      }
+    },
+    {
+      "id": "fx-zero-mod-rare",
+      "listing": {
+        "indexed": "2026-09-25T09:30:00Z",
+        "account": { "name": "Blank#9", "online": null },
+        "price": { "type": "~b/o", "amount": 250, "currency": "exalted" },
+        "fee": 1200
+      },
+      "item": { "name": "Empty Shell", "baseType": "Vaal Gauntlets", "rarity": "Rare", "ilvl": 80, "explicitMods": [] }
+    },
+    {
+      "id": "fx-unrated-ccy",
+      "listing": {
+        "indexed": "2026-09-25T09:40:00Z",
+        "account": { "name": "Annuller#2", "online": null },
+        "price": { "type": "~b/o", "amount": 4, "currency": "annul" },
+        "fee": 900
+      },
+      "item": {
+        "name": "Odd Price",
+        "baseType": "Vaal Gauntlets",
+        "rarity": "Rare",
+        "ilvl": 81,
+        "explicitMods": [{ "description": "+80 to maximum [Life|Life]", "hash": "stat.explicit.stat_3299347043" }]
+      }
+    },
+    {
+      "id": "fx-mirrored",
+      "listing": {
+        "indexed": "2026-09-25T09:50:00Z",
+        "account": { "name": "Mirror#3", "online": null },
+        "price": { "type": "~b/o", "amount": 40, "currency": "divine" },
+        "fee": 5000
+      },
+      "item": {
+        "name": "Twin Grasp",
+        "baseType": "Vaal Gauntlets",
+        "rarity": "Rare",
+        "ilvl": 84,
+        "duplicated": true,
+        "explicitMods": [
+          { "description": "+120 to maximum [Life|Life]", "hash": "stat.explicit.stat_3299347043" },
+          42
+        ]
+      }
+    },
+    null
+  ]
+}

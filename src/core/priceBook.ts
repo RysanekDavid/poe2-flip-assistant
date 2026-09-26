@@ -1,32 +1,10 @@
-import { config } from "../config/env";
-
 /**
  * Price Book: value a rare item from observed market listings instead of a per-item live
  * search (which the trade2 rate limit can't sustain at scale). Every listing we see is
- * recorded under a (base + mod-signature) key; the distribution of asks under that key is
- * the market value. A listing far below the median, on a key with enough samples (volume
- * confidence), is a SNIPE.
- *
- * The signature is intentionally coarse for the MVP — same base + same SET of mod types
- * (rolls collapsed to '#'). Roll-quality variance becomes spread in the distribution; a
- * 50-vs-420 outlier still falls below the floor. Refine later with roll-tier bucketing
- * and pseudo-mod grouping (ref: Exiled Exchange 2 stat maps).
+ * recorded under ONE signature scheme — `rollSignature` (base + resolved stat refs + roll
+ * buckets) — by BOTH hunts and autosnipe, so the two engines feed and read the same space.
+ * (They used to write two incompatible key spaces into one table.)
  */
-
-/** Collapse a mod line to a roll-independent shape: numbers → '#', lowercased. */
-function normMod(m: string): string {
-  return m
-    .replace(/[+-]?\d+(?:\.\d+)?/g, "#")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** Stable key for an item: base type + its sorted, de-duped normalized mod set. */
-export function modSignature(baseType: string, mods: string[]): string {
-  const norm = [...new Set(mods.map(normMod).filter(Boolean))].sort();
-  return `${baseType.toLowerCase().trim()}|${norm.join("~")}`;
-}
 
 /**
  * Constant-relative-width roll buckets: two rolls within ~ratio of each other share a code,
@@ -43,61 +21,52 @@ export function bucketCode(value: number): string {
 }
 
 /**
- * Roll-AWARE signature: base type + sorted (stat ref + roll bucket). Unlike modSignature this
- * encodes *how high* each mod rolled, so the price-book distribution under a key is genuinely
- * comparable items — the precondition for a meaningful "this listing is far under value" call.
+ * Roll-AWARE signature: base type + sorted (stat ref + roll bucket). Encodes *how high* each
+ * mod rolled, so the price-book distribution under a key is genuinely comparable items — the
+ * precondition for a meaningful "this listing is far under value" call.
  */
 export function rollSignature(baseType: string, stats: Array<{ ref: string; value: number }>): string {
   const parts = [...new Set(stats.map((s) => `${s.ref}#${bucketCode(s.value)}`))].sort();
   return `${baseType.toLowerCase().trim()}|${parts.join("~")}`;
 }
 
-export interface PriceStats {
-  samples: number;
-  median: number | null;
-  p25: number | null;
-  min: number | null;
+/** How many stat tokens a signature carries. A bare "base|" (mods never resolved) is 0. */
+export function signatureModCount(sig: string): number {
+  const bar = sig.indexOf("|");
+  const tail = bar < 0 ? "" : sig.slice(bar + 1);
+  return tail === "" ? 0 : tail.split("~").length;
 }
 
-/** Median / 25th-percentile / min of a price sample (computed in JS — keys are narrow). */
-export function summarizePrices(prices: number[]): PriceStats {
-  const s = prices.filter((p) => Number.isFinite(p) && p > 0).sort((a, b) => a - b);
-  if (s.length === 0) return { samples: 0, median: null, p25: null, min: null };
-  const at = (q: number) => s[Math.min(s.length - 1, Math.floor(q * s.length))]!;
-  const mid = Math.floor(s.length / 2);
-  const median = s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
-  return { samples: s.length, median, p25: at(0.25), min: s[0]! };
+/** Listings under this fraction of the median of the rest are price-fixer bait, not market. */
+const OUTLIER_FRACTION = 0.3;
+/** At most this many cheap outliers are dropped — more than that and the "outliers" ARE the market. */
+const MAX_OUTLIERS = 3;
+
+export interface ReferenceValue {
+  valueDiv: number | null; // trimmed median, null when nothing usable remains
+  samples: number; // comparables the value stands on (after trimming)
+  dropped: number; // cheap outliers removed
+  minDiv: number | null; // cheapest surviving comparable
 }
 
-export interface SnipeResult {
-  sig: string;
-  askDiv: number;
-  valueDiv: number | null; // market value estimate (median of comparables)
-  samples: number;
-  minDiv: number | null;
-  p25Div: number | null;
-  discountPct: number | null; // % below median
-  isSnipe: boolean;
-  reason: string;
-}
+const medianOf = (sortedAsc: number[]): number => {
+  const m = Math.floor(sortedAsc.length / 2);
+  return sortedAsc.length % 2 ? sortedAsc[m]! : (sortedAsc[m - 1]! + sortedAsc[m]!) / 2;
+};
 
 /**
- * Decide whether `askDiv` is a snipe for a signature, given its observed price stats.
- * Snipe = enough samples (volume confidence) AND ask at/below median × (1 - discount).
+ * Trimmed-median reference value of a comparable set: non-positive / non-finite asks are
+ * discarded, then up to MAX_OUTLIERS of the cheapest asks are dropped while each sits under
+ * OUTLIER_FRACTION × median-of-the-rest. The candidate being judged must NOT be in `prices`
+ * (callers exclude it) — including it let a 1-ex listing drag its own reference down.
  */
-export function snipeVerdict(sig: string, askDiv: number, stats: PriceStats): SnipeResult {
-  const base = { sig, askDiv, valueDiv: stats.median, samples: stats.samples, minDiv: stats.min, p25Div: stats.p25 };
-  if (stats.samples < config.snipe.minSamples || stats.median == null) {
-    return { ...base, discountPct: null, isSnipe: false, reason: `thin data (${stats.samples}/${config.snipe.minSamples} samples)` };
+export function referenceValue(prices: number[]): ReferenceValue {
+  const xs = prices.filter((p) => Number.isFinite(p) && p > 0).sort((a, b) => a - b);
+  let dropped = 0;
+  while (dropped < MAX_OUTLIERS && xs.length > 1 && xs[0]! < OUTLIER_FRACTION * medianOf(xs.slice(1))) {
+    xs.shift();
+    dropped++;
   }
-  const discountPct = (1 - askDiv / stats.median) * 100;
-  const isSnipe = askDiv <= stats.median * (1 - config.snipe.discountPct / 100);
-  return {
-    ...base,
-    discountPct,
-    isSnipe,
-    reason: isSnipe
-      ? `${discountPct.toFixed(0)}% below median (${stats.samples} samples)`
-      : `only ${discountPct.toFixed(0)}% below median (need ≥${config.snipe.discountPct}%)`,
-  };
+  if (xs.length === 0) return { valueDiv: null, samples: 0, dropped, minDiv: null };
+  return { valueDiv: medianOf(xs), samples: xs.length, dropped, minDiv: xs[0]! };
 }
