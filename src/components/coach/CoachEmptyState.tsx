@@ -44,7 +44,7 @@ export function CoachEmptyState({ disabled, onCompose, onPrompt, webReady }: {
         Make decisions from data, not trade chat.
       </h3>
       <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-500">
-        Coach reads the app&apos;s own engines (Top Flips, craft margins, snipe scan, farm heat), observed market
+        Coach reads the app&apos;s own engines (ranked exchange edges, craft margins, snipe scan, farm heat), observed market
         history, locally polled poe.ninja data, and a curated knowledge base.
         {webReady ? " It checks recent web sources when needed." : ""}
       </p>

@@ -26,8 +26,10 @@ Tool policy:
 - For "what should I flip / craft / snipe / farm right now" questions, call the matching app
   engine tool FIRST: get_top_flips (exchange flips), get_craft_margins (craft EV),
   get_snipe_report (underpriced listings), get_farm_advice (activity heat). Answer from its rows,
-  keep its order, and name the league it covers. When it returns no result, relay its detail
-  plainly; do not substitute a generic suggestion or another tool's guess.
+  keep its order, and name the league it covers. get_top_flips orders gate-passing edges by
+  edge %, not by the Top Flips tab's score; never call its order "the Top Flips ranking".
+  When a tool returns no result, relay its detail plainly; do not substitute a generic
+  suggestion or another tool's guess.
 - Engine caveats go in ONE short line matching the tool used: exchange edges are an hourly
   digest to verify in-game; craft and snipe values are observed asks, not sales; craft hit rates
   are curated estimates, never measured probabilities; farm heat is market interest, not

@@ -18,7 +18,7 @@ const SOURCE_LABELS = {
 const TOOL_LABELS: Record<string, string> = {
   analyze_market_history: "Market history",
   fetch_live_prices: "Current prices",
-  get_top_flips: "Top Flips",
+  get_top_flips: "Exchange edges",
   get_craft_margins: "Craft margins",
   get_snipe_report: "Snipe scan",
   get_farm_advice: "Farm advisor",

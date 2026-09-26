@@ -24,7 +24,12 @@ def farm_db(market_db: Path, monkeypatch: Any) -> Path:
 
 
 def _add(
-    path: Path, league: str, item_id: str, category: str, value: float, volume: float,
+    path: Path,
+    league: str,
+    item_id: str,
+    category: str,
+    value: float,
+    volume: float,
     change: float | None,
 ) -> None:
     stamp = datetime.now(UTC).isoformat()
@@ -90,8 +95,13 @@ def test_payload_stays_under_the_cap(farm_db: Path, market_league: str) -> None:
     for category in range(20):
         for item in range(6):
             _add(
-                farm_db, market_league, f"long-item-name-{category}-{item}-with-extra-words",
-                f"Category{category}", 1.0 + item, 500, float(category + item),
+                farm_db,
+                market_league,
+                f"long-item-name-{category}-{item}-with-extra-words",
+                f"Category{category}",
+                1.0 + item,
+                500,
+                float(category + item),
             )
 
     text = farm.get_farm_advice.invoke({"limit": 8, "league": market_league})

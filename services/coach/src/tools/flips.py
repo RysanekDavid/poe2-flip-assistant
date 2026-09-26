@@ -14,12 +14,23 @@ from langchain_core.tools import InjectedToolArg, tool
 
 from src.config import get_settings
 from src.errors import ToolNoResult
-from src.tools.engine_common import engine_source, fit_payload, sig, utc_iso, validated_limit
+from src.tools.engine_common import (
+    engine_source,
+    fit_payload,
+    parse_utc,
+    sig,
+    utc_iso,
+    validated_limit,
+)
 from src.tools.sqlite_source import connect_read_only, raise_source_error
 
 #: Mirrors CX_MAX_AGE_MS in src/core/cx/cxItemMarkets.ts: past this the newest stored digest hour
 #: no longer stands for "the market now", and the app stops showing exchange edges.
 _CX_MAX_AGE_SECONDS = 3 * 60 * 60
+#: The poller stores every league's new digest hour in cx_ingest BEFORE it publishes that hour's
+#: ranked edges (src/scheduler/marketCycle.ts). Inside this window an empty newest hour means
+#: "not published yet", not "nothing ranks", so the previous published hour answers instead.
+_PUBLISH_GRACE_SECONDS = 120
 #: Mirrors PERSISTENCE_WINDOW_DAYS in src/core/cx/cxOutcomes.ts.
 _PERSISTENCE_WINDOW_DAYS = 7
 #: Added to cx_edge_outcomes after the table shipped; older rows (and a DB whose web process has
@@ -54,7 +65,7 @@ def get_top_flips(limit: int, league: Annotated[str, InjectedToolArg]) -> str:
     now = datetime.now(UTC)
     try:
         with closing(connect_read_only(get_settings().poe_db_path)) as connection:
-            hour = _fresh_newest_hour(connection, league, now)
+            hour, processing = _published_hour(connection, league, now)
             rows = _ranked_rows(connection, league, hour)
             persisted = _persisted_next_hour(connection, league, now)
             mids = _ninja_mids(connection, league, [_name(row) for row in rows[:count]])
@@ -62,7 +73,7 @@ def get_top_flips(limit: int, league: Annotated[str, InjectedToolArg]) -> str:
         raise_source_error(error)
     source = engine_source(
         f"flips|{league}|{hour}",
-        f"Top Flips: ranked exchange edges, {league}, digest to {utc_iso(hour)}",
+        f"Ranked exchange edges, {league}, digest to {utc_iso(hour)}",
     )
     payload: dict[str, object] = {
         "league": league,
@@ -70,7 +81,8 @@ def get_top_flips(limit: int, league: Annotated[str, InjectedToolArg]) -> str:
         "executable": False,
         "digest_hour_end_utc": utc_iso(hour),
         "rank_gate": _GATE,
-        "order": "edge_pct descending; the Top Flips table also weighs liquidity and oscillation",
+        "order": "edge_pct descending, not the Top Flips tab's score (which adds liquidity and "
+        "oscillation)",
         "verify_in_game": True,
         "caveat": _CAVEAT,
         "ranked_total": len(rows),
@@ -79,14 +91,18 @@ def get_top_flips(limit: int, league: Annotated[str, InjectedToolArg]) -> str:
         "evidence_id": source["id"],
         "sources": [source],
     }
+    if processing:
+        payload["newest_digest_hour"] = "still being processed; showing the previous hour"
     return fit_payload(payload, "flips")
 
 
-def _fresh_newest_hour(connection: sqlite3.Connection, league: str, now: datetime) -> int:
+def _published_hour(connection: sqlite3.Connection, league: str, now: datetime) -> tuple[int, bool]:
+    """The digest hour to answer from, and whether the newest one is still being published."""
     row = connection.execute(
-        "SELECT MAX(hour) AS hour FROM cx_ingest WHERE league = ?", (league,)
+        "SELECT hour, ingested_at FROM cx_ingest WHERE league = ? ORDER BY hour DESC LIMIT 1",
+        (league,),
     ).fetchone()
-    if row is None or row["hour"] is None:
+    if row is None:
         raise ToolNoResult(
             f"No exchange history for league {league!r}",
             public_detail=(
@@ -95,15 +111,35 @@ def _fresh_newest_hour(connection: sqlite3.Connection, league: str, now: datetim
             ),
         )
     hour = int(row["hour"])
+    _require_fresh(hour, now)
+    published = connection.execute(
+        "SELECT 1 FROM cx_edge_outcomes WHERE league = ? AND hour = ? LIMIT 1", (league, hour)
+    ).fetchone()
+    just_ingested = (now - parse_utc(str(row["ingested_at"]))).total_seconds() < (
+        _PUBLISH_GRACE_SECONDS
+    )
+    if published is not None or not just_ingested:
+        return hour, False
+    previous = connection.execute(
+        "SELECT MAX(hour) AS hour FROM cx_ingest WHERE league = ? AND hour < ?", (league, hour)
+    ).fetchone()
+    if previous is None or previous["hour"] is None:
+        return hour, False
+    earlier = int(previous["hour"])
+    if now.timestamp() - earlier > _CX_MAX_AGE_SECONDS:
+        return hour, False
+    return earlier, True
+
+
+def _require_fresh(hour: int, now: datetime) -> None:
     if now.timestamp() - hour > _CX_MAX_AGE_SECONDS:
         raise ToolNoResult(
-            f"Exchange history for {league!r} is stale",
+            f"Exchange history is stale at {hour}",
             public_detail=(
-                f"The newest stored exchange digest hour ends {utc_iso(hour)}, older than 3 "
+                f"The newest usable exchange digest hour ends {utc_iso(hour)}, older than 3 "
                 "hours, so the app shows no current flips. Say the exchange feed is behind."
             ),
         )
-    return hour
 
 
 def _ranked_rows(connection: sqlite3.Connection, league: str, hour: int) -> list[sqlite3.Row]:
@@ -113,8 +149,7 @@ def _ranked_rows(connection: sqlite3.Connection, league: str, hour: int) -> list
     }
     # Column names come from the fixed tuple above, never from input.
     detail = ", ".join(
-        f"o.{name} AS {name}" if name in present else f"NULL AS {name}"
-        for name in _DETAIL_COLUMNS
+        f"o.{name} AS {name}" if name in present else f"NULL AS {name}" for name in _DETAIL_COLUMNS
     )
     rows = connection.execute(
         f"""
@@ -162,9 +197,7 @@ def _persisted_next_hour(
     }
 
 
-def _ninja_mids(
-    connection: sqlite3.Connection, league: str, names: list[str]
-) -> dict[str, float]:
+def _ninja_mids(connection: sqlite3.Connection, league: str, names: list[str]) -> dict[str, float]:
     """Latest poe.ninja reference mid per exact name; a name on two ninja lines is left out."""
     if not names:
         return {}

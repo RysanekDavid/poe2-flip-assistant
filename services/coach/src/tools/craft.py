@@ -6,6 +6,7 @@ so reports exist only for the league it scanned; another league gets an honest "
 """
 
 import json
+import logging
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass, field
@@ -34,6 +35,7 @@ from src.tools.engine_common import (
 )
 from src.tools.sqlite_source import connect_read_only, raise_source_error
 
+logger = logging.getLogger("uvicorn.error")
 DomainFilter = Literal["any", "jewel", "weapon", "jewellery", "armour"]
 _EV_FORMULA = (
     "EV per attempt = curated hit-rate estimate × result ask (p30 of floor-filtered listings) "
@@ -60,8 +62,9 @@ def get_craft_margins(
     """Return up to `limit` (1-8) curated craft recipes ranked by expected Div per attempt.
 
     Use for "what should I craft right now". `domain` narrows to jewel, weapon, jewellery or
-    armour recipes, or "any". Recipes passing the app's confidence gate come first; each row
-    has EV, margin %, market depth behind both legs, and its gate reasons when it does not pass.
+    armour recipes, or "any". Only current, successfully priced reports are listed; failed,
+    stale or unreadable ones are left out and counted in `excluded`. Listed recipes that pass the
+    app's confidence gate come first; the rest carry their gate reasons.
     """
     count = validated_limit(limit, 8)
     settings = get_settings()
@@ -127,16 +130,14 @@ def _report_rows(connection: sqlite3.Connection, league: str) -> list[sqlite3.Ro
     )
 
 
-def _triage(
-    rows: list[sqlite3.Row], domain: DomainFilter, now: datetime, max_age: int
-) -> _Triage:
+def _triage(rows: list[sqlite3.Row], domain: DomainFilter, now: datetime, max_age: int) -> _Triage:
     triage = _Triage()
     for row in rows:
         key = str(row["recipe_key"])
         meta = RECIPES.get(key)
         if domain != "any" and (meta is None or meta.domain != domain):
             continue
-        report = _parse(str(row["report_json"]))
+        report = _parse(key, str(row["report_json"]), log=not triage.excluded["unreadable"])
         if report is None:
             triage.excluded["unreadable"] += 1
         elif report.status != "ok" or report.base is None or report.result is None:
@@ -148,10 +149,25 @@ def _triage(
     return triage
 
 
-def _parse(text: str) -> MarginReport | None:
+def _parse(key: str, text: str, *, log: bool) -> MarginReport | None:
+    """None for a row the app's schema would also reject; the first per call is logged."""
     try:
         return MarginReport.model_validate(json.loads(text))
-    except (json.JSONDecodeError, ValidationError):
+    except json.JSONDecodeError as error:
+        if log:
+            logger.warning(
+                "coach_craft_report_unreadable key=%s reason=json pos=%d", key, error.pos
+            )
+        return None
+    except ValidationError as error:
+        if log:
+            first = error.errors()[0]
+            logger.warning(
+                "coach_craft_report_unreadable key=%s reason=schema loc=%s type=%s",
+                key,
+                ".".join(str(part) for part in first["loc"]),
+                first["type"],
+            )
         return None
 
 

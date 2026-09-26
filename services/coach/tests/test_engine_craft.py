@@ -1,6 +1,7 @@
 """get_craft_margins serves stored craft reports through the app's gate, per league."""
 
 import json
+import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -62,8 +63,11 @@ def test_domain_filter_and_exclusions_are_counted(craft_db: Path, market_league:
     stale_age = timedelta(minutes=report_max_age_minutes(10) + 1)
     add_craft(craft_db, market_league, "bow_amanamu", craft_report("bow_amanamu", 1.2))
     add_craft(
-        craft_db, market_league, "wand_alloy_crystallisation",
-        craft_report("wand_alloy_crystallisation", 5.0), age=stale_age,
+        craft_db,
+        market_league,
+        "wand_alloy_crystallisation",
+        craft_report("wand_alloy_crystallisation", 5.0),
+        age=stale_age,
     )
     failed = craft_report("quarterstaff_desecrate_crit", 0.0, status="leg-failed", result=None)
     add_craft(craft_db, market_league, "quarterstaff_desecrate_crit", failed)
@@ -80,7 +84,10 @@ def test_legacy_valuation_and_flagged_return_fail_the_gate(
 ) -> None:
     # 12 result listings clear the base depth gate but not the flagged-return one (20).
     report = craft_report(
-        "ring_fractured_t1res", 4.0, valuation="legacy-cheapest", returnFlagged=True,
+        "ring_fractured_t1res",
+        4.0,
+        valuation="legacy-cheapest",
+        returnFlagged=True,
         result=leg(6.0, total=12),
     )
     add_craft(craft_db, market_league, "ring_fractured_t1res", report)
@@ -97,7 +104,10 @@ def test_failing_rescans_are_flagged_beside_the_last_good_report(
     craft_db: Path, market_league: str
 ) -> None:
     add_craft(
-        craft_db, market_league, "bow_amanamu", craft_report("bow_amanamu", 1.2),
+        craft_db,
+        market_league,
+        "bow_amanamu",
+        craft_report("bow_amanamu", 1.2),
         last_error_at=datetime.now(UTC),
     )
 
@@ -116,7 +126,10 @@ def test_reports_of_another_league_are_never_served(craft_db: Path, market_leagu
 
 def test_all_stale_is_no_result(craft_db: Path, market_league: str) -> None:
     add_craft(
-        craft_db, market_league, "bow_amanamu", craft_report("bow_amanamu", 1.2),
+        craft_db,
+        market_league,
+        "bow_amanamu",
+        craft_report("bow_amanamu", 1.2),
         age=timedelta(days=2),
     )
 
@@ -140,8 +153,9 @@ async def test_only_malformed_rows_is_source_unavailable_not_a_crash(
 
 
 def test_malformed_row_beside_good_ones_is_counted_and_skipped(
-    craft_db: Path, market_league: str
+    craft_db: Path, market_league: str, caplog: pytest.LogCaptureFixture
 ) -> None:
+    caplog.set_level(logging.WARNING, logger="uvicorn.error")
     add_craft(craft_db, market_league, "bow_amanamu", "[1, 2")
     add_craft(craft_db, market_league, "jewel_suffix_push", craft_report("jewel_suffix_push", 3.4))
     # A number stored as text is corrupt in the app's zod schema too.
@@ -152,6 +166,8 @@ def test_malformed_row_beside_good_ones_is_counted_and_skipped(
 
     assert [recipe["key"] for recipe in result["recipes"]] == ["jewel_suffix_push"]
     assert result["excluded"]["unreadable"] == 2
+    # Loud but bounded: the first unreadable row per call is logged, not every one.
+    assert caplog.text.count("coach_craft_report_unreadable") == 1
 
 
 def test_every_recipe_fits_under_the_payload_cap(craft_db: Path, market_league: str) -> None:
@@ -159,7 +175,10 @@ def test_every_recipe_fits_under_the_payload_cap(craft_db: Path, market_league: 
 
     for index, key in enumerate(RECIPES):
         thin = craft_report(
-            key, float(index), valuation="legacy-cheapest", returnFlagged=True,
+            key,
+            float(index),
+            valuation="legacy-cheapest",
+            returnFlagged=True,
             base=leg(1.0, samples=1, total=2, unresolvedStats=["x"], outliersDropped=3),
             result=leg(6.0, samples=1, total=2, unresolvedStats=["y"], outliersDropped=3),
         )

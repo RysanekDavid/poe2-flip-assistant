@@ -10,9 +10,10 @@ from pathlib import Path
 
 import pytest
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel
 
 from src.config import APP_ROOT, Settings
-from src.tools import craft_gate, farm_tables, flips, get_tools
+from src.tools import craft_gate, farm_tables, flips, get_tools, snipe
 
 _ENGINE_TOOLS = {"get_top_flips", "get_craft_margins", "get_snipe_report", "get_farm_advice"}
 
@@ -67,6 +68,8 @@ def test_farm_tables_match_farm_advisor() -> None:
     source = _ts("src/core/farmAdvisor.ts")
     overrides_block = source.split("const SOURCE_OVERRIDES", 1)[1].split("};", 1)[0]
     overrides = dict(re.findall(r'^\s+"([a-z0-9-]+)": "(\w+)",', overrides_block, re.MULTILINE))
+    # Every entry line must be parsed; a reformatted entry must not silently drop out.
+    assert len(overrides) == len(re.findall(r'^\s+"[^"]+":', overrides_block, re.MULTILINE))
     assert overrides == farm_tables.SOURCE_OVERRIDES
 
     labels_block = source.split("const FARM_LABELS", 1)[1].split("};", 1)[0]
@@ -76,6 +79,7 @@ def test_farm_tables_match_farm_advisor() -> None:
             r'^\s+(\w+): \{ label: "([^"]+)", hint: "([^"]*)" \},', labels_block, re.MULTILINE
         )
     }
+    assert len(labels) == len(re.findall(r"^\s+\w+: \{", labels_block, re.MULTILINE))
     assert labels == farm_tables.FARM_LABELS
     assert int(_const(source, "MIN_VOLUME")) == farm_tables.MIN_VOLUME
     assert 'wAvgChange7d >= 30 ? "HOT" : wAvgChange7d >= 10 ? "WARM" : "COLD"' in source
@@ -100,6 +104,44 @@ def test_published_detail_columns_match_the_node_migration() -> None:
     source = _ts("src/db/cxEdgeDetail.ts")
     columns = tuple(re.findall(r'^\s+\["(\w+)", "(?:INTEGER|REAL)"\]', source, re.MULTILINE))
     assert columns == flips._DETAIL_COLUMNS
+
+
+def _ts_keys(source: str, opener: str) -> set[str]:
+    """Property names of one TS object literal / interface, from `opener` to its closing brace."""
+    assert opener in source, f"{opener!r} not found"
+    body = source.split(opener, 1)[1]
+    end = re.search(r"^\}", body, re.MULTILINE)
+    assert end is not None
+    return set(re.findall(r"^  (\w+)\??:", body[: end.start()], re.MULTILINE))
+
+
+def _aliases(model: type[BaseModel]) -> set[str]:
+    return {str(field.alias) for field in model.model_fields.values()}
+
+
+@pytest.mark.parametrize(
+    ("model", "path", "opener"),
+    [
+        (
+            craft_gate.LegReport,
+            "src/core/craftRecipes.ts",
+            "export const LegReportSchema = z.object({",
+        ),
+        (
+            craft_gate.MarginReport,
+            "src/core/craftRecipes.ts",
+            "export const RecipeMarginReportSchema = z.object({",
+        ),
+        (snipe.SnipeFinding, "src/core/autoSnipe.ts", "export interface SnipeFinding {"),
+        (snipe.ScanReport, "src/core/autoSnipe.ts", "export interface ScanReport {"),
+    ],
+)
+def test_stored_json_field_names_match_the_typescript_schemas(
+    model: type[BaseModel], path: str, opener: str
+) -> None:
+    ts_keys = _ts_keys(_ts(path), opener)
+
+    assert _aliases(model) <= ts_keys, _aliases(model) - ts_keys
 
 
 @pytest.mark.parametrize("name", sorted(_ENGINE_TOOLS))

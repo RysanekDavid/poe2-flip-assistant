@@ -1,6 +1,7 @@
 """get_top_flips reads the app's published exchange edges for the asking league only."""
 
 import json
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,7 @@ from langchain_core.messages import AIMessage
 from src.errors import ToolNoResult
 from src.tool_execution import tool_node
 from src.tools import flips
-from src.tools.engine_common import PAYLOAD_CAP_BYTES
+from src.tools.engine_common import PAYLOAD_CAP_BYTES, utc_iso
 
 
 @pytest.fixture
@@ -42,8 +43,14 @@ def test_returns_newest_hour_ranked_edges_for_the_league_only(
         add_ingest(cx_db, league, hour - 3600)
     add_edge(cx_db, market_league, hour, "Metadata/Sim", 8.2, **detail(6, 900.0))
     add_edge(
-        cx_db, market_league, hour, "Metadata/Rune", 12.5,
-        buy_quote="Metadata/Ex", sell_quote="Metadata/Ex", **detail(4, 150.0),
+        cx_db,
+        market_league,
+        hour,
+        "Metadata/Rune",
+        12.5,
+        buy_quote="Metadata/Ex",
+        sell_quote="Metadata/Ex",
+        **detail(4, 150.0),
     )
     # Older hour and another league must not leak into "now".
     add_edge(cx_db, market_league, hour - 3600, "Metadata/Omen", 30.0, outcome="hit")
@@ -85,9 +92,7 @@ def test_ninja_context_joins_the_latest_snapshot_by_exact_name(
     assert result["flips"][0]["ninja_mid_div"] == 0.02
 
 
-def test_no_edge_at_the_newest_hour_is_an_honest_no_result(
-    cx_db: Path, market_league: str
-) -> None:
+def test_no_edge_at_the_newest_hour_is_an_honest_no_result(cx_db: Path, market_league: str) -> None:
     hour = current_hour()
     add_ingest(cx_db, market_league, hour)
     add_ingest(cx_db, market_league, hour - 3600)
@@ -99,6 +104,21 @@ def test_no_edge_at_the_newest_hour_is_an_honest_no_result(
 
     assert raised.value.public_detail is not None
     assert "passes the app's rank gate" in raised.value.public_detail
+
+
+def test_newest_hour_still_publishing_falls_back_to_the_previous_hour(
+    cx_db: Path, market_league: str
+) -> None:
+    hour = current_hour()
+    add_ingest(cx_db, market_league, hour - 3600)
+    add_ingest(cx_db, market_league, hour, ingested=timedelta(seconds=20))
+    add_edge(cx_db, market_league, hour - 3600, "Metadata/Sim", 9.0, **detail())
+
+    result = _invoke(market_league)
+
+    assert [flip["item"] for flip in result["flips"]] == ["Simulacrum"]
+    assert result["digest_hour_end_utc"] == utc_iso(hour - 3600)
+    assert "still being processed" in result["newest_digest_hour"]
 
 
 def test_league_without_exchange_history_is_reported(cx_db: Path) -> None:
