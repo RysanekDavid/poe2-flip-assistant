@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const targets = {
+  auth: "src/scripts/testAuth.ts",
   craft: "src/scripts/testCraftMargin.ts",
   db: "src/scripts/testDbCompact.ts",
   market: "src/scripts/testMarketLeague.ts",
@@ -17,6 +18,7 @@ if (!target || !(target in targets)) {
 
 process.env.APP_DISABLE_DOTENV = "1";
 process.env.OWNER_PASSWORD = "test-only-owner-password";
+process.env.AUTH_SECRET = "test-only-auth-secret";
 process.env.DB_PATH = resolve("data", `tmp-${target}-test.db`);
 
 import(pathToFileURL(resolve(targets[target])).href).catch((error: unknown) => {

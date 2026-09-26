@@ -9,6 +9,13 @@ import { decodeSessionPayload, parseSessionToken, SESSION_COOKIE } from "./auth/
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
+  // CSRF defense in depth on top of SameSite=Lax: browsers always send Origin on cross-site
+  // mutating requests. Absent Origin = non-browser client (local agent, curl) and is allowed;
+  // those carry no ambient cookies worth protecting.
+  if (isCrossOriginMutation(req)) {
+    return NextResponse.json({ error: "cross-origin request rejected" }, { status: 403 });
+  }
+
   // Always-open paths: the login page and the auth API (login/logout/me).
   if (pathname === "/login" || pathname.startsWith("/api/auth")) return NextResponse.next();
 
@@ -21,13 +28,30 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   return NextResponse.redirect(loginUrl(req));
 }
 
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function isCrossOriginMutation(req: NextRequest): boolean {
+  if (!MUTATING_METHODS.has(req.method.toUpperCase())) return false;
+  const origin = req.headers.get("origin");
+  if (origin === null) return false;
+  return origin !== appOrigin(req);
+}
+
 function loginUrl(req: NextRequest): URL {
+  return new URL("/login", appOrigin(req));
+}
+
+/**
+ * The public origin: validated APP_ORIGIN, never the internal upstream or a Host header.
+ * Dev without APP_ORIGIN falls back to the request's own origin.
+ */
+function appOrigin(req: NextRequest): string {
   const configured = process.env.APP_ORIGIN;
   if (!configured) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("APP_ORIGIN is required for production redirects");
+      throw new Error("APP_ORIGIN is required in production (redirects + Origin check)");
     }
-    return new URL("/login", req.url);
+    return new URL(req.url).origin;
   }
   const origin = new URL(configured);
   const invalidShape = origin.username !== "" || origin.password !== "" ||
@@ -35,7 +59,7 @@ function loginUrl(req: NextRequest): URL {
   if (invalidShape || (process.env.NODE_ENV === "production" && origin.protocol !== "https:")) {
     throw new Error("APP_ORIGIN must be a bare HTTPS origin in production");
   }
-  return new URL("/login", origin);
+  return origin.origin;
 }
 
 async function verifyEdgeSession(token: string, secret: string | undefined): Promise<boolean> {

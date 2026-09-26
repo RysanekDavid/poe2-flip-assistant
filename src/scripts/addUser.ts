@@ -18,7 +18,7 @@ async function main(): Promise<void> {
   if (getUserByName(name)) {
     throw new Error(`user "${name}" already exists`);
   }
-  const u = createUser(name, password, role);
+  const u = await createUser(name, password, role);
   console.log(`created user #${u.id} "${u.name}" (${u.role})`);
   console.log("No API key or password was printed. POESESSID remains unset.");
 }

@@ -34,7 +34,8 @@
     "test:patch": "tsx src/scripts/testPatchNotes.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "lint": "tsx src/scripts/lintPolicy.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:auth": "tsx src/scripts/runWithTestEnv.ts auth"
   },
   "dependencies": {
     "axios": "^1.7.0",

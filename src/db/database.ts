@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { readFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { config } from "../config/env";
-import { hashPassword, genApiKey } from "../auth/auth";
+import { hashPasswordSync, genApiKey } from "../auth/credentials";
 import { migratePatchProvenance } from "./sourceMigrations";
 import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
 
@@ -63,6 +63,9 @@ export function getDb(): Database.Database {
     // pre-existing row means: nobody had ever chosen a league of their own.
     ["league", "TEXT"],
     ["league_set_at", "TEXT"], // ISO stamp of the last switch — the poller's dwell debounce reads it
+    // Signed into every session token; bumping it revokes them. Default 0 matches tokens that
+    // predate the column, so existing logins survive the deploy.
+    ["session_version", "INTEGER NOT NULL DEFAULT 0"],
   ]);
 
   // Multi-tenancy: every private table gains user_id (existing rows backfill to owner id=1).
@@ -107,7 +110,7 @@ function seedOwner(conn: Database.Database): void {
   }
   conn
     .prepare("INSERT INTO users (id, name, password_hash, api_key, role) VALUES (1, ?, ?, ?, 'owner')")
-    .run(config.ownerName, hashPassword(pw), genApiKey());
+    .run(config.ownerName, hashPasswordSync(pw), genApiKey());
 }
 
 /** watchlist shipped with an inline `item_id UNIQUE` (global) — rebuild to per-user uniqueness. */
