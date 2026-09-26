@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { tradeErrorResponse } from "../../../../lib/tradeRouteError";
 import { balanceStats } from "../../../../db/balanceQueries";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
@@ -51,6 +52,6 @@ export async function POST(): Promise<Response> {
     const { snapshot, scan } = await recordTradeBalance(user.id, league, cred.account, resolved.rates, cred);
     return NextResponse.json({ snapshot, stats: balanceStats(user.id, league), scan, warning, computedLeague: league });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
+    return tradeErrorResponse(e);
   }
 }

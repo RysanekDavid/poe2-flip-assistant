@@ -3,6 +3,11 @@ import Bottleneck from "bottleneck";
 import { config } from "../config/env";
 import { getDefaultLeague } from "../core/leagueState";
 import { buildTradeQuery, type TradeQuery } from "../lib/tradeLink";
+import { createRateGovernor, type RateGovernor, type TradeEndpoint } from "./tradeRateLimit";
+import { scheduleMetered } from "./tradeMeter";
+import { TradeRateLimitedError } from "./tradeErrors";
+import { dbRateStore } from "../db/tradeRateQueries";
+import { parseFetchResponse, type Listing } from "./tradeListing";
 
 /**
  * Read-only client for the official PoE2 trade API. We search and price-check —
@@ -16,62 +21,30 @@ import { buildTradeQuery, type TradeQuery } from "../lib/tradeLink";
  */
 const BASE = "https://www.pathofexile.com/api/trade2";
 
-// One request at a time, never faster than the configured floor — protects against
-// the trade API rate limits (429). Background scans queue through this.
+// One request at a time per process, never faster than the configured floor. Two processes call
+// trade2 — the poller (scans) and the web server (interactive lookups: snipe listings, craft
+// rolls, balance reads) — so each has its own limiter; the shared account+IP budget is enforced by
+// the governor, whose request log and restriction state live in the DB both processes read.
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: config.hunt.minRequestMs });
+let governor: RateGovernor | null = null;
+const gov = (): RateGovernor => (governor ??= createRateGovernor(dbRateStore()));
 
-export interface Listing {
-  listingId: string; // unique listing hash — for de-duping across re-lists
-  price: { amount: number; currency: string } | null;
-  account: string;
-  online: boolean; // seller currently in-game
-  indexed: string | null; // when the listing was indexed (age)
-  whisper: string | null;
-  itemName: string;
-  baseType: string;
-  icon: string | null; // rendered item art (trade2 CDN url) — for showing the actual item in results
-  stackSize: number; // for currency: how many orbs in the stack (0 if N/A)
-  mods: string[]; // explicit + implicit + rune mod lines, as displayed (for mod-value scans)
-  stash: string | null; // stash tab the listing sits in (your own listings expose this)
+/**
+ * Longest budget wait a call may sit out inline before failing with TradeRateLimitedError. The
+ * default suits the WEB process: an HTTP request must not hang for a minute behind the 36s search
+ * pace, so the route answers 503 + Retry-After instead. The poller raises it at startup — its
+ * scans are background work and simply queue behind the pace.
+ */
+let maxInlineWaitMs = 10_000;
+export const POLLER_MAX_INLINE_WAIT_MS = 120_000;
+export function setMaxInlineWaitMs(ms: number): void {
+  maxInlineWaitMs = ms;
 }
 
 export interface SearchResp {
   id: string; // queryId — reused by the live WebSocket
   result: string[];
   total: number;
-}
-interface FetchResp {
-  result: Array<{
-    id?: string;
-    listing?: {
-      indexed?: string;
-      price?: { amount?: number; currency?: string } | null;
-      account?: { name?: string; online?: unknown };
-      whisper?: string;
-      stash?: { name?: string };
-    };
-    item?: {
-      name?: string;
-      typeLine?: string;
-      baseType?: string;
-      icon?: string;
-      stackSize?: number;
-      explicitMods?: string[];
-      implicitMods?: string[];
-      runeMods?: string[];
-      craftedMods?: string[];
-      fracturedMods?: string[];
-      enchantMods?: string[];
-    };
-  } | null>;
-}
-
-/** Strip trade2 display markup: "[Resistances|Cold Resistance]" → "Cold Resistance", "[Bonded]" → "Bonded". */
-function cleanMod(m: string): string {
-  return m
-    .replace(/\[[^\]|]*\|([^\]]*)\]/g, "$1")
-    .replace(/\[([^\]]*)\]/g, "$1")
-    .trim();
 }
 
 /** Per-user trade2 credentials. Threaded through every call so users search with their own cookie. */
@@ -98,61 +71,50 @@ function authHeaders(cred: TradeCred): Record<string, string> {
   };
 }
 
-/** Wrap a trade2 call with the limiter + a clear message on the common failure modes. */
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+const endpointOf = (path: string): TradeEndpoint => (path.startsWith("/fetch/") ? "fetch" : "search");
+
+/** Wait until the shared budget admits this request (and record it), or fail fast on a long block. */
+async function reserveBudget(kind: TradeEndpoint): Promise<void> {
+  for (;;) {
+    const wait = gov().reserve(kind);
+    if (wait === 0) return;
+    if (wait > maxInlineWaitMs) throw new TradeRateLimitedError(kind, wait);
+    await sleep(wait);
+  }
+}
+
+function describeFailure(err: unknown, method: string, path: string): Error {
+  const ax = err as AxiosError;
+  const status = ax.response?.status;
+  if (status === 429) {
+    const retry = ax.response?.headers?.["retry-after"];
+    return new Error(`trade2 rate-limited (429)${retry ? ` — backing off ${retry}s` : ""}.`);
+  }
+  if (status === 403) return new Error("trade2 403 — POESESSID invalid/expired or Cloudflare challenge. Refresh your cookie.");
+  // surface the API's error body (trade2 explains 400s, e.g. an invalid filter id)
+  const body = ax.response?.data ? ` — ${JSON.stringify(ax.response.data).slice(0, 300)}` : "";
+  return new Error(`trade2 ${method.toUpperCase()} ${path} failed (${status ?? "no-status"})${body}`);
+}
+
+/** Wrap a trade2 call with the limiter + governor + a clear message on the common failure modes. */
 async function call<T>(method: "get" | "post", path: string, cred: TradeCred, body?: unknown): Promise<T> {
-  return limiter.schedule(async () => {
+  const kind = endpointOf(path);
+  // the caller's scan meter is captured HERE, before the queue (see tradeMeter.scheduleMetered)
+  return scheduleMetered(limiter, kind, async (count) => {
+    await reserveBudget(kind);
+    count();
     try {
-      const res = await axios.request<T>({
-        method,
-        url: `${BASE}${path}`,
-        data: body,
-        timeout: 20_000,
-        headers: authHeaders(cred),
-      });
+      const res = await axios.request<T>({ method, url: `${BASE}${path}`, data: body, timeout: 20_000, headers: authHeaders(cred) });
+      gov().observe(kind, res.status, res.headers);
       return res.data;
     } catch (err) {
       const ax = err as AxiosError;
-      const status = ax.response?.status;
-      if (status === 429) {
-        const retry = ax.response?.headers?.["retry-after"];
-        throw new Error(`trade2 rate-limited (429)${retry ? ` — retry after ${retry}s` : ""}. Slow the scan cadence.`);
-      }
-      if (status === 403) {
-        throw new Error("trade2 403 — POESESSID invalid/expired or Cloudflare challenge. Refresh your cookie.");
-      }
-      // surface the API's error body (trade2 explains 400s, e.g. an invalid filter id)
-      const body = ax.response?.data ? ` — ${JSON.stringify(ax.response.data).slice(0, 300)}` : "";
-      throw new Error(`trade2 ${method.toUpperCase()} ${path} failed (${status ?? "no-status"})${body}`);
+      if (ax.response) gov().observe(kind, ax.response.status ?? null, ax.response.headers);
+      throw describeFailure(err, method, path);
     }
   });
-}
-
-function parseListing(r: FetchResp["result"][number]): Listing | null {
-  if (!r) return null;
-  const p = r.listing?.price;
-  return {
-    listingId: r.id ?? "",
-    price: p && p.amount != null && p.currency ? { amount: p.amount, currency: p.currency } : null,
-    account: r.listing?.account?.name ?? "?",
-    online: r.listing?.account?.online != null,
-    indexed: r.listing?.indexed ?? null,
-    whisper: r.listing?.whisper ?? null,
-    itemName: r.item?.name || r.item?.baseType || r.item?.typeLine || "?",
-    baseType: r.item?.baseType || r.item?.typeLine || "",
-    icon: r.item?.icon ?? null,
-    stackSize: r.item?.stackSize ?? 0,
-    mods: [
-      ...(r.item?.implicitMods ?? []),
-      ...(r.item?.explicitMods ?? []),
-      ...(r.item?.craftedMods ?? []),
-      ...(r.item?.fracturedMods ?? []),
-      ...(r.item?.runeMods ?? []),
-      ...(r.item?.enchantMods ?? []),
-    ]
-      .filter((m): m is string => typeof m === "string")
-      .map(cleanMod),
-    stash: r.listing?.stash?.name ?? null,
-  };
 }
 
 /** Sort spec: "asc"/"desc" = by price (the common case), or an explicit field map,
@@ -180,8 +142,8 @@ export async function fetchListings(
 ): Promise<Listing[]> {
   const slice = ids.slice(0, 10);
   if (slice.length === 0) return [];
-  const fetched = await call<FetchResp>("get", `/fetch/${slice.join(",")}?query=${queryId}&realm=poe2`, cred);
-  return (fetched.result ?? []).map(parseListing).filter((l): l is Listing => l != null);
+  const fetched = await call<unknown>("get", `/fetch/${slice.join(",")}?query=${queryId}&realm=poe2`, cred);
+  return parseFetchResponse(fetched);
 }
 
 /**
@@ -230,31 +192,6 @@ export async function searchListingsLinked(
     listings.push(...(await fetchListings(ids.slice(i, i + 10), search.id, cred)));
   }
   return { total: search.total ?? listings.length, listings, searchUrl: searchPageUrl(search.id) };
-}
-
-/**
- * Search every item YOU have listed (in public stash tabs), by account name. This is how
- * PoE2 net-worth tools read your stash — the official stash API is PoE1-only, but a trade
- * search filtered to your own account returns all your indexed (public-tab) listings,
- * currency stacks included. Read-only; only sees PUBLIC tabs.
- */
-export async function searchAccountListings(
-  account: string,
-  limit = 200,
-  cred: TradeCred = configCred(),
-): Promise<{ total: number; listings: Listing[] }> {
-  const league = encodeURIComponent(getDefaultLeague());
-  const body = {
-    query: { filters: { trade_filters: { filters: { account: { input: account } } } } },
-    sort: { price: "asc" },
-  };
-  const search = await call<SearchResp>("post", `/search/poe2/${league}?realm=poe2`, cred, body);
-  const ids = (search.result ?? []).slice(0, limit);
-  const listings: Listing[] = [];
-  for (let i = 0; i < ids.length; i += 10) {
-    listings.push(...(await fetchListings(ids.slice(i, i + 10), search.id, cred)));
-  }
-  return { total: search.total ?? listings.length, listings };
 }
 
 export const liveSearchEnabled = (cred: TradeCred = configCred()): boolean => cred.poesessid.length > 0;

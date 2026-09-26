@@ -1,4 +1,5 @@
-import { createSearch, fetchListings, type Listing, type TradeCred } from "../api/tradeClient";
+import { createSearch, fetchListings, type TradeCred } from "../api/tradeClient";
+import type { Listing } from "../api/tradeListing";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { buildStatIndex, type StatIndex } from "./statResolver";
 import { fireAlert } from "./alertEngine";

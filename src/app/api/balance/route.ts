@@ -5,6 +5,8 @@ import { getBalances, balanceStats, latestTabs, tabSeries } from "../../../db/ba
 import { getCurrentUser } from "../../../auth/session";
 import { getCallerCred } from "../../../auth/tradeCred";
 import { accountReadEnabled } from "../../../api/tradeClient";
+import { TradeRateLimitedError } from "../../../api/tradeErrors";
+import { tradeErrorResponse } from "../../../lib/tradeRouteError";
 import { readCurrencyFromTrade } from "../../../api/accountScan";
 import { getDefaultLeague } from "../../../core/leagueState";
 import { leagueForUser } from "../../../core/leagueUsers";
@@ -71,6 +73,8 @@ export async function POST(req: Request): Promise<Response> {
     try {
       otherDiv = (await readCurrencyFromTrade(cred.account, rates, cred)).otherDiv;
     } catch (e) {
+      // shared trade2 budget busy → 503 + Retry-After so the UI can say "retry in N s"
+      if (e instanceof TradeRateLimitedError) return tradeErrorResponse(e);
       const message = e instanceof Error ? e.message : String(e);
       return NextResponse.json(
         {

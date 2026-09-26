@@ -1,5 +1,5 @@
 import { getDb } from "./database";
-import { addHunt, updateHunt, setHuntActive, type Hunt } from "./queries";
+import { addHunt, updateHunt, setHuntActive, type HuntFields } from "./huntQueries";
 
 /**
  * Craft-margin persistence — kept out of queries.ts, which is already over the file-size cap.
@@ -289,7 +289,7 @@ export function craftPnlByRecipe(userId: number): RecipePnl[] {
     .all(userId) as RecipePnl[];
 }
 
-export type CraftBaseHunt = Omit<Hunt, "id" | "user_id" | "active" | "last_scan_at" | "last_hit_at" | "created_at">;
+export type CraftBaseHunt = HuntFields;
 
 /**
  * Create or refresh the user's craft-base hunt for one recipe in one league. Clicking

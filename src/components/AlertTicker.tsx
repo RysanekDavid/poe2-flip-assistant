@@ -56,6 +56,7 @@ export function AlertTicker() {
               <span key={a.id} className={`flex items-center gap-1 truncate ${a.seen === 0 ? "" : "opacity-60"}`}>
                 <span className={`font-semibold ${TYPE_TONE[a.type] ?? "text-neutral-300"}`}>{a.type}</span>
                 <span className="text-neutral-200">{a.item_name ?? a.item_id}</span>
+                {a.foreign_league && <span className="rounded bg-neutral-800 px-1 text-[10px] text-sky-300" title="found in this league, not the one you are viewing">{a.foreign_league}</span>}
                 <span className="truncate text-neutral-500">{a.message}</span>
                 {a.whisper && (
                   <button

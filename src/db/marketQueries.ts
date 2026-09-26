@@ -241,15 +241,19 @@ export function recordObservation(
     .run(league, sig, baseType, priceDiv, listingId ?? null);
 }
 
-/** Recent observed prices for a signature in one league (within retention), for valuation. */
-export function observedPrices(league: string, sig: string): number[] {
+/** Recent observed prices for a signature in one league (within retention), for valuation.
+ *  `excludeListingId` keeps the listing being judged out of its own reference distribution. */
+export function observedPrices(league: string, sig: string, excludeListingId: string | null = null): number[] {
   return (
     getDb()
       .prepare(
         `SELECT price_div FROM price_book_obs
-         WHERE league = ? AND sig = ? AND seen_at >= datetime('now', ?)`,
+         WHERE league = ? AND sig = ? AND seen_at >= datetime('now', ?)
+           AND (? IS NULL OR listing_id IS NULL OR listing_id != ?)`,
       )
-      .all(league, sig, `-${config.snipe.obsRetentionDays} days`) as Array<{ price_div: number }>
+      .all(league, sig, `-${config.snipe.obsRetentionDays} days`, excludeListingId, excludeListingId) as Array<{
+      price_div: number;
+    }>
   ).map((r) => r.price_div);
 }
 

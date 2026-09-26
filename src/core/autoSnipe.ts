@@ -1,39 +1,32 @@
-import { searchListings, type Listing, type TradeCred } from "../api/tradeClient";
-import { fetchScout, type ScoutRates } from "../api/scoutClient";
+import { searchListings, type TradeCred } from "../api/tradeClient";
+import { metered, newMeter, type TradeMeter } from "../api/tradeMeter";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
-import { saveSnipeReport } from "../db/queries";
-import { recordObservation, observedPrices } from "../db/marketQueries";
+import { saveSnipeFailure, saveSnipeReport } from "../db/huntQueries";
 import { getDefaultLeague } from "./leagueState";
 import { listUsers } from "../db/userQueries";
-import { toDivine } from "./huntEngine";
 import { buildStatIndex, type StatIndex, type ResolvedStat } from "./statResolver";
-import { summarizePrices, snipeVerdict } from "./priceBook";
-import { buildPlan, listingToItem, valueListingLive, checkSnipe } from "./comparableValuation";
+import { valueListingLive } from "./comparableValuation";
 import { SNIPE_PROFILES, profileToQuery, type SnipeProfile } from "./snipeProfiles";
+import { pickArchetypes, pickCandidates, rankCandidates, type Candidate } from "./autoSnipeCandidates";
+import { bookReference, feedPriceBook, newBookCounters, describeRefusals, type BookCounters } from "./priceBookFeed";
+import { evaluateSnipe } from "./snipeGate";
+import { scanRates } from "./scanRates";
+import { snipeAlertMessage } from "./snipeAlert";
+import type { DivRates } from "./listingPrice";
 
 /**
- * Autonomous snipe scanner — REDESIGNED.
+ * Autonomous snipe scanner. Values each ITEM individually, the way a real price-check works:
+ *   1. For a rotating slice of the valuable archetypes, pull the NEWEST instant-buyout listings
+ *      (indexed desc, 1-day window) and feed them to the price book under the roll signature.
+ *   2. Rank by desirability (price only as a tiebreak) above a price floor → candidates.
+ *   3. Value each candidate by a relaxed comparable search on ITS OWN rolls (trimmed median of
+ *      instant-buyout comparables, candidate excluded).
+ *   4. Alert only what passes the shared snipe gate — once per listing, ever.
  *
- * The old model valued a whole CATEGORY by the median of its cheapest listings. That is
- * structurally wrong: a category has no single value (a 90-life and a 140-life glove are not
- * the same item), and the cheapest listings of a broad search are 1-exalt vendor junk, so the
- * "value" collapsed to the junk floor and every item looked worthless.
- *
- * This version values each ITEM individually, the way a real price-check works:
- *   1. For each valuable archetype, pull the cheapest listings and record them in the price
- *      book under a ROLL-AWARE signature (base + mods + roll buckets).
- *   2. Take the cheapest REAL listings (≥ minCandidateDiv, ≤ maxTargetDiv) as candidates —
- *      these are the snipe-likely ones; sub-junk is skipped so we never waste a valuation on it.
- *   3. Value each candidate by a relaxed comparable search on ITS OWN rolls → a concrete fair
- *      value with a concrete item name and the comparables behind it.
- *   4. A candidate priced far under its own value (and worth ≥ minValueDiv) is a SNIPE → alert
- *      with the item, the key mods, the price/value gap, a working trade link, and the whisper.
- *
- * Per-item searches are the rate-limit risk, so they are hard-capped per scan (maxValuations)
- * and the book short-circuits candidates whose signature is already known to be fairly priced.
- * Read-only throughout: it alerts, the human buys.
+ * Trade2 spend is capped per scan (scan-local search budget + archetype rotation) so hunts keep their
+ * cadence. Read-only throughout: it alerts, the human buys.
  */
 export interface SnipeFinding {
   profile: string;
@@ -57,11 +50,13 @@ export interface ProfileDiag {
   key: string;
   label: string;
   total: number; // total live listings the archetype search reports
-  fetched: number; // priced+online listings we pulled and recorded
-  candidates: number; // cheapest real listings put forward for valuation
+  fetched: number; // buyable, rated listings we pulled and screened
+  candidates: number;
   verified: number; // candidates we actually live-valued (budget permitting)
   snipes: number;
   floorDiv: number; // trimmed-median reference (diagnostic only, NOT the value we snipe on)
+  zeroModRares: number; // rares with no mods — mod capture broken if > 0
+  unrated: number;
   note: string;
 }
 
@@ -71,97 +66,26 @@ export interface ScanReport {
   exaltPerDivine: number; // so the UI can render small Div values in exalt
   valuations: number; // per-item comparable searches spent this scan
   maxValuations: number;
+  searches: number; // trade2 searches THIS scan issued (the scarce resource: 600 per 6h per IP)
+  fetches: number;
+  maxSearches: number;
+  book: BookCounters;
   findings: SnipeFinding[];
   diags: ProfileDiag[];
   errors: Array<{ profile: string; error: string }>;
 }
 
-const sortAsc = (xs: number[]): number[] => [...xs].sort((a, b) => a - b);
-const median = (xs: number[]): number => {
-  if (xs.length === 0) return 0;
-  const s = sortAsc(xs);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
-};
-
-/** Median of the cluster left after dropping the cheapest `trim` fraction — a junk-resistant
- *  central price, used ONLY as a diagnostic reference, never as the value we alert on. */
-export function trimmedMedian(divsAsc: number[], trim = 0.25): number {
-  if (divsAsc.length === 0) return 0;
-  const start = Math.floor(divsAsc.length * trim);
-  return median(divsAsc.slice(start));
+interface ScanCtx {
+  idx: StatIndex;
+  rates: DivRates;
+  cred: TradeCred;
+  league: string;
+  report: ScanReport;
+  meter: TradeMeter; // counts only this scan's requests — hunts on the shared limiter don't eat it
 }
 
-/**
- * Value-driving mod count of a planned item: distinctive explicits (skill levels, spirit, spell/
- * attack dmg, crit, speed) weigh 2, pseudo totals (life/res/attr) weigh 1. Junk (only generic
- * life+res → pseudos) scores low; a multi-chase-mod item scores high. Used to spend the limited
- * valuation budget on the most promising CHEAP listings rather than random or merely-cheapest ones.
- */
-export function desirability(searchStats: ResolvedStat[]): number {
-  return searchStats.reduce((s, st) => s + (st.group === "pseudo" ? 1 : 2), 0);
-}
-
-export interface Candidate {
-  profile: SnipeProfile;
-  listing: Listing;
-  div: number;
-  sig: string;
-  score: number;
-  floorDiv: number;
-}
-
-export interface Observation {
-  sig: string;
-  baseType: string;
-  div: number;
-  listingId: string | null;
-}
-
-/**
- * Pure: resolve + score every listing, then surface the best snipe candidates = highest
- * value-driving mods PER DIVINE. There is deliberately NO absolute price floor — a god-roll
- * fat-fingered to 1 exalt is the juiciest snipe of all, and the old floor skipped exactly those.
- * The desirability score (not price) separates a cheap god-roll from cheap vendor junk; the
- * per-item valuation + `minValueDiv` gate downstream reject anything genuinely worthless. Also
- * returns the full observation set so the caller can feed the price book.
- */
-export function pickCandidates(
-  profile: SnipeProfile,
-  listings: Listing[],
-  rates: ScoutRates,
-  idx: StatIndex,
-): { candidates: Candidate[]; floorDiv: number; fetched: number; observations: Observation[] } {
-  const scored = listings
-    .filter((l) => l.price && l.online)
-    .map((l) => {
-      const div = toDivine(l.price!.amount, l.price!.currency, rates);
-      const plan = buildPlan(listingToItem(l), idx);
-      return { l, div, sig: plan.signature, score: desirability(plan.searchStats) };
-    })
-    .filter((x) => Number.isFinite(x.div) && x.div > 0);
-
-  const floorDiv = trimmedMedian([...scored.map((x) => x.div)].sort((a, b) => a - b));
-  const observations: Observation[] = scored.map((x) => ({
-    sig: x.sig,
-    baseType: x.l.baseType || profile.label,
-    div: x.div,
-    listingId: x.l.listingId,
-  }));
-
-  const candidates = scored
-    .filter(
-      (x) =>
-        x.score >= config.autoSnipe.minCandidateScore &&
-        x.div >= config.autoSnipe.minCandidateDiv &&
-        x.div <= config.snipe.maxTargetDiv,
-    )
-    .sort((a, b) => b.score / b.div - a.score / a.div) // best mods-per-Divine first
-    .slice(0, config.autoSnipe.candidatesPerArchetype)
-    .map((x) => ({ profile, listing: x.l, div: x.div, sig: x.sig, score: x.score, floorDiv }));
-
-  return { candidates, floorDiv, fetched: scored.length, observations };
-}
+// an archetype costs 1 search; a valuation up to 2 (distinctive + pseudo-only fallback)
+const hasBudget = (ctx: ScanCtx, searches: number): boolean => ctx.meter.search + searches <= config.autoSnipe.maxSearchesPerScan;
 
 /** One-line summary of the value-driving rolls, for the alert + UI ("Life 118 · Res 134 · +2 Cold skills"). */
 function describeStats(stats: ResolvedStat[]): string {
@@ -172,50 +96,76 @@ function describeStats(stats: ResolvedStat[]): string {
     .join(" · ");
 }
 
-/** Pull + record one archetype's listings and surface its cheapest real candidates. */
-async function collectArchetype(
-  profile: SnipeProfile,
-  idx: StatIndex,
-  rates: ScoutRates,
-  cred: TradeCred,
-): Promise<{ candidates: Candidate[]; diag: ProfileDiag }> {
-  const { query, resolved } = profileToQuery(profile, idx);
-  // 0 resolved stats no longer aborts — we still scan the category (per-item valuation is the
-  // real filter); a bad stat text just means coarser candidates. Surfaced via the diag note.
-  const { total, listings } = await searchListings(query, config.autoSnipe.fetchPerArchetype, "asc", cred);
+function diagNote(resolved: number, d: ProfileDiag): string {
+  if (resolved === 0) return "stat text didn't resolve — category-only search (fix profile text)";
+  if (d.zeroModRares > 0) return `${d.zeroModRares} rare listing(s) had no mods — trade2 mod capture broken`;
+  if (d.candidates === 0) return "no candidate items (below price floor, stale, or too few resolved mods)";
+  return "";
+}
 
-  const { candidates, floorDiv, fetched, observations } = pickCandidates(profile, listings, rates, idx);
+/** Pull + record one archetype's newest listings and surface its most desirable candidates. */
+async function collectArchetype(profile: SnipeProfile, ctx: ScanCtx): Promise<{ candidates: Candidate[]; diag: ProfileDiag }> {
+  const { query, resolved } = profileToQuery(profile, ctx.idx);
+  const { total, listings } = await searchListings(query, config.autoSnipe.fetchPerArchetype, { indexed: "desc" }, ctx.cred);
+  const { candidates, floorDiv, observations, diag: cd } = pickCandidates(profile, listings, ctx.rates, ctx.idx);
+  for (const o of observations) feedPriceBook(ctx.league, o, ctx.report.book);
 
-  // feed the price book (builds the per-signature distribution over scans → lets us short-circuit
-  // known-fair items later)
-  const league = getDefaultLeague();
-  for (const o of observations) recordObservation(league, o.sig, o.baseType, o.div, o.listingId);
   const diag: ProfileDiag = {
     key: profile.key,
     label: profile.label,
     total,
-    fetched,
+    fetched: cd.fetched,
     candidates: candidates.length,
     verified: 0,
     snipes: 0,
     floorDiv,
-    note:
-      resolved === 0
-        ? "stat text didn't resolve — category-only search (fix profile text)"
-        : candidates.length === 0
-          ? "no candidate items (mods too plain / nothing resolved)"
-          : "",
+    zeroModRares: cd.zeroModRares,
+    unrated: cd.unrated,
+    note: "",
   };
+  diag.note = diagNote(resolved, diag);
   return { candidates, diag };
 }
 
-/** Confirm + alert a candidate as a snipe, or return null. Spends one (sometimes two) trade2 searches. */
-async function valueAndAlert(c: Candidate, idx: StatIndex, rates: ScoutRates, cred: TradeCred): Promise<SnipeFinding | null> {
-  const { value, plan, searchUrl } = await valueListingLive(c.listing, idx, rates, cred);
-  const verdict = checkSnipe(c.div, value);
-  if (!verdict.isSnipe || value.valueDiv < config.valuation.minValueDiv) return null;
+function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
+  // market snipes are shared opportunities — alert every account holder, once per listing each.
+  // The scan runs under ONE cred in the app default league, so that is the market they belong to.
+  for (const u of listUsers()) {
+    fireAlert(u.id, ctx.league, {
+      type: "SNIPE",
+      itemId: finding.listingId,
+      itemName: finding.itemName,
+      message: snipeAlertMessage({
+        marginPct: finding.marginPct,
+        askDiv: finding.priceDiv,
+        valueDiv: finding.valueDiv,
+        samples: finding.samples,
+        exPerDiv: ctx.rates.exaltPerDivine,
+        basis: "comps",
+        keyMods: finding.keyMods,
+      }),
+      value: finding.marginPct,
+      threshold: config.valuation.discountPct,
+      whisper: finding.whisper,
+      link: finding.searchUrl,
+      dedupe: "once",
+    });
+  }
+}
 
-  const keyMods = describeStats(plan.searchStats);
+/** Confirm + alert a candidate as a snipe, or return null. Spends up to two comparable searches. */
+async function valueAndAlert(c: Candidate, ctx: ScanCtx): Promise<SnipeFinding | null> {
+  const { value, plan, searchUrl } = await valueListingLive(c.listing, ctx.idx, ctx.rates, ctx.cred);
+  const verdict = evaluateSnipe({
+    askDiv: c.div,
+    refDiv: value.valueDiv,
+    samples: value.samples,
+    resolvedMods: c.resolvedMods,
+    indexed: c.listing.indexed,
+    discountPct: config.valuation.discountPct,
+  });
+  if (!verdict.pass || verdict.valueDiv < config.valuation.minValueDiv) return null;
+
   const finding: SnipeFinding = {
     profile: c.profile.key,
     label: c.profile.label,
@@ -223,99 +173,120 @@ async function valueAndAlert(c: Candidate, idx: StatIndex, rates: ScoutRates, cr
     account: c.listing.account,
     itemName: c.listing.itemName || c.profile.label,
     baseType: c.listing.baseType,
-    keyMods,
+    keyMods: describeStats(plan.searchStats),
     whisper: c.listing.whisper,
     online: c.listing.online,
     priceDiv: c.div,
-    valueDiv: value.valueDiv,
+    valueDiv: verdict.valueDiv,
     marginPct: verdict.marginPct,
     samples: value.samples,
     searchUrl,
   };
-
-  // market snipes are shared opportunities — alert every account holder (fireAlert de-dupes by
-  // listingId within the cooldown, so each user only pings once per listing). The scan runs under
-  // ONE cred in the app default league, so that is the market these findings belong to — not
-  // whatever league each recipient happens to be viewing.
-  const league = getDefaultLeague();
-  for (const u of listUsers()) {
-    fireAlert(u.id, league, {
-      type: "SNIPE",
-      itemId: finding.listingId || `auto-${c.profile.key}`,
-      itemName: finding.itemName,
-      message: `${Math.round(finding.marginPct)}% under — ${finding.priceDiv.toFixed(0)} vs ~${finding.valueDiv.toFixed(0)} Div (${finding.samples} comps)${keyMods ? ` · ${keyMods}` : ""}`,
-      value: finding.marginPct,
-      threshold: config.valuation.discountPct,
-      whisper: finding.whisper,
-      link: finding.searchUrl,
-    });
-  }
+  alertEveryone(finding, ctx);
   return finding;
 }
 
-/**
- * Run one autonomous scan: collect candidates from every archetype (cheap searches), then spend
- * a capped per-item valuation budget on the most promising ones. A candidate whose signature is
- * already well-sampled in the book AND not below its book floor is skipped for free.
- */
-export async function scanAutoSnipes(cred: TradeCred): Promise<ScanReport> {
-  const { rates } = await fetchScout();
-  const { stats } = await fetchTradeMeta();
-  const idx = buildStatIndex(stats);
+/** Book short-circuit: a well-sampled signature whose ask isn't under the book's discount line
+ *  is a known fair price — skip the live valuation and save the rate budget. */
+function knownFair(c: Candidate, ctx: ScanCtx): boolean {
+  const ref = bookReference(ctx.league, c.sig, c.listing.listingId);
+  if (ref.valueDiv == null || ref.samples < config.snipeGate.minSamples) return false;
+  return c.div > ref.valueDiv * (1 - config.valuation.discountPct / 100);
+}
 
-  const report: ScanReport = {
+async function collectPhase(profiles: SnipeProfile[], ctx: ScanCtx): Promise<Array<Candidate & { diag: ProfileDiag }>> {
+  const pool: Array<Candidate & { diag: ProfileDiag }> = [];
+  for (const p of profiles) {
+    if (!hasBudget(ctx, 1)) {
+      ctx.report.errors.push({ profile: p.key, error: "search budget reached — archetype deferred to a later scan" });
+      continue;
+    }
+    try {
+      const { candidates, diag } = await collectArchetype(p, ctx);
+      ctx.report.searched++;
+      ctx.report.diags.push(diag);
+      for (const c of candidates) pool.push({ ...c, diag });
+    } catch (e) {
+      ctx.report.errors.push({ profile: p.key, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  return pool;
+}
+
+async function valuationPhase(pool: Array<Candidate & { diag: ProfileDiag }>, ctx: ScanCtx): Promise<void> {
+  for (const c of rankCandidates(pool)) {
+    if (ctx.report.valuations >= config.autoSnipe.maxValuations || !hasBudget(ctx, 2)) {
+      if (!c.diag.note) c.diag.note = "valuation budget reached — candidate not valued this scan";
+      continue;
+    }
+    if (knownFair(c, ctx)) continue;
+    ctx.report.valuations++;
+    c.diag.verified++;
+    try {
+      const finding = await valueAndAlert(c, ctx);
+      if (finding) {
+        ctx.report.findings.push(finding);
+        c.diag.snipes++;
+      }
+    } catch (e) {
+      ctx.report.errors.push({ profile: c.profile.key, error: `valuation: ${e instanceof Error ? e.message : String(e)}` });
+    }
+  }
+}
+
+let rotationCursor = 0;
+let running = false;
+
+function emptyReport(exaltPerDivine: number): ScanReport {
+  return {
     profiles: SNIPE_PROFILES.length,
     searched: 0,
-    exaltPerDivine: rates.exaltPerDivine,
+    exaltPerDivine,
     valuations: 0,
     maxValuations: config.autoSnipe.maxValuations,
+    searches: 0,
+    fetches: 0,
+    maxSearches: config.autoSnipe.maxSearchesPerScan,
+    book: newBookCounters(),
     findings: [],
     diags: [],
     errors: [],
   };
+}
 
-  // phase 1 — collect candidates (one cheap search per archetype)
-  const pool: Array<Candidate & { diag: ProfileDiag }> = [];
-  for (const p of SNIPE_PROFILES) {
-    try {
-      const { candidates, diag } = await collectArchetype(p, idx, rates, cred);
-      report.searched++;
-      report.diags.push(diag);
-      for (const c of candidates) pool.push({ ...c, diag });
-    } catch (e) {
-      report.errors.push({ profile: p.key, error: e instanceof Error ? e.message : String(e) });
-    }
-  }
 
-  // rank: most value-driving mods per Divine first (most likely to be a real snipe)
-  pool.sort((a, b) => b.score / b.div - a.score / a.div);
+async function runScan(cred: TradeCred): Promise<ScanReport> {
+  const rates = scanRates();
+  const { stats } = await fetchTradeMeta();
+  const { picked, next } = pickArchetypes(SNIPE_PROFILES, rotationCursor, config.autoSnipe.archetypesPerScan);
+  rotationCursor = next;
+  const report = emptyReport(rates.exaltPerDivine);
+  const ctx: ScanCtx = { idx: buildStatIndex(stats), rates, cred, league: getDefaultLeague(), report, meter: newMeter() };
 
-  // phase 2 — spend the valuation budget
-  for (const c of pool) {
-    if (report.valuations >= config.autoSnipe.maxValuations) {
-      if (!c.diag.note) c.diag.note = "valuation budget reached — raise AUTOSNIPE_MAX_VALUATIONS to value more";
-      break;
-    }
-
-    // book short-circuit: if we've seen this exact roll-bucket enough and the ask isn't below the
-    // book floor, it's a known fair price — skip the live search (saves rate budget)
-    const book = summarizePrices(observedPrices(getDefaultLeague(), c.sig));
-    if (book.samples >= config.snipe.minSamples && !snipeVerdict(c.sig, c.div, book).isSnipe) continue;
-
-    report.valuations++;
-    c.diag.verified++;
-    try {
-      const finding = await valueAndAlert(c, idx, rates, cred);
-      if (finding) {
-        report.findings.push(finding);
-        c.diag.snipes++;
-      }
-    } catch (e) {
-      report.errors.push({ profile: c.profile.key, error: `valuation: ${e instanceof Error ? e.message : String(e)}` });
-    }
-  }
-
-  // persist so the UI shows the latest scan (manual or cron) without re-running one
-  saveSnipeReport(JSON.stringify(report));
+  await metered(ctx.meter, async () => valuationPhase(await collectPhase(picked, ctx), ctx));
+  report.searches = ctx.meter.search;
+  report.fetches = ctx.meter.fetch;
+  const refusals = describeRefusals(report.book);
+  if (refusals) report.errors.push({ profile: "(price book)", error: refusals });
   return report;
+}
+
+/**
+ * Run one autonomous scan over the next slice of archetypes. Throws if a scan is already in
+ * flight in this process (the poller also guards, this makes the invariant local). A scan that
+ * fails as a whole records its error apart from the report, so the last good findings survive.
+ */
+export async function scanAutoSnipes(cred: TradeCred): Promise<ScanReport> {
+  if (running) throw new Error("autosnipe scan already running");
+  running = true;
+  try {
+    const report = await runScan(cred);
+    saveSnipeReport(JSON.stringify(report)); // the UI reads the latest scan across processes
+    return report;
+  } catch (e) {
+    saveSnipeFailure(`scan failed: ${e instanceof Error ? e.message : String(e)}`); // last good report kept
+    throw e;
+  } finally {
+    running = false;
+  }
 }

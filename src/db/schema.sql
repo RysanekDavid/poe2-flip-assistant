@@ -165,6 +165,7 @@ CREATE TABLE IF NOT EXISTS hunts (
   active INTEGER DEFAULT 1,
   last_scan_at DATETIME,
   last_hit_at DATETIME,
+  last_error TEXT,              -- why the last scan of this hunt failed (NULL after a clean scan)
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -177,7 +178,7 @@ CREATE TABLE IF NOT EXISTS hunt_hits (
   base_type TEXT,
   price_amount REAL NOT NULL,
   price_ccy TEXT NOT NULL,
-  price_div REAL NOT NULL,       -- normalized to Divine for ranking/margin
+  price_div REAL,                -- normalized to Divine; NULL = ask currency outside the rates ladder
   margin_pct REAL,               -- (target_div - price_div)/price_div, if target set
   account TEXT,
   whisper TEXT,
@@ -203,6 +204,14 @@ CREATE TABLE IF NOT EXISTS autosnipe_report (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   report_json TEXT NOT NULL,        -- serialized ScanReport (findings + per-archetype diags)
   scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Last FAILED auto-snipe scan, kept apart from autosnipe_report so one transient failure (rates
+-- stale, trade2 busy) can't wipe the last good findings. The UI shows it as a banner when newer.
+CREATE TABLE IF NOT EXISTS autosnipe_failure (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  error TEXT NOT NULL,
+  failed_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Latest craft-margin report per recipe (poller writes, the UI reads across processes) — SHARED.
@@ -252,6 +261,31 @@ CREATE TABLE IF NOT EXISTS craft_refresh_request (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   requested INTEGER NOT NULL DEFAULT 0,
   requested_at DATETIME
+);
+
+-- trade2 rate-limit governor state, SHARED by the web and poller processes (both call trade2 on
+-- the same account+IP budget). One row per request we issued, per endpoint kind, kept for the
+-- longest rule window; plus the latest policy GGG reported and any active restriction.
+CREATE TABLE IF NOT EXISTS trade_rate_hits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,           -- 'search' | 'fetch'
+  at_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_trade_rate_hits ON trade_rate_hits(kind, at_ms);
+CREATE TABLE IF NOT EXISTS trade_rate_policy (
+  kind TEXT PRIMARY KEY,
+  rules_json TEXT NOT NULL,     -- RateRule[] from the latest X-Rate-Limit-* headers
+  blocked_until_ms INTEGER NOT NULL DEFAULT 0
+);
+
+-- Manual trade2 scan requests (autosnipe, a user's hunts). Same idea as craft_refresh_request:
+-- the web process only queues, the poller consumes and runs the scan on ITS limiter, so one
+-- process owns the account+IP trade2 budget. user_id 0 = not user-scoped (autosnipe).
+CREATE TABLE IF NOT EXISTS scan_request (
+  kind TEXT NOT NULL,           -- 'autosnipe' | 'hunts'
+  user_id INTEGER NOT NULL DEFAULT 0,
+  requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (kind, user_id)
 );
 
 -- Balance snapshots (net-worth over time) — PER-USER, one row per currency reading.

@@ -1,5 +1,6 @@
-import { createSearch, fetchListings, type Listing, type TradeCred } from "./tradeClient";
-import { toDivine } from "../core/huntEngine";
+import { createSearch, fetchListings, type TradeCred } from "./tradeClient";
+import type { Listing } from "./tradeListing";
+import { amountInDivine, ratedDiv } from "../core/listingPrice";
 import { buildValuer } from "../core/valuation";
 import type { ExchangeRates } from "../core/priceEngine";
 
@@ -36,8 +37,14 @@ export interface AccountCurrency {
 type Rates = Pick<ExchangeRates, "exaltPerDivine" | "chaosPerDivine">;
 type TabAcc = Omit<TabValue, "valueDiv">;
 
+function ladderDiv(amount: number, currency: "exalted" | "chaos", rates: Rates): number {
+  const d = amountInDivine(amount, currency, rates);
+  if (d == null) throw new Error(`rates have no usable ${currency}→Divine rate`);
+  return d;
+}
+
 const tabValue = (t: TabAcc, rates: Rates): number =>
-  t.divine + toDivine(t.exalted, "exalted", rates) + toDivine(t.chaos, "chaos", rates) + t.otherDiv;
+  t.divine + ladderDiv(t.exalted, "exalted", rates) + ladderDiv(t.chaos, "chaos", rates) + t.otherDiv;
 
 /**
  * Your own listings, MOST EXPENSIVE FIRST. trade2 hands back at most 100 ids per search, so a
@@ -74,8 +81,8 @@ function addListing(l: Listing, acc: AccountCurrency, t: TabAcc, valuer: ReturnT
     acc.otherDiv += mv.div; t.otherDiv += mv.div;
     return;
   }
-  const d = l.price ? toDivine(l.price.amount, l.price.currency, rates) : NaN;
-  if (Number.isFinite(d)) {
+  const d = ratedDiv(l.price, rates);
+  if (d != null) {
     acc.otherDiv += d; t.otherDiv += d; acc.gearAtAskDiv += d;
   } else {
     acc.unpriced++; t.unpriced++;

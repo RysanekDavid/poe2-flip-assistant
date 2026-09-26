@@ -1,33 +1,29 @@
+import { z } from "zod";
 import { searchListings, type TradeCred } from "../api/tradeClient";
-import { fetchScout, type ScoutRates } from "../api/scoutClient";
+import { isZeroModRare, type Listing } from "../api/tradeListing";
+import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
 import { credForUser } from "../auth/credForUser";
 import { listUsers } from "../db/userQueries";
-import {
-  getHunts,
-  touchHuntScan,
-  recentHitSig,
-  recentHitByListing,
-  insertHit,
-  setRuntime,
-  type Hunt,
-} from "../db/queries";
-import { recordObservation, observedPrices } from "../db/marketQueries";
+import { getHunts, touchHuntScan, recentHitSig, recentHitByListing, insertHit, setRuntime, type Hunt } from "../db/huntQueries";
 import { getDefaultLeague } from "./leagueState";
-import { modSignature, summarizePrices, snipeVerdict } from "./priceBook";
-import type { TradeQuery, StatFilter, Rarity } from "../lib/tradeLink";
+import { buildStatIndex, type StatIndex } from "./statResolver";
+import { buildPlan, listingToItem } from "./comparableValuation";
+import { listingDiv, type DivRates } from "./listingPrice";
+import { bookReference, describeRefusals, feedPriceBook, newBookCounters, type BookCounters } from "./priceBookFeed";
+import { evaluateSnipe, listingAgeMin } from "./snipeGate";
+import { scanRates } from "./scanRates";
+import { snipeAlertMessage } from "./snipeAlert";
+import { StatFilterSchema } from "../lib/huntSchema";
+import type { TradeQuery, Rarity } from "../lib/tradeLink";
 
-/** Convert a listing price to Divine, or NaN for currencies we don't rate. */
-export function toDivine(amount: number, ccy: string, r: ScoutRates): number {
-  if (ccy === "divine") return amount;
-  if (ccy === "exalted" || ccy === "exalt") return amount / r.exaltPerDivine;
-  if (ccy === "chaos") return amount / r.chaosPerDivine;
-  return NaN;
-}
+const StoredStats = z.array(StatFilterSchema);
 
 export function huntToQuery(h: Hunt): TradeQuery {
-  const stats: StatFilter[] | undefined = h.stats_json ? (JSON.parse(h.stats_json) as StatFilter[]) : undefined;
+  // stats_json is validated on write now; an old malformed row fails HERE with a clear message
+  // (recorded on the hunt) instead of producing a silently wrong search
+  const stats = h.stats_json ? StoredStats.parse(JSON.parse(h.stats_json)) : undefined;
   return {
     name: h.item_name ?? undefined,
     type: h.base_type ?? undefined,
@@ -46,138 +42,201 @@ export function huntToQuery(h: Hunt): TradeQuery {
   };
 }
 
-/** Age of a listing in minutes from its trade `indexed` timestamp; Infinity if unknown. */
-function listingAgeMin(indexed: string | null): number {
-  if (!indexed) return Infinity;
-  const ms = Date.now() - new Date(indexed).getTime();
-  return Number.isFinite(ms) ? ms / 60_000 : Infinity;
+/** Listing-level health counters — a scan that sees rares without mods must say so. */
+export interface HuntDiag {
+  listings: number;
+  zeroModRares: number;
+  rares: number;
+  unrated: number;
+  unreadableMods: number;
 }
 
 export interface ScanSummary {
   scanned: number;
   hits: number;
   errors: Array<{ hunt: string; error: string }>;
+  diag: HuntDiag;
+  book: BookCounters;
 }
 
-/** Scan one hunt: fetch the NEWEST live listings at/under the trigger price (poll-diff —
- *  sort indexed desc + 1-day window + de-dupe by listing id), record fresh ones, alert. */
-async function scanHunt(h: Hunt, rates: ScoutRates, cred: TradeCred): Promise<number> {
-  const { listings } = await searchListings(huntToQuery(h), config.hunt.perScan, { indexed: "desc" }, cred);
-  const league = getDefaultLeague();
-  let newHits = 0;
+interface ScanCtx {
+  league: string;
+  rates: DivRates;
+  idx: StatIndex;
+  diag: HuntDiag;
+  book: BookCounters;
+}
 
-  for (const l of listings) {
-    if (!l.price) continue;
-    const priceDiv = toDivine(l.price.amount, l.price.currency, rates);
-
-    // feed the price book, then snipe-check this listing against the accumulated distribution
-    if (Number.isFinite(priceDiv) && l.baseType) {
-      const sig = modSignature(l.baseType, l.mods);
-      recordObservation(league, sig, l.baseType, priceDiv, l.listingId);
-      const verdict = snipeVerdict(sig, priceDiv, summarizePrices(observedPrices(league, sig)));
-      if (verdict.isSnipe) {
-        // fireAlert de-dupes by itemId+type within the cooldown, so the same listing won't re-ping
-        fireAlert(h.user_id, league, {
-          type: "SNIPE",
-          itemId: l.listingId || `snipe-${sig}`,
-          itemName: l.itemName,
-          message: `${verdict.discountPct?.toFixed(0)}% under market — ${priceDiv.toFixed(0)} vs ~${verdict.valueDiv?.toFixed(0)} Div (${verdict.samples} samples)`,
-          value: verdict.discountPct ?? 0,
-          threshold: config.snipe.discountPct,
-          whisper: l.whisper, // paste in-game to whisper the seller
-        });
-      }
-    }
-
-    // only genuinely fresh listings become hits — old ones still feed the price book above,
-    // but a listing that sat unsold for hours is stale bait, not a snipe
-    if (listingAgeMin(l.indexed) > config.hunt.freshMinutes) continue;
-
-    const sig = `${h.id}|${l.account}|${l.price.amount}|${l.price.currency}`;
-    if (recentHitByListing(h.user_id, l.listingId) || recentHitSig(h.user_id, sig, config.alertCooldownMin)) continue;
-
-    const marginPct =
-      h.target_div != null && priceDiv > 0 ? ((h.target_div - priceDiv) / priceDiv) * 100 : null;
-
-    insertHit(h.user_id, {
-      hunt_id: h.id,
-      item_name: l.itemName,
-      base_type: l.baseType || h.base_type,
-      price_amount: l.price.amount,
-      price_ccy: l.price.currency,
-      price_div: Number.isFinite(priceDiv) ? priceDiv : 0,
-      margin_pct: marginPct,
-      account: l.account,
-      whisper: l.whisper,
-      listing_id: l.listingId,
-      seller_online: l.online ? 1 : 0,
-      listed_at: l.indexed,
-      sig,
-    });
-    newHits++;
+/**
+ * Price-book verdict for one rated listing, through the shared snipe gate.
+ *
+ * Deliberately OPPORTUNISTIC and mostly inert: it fires only when the book already holds ≥5
+ * comparables under this listing's exact roll-bucket signature — which in practice means
+ * autosnipe has been pricing the same archetype (hunts contribute few observations: 10 newest
+ * listings per scan, and never from price-capped hunts). Kept because it costs one indexed query
+ * per listing and can catch a hunted item the user has no target price for; the hunt's own
+ * target/ceiling logic (recordHit) is the primary signal.
+ */
+function bookVerdict(h: Hunt, l: Listing, div: number, ctx: ScanCtx): void {
+  if (!l.baseType || !l.listingId) return;
+  const plan = buildPlan(listingToItem(l), ctx.idx);
+  // a hunt's results are pre-filtered by ITS price ceiling — feeding them would teach the book
+  // that the market tops out at that ceiling, so only uncapped hunts contribute observations
+  if (h.max_amount == null) {
+    feedPriceBook(ctx.league, { sig: plan.signature, baseType: l.baseType, div, listingId: l.listingId }, ctx.book);
   }
+  const ref = bookReference(ctx.league, plan.signature, l.listingId);
+  const verdict = evaluateSnipe({
+    askDiv: div,
+    refDiv: ref.valueDiv,
+    samples: ref.samples,
+    resolvedMods: plan.resolvedCount,
+    indexed: l.indexed,
+    discountPct: config.snipe.discountPct,
+  });
+  if (!verdict.pass) return;
+  fireAlert(h.user_id, ctx.league, {
+    type: "SNIPE",
+    itemId: l.listingId,
+    itemName: l.itemName,
+    message: snipeAlertMessage({ marginPct: verdict.marginPct, askDiv: div, valueDiv: verdict.valueDiv, samples: ref.samples, exPerDiv: ctx.rates.exaltPerDivine, basis: "samples" }),
+    value: verdict.marginPct,
+    threshold: config.snipe.discountPct,
+    whisper: l.whisper,
+    dedupe: "once",
+  });
+}
 
+/** Record a fresh, not-yet-seen listing as a hunt hit. Returns true when a hit was inserted. */
+function recordHit(h: Hunt, l: Listing, div: number | null): boolean {
+  if (!l.price) return false;
+  // a listing that sat unsold for hours is stale bait, not a hit
+  if (listingAgeMin(l.indexed) > config.hunt.freshMinutes) return false;
+  const sig = `${h.id}|${l.account}|${l.price.amount}|${l.price.currency}`;
+  if (recentHitByListing(h.user_id, l.listingId) || recentHitSig(h.user_id, sig, config.alertCooldownMin)) return false;
+  insertHit(h.user_id, {
+    hunt_id: h.id,
+    item_name: l.itemName,
+    base_type: l.baseType || h.base_type,
+    price_amount: l.price.amount,
+    price_ccy: l.price.currency,
+    price_div: div,
+    margin_pct: h.target_div != null && div != null ? ((h.target_div - div) / div) * 100 : null,
+    account: l.account,
+    whisper: l.whisper,
+    listing_id: l.listingId,
+    seller_online: l.online ? 1 : 0,
+    listed_at: l.indexed,
+    sig,
+  });
+  return true;
+}
+
+function processListing(h: Hunt, l: Listing, ctx: ScanCtx): { hit: boolean; div: number | null } {
+  if (!l.price) return { hit: false, div: null };
+  ctx.diag.listings++;
+  ctx.diag.unreadableMods += l.unreadableMods;
+  if ((l.rarity ?? "").toLowerCase() === "rare") ctx.diag.rares++;
+  if (isZeroModRare(l)) ctx.diag.zeroModRares++;
+  const priced = listingDiv(l.price, ctx.rates);
+  const div = priced.kind === "rated" ? priced.div : null;
+  if (div == null) ctx.diag.unrated++;
+  else bookVerdict(h, l, div, ctx);
+  return { hit: recordHit(h, l, div), div };
+}
+
+/** Scan one hunt: NEWEST live listings at/under the trigger price (poll-diff), record + alert. */
+async function scanHunt(h: Hunt, ctx: ScanCtx, cred: TradeCred): Promise<number> {
+  const { listings } = await searchListings(huntToQuery(h), config.hunt.perScan, { indexed: "desc" }, cred);
+  let newHits = 0;
+  let cheapest: { l: Listing; div: number } | null = null;
+  for (const l of listings) {
+    const { hit, div } = processListing(h, l, ctx);
+    if (hit) newHits++;
+    if (div != null && (cheapest == null || div < cheapest.div)) cheapest = { l, div };
+  }
   if (newHits > 0) {
-    // listings arrive newest-first — summarize on the CHEAPEST priced one, that's the headline
-    const cheapest = listings
-      .filter((l) => l.price)
-      .sort(
-        (a, b) => toDivine(a.price!.amount, a.price!.currency, rates) - toDivine(b.price!.amount, b.price!.currency, rates),
-      )[0];
-    const cheapDiv = cheapest ? toDivine(cheapest.price!.amount, cheapest.price!.currency, rates) : NaN;
     const marginTxt =
-      h.target_div != null && Number.isFinite(cheapDiv) && cheapDiv > 0
-        ? ` (~${(((h.target_div - cheapDiv) / cheapDiv) * 100).toFixed(0)}% vs target)`
-        : "";
-    fireAlert(h.user_id, league, {
+      h.target_div != null && cheapest ? ` (~${(((h.target_div - cheapest.div) / cheapest.div) * 100).toFixed(0)}% vs target)` : "";
+    const cheapTxt = cheapest?.l.price ? ` — cheapest ${cheapest.l.price.amount} ${cheapest.l.price.currency}` : "";
+    fireAlert(h.user_id, ctx.league, {
       type: h.mode,
       itemId: `hunt-${h.id}`,
       itemName: h.label,
-      message: `${newHits} new — cheapest ${cheapest?.price?.amount} ${cheapest?.price?.currency}${marginTxt}`,
+      message: `${newHits} new${cheapTxt}${marginTxt}`,
       value: newHits,
       threshold: 0,
     });
   }
-
-  touchHuntScan(h.id, newHits > 0);
   return newHits;
+}
+
+/** Health line for the status bar: first hunt error, else a broken-mod-capture warning. */
+function runtimeError(errors: ScanSummary["errors"], diag: HuntDiag, book: BookCounters): string | null {
+  if (errors.length > 0) return `${errors[0]!.hunt}: ${errors[0]!.error}`;
+  if (diag.zeroModRares > 0) {
+    return `${diag.zeroModRares}/${diag.rares} rare listing(s) arrived with no mods — trade2 mod capture is broken`;
+  }
+  if (diag.unreadableMods > 0) return `${diag.unreadableMods} mod entr(ies) in an unknown trade2 shape — parser out of date`;
+  return describeRefusals(book);
+}
+
+async function buildCtx(): Promise<ScanCtx> {
+  const league = getDefaultLeague();
+  const rates = scanRates(league);
+  const { stats } = await fetchTradeMeta();
+  const diag: HuntDiag = { listings: 0, zeroModRares: 0, rares: 0, unrated: 0, unreadableMods: 0 };
+  return { league, rates, idx: buildStatIndex(stats), diag, book: newBookCounters() };
 }
 
 /**
  * Scan active hunts, each with ITS OWNER's POESESSID. Pass `only` to scan a single user's hunts
- * with a supplied cred (manual route trigger); omit it to scan everyone's (the poller backstop),
- * resolving each user's stored cred and skipping users who haven't connected one. One hunt's
- * failure doesn't abort the rest.
+ * (a queued manual scan); omit it to scan everyone's, skipping users without a stored cred. One
+ * hunt's failure doesn't abort the rest — it is stamped on that hunt (last_error) instead.
  */
 export async function scanAll(only?: { userId: number; cred: TradeCred }): Promise<ScanSummary> {
   const all = getHunts(true);
   const hunts = only ? all.filter((h) => h.user_id === only.userId) : all;
-  if (hunts.length === 0) return { scanned: 0, hits: 0, errors: [] };
+  const summary: ScanSummary = {
+    scanned: 0,
+    hits: 0,
+    errors: [],
+    diag: { listings: 0, zeroModRares: 0, rares: 0, unrated: 0, unreadableMods: 0 },
+    book: newBookCounters(),
+  };
+  if (hunts.length === 0) return summary;
 
-  const { rates } = await fetchScout();
+  let ctx: ScanCtx;
+  try {
+    ctx = await buildCtx();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    setRuntime(0, `scan setup failed: ${msg}`, true);
+    return { ...summary, errors: [{ hunt: "(all)", error: msg }] };
+  }
+  summary.diag = ctx.diag;
+  summary.book = ctx.book;
 
-  // one cred per user: provided directly for a manual scan, else resolved from stored creds
   const credByUser = new Map<number, TradeCred | null>();
   if (only) credByUser.set(only.userId, only.cred);
   else for (const u of listUsers()) credByUser.set(u.id, credForUser(u));
-
-  let hits = 0;
-  let scanned = 0;
-  const errors: ScanSummary["errors"] = [];
 
   for (const h of hunts) {
     const cred = credByUser.get(h.user_id) ?? null;
     if (!cred) continue; // user hasn't connected a POESESSID — skip their hunts
     try {
-      hits += await scanHunt(h, rates, cred);
-      scanned++;
+      const hits = await scanHunt(h, ctx, cred);
+      summary.hits += hits;
+      summary.scanned++;
+      touchHuntScan(h.id, hits > 0, null);
     } catch (e) {
-      errors.push({ hunt: h.label, error: e instanceof Error ? e.message : String(e) });
+      const msg = e instanceof Error ? e.message : String(e);
+      summary.errors.push({ hunt: h.label, error: msg });
+      touchHuntScan(h.id, false, msg);
     }
   }
 
   // publish scan health for the UI status bar (cross-process via DB)
-  setRuntime(scanned, errors.length > 0 ? `${errors[0]!.hunt}: ${errors[0]!.error}` : null, true);
-
-  return { scanned, hits, errors };
+  setRuntime(summary.scanned, runtimeError(summary.errors, ctx.diag, ctx.book), true);
+  return summary;
 }
