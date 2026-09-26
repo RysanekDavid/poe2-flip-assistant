@@ -67,7 +67,16 @@ interface ScanCtx {
   book: BookCounters;
 }
 
-/** Price-book verdict for one rated listing, through the shared snipe gate. */
+/**
+ * Price-book verdict for one rated listing, through the shared snipe gate.
+ *
+ * Deliberately OPPORTUNISTIC and mostly inert: it fires only when the book already holds ≥5
+ * comparables under this listing's exact roll-bucket signature — which in practice means
+ * autosnipe has been pricing the same archetype (hunts contribute few observations: 10 newest
+ * listings per scan, and never from price-capped hunts). Kept because it costs one indexed query
+ * per listing and can catch a hunted item the user has no target price for; the hunt's own
+ * target/ceiling logic (recordHit) is the primary signal.
+ */
 function bookVerdict(h: Hunt, l: Listing, div: number, ctx: ScanCtx): void {
   if (!l.baseType || !l.listingId) return;
   const plan = buildPlan(listingToItem(l), ctx.idx);

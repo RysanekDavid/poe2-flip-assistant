@@ -1,14 +1,20 @@
 /* Capture ONE real trade2 search + fetch as a committed contract fixture (manual, network).
- * Run: npm run capture:trade2-fixture [-- "<league>"]
+ * Run: npm run capture:trade2-fixture [-- [--status securable|online] ["<league>"]]
  * Unauthenticated, read-only: 1 search + 1 fetch (10 ids). Writes
- * src/scripts/fixtures/trade2-fetch-live.json, which testSnipe.ts contract-tests when present,
- * and prints the X-Rate-Limit-* headers seen. */
+ *   --status securable (default) → src/scripts/fixtures/trade2-fetch-live.json (instant buyout)
+ *   --status online              → src/scripts/fixtures/trade2-fetch-live-online.json (in person)
+ * which testSnipe.ts contract-tests when present, and prints the X-Rate-Limit-* headers seen.
+ * Anonymize account names / whispers / tokens before committing a capture. */
 import axios from "axios";
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
 
-const league = process.argv[2] ?? "Forbidden Rites";
+const args = process.argv.slice(2);
+const statusAt = args.indexOf("--status");
+const status = z.enum(["securable", "online"]).parse(statusAt >= 0 ? args[statusAt + 1] : "securable");
+const league = args.filter((_, i) => i !== statusAt && i !== statusAt + 1)[0] ?? "Forbidden Rites";
+const OUT_FILE = status === "online" ? "trade2-fetch-live-online.json" : "trade2-fetch-live.json";
 const BASE = "https://www.pathofexile.com/api/trade2";
 const headers = {
   "Content-Type": "application/json",
@@ -25,7 +31,7 @@ const rateHeaders = (h: Record<string, unknown>): string =>
 async function main(): Promise<void> {
   const query = {
     query: {
-      status: { option: "securable" },
+      status: { option: status },
       stats: [{ type: "and", filters: [] }],
       filters: {
         type_filters: { filters: { category: { option: "armour.gloves" }, rarity: { option: "rare" } } },
@@ -42,8 +48,8 @@ async function main(): Promise<void> {
 
   const fetched = await axios.get(`${BASE}/fetch/${ids.join(",")}?query=${s.id}&realm=poe2`, { headers, timeout: 20_000 });
   console.log(`fetch ${fetched.status}\n${rateHeaders(fetched.headers)}`);
-  const out = resolve("src/scripts/fixtures/trade2-fetch-live.json");
-  const payload = { _provenance: `REAL trade2 fetch, league "${league}", captured ${new Date().toISOString()}`, ...fetched.data };
+  const out = resolve("src/scripts/fixtures", OUT_FILE);
+  const payload = { _provenance: `REAL trade2 fetch, status "${status}", league "${league}", captured ${new Date().toISOString()}`, ...fetched.data };
   writeFileSync(out, `${JSON.stringify(payload, null, 2)}\n`);
   console.log(`wrote ${out} (${ids.length} listings of ${s.total})`);
 }

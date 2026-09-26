@@ -10,7 +10,8 @@
         "account": { "name": "SellerOne#1234", "online": null, "lastCharacterName": "Seller" },
         "price": { "type": "~b/o", "amount": 3, "currency": "divine" },
         "fee": 80861,
-        "hideout_token": "eyJ0eXAiOiJKV1QifQ.synthetic.token"
+        "hideout_token": "eyJ0eXAiOiJKV1QifQ.synthetic.token",
+        "whisper": "@SellerOne Hi, I would like to buy your Doom Grip Vaal Gauntlets"
       },
       "item": {
         "realm": "poe2",

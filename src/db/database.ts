@@ -82,6 +82,7 @@ export function getDb(): Database.Database {
   // step, exactly once (see TAGGED_TABLES).
   migrateLeagueScope(conn);
   seedLeagueRegistry(conn);
+  purgeLegacyPriceBook(conn);
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.
   conn.exec(`
@@ -188,6 +189,25 @@ export function relaxHuntHitPriceDiv(conn: Database.Database): void {
     conn.exec("DROP TABLE hunt_hits");
     conn.exec("ALTER TABLE hunt_hits_new RENAME TO hunt_hits");
   })();
+}
+
+const PRICE_BOOK_CUTOVER_KEY = "price_book_cutover_rollsig_v1";
+
+/**
+ * One-time wipe of the price book at the signature cutover. Rows written before it are in the two
+ * retired key spaces (text-based modSignature from hunts, and zero-mod "<base>|" rows from the
+ * broken mod capture) — never read again, and a bare "<base>|" key is exactly the pooled bucket
+ * behind the "1111 samples" bait alerts. Guarded by an app_settings marker so it runs once.
+ */
+export function purgeLegacyPriceBook(conn: Database.Database): number {
+  return conn.transaction(() => {
+    const done = conn.prepare("SELECT 1 FROM app_settings WHERE key = ?").get(PRICE_BOOK_CUTOVER_KEY);
+    if (done) return 0;
+    const removed = conn.prepare("DELETE FROM price_book_obs").run().changes;
+    conn.prepare("INSERT INTO app_settings (key, value) VALUES (?, ?)").run(PRICE_BOOK_CUTOVER_KEY, new Date().toISOString());
+    if (removed > 0) console.warn(`[db] price-book cutover: removed ${removed} legacy observation(s)`);
+    return removed;
+  }).immediate();
 }
 
 /** Add any missing columns to a table (idempotent). */

@@ -4,7 +4,9 @@
  * Run: npm run test:snipe (src/scripts/runWithTestEnv.ts snipe-db sets DB_PATH + disables toasts). */
 import Database from "better-sqlite3";
 import { config } from "../config/env";
-import { getDb, relaxHuntHitPriceDiv } from "../db/database";
+import { getDb, purgeLegacyPriceBook, relaxHuntHitPriceDiv } from "../db/database";
+import { dbRateStore } from "../db/tradeRateQueries";
+import { createRateGovernor } from "../api/tradeRateLimit";
 import { fireAlert } from "../core/alertEngine";
 import { getAlerts } from "../db/alertQueries";
 import { feedPriceBook, newBookCounters, bookReference } from "../core/priceBookFeed";
@@ -52,17 +54,25 @@ age(5);
 fireAlert(USER, A, cooldown);
 ok("non-snipe alerts keep the cooldown behaviour (re-alert after it)", count("SELECT COUNT(*) c FROM alerts WHERE item_id = 'divine'") === 2);
 
-// --- alerts feed is filtered to the viewer's league ---
+// --- alerts feed: market alerts filtered to the viewed league; own-pipeline alerts labeled ---
 fireAlert(USER, B, { ...snipe, itemId: "listing-beta" });
+fireAlert(USER, B, { ...cooldown, itemId: "beta-spread" });
 db.prepare(
   "INSERT INTO alerts (user_id, league, type, item_id, item_name, message) VALUES (?, ?, 'LEAGUE', 'league', ?, 'new league')",
 ).run(USER, B, B);
+db.prepare("INSERT INTO alerts (user_id, league, type, item_id, item_name, message) VALUES (?, NULL, 'SPREAD', 'legacy', 'x', 'old')").run(USER);
 const alphaFeed = getAlerts(USER, A);
-ok("Alpha viewer does not see Beta snipes", !alphaFeed.some((a) => a.item_id === "listing-beta"));
-ok("Alpha viewer sees Alpha alerts", alphaFeed.some((a) => a.item_id === "listing-1"));
+ok("Alpha viewer does not see Beta MARKET alerts (spread)", !alphaFeed.some((a) => a.item_id === "beta-spread"));
+const betaSnipe = alphaFeed.find((a) => a.item_id === "listing-beta");
+ok("Beta SNIPE (default-league pipeline) still shown to its owner, labeled Beta", betaSnipe?.foreign_league === B, JSON.stringify(betaSnipe?.foreign_league));
+ok("Alpha alerts shown unlabeled", alphaFeed.find((a) => a.item_id === "listing-1")?.foreign_league === null);
 ok("LEAGUE news reaches every league view", alphaFeed.some((a) => a.type === "LEAGUE"));
-ok("league match is case-insensitive", getAlerts(USER, "league beta").some((a) => a.item_id === "listing-beta"));
-ok("unseen filter still applies", getAlerts(USER, A, true).length === alphaFeed.length);
+ok("legacy NULL-league rows stay visible", alphaFeed.some((a) => a.item_id === "legacy"));
+ok("league match is case-insensitive", getAlerts(USER, "league beta").some((a) => a.item_id === "beta-spread"));
+const seenId = alphaFeed[0]!.id;
+db.prepare("UPDATE alerts SET seen = 1 WHERE id = ?").run(seenId);
+const unseenFeed = getAlerts(USER, A, true);
+ok("unseen filter drops the seen alert", unseenFeed.length === alphaFeed.length - 1 && !unseenFeed.some((a) => a.id === seenId));
 
 // --- price book refuses zero-mod observations, counts them ---
 const book = newBookCounters();
@@ -114,6 +124,27 @@ const cols = legacy.prepare("PRAGMA table_info(hunt_hits)").all() as Array<{ nam
 ok("migration: price_div nullable", cols.find((c) => c.name === "price_div")?.notnull === 0);
 ok("migration: ALTER-added column + row preserved", (legacy.prepare("SELECT listing_id FROM hunt_hits").get() as { listing_id: string }).listing_id === "L");
 legacy.close();
+
+// --- one-time price-book cutover purge ---
+db.prepare("DELETE FROM app_settings WHERE key LIKE 'price_book_cutover%'").run();
+db.prepare("INSERT INTO price_book_obs (league, sig, base_type, price_div, listing_id) VALUES (?, 'old|', 'x', 1, 'old-1')").run(A);
+const firstPurge = purgeLegacyPriceBook(db);
+ok("cutover purges legacy observations once", firstPurge > 0 && count("SELECT COUNT(*) c FROM price_book_obs") === 0, String(firstPurge));
+feedPriceBook(A, { sig: "vaal gauntlets|a#b3~b#b4", baseType: "Vaal Gauntlets", div: 5, listingId: "post-cutover" }, book);
+ok("cutover is idempotent — later runs keep new rows", purgeLegacyPriceBook(db) === 0 && count("SELECT COUNT(*) c FROM price_book_obs") === 1);
+
+// --- DB rate store: shared, atomic reservations (web + poller see one budget) ---
+db.exec("DELETE FROM trade_rate_hits; DELETE FROM trade_rate_policy;");
+let clock = 1_000_000;
+const govA = createRateGovernor(dbRateStore(), { now: () => clock });
+const govB = createRateGovernor(dbRateStore(), { now: () => clock }); // "the other process"
+ok("first search admitted", govA.reserve("search") === 0);
+ok("second process sees the first's request (paced ~36s)", govB.reserve("search") === 36_000, String(govB.reserve("search")));
+clock += 36_000;
+ok("after the pace gap the other process may search", govB.reserve("search") === 0);
+govA.observe("search", 429, { "retry-after": "90", "x-rate-limit-rules": "Ip", "x-rate-limit-ip": "5:10:60,15:60:300,30:300:1800,600:21600:3600", "x-rate-limit-ip-state": "2:10:0,2:60:0,2:300:0,2:21600:0" });
+ok("a 429 seen by one process blocks the other", govB.reserve("search") === 90_000, String(govB.reserve("search")));
+ok("fetch budget is separate from search", govB.reserve("fetch") === 0);
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
 process.exit(fail === 0 ? 0 : 1);

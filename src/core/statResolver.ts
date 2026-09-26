@@ -51,11 +51,19 @@ const PREF: Record<string, string[]> = {
   fractured: ["explicit"],
 };
 
-/** Crafted/fractured/desecrated ids aren't in the searchable catalog groups — search them as explicit. */
+/** Groups whose mods are ordinary explicits carrying a flag (crafted/fractured/desecrated). */
+const EXPLICIT_VARIANTS = new Set(["crafted", "fractured", "desecrated"]);
+
+/**
+ * Catalog ids to try for a fetched stat hash. A fractured/desecrated/crafted mod is searched as its
+ * `explicit.` twin FIRST: comparables are "items with this mod", and narrowing them to the ones
+ * where it happens to be fractured would shrink the set to near nothing. Implicit/rune/enchant
+ * ids stay in their own group — there the group IS the meaning.
+ */
 function catalogIdCandidates(statId: string): string[] {
   const dot = statId.indexOf(".");
   if (dot < 0) return [statId];
-  return [statId, `explicit${statId.slice(dot)}`];
+  return EXPLICIT_VARIANTS.has(statId.slice(0, dot)) ? [`explicit${statId.slice(dot)}`, statId] : [statId];
 }
 
 function rollOf(line: ParsedModLine): number {

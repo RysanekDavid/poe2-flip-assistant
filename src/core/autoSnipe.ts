@@ -1,4 +1,5 @@
-import { searchListings, tradeRequestCount, type TradeCred } from "../api/tradeClient";
+import { searchListings, type TradeCred } from "../api/tradeClient";
+import { metered, newMeter, type TradeMeter } from "../api/tradeMeter";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
@@ -24,7 +25,7 @@ import type { DivRates } from "./listingPrice";
  *      instant-buyout comparables, candidate excluded).
  *   4. Alert only what passes the shared snipe gate — once per listing, ever.
  *
- * Trade2 spend is capped per scan (request budget + archetype rotation) so hunts keep their
+ * Trade2 spend is capped per scan (scan-local search budget + archetype rotation) so hunts keep their
  * cadence. Read-only throughout: it alerts, the human buys.
  */
 export interface SnipeFinding {
@@ -65,12 +66,14 @@ export interface ScanReport {
   exaltPerDivine: number; // so the UI can render small Div values in exalt
   valuations: number; // per-item comparable searches spent this scan
   maxValuations: number;
-  requests: number; // trade2 requests this scan issued
-  maxRequests: number;
+  searches: number; // trade2 searches THIS scan issued (the scarce resource: 600 per 6h per IP)
+  fetches: number;
+  maxSearches: number;
   book: BookCounters;
   findings: SnipeFinding[];
   diags: ProfileDiag[];
   errors: Array<{ profile: string; error: string }>;
+  error?: string; // set when the scan failed as a whole (the UI shows it instead of waiting forever)
 }
 
 interface ScanCtx {
@@ -79,12 +82,11 @@ interface ScanCtx {
   cred: TradeCred;
   league: string;
   report: ScanReport;
-  startRequests: number;
+  meter: TradeMeter; // counts only this scan's requests — hunts on the shared limiter don't eat it
 }
 
-const spent = (ctx: ScanCtx): number => tradeRequestCount() - ctx.startRequests;
-// a valuation is up to 2 searches + 2 fetches; an archetype is 1 search + ≤3 fetches
-const hasBudget = (ctx: ScanCtx, cost: number): boolean => spent(ctx) + cost <= config.autoSnipe.maxRequestsPerScan;
+// an archetype costs 1 search; a valuation up to 2 (distinctive + pseudo-only fallback)
+const hasBudget = (ctx: ScanCtx, searches: number): boolean => ctx.meter.search + searches <= config.autoSnipe.maxSearchesPerScan;
 
 /** One-line summary of the value-driving rolls, for the alert + UI ("Life 118 · Res 134 · +2 Cold skills"). */
 function describeStats(stats: ResolvedStat[]): string {
@@ -196,8 +198,8 @@ function knownFair(c: Candidate, ctx: ScanCtx): boolean {
 async function collectPhase(profiles: SnipeProfile[], ctx: ScanCtx): Promise<Array<Candidate & { diag: ProfileDiag }>> {
   const pool: Array<Candidate & { diag: ProfileDiag }> = [];
   for (const p of profiles) {
-    if (!hasBudget(ctx, 4)) {
-      ctx.report.errors.push({ profile: p.key, error: "request budget reached — archetype deferred to a later scan" });
+    if (!hasBudget(ctx, 1)) {
+      ctx.report.errors.push({ profile: p.key, error: "search budget reached — archetype deferred to a later scan" });
       continue;
     }
     try {
@@ -214,7 +216,7 @@ async function collectPhase(profiles: SnipeProfile[], ctx: ScanCtx): Promise<Arr
 
 async function valuationPhase(pool: Array<Candidate & { diag: ProfileDiag }>, ctx: ScanCtx): Promise<void> {
   for (const c of rankCandidates(pool)) {
-    if (ctx.report.valuations >= config.autoSnipe.maxValuations || !hasBudget(ctx, 4)) {
+    if (ctx.report.valuations >= config.autoSnipe.maxValuations || !hasBudget(ctx, 2)) {
       if (!c.diag.note) c.diag.note = "valuation budget reached — candidate not valued this scan";
       continue;
     }
@@ -236,39 +238,59 @@ async function valuationPhase(pool: Array<Candidate & { diag: ProfileDiag }>, ct
 let rotationCursor = 0;
 let running = false;
 
+function emptyReport(exaltPerDivine: number): ScanReport {
+  return {
+    profiles: SNIPE_PROFILES.length,
+    searched: 0,
+    exaltPerDivine,
+    valuations: 0,
+    maxValuations: config.autoSnipe.maxValuations,
+    searches: 0,
+    fetches: 0,
+    maxSearches: config.autoSnipe.maxSearchesPerScan,
+    book: newBookCounters(),
+    findings: [],
+    diags: [],
+    errors: [],
+  };
+}
+
+/** Persist a scan that failed as a whole, so the UI stops waiting and shows why. */
+export function saveFailedSnipeReport(error: string): void {
+  saveSnipeReport(JSON.stringify({ ...emptyReport(0), error }));
+}
+
+async function runScan(cred: TradeCred): Promise<ScanReport> {
+  const rates = scanRates();
+  const { stats } = await fetchTradeMeta();
+  const { picked, next } = pickArchetypes(SNIPE_PROFILES, rotationCursor, config.autoSnipe.archetypesPerScan);
+  rotationCursor = next;
+  const report = emptyReport(rates.exaltPerDivine);
+  const ctx: ScanCtx = { idx: buildStatIndex(stats), rates, cred, league: getDefaultLeague(), report, meter: newMeter() };
+
+  await metered(ctx.meter, async () => valuationPhase(await collectPhase(picked, ctx), ctx));
+  report.searches = ctx.meter.search;
+  report.fetches = ctx.meter.fetch;
+  const refusals = describeRefusals(report.book);
+  if (refusals) report.errors.push({ profile: "(price book)", error: refusals });
+  return report;
+}
+
 /**
  * Run one autonomous scan over the next slice of archetypes. Throws if a scan is already in
- * flight in this process (the poller also guards, this makes the invariant local).
+ * flight in this process (the poller also guards, this makes the invariant local). A scan that
+ * fails as a whole still writes a report carrying the error.
  */
 export async function scanAutoSnipes(cred: TradeCred): Promise<ScanReport> {
   if (running) throw new Error("autosnipe scan already running");
   running = true;
   try {
-    const rates = scanRates();
-    const { stats } = await fetchTradeMeta();
-    const { picked, next } = pickArchetypes(SNIPE_PROFILES, rotationCursor, config.autoSnipe.archetypesPerScan);
-    rotationCursor = next;
-    const report: ScanReport = {
-      profiles: SNIPE_PROFILES.length,
-      searched: 0,
-      exaltPerDivine: rates.exaltPerDivine,
-      valuations: 0,
-      maxValuations: config.autoSnipe.maxValuations,
-      requests: 0,
-      maxRequests: config.autoSnipe.maxRequestsPerScan,
-      book: newBookCounters(),
-      findings: [],
-      diags: [],
-      errors: [],
-    };
-    const ctx: ScanCtx = { idx: buildStatIndex(stats), rates, cred, league: getDefaultLeague(), report, startRequests: tradeRequestCount() };
-
-    await valuationPhase(await collectPhase(picked, ctx), ctx);
-    report.requests = spent(ctx);
-    const refusals = describeRefusals(report.book);
-    if (refusals) report.errors.push({ profile: "(price book)", error: refusals });
+    const report = await runScan(cred);
     saveSnipeReport(JSON.stringify(report)); // the UI reads the latest scan across processes
     return report;
+  } catch (e) {
+    saveFailedSnipeReport(`scan failed: ${e instanceof Error ? e.message : String(e)}`);
+    throw e;
   } finally {
     running = false;
   }

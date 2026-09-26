@@ -1,7 +1,7 @@
 import type { TradeCred } from "../api/tradeClient";
 import { credForUser } from "../auth/credForUser";
 import { scanAll } from "../core/huntEngine";
-import { scanAutoSnipes } from "../core/autoSnipe";
+import { scanAutoSnipes, saveFailedSnipeReport } from "../core/autoSnipe";
 import { consumeScanRequests, requestScan } from "../db/scanRequestQueries";
 import { listUsers } from "../db/userQueries";
 
@@ -40,7 +40,7 @@ export function runAutoSnipe(reason: string, cred: TradeCred): boolean {
   autoSnipeRunning = true;
   scanAutoSnipes(cred)
     .then((r) => {
-      console.log(`[autosnipe] ${reason}: ${r.findings.length} snipe(s), ${r.searched} archetype(s), ${r.requests}/${r.maxRequests} requests`);
+      console.log(`[autosnipe] ${reason}: ${r.findings.length} snipe(s), ${r.searched} archetype(s), ${r.searches}/${r.maxSearches} searches, ${r.fetches} fetches`);
       if (r.errors.length > 0) console.warn(`[autosnipe] ${r.errors.length} error(s):`, r.errors.map((e) => `${e.profile}: ${e.error}`).join("; "));
     })
     .catch((e) => console.error(`[autosnipe] ${reason} failed:`, errText(e)))
@@ -50,17 +50,20 @@ export function runAutoSnipe(reason: string, cred: TradeCred): boolean {
   return true;
 }
 
-/**
- * Drain manual scan requests queued by the web routes. A request is only consumed when its
- * runner is idle — a busy runner leaves it queued for the next drain instead of dropping it.
- */
-export function drainScanRequests(ownerCredNow: () => TradeCred | null): void {
-  if (!autoSnipeRunning && consumeScanRequests("autosnipe").length > 0) {
-    // resolved per request: the owner may have saved a POESESSID after the poller started
-    const ownerCred = ownerCredNow();
-    if (ownerCred) runAutoSnipe("manual scan", ownerCred);
-    else console.error("[autosnipe] manual scan requested but the owner has no POESESSID — dropped");
+function drainAutoSnipe(ownerCredNow: () => TradeCred | null): void {
+  if (autoSnipeRunning || consumeScanRequests("autosnipe").length === 0) return;
+  // resolved per request: the owner may have saved a POESESSID after the poller started
+  const ownerCred = ownerCredNow();
+  if (ownerCred) {
+    runAutoSnipe("manual scan", ownerCred);
+    return;
   }
+  const msg = "manual scan requested but the owner has no POESESSID stored";
+  console.error(`[autosnipe] ${msg}`);
+  saveFailedSnipeReport(msg); // the UI is waiting on a report — give it the reason
+}
+
+function drainHunts(): void {
   if (huntScanning) return;
   const userIds = consumeScanRequests("hunts");
   if (userIds.length === 0) return;
@@ -73,4 +76,23 @@ export function drainScanRequests(ownerCredNow: () => TradeCred | null): void {
   else console.error(`[hunt] manual scan for ${first.name} dropped — no stored POESESSID`);
   // re-queue the others; the next drain (20s) picks them up once this scan finishes
   for (const u of rest) requestScan("hunts", u.id);
+}
+
+/**
+ * Drain manual scan requests queued by the web routes. A request is only consumed when its
+ * runner is idle — a busy runner leaves it queued for the next drain instead of dropping it.
+ * Runs on a timer, so a DB error (SQLITE_BUSY, a cred that fails to decrypt) is logged loudly and
+ * retried next tick instead of escaping as an uncaught exception that kills the poller.
+ */
+export function drainScanRequests(ownerCredNow: () => TradeCred | null): void {
+  try {
+    drainAutoSnipe(ownerCredNow);
+  } catch (e) {
+    console.error("[autosnipe] draining manual scan requests failed:", errText(e));
+  }
+  try {
+    drainHunts();
+  } catch (e) {
+    console.error("[hunt] draining manual scan requests failed:", errText(e));
+  }
 }

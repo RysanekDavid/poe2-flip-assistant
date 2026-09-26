@@ -60,19 +60,34 @@ export function hasAlertEver(userId: number, itemId: string, type: string): bool
 }
 
 /**
- * This user's feed in ONE league. A snipe or spread alert from another economy is noise at best
- * and a wrong trade at worst. LEAGUE alerts are the exception: "a new league started" is news for
- * whoever is still looking at the old one.
+ * Alert types produced by the shared trade2 pipelines (hunts, autosnipe, craft margins), which
+ * only ever run in the app DEFAULT league on the owner's/user's creds. They are the user's own
+ * watches — hiding them because the user is viewing another league would silently swallow a
+ * snipe — so they show in every view, labeled with their league (`foreign_league`). LEAGUE news
+ * ("a new league started") likewise matters most to someone still viewing the old one.
  */
-export function getAlerts(userId: number, league: string, unseenOnly = false, limit = 100): AlertRow[] {
+export const EVERY_VIEW_ALERT_TYPES = ["LEAGUE", "SNIPE", "CRAFT_BASE", "RESELL", "CRAFT_MARGIN"] as const;
+
+export interface AlertFeedRow extends AlertRow {
+  foreign_league: string | null; // the alert's league when it differs from the viewed one
+}
+
+/**
+ * This user's feed for the league they view. Market alerts (spreads, trends, spikes) from another
+ * economy are noise at best and a wrong trade at worst, so those are filtered; pre-league-scoping
+ * rows (league NULL) can't be attributed and stay visible rather than vanish.
+ */
+export function getAlerts(userId: number, league: string, unseenOnly = false, limit = 100): AlertFeedRow[] {
   const unseen = unseenOnly ? "AND seen = 0" : "";
+  const everyView = EVERY_VIEW_ALERT_TYPES.map((t) => `'${t}'`).join(", ");
   return getDb()
     .prepare(
-      `SELECT * FROM alerts
-       WHERE user_id = ? AND (league = ? COLLATE NOCASE OR type = 'LEAGUE') ${unseen}
-       ORDER BY created_at DESC, id DESC LIMIT ?`,
+      `SELECT *, CASE WHEN league IS NOT NULL AND league != @league COLLATE NOCASE THEN league END AS foreign_league
+       FROM alerts
+       WHERE user_id = @userId AND (league = @league COLLATE NOCASE OR league IS NULL OR type IN (${everyView})) ${unseen}
+       ORDER BY created_at DESC, id DESC LIMIT @limit`,
     )
-    .all(userId, league, limit) as AlertRow[];
+    .all({ userId, league, limit }) as AlertFeedRow[];
 }
 
 /** Mark alerts seen — scoped to the user so one account can't touch another's feed. */

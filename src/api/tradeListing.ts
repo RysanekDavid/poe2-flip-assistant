@@ -27,7 +27,7 @@ export interface Listing {
   online: boolean; // seller currently in-game (instant-buyout sellers report null → false)
   instantBuyout: boolean; // Merchant/async listing (carries a gold `fee`) — buyable while offline
   indexed: string | null; // when the listing was indexed (age)
-  whisper: string | null; // absent on instant-buyout listings
+  whisper: string | null; // copyable in-game message (present on real instant-buyout listings too)
   itemName: string;
   baseType: string;
   rarity: string | null; // "Normal" | "Magic" | "Rare" | "Unique"

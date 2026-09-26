@@ -3,7 +3,9 @@ import Bottleneck from "bottleneck";
 import { config } from "../config/env";
 import { getDefaultLeague } from "../core/leagueState";
 import { buildTradeQuery, type TradeQuery } from "../lib/tradeLink";
-import { createRateGovernor } from "./tradeRateLimit";
+import { createRateGovernor, type RateGovernor, type TradeEndpoint } from "./tradeRateLimit";
+import { countRequest } from "./tradeMeter";
+import { dbRateStore } from "../db/tradeRateQueries";
 import { parseFetchResponse, type Listing } from "./tradeListing";
 
 /**
@@ -18,18 +20,15 @@ import { parseFetchResponse, type Listing } from "./tradeListing";
  */
 const BASE = "https://www.pathofexile.com/api/trade2";
 
-// One request at a time, never faster than the configured floor. This limiter lives in the
-// POLLER process only: web routes enqueue scans (db/scanRequestQueries) instead of calling
-// trade2 themselves, so a single limiter owns the account+IP budget.
+// One request at a time per process, never faster than the configured floor. Two processes call
+// trade2 — the poller (scans) and the web server (interactive lookups: snipe listings, craft
+// rolls) — so each has its own limiter; the shared account+IP budget is enforced by the governor,
+// whose request log and restriction state live in the DB both processes read.
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: config.hunt.minRequestMs });
-// Live GGG rate-limit state on top of the fixed floor (restrictions, near-cap rules, 429s).
-const governor = createRateGovernor();
+let governor: RateGovernor | null = null;
+const gov = (): RateGovernor => (governor ??= createRateGovernor(dbRateStore()));
 // A wait longer than this fails the call instead of freezing every queued scan behind it.
 const MAX_INLINE_WAIT_MS = 120_000;
-let requestCount = 0;
-
-/** Monotonic count of trade2 requests issued by this process — scans meter their budget off it. */
-export const tradeRequestCount = (): number => requestCount;
 
 export interface SearchResp {
   id: string; // queryId — reused by the live WebSocket
@@ -63,20 +62,26 @@ function authHeaders(cred: TradeCred): Record<string, string> {
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Hold the queue for the governor's wait, or fail fast when the penalty window is long. */
-async function awaitBudget(path: string): Promise<void> {
-  const wait = governor.waitMs();
-  if (wait > MAX_INLINE_WAIT_MS) {
-    throw new Error(`trade2 backing off for ${Math.ceil(wait / 1000)}s (rate-limit state) — skipped ${path.split("?")[0]}`);
+const endpointOf = (path: string): TradeEndpoint => (path.startsWith("/fetch/") ? "fetch" : "search");
+
+/** Wait until the shared budget admits this request (and record it), or fail fast on a long block. */
+async function reserveBudget(kind: TradeEndpoint, path: string): Promise<void> {
+  for (;;) {
+    const wait = gov().reserve(kind);
+    if (wait === 0) return;
+    if (wait > MAX_INLINE_WAIT_MS) {
+      throw new Error(`trade2 ${kind} budget exhausted for ${Math.ceil(wait / 1000)}s (rate-limit state) — skipped ${path.split("?")[0]}`);
+    }
+    await sleep(wait);
   }
-  if (wait > 0) await sleep(wait);
 }
 
-/** Wrap a trade2 call with the limiter + a clear message on the common failure modes. */
+/** Wrap a trade2 call with the limiter + governor + a clear message on the common failure modes. */
 async function call<T>(method: "get" | "post", path: string, cred: TradeCred, body?: unknown): Promise<T> {
+  const kind = endpointOf(path);
   return limiter.schedule(async () => {
-    await awaitBudget(path);
-    requestCount++;
+    await reserveBudget(kind, path);
+    countRequest(kind);
     try {
       const res = await axios.request<T>({
         method,
@@ -85,12 +90,12 @@ async function call<T>(method: "get" | "post", path: string, cred: TradeCred, bo
         timeout: 20_000,
         headers: authHeaders(cred),
       });
-      governor.observe(res.status, res.headers);
+      gov().observe(kind, res.status, res.headers);
       return res.data;
     } catch (err) {
       const ax = err as AxiosError;
       const status = ax.response?.status;
-      if (ax.response) governor.observe(status ?? null, ax.response.headers);
+      if (ax.response) gov().observe(kind, status ?? null, ax.response.headers);
       if (status === 429) {
         const retry = ax.response?.headers?.["retry-after"];
         throw new Error(`trade2 rate-limited (429)${retry ? ` — backing off ${retry}s` : ""}.`);

@@ -10,8 +10,10 @@ import { buildPlan, listingToItem, valueFromComparables } from "../core/comparab
 import { buildStatIndex } from "../core/statResolver";
 import { rankCandidates, pickCandidates, pickArchetypes } from "../core/autoSnipeCandidates";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
-import { createRateGovernor, delayFromHeaders, parseRules } from "../api/tradeRateLimit";
+import { computeWaitMs, createRateGovernor, memoryRateStore, paceMs, parseRules } from "../api/tradeRateLimit";
+import { countRequest, metered, newMeter } from "../api/tradeMeter";
 import { fmtDivOrEx } from "../lib/format";
+import { pos } from "../config/env";
 import { snipeAlertMessage } from "../core/snipeAlert";
 import { parseHuntBody } from "../lib/huntSchema";
 import { buildTradeQuery } from "../lib/tradeLink";
@@ -71,7 +73,7 @@ ok("fractured flag → fractured marker", gl.modLines.find((m) => m.text.include
 ok("no unreadable mod entries on a well-formed item", gl.unreadableMods === 0);
 ok("instant buyout detected from fee; online null → offline but buyable", gl.instantBuyout && !gl.online && isBuyable(gl));
 ok("item level / rarity / corrupted carried", gl.itemLevel === 82 && gl.rarity === "Rare" && gl.corrupted === false);
-ok("instant-buyout listing has no whisper", gl.whisper === null);
+ok("instant-buyout listing keeps its whisper (real IB listings carry one)", gl.whisper != null);
 const legacy = byId("fx-ring-legacy");
 ok("legacy string mods still parse (+ craftedMods bucket)", legacy.modLines.length === 3 && legacy.modLines.some((m) => m.marker === "crafted"));
 ok("price amount 0 → price null (never a 0-Div ask)", legacy.price === null);
@@ -115,8 +117,22 @@ if (existsSync(livePath)) {
   ok("LIVE fixture: every rare has mods", rares.every((l) => l.modLines.length > 0), rares.map((l) => l.modLines.length).join(","));
   ok("LIVE fixture: no unreadable mod entries", live.every((l) => l.unreadableMods === 0));
   ok("LIVE fixture: rares resolve ≥2 mods (catalog-free: via stat ids)", rares.every((l) => l.modLines.filter((m) => m.statId).length >= 2));
+  ok("LIVE fixture (securable search): every listing is instant buyout (fee present)", live.every((l) => l.instantBuyout));
+  ok("LIVE fixture: instant-buyout listings still carry a whisper", live.every((l) => l.whisper != null));
 } else {
   console.log("SKIP  live trade2 fixture absent — run `npm run capture:trade2-fixture` to contract-test a real capture");
+}
+
+// the fee-as-instant-buyout signal must also be shown to be ABSENT on in-person listings
+const onlinePath = resolve("src/scripts/fixtures/trade2-fetch-live-online.json");
+if (existsSync(onlinePath)) {
+  const raw = JSON.parse(readFileSync(onlinePath, "utf8")) as { result: Array<{ listing?: { fee?: unknown } } | null> };
+  const inPerson = parseFetchResponse(raw).filter((l) => !l.instantBuyout);
+  ok("LIVE online fixture: contains whisper-only (in-person) listings", inPerson.length > 0, String(inPerson.length));
+  ok("LIVE online fixture: in-person listings lack a fee and carry a whisper", inPerson.every((l) => l.whisper != null));
+  ok("LIVE online fixture: fee present ⇔ instantBuyout", raw.result.every((e, i) => e == null || (e.listing?.fee != null) === parseFetchResponse({ result: [raw.result[i]] })[0]?.instantBuyout));
+} else {
+  console.log("SKIP  in-person trade2 fixture absent — run `npm run capture:trade2-fixture -- --status online`");
 }
 
 // --- 4. typed price conversion (unrated path) ---
@@ -153,23 +169,51 @@ ok("observations exclude nothing buyable+rated (5)", pc.observations.length === 
 const rot = pickArchetypes(["a", "b", "c", "d", "e"], 3, 4);
 ok("archetype rotation wraps", rot.picked.join("") === "deab" && rot.next === 2, `${rot.picked.join("")} next ${rot.next}`);
 
-// --- 7. header-driven rate limiting + 429 backoff (fake clock) ---
-let t = 0;
-const gov = createRateGovernor({ now: () => t });
-const H = (state: string) => ({ "X-Rate-Limit-Rules": "Ip", "X-Rate-Limit-Ip": "8:10:60,15:60:120", "X-Rate-Limit-Ip-State": state });
-gov.observe(200, H("1:10:0,2:60:0"));
-ok("well under limits → no wait", gov.waitMs() === 0);
-gov.observe(200, H("7:10:0,8:60:0"));
-ok("one hit from a cap → wait out that rule's period", gov.waitMs() === 10_000, String(gov.waitMs()));
-t += 10_000;
-ok("wait elapses with the clock", gov.waitMs() === 0);
-gov.observe(429, { "retry-after": "30" });
-ok("429 honours Retry-After", gov.waitMs() === 30_000, String(gov.waitMs()));
-t += 30_000;
-gov.observe(429, {});
-ok("429 without Retry-After → conservative 60s", gov.waitMs() === 60_000, String(gov.waitMs()));
-ok("active restriction wins", delayFromHeaders(H("9:10:45,9:60:0")) === 45_000);
+// --- 7. header-driven rate limiting + 429 backoff (fake clock, REAL header strings 2026-09-26) ---
+const SEARCH_RULES = "5:10:60,15:60:300,30:300:1800,600:21600:3600";
+const FETCH_RULES = "12:4:10,16:12:300,50:300:300,1000:21600:1800";
+const H = (rules: string, state: string) => ({ "X-Rate-Limit-Rules": "Ip", "X-Rate-Limit-Ip": rules, "X-Rate-Limit-Ip-State": state });
+ok("real search rules parse (4 tiers)", parseRules(SEARCH_RULES).length === 4);
 ok("malformed rule parts dropped", parseRules("8:10:60,garbage,1:2").length === 1);
+ok("search pace = 600/6h → one per 36s", paceMs(parseRules(SEARCH_RULES)) === 36_000);
+ok("fetch pace = 1000/6h → one per 21.6s", paceMs(parseRules(FETCH_RULES)) === 21_600);
+
+const H6 = 21_600_000;
+const now0 = 50_000_000;
+// 599 of our searches in the last 6h (one under GGG's 600), the oldest 60s from ageing out
+const spread = [now0 - H6 + 60_000, ...Array.from({ length: 598 }, (_, i) => now0 - 3_600_000 - i * 1_000)].sort((a, b) => a - b);
+const longOnly = [{ hits: 600, periodSec: 21_600, restrictSec: 3_600 }];
+const nearCap = computeWaitMs(now0, spread, longOnly, 0);
+ok("near the 600/6h cap → wait until the OLDEST request ages out, not 6h", nearCap > 0 && nearCap <= 60_000, `${nearCap}ms for ${spread.length} hits`);
+ok("never the full 6h period", computeWaitMs(now0, spread, parseRules(SEARCH_RULES), 0) < 3_600_000);
+const burst = [now0 - 3_000, now0 - 2_000, now0 - 1_000, now0];
+ok("short-window cap: 4 hits in 10s → wait for the oldest to leave the window", computeWaitMs(now0, burst, [{ hits: 5, periodSec: 10, restrictSec: 60 }], 0) === 7_000);
+
+let t = now0;
+const gov = createRateGovernor(memoryRateStore(), { now: () => t });
+ok("governor: first search admitted (defaults = observed policy)", gov.reserve("search") === 0);
+gov.observe("search", 200, H(SEARCH_RULES, "1:10:0,1:60:0,1:300:0,1:21600:0"));
+ok("governor: next search paced 36s", gov.reserve("search") === 36_000);
+t += 36_000;
+ok("governor: admitted after the pace gap", gov.reserve("search") === 0);
+t += 36_000;
+gov.observe("search", 429, { "retry-after": "30" });
+ok("429 honours Retry-After", gov.reserve("search") === 30_000, String(gov.reserve("search")));
+t += 30_000;
+gov.observe("search", 429, {});
+ok("429 without Retry-After → conservative 60s", gov.reserve("search") === 60_000);
+t += 60_000;
+gov.observe("search", 200, H(SEARCH_RULES, "1:10:0,1:60:0,1:300:1800,3:21600:0"));
+ok("active restriction → exactly its restrictSec (1800s), not a window period", gov.reserve("search") === 1_800_000, String(gov.reserve("search")));
+
+let t2 = now0;
+const gov2 = createRateGovernor(memoryRateStore(), { now: () => t2 });
+gov2.observe("search", 200, H(SEARCH_RULES, "1:10:0,1:60:0,1:300:0,598:21600:0"));
+t2 += 36_000;
+ok("server count > own log (restart) is adopted: one more search fits under the cap", gov2.reserve("search") === 0);
+t2 += 36_000;
+const lock = gov2.reserve("search");
+ok("…then the long window blocks until those requests age out (bounded by 6h)", lock > 36_000 && lock <= H6, String(lock));
 
 // --- 8. alert rendering + hunt validation ---
 ok("sub-Div ask rendered in exalted", fmtDivOrEx(0.25, 200) === "50 ex" && fmtDivOrEx(1 / 200, 200) === "1 ex");
@@ -183,5 +227,39 @@ ok("hunt: unknown mode → 400", !parseHuntBody({ label: "x", baseType: "Ring", 
 ok("hunt: price without currency → 400", !parseHuntBody({ label: "x", baseType: "Ring", maxAmount: 3 }).ok);
 ok("hunt: no target at all → 400", !parseHuntBody({ label: "x" }).ok);
 
-console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
-process.exit(fail === 0 ? 0 : 1);
+// --- boot-time validation of gate thresholds ---
+process.env.TEST_POS_ZERO = "0";
+process.env.TEST_POS_NEG = "-1";
+process.env.TEST_POS_BIG = "150";
+process.env.TEST_POS_OK = "0.05";
+ok("env: 0 threshold rejected at boot", throws(() => pos("TEST_POS_ZERO", 1)));
+ok("env: negative threshold rejected", throws(() => pos("TEST_POS_NEG", 1)));
+ok("env: above max (discount > 100%) rejected", throws(() => pos("TEST_POS_BIG", 40, 100)));
+ok("env: valid value + fallback accepted", pos("TEST_POS_OK", 1) === 0.05 && pos("TEST_POS_UNSET", 7) === 7);
+
+// --- 9. scan-local meter: requests from OTHER async work (hunts on the shared limiter) don't count ---
+async function meterCheck(): Promise<void> {
+  const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 1));
+  const hunt = async (): Promise<void> => {
+    for (let i = 0; i < 5; i++) {
+      await tick();
+      countRequest("search");
+    }
+  };
+  const meter = newMeter();
+  const scan = metered(meter, async () => {
+    for (let i = 0; i < 3; i++) {
+      await tick();
+      countRequest("search");
+    }
+    await tick();
+    countRequest("fetch");
+  });
+  await Promise.all([scan, hunt(), hunt()]);
+  ok("meter counts only the scan's own requests despite 10 interleaved hunt searches", meter.search === 3 && meter.fetch === 1, JSON.stringify(meter));
+}
+
+void meterCheck().then(() => {
+  console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
+  process.exit(fail === 0 ? 0 : 1);
+});

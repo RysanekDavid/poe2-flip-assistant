@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { Radar, Loader2, Play, Target, Copy, Check, ExternalLink } from "lucide-react";
 import { fmtDivOrEx } from "../lib/format";
 
+// a paced scan is a handful of searches ≥36s apart plus the 20s drain tick — 6 min is generous
+const SCAN_WAIT_TIMEOUT_MS = 6 * 60_000;
+
 interface Status {
   enabled: boolean;
   live: boolean;
@@ -76,8 +79,9 @@ export function AutoSnipeBar() {
   const [lastScanAt, setLastScanAt] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  // lastScanAt at the moment a manual scan was queued; the scan is done once a newer report lands
-  const waitingFrom = useRef<string | null | undefined>(undefined);
+  // a queued manual scan: the report timestamp it started from + when it was queued
+  const waiting = useRef<{ from: string | null; at: number } | null>(null);
+  const failed = (error: string): ScanResult => ({ profiles: 0, searched: 0, exaltPerDivine: 0, valuations: 0, maxValuations: 0, findings: [], diags: [], errors: [], error });
 
   // load status + the last persisted scan (cron or manual), and keep polling so
   // background-scan results appear without pressing anything
@@ -88,10 +92,15 @@ export function AutoSnipeBar() {
         .then((s: Status) => {
           setStatus(s);
           setLastScanAt(s.lastScanAt ?? null);
-          if (s.lastReport) setResult(s.lastReport); // manual scans persist too, so this is never stale
-          if (waitingFrom.current !== undefined && !s.pending && (s.lastScanAt ?? null) !== waitingFrom.current) {
-            waitingFrom.current = undefined;
+          if (s.lastReport) setResult(s.lastReport); // failed scans persist an error report too
+          const w = waiting.current;
+          if (w && !s.pending && (s.lastScanAt ?? null) !== w.from) {
+            waiting.current = null;
             setScanning(false);
+          } else if (w && Date.now() - w.at > SCAN_WAIT_TIMEOUT_MS) {
+            waiting.current = null;
+            setScanning(false);
+            setResult(failed("scan did not report back within 6 min — is the poller running? check its log"));
           }
         })
         .catch(() => setStatus({ enabled: false, live: false, intervalMin: 0, profiles: [], error: "failed to load" }));
@@ -107,12 +116,12 @@ export function AutoSnipeBar() {
     fetch("/api/snipe/scan", { method: "POST" })
       .then((r) => r.json())
       .then((b: { queued?: boolean; error?: string }) => {
-        if (b.queued) waitingFrom.current = lastScanAt;
+        if (b.queued) waiting.current = { from: lastScanAt, at: Date.now() };
         else throw new Error(b.error ?? "scan was not queued");
       })
       .catch((e: unknown) => {
         setScanning(false);
-        setResult({ profiles: 0, searched: 0, exaltPerDivine: 0, valuations: 0, maxValuations: 0, findings: [], diags: [], errors: [], error: `scan failed: ${e instanceof Error ? e.message : String(e)}` });
+        setResult(failed(`scan failed: ${e instanceof Error ? e.message : String(e)}`));
       });
   };
 

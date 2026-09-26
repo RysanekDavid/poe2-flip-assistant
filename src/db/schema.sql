@@ -300,6 +300,21 @@ CREATE TABLE IF NOT EXISTS craft_refresh_request (
   requested_at DATETIME
 );
 
+-- trade2 rate-limit governor state, SHARED by the web and poller processes (both call trade2 on
+-- the same account+IP budget). One row per request we issued, per endpoint kind, kept for the
+-- longest rule window; plus the latest policy GGG reported and any active restriction.
+CREATE TABLE IF NOT EXISTS trade_rate_hits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,           -- 'search' | 'fetch'
+  at_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_trade_rate_hits ON trade_rate_hits(kind, at_ms);
+CREATE TABLE IF NOT EXISTS trade_rate_policy (
+  kind TEXT PRIMARY KEY,
+  rules_json TEXT NOT NULL,     -- RateRule[] from the latest X-Rate-Limit-* headers
+  blocked_until_ms INTEGER NOT NULL DEFAULT 0
+);
+
 -- Manual trade2 scan requests (autosnipe, a user's hunts). Same idea as craft_refresh_request:
 -- the web process only queues, the poller consumes and runs the scan on ITS limiter, so one
 -- process owns the account+IP trade2 budget. user_id 0 = not user-scoped (autosnipe).
