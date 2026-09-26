@@ -3,7 +3,9 @@ import { pathToFileURL } from "node:url";
 
 const targets = {
   craft: "src/scripts/testCraftMargin.ts",
+  cx: "src/scripts/testCxHistory.ts",
   db: "src/scripts/testDbCompact.ts",
+  flips: "src/scripts/testFlipModel.ts",
   market: "src/scripts/testMarketLeague.ts",
   rates: "src/scripts/testRates.ts",
   "user-league": "src/scripts/testUserLeague.ts",
