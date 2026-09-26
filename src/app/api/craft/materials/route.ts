@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { getMaterialPrices } from "../../../../db/craftQueries";
-import { leagueForUser } from "../../../../core/leagueUsers";
+import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 import { ALL_MATERIALS } from "../../../../core/craftMaterials";
 
@@ -13,7 +13,9 @@ export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const league = leagueForUser(user.id);
+  // Same league as the margin reports these materials feed: one Craft tab, one economy. Pricing
+  // materials in the viewer's league next to margins from the default league mixed two markets.
+  const league = getDefaultLeague();
   const prices = getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id));
   const materials = ALL_MATERIALS.map((m) => {
     const p = prices.get(m.id);
@@ -31,6 +33,7 @@ export async function GET(): Promise<Response> {
 
   const resolved = resolveRates(league);
   return NextResponse.json({
+    computedLeague: league,
     materials,
     exaltPerDivine: resolved?.rates.exaltPerDivine ?? null,
     ratesSource: resolved?.source ?? null,

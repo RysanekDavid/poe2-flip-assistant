@@ -1,4 +1,5 @@
 import { getDb } from "./database";
+import { addHunt, updateHunt, setHuntActive, type Hunt } from "./queries";
 
 /**
  * Craft-margin persistence — kept out of queries.ts, which is already over the file-size cap.
@@ -241,11 +242,20 @@ export interface RecipePnl {
   attempts: number;
   closed: number;
   hits: number;
-  spent_div: number; // base + mats over all attempts
-  sold_div: number; // realized sales over closed attempts
+  spent_div: number; // base + mats over REALIZED attempts (bricks + sold hits)
+  sold_div: number; // realized sales
+  pending: number; // open attempts + hits kept/unsold — outcome value not known yet
+  pending_cost_div: number; // capital tied up in those pending attempts
 }
 
-/** Per-recipe aggregates over the user's attempts — real hit rate + net vs the model. */
+// An attempt's value is known once it bricked or its hit was sold.
+const REALIZED = "(outcome = 'brick' OR (outcome = 'hit' AND sold_div IS NOT NULL))";
+
+/**
+ * Per-recipe aggregates over the user's attempts — real hit rate + realized net vs the model.
+ * A hit with no sale price is KEPT/PENDING, not a loss: counting its cost against a 0 sale would
+ * show every unsold hit as a brick. Realized = bricks + hits with a recorded sale.
+ */
 export function craftPnlByRecipe(userId: number): RecipePnl[] {
   return getDb()
     .prepare(
@@ -253,9 +263,36 @@ export function craftPnlByRecipe(userId: number): RecipePnl[] {
               COUNT(*) AS attempts,
               SUM(CASE WHEN outcome != 'open' THEN 1 ELSE 0 END) AS closed,
               SUM(CASE WHEN outcome = 'hit' THEN 1 ELSE 0 END) AS hits,
-              SUM(base_cost_div + mats_cost_div) AS spent_div,
-              SUM(COALESCE(sold_div, 0)) AS sold_div
+              SUM(CASE WHEN ${REALIZED} THEN base_cost_div + mats_cost_div ELSE 0 END) AS spent_div,
+              SUM(CASE WHEN ${REALIZED} THEN COALESCE(sold_div, 0) ELSE 0 END) AS sold_div,
+              SUM(CASE WHEN ${REALIZED} THEN 0 ELSE 1 END) AS pending,
+              SUM(CASE WHEN ${REALIZED} THEN 0 ELSE base_cost_div + mats_cost_div END) AS pending_cost_div
        FROM craft_attempts WHERE user_id = ? GROUP BY recipe_key`,
     )
     .all(userId) as RecipePnl[];
+}
+
+export type CraftBaseHunt = Omit<Hunt, "id" | "user_id" | "active" | "last_scan_at" | "last_hit_at" | "created_at">;
+
+/**
+ * Create or refresh the user's craft-base hunt for one recipe in one league. Clicking
+ * "hunt this base" again must move the existing hunt's cap, not stack a duplicate that scans
+ * (and spends trade2 budget) twice. The deterministic preset label is the recipe identity; the
+ * hunt is re-activated because re-clicking means "I want this running".
+ */
+export function upsertCraftBaseHunt(
+  userId: number,
+  league: string,
+  hunt: CraftBaseHunt,
+): { id: number; created: boolean } {
+  const existing = getDb()
+    .prepare(
+      `SELECT id FROM hunts WHERE user_id = ? AND league = ? AND mode = 'CRAFT_BASE' AND label = ?
+       ORDER BY id LIMIT 1`,
+    )
+    .get(userId, league, hunt.label) as { id: number } | undefined;
+  if (!existing) return { id: addHunt(userId, league, hunt), created: true };
+  updateHunt(userId, existing.id, hunt);
+  setHuntActive(userId, existing.id, true);
+  return { id: existing.id, created: false };
 }

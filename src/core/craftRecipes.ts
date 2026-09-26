@@ -56,6 +56,10 @@ export interface GuideStep {
   onFail?: string;
   pick?: string[]; // at reveal/unveil steps: the exact mods to look for, best first
   check?: string; // what the item must look like after this step — the player's verification
+  // Set when a step's mechanic could NOT be confirmed against the KB / RePoE catalog. The UI must
+  // render it as a visible badge — an unconfirmed step is kept for the player to test cheaply,
+  // never presented with the same authority as a verified one.
+  unverified?: string;
 }
 
 export interface GuidePhase {
@@ -114,6 +118,11 @@ export const LegReportSchema = z.object({
   outliersDropped: z.number(), // bait listings discarded before valuation
   unresolvedStats: z.array(z.string()), // target mod texts the catalog couldn't resolve (search widened)
   icon: z.string().nullable().catch(null), // item art from a live comparable (catch: pre-icon rows parse as null)
+  // Floor-percentile provenance (craftValuation). Defaults let reports written before the
+  // valuation rework still parse; those carry valuation "legacy-cheapest" and never pass rankGate.
+  floorDiv: z.number().nullable().default(null), // ask floor applied (Div)
+  percentile: z.number().nullable().default(null), // which percentile of floor-passing asks priced the leg
+  sampled: z.number().nullable().default(null), // listings fetched for this leg
 });
 export type LegReport = z.infer<typeof LegReportSchema>;
 
@@ -128,6 +137,8 @@ export const RecipeMarginReportSchema = z.object({
   evDiv: z.number(), // hitRate × result − base − materials
   marginPct: z.number(), // ev / (base + materials) × 100
   error: z.string().nullable(),
+  valuation: z.enum(["legacy-cheapest", "floor-percentile"]).default("legacy-cheapest"),
+  returnCapped: z.boolean().default(false), // hitRate × result was capped at a multiple of cost
 });
 export type RecipeMarginReport = z.infer<typeof RecipeMarginReportSchema>;
 
