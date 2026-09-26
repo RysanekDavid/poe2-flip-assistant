@@ -1,4 +1,4 @@
-/** Applies schema.sql (idempotent) and reports table state. Run: npm run db:migrate */
+/** Applies schema.sql + coachSchema.sql (idempotent) and reports table state. Run: npm run db:migrate */
 import { config } from "../config/env";
 import { getDb } from "./database";
 

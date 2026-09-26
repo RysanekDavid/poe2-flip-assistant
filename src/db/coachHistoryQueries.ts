@@ -9,6 +9,7 @@ import {
   type CoachHistoryMessage,
 } from "../lib/coachHistoryContract";
 import { coachSourceSchema, type CoachSource } from "../lib/coachContract";
+import { insertCoachUsage, type CoachUsageRecord } from "./coachUsageQueries";
 
 const stringArraySchema = z.array(z.string().min(1));
 const sourceArraySchema = z.array(coachSourceSchema);
@@ -45,6 +46,7 @@ export interface CompleteCoachTurnInput extends BeginCoachTurnInput {
   processorsUsed: string[];
   sources: CoachSource[];
   completedAt?: string;
+  usage?: CoachUsageRecord;
 }
 
 export interface StoredCoachTurn {
@@ -230,6 +232,7 @@ export function completeCoachTurn(
     }
     if (conversation.turn_count >= MAX_TURNS) throw new CoachHistoryError("conversation_full");
     insertTurn(userId, input, conversation.turn_count + 1, completedAt, database);
+    if (input.usage) insertCoachUsage(userId, input.usage, completedAt, database);
     incrementConversation(userId, input.conversationId, completedAt, database);
     releaseCoachTurn(userId, input.conversationId, input.turnId, database);
     pruneCoachConversations(userId, input.nowMs ?? Date.now(), database);

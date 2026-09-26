@@ -6,26 +6,29 @@ from collections.abc import Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
-from src.guardrails import enforce_disclaimer
-from src.schemas import EvidenceSource
+from src.schemas import EvidenceSource, TurnUsage
 
 _CITATION = re.compile(r"\[([MLKWD][0-9a-f]{12})\]")
 
 
 def final_answer(messages: Sequence[BaseMessage]) -> str:
-    """Return the last textual AI response and enforce the safety boundary."""
+    """Return the last textual AI response."""
     for message in reversed(messages):
         if isinstance(message, AIMessage) and not message.tool_calls:
             content = _text_content(message.content)
             if content:
-                return enforce_disclaimer(content)
+                return content
     raise RuntimeError("Agent completed without a final textual response")
 
 
 def turn_trace(
     messages: Sequence[BaseMessage],
 ) -> tuple[list[str], list[EvidenceSource]]:
-    """Extract tools and evidence produced after the most recent human message."""
+    """Extract tools and evidence produced after the most recent human message.
+
+    The graph is stateless: prior turns are replayed as plain dialogue without tool messages,
+    so only this turn's evidence exists and only it may be cited.
+    """
     turn = _latest_turn(messages)
     tools: list[str] = []
     sources: dict[str, EvidenceSource] = {}
@@ -36,9 +39,6 @@ def turn_trace(
             tools.append(message.name)
         for source in _parse_sources(message.content):
             sources[source.id] = source
-    cited_ids = _final_cited_ids(messages)
-    if cited_ids - sources.keys():
-        _add_prior_cited_sources(messages, cited_ids, sources)
     return tools, list(sources.values())
 
 
@@ -49,24 +49,24 @@ def citations_are_valid(answer: str, sources: Sequence[EvidenceSource]) -> bool:
     return cited_ids <= available_ids and (not available_ids or bool(cited_ids))
 
 
-def _final_cited_ids(messages: Sequence[BaseMessage]) -> set[str]:
-    for message in reversed(messages):
-        if isinstance(message, AIMessage) and not message.tool_calls:
-            return set(_CITATION.findall(_text_content(message.content)))
-    return set()
-
-
-def _add_prior_cited_sources(
-    messages: Sequence[BaseMessage],
-    cited_ids: set[str],
-    sources: dict[str, EvidenceSource],
-) -> None:
-    for message in messages:
-        if not isinstance(message, ToolMessage):
+def turn_usage(messages: Sequence[BaseMessage], *, duration_ms: int) -> TurnUsage:
+    """Sum provider token usage over this turn's model calls; content is never read."""
+    input_tokens = output_tokens = total_tokens = model_calls = 0
+    for message in _latest_turn(messages):
+        if not isinstance(message, AIMessage) or message.usage_metadata is None:
             continue
-        for source in _parse_sources(message.content):
-            if source.id in cited_ids:
-                sources[source.id] = source
+        usage = message.usage_metadata
+        model_calls += 1
+        input_tokens += usage["input_tokens"]
+        output_tokens += usage["output_tokens"]
+        total_tokens += usage["total_tokens"]
+    return TurnUsage(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+        model_calls=model_calls,
+        duration_ms=max(0, duration_ms),
+    )
 
 
 def _latest_turn(messages: Sequence[BaseMessage]) -> Sequence[BaseMessage]:

@@ -30,7 +30,15 @@ class ToolInvalidInput(ValueError):
 
 
 class ToolNoResult(LookupError):
-    """Raised when a valid tool query has no matching evidence."""
+    """Raised when a valid tool query has no matching evidence.
+
+    `public_detail` is a server-authored explanation safe to show the model. The exception
+    message itself may echo model-supplied arguments and therefore never leaves the process.
+    """
+
+    def __init__(self, message: str, *, public_detail: str | None = None) -> None:
+        super().__init__(message)
+        self.public_detail = public_detail
 
 
 @dataclass

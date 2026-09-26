@@ -34,6 +34,8 @@ jobs:
       - run: npm run test:user-league
       - run: npm run test:market-league
       - run: npm run test:rates
+      # KB staleness gate: every Coach knowledge file must match its patch-stamped manifest entry.
+      - run: npm run kb:check
       - run: npm run test:craft
 
       - name: Install uv

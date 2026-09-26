@@ -44,6 +44,10 @@ class RetrievalService:
         except (OSError, RuntimeError, ValueError):
             return False
 
+    def warm(self) -> None:
+        """Build the lexical and dense indexes now instead of on the first search."""
+        self._ensure_indexes()
+
     def search(self, query: str, *, mode: str = "hybrid", limit: int = 4) -> list[RetrievalHit]:
         """Search the dense baseline or the improved BM25/RRF hybrid retriever."""
         if mode not in {"dense", "hybrid"}:

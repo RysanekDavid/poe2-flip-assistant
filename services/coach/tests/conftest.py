@@ -13,6 +13,8 @@ import pytest
 
 # Must be set before test modules import src.config. Tests never inspect the root .env.local.
 os.environ["COACH_DISABLE_DOTENV"] = "1"
+# Start-up warm-up embeds the corpus through OpenAI; tests never touch the network.
+os.environ["COACH_WARM_KNOWLEDGE_ON_START"] = "0"
 
 
 @pytest.hookimpl(tryfirst=True)
