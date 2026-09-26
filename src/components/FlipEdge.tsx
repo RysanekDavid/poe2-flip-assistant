@@ -74,14 +74,26 @@ function estimatedTooltip(r: FlipEdgeInfo): string {
   return [`ESTIMATED — ${why}`, "legs + margin are a volume-based target, not an observed edge", ...flowLines(r)].join("\n");
 }
 
+/** The rank gate as the API reports it (core/cx/cxItemMarkets cxRankGate) — never hardcoded here. */
+export interface RankGate {
+  minHeldHours: number;
+  windowHours: number;
+  minSlowerDivPerHour: number;
+}
+
+function notRankedLine(gate: RankGate | null): string {
+  if (gate == null) return "NOT RANKED — held too few hours or too little flow on the slower leg";
+  return `NOT RANKED — needs ≥${gate.minHeldHours}/${gate.windowHours}h held and ≥${gate.minSlowerDivPerHour} Div/h on the slower leg`;
+}
+
 /** Everything behind the number, for the hover tooltip — prose stays out of the table. */
-export function edgeTooltip(r: FlipEdgeInfo): string {
+export function edgeTooltip(r: FlipEdgeInfo, gate: RankGate | null): string {
   if (r.source === "estimated") return estimatedTooltip(r);
   const kind = r.edgeKind === "cross" ? "cross-market (buy in one currency, sell in another)" : "in-market band";
   const band = r.band ? `ratio extremes ${fmtSmart(r.band.lowDiv)}–${fmtSmart(r.band.highDiv)} Div (not fills)` : "no ratio extremes published";
   return [
     `GGG exchange · ${kind} · ${VERIFY}`,
-    ...(r.ranked ? [] : ["NOT RANKED — needs ≥4/6h held and ≥100 Div/h on the slower leg"]),
+    ...(r.ranked ? [] : [notRankedLine(gate)]),
     `net edge 6h median ${pct(r.edgePct)} (silent/invalid hours = 0) · last hour ${pct(r.edgeLatestPct)} · 24h ${pct(r.edgeMedian24Pct)}`,
     `buy/sell shown = last valid hour${r.legsHour == null ? "" : ` (to ${clock(r.legsHour)})`}, not the median`,
     `held ${r.persistence6 ?? 0}/6h · ${r.persistence24 ?? 0}/24h`,
@@ -123,43 +135,50 @@ function edgeTone(n: number): string {
   return n >= 10 ? "text-good" : n >= 3 ? "text-warn" : n > 0 ? "text-neutral-300" : "text-bad";
 }
 
+/** Only a RANKED observed edge earns a colour; everything else reads neutral. */
+function cellTone(row: FlipEdgeInfo): string {
+  return row.source === "cx" && row.ranked ? edgeTone(row.edgePct) : "text-neutral-500";
+}
+
 /** Table cell content: the edge %, its source chip, and the full story on hover. */
-export function EdgeCell({ row }: { row: FlipEdgeInfo }) {
+export function EdgeCell({ row, gate }: { row: FlipEdgeInfo; gate: RankGate | null }) {
   return (
-    <span className="inline-flex items-center justify-end gap-1.5" title={edgeTooltip(row)}>
-      <span className={`font-semibold tabular-nums ${row.source === "cx" ? edgeTone(row.edgePct) : "text-neutral-500"}`}>
-        {pct(row.edgePct)}
-      </span>
+    <span className="inline-flex items-center justify-end gap-1.5" title={edgeTooltip(row, gate)}>
+      <span className={`font-semibold tabular-nums ${cellTone(row)}`}>{pct(row.edgePct)}</span>
       <EdgeBadge row={row} />
     </span>
   );
+}
+
+/** Published edges that still showed in the next hour's digest (core/cx/cxOutcomes). */
+export interface PersistedNextHour {
+  held: number;
+  checked: number;
+  days: number;
+}
+
+function persistedLine(p: PersistedNextHour | null): string {
+  if (p == null || p.checked === 0) return "Outcome log: no published edge has been checked against its next hour yet.";
+  const share = Math.round((100 * p.held) / p.checked);
+  return `Published edges still showing in the next hour's digest: ${p.held}/${p.checked} (${share}%) over ${p.days}d — persistence of the edge, not proof that orders filled.`;
 }
 
 /**
  * Table-level provenance: observed exchange data when any row has it, the heuristic label when
  * none does. `newestHour` is the digest's end-of-hour boundary (unix seconds).
  */
-export interface HitRate {
-  hits: number;
-  resolved: number;
-  days: number;
-}
-
-function hitRateLine(h: HitRate | null): string {
-  if (h == null || h.resolved === 0) return "Outcome log: no published edge has been checked against its next hour yet.";
-  return `Published edges that still held the next hour: ${h.hits}/${h.resolved} (${Math.round((100 * h.hits) / h.resolved)}%) over ${h.days}d.`;
-}
-
 export function MarketSourceBadge({
   newestHour,
+  ranked,
   observed,
   total,
-  hitRate,
+  persisted,
 }: {
   newestHour: number | null;
+  ranked: number;
   observed: number;
   total: number;
-  hitRate: HitRate | null;
+  persisted: PersistedNextHour | null;
 }) {
   if (newestHour == null || observed === 0) {
     return (
@@ -174,9 +193,9 @@ export function MarketSourceBadge({
   return (
     <span
       className="rounded border border-emerald-900/50 bg-emerald-950/20 px-1.5 py-0.5 text-[10px] text-emerald-300"
-      title={`Edges from GGG's hourly exchange digest (volume-weighted fills), last closed hour to ${clock(newestHour)} — ${VERIFY}. ${total - observed} row(s) without a computable exchange edge are marked "est.". ${hitRateLine(hitRate)}`}
+      title={`Edges from GGG's hourly exchange digest (volume-weighted fills), last closed hour to ${clock(newestHour)} — ${VERIFY}. ${ranked} ranked of ${observed} observed edges; ${total - observed} row(s) without a computable exchange edge are marked "est.". ${persistedLine(persisted)}`}
     >
-      GGG exchange · {observed}/{total}
+      GGG exchange · {ranked} ranked · {observed} observed
     </span>
   );
 }

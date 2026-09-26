@@ -37,6 +37,8 @@ export interface RouteHour {
   status: RouteStatus;
   netPct: number;
   capUnits: number;
+  /** Div paid per item on the buy leg — prices capUnits for the capacity gate. */
+  costDiv: number;
   feeComplete: boolean;
 }
 
@@ -51,6 +53,8 @@ export interface Route {
   latestNetPct: number | null;
   /** Mean item units/hour through the slowest leg over the 6h window, other hours as 0. */
   capUnitsPerHour: number;
+  /** Mean Div/hour through the slowest leg over the window, priced at each hour's own buy cost. */
+  capDivPerHour: number;
   feeComplete: boolean;
 }
 
@@ -96,6 +100,7 @@ function routeHour(ctx: HourCtx, item: string, buy: QuoteObs, sell: QuoteObs): R
     status: status(ctx, grossPct, gridPct, netPct, costDiv, feeComplete, capUnits * costDiv),
     netPct,
     capUnits,
+    costDiv,
     feeComplete,
   };
 }
@@ -144,15 +149,22 @@ function toRoute(list: readonly RouteHour[], newestHour: number, thresholdPct: n
     medianNetPct: median(netSlots)!,
     latestNetPct: valid.find((h) => h.hour === newestHour)?.netPct ?? null,
     capUnitsPerHour: valid.reduce((s, h) => s + h.capUnits, 0) / SHORT_WINDOW_HOURS,
+    capDivPerHour: valid.reduce((s, h) => s + h.capUnits * h.costDiv, 0) / SHORT_WINDOW_HOURS,
     feeComplete: valid.every((h) => h.feeComplete),
   };
 }
 
 /**
- * Routes that held in at least MIN_HELD_HOURS of the last 6 hours, best median first. A route
- * that printed once is a thin-market VWAP artefact until it repeats.
+ * Routes that held in at least MIN_HELD_HOURS of the last 6 hours AND whose slowest leg moved at
+ * least `minCapDivPerHour` on average — the same gate a Top Flips row must pass to be ranked, so
+ * a loop the table calls "not ranked" can never show up as a route. Best median first.
  */
-export function persistentRoutes(hours: readonly RouteHour[], newestHour: number, thresholdPct: number): Route[] {
+export function persistentRoutes(
+  hours: readonly RouteHour[],
+  newestHour: number,
+  thresholdPct: number,
+  minCapDivPerHour: number,
+): Route[] {
   const from = newestHour - (SHORT_WINDOW_HOURS - 1) * CX_HOUR_SECONDS;
   const window = hours.filter((h) => h.hour >= from && h.hour <= newestHour);
   const tainted = taintedItems(window);
@@ -164,6 +176,6 @@ export function persistentRoutes(hours: readonly RouteHour[], newestHour: number
   }
   return [...groups.values()]
     .map((list) => toRoute(list, newestHour, thresholdPct))
-    .filter((r) => r.held6 >= MIN_HELD_HOURS)
+    .filter((r) => r.held6 >= MIN_HELD_HOURS && r.capDivPerHour >= minCapDivPerHour)
     .sort((a, b) => b.medianNetPct - a.medianNetPct);
 }

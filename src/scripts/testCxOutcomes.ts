@@ -1,11 +1,37 @@
-/* Outcome loop (published edge → next hour hit/miss) and the absent-league safeguards, against the
- * TEMP DB testCxHistory.ts has filled. Run via npm run test:cx. NO NETWORK. */
+/* Outcome loop (published edge → next hour hit/miss) and the absent-league safeguards, against a
+ * TEMP DB. Seeds its own history — no dependency on what earlier suites stored.
+ * Run via npm run test:cx. NO NETWORK. */
 import assert from "node:assert/strict";
 import { CX_HOUR_SECONDS } from "../api/cxClient";
 import { absentRetryAt, ingestCxDigest, MAX_ABSENCES, resetCxIngestState, syncCxHistory } from "../core/cx/cxIngest";
-import { cxHitRate, trackCxOutcomes } from "../core/cx/cxOutcomes";
+import { leagueStats } from "../core/cx/cxItemMarkets";
+import { cxPersistedNextHour, trackCxOutcomes } from "../core/cx/cxOutcomes";
 import { getDb } from "../db/database";
-import { FR, H0, IDS, digestAt, simulacrumMarkets, stubNames } from "./cxTestFixtures";
+import {
+  FR,
+  H0,
+  IDS,
+  digestAt,
+  hourId,
+  implausibleMarkets,
+  omenMarkets,
+  simulacrumMarkets,
+  stubNames,
+  thinRibMarkets,
+} from "./cxTestFixtures";
+
+/**
+ * Six fresh hours ending at H0: Simulacrum holds a 12% Div → Ex edge every hour and is the only
+ * item that passes the rank gate (the rib is thin, the Vaal Siphoner implausible, Omen and the
+ * base currencies coarse).
+ */
+function seedSixHours(): void {
+  getDb().exec(`DELETE FROM cx_markets WHERE league = '${FR}'; DELETE FROM cx_ingest WHERE league = '${FR}'; DELETE FROM cx_edge_outcomes;`);
+  for (let k = 5; k >= 0; k--) {
+    const extra = [...simulacrumMarkets(12), ...omenMarkets(), ...thinRibMarkets(), ...implausibleMarkets()];
+    ingestCxDigest(digestAt(hourId(k), extra), [FR], stubNames);
+  }
+}
 
 type Row = { item: string; hour: number; buy_quote: string; sell_quote: string; next_net_pct: number | null; outcome: string | null };
 
@@ -16,12 +42,20 @@ function outcomes(): Row[] {
 }
 
 /**
- * Expects six stored hours ending at H0 in which Simulacrum held a 12% Div → Ex edge every hour —
- * the only item that passes the rank gate (the rib is thin, the Vaal Siphoner implausible, Omen
- * and the base currencies coarse).
+ * Newest hour first, older hours backfilled later (the real cold-start order): the memoized stats
+ * for that newest hour must be recomputed once the window fills, not stay "sporadic".
  */
+function testMemoSeesLateBackfill(): void {
+  getDb().exec(`DELETE FROM cx_markets WHERE league = '${FR}'; DELETE FROM cx_ingest WHERE league = '${FR}';`);
+  ingestCxDigest(digestAt(hourId(0), simulacrumMarkets(12)), [FR], stubNames);
+  assert.equal(leagueStats(FR, H0).get(IDS.simulacrum)?.issue, "sporadic");
+  for (let k = 1; k <= 4; k++) ingestCxDigest(digestAt(hourId(k), simulacrumMarkets(12)), [FR], stubNames);
+  assert.equal(leagueStats(FR, H0).get(IDS.simulacrum)?.edge?.persistence6, 5, "late backfill invalidated the memo");
+}
+
 export function runCxOutcomeTests(): void {
-  getDb().exec("DELETE FROM cx_edge_outcomes;");
+  testMemoSeesLateBackfill();
+  seedSixHours();
   assert.deepEqual(trackCxOutcomes(FR), { resolved: 0, published: 1 });
   assert.deepEqual(trackCxOutcomes(FR), { resolved: 0, published: 0 }, "publishing is idempotent per item-hour");
   const [first] = outcomes();
@@ -42,8 +76,8 @@ export function runCxOutcomeTests(): void {
   assert.equal(miss?.hour, H0 + CX_HOUR_SECONDS);
   assert.equal(miss?.outcome, "miss");
   const now = (H0 + 2 * CX_HOUR_SECONDS) * 1000 + 60_000;
-  assert.deepEqual(cxHitRate(FR, now), { hits: 1, resolved: 2, days: 7 });
-  assert.deepEqual(cxHitRate(FR, now + 8 * 24 * 3_600_000), { hits: 0, resolved: 0, days: 7 }, "rolling window");
+  assert.deepEqual(cxPersistedNextHour(FR, now), { held: 1, checked: 2, days: 7 });
+  assert.deepEqual(cxPersistedNextHour(FR, now + 8 * 24 * 3_600_000), { held: 0, checked: 0, days: 7 }, "rolling window");
 }
 
 /** A league GGG never lists: bounded re-asks, and one loud warning an hour. */

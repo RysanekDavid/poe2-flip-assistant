@@ -7,7 +7,7 @@ import { type Currency } from "../../../core/priceEngine";
 import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 import { scoreItem } from "../../../core/flipModel";
-import { loadCxMarketView } from "../../../core/cx/cxItemMarkets";
+import { cxRankGate, loadCxMarketView } from "../../../core/cx/cxItemMarkets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,6 +74,7 @@ export async function GET() {
     ratesSource: resolved.source,
     ratesFetchedAt: resolved.fetchedAt,
     spreads,
+    rankGate: cxRankGate(),
     currencyIcons,
   });
 }

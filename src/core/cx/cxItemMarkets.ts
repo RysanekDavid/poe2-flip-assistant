@@ -1,9 +1,9 @@
 import { CX_HOUR_SECONDS } from "../../api/cxClient";
 import { config } from "../../config/env";
-import { cxItemNames, cxMarketsSince, newestCxHour, type CxMarketRow } from "../../db/cxMarketQueries";
+import { cxItemNames, cxMarketsSince, ingestedCxHours, newestCxHour, type CxMarketRow } from "../../db/cxMarketQueries";
 import { hourEdges, type ItemHour } from "./cxEdges";
 import { modelParams, type ModelParams } from "./cxMarketModel";
-import { aggregateItem, LONG_WINDOW_HOURS, type CxItemStats } from "./cxPersistence";
+import { aggregateItem, LONG_WINDOW_HOURS, MIN_HELD_HOURS, SHORT_WINDOW_HOURS, type CxItemStats } from "./cxPersistence";
 
 /**
  * The stored exchange history of one league, keyed by OUR item ids (poe.ninja slugs) so Top
@@ -73,13 +73,19 @@ export function statsFromRows(
   return out;
 }
 
-/** Per-base-id stats of one league at `newestHour`, memoized per league. */
+/**
+ * Per-base-id stats of one league at `newestHour`, memoized per league. The key carries how many
+ * hours of the window are stored: a backfill that lands OLDER hours after the newest one must
+ * invalidate it, or persistence would stay computed on the partial window.
+ */
 export function leagueStats(league: string, newestHour: number): Map<string, CxItemStats> {
   const params = modelParams();
-  const key = `${newestHour}|${config.cx.edgeThresholdPct}|${JSON.stringify(params)}`;
+  const fromHour = newestHour - (LONG_WINDOW_HOURS - 1) * CX_HOUR_SECONDS;
+  const stored = ingestedCxHours(league, fromHour).size;
+  const key = `${newestHour}|${stored}|${config.cx.edgeThresholdPct}|${JSON.stringify(params)}`;
   const hit = memo.get(league);
   if (hit?.key === key) return hit.stats;
-  const rows = cxMarketsSince(league, newestHour - (LONG_WINDOW_HOURS - 1) * CX_HOUR_SECONDS);
+  const rows = cxMarketsSince(league, fromHour);
   const stats = statsFromRows(rows, newestHour, params, config.cx.edgeThresholdPct);
   memo.set(league, { key, stats });
   return stats;
@@ -135,6 +141,17 @@ export function mapToItemIds(
     if (s != null) byItemId.set(itemId, s);
   }
   return { byItemId, coverage };
+}
+
+/** The rank gate's values, for the UI to quote instead of hardcoding them. */
+export interface CxRankGate {
+  minHeldHours: number;
+  windowHours: number;
+  minSlowerDivPerHour: number;
+}
+
+export function cxRankGate(): CxRankGate {
+  return { minHeldHours: MIN_HELD_HOURS, windowHours: SHORT_WINDOW_HOURS, minSlowerDivPerHour: config.cx.liquidityRiskyDivH };
 }
 
 /** Newest stored hour when it is recent enough to stand for "the market now", else null. */

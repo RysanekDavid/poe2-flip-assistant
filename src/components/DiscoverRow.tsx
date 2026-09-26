@@ -5,7 +5,7 @@ import { formatDenom, formatObservedDenom, type Denom } from "../core/treasury";
 import { categoryColor, worthTone, ROW_BASE, CELL } from "../lib/tableStyle";
 import { FlameIcon, ArrowDownIcon, PlusIcon } from "./ui/icons";
 import { Sparkline } from "./ui/Sparkline";
-import { EdgeCell, liquidityBar, type FlipEdgeInfo } from "./FlipEdge";
+import { EdgeCell, liquidityBar, type FlipEdgeInfo, type RankGate } from "./FlipEdge";
 
 /** One Top Flips row as /api/discover returns it (core/flipModel FlipRow, the fields we show). */
 export interface Candidate extends FlipEdgeInfo {
@@ -124,12 +124,14 @@ interface RowProps {
   watched: boolean;
   maxOsc: number;
   maxVol: number;
+  /** The rank gate from /api/discover, quoted in the Edge tooltip. */
+  gate: RankGate | null;
   onSelect: () => void;
   onWatch: () => void;
   onUnwatch: () => void;
 }
 
-export function DiscoverRow({ r, selected, watched, maxOsc, maxVol, onSelect, onWatch, onUnwatch }: RowProps) {
+export function DiscoverRow({ r, selected, watched, maxOsc, maxVol, gate, onSelect, onWatch, onUnwatch }: RowProps) {
   const oscTone = maxOsc > 0 && r.oscScore >= maxOsc * 0.6 ? "font-semibold text-sky-300" : "text-neutral-400";
   // An estimated row's profit is the heuristic's, so its Div/day is shown but never highlighted.
   const perDayTone = r.source === "cx" && r.throughputDivDay >= 1 ? "font-semibold text-emerald-300" : "text-neutral-500";
@@ -145,7 +147,7 @@ export function DiscoverRow({ r, selected, watched, maxOsc, maxVol, onSelect, on
       <td className={`${CELL} whitespace-nowrap text-right tabular-nums`} title={legTitle(r)}>{legText(r, r.buyDisp)}</td>
       <td className={`${CELL} whitespace-nowrap text-right tabular-nums`} title={legTitle(r)}>{legText(r, r.sellDisp)}</td>
       <td className={`${CELL} whitespace-nowrap text-right`}>
-        <EdgeCell row={r} />
+        <EdgeCell row={r} gate={gate} />
       </td>
       <td className={`${CELL} text-right font-semibold tabular-nums ${changeTone(r.change24h)}`}>{signed(r.change24h)}</td>
       <td className={`${CELL} whitespace-nowrap text-right`}>

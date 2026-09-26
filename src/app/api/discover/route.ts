@@ -8,8 +8,8 @@ import { type ExchangeRates } from "../../../core/priceEngine";
 import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 import { scoreItem, type FlipRow } from "../../../core/flipModel";
-import { loadCxMarketView, type CxMarketView } from "../../../core/cx/cxItemMarkets";
-import { cxHitRate } from "../../../core/cx/cxOutcomes";
+import { cxRankGate, loadCxMarketView, type CxMarketView } from "../../../core/cx/cxItemMarkets";
+import { cxPersistedNextHour } from "../../../core/cx/cxOutcomes";
 import type { PricedItem } from "../../../api/types";
 
 export const runtime = "nodejs";
@@ -29,11 +29,18 @@ function scoreAll(prices: PricedItem[], rates: ExchangeRates, cx: CxMarketView |
 }
 
 /**
- * Where the exchange numbers came from, and how often a published edge still held an hour later
- * (the outcome loop) — enough for the UI to label the table honestly.
+ * Where the exchange numbers came from, the gate a row must pass to be ranked, and how many
+ * published edges still showed in the next hour's digest (the outcome loop) — enough for the UI
+ * to label the table honestly without hardcoding any threshold.
  */
 function cxSummary(league: string, cx: CxMarketView | null) {
-  return cx == null ? null : { newestHour: cx.newestHour, coverage: cx.coverage, hitRate: cxHitRate(league) };
+  if (cx == null) return null;
+  return {
+    newestHour: cx.newestHour,
+    coverage: cx.coverage,
+    rankGate: cxRankGate(),
+    persistedNextHour: cxPersistedNextHour(league),
+  };
 }
 
 /** GET /api/discover?limit=80&q=essence → market-wide flip scan; `q` searches the WHOLE market by name. */

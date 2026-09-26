@@ -2,14 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { SCROLL_BOX, THEAD_STICKY, CELL } from "../lib/tableStyle";
-import { edgeSortTier, MarketSourceBadge, type HitRate } from "./FlipEdge";
+import { edgeSortTier, MarketSourceBadge, type PersistedNextHour, type RankGate } from "./FlipEdge";
 import { DiscoverRow, type Candidate } from "./DiscoverRow";
 import { CxRoutesStrip } from "./CxRoutesStrip";
 
 interface CxSummary {
   newestHour: number;
   coverage: { cxItems: number; mapped: number; unnamed: number; unmatched: number; ambiguous: number };
-  hitRate: HitRate;
+  rankGate: RankGate;
+  persistedNextHour: PersistedNextHour;
 }
 
 type SortKey =
@@ -199,9 +200,10 @@ export function DiscoverTable({
           <h2 className="text-lg font-semibold">Top Flips — whole market</h2>
           <MarketSourceBadge
             newestHour={cx?.newestHour ?? null}
+            ranked={rows.filter((r) => r.source === "cx" && r.ranked).length}
             observed={rows.filter((r) => r.source === "cx").length}
             total={rows.length}
-            hitRate={cx?.hitRate ?? null}
+            persisted={cx?.persistedNextHour ?? null}
           />
           {dataAge && (
             <span className="text-xs text-neutral-500" title="poe.ninja refreshes ~hourly, so prices move slowly">
@@ -290,6 +292,7 @@ export function DiscoverTable({
                 watched={watched.has(r.itemId)}
                 maxOsc={maxOsc}
                 maxVol={maxVol}
+                gate={cx?.rankGate ?? null}
                 onSelect={() => onSelect?.({ id: r.itemId, name: r.item })}
                 onWatch={() => addWatch(r)}
                 onUnwatch={() => unwatch(r.itemId)}

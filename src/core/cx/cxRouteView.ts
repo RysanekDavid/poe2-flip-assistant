@@ -22,8 +22,8 @@ export interface RouteRow {
   edgePct: number;
   latestPct: number | null;
   capUnitsPerHour: number;
-  /** Capacity in Div/h at the ninja mid, or null when the item has no ninja line. */
-  capDivPerHour: number | null;
+  /** Capacity in Div/h through the slowest leg, priced from the exchange itself (not ninja). */
+  capDivPerHour: number;
   feeComplete: boolean;
 }
 
@@ -52,12 +52,12 @@ function toRow(route: Route, itemIdOf: ReadonlyMap<string, string>, names: Reado
     edgePct: route.medianNetPct,
     latestPct: route.latestNetPct,
     capUnitsPerHour: route.capUnitsPerHour,
-    capDivPerHour: ninja != null ? route.capUnitsPerHour * ninja.baseValue : null,
+    capDivPerHour: route.capDivPerHour,
     feeComplete: route.feeComplete,
   };
 }
 
-/** Closed loops (A → item → B → A) that held ≥ ROUTE_MIN_HELD of the last 6 hours, or null. */
+/** Closed loops (A → item → B → A) that held ≥ ROUTE_MIN_HELD of 6 hours on a liquid enough slowest leg, or null. */
 export function loadCxRoutes(
   league: string,
   ninja: readonly PricedItem[],
@@ -68,7 +68,7 @@ export function loadCxRoutes(
   const params = modelParams();
   const rows = cxMarketsSince(league, newestHour - (SHORT_WINDOW_HOURS - 1) * CX_HOUR_SECONDS);
   const hours = [...groupByHour(rows)].flatMap(([hour, hourRows]) => hourRoutes(hour, hourRows, params));
-  const routes = persistentRoutes(hours, newestHour, config.cx.edgeThresholdPct);
+  const routes = persistentRoutes(hours, newestHour, config.cx.edgeThresholdPct, config.cx.liquidityRiskyDivH);
   const names = cxItemNames();
   const { itemIdOf } = resolveItemIds(new Set(routes.map((r) => r.item)), names, ninja);
   const byId = new Map(ninja.map((p) => [p.itemId, p]));

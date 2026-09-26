@@ -16,19 +16,20 @@ interface RouteRow {
   edgePct: number;
   latestPct: number | null;
   capUnitsPerHour: number;
-  capDivPerHour: number | null;
+  capDivPerHour: number;
   feeComplete: boolean;
 }
 
 const MAX_SHOWN = 6;
 
 function routeTitle(r: RouteRow): string {
-  const cap = r.capDivPerHour != null ? `${compact(r.capDivPerHour)} Div/h` : `${compact(r.capUnitsPerHour)} units/h`;
+  const cap = `${compact(r.capDivPerHour)} Div/h (${compact(r.capUnitsPerHour)} units/h)`;
   return [
     `${SHORT[r.from]} → ${r.item} → ${SHORT[r.to]} → ${SHORT[r.from]} (closing conversion included)`,
     `net after gold fees: 6h median ${r.edgePct.toFixed(1)}% · last hour ${r.latestPct == null ? "—" : `${r.latestPct.toFixed(1)}%`}`,
     `held ${r.held6}/6h · slowest leg ${cap}`,
     r.feeComplete ? "all leg fees known" : "this item's own fee unknown — only currency legs counted",
+    "verify in-game before trading — hourly digest, not a live order book",
   ].join("\n");
 }
 

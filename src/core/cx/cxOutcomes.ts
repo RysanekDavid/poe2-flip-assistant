@@ -13,15 +13,21 @@ import { isPublishable } from "./cxPersistence";
  * Every edge that passes the rank gate at a league's newest digest hour is logged. When the NEXT
  * hour's digest is stored, the same direction (buy quote → sell quote) is re-judged on it with
  * the same guards: a valid net edge ≥ the threshold is a hit, anything else — a guard failure,
- * a leg that stopped trading, a shrunken edge — is a miss. The rolling hit rate is the only
- * ground truth the thresholds can be tuned against.
+ * a leg that stopped trading, a shrunken edge — is a miss. The rolling share is the only ground
+ * truth the thresholds can be tuned against.
+ *
+ * It measures PERSISTENCE — whether the digest still showed the edge an hour later — not whether
+ * anyone's orders filled at those prices. Hence the name.
  */
 
-export const HIT_RATE_DAYS = 7;
+export const PERSISTENCE_WINDOW_DAYS = 7;
 
-export interface HitRate {
-  hits: number;
-  resolved: number;
+/** Published edges that still held in the next hour's digest, over a rolling window. */
+export interface PersistedNextHour {
+  /** Edges that still cleared the threshold, same direction, one hour later. */
+  held: number;
+  /** Edges whose next hour has been judged. */
+  checked: number;
   days: number;
 }
 
@@ -77,8 +83,9 @@ export function trackCxOutcomes(league: string): { resolved: number; published: 
   return { resolved, published };
 }
 
-/** Rolling hit rate of published edges over the last HIT_RATE_DAYS. */
-export function cxHitRate(league: string, nowMs: number = Date.now()): HitRate {
-  const fromHour = Math.floor(nowMs / 1000) - HIT_RATE_DAYS * 24 * CX_HOUR_SECONDS;
-  return { ...outcomeCounts(league, fromHour), days: HIT_RATE_DAYS };
+/** How many published edges persisted into their next hour, over the last PERSISTENCE_WINDOW_DAYS. */
+export function cxPersistedNextHour(league: string, nowMs: number = Date.now()): PersistedNextHour {
+  const fromHour = Math.floor(nowMs / 1000) - PERSISTENCE_WINDOW_DAYS * 24 * CX_HOUR_SECONDS;
+  const { hits, resolved } = outcomeCounts(league, fromHour);
+  return { held: hits, checked: resolved, days: PERSISTENCE_WINDOW_DAYS };
 }
