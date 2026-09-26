@@ -1,0 +1,2722 @@
+{
+  "_provenance": "REAL trade2 fetch, status \"online\", league \"Forbidden Rites\", captured 2026-09-26T00:54:37.851Z",
+  "result": [
+    {
+      "id": "653cac05504ae0089302efb6357a9d913a82ca7e32e3ec462d559ed6717e4c3c",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:54:24Z",
+        "stash": {
+          "name": "Tab1",
+          "x": 8,
+          "y": 8
+        },
+        "price": {
+          "type": "~price",
+          "amount": 3,
+          "currency": "chaos"
+        },
+        "account": {
+          "name": "Player1",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player2",
+          "language": "en_US",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX Hi, I would like to buy your Onslaught Claw Ringmail Gauntlets listed for 3 chaos in Forbidden Rites (stash tab \"Tab1\"; position: left 9, top 9)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc1N0ckRleDAxIiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/b26babb5f6/GlovesStrDex01.png",
+        "league": "Forbidden Rites",
+        "id": "653cac05504ae0089302efb6357a9d913a82ca7e32e3ec462d559ed6717e4c3c",
+        "name": "Onslaught Claw",
+        "typeLine": "Ringmail Gauntlets",
+        "baseType": "Ringmail Gauntlets",
+        "rarity": "Rare",
+        "ilvl": 18,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[Armour]",
+            "values": [
+              [
+                "17",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 16
+          },
+          {
+            "name": "[Evasion|Evasion Rating]",
+            "values": [
+              [
+                "13",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 17
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "12",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "20% increased [Armour|Armour] and [Evasion|Evasion]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_2451402625",
+            "mods": [
+              {
+                "name": "Thug's",
+                "tier": "P5",
+                "level": 16,
+                "magnitudes": [
+                  {
+                    "min": "14",
+                    "max": "20"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Adds 6 to 13 [Fire] damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1573130764",
+            "mods": [
+              {
+                "name": "Smoking",
+                "tier": "P7",
+                "level": 16,
+                "magnitudes": [
+                  {
+                    "min": "6",
+                    "max": "8"
+                  },
+                  {
+                    "min": "10",
+                    "max": "13"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+38 to maximum Life",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3299347043",
+            "mods": [
+              {
+                "name": "Healthy",
+                "tier": "P8",
+                "level": 6,
+                "magnitudes": [
+                  {
+                    "min": "20",
+                    "max": "29"
+                  }
+                ]
+              },
+              {
+                "name": "Thug's",
+                "tier": "P5",
+                "level": 16,
+                "magnitudes": [
+                  {
+                    "min": "11",
+                    "max": "19"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "13% increased [CriticalDamageBonus|Critical Damage Bonus]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3556824919",
+            "mods": [
+              {
+                "name": "of Ire",
+                "tier": "S5",
+                "level": 8,
+                "magnitudes": [
+                  {
+                    "min": "10",
+                    "max": "14"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+14% to [Resistances|Lightning Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1671376347",
+            "mods": [
+              {
+                "name": "of the Squall",
+                "tier": "S7",
+                "level": 13,
+                "magnitudes": [
+                  {
+                    "min": "11",
+                    "max": "15"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Gain 8 Life per enemy killed",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3695891184",
+            "mods": [
+              {
+                "name": "of Victory",
+                "tier": "S7",
+                "level": 11,
+                "magnitudes": [
+                  {
+                    "min": "7",
+                    "max": "9"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "extended": {
+          "ev": 16,
+          "ev_aug": true,
+          "ar": 20,
+          "ar_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_2451402625",
+                [
+                  5
+                ]
+              ],
+              [
+                "explicit.stat_1573130764",
+                [
+                  3
+                ]
+              ],
+              [
+                "explicit.stat_3299347043",
+                [
+                  0,
+                  5
+                ]
+              ],
+              [
+                "explicit.stat_3556824919",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_1671376347",
+                [
+                  2
+                ]
+              ],
+              [
+                "explicit.stat_3695891184",
+                [
+                  4
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "1cb4bd53e4001eeff7f8a2823f24fa1dfc94ad213848da7d8e3f36424192b893",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:53:27Z",
+        "stash": {
+          "name": "Tab2",
+          "x": 18,
+          "y": 18
+        },
+        "price": {
+          "type": "~price",
+          "amount": 1,
+          "currency": "exalted"
+        },
+        "account": {
+          "name": "Player3",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player4",
+          "language": "ko_KR",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX 안녕하세요, 1 exalted(으)로 올려놓은 Forbidden Rites 리그의 영충 관절 밧줄 수갑(을)를 구매하고 싶습니다 (보관함 탭 \"~price 1 exalted\", 위치: 왼쪽 19, 상단 19)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc0ludFN0cjAxIiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c4b6d03f66/GlovesIntStr01.png",
+        "league": "Forbidden Rites",
+        "id": "1cb4bd53e4001eeff7f8a2823f24fa1dfc94ad213848da7d8e3f36424192b893",
+        "name": "Brood Knuckle",
+        "typeLine": "Rope Cuffs",
+        "baseType": "Rope Cuffs",
+        "rarity": "Rare",
+        "ilvl": 9,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[Armour]",
+            "values": [
+              [
+                "15",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 16
+          },
+          {
+            "name": "[EnergyShield|Energy Shield]",
+            "values": [
+              [
+                "7",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 18
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "6",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "16% increased [Armour|Armour] and [EnergyShield|Energy Shield]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3321629045",
+            "mods": [
+              {
+                "name": "Infixed",
+                "tier": "P7",
+                "level": 2,
+                "magnitudes": [
+                  {
+                    "min": "15",
+                    "max": "26"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Adds 2 to 3 [Physical|Physical] Damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3032590688",
+            "mods": [
+              {
+                "name": "Glinting",
+                "tier": "P9",
+                "magnitudes": [
+                  {
+                    "min": "1",
+                    "max": "2"
+                  },
+                  {
+                    "min": "3",
+                    "max": "3"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+16 to [Accuracy|Accuracy] Rating",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_803737631",
+            "mods": [
+              {
+                "name": "Precise",
+                "tier": "P9",
+                "magnitudes": [
+                  {
+                    "min": "11",
+                    "max": "32"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "10% increased [ItemRarity|Rarity of Items] found",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3917489142",
+            "mods": [
+              {
+                "name": "of Plunder",
+                "tier": "S3",
+                "level": 3,
+                "magnitudes": [
+                  {
+                    "min": "6",
+                    "max": "10"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "10% increased [CriticalDamageBonus|Critical Damage Bonus]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3556824919",
+            "mods": [
+              {
+                "name": "of Ire",
+                "tier": "S5",
+                "level": 8,
+                "magnitudes": [
+                  {
+                    "min": "10",
+                    "max": "14"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+7% to [Resistances|Lightning Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1671376347",
+            "mods": [
+              {
+                "name": "of the Cloud",
+                "tier": "S8",
+                "magnitudes": [
+                  {
+                    "min": "6",
+                    "max": "10"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "extended": {
+          "ar": 18,
+          "ar_aug": true,
+          "es": 8,
+          "es_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_3321629045",
+                [
+                  2
+                ]
+              ],
+              [
+                "explicit.stat_3032590688",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_803737631",
+                [
+                  5
+                ]
+              ],
+              [
+                "explicit.stat_3917489142",
+                [
+                  4
+                ]
+              ],
+              [
+                "explicit.stat_3556824919",
+                [
+                  0
+                ]
+              ],
+              [
+                "explicit.stat_1671376347",
+                [
+                  3
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "6cb962150ef5efaec259e790dcb0f50a3e93eb9a8c728e599eb81b28379b8fe1",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:53:19Z",
+        "stash": {
+          "name": "Tab3",
+          "x": 12,
+          "y": 22
+        },
+        "price": {
+          "type": "~price",
+          "amount": 1,
+          "currency": "exalted"
+        },
+        "account": {
+          "name": "Player3",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player4",
+          "language": "ko_KR",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX 안녕하세요, 1 exalted(으)로 올려놓은 Forbidden Rites 리그의 혼란 유발의 손아귀 복잡한 장갑(을)를 구매하고 싶습니다 (보관함 탭 \"~price 1 exalted\", 위치: 왼쪽 13, 상단 23)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc0ludDA1IiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/b273510d40/GlovesInt05.png",
+        "league": "Forbidden Rites",
+        "id": "6cb962150ef5efaec259e790dcb0f50a3e93eb9a8c728e599eb81b28379b8fe1",
+        "sockets": [
+          {
+            "group": 0,
+            "type": "rune"
+          }
+        ],
+        "name": "Pandemonium Clutches",
+        "typeLine": "Intricate Gloves",
+        "baseType": "Intricate Gloves",
+        "rarity": "Rare",
+        "ilvl": 36,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[EnergyShield|Energy Shield]",
+            "values": [
+              [
+                "27",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 18
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "33",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          },
+          {
+            "name": "[Intelligence|Int]",
+            "values": [
+              [
+                "42",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 65
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "Adds 4 to 8 [Physical|Physical] Damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3032590688",
+            "mods": [
+              {
+                "name": "Honed",
+                "tier": "P6",
+                "level": 33,
+                "magnitudes": [
+                  {
+                    "min": "4",
+                    "max": "6"
+                  },
+                  {
+                    "min": "8",
+                    "max": "11"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Adds 7 to 13 [Cold] damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_4067062424",
+            "mods": [
+              {
+                "name": "Frigid",
+                "tier": "P6",
+                "level": 33,
+                "magnitudes": [
+                  {
+                    "min": "7",
+                    "max": "8"
+                  },
+                  {
+                    "min": "12",
+                    "max": "14"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+18 to [Dexterity|Dexterity]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3261801346",
+            "mods": [
+              {
+                "name": "of the Falcon",
+                "tier": "S6",
+                "level": 33,
+                "magnitudes": [
+                  {
+                    "min": "17",
+                    "max": "20"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+17 to [Intelligence|Intelligence]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_328541901",
+            "mods": [
+              {
+                "name": "of the Augur",
+                "tier": "S5",
+                "level": 33,
+                "magnitudes": [
+                  {
+                    "min": "17",
+                    "max": "20"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "socketedItems": [],
+        "extended": {
+          "es": 32,
+          "es_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_3032590688",
+                [
+                  3
+                ]
+              ],
+              [
+                "explicit.stat_4067062424",
+                [
+                  0
+                ]
+              ],
+              [
+                "explicit.stat_3261801346",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_328541901",
+                [
+                  2
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "0767e98205732806a635e954328cb21be4bde2c7f70d3d90c91bffc574944331",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:53:19Z",
+        "stash": {
+          "name": "Tab4",
+          "x": 12,
+          "y": 20
+        },
+        "price": {
+          "type": "~price",
+          "amount": 1,
+          "currency": "exalted"
+        },
+        "account": {
+          "name": "Player3",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player4",
+          "language": "ko_KR",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX 안녕하세요, 1 exalted(으)로 올려놓은 Forbidden Rites 리그의 크라켄의 발톱 금주물 수갑(을)를 구매하고 싶습니다 (보관함 탭 \"~price 1 exalted\", 위치: 왼쪽 13, 상단 21)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc0ludFN0cjAzIiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/0e34625351/GlovesIntStr03.png",
+        "league": "Forbidden Rites",
+        "id": "0767e98205732806a635e954328cb21be4bde2c7f70d3d90c91bffc574944331",
+        "name": "Kraken Talons",
+        "typeLine": "Goldcast Cuffs",
+        "baseType": "Goldcast Cuffs",
+        "rarity": "Rare",
+        "ilvl": 34,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[Armour]",
+            "values": [
+              [
+                "49",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 16
+          },
+          {
+            "name": "[EnergyShield|Energy Shield]",
+            "values": [
+              [
+                "15",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 18
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "33",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          },
+          {
+            "name": "[Strength|Str]",
+            "values": [
+              [
+                "24",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 63
+          },
+          {
+            "name": "[Intelligence|Int]",
+            "values": [
+              [
+                "24",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 65
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "Adds 3 to 9 [Fire] damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1573130764",
+            "mods": [
+              {
+                "name": "Smouldering",
+                "tier": "P8",
+                "level": 8,
+                "magnitudes": [
+                  {
+                    "min": "3",
+                    "max": "5"
+                  },
+                  {
+                    "min": "6",
+                    "max": "9"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+15 to [Intelligence|Intelligence]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_328541901",
+            "mods": [
+              {
+                "name": "of the Prodigy",
+                "tier": "S6",
+                "level": 22,
+                "magnitudes": [
+                  {
+                    "min": "13",
+                    "max": "16"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+17% to [Resistances|Cold Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_4220027924",
+            "mods": [
+              {
+                "name": "of the Narwhal",
+                "tier": "S6",
+                "level": 26,
+                "magnitudes": [
+                  {
+                    "min": "16",
+                    "max": "20"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+7% to [Resistances|Lightning Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1671376347",
+            "mods": [
+              {
+                "name": "of the Cloud",
+                "tier": "S8",
+                "magnitudes": [
+                  {
+                    "min": "6",
+                    "max": "10"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "extended": {
+          "ar": 59,
+          "ar_aug": true,
+          "es": 18,
+          "es_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_1573130764",
+                [
+                  3
+                ]
+              ],
+              [
+                "explicit.stat_328541901",
+                [
+                  0
+                ]
+              ],
+              [
+                "explicit.stat_4220027924",
+                [
+                  2
+                ]
+              ],
+              [
+                "explicit.stat_1671376347",
+                [
+                  1
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "d85690bd3143652a50134e88b4ec9c0a78c32ae2a4744f363d5486aa0d741ea4",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:52:11Z",
+        "stash": {
+          "name": "Tab5",
+          "x": 19,
+          "y": 18
+        },
+        "price": {
+          "type": "~price",
+          "amount": 10,
+          "currency": "chaos"
+        },
+        "account": {
+          "name": "Player5",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player6",
+          "language": "ko_KR",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX 안녕하세요, 10 chaos(으)로 올려놓은 Forbidden Rites 리그의 불사조 손 광택 나는 팔보호구(을)를 구매하고 싶습니다 (보관함 탭 \"~price 10 chaos\", 위치: 왼쪽 20, 상단 19)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc0RleDA2IiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f400b5dc10/GlovesDex06.png",
+        "league": "Forbidden Rites",
+        "id": "d85690bd3143652a50134e88b4ec9c0a78c32ae2a4744f363d5486aa0d741ea4",
+        "name": "Phoenix Hand",
+        "typeLine": "Polished Bracers",
+        "baseType": "Polished Bracers",
+        "rarity": "Rare",
+        "ilvl": 81,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[Evasion|Evasion Rating]",
+            "values": [
+              [
+                "291",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 17
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "80",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          },
+          {
+            "name": "[Dexterity|Dex]",
+            "values": [
+              [
+                "101",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 64
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "71% increased [Evasion|Evasion] Rating",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_124859000",
+            "mods": [
+              {
+                "name": "Phantasm's",
+                "tier": "P3",
+                "level": 54,
+                "magnitudes": [
+                  {
+                    "min": "68",
+                    "max": "79"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Adds 4 to 8 [Physical|Physical] Damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3032590688",
+            "mods": [
+              {
+                "name": "Honed",
+                "tier": "P6",
+                "level": 33,
+                "magnitudes": [
+                  {
+                    "min": "4",
+                    "max": "6"
+                  },
+                  {
+                    "min": "8",
+                    "max": "11"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Adds 14 to 24 [Cold] damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_4067062424",
+            "mods": [
+              {
+                "name": "Glaciated",
+                "tier": "P3",
+                "level": 60,
+                "magnitudes": [
+                  {
+                    "min": "14",
+                    "max": "15"
+                  },
+                  {
+                    "min": "22",
+                    "max": "24"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+38% to [Resistances|Cold Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_4220027924",
+            "mods": [
+              {
+                "name": "of the Ice",
+                "tier": "S2",
+                "level": 71,
+                "magnitudes": [
+                  {
+                    "min": "36",
+                    "max": "40"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Gain [Deflect|Deflection Rating] equal to 19% of [Evasion|Evasion Rating]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3033371881",
+            "mods": [
+              {
+                "name": "of Diversion",
+                "tier": "S2",
+                "level": 48,
+                "magnitudes": [
+                  {
+                    "min": "18",
+                    "max": "20"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Gain 18 Mana per enemy killed",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1368271171",
+            "mods": [
+              {
+                "name": "of Consumption",
+                "tier": "S4",
+                "level": 45,
+                "magnitudes": [
+                  {
+                    "min": "15",
+                    "max": "20"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "extended": {
+          "ev": 349,
+          "ev_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_124859000",
+                [
+                  0
+                ]
+              ],
+              [
+                "explicit.stat_3032590688",
+                [
+                  5
+                ]
+              ],
+              [
+                "explicit.stat_4067062424",
+                [
+                  4
+                ]
+              ],
+              [
+                "explicit.stat_4220027924",
+                [
+                  2
+                ]
+              ],
+              [
+                "explicit.stat_3033371881",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_1368271171",
+                [
+                  3
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "b7327645592cad5fcb53ca25930dba876e62ccb4be07efd0697b29a6b4489c9c",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:51:59Z",
+        "stash": {
+          "name": "Tab6",
+          "x": 16,
+          "y": 5
+        },
+        "price": {
+          "type": "~price",
+          "amount": 5,
+          "currency": "chaos"
+        },
+        "account": {
+          "name": "Player7",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player8",
+          "language": "th_TH",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX สวัสดี เราต้องการซื้อ Dragon Talons Stitched Gloves ที่คุณตั้งขายไว้ในราคา 5 chaos ในลีก Forbidden Rites (แท็บ \"~price 5 chaos\" ตำแหน่ง: ซ้าย 17, บน 6)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc0ludDAzIiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/85766bcbe2/GlovesInt03.png",
+        "league": "Forbidden Rites",
+        "id": "b7327645592cad5fcb53ca25930dba876e62ccb4be07efd0697b29a6b4489c9c",
+        "name": "Dragon Talons",
+        "typeLine": "Stitched Gloves",
+        "baseType": "Stitched Gloves",
+        "rarity": "Rare",
+        "ilvl": 25,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[EnergyShield|Energy Shield]",
+            "values": [
+              [
+                "24",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 18
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "17",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          },
+          {
+            "name": "[Intelligence|Int]",
+            "values": [
+              [
+                "22",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 65
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "31% increased [EnergyShield|Energy Shield]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_4015621042",
+            "mods": [
+              {
+                "name": "Strong-Willed",
+                "tier": "P6",
+                "level": 16,
+                "magnitudes": [
+                  {
+                    "min": "27",
+                    "max": "42"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+59 to [Accuracy|Accuracy] Rating",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_803737631",
+            "mods": [
+              {
+                "name": "Reliable",
+                "tier": "P8",
+                "level": 11,
+                "magnitudes": [
+                  {
+                    "min": "33",
+                    "max": "60"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+18 to maximum Mana",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1050105434",
+            "mods": [
+              {
+                "name": "Cobalt",
+                "tier": "P8",
+                "level": 6,
+                "magnitudes": [
+                  {
+                    "min": "15",
+                    "max": "24"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+16 to [Intelligence|Intelligence]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_328541901",
+            "mods": [
+              {
+                "name": "of the Prodigy",
+                "tier": "S6",
+                "level": 22,
+                "magnitudes": [
+                  {
+                    "min": "13",
+                    "max": "16"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "[ManaLeech|Leech] 5.81% of [Physical] [Attack] Damage as Mana",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_707457662",
+            "mods": [
+              {
+                "name": "of the Parched",
+                "tier": "S4",
+                "level": 21,
+                "magnitudes": [
+                  {
+                    "min": "5",
+                    "max": "5.9"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "14% increased [CriticalDamageBonus|Critical Damage Bonus]",
+            "flags": {
+              "desecrated": true
+            },
+            "domain": "desecrated",
+            "hash": "stat.desecrated.stat_3556824919",
+            "mods": [
+              {
+                "name": "of Ire",
+                "tier": "S5",
+                "level": 8,
+                "magnitudes": [
+                  {
+                    "min": "10",
+                    "max": "14"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "desecrated": true,
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "extended": {
+          "es": 28,
+          "es_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_4015621042",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_803737631",
+                [
+                  4
+                ]
+              ],
+              [
+                "explicit.stat_1050105434",
+                [
+                  3
+                ]
+              ],
+              [
+                "explicit.stat_328541901",
+                [
+                  0
+                ]
+              ],
+              [
+                "explicit.stat_707457662",
+                [
+                  2
+                ]
+              ]
+            ],
+            "desecrated": [
+              [
+                "desecrated.stat_3556824919",
+                [
+                  0
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "1dac3486569de4f5fb6615e510982d52c5e31db5ae1e0f415242979d90b26ba6",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:51:09Z",
+        "stash": {
+          "name": "Tab7",
+          "x": 4,
+          "y": 3
+        },
+        "price": {
+          "type": "~price",
+          "amount": 558,
+          "currency": "divine"
+        },
+        "account": {
+          "name": "Player9",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player10",
+          "language": "en_US",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX Hi, I would like to buy your Brimstone Clutches Sirenscale Gloves listed for 558 divine in Forbidden Rites (stash tab \"Tab7\"; position: left 5, top 4)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc0ludDA2IiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/472c12ee59/GlovesInt06.png",
+        "league": "Forbidden Rites",
+        "id": "1dac3486569de4f5fb6615e510982d52c5e31db5ae1e0f415242979d90b26ba6",
+        "fractured": true,
+        "sockets": [
+          {
+            "group": 0,
+            "type": "rune"
+          },
+          {
+            "group": 1,
+            "type": "rune"
+          }
+        ],
+        "name": "Brimstone Clutches",
+        "typeLine": "Sirenscale Gloves",
+        "baseType": "Sirenscale Gloves",
+        "rarity": "Rare",
+        "ilvl": 82,
+        "identified": true,
+        "note": "~price 558 divine",
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[Quality]",
+            "values": [
+              [
+                "+20%",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 6
+          },
+          {
+            "name": "[EnergyShield|Energy Shield]",
+            "values": [
+              [
+                "265",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 18
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "80",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          },
+          {
+            "name": "[Intelligence|Int]",
+            "values": [
+              [
+                "101",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 65
+          }
+        ],
+        "runeMods": [
+          {
+            "description": "+1 Suffix Modifier allowed",
+            "domain": "rune",
+            "hash": "stat.rune.stat_718638445"
+          },
+          {
+            "description": "Can roll Marksman modifiers",
+            "domain": "rune",
+            "hash": "stat.rune.stat_201332984"
+          },
+          {
+            "description": "[ShamanOnlyMods|Bonded]: 20% increased [Projectile] Damage",
+            "domain": "rune",
+            "hash": "stat.rune.stat_2418344131"
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "97% increased [EnergyShield|Energy Shield]",
+            "flags": {
+              "fractured": true
+            },
+            "domain": "fractured",
+            "hash": "stat.fractured.stat_4015621042",
+            "mods": [
+              {
+                "name": "Unassailable",
+                "tier": "P1",
+                "level": 65,
+                "magnitudes": [
+                  {
+                    "min": "92",
+                    "max": "100"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+58 to maximum [EnergyShield|Energy Shield]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_4052037485",
+            "mods": [
+              {
+                "name": "Blazing",
+                "tier": "P1",
+                "level": 54,
+                "magnitudes": [
+                  {
+                    "min": "48",
+                    "max": "60"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+2 to Level of all [Projectile] Skills",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1202301673",
+            "mods": [
+              {
+                "name": "of the Hunt",
+                "tier": "S1",
+                "level": 65,
+                "magnitudes": [
+                  {
+                    "min": "2",
+                    "max": "2"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+31 to [Intelligence|Intelligence]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_328541901",
+            "mods": [
+              {
+                "name": "of the Virtuoso",
+                "tier": "S1",
+                "level": 74,
+                "magnitudes": [
+                  {
+                    "min": "31",
+                    "max": "33"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+40% to [Resistances|Cold Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_4220027924",
+            "mods": [
+              {
+                "name": "of the Ice",
+                "tier": "S2",
+                "level": 71,
+                "magnitudes": [
+                  {
+                    "min": "36",
+                    "max": "40"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "40% increased [Projectile] Damage",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1839076647",
+            "mods": [
+              {
+                "name": "Kolr's",
+                "tier": "P1",
+                "level": 75,
+                "magnitudes": [
+                  {
+                    "min": "31",
+                    "max": "40"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+42% to [Resistances|Lightning Resistance]",
+            "flags": {
+              "desecrated": true
+            },
+            "domain": "desecrated",
+            "hash": "stat.desecrated.stat_1671376347",
+            "mods": [
+              {
+                "name": "of Ephij",
+                "tier": "S1",
+                "level": 82,
+                "magnitudes": [
+                  {
+                    "min": "41",
+                    "max": "45"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "desecrated": true,
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "socketedItems": [
+          {
+            "realm": "poe2",
+            "verified": true,
+            "w": 1,
+            "h": 1,
+            "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRXhwZWRpdGlvbjIvR2FtZVdhcnBSdW5lRGV4IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f101e34f8a/GameWarpRuneDex.png",
+            "stackSize": 1,
+            "maxStackSize": 10,
+            "league": "Forbidden Rites",
+            "id": "32e25f29a8f95d85adb18afa1c70cf57b6890100ff601b4f8b95f4430e0cd97f",
+            "name": "",
+            "typeLine": "Kolr's Hunt",
+            "baseType": "Kolr's Hunt",
+            "ilvl": 0,
+            "identified": true,
+            "properties": [
+              {
+                "name": "Stack Size",
+                "values": [
+                  [
+                    "1/10",
+                    0
+                  ]
+                ],
+                "displayMode": 0,
+                "type": 32
+              },
+              {
+                "name": "[Rune|Rune]",
+                "values": [],
+                "displayMode": 0
+              },
+              {
+                "name": "Limited to",
+                "values": [
+                  [
+                    "1",
+                    0
+                  ]
+                ],
+                "displayMode": 0
+              }
+            ],
+            "runeMods": [
+              "[SocketBound|Socket-bound]"
+            ],
+            "explicitMods": [
+              {
+                "description": "Gloves: Can roll Marksman modifiers"
+              }
+            ],
+            "bondedMods": [
+              "[ShamanOnlyMods|Bonded]:",
+              "Gloves: 20% increased [Projectile] Damage"
+            ],
+            "descrText": "Place into an empty [Augment] Socket in a pair of Gloves to apply its effect to that item. Once socketed it cannot be retrieved or replaced.",
+            "flavourText": [
+              "To win over the Wildking, Aldur spent a winter on the\r",
+              "hunt with Kolr and his men. He did not land a single\r",
+              "arrow on any stag, yet Kolr agreed to unify. It was not\r",
+              "an arrow that mattered. It was the determined attempt."
+            ],
+            "frameType": 5,
+            "frameTypeId": "Currency",
+            "socket": 0,
+            "socketedIcon": "https://web.poecdn.com/gen/image/WzIxLDE0LHsiayI6IjJEQXJ0L1VJSW1hZ2VzL0luR2FtZS9SdW5lU29ja2V0RmlsbGVkRGV4IiwicmVhbG0iOiJwb2UyIn1d/71274981b6/RuneSocketFilledDex.png"
+          },
+          {
+            "realm": "poe2",
+            "verified": true,
+            "w": 1,
+            "h": 1,
+            "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRXhwZWRpdGlvbjIvR2FtZVdhcnBSdW5lMiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/429591e72f/GameWarpRune2.png",
+            "stackSize": 1,
+            "maxStackSize": 10,
+            "league": "Forbidden Rites",
+            "id": "8a9beb8e2be65637e96b881a8fca3e9bcb862c84cf7f567e9de51ec76bc7f25b",
+            "name": "",
+            "typeLine": "Serle's Triumph",
+            "baseType": "Serle's Triumph",
+            "ilvl": 0,
+            "identified": true,
+            "properties": [
+              {
+                "name": "Stack Size",
+                "values": [
+                  [
+                    "1/10",
+                    0
+                  ]
+                ],
+                "displayMode": 0,
+                "type": 32
+              },
+              {
+                "name": "[Rune|Rune]",
+                "values": [],
+                "displayMode": 0
+              },
+              {
+                "name": "Limited to",
+                "values": [
+                  [
+                    "1",
+                    0
+                  ]
+                ],
+                "displayMode": 0
+              }
+            ],
+            "runeMods": [
+              "[SocketBound|Socket-bound]"
+            ],
+            "explicitMods": [
+              {
+                "description": "All Equipment: +1 Suffix Modifier allowed"
+              }
+            ],
+            "descrText": "Place into an empty [Augment] Socket in any Equipment to apply its effect to that item. Once socketed it cannot be retrieved or replaced.",
+            "flavourText": [
+              "The pinnacle of Serle's work was not a grand artefact.\r",
+              "It was a subversion; a window. He stood upon a peak\r",
+              "and saw beyond mortal limitations, understanding, in\r",
+              "that moment, that so much more was possible..."
+            ],
+            "frameType": 5,
+            "frameTypeId": "Currency",
+            "socket": 1,
+            "socketedIcon": "https://web.poecdn.com/gen/image/WzIxLDE0LHsiayI6IjJEQXJ0L1VJSW1hZ2VzL0luR2FtZS9XYXJwZWRSdW5lU29ja2V0RmlsbGVkU3BlY2lhbCIsInJlYWxtIjoicG9lMiJ9XQ/af18b965d0/WarpedRuneSocketFilledSpecial.png"
+          }
+        ],
+        "extended": {
+          "es": 265,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_4052037485",
+                [
+                  4
+                ]
+              ],
+              [
+                "explicit.stat_1202301673",
+                [
+                  0
+                ]
+              ],
+              [
+                "explicit.stat_328541901",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_4220027924",
+                [
+                  2
+                ]
+              ],
+              [
+                "explicit.stat_1839076647",
+                [
+                  3
+                ]
+              ]
+            ],
+            "fractured": [
+              [
+                "fractured.stat_4015621042",
+                [
+                  0
+                ]
+              ]
+            ],
+            "rune": [
+              [
+                "rune.stat_718638445",
+                null
+              ],
+              [
+                "rune.stat_201332984",
+                null
+              ],
+              [
+                "rune.stat_2418344131",
+                null
+              ]
+            ],
+            "desecrated": [
+              [
+                "desecrated.stat_1671376347",
+                [
+                  0
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "2e20bae5ec1a8400ae153821c4d3dc10ea08ce9b196b27d490129140ad805888",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:48:47Z",
+        "stash": {
+          "name": "Tab8",
+          "x": 2,
+          "y": 2
+        },
+        "price": {
+          "type": "~price",
+          "amount": 5,
+          "currency": "divine"
+        },
+        "account": {
+          "name": "Player11",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player12",
+          "language": "en_US",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX Hi, I would like to buy your Maelström Knuckle War Wraps listed for 5 divine in Forbidden Rites (stash tab \"Tab8\"; position: left 3, top 3)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc0RleEludDAxIiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/5595d33f3d/GlovesDexInt01.png",
+        "league": "Forbidden Rites",
+        "id": "2e20bae5ec1a8400ae153821c4d3dc10ea08ce9b196b27d490129140ad805888",
+        "name": "Maelström Knuckle",
+        "typeLine": "War Wraps",
+        "baseType": "War Wraps",
+        "rarity": "Rare",
+        "ilvl": 81,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[Evasion|Evasion Rating]",
+            "values": [
+              [
+                "133",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 17
+          },
+          {
+            "name": "[EnergyShield|Energy Shield]",
+            "values": [
+              [
+                "41",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 18
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "65",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          },
+          {
+            "name": "[Dexterity|Dex]",
+            "values": [
+              [
+                "44",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 64
+          },
+          {
+            "name": "[Intelligence|Int]",
+            "values": [
+              [
+                "44",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 65
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "41% increased [Evasion] and [EnergyShield|Energy Shield]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1999113824",
+            "mods": [
+              {
+                "name": "Maestro's",
+                "tier": "P1",
+                "level": 78,
+                "magnitudes": [
+                  {
+                    "min": "39",
+                    "max": "42"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Adds 15 to 22 [Cold] damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_4067062424",
+            "mods": [
+              {
+                "name": "Glaciated",
+                "tier": "P3",
+                "level": 60,
+                "magnitudes": [
+                  {
+                    "min": "14",
+                    "max": "15"
+                  },
+                  {
+                    "min": "22",
+                    "max": "24"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+48 to maximum Life",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3299347043",
+            "mods": [
+              {
+                "name": "Maestro's",
+                "tier": "P1",
+                "level": 78,
+                "magnitudes": [
+                  {
+                    "min": "42",
+                    "max": "49"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+38% to [Resistances|Fire Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3372524247",
+            "mods": [
+              {
+                "name": "of Magma",
+                "tier": "S2",
+                "level": 71,
+                "magnitudes": [
+                  {
+                    "min": "36",
+                    "max": "40"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+31% to [Resistances|Lightning Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1671376347",
+            "mods": [
+              {
+                "name": "of the Maelstrom",
+                "tier": "S3",
+                "level": 60,
+                "magnitudes": [
+                  {
+                    "min": "31",
+                    "max": "35"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Gain 46 Life per enemy killed",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3695891184",
+            "mods": [
+              {
+                "name": "of Valour",
+                "tier": "S3",
+                "level": 55,
+                "magnitudes": [
+                  {
+                    "min": "41",
+                    "max": "53"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "extended": {
+          "ev": 159,
+          "ev_aug": true,
+          "es": 49,
+          "es_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_1999113824",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_4067062424",
+                [
+                  4
+                ]
+              ],
+              [
+                "explicit.stat_3299347043",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_3372524247",
+                [
+                  3
+                ]
+              ],
+              [
+                "explicit.stat_1671376347",
+                [
+                  2
+                ]
+              ],
+              [
+                "explicit.stat_3695891184",
+                [
+                  0
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "f4ae21ea1dbe88f1c6a69cd94a7029c957bb7dbd71089aa56bb04de3a7776481",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:47:18Z",
+        "stash": {
+          "name": "Tab9",
+          "x": 18,
+          "y": 0
+        },
+        "price": {
+          "type": "~price",
+          "amount": 9,
+          "currency": "chaos"
+        },
+        "account": {
+          "name": "Player13",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player14",
+          "language": "ko_KR",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX 안녕하세요, 9 chaos(으)로 올려놓은 Forbidden Rites 리그의 불안의 미트 고정된 싸개(을)를 구매하고 싶습니다 (보관함 탭 \"~price 9 chaos\", 위치: 왼쪽 19, 상단 1)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc0RleEludDA0IiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f43ef07a0c/GlovesDexInt04.png",
+        "league": "Forbidden Rites",
+        "id": "f4ae21ea1dbe88f1c6a69cd94a7029c957bb7dbd71089aa56bb04de3a7776481",
+        "name": "Dread Mitts",
+        "typeLine": "Secured Wraps",
+        "baseType": "Secured Wraps",
+        "rarity": "Rare",
+        "ilvl": 81,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[Evasion|Evasion Rating]",
+            "values": [
+              [
+                "197",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 17
+          },
+          {
+            "name": "[EnergyShield|Energy Shield]",
+            "values": [
+              [
+                "61",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 18
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "80",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          },
+          {
+            "name": "[Dexterity|Dex]",
+            "values": [
+              [
+                "55",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 64
+          },
+          {
+            "name": "[Intelligence|Int]",
+            "values": [
+              [
+                "55",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 65
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "110% increased [Evasion] and [EnergyShield|Energy Shield]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1999113824",
+            "mods": [
+              {
+                "name": "Minstrel's",
+                "tier": "P2",
+                "level": 60,
+                "magnitudes": [
+                  {
+                    "min": "33",
+                    "max": "38"
+                  }
+                ]
+              },
+              {
+                "name": "Evanescent",
+                "tier": "P3",
+                "level": 54,
+                "magnitudes": [
+                  {
+                    "min": "68",
+                    "max": "79"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+34 to maximum Life",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3299347043",
+            "mods": [
+              {
+                "name": "Minstrel's",
+                "tier": "P2",
+                "level": 60,
+                "magnitudes": [
+                  {
+                    "min": "33",
+                    "max": "41"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "14% increased [Attack] Speed",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_681332047",
+            "mods": [
+              {
+                "name": "of Renown",
+                "tier": "S1",
+                "level": 60,
+                "magnitudes": [
+                  {
+                    "min": "14",
+                    "max": "16"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "+36% to [Resistances|Lightning Resistance]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1671376347",
+            "mods": [
+              {
+                "name": "of the Lightning",
+                "tier": "S2",
+                "level": 71,
+                "magnitudes": [
+                  {
+                    "min": "36",
+                    "max": "40"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Gain 52 Life per enemy killed",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3695891184",
+            "mods": [
+              {
+                "name": "of Valour",
+                "tier": "S3",
+                "level": 55,
+                "magnitudes": [
+                  {
+                    "min": "41",
+                    "max": "53"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "extended": {
+          "ev": 237,
+          "ev_aug": true,
+          "es": 73,
+          "es_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_1999113824",
+                [
+                  3,
+                  4
+                ]
+              ],
+              [
+                "explicit.stat_3299347043",
+                [
+                  3
+                ]
+              ],
+              [
+                "explicit.stat_681332047",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_1671376347",
+                [
+                  0
+                ]
+              ],
+              [
+                "explicit.stat_3695891184",
+                [
+                  2
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "c50f8e4ff2200636fb870e0a84b0be346c9c647e9162f86aa396e4f7b4509ed5",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-26T00:47:11Z",
+        "stash": {
+          "name": "Tab10",
+          "x": 2,
+          "y": 0
+        },
+        "price": {
+          "type": "~price",
+          "amount": 10,
+          "currency": "divine"
+        },
+        "account": {
+          "name": "Player15",
+          "online": {
+            "league": "Forbidden Rites"
+          },
+          "lastCharacterName": "Player16",
+          "language": "zh_TW",
+          "realm": "poe2"
+        },
+        "whisper": "@PlayerX 你好，我想購買 刺荊 靈指 華麗長手套 標價 10 divine 在 Forbidden Rites (倉庫頁 \"~price 10 divine\"; 位置: 左 3, 上 1)"
+      },
+      "item": {
+        "realm": "poe2",
+        "verified": true,
+        "w": 2,
+        "h": 2,
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9HbG92ZXMvQmFzZXR5cGVzL0dsb3Zlc1N0cjA0IiwidyI6MiwiaCI6Miwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/041d8df186/GlovesStr04.png",
+        "league": "Forbidden Rites",
+        "id": "c50f8e4ff2200636fb870e0a84b0be346c9c647e9162f86aa396e4f7b4509ed5",
+        "sockets": [
+          {
+            "group": 0,
+            "type": "rune"
+          }
+        ],
+        "name": "Bramble Grip",
+        "typeLine": "Ornate Mitts",
+        "baseType": "Ornate Mitts",
+        "rarity": "Rare",
+        "ilvl": 81,
+        "identified": true,
+        "properties": [
+          {
+            "name": "Gloves",
+            "values": [],
+            "displayMode": 0,
+            "type": 109
+          },
+          {
+            "name": "[Armour]",
+            "values": [
+              [
+                "645",
+                1
+              ]
+            ],
+            "displayMode": 0,
+            "type": 16
+          }
+        ],
+        "requirements": [
+          {
+            "name": "Level",
+            "values": [
+              [
+                "70",
+                0
+              ]
+            ],
+            "displayMode": 0,
+            "type": 62
+          },
+          {
+            "name": "[Strength|Str]",
+            "values": [
+              [
+                "87",
+                0
+              ]
+            ],
+            "displayMode": 1,
+            "type": 63
+          }
+        ],
+        "runeMods": [
+          {
+            "description": "+18% to [Resistances|Lightning Resistance]",
+            "domain": "rune",
+            "hash": "stat.rune.stat_1671376347"
+          },
+          {
+            "description": "[ShamanOnlyMods|Bonded]: +20 to maximum Life",
+            "domain": "rune",
+            "hash": "stat.rune.stat_2280525771"
+          },
+          {
+            "description": "[ShamanOnlyMods|Bonded]: +20 to maximum Mana",
+            "domain": "rune",
+            "hash": "stat.rune.stat_2926029365"
+          }
+        ],
+        "explicitMods": [
+          {
+            "description": "+165 to [Armour|Armour]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3484657501",
+            "mods": [
+              {
+                "name": "Encased",
+                "tier": "P1",
+                "level": 54,
+                "magnitudes": [
+                  {
+                    "min": "160",
+                    "max": "190"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "92% increased [Armour|Armour]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_1062208444",
+            "mods": [
+              {
+                "name": "Impregnable",
+                "tier": "P1",
+                "level": 65,
+                "magnitudes": [
+                  {
+                    "min": "92",
+                    "max": "100"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Adds 18 to 28 [Physical|Physical] Damage to [Attack|Attacks]",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3032590688",
+            "mods": [
+              {
+                "name": "Flaring",
+                "tier": "P1",
+                "level": 75,
+                "magnitudes": [
+                  {
+                    "min": "12",
+                    "max": "19"
+                  },
+                  {
+                    "min": "22",
+                    "max": "32"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "Gain 44 Life per enemy killed",
+            "domain": "explicit",
+            "hash": "stat.explicit.stat_3695891184",
+            "mods": [
+              {
+                "name": "of Valour",
+                "tier": "S3",
+                "level": 55,
+                "magnitudes": [
+                  {
+                    "min": "41",
+                    "max": "53"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frameType": 2,
+        "frameTypeId": "Rare",
+        "socketedItems": [
+          {
+            "realm": "poe2",
+            "verified": true,
+            "w": 1,
+            "h": 1,
+            "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvUnVuZXMvTGlnaHRuaW5nUnVuZVRpZXIyIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f012a6530b/LightningRuneTier2.png",
+            "stackSize": 1,
+            "maxStackSize": 10,
+            "league": "Forbidden Rites",
+            "id": "51f3d6a82f2f6a3cb4dc4aab0f412321d75829d53a66313f0e84b061e0ee64de",
+            "name": "",
+            "typeLine": "Greater Storm Rune",
+            "baseType": "Greater Storm Rune",
+            "ilvl": 0,
+            "identified": true,
+            "properties": [
+              {
+                "name": "Stack Size",
+                "values": [
+                  [
+                    "1/10",
+                    0
+                  ]
+                ],
+                "displayMode": 0,
+                "type": 32
+              },
+              {
+                "name": "[Rune|Rune]",
+                "values": [],
+                "displayMode": 0
+              }
+            ],
+            "requirements": [
+              {
+                "name": "Level",
+                "values": [
+                  [
+                    "30",
+                    0
+                  ]
+                ],
+                "displayMode": 0,
+                "type": 62
+              }
+            ],
+            "explicitMods": [
+              {
+                "description": "[MartialWeapon|Martial Weapon]: Adds 1 to 30 [Lightning|Lightning] Damage"
+              },
+              {
+                "description": "Wand or Staff: [Gain] 10% of Damage as Extra [Lightning] Damage"
+              },
+              {
+                "description": "Armour: +18% to [Resistances|Lightning Resistance]"
+              }
+            ],
+            "bondedMods": [
+              "[ShamanOnlyMods|Bonded]:",
+              "[MartialWeapon|Martial Weapon]: 30% increased [BuffMagnitude|Magnitude] of [Shock|Shock] you inflict",
+              "Wand or Staff: 30% increased [BuffMagnitude|Magnitude] of [Shock|Shock] you inflict",
+              "Armour:",
+              "+20 to maximum Life",
+              "+20 to maximum Mana"
+            ],
+            "descrText": "Place into an empty [Augment] Socket in a Weapon or Armour to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other [Augment] items.",
+            "frameType": 5,
+            "frameTypeId": "Currency",
+            "socket": 0,
+            "socketedIcon": "https://web.poecdn.com/gen/image/WzIxLDE0LHsiayI6IjJEQXJ0L1VJSW1hZ2VzL0luR2FtZS9SdW5lU29ja2V0RmlsbGVkIiwicmVhbG0iOiJwb2UyIn1d/d02d26cbf0/RuneSocketFilled.png"
+          }
+        ],
+        "extended": {
+          "ar": 774,
+          "ar_aug": true,
+          "hashes": {
+            "explicit": [
+              [
+                "explicit.stat_3484657501",
+                [
+                  0
+                ]
+              ],
+              [
+                "explicit.stat_1062208444",
+                [
+                  1
+                ]
+              ],
+              [
+                "explicit.stat_3032590688",
+                [
+                  3
+                ]
+              ],
+              [
+                "explicit.stat_3695891184",
+                [
+                  2
+                ]
+              ]
+            ],
+            "rune": [
+              [
+                "rune.stat_1671376347",
+                null
+              ],
+              [
+                "rune.stat_2280525771",
+                null
+              ],
+              [
+                "rune.stat_2926029365",
+                null
+              ]
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
