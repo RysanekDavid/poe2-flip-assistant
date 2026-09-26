@@ -2,7 +2,7 @@ import { fetchAll } from "../api/ninjaClient";
 import { config } from "../config/env";
 import { fireAlert } from "../core/alertEngine";
 import { loadCxMarketView, type CxMarketView } from "../core/cx/cxItemMarkets";
-import { LIVE_HISTORY_SOURCES, pruneCxMarketHistory, syncCxHistory, type CxHistorySources } from "../core/cx/cxIngest";
+import { cxHistoryProblem, pruneCxMarketHistory, syncCxHistory } from "../core/cx/cxIngest";
 import { trackCxOutcomes } from "../core/cx/cxOutcomes";
 import { scoreItem } from "../core/flipModel";
 import { getPolledLeagues, leagueForUser, sameLeague } from "../core/leagueUsers";
@@ -93,25 +93,9 @@ async function refreshRatesTracked(leagues: readonly string[]): Promise<void> {
   await withHeartbeat("cx-rates", "", () => refreshCxRatesIfStale(leagues, sources), { problem: () => failure });
 }
 
-/** Same for the history backfill: a run where every due hour failed and nothing was stored is red. */
+/** The backfill reports its own attempts and failure back-offs; cxHistoryProblem judges them. */
 async function syncHistoryTracked(leagues: readonly string[]): Promise<void> {
-  let failures = 0;
-  let lastFailure = "";
-  const sources: CxHistorySources = {
-    ...LIVE_HISTORY_SOURCES,
-    digestAt: async (hour) => {
-      try {
-        return await LIVE_HISTORY_SOURCES.digestAt(hour);
-      } catch (err: unknown) {
-        failures++;
-        lastFailure = errText(err);
-        throw err;
-      }
-    },
-  };
-  const problem = (stored: number): string | null =>
-    failures > 0 && stored === 0 ? `${failures} digest hour(s) failed, none stored: ${lastFailure}` : null;
-  await withHeartbeat("cx-history", "", () => syncCxHistory(leagues, sources), { problem });
+  await withHeartbeat("cx-history", "", () => syncCxHistory(leagues), { problem: cxHistoryProblem });
 }
 
 /** Settle and publish exchange edges for the outcome log. A failure is logged, never fatal. */

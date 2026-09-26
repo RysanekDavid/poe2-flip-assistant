@@ -12,6 +12,7 @@ import {
   pruneCxMarketHistory,
   resetCxIngestState,
   syncCxHistory,
+  cxHistoryProblem,
   type CxHistorySources,
 } from "../core/cx/cxIngest";
 import { loadCxMarketView } from "../core/cx/cxItemMarkets";
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
   testIngestIsIdempotentAndExcludesPrivate();
   testAbsentLeagueIsNotMarked();
   await testBackfillIsBoundedAndPolite();
+  await testOutageStaysRed();
   testLeagueViewAndStaleness();
   testRouteView();
   testRetention();
@@ -143,8 +145,10 @@ async function testBackfillIsBoundedAndPolite(): Promise<void> {
   assert.equal(missingRequestHours([FR], NOW).length, config.cx.backfillHours);
 
   const calls = { fetched: [] as number[], slept: [] as number[] };
-  const stored = await syncCxHistory([FR], sources(available, calls), NOW);
-  assert.equal(stored, 6);
+  const first = await syncCxHistory([FR], sources(available, calls), NOW);
+  assert.equal(first.stored, 6);
+  assert.equal(first.attempted, CX_MAX_FETCHES_PER_RUN);
+  assert.equal(cxHistoryProblem(first), null, "a partial backfill that stored hours is healthy");
   assert.equal(calls.fetched.length, CX_MAX_FETCHES_PER_RUN, "bounded per run");
   assert.equal(calls.fetched[0], H0 - CX_HOUR_SECONDS, "newest hour first");
   assert.deepEqual(calls.slept, Array(CX_MAX_FETCHES_PER_RUN - 1).fill(CX_REQUEST_GAP_MS), "≤ 1 request / 2 s");
@@ -152,15 +156,33 @@ async function testBackfillIsBoundedAndPolite(): Promise<void> {
 
   // Second run: stored hours are never re-fetched, and the six that just failed are backed off.
   const again = { fetched: [] as number[], slept: [] as number[] };
-  await syncCxHistory([FR], sources(available, again), NOW);
+  const second = await syncCxHistory([FR], sources(available, again), NOW);
   assert.equal(again.fetched.length, config.cx.backfillHours - CX_MAX_FETCHES_PER_RUN);
   assert.ok(again.fetched.every((h) => !calls.fetched.includes(h)));
+  assert.equal(second.deferred, first.attempted - first.stored, "the hours that just failed are counted as backed off");
+}
 
-  // A digest for the wrong hour is refused rather than filed under the hour we asked for.
+/**
+ * A persistent outage must stay red: after the first failed run every missing hour sits in its
+ * back-off, so a later run attempts nothing — deferred failures still make it a problem. The
+ * wrong-hour digest (a non-network failure) counts as a failure too.
+ */
+async function testOutageStaysRed(): Promise<void> {
   resetCxIngestState();
   const wrong = new Map([[hourId(8), digestAt(hourId(9), omenMarkets())]]);
-  await syncCxHistory([FR], sources(wrong, { fetched: [], slept: [] }), NOW);
+  const run = () => syncCxHistory([FR], sources(wrong, { fetched: [], slept: [] }), NOW);
+  const first = await run();
+  // A digest for the wrong hour is refused rather than filed under the hour we asked for.
   assert.equal(count("SELECT COUNT(*) c FROM cx_ingest WHERE hour IN (?, ?)", hourId(8), hourId(9)), 0);
+  assert.equal(first.stored, 0);
+  assert.ok(cxHistoryProblem(first) != null, "every attempted hour failed → problem");
+
+  let last = first;
+  for (let i = 0; i < 5 && last.attempted > 0; i++) last = await run();
+  assert.equal(last.attempted, 0, "eventually every missing hour is backed off");
+  assert.ok(last.deferred > 0);
+  assert.match(cxHistoryProblem(last) ?? "", /backed off after failures, none stored/, "no flap to green during back-off");
+  assert.equal(cxHistoryProblem({ stored: 0, attempted: 0, deferred: 0, lastError: null }), null, "nothing missing is healthy");
 }
 
 function testLeagueViewAndStaleness(): void {
