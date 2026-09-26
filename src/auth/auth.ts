@@ -1,17 +1,19 @@
-import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypto";
+import { timingSafeEqual, createHmac } from "node:crypto";
 import { config } from "../config/env";
+import { getSessionVersion } from "../db/userQueries";
 import {
   decodeSessionPayload,
   parseSessionToken,
+  sessionVersionOf,
   SESSION_COOKIE,
   SESSION_TTL_MS,
 } from "./sessionContract";
 
 /**
- * Auth primitives — dependency-free (node:crypto only).
- *  - passwords: scrypt with a per-password salt, stored as `scrypt$<saltHex>$<hashHex>`
- *  - sessions:  HMAC-signed `<payload>.<sig>` token (kept in an httpOnly cookie)
- *  - api keys:  opaque random tokens for the local agent (bearer auth, no expiry)
+ * Session tokens: HMAC-signed `<payload>.<sig>` (kept in an httpOnly cookie). The payload
+ * carries users.session_version so bumping that column revokes every outstanding token for the
+ * user (password change, "log out everywhere"). Password + api-key primitives live in
+ * ./credentials.
  *
  * Secret comes from AUTH_SECRET. We fail loud in production if it's missing so sessions
  * can never be forged against an empty/guessable key.
@@ -26,37 +28,42 @@ function secret(): string {
   return "dev-insecure-auth-secret-change-me";
 }
 
-export function hashPassword(password: string): string {
-  const salt = randomBytes(16);
-  const dk = scryptSync(password, salt, 64);
-  return `scrypt$${salt.toString("hex")}$${dk.toString("hex")}`;
-}
-
-export function verifyPassword(password: string, stored: string): boolean {
-  const parts = stored.split("$");
-  if (parts.length !== 3 || parts[0] !== "scrypt") return false;
-  const want = Buffer.from(parts[2]!, "hex");
-  const dk = scryptSync(password, Buffer.from(parts[1]!, "hex"), want.length);
-  return dk.length === want.length && timingSafeEqual(dk, want);
-}
-
-export function genApiKey(): string {
-  return "pk_" + randomBytes(24).toString("hex");
-}
-
 function b64url(buf: Buffer): string {
   return buf.toString("base64url");
 }
 
-/** Sign a session token for a user. Default 30-day TTL. */
-export function signSession(userId: number, ttlMs: number = SESSION_TTL_MS): string {
-  const payload = b64url(Buffer.from(JSON.stringify({ uid: userId, exp: Date.now() + ttlMs })));
+/**
+ * Sign a session token for a user. Default 30-day TTL. The version defaults to the user's
+ * current session_version so callers that only know the id (deploy smoke) mint a valid token.
+ */
+export function signSession(
+  userId: number,
+  ttlMs: number = SESSION_TTL_MS,
+  version: number = requireSessionVersion(userId),
+): string {
+  const body = { uid: userId, exp: Date.now() + ttlMs, ver: version };
+  const payload = b64url(Buffer.from(JSON.stringify(body)));
   const sig = b64url(createHmac("sha256", secret()).update(payload).digest());
   return `${payload}.${sig}`;
 }
 
-/** Verify a session token. Returns the user id, or null if invalid/expired/tampered. */
-export function verifySession(token: string | undefined | null): number | null {
+function requireSessionVersion(userId: number): number {
+  const version = getSessionVersion(userId);
+  if (version === undefined) throw new Error(`cannot sign a session for unknown user #${userId}`);
+  return version;
+}
+
+export interface VerifiedSession {
+  uid: number;
+  ver: number;
+}
+
+/**
+ * Verify a token's signature and expiry. Returns uid + signed version, or null if
+ * invalid/expired/tampered. The caller must still compare `ver` with the user's current
+ * session_version (see session.ts) — this function is DB-free on purpose.
+ */
+export function verifySession(token: string | undefined | null): VerifiedSession | null {
   if (!token) return null;
   const parsed = parseSessionToken(token);
   if (!parsed) return null;
@@ -65,7 +72,8 @@ export function verifySession(token: string | undefined | null): number | null {
   const a = Buffer.from(sig);
   const b = Buffer.from(want);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  return decodeSessionPayload(payload)?.uid ?? null;
+  const decoded = decodeSessionPayload(payload);
+  return decoded ? { uid: decoded.uid, ver: sessionVersionOf(decoded) } : null;
 }
 
 export { SESSION_COOKIE };

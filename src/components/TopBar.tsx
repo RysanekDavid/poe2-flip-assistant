@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, LogOut } from "lucide-react";
+import { z } from "zod";
 import { BellIcon, XIcon } from "./ui/icons";
 import { AlertsPanel } from "./AlertFeed";
 
@@ -96,17 +97,37 @@ function WealthChip() {
   );
 }
 
-/** Current user + logout. Mirrors who owns the private data shown on the page. */
-function UserMenu() {
+const MeResponse = z.object({ user: z.object({ name: z.string() }).nullable() });
+
+/** Signed-in account name; bounces to /login when the session no longer resolves. */
+function useSignedInName(): string | null {
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => setName(d.user?.name ?? null))
-      .catch(() => {});
-  }, []);
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`/api/auth/me → ${r.status}`);
+        return MeResponse.parse(await r.json());
+      })
+      .then(({ user }) => {
+        // Session revoked elsewhere ("log out everywhere", password change): /me already cleared
+        // the cookie, so leave the private dashboard instead of rendering it anonymous.
+        if (user === null) {
+          router.replace("/login");
+          return;
+        }
+        setName(user.name);
+      })
+      .catch((error: unknown) => console.error("[auth] could not load the current user", error));
+  }, [router]);
+  return name;
+}
+
+/** Current user + logout. Mirrors who owns the private data shown on the page. */
+function UserMenu() {
+  const router = useRouter();
+  const name = useSignedInName();
 
   async function logout(): Promise<void> {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});

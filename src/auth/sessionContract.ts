@@ -4,6 +4,11 @@ export const SESSION_TTL_MS = 30 * 24 * 3600_000;
 export interface SessionPayload {
   uid: number;
   exp: number;
+  /**
+   * users.session_version at signing time. Optional because tokens issued before revocation
+   * shipped carry none; they count as version 0 so the deploy logs nobody out.
+   */
+  ver?: number;
 }
 
 export function parseSessionToken(token: string): { payload: string; signature: string } | null {
@@ -28,7 +33,14 @@ export function decodeSessionPayload(encoded: string, now = Date.now()): Session
 
 function isSessionPayload(value: unknown): value is SessionPayload {
   if (typeof value !== "object" || value == null) return false;
-  const candidate = value as { uid?: unknown; exp?: unknown };
+  const candidate = value as { uid?: unknown; exp?: unknown; ver?: unknown };
+  const validVersion = candidate.ver === undefined ||
+    (Number.isSafeInteger(candidate.ver) && Number(candidate.ver) >= 0);
   return Number.isSafeInteger(candidate.uid) && Number(candidate.uid) > 0 &&
-    typeof candidate.exp === "number" && Number.isFinite(candidate.exp);
+    typeof candidate.exp === "number" && Number.isFinite(candidate.exp) && validVersion;
+}
+
+/** Session version a payload was signed with; pre-revocation tokens carry none and mean 0. */
+export function sessionVersionOf(payload: SessionPayload): number {
+  return payload.ver ?? 0;
 }

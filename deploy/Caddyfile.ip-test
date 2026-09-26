@@ -1,9 +1,13 @@
 # Early IP-only test mode. This intentionally uses Caddy's internal CA and is not production TLS.
+# No HSTS here: pinning HTTPS on a bare IP with a self-signed cert would outlive the test.
 {$SITE_ADDRESS} {
 	tls internal
 	encode gzip
 	reverse_proxy 127.0.0.1:3000
 	header {
 		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://web.poecdn.com https://*.poecdn.com; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 	}
 }

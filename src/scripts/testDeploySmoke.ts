@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import Database from "better-sqlite3";
 import { applicationSchemaSql } from "../db/schemaFiles";
-import { verifyPassword } from "../auth/auth";
+import { verifyPassword } from "../auth/credentials";
 import { beginCoachTurn, completeCoachTurn, listCoachConversations } from "../db/coachHistoryQueries";
 import { ensureSmokeUser, purgeSmokeConversations, SMOKE_USER_NAME } from "./deploySmokeCore";
 
@@ -20,9 +20,6 @@ const row = db.prepare("SELECT role, password_hash FROM users WHERE id = ?").get
   password_hash: string;
 };
 assert.equal(row.role, "member");
-for (const guess of ["", "deploy-smoke", row.password_hash, "password"]) {
-  assert.equal(verifyPassword(guess, row.password_hash), false, "smoke user must not be able to log in");
-}
 
 commitTurn(1, "00000000-0000-4000-8000-000000000001");
 commitTurn(smokeId, "00000000-0000-4000-8000-000000000002");
@@ -43,7 +40,20 @@ db.prepare("UPDATE users SET password_hash = 'scrypt$aa$bb' WHERE id = ?").run(s
 assert.throws(() => ensureSmokeUser(db), new RegExp(SMOKE_USER_NAME));
 
 db.close();
-console.log("ALL PASS — deploy smoke user is isolated, no-login, and cleaned up");
+
+// verifyPassword is async (scrypt off the event loop); CommonJS tsx has no top-level await.
+assertSmokeUserCannotLogIn(row.password_hash)
+  .then(() => console.log("ALL PASS — deploy smoke user is isolated, no-login, and cleaned up"))
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exit(1);
+  });
+
+async function assertSmokeUserCannotLogIn(passwordHash: string): Promise<void> {
+  for (const guess of ["", "deploy-smoke", passwordHash, "password"]) {
+    assert.equal(await verifyPassword(guess, passwordHash), false, "smoke user must not be able to log in");
+  }
+}
 
 function commitTurn(userId: number, conversationId: string): void {
   const input = {

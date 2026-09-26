@@ -1,0 +1,24 @@
+[Unit]
+Description=PoE2 Flip Assistant - nightly SQLite backup (online, gzip, keep 14, optional rclone)
+# rclone (when BACKUP_RCLONE_REMOTE is set) needs the network; harmless otherwise.
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=poe2flip
+Group=poe2flip
+WorkingDirectory=/opt/poe2flip/current
+# Defaults first; .env.local may override BACKUP_* and sets DB_PATH / BACKUP_RCLONE_REMOTE.
+Environment=BACKUP_DIR=/opt/poe2flip/backups/nightly
+Environment=BACKUP_KEEP=14
+Environment=NODE_ENV=production
+Environment=PATH=/usr/bin:/usr/local/bin
+EnvironmentFile=/opt/poe2flip/.env.local
+UMask=0077
+Nice=10
+IOSchedulingClass=idle
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ExecStart=/opt/poe2flip/current/node_modules/.bin/tsx src/db/maintenanceCli.ts backup --wait=60

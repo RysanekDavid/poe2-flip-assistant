@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { KeyRound, Loader2, Check, ShieldCheck, ShieldAlert, ExternalLink, Lock } from "lucide-react";
+import { LogoutEverywhere } from "./LogoutEverywhere";
 
 interface PoeStatus {
   connected: boolean;
@@ -174,6 +175,7 @@ export function SettingsPanel() {
         </p>
       </details>
       <ChangePassword />
+      <LogoutEverywhere />
     </section>
   );
 }

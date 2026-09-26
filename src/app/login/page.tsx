@@ -3,6 +3,30 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Loader2 } from "lucide-react";
+import { z } from "zod";
+
+const ErrorBody = z.object({ error: z.string() });
+
+/** User-facing text for a failed login; a 429 says why and when to retry instead of "failed". */
+async function loginErrorMessage(res: Response): Promise<string> {
+  if (res.status === 401) return "Wrong name or password.";
+  if (res.status !== 429) return `Login failed (HTTP ${res.status}).`;
+  const body = ErrorBody.safeParse(await res.json().catch(() => null));
+  const reason = body.success ? body.data.error : "too many failed logins";
+  const retryAfterSec = Number(res.headers.get("retry-after"));
+  if (!Number.isFinite(retryAfterSec) || retryAfterSec <= 0) return `${capitalize(reason)}.`;
+  return `${capitalize(reason)}. Retry in ${formatWait(retryAfterSec)}.`;
+}
+
+function formatWait(seconds: number): string {
+  if (seconds < 60) return `${Math.ceil(seconds)} s`;
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} min`;
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +46,7 @@ export default function LoginPage() {
         body: JSON.stringify({ name, password }),
       });
       if (!res.ok) {
-        setError(res.status === 401 ? "Wrong name or password." : "Login failed.");
+        setError(await loginErrorMessage(res));
         return;
       }
       router.replace("/");

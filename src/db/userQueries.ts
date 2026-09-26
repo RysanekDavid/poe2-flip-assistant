@@ -1,5 +1,5 @@
 import { getDb } from "./database";
-import { hashPassword, verifyPassword, genApiKey } from "../auth/auth";
+import { hashPassword, verifyPassword, verifyDummyPassword, genApiKey } from "../auth/credentials";
 import { encryptSecret, decryptSecret } from "../auth/secretbox";
 import { type TradeCred } from "../api/tradeClient";
 
@@ -12,6 +12,8 @@ export interface UserRow {
   api_key: string;
   role: UserRole;
   created_at: string;
+  /** Bumped to revoke every outstanding session token for this user. */
+  session_version: number;
 }
 
 /** Public-safe view of a user — never leak the password hash or (beyond setup) the api key. */
@@ -47,25 +49,61 @@ export function listUsers(): UserPublic[] {
 }
 
 /** Create a user. `id` may be forced (used to seed the owner as id=1 so existing data backfills cleanly). */
-export function createUser(name: string, password: string, role: UserRole = "member", id?: number): UserRow {
+export async function createUser(
+  name: string,
+  password: string,
+  role: UserRole = "member",
+  id?: number,
+): Promise<UserRow> {
+  const hash = await hashPassword(password);
   const stmt = id
     ? getDb().prepare(
         "INSERT INTO users (id, name, password_hash, api_key, role) VALUES (@id, @name, @hash, @key, @role)",
       )
     : getDb().prepare("INSERT INTO users (name, password_hash, api_key, role) VALUES (@name, @hash, @key, @role)");
-  const info = stmt.run({ id, name, hash: hashPassword(password), key: genApiKey(), role });
-  return getUserById(Number(info.lastInsertRowid))!;
+  const info = stmt.run({ id, name, hash, key: genApiKey(), role });
+  const created = getUserById(Number(info.lastInsertRowid));
+  if (!created) throw new Error(`user "${name}" missing right after insert`);
+  return created;
 }
 
-/** Verify a login. Returns the user on success, null on bad name/password. */
-export function authenticate(name: string, password: string): UserRow | null {
+/**
+ * Verify a login. Returns the user on success, null on bad name/password. Unknown names still
+ * pay one scrypt so response timing doesn't reveal which usernames exist.
+ */
+export async function authenticate(name: string, password: string): Promise<UserRow | null> {
   const u = getUserByName(name);
-  if (!u || !verifyPassword(password, u.password_hash)) return null;
-  return u;
+  if (!u) {
+    await verifyDummyPassword(password);
+    return null;
+  }
+  return (await verifyPassword(password, u.password_hash)) ? u : null;
 }
 
-export function setPassword(id: number, password: string): void {
-  getDb().prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(password), id);
+/** Set a new password and revoke every existing session for the user (bumps session_version). */
+export async function setPassword(id: number, password: string): Promise<void> {
+  const hash = await hashPassword(password);
+  const info = getDb()
+    .prepare("UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?")
+    .run(hash, id);
+  if (info.changes !== 1) throw new Error(`no user #${id} to set a password for`);
+}
+
+/** Current session_version for a user, or undefined when the user doesn't exist. */
+export function getSessionVersion(id: number): number | undefined {
+  const row = getDb().prepare("SELECT session_version FROM users WHERE id = ?").get(id) as
+    | { session_version: number }
+    | undefined;
+  return row?.session_version;
+}
+
+/** Revoke every outstanding session for a user ("log out everywhere"). Returns the new version. */
+export function bumpSessionVersion(id: number): number {
+  const row = getDb()
+    .prepare("UPDATE users SET session_version = session_version + 1 WHERE id = ? RETURNING session_version")
+    .get(id) as { session_version: number } | undefined;
+  if (!row) throw new Error(`no user #${id} to revoke sessions for`);
+  return row.session_version;
 }
 
 /** Rotate a user's agent API key (e.g. if it leaks). Returns the new key. */

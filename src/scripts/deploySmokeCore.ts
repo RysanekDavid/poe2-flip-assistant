@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type Database from "better-sqlite3";
-import { genApiKey } from "../auth/auth";
+import { genApiKey } from "../auth/credentials";
 
 /** Dedicated member account for deploy smokes, so no deploy ever writes into a real user's data. */
 export const SMOKE_USER_NAME = "deploy-smoke";

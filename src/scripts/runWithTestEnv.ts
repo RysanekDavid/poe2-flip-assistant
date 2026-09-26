@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const targets = {
+  auth: "src/scripts/testAuth.ts",
   craft: "src/scripts/testCraftMargin.ts",
   "craft-valuation": "src/scripts/testCraftValuation.ts",
   "craft-guides": "src/scripts/testCraftGuides.ts",
@@ -22,6 +23,7 @@ if (!target || !(target in targets)) {
 
 process.env.APP_DISABLE_DOTENV = "1";
 process.env.OWNER_PASSWORD = "test-only-owner-password";
+process.env.AUTH_SECRET = "test-only-auth-secret";
 process.env.DESKTOP_NOTIFY = "false";
 process.env.DB_PATH = resolve("data", `tmp-${target}-test.db`);
 

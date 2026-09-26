@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the lint ratchet diffs against the pre-push commit, not HEAD.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -23,17 +26,24 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       # Build first: it generates next-env.d.ts (gitignored), which declares the
       # image module types that typecheck needs.
       - run: npm run build
       - run: npm run typecheck
       - run: npm run lint
+        env:
+          # Commit master pointed at before this push (empty on manual dispatch → merge-base).
+          LINT_BASE_REF: ${{ github.event.before }}
       - run: npm run test:coach
       - run: npm run test:deploy-config
       - run: npm run test:league
       - run: npm run test:user-league
       - run: npm run test:market-league
       - run: npm run test:rates
+      - run: npm run test:middleware
+      - run: npm run test:auth
+      - run: npm run test:maintenance
       - run: npm run test:valuation
       - run: npm run test:auto-snipe
       - run: npm run test:snipe
