@@ -80,6 +80,7 @@ async function main(): Promise<void> {
   await testWebhookRemoved();
   await testAxiosTransport();
   await testDigest();
+  await testReplaceKeepsQueue();
 }
 
 async function testBatching(): Promise<void> {
@@ -102,13 +103,27 @@ async function testRateLimit(): Promise<void> {
   const limited = fakeTransport(() => classifyResponse(429, { retry_after: 45.5, global: false }, undefined));
   const r = await drain(t, limited);
   const row = db.prepare("SELECT status, attempts, next_attempt_at FROM notify_queue").get() as { status: string; attempts: number; next_attempt_at: number };
-  ok("429 → row stays pending, counted", r.retried === 1 && row.status === "pending" && row.attempts === 1);
+  ok("429 → row stays pending, retry budget untouched", r.retried === 1 && row.status === "pending" && row.attempts === 0, JSON.stringify(row));
   ok("429 → next attempt exactly retry_after later", row.next_attempt_at === t + 45_500, String(row.next_attempt_at - t));
   sent.length = 0;
   await drain(t + 31_000); // window open, but Discord said 45.5 s
   ok("not retried before retry_after", sent.length === 0);
   await drain(t + 46_000);
   ok("retried after retry_after → sent", sent.length === 1 && statuses().sent === 1);
+
+  // a long run of 429s must never exhaust the retry budget
+  reset();
+  alert(101);
+  const brief = fakeTransport(() => classifyResponse(429, { retry_after: 1 }, undefined));
+  let at = t + 120_000;
+  for (let i = 0; i < NOTIFY_POLICY.maxAttempts + 3; i++) {
+    await drain(at, brief);
+    at += NOTIFY_POLICY.windowMs + 1;
+  }
+  const after = db.prepare("SELECT status, attempts FROM notify_queue").get() as { status: string; attempts: number };
+  ok(`${NOTIFY_POLICY.maxAttempts + 3} × 429 → still pending, 0 attempts spent`, after.status === "pending" && after.attempts === 0, JSON.stringify(after));
+  await drain(at);
+  ok("delivered once Discord lets up", statuses().sent === 1);
 }
 
 async function testGiveUp(): Promise<void> {
@@ -123,7 +138,11 @@ async function testGiveUp(): Promise<void> {
     delays.push(row.next_attempt_at - t);
     t = Math.max(row.next_attempt_at, t + NOTIFY_POLICY.windowMs) + 1;
   }
-  ok("backoff doubles: 30 s, 60 s, 120 s, 240 s", delays.slice(0, 4).join(",") === [1, 2, 3, 4].map(backoffMs).join(","), delays.join(","));
+  const expected = [30, 60, 120, 240, 480, 960, 1800].map((s) => s * 1000); // doubling, then the 30 min cap
+  ok("backoff doubles up to the 30 min cap", delays.slice(0, 7).join(",") === expected.join(","), delays.join(","));
+  ok("backoffMs matches the schedule", [1, 2, 3, 4, 5, 6, 7, 8].map(backoffMs).slice(0, 7).join(",") === expected.join(","));
+  const span = delays.slice(0, NOTIFY_POLICY.maxAttempts - 1).reduce((a, b) => a + b, 0);
+  ok("retries ride out a ~1 h outage", span >= 3_600_000, `${Math.round(span / 60_000)} min`);
   const row = db.prepare("SELECT status, attempts, last_error FROM notify_queue").get() as { status: string; attempts: number; last_error: string };
   ok(`gave up after ${NOTIFY_POLICY.maxAttempts} attempts`, row.status === "failed" && row.attempts === NOTIFY_POLICY.maxAttempts, JSON.stringify(row));
   ok("error stored for Settings", row.last_error.includes("503") && row.last_error.includes("upstream down"), row.last_error);
@@ -185,17 +204,38 @@ async function testDigest(): Promise<void> {
   reset();
   alert(500);
   insertAlert(USER, "Runes of Aldur", { type: "TREND", itemId: "t", itemName: "Trendy", message: "up", value: 60, threshold: 50 });
+  insertAlert(USER, "Runes of Aldur", { type: "SPREAD", itemId: "old", itemName: "Stale", message: "old", value: 99, threshold: 15 });
+  db.prepare("UPDATE alerts SET created_at = datetime('now', '-10 days') WHERE item_id = 'old'").run();
   const now = Date.now() + 2_000; // created_at has 1 s resolution — close the window after the inserts
   db.prepare("DELETE FROM notify_queue").run(); // only the digest under test
-  setLastDigestAt(USER, now - 25 * 3600_000);
+  setLastDigestAt(USER, now - 30 * 24 * 3600_000); // e.g. the poller was down for a month
   const r = await drain(now);
   ok("closed 24 h window → one digest queued and sent", r.digests === 1 && sent.length === 1, JSON.stringify(r));
   const embed = sent[0]?.embeds[0];
   ok("digest counts muted-from-Discord types too", embed?.description?.includes("TREND 1") === true, embed?.description);
+  ok("digest window capped at 24 h (10-day-old alert excluded)", embed?.description?.includes("SPREAD") === false, embed?.description);
+  const since = new Date(now - 24 * 3600_000).toISOString().slice(0, 16).replace("T", " ");
+  ok("digest footer states the capped start", embed?.footer?.text.includes(since) === true, embed?.footer?.text);
   ok("digest lists the top snipe", embed?.fields.some((f) => f.name === "Top SNIPE" && f.value.includes("Item 500")) === true);
   const again = await drain(now + NOTIFY_POLICY.windowMs + 1);
   ok("no second digest inside the same day", again.digests === 0 && sent.length === 1);
   db.prepare("DELETE FROM notify_settings").run();
   const baseline = await drain(now + 2 * NOTIFY_POLICY.windowMs);
   ok("first sight of a user only sets the baseline", baseline.digests === 0);
+
+  const lastDigest = (): number | null =>
+    (db.prepare("SELECT last_digest_at AS t FROM notify_settings WHERE user_id = ?").get(USER) as { t: number | null } | undefined)?.t ?? null;
+  ok("baseline stamped", lastDigest() != null);
+  setWebhook(USER, null);
+  ok("clearing the webhook forgets the digest baseline", lastDigest() === null);
+  setWebhook(USER, URL);
+}
+
+async function testReplaceKeepsQueue(): Promise<void> {
+  reset();
+  alert(600);
+  setWebhook(USER, URL.replace("987654321098765432", "111111111111111111"));
+  ok("replacing the webhook keeps queued alerts (they go to the new URL)", statuses().pending === 1);
+  setWebhook(USER, URL);
+  ok("…and still pending after switching back", statuses().pending === 1);
 }

@@ -21,10 +21,19 @@ import { redactWebhook } from "./webhookUrl";
  * Delivery policy. One message per user per 30 s is what keeps a snipe burst from becoming ten
  * pings (and stays far under Discord's 5-requests-per-2-s webhook bucket); up to 10 alerts ride
  * in that one message as separate embeds.
+ *
+ * Retries: 8 failed attempts with backoff 30 s → 60 s → … → 30 min (cap) span ~1 h, which rides
+ * out a realistic Discord incident. A 429 is NOT a failed attempt — Discord told us exactly when
+ * to come back, so it only moves next_attempt_at and never uses up the retry budget.
+ *
+ * Delivery is AT-LEAST-ONCE, deliberately: Discord webhooks have no idempotency key, so a POST
+ * that Discord accepted but whose response we never saw (timeout, poller crash between the POST
+ * and markSent) is retried and shows up twice. A rare duplicate ping is the accepted cost; do not
+ * "fix" it by dropping retries — that trades a duplicate for a silently lost snipe.
  */
 export const NOTIFY_POLICY = {
   windowMs: 30_000,
-  maxAttempts: 5,
+  maxAttempts: 8,
   baseBackoffMs: 30_000,
   maxBackoffMs: 30 * 60_000,
   drainEveryMs: 10_000,
@@ -85,12 +94,20 @@ function applyResult(userId: number, batch: QueueRow[], result: DeliveryResult, 
     console.error(`[notify] user ${userId}: ${result.detail} — gave up on ${ids.length} deliver${ids.length === 1 ? "y" : "ies"} (fix the webhook in Settings)`);
     return;
   }
+  if (result.kind === "rate_limited") {
+    const retryAt = now + result.retryAfterMs;
+    deps.db.transaction(() => {
+      for (const r of batch) markRetry(r.queue_id, now, retryAt, result.detail, { counts: false, giveUp: false }, deps.db);
+    })();
+    sum.retried += ids.length;
+    console.warn(`[notify] user ${userId}: ${result.detail}`);
+    return;
+  }
   deps.db.transaction(() => {
     for (const r of batch) {
       const attempt = r.attempts + 1;
       const giveUp = attempt >= NOTIFY_POLICY.maxAttempts;
-      const delay = result.kind === "rate_limited" ? result.retryAfterMs : backoffMs(attempt);
-      markRetry(r.queue_id, now, now + delay, result.detail, giveUp, deps.db);
+      markRetry(r.queue_id, now, now + backoffMs(attempt), result.detail, { counts: true, giveUp }, deps.db);
       if (giveUp) sum.failed++;
       else sum.retried++;
     }

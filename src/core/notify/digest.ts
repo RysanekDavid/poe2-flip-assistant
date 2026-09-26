@@ -57,7 +57,9 @@ export function enqueueDueDigests(now: number, db: Database.Database = getDb()):
       continue;
     }
     if (now - c.last_digest_at < DIGEST_PERIOD_MS) continue;
-    const payload = digestPayload(digestData(c.user_id, c.last_digest_at, now, TOP_TYPES, db), c.last_digest_at, now);
+    // Capped at 24 h: after a poller outage the "last 24 h" digest must not silently cover a month.
+    const from = Math.max(c.last_digest_at, now - DIGEST_PERIOD_MS);
+    const payload = digestPayload(digestData(c.user_id, from, now, TOP_TYPES, db), from, now);
     db.transaction(() => {
       if (payload) enqueueDigest(c.user_id, JSON.stringify(payload), db);
       setLastDigestAt(c.user_id, now, db);

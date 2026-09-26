@@ -14,11 +14,18 @@ import type { NotifyAlert } from "../core/notify/discordMessage";
 
 export type StoredWebhook = { state: "none" } | { state: "set"; url: string } | { state: "unreadable" };
 
-/** Replace (url) or clear (null) the webhook. Clearing drops undelivered rows: they have nowhere to go. */
+/**
+ * Replace (url) or clear (null) the webhook. Replacing keeps queued alerts — the drainer reads
+ * the webhook at send time, so they go to the new URL. Clearing drops undelivered rows (they have
+ * nowhere to go) and forgets the digest baseline, so a webhook re-added weeks later starts a
+ * fresh day instead of summarising the gap.
+ */
 export function setWebhook(userId: number, url: string | null, db: Database.Database = getDb()): void {
   db.transaction(() => {
     db.prepare("UPDATE users SET discord_webhook_enc = ? WHERE id = ?").run(url ? encryptSecret(url) : null, userId);
+    if (url != null) return;
     db.prepare("DELETE FROM notify_queue WHERE user_id = ? AND status = 'pending'").run(userId);
+    db.prepare("UPDATE notify_settings SET last_digest_at = NULL WHERE user_id = ?").run(userId);
   })();
 }
 
@@ -155,19 +162,22 @@ export function markFailed(ids: readonly number[], now: number, error: string, d
   ).run(now, error, ...ids);
 }
 
-/** One more failed attempt for a row: back to pending at `nextAt`, or failed when out of attempts. */
+/**
+ * Put a row back for a later attempt at `nextAt`, or fail it when out of attempts. `counts` is
+ * false for a 429: the POST is still stamped (the 30 s window sees it) but no retry budget is spent.
+ */
 export function markRetry(
   id: number,
   now: number,
   nextAt: number,
   error: string,
-  giveUp: boolean,
+  opts: { counts: boolean; giveUp: boolean },
   db: Database.Database = getDb(),
 ): void {
   db.prepare(
-    `UPDATE notify_queue SET attempts = attempts + 1, last_attempt_at = ?, last_error = ?,
+    `UPDATE notify_queue SET attempts = attempts + ?, last_attempt_at = ?, last_error = ?,
        next_attempt_at = ?, status = ? WHERE id = ?`,
-  ).run(now, error, nextAt, giveUp ? "failed" : "pending", id);
+  ).run(opts.counts ? 1 : 0, now, error, nextAt, opts.giveUp ? "failed" : "pending", id);
 }
 
 /** Drop a user's undelivered rows (webhook cleared between enqueue and delivery). */
