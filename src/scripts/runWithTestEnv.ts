@@ -14,6 +14,7 @@ const targets = {
   market: "src/scripts/testMarketLeague.ts",
   rates: "src/scripts/testRates.ts",
   "snipe-db": "src/scripts/testSnipeDb.ts",
+  system: "src/scripts/testSystem.ts",
   "user-league": "src/scripts/testUserLeague.ts",
 } as const;
 type Target = keyof typeof targets;

@@ -49,6 +49,7 @@ jobs:
       - run: npm run test:valuation
       - run: npm run test:auto-snipe
       - run: npm run test:snipe
+      - run: npm run test:system
       # KB staleness gate: every Coach knowledge file must match its patch-stamped manifest entry.
       - run: npm run kb:check
       - run: npm run test:craft
