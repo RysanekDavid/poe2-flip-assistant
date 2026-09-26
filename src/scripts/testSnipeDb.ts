@@ -8,6 +8,7 @@ import { getDb, purgeLegacyPriceBook, relaxHuntHitPriceDiv } from "../db/databas
 import { dbRateStore } from "../db/tradeRateQueries";
 import { createRateGovernor } from "../api/tradeRateLimit";
 import { fireAlert } from "../core/alertEngine";
+import { emptyReport } from "../core/autoSnipe";
 import { getAlertCounts, getAlertFeed, markVisibleSeen } from "../db/alertQueries";
 import { feedPriceBook, newBookCounters, bookReference } from "../core/priceBookFeed";
 import { consumeScanRequests, isScanPending, requestScan } from "../db/scanRequestQueries";
@@ -143,6 +144,10 @@ saveSnipeReport(JSON.stringify({ findings: [{ listingId: "good-1" }] }));
 saveSnipeFailure("scan failed: no fresh exchange rates");
 ok("failure recorded separately", getSnipeFailure()?.error === "scan failed: no fresh exchange rates");
 ok("last good report survives the failure", getSnipeReport()?.report_json.includes("good-1") === true);
+
+// --- a stored scan report names the league it ran in (the Coach matches on it) ---
+saveSnipeReport(JSON.stringify(emptyReport(350, A)));
+ok("stored report carries its scan league", (JSON.parse(getSnipeReport()?.report_json ?? "{}") as { league?: string }).league === A);
 
 // --- one-time price-book cutover purge ---
 db.prepare("DELETE FROM app_settings WHERE key LIKE 'price_book_cutover%'").run();

@@ -6,6 +6,7 @@ import { hashPasswordSync, genApiKey } from "../auth/credentials";
 import { migratePatchProvenance } from "./sourceMigrations";
 import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
 import { ensureCxTables } from "./cxMigrations";
+import { CX_EDGE_DETAIL_COLUMNS } from "./cxEdgeDetail";
 import { applicationSchemaSql } from "./schemaFiles";
 import { ensureNotifySchema } from "./notifyMigrations";
 
@@ -24,6 +25,7 @@ export function getDb(): Database.Database {
 
   conn.exec(applicationSchemaSql());
   ensureCxTables(conn);
+  ensureColumns(conn, "cx_edge_outcomes", CX_EDGE_DETAIL_COLUMNS);
   migratePatchProvenance(conn);
 
   // Additive migrations — CREATE TABLE IF NOT EXISTS won't add columns to an existing DB,
@@ -231,7 +233,7 @@ export function purgeLegacyPriceBook(conn: Database.Database): number {
 }
 
 /** Add any missing columns to a table (idempotent). */
-function ensureColumns(conn: Database.Database, table: string, cols: Array<[string, string]>): void {
+export function ensureColumns(conn: Database.Database, table: string, cols: Array<[string, string]>): void {
   const existing = new Set(
     (conn.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map((r) => r.name),
   );

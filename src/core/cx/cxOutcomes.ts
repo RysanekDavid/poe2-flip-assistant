@@ -5,7 +5,7 @@ import { outcomeCounts, pendingOutcomes, recordPublished, resolveOutcome, type P
 import { judgePair } from "./cxEdges";
 import { leagueStats } from "./cxItemMarkets";
 import { baseMarkets, hourRates, modelParams, quotesByItem, type ModelParams } from "./cxMarketModel";
-import { isPublishable } from "./cxPersistence";
+import { isPublishable, slowerLegDivPerHour } from "./cxPersistence";
 
 /**
  * The outcome loop: did a published edge still hold an hour later?
@@ -71,6 +71,15 @@ function publishNewest(league: string): number {
       buyQuote: s.edge!.buy.quote,
       sellQuote: s.edge!.sell.quote,
       edgePct: s.edge!.edgePct,
+      // What the gate saw, so readers outside this model (the Coach) can quote it verbatim.
+      detail: {
+        persistence6: s.edge!.persistence6,
+        slowerDivPerHour: slowerLegDivPerHour(s),
+        netDivPerUnit: s.edge!.netDivPerUnit,
+        buyPrice: s.edge!.buy.priceQuote,
+        sellPrice: s.edge!.sell.priceQuote,
+        feeComplete: s.edge!.feeComplete,
+      },
     }));
   return recordPublished(league, edges);
 }
