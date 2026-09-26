@@ -17,6 +17,7 @@ import { startPatchNotesWatcher } from "../sources/patchNotes/watcher";
 import { startLeagueWatcher } from "./leagueWatcher";
 import { getPolledLeagues } from "../core/leagueUsers";
 import { getDefaultLeague } from "../core/leagueState";
+import { startNotifyDrainer } from "../core/notify/drainer";
 
 const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under the owner's cred
 
@@ -66,6 +67,7 @@ function start(): void {
   }
   // Manual scans from the web are queued in the DB and run HERE, on this process's limiter.
   setInterval(() => drainScanRequests(() => credForUser({ id: OWNER_ID, role: "owner" })), 20_000);
+  startNotifyDrainer(); // Discord deliveries queued by the alerts trigger (core/notify)
 
   // Autonomous rare-snipe scanner — OFF unless AUTOSNIPE_ENABLED=true. Rotates the built-in
   // valuable archetypes, values each from its own search, alerts EVERY user on underpriced
