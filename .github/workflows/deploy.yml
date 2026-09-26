@@ -35,6 +35,9 @@ jobs:
       - run: npm run test:user-league
       - run: npm run test:market-league
       - run: npm run test:rates
+      - run: npm run test:middleware
+      - run: npm run test:auth
+      - run: npm run test:maintenance
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5

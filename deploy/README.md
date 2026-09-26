@@ -142,6 +142,17 @@ openssl s_client -connect flip.example.com:443 -servername flip.example.com </de
 The Caddy upstream is `127.0.0.1:3000`; Coach is `127.0.0.1:8000` behind authenticated Next
 routes. Never bind either service publicly. Set `APP_ORIGIN=https://<DOMAIN>` in `.env.local`;
 auth redirects use that validated origin instead of the internal upstream or untrusted Host headers.
+The middleware also rejects (403) any POST/PUT/PATCH/DELETE whose `Origin` header is present and
+differs from `APP_ORIGIN` — so it must be the exact public origin browsers use (scheme + host, no
+path, no `www.`). Requests without `Origin` (local agent, curl, deploy smoke) are unaffected.
+
+The Caddyfile sends HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy` and an enforcing
+Content-Security-Policy. `script-src`/`style-src` include `'unsafe-inline'` because Next.js streams
+its RSC payload through inline scripts and React/Recharts/driver.js use inline style attributes;
+images are allowed only from the app and `*.poecdn.com`, and all fetches must go to the app itself.
+If a new feature loads anything from another host, extend the CSP in both Caddyfiles first. To
+debug a suspected CSP breakage, temporarily rename the header to
+`Content-Security-Policy-Report-Only`, reload Caddy, and read the browser console.
 
 ## 7. Firewall
 ```bash
@@ -234,4 +245,63 @@ curl -sS http://127.0.0.1:8000/health
   is a global spend cap for the box, not a separate limit per browser user.
 - **Backups:** `deploy.sh` uses SQLite's consistent `.backup` operation for the product DB, which
   includes canonical Coach history. Backups contain private user and trading data: keep them mode `600`, off Git,
-  and copy them to encrypted off-box storage periodically.
+  and copy them to encrypted off-box storage periodically (the nightly timer below can do this).
+- **Login throttling:** 5 failed logins per client IP + username within 15 minutes → HTTP 429 with
+  `Retry-After`. Counters live in the web process memory (single `next start` process); a restart
+  resets them. Scaling the web tier to several processes requires moving them to SQLite.
+- **Session revocation:** changing a password (Settings or `src/scripts/setPassword.ts`) and
+  Settings → "log out everywhere" (`POST /api/auth/logout-all`) bump `users.session_version`,
+  which invalidates every outstanding session cookie of that user. Plain logout only clears the
+  current browser's cookie. The agent API key is separate; rotate it independently.
+
+## Scheduled backups + VACUUM (systemd timers)
+
+Two oneshot units run the ops entrypoint `src/db/maintenanceCli.ts` from the `current` release as
+the `poe2flip` user, reading `DB_PATH` from `.env.local`:
+
+| Unit | Schedule | What it does |
+|------|----------|--------------|
+| `poe2flip-backup.timer` | nightly 03:15 (+≤10 min jitter) | online SQLite backup API snapshot → `journal_mode=DELETE` + `quick_check` → gzip → `/opt/poe2flip/backups/nightly/<db>-<UTC stamp>.db.gz` (mode 600), keeps the newest `BACKUP_KEEP` (14); optional off-box copy |
+| `poe2flip-maintenance.timer` | 1st of the month 04:30 | `wal_checkpoint(TRUNCATE)` → `VACUUM` → checkpoint again; logs size + freelist before/after |
+
+Neither stops the web or poller. The VACUUM waits up to 60 s (`--wait=60`) for the write lock and
+then **fails the unit** rather than skipping; `systemctl --failed` / `journalctl` shows it. It needs
+free disk of about twice the live data size while it runs. The app's own connections wait 5 s on a
+lock, so run the **first** VACUUM of a long-unvacuumed database manually with the poller stopped
+(`systemctl stop poe2flip-poller`, `sudo -u poe2flip bash -c 'cd /opt/poe2flip/current && npm run db:maintain'`,
+`systemctl start poe2flip-poller`); later monthly runs only reclaim a month of churn and are quick.
+
+The optional off-box copy runs when `BACKUP_RCLONE_REMOTE` is set in `.env.local` (for example
+`BACKUP_RCLONE_REMOTE=b2crypt:poe2flip/nightly`). Use an rclone **crypt** remote — the backups
+contain private user data — and keep its config outside the git checkout so `deploy.sh`'s clean-tree
+check keeps passing:
+
+```bash
+apt-get install -y rclone
+install -d -m 0750 -o root -g poe2flip /etc/poe2flip
+rclone config --config /etc/poe2flip/rclone.conf   # create the backend + crypt remotes
+chown root:poe2flip /etc/poe2flip/rclone.conf && chmod 0640 /etc/poe2flip/rclone.conf
+# then in /opt/poe2flip/.env.local:
+#   BACKUP_RCLONE_REMOTE=b2crypt:poe2flip/nightly
+#   RCLONE_CONFIG=/etc/poe2flip/rclone.conf
+```
+
+A failing rclone copy fails the unit (the local backup is still written first).
+
+Install or refresh the units (deploy.sh does not install them yet):
+
+```bash
+install -m 0644 /opt/poe2flip/current/deploy/poe2flip-backup.{service,timer} \
+  /opt/poe2flip/current/deploy/poe2flip-maintenance.{service,timer} /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now poe2flip-backup.timer poe2flip-maintenance.timer
+systemctl start poe2flip-backup.service            # first backup now; must exit 0
+journalctl -u poe2flip-backup -n 20 --no-pager
+ls -l /opt/poe2flip/backups/nightly/
+systemctl list-timers 'poe2flip-*'
+```
+
+Restore a nightly backup (services stopped):
+`gunzip -c /opt/poe2flip/backups/nightly/<file>.db.gz > /opt/poe2flip/data/poe2flip.db.restore`,
+check it with `sqlite3 … 'PRAGMA quick_check;'`, then move it over the live file (remove the stale
+`-wal`/`-shm` siblings first) and start the services.

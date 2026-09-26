@@ -1,0 +1,9 @@
+[Unit]
+Description=Monthly PoE2 Flip SQLite VACUUM (low-traffic window, after the nightly backup)
+
+[Timer]
+OnCalendar=*-*-01 04:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
