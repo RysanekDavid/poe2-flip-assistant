@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     patch_notes_max_ready_age_min: int = Field(
         default=90, gt=0, validation_alias="PATCH_NOTES_MAX_READY_AGE_MIN"
     )
+    # Same variable and default as the web app's craft poller cadence (src/config/env.ts); the
+    # craft-report staleness gate is a multiple of it, so both processes must agree.
+    craft_margin_interval_min: int = Field(
+        default=10, gt=0, validation_alias="CRAFT_MARGIN_INTERVAL_MIN"
+    )
     corpus_dir: Path = APP_ROOT
     qdrant_collection: str = "poe2_knowledge"
     # Embeds the corpus in a background task at start-up so no user turn pays for it.

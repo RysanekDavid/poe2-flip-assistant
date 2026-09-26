@@ -12,7 +12,9 @@ type CoachSuggestion =
   | { kind: "compose"; eyebrow: string; label: string; placeholder: string };
 
 const SUGGESTIONS: readonly CoachSuggestion[] = [
-  { kind: "send", eyebrow: "FLIPS", prompt: "What's flipping well right now in my league?" },
+  // Worded as an exchange-flip question so the Coach answers from get_top_flips (the app's own
+  // ranked edges) rather than from price history.
+  { kind: "send", eyebrow: "FLIPS", prompt: "What's flipping well on the currency exchange right now in my league?" },
   {
     kind: "send",
     eyebrow: "MARKET",
@@ -42,7 +44,8 @@ export function CoachEmptyState({ disabled, onCompose, onPrompt, webReady }: {
         Make decisions from data, not trade chat.
       </h3>
       <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-500">
-        Coach combines observed market history, locally polled poe.ninja data, and a curated knowledge base.
+        Coach reads the app&apos;s own engines (Top Flips, craft margins, snipe scan, farm heat), observed market
+        history, locally polled poe.ninja data, and a curated knowledge base.
         {webReady ? " It checks recent web sources when needed." : ""}
       </p>
       <div className="mt-8 grid w-full gap-3 md:grid-cols-3">
