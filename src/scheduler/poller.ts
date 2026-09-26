@@ -3,9 +3,9 @@ import { config } from "../config/env";
 import { pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries";
 import { listUsers } from "../db/userQueries";
 import { credForUser } from "../auth/credForUser";
+import { POLLER_MAX_INLINE_WAIT_MS, setMaxInlineWaitMs } from "../api/tradeClient";
 import { runCycle } from "./marketCycle";
-import { scanAll } from "../core/huntEngine";
-import { scanAutoSnipes } from "../core/autoSnipe";
+import { runHuntScan, runAutoSnipe, drainScanRequests } from "./tradeScans";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
 import { refreshStalestRecipe, refreshAllRecipes } from "../core/craftMargin";
 import { RECIPES } from "../core/craftRecipes";
@@ -23,6 +23,8 @@ const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under 
 function start(): void {
   const expr = `*/${config.pollIntervalMin} * * * *`;
   console.log(`poller starting — cron "${expr}", leagues "${getPolledLeagues().join(", ")}"`);
+  // background scans may sit out the shared trade2 pace inline; web requests fail fast instead
+  setMaxInlineWaitMs(POLLER_MAX_INLINE_WAIT_MS);
   startPatchNotesWatcher();
   startLeagueWatcher();
 
@@ -59,16 +61,11 @@ function start(): void {
   // is still draining through the rate limiter, so many hunts degrade gracefully to slower laps.
   if (config.hunt.enabled) {
     console.log(`[hunt] per-user scan every ${config.hunt.scanSec}s`);
-    let scanning = false;
-    setInterval(() => {
-      if (scanning) return; // previous cycle still queued behind the trade2 limiter
-      scanning = true;
-      scanAll()
-        .then((s) => { if (s.hits > 0) console.log(`[hunt] scan: ${s.hits} new across ${s.scanned} hunt(s)`); })
-        .catch((e) => console.error("[hunt] scan failed:", e instanceof Error ? e.message : e))
-        .finally(() => { scanning = false; });
-    }, config.hunt.scanSec * 1000);
+    // runHuntScan skips the tick while the previous cycle is still queued behind the limiter
+    setInterval(() => runHuntScan("scan"), config.hunt.scanSec * 1000);
   }
+  // Manual scans from the web are queued in the DB and run HERE, on this process's limiter.
+  setInterval(() => drainScanRequests(() => credForUser({ id: OWNER_ID, role: "owner" })), 20_000);
 
   // Autonomous rare-snipe scanner — OFF unless AUTOSNIPE_ENABLED=true. Rotates the built-in
   // valuable archetypes, values each from its own search, alerts EVERY user on underpriced
@@ -76,15 +73,8 @@ function start(): void {
   // the per-IP rate budget by the user count for the same public listings).
   if (config.autoSnipe.enabled && ownerCred) {
     const asExpr = `*/${config.autoSnipe.intervalMin} * * * *`;
-    console.log(`[autosnipe] scanning ${SNIPE_PROFILES.length} archetypes every ${config.autoSnipe.intervalMin}m`);
-    cron.schedule(asExpr, () => {
-      scanAutoSnipes(ownerCred)
-        .then((r) => {
-          if (r.findings.length > 0) console.log(`[autosnipe] ${r.findings.length} snipe(s) across ${r.searched} archetypes`);
-          if (r.errors.length > 0) console.warn(`[autosnipe] ${r.errors.length} archetype error(s):`, r.errors.map((e) => `${e.profile}: ${e.error}`).join("; "));
-        })
-        .catch((e) => console.error("[autosnipe] scan failed:", e instanceof Error ? e.message : e));
-    });
+    console.log(`[autosnipe] ${config.autoSnipe.archetypesPerScan}/${SNIPE_PROFILES.length} archetypes per scan every ${config.autoSnipe.intervalMin}m`);
+    cron.schedule(asExpr, () => runAutoSnipe("cron", ownerCred));
   } else if (config.autoSnipe.enabled) {
     console.warn("[autosnipe] AUTOSNIPE_ENABLED=true but owner POESESSID missing — scanner stays off");
   }

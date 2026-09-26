@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getHits, markHitsSeen } from "../../../../db/queries";
+import { getHits, markHitsSeen } from "../../../../db/huntQueries";
 import { getCurrentUser } from "../../../../auth/session";
 
 export const runtime = "nodejs";

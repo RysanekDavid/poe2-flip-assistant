@@ -4,9 +4,9 @@ import type { StatFilter, TradeQuery } from "../lib/tradeLink";
 /**
  * Built-in valuable rare archetypes the auto-scanner rotates over. This is the
  * NO-MANUAL-ENTRY part: the user never types a search — we ship the high-value stat
- * profiles (life + total resistance gear, caster weapons, …) and the scanner searches each,
- * treating the returned cheapest-first listings as a comparable set (median = value, a
- * listing far under = snipe). Categories/mins are tunable once live data confirms them.
+ * profiles (caster weapons, spirit, +levels, …) and the scanner pulls each one's NEWEST instant-
+ * buyout listings, then values the most desirable ones individually (comparableValuation).
+ * Categories/mins are tunable once live data confirms them.
  *
  * Stats are declared by their catalog TEXT (with '#' for the roll) so we resolve the real
  * trade id from the same `/data/stats` catalog at runtime — no hardcoded `stat_XXXX`.
@@ -157,7 +157,12 @@ export const SNIPE_PROFILES: SnipeProfile[] = [
 
 const norm = (s: string): string => s.toLowerCase().replace(/\+/g, "").replace(/\s+/g, " ").trim();
 
-/** Resolve a profile's stat texts to trade ids via the catalog. Drops any the catalog lacks. */
+/**
+ * Resolve a profile's stat texts to trade ids via the catalog. Drops any the catalog lacks.
+ * The query is a FRESH-LISTING feed: instant buyout only (bait lives in whisper-only listings),
+ * indexed within a day, never mirrored. Callers sort it { indexed: "desc" } — the old price-asc,
+ * no-window search returned the same stale 1-ex bait on every scan.
+ */
 export function profileToQuery(profile: SnipeProfile, idx: StatIndex): { query: TradeQuery; resolved: number } {
   const filters: StatFilter[] = [];
   for (const s of profile.stats) {
@@ -167,7 +172,16 @@ export function profileToQuery(profile: SnipeProfile, idx: StatIndex): { query: 
     filters.push({ id: pick.id, min: s.min });
   }
   return {
-    query: { category: profile.category, rarity: "rare", ilvlMin: profile.ilvlMin, corrupted: false, online: true, stats: filters },
+    query: {
+      category: profile.category,
+      rarity: "rare",
+      ilvlMin: profile.ilvlMin,
+      corrupted: false,
+      mirrored: false,
+      instantBuyout: true,
+      indexedWindow: "1day",
+      stats: filters,
+    },
     resolved: filters.length,
   };
 }

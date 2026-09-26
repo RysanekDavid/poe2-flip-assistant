@@ -2,9 +2,10 @@
 import { parseItem } from "../core/itemParser";
 import { buildStatIndex, resolveLine } from "../core/statResolver";
 import { applyPseudos } from "../core/pseudoRules";
-import { valueFromComparables, checkSnipe } from "../core/comparableValuation";
+import { valueFromComparables } from "../core/comparableValuation";
+import { evaluateSnipe } from "../core/snipeGate";
 import type { StatOption } from "../api/tradeMeta";
-import type { Listing } from "../api/tradeClient";
+import type { Listing } from "../api/tradeListing";
 import type { ScoutRates } from "../api/scoutClient";
 
 let fail = 0;
@@ -80,13 +81,20 @@ const mk = (amount: number, currency: string, online = true): Listing => ({
   price: { amount, currency },
   account: "x",
   online,
+  instantBuyout: false,
   indexed: null,
   whisper: null,
   itemName: "x",
   baseType: "Vaal Gauntlets",
+  rarity: "Rare",
+  itemLevel: 82,
+  corrupted: false,
+  mirrored: false,
   icon: null,
   stackSize: 0,
   mods: [],
+  modLines: [],
+  unreadableMods: 0,
   stash: null,
 });
 const listings: Listing[] = [
@@ -94,20 +102,21 @@ const listings: Listing[] = [
   mk(10, "divine"),
   mk(12, "divine"),
   mk(2000, "exalted"), // = 10 div
-  mk(50, "divine", false), // offline → excluded
+  mk(9, "divine"),
+  mk(50, "divine", false), // offline in-person → excluded
 ];
 const v = valueFromComparables(listings, 120, rates);
-ok("value samples = 4 (offline dropped)", v.samples === 4, String(v.samples));
+ok("value samples = 5 (offline dropped)", v.samples === 5, String(v.samples));
 ok("median value = 10 div", v.valueDiv === 10, String(v.valueDiv));
 ok("min = 8 div", v.minDiv === 8, String(v.minDiv));
 
-// 5. snipe verdict
-const cheap = checkSnipe(5, v); // 50% under 10 → snipe (discount 35%)
-ok("snipe fires at 5 div", cheap.isSnipe, cheap.reason);
-const fair = checkSnipe(9, v); // 10% under → not a snipe
-ok("no snipe at 9 div", !fair.isSnipe, fair.reason);
-const thin = checkSnipe(1, { ...v, samples: 1 });
-ok("thin data blocks snipe", !thin.isSnipe, thin.reason);
+// 5. snipe verdict through the shared gate (fresh listing, 3 resolved mods)
+const judge = (askDiv: number, samples = v.samples) =>
+  evaluateSnipe({ askDiv, refDiv: v.valueDiv, samples, resolvedMods: 3, indexed: new Date().toISOString(), discountPct: 35 });
+const cheap = judge(5); // 50% under 10 → snipe (discount 35%)
+ok("snipe fires at 5 div", cheap.pass, cheap.pass ? "" : cheap.detail);
+ok("no snipe at 9 div (10% under)", !judge(9).pass);
+ok("thin data blocks snipe", !judge(5, 1).pass);
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
 process.exit(fail === 0 ? 0 : 1);

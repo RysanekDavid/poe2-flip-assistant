@@ -26,6 +26,8 @@
     "test:db": "tsx src/scripts/runWithTestEnv.ts db",
     "test:valuation": "tsx src/scripts/testValuation.ts",
     "test:auto-snipe": "tsx src/scripts/testAutoSnipe.ts",
+    "test:snipe": "tsx src/scripts/testSnipe.ts && tsx src/scripts/runWithTestEnv.ts snipe-db",
+    "capture:trade2-fixture": "tsx src/scripts/captureTrade2Fixture.ts",
     "sync:poe2-data": "tsx src/scripts/syncPoe2GameData.ts",
     "verify:poe2-data": "tsx src/scripts/syncPoe2GameData.ts --verify",
     "patch:sync": "tsx src/scripts/syncPatchNotes.ts",

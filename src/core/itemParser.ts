@@ -12,6 +12,7 @@ export interface ParsedModLine {
   placeholdered: string; // numbers → '#': "+# to maximum Life"
   numbers: number[]; // [45]  (or [5,10] for "Adds 5 to 10 …")
   marker: ModMarker; // which mod bucket the game tagged it as
+  statId?: string | null; // trade stat id when the source carried one (trade2 ItemMod.hash)
 }
 
 export interface ParsedItem {
