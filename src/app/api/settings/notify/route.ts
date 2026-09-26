@@ -49,12 +49,24 @@ const Body = z.discriminatedUnion("action", [
 ]);
 type Body = z.infer<typeof Body>;
 
+const TEST_COOLDOWN_MS = 10_000;
+// Per web process, which is all there is: it only has to stop a mashed button from spamming the channel.
+const lastTestAt = new Map<number, number>();
+
 async function runTest(userId: number): Promise<Response> {
+  const now = Date.now();
+  const waitMs = (lastTestAt.get(userId) ?? 0) + TEST_COOLDOWN_MS - now;
+  if (waitMs > 0) {
+    const s = Math.ceil(waitMs / 1000);
+    return NextResponse.json({ error: `test sent moments ago — wait ${s} s before sending another` }, { status: 429 });
+  }
   const hook = readWebhook(userId);
   if (hook.state !== "set") {
     const why = hook.state === "none" ? "no webhook saved" : "stored webhook cannot be decrypted — paste it again";
     return NextResponse.json({ error: why }, { status: 409 });
   }
+  // Stamped only when a POST will happen, and before its await, so a double-click cannot race it.
+  lastTestAt.set(userId, now);
   const result = await sendTestPing(hook.url);
   if (result.kind !== "ok") return NextResponse.json({ error: result.detail }, { status: 502 });
   return NextResponse.json({ ...settingsView(userId), tested: true });

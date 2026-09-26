@@ -53,11 +53,19 @@ function testUrlValidation(): void {
   const valid = (u: string): boolean => WebhookUrlSchema.safeParse(u).success;
   ok("discord.com webhook accepted", valid(URL));
   ok("discordapp.com webhook accepted", valid(URL.replace("discord.com", "discordapp.com")));
+  ok("canary.discord.com webhook accepted", valid(URL.replace("discord.com", "canary.discord.com")));
+  ok("ptb.discord.com webhook accepted", valid(URL.replace("discord.com", "ptb.discord.com")));
+  ok("mask keeps the real host", maskWebhook(URL.replace("discord.com", "ptb.discord.com")).startsWith("ptb.discord.com/api/webhooks/"));
   ok("surrounding whitespace trimmed", WebhookUrlSchema.safeParse(`  ${URL}\n`).data === URL);
   const bad = [
     URL.replace("https://", "http://"),
     URL.replace("discord.com", "discord.com.evil.io"),
     URL.replace("discord.com", "evil.io"),
+    URL.replace("discord.com", "evil.discord.com"),
+    URL.replace("discord.com", "canary.discordapp.com"),
+    URL.replace("discord.com", "canarydiscord.com"),
+    URL.replace("discord.com", "ptb.discord.com.evil.io"),
+    URL.replace("https://discord.com", "https://ptb.discord.com@evil.io"),
     `${URL}/extra`,
     `${URL}?thread_id=1`,
     "https://discord.com/api/webhooks/123456789012345678",

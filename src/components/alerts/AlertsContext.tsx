@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { AlertCenterSchema, groupAlerts, unmutedUnseen, type AlertCenterData, type AlertGroup } from "../../lib/alertCenter";
 import { raiseBrowserNotifications } from "./browserNotify";
 
-const POLL_MS = 30_000;
+const POLL_MS = 30_000; // visible tabs only — see the effect below
 const CHANGED_EVENT = "alerts-changed";
 
 interface AlertCenterState {
@@ -26,6 +26,30 @@ async function postJson(url: string, body: unknown): Promise<void> {
 /** Tell every alert consumer (and the Settings panel) to refetch. */
 export function announceAlertsChanged(): void {
   window.dispatchEvent(new Event(CHANGED_EVENT));
+}
+
+/**
+ * Run `load` now, every POLL_MS while the tab is visible, on "alerts-changed", and immediately
+ * when the tab becomes visible again. A background tab (the game is fullscreen most of the time)
+ * skips the poll — Discord covers that gap — and is never stale when the user looks.
+ */
+function useVisiblePoll(load: () => void): void {
+  useEffect(() => {
+    load();
+    const id = window.setInterval(() => {
+      if (!document.hidden) load();
+    }, POLL_MS);
+    const onVisible = (): void => {
+      if (!document.hidden) load();
+    };
+    window.addEventListener(CHANGED_EVENT, load);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener(CHANGED_EVENT, load);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [load]);
 }
 
 /**
@@ -54,15 +78,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = window.setInterval(load, POLL_MS);
-    window.addEventListener(CHANGED_EVENT, load);
-    return () => {
-      window.clearInterval(id);
-      window.removeEventListener(CHANGED_EVENT, load);
-    };
-  }, [load]);
+  useVisiblePoll(load);
 
   // Actions report failure through `error` (shown by the ticker), so callers can fire and forget.
   const act = useCallback(async (url: string, body: unknown) => {
