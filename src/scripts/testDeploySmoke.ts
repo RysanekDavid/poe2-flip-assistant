@@ -1,14 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import Database from "better-sqlite3";
+import { applicationSchemaSql } from "../db/schemaFiles";
 import { verifyPassword } from "../auth/auth";
 import { beginCoachTurn, completeCoachTurn, listCoachConversations } from "../db/coachHistoryQueries";
 import { ensureSmokeUser, purgeSmokeConversations, SMOKE_USER_NAME } from "./deploySmokeCore";
 
 const db = new Database(":memory:");
 db.pragma("foreign_keys = ON");
-db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
+db.exec(applicationSchemaSql());
 db.prepare(
   "INSERT INTO users (id, name, password_hash, api_key, role) VALUES (1, 'owner', 'hash', 'pk_owner', 'owner')",
 ).run();

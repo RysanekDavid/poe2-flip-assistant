@@ -23,14 +23,13 @@ from src.failure_handling import (
     raise_timeout,
 )
 from src.guardrails import inspect_input
-from src.items import catalog_ready
+from src.health import health_response, warm_knowledge
 from src.items.models import ItemInspection
 from src.league import resolve_default_league
-from src.patch_readiness import read_patch_readiness
 from src.rate_limit import RateLimitExceeded, SlidingWindowRateLimiter
 from src.request_auth import InvalidProxyIdentity, actor_id, request_id
 from src.response import citations_are_valid, final_answer, turn_trace, turn_usage
-from src.retrieval import RetrievalService
+from src.retrieval import RetrievalService, get_retrieval_service
 from src.schemas import (
     ChatRequest,
     ChatResponse,
@@ -40,7 +39,6 @@ from src.schemas import (
     HealthResponse,
 )
 from src.thread_locks import ThreadBusy, ThreadLockPool
-from src.tools.market import market_ready
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -54,6 +52,11 @@ class AgentRunner(Protocol):
 
 
 AgentFactory = Callable[[Settings], AgentRunner]
+KnowledgeWarmer = Callable[[], None]
+
+
+def _warm_shared_retrieval() -> None:
+    get_retrieval_service().warm()
 
 
 class AgentProvider:
@@ -75,21 +78,41 @@ class AgentProvider:
                 self._agent = self._factory(self._settings)
         return self._agent
 
+    async def ready(self) -> bool:
+        """Build the graph (model client, strict tool schemas, compile) without calling a model.
+
+        The deploy gate needs this: a guard-rejected smoke never reaches the agent, so a tool
+        schema or import defect would otherwise ship green and fail every real turn.
+        """
+        if not self._settings.openai_api_key:
+            return False
+        try:
+            await self.get()
+        except Exception as error:
+            logger.error(
+                "coach_agent_build outcome=error exception=%s: %s", type(error).__name__, error
+            )
+            return False
+        return True
+
     def thread_scope(self, thread_id: str) -> AbstractAsyncContextManager[None]:
         """Keep one in-process request active per conversation."""
         return self._thread_locks.hold(thread_id)
 
 
 def create_app(
-    *, settings: Settings | None = None, agent_factory: AgentFactory = build_agent
+    *,
+    settings: Settings | None = None,
+    agent_factory: AgentFactory = build_agent,
+    knowledge_warmer: KnowledgeWarmer = _warm_shared_retrieval,
 ) -> FastAPI:
-    """Create an app with injectable configuration and agent construction."""
+    """Create an app with injectable configuration, agent construction and index warm-up."""
     active_settings = settings or get_settings()
     retrieval_readiness = RetrievalService(active_settings)
     app = FastAPI(
         title="PoE2 Flip Coach",
         version="0.1.0",
-        lifespan=_lifespan(active_settings, agent_factory),
+        lifespan=_lifespan(active_settings, agent_factory, knowledge_warmer),
     )
     app.add_exception_handler(PublicCoachError, _public_error_handler)
     _register_routes(app, active_settings, retrieval_readiness)
@@ -97,12 +120,21 @@ def create_app(
 
 
 def _lifespan(
-    settings: Settings, agent_factory: AgentFactory
+    settings: Settings, agent_factory: AgentFactory, knowledge_warmer: KnowledgeWarmer
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.agent_provider = AgentProvider(settings, agent_factory)
-        yield
+        warmup: asyncio.Task[None] | None = None
+        # Dense embeddings need the model key; without it Coach is unconfigured anyway.
+        if settings.warm_knowledge_on_start and settings.openai_api_key is not None:
+            warmup = asyncio.create_task(warm_knowledge(knowledge_warmer))
+        app.state.knowledge_warmup = warmup
+        try:
+            yield
+        finally:
+            if warmup is not None and not warmup.done():
+                warmup.cancel()
 
     return lifespan
 
@@ -114,8 +146,10 @@ def _register_routes(
     rate_limiter = SlidingWindowRateLimiter(settings.chat_requests_per_minute)
 
     @app.get("/health", response_model=HealthResponse)
-    async def health() -> HealthResponse:
-        return _health_response(settings, retrieval_readiness)
+    async def health(request: Request) -> HealthResponse:
+        provider: AgentProvider = request.app.state.agent_provider
+        agent_ready = await provider.ready()
+        return health_response(settings, retrieval_readiness, agent_ready=agent_ready)
 
     @app.post("/chat", response_model=ChatResponse)
     async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
@@ -195,38 +229,6 @@ def _verified_correlation_id(request: Request, settings: Settings) -> str:
             False,
             False,
         ) from error
-
-
-def _health_response(settings: Settings, retrieval: RetrievalService) -> HealthResponse:
-    market_is_ready = market_ready(settings.poe_db_path)
-    knowledge_ready = retrieval.ready
-    item_data_ready = catalog_ready(settings.item_catalog_path)
-    configured = settings.openai_api_key is not None
-    patch = read_patch_readiness(
-        settings.patch_coverage_path,
-        settings.item_catalog_path,
-        settings.poe_db_path,
-        settings.patch_notes_max_ready_age_min,
-    )
-    return HealthResponse(
-        status=(
-            "ok"
-            if market_is_ready and knowledge_ready and item_data_ready and configured
-            else "degraded"
-        ),
-        market_ready=market_is_ready,
-        knowledge_ready=knowledge_ready,
-        item_data_ready=item_data_ready,
-        model_configured=configured,
-        web_search_ready=settings.tavily_api_key is not None,
-        model=settings.chat_model,
-        patch_monitor_ready=patch.patch_monitor_ready,
-        game_data_patch=patch.game_data_patch,
-        latest_official_patch=patch.latest_official_patch,
-        recommendations_ready=patch.recommendations_ready,
-        patch_checked_at=patch.patch_checked_at,
-        pending_patch_reviews=patch.pending_patch_reviews,
-    )
 
 
 async def _chat_response(

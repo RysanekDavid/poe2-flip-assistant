@@ -16,7 +16,7 @@ export function CoachPanel({ active }: { active: boolean }) {
   // Keep the editorial type treatment scoped to Coach; the data-heavy dashboard stays compact.
   const session = useCoachSession(active);
   const { health, healthError } = useCoachHealth(active);
-  const { compose, requestCompose } = useComposeRequest();
+  const { compose, requestCompose, send, newChat } = useComposeRequest(session.send, session.newChat);
   const scrollRef = useRef<HTMLDivElement>(null);
   const availability = coachAvailability(health, healthError);
   useCoachScroll(active, scrollRef, session.messages.at(-1)?.id ?? null, session.isLoading);
@@ -26,7 +26,7 @@ export function CoachPanel({ active }: { active: boolean }) {
       <CoachHeader
         health={health}
         healthError={healthError}
-        onReset={session.newChat}
+        onReset={newChat}
       />
 
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
@@ -35,7 +35,7 @@ export function CoachPanel({ active }: { active: boolean }) {
           activeId={session.conversationId}
           disabled={session.isLoading || session.isHistoryLoading}
           onDelete={session.remove}
-          onNew={session.newChat}
+          onNew={newChat}
           onOpen={session.open}
           onRename={session.rename}
         />
@@ -45,7 +45,7 @@ export function CoachPanel({ active }: { active: boolean }) {
           <CoachEmptyState
             disabled={!availability.ready}
             onCompose={requestCompose}
-            onPrompt={session.send}
+            onPrompt={send}
             webReady={health?.web_search_ready === true}
           />
         ) : null}
@@ -58,7 +58,7 @@ export function CoachPanel({ active }: { active: boolean }) {
             disabled={!session.ready || session.isLoading || !availability.ready}
             error={session.error}
             notice={availability.reason}
-            onSend={session.send}
+            onSend={send}
             onRecover={session.recover}
           />
         </div>
@@ -67,12 +67,24 @@ export function CoachPanel({ active }: { active: boolean }) {
   );
 }
 
-function useComposeRequest() {
+/** A compose hint lives until the user sends or starts a new chat; it must not linger. */
+function useComposeRequest(
+  sessionSend: (message: string) => Promise<void>,
+  sessionNewChat: () => void,
+) {
   const [compose, setCompose] = useState<ComposeRequest | null>(null);
   const requestCompose = useCallback((placeholder: string) => {
     setCompose((current) => ({ placeholder, nonce: (current?.nonce ?? 0) + 1 }));
   }, []);
-  return { compose, requestCompose };
+  const send = useCallback(async (message: string): Promise<void> => {
+    setCompose(null);
+    await sessionSend(message);
+  }, [sessionSend]);
+  const newChat = useCallback(() => {
+    setCompose(null);
+    sessionNewChat();
+  }, [sessionNewChat]);
+  return { compose, requestCompose, send, newChat };
 }
 
 function TurnInProgress() {
@@ -144,11 +156,17 @@ function Health({ health, failed }: { health: CoachHealth | null; failed: boolea
   if (!health.model_configured) {
     return <Status label="AI not configured" title="Configure the isolated Coach environment." tone="warning" />;
   }
+  if (health.agent_ready === false) {
+    return <Status label="Coach init failed" title="The Coach agent failed to initialize; check the service log." tone="error" />;
+  }
   if (!health.item_data_ready) {
     return <Status label="item data missing" title="Run npm run sync:poe2-data and restart Coach." tone="error" />;
   }
-  if (!health.market_ready || !health.knowledge_ready) {
-    return <Status label="sources unavailable" title="The market database or knowledge base is unavailable." tone="error" />;
+  if (!health.knowledge_ready) {
+    return <Status label="knowledge unavailable" title="The Coach knowledge base is unavailable." tone="error" />;
+  }
+  if (!health.market_ready) {
+    return <Status label="market data stale" title="Market prices are stale or unavailable; knowledge and item questions still work." tone="warning" />;
   }
   if (!health.recommendations_ready) {
     const title = health.patch_monitor_ready

@@ -5,6 +5,7 @@ import {
   coachBrowserRequestSchema,
   coachBrowserResponseSchema,
   coachErrorResponseSchema,
+  coachHealthSchema,
   coachUpstreamErrorSchema,
   coachUpstreamResponseSchema,
   parseCoachUpstreamError,
@@ -88,6 +89,22 @@ assert.equal(
   coachUpstreamResponseSchema.safeParse({ ...upstream, usage: { ...upstream.usage, prompt: "x" } }).success,
   false,
 );
+
+const health = {
+  status: "degraded", market_ready: false, knowledge_ready: true, item_data_ready: true,
+  model_configured: true, web_search_ready: false, model: "gpt-5.4-mini", patch_monitor_ready: true,
+  game_data_patch: "0.5.4", latest_official_patch: "0.5.4", recommendations_ready: true,
+  pending_patch_reviews: 0,
+};
+// The deploy gate reads these through the web proxy: parsing must keep them, not strip them.
+const newFlags = coachHealthSchema.parse({
+  ...health, agent_ready: true, market_schema_ready: true, market_fresh: false,
+});
+assert.equal(newFlags.agent_ready, true);
+assert.equal(newFlags.market_schema_ready, true);
+assert.equal(newFlags.market_fresh, false);
+// An older Coach (rollback window) omits them and must still parse.
+assert.equal(coachHealthSchema.parse(health).agent_ready, undefined);
 
 const publicError = coachErrorResponseSchema.parse({
   error: {

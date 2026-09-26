@@ -147,7 +147,8 @@ wait_for_http() {
 coach_health_ok() {
   local body
   body=$(curl --fail --silent --max-time 3 http://127.0.0.1:8000/health) || return 1
-  coach_health_gate "$body"
+  # Only called while restoring the previous release, whose /health may predate newer flags.
+  coach_health_gate "$body" rollback
 }
 
 wait_for_coach_health() {

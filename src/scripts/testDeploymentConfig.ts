@@ -73,6 +73,11 @@ assert.equal((deploy.match(/live_coach_smoke/g) ?? []).length, 1, "at most one l
 assert.match(deploy, /coach_health_gate "\$COACH_HEALTH"/);
 assert.match(deploy, /coach_health_gate "\$WEB_COACH_HEALTH"/);
 assert.doesNotMatch(deploy, /!health\.market_ready/);
+// Rollback restores an older Coach whose /health lacks the newer flags; only it gets the lenient gate.
+assert.match(deploy, /coach_health_gate "\$body" rollback/);
+assert.equal((deploy.match(/coach_health_gate "[^"]+" rollback/g) ?? []).length, 1);
+assert.match(deployHelpers, /"agent_ready", "market_schema_ready"/);
+assert.match(deployHelpers, /UNIT_BACKUP_NAME_PATTERN/);
 // Housekeeping after the ERR trap is cleared, so it can never roll a healthy release back.
 assert.match(deploy, /prune_releases "\$APP_DIR\/releases" 3 "\$RELEASE_DIR" "\$PREVIOUS_TARGET"/);
 assert.match(deploy, /prune_backups "\$APP_DIR\/backups" 5/);

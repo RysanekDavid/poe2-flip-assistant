@@ -6,9 +6,13 @@ import { fetchCoachHealth, type CoachHealth } from "./api";
 /** While Coach is unusable, re-check this often so a restarted service unlocks the composer. */
 const UNAVAILABLE_RECHECK_MS = 60_000;
 
+/** `ready` unlocks the composer; a ready Coach may still carry a notice (e.g. stale prices). */
 export type CoachAvailability =
-  | { ready: true; reason: null }
+  | { ready: true; reason: string | null }
   | { ready: false; reason: string };
+
+const STALE_MARKET_NOTICE =
+  "Market data is stale or unavailable — price answers may be missing; knowledge and item questions still work.";
 
 export function coachAvailability(health: CoachHealth | null, failed: boolean): CoachAvailability {
   if (failed) return { ready: false, reason: "The local Coach service is not running." };
@@ -19,13 +23,18 @@ export function coachAvailability(health: CoachHealth | null, failed: boolean): 
       reason: "Configure the isolated Coach process environment, then restart Coach.",
     };
   }
+  if (health.agent_ready === false) {
+    return { ready: false, reason: "Coach failed to initialize; check the Coach service log." };
+  }
   if (!health.item_data_ready) {
     return { ready: false, reason: "The local PoE2 item catalog is missing or invalid." };
   }
-  if (!health.market_ready || !health.knowledge_ready) {
-    return { ready: false, reason: "The market database or knowledge base is unavailable." };
+  if (!health.knowledge_ready) {
+    return { ready: false, reason: "The Coach knowledge base is unavailable." };
   }
-  return { ready: true, reason: null };
+  // A poe.ninja outage or stopped poller must not lock out knowledge and item questions; the
+  // market tools report their own gap per request.
+  return { ready: true, reason: health.market_ready ? null : STALE_MARKET_NOTICE };
 }
 
 /**

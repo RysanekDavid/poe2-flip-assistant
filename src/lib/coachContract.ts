@@ -93,9 +93,13 @@ export const coachBrowserResponseSchema = z.object({
 export const coachHealthSchema = z.object({
   status: z.enum(["ok", "degraded"]),
   market_ready: z.boolean(),
+  // Optional: a Coach release older than this web release (rollback window) omits them.
+  market_schema_ready: z.boolean().optional(),
+  market_fresh: z.boolean().optional(),
   knowledge_ready: z.boolean(),
   item_data_ready: z.boolean(),
   model_configured: z.boolean(),
+  agent_ready: z.boolean().optional(),
   web_search_ready: z.boolean(),
   model: z.string().min(1),
   patch_monitor_ready: z.boolean(),

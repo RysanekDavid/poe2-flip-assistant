@@ -34,15 +34,23 @@ check_release_pruning() {
 }
 
 check_backup_pruning() {
-  local backups="$work/backups" day kept
+  local backups="$work/backups" day kept units
   mkdir -p "$backups/units-x"
   : > "$backups/failed-x-poe2flip.db"
-  for day in 1 2 3 4 5 6 7; do : > "$backups/poe2flip-$(release_name "$day").db"; done
+  for day in 1 2 3 4 5 6 7; do
+    : > "$backups/poe2flip-$(release_name "$day").db"
+    mkdir -p "$backups/units-$(release_name "$day")"
+    : > "$backups/units-$(release_name "$day")/poe2flip-web.service"
+  done
   prune_backups "$backups" 5 >/dev/null
   kept=$(find "$backups" -maxdepth 1 -name 'poe2flip-*.db' | wc -l)
-  [[ $kept -eq 5 ]] || fail "expected 5 backups, found $kept"
+  units=$(find "$backups" -maxdepth 1 -type d -name 'units-2026*' | wc -l)
+  [[ $kept -eq 5 ]] || fail "expected 5 DB backups, found $kept"
+  [[ $units -eq 5 ]] || fail "expected 5 unit backups, found $units"
   [[ ! -e "$backups/poe2flip-$(release_name 1).db" ]] || fail "oldest backup should be pruned"
+  [[ ! -e "$backups/units-$(release_name 2)" ]] || fail "old unit backup should be pruned"
   [[ -e "$backups/poe2flip-$(release_name 7).db" ]] || fail "newest backup must be kept"
+  [[ -d "$backups/units-$(release_name 7)" ]] || fail "newest unit backup must be kept"
   [[ -e "$backups/failed-x-poe2flip.db" && -d "$backups/units-x" ]] || fail "other files kept"
 }
 
@@ -60,20 +68,36 @@ echo survived
   [[ ! -s "$marker" ]] || fail "run_nonfatal triggered the rollback trap"
 }
 
+# status market_ready knowledge_ready agent_ready market_schema_ready
 health() {
-  printf '{"status":"%s","market_ready":%s,"knowledge_ready":%s,"item_data_ready":true,"model_configured":true}' "$@"
+  printf '{"status":"%s","market_ready":%s,"knowledge_ready":%s,"agent_ready":%s,"market_schema_ready":%s,"item_data_ready":true,"model_configured":true}' "$@"
+}
+
+legacy_health() {
+  printf '{"status":"%s","market_ready":%s,"knowledge_ready":true,"item_data_ready":true,"model_configured":true}' "$@"
+}
+
+rejects() {
+  if coach_health_gate "$@" 2>/dev/null; then
+    return 1
+  fi
 }
 
 check_health_gate() {
-  coach_health_gate "$(health ok true true)" 2>/dev/null || fail "healthy Coach rejected"
-  coach_health_gate "$(health degraded false true)" 2>/dev/null \
-    || fail "stale market must only warn during deploy"
-  if coach_health_gate "$(health degraded true false)" 2>/dev/null; then
-    fail "missing knowledge base must be fatal"
-  fi
-  if coach_health_gate "$(health degraded true true)" 2>/dev/null; then
-    fail "degraded status with a ready market must be fatal"
-  fi
+  coach_health_gate "$(health ok true true true true)" 2>/dev/null || fail "healthy Coach rejected"
+  coach_health_gate "$(health degraded false true true true)" 2>/dev/null \
+    || fail "stale market data must only warn during deploy"
+  rejects "$(health degraded true false true true)" || fail "missing knowledge base must be fatal"
+  rejects "$(health degraded true true true true)" || fail "degraded status + fresh market is fatal"
+  rejects "$(health degraded false true false true)" || fail "agent build failure must be fatal"
+  rejects "$(health degraded false true true false)" || fail "broken market schema must be fatal"
+  rejects "$(legacy_health ok true)" || fail "a new release must report agent/schema flags"
+  coach_health_gate "$(legacy_health ok true)" rollback 2>/dev/null \
+    || fail "rollback must accept the previous release's older health contract"
+  coach_health_gate "$(legacy_health degraded false)" rollback 2>/dev/null \
+    || fail "rollback treats an old market_ready=false as a warning"
+  rejects "$(health degraded false true false true)" rollback \
+    || fail "rollback still fails an explicit agent build failure"
 }
 
 rejection() {

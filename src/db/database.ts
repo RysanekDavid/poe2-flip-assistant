@@ -1,10 +1,11 @@
 import Database from "better-sqlite3";
-import { readFileSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { config } from "../config/env";
 import { hashPassword, genApiKey } from "../auth/auth";
 import { migratePatchProvenance } from "./sourceMigrations";
 import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
+import { applicationSchemaSql } from "./schemaFiles";
 
 let db: Database.Database | null = null;
 
@@ -19,8 +20,7 @@ export function getDb(): Database.Database {
   conn.pragma("journal_mode = WAL");
   conn.pragma("foreign_keys = ON");
 
-  const schema = readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8");
-  conn.exec(schema);
+  conn.exec(applicationSchemaSql());
   migratePatchProvenance(conn);
 
   // Additive migrations — CREATE TABLE IF NOT EXISTS won't add columns to an existing DB,

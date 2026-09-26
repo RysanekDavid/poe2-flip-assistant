@@ -180,12 +180,23 @@ used), sends a prompt the FastAPI input guard rejects, and asserts the full prox
 history contract (`400 request_rejected` from the guard, lease released on replay, nothing
 persisted). The smoke user's conversations are deleted afterwards. `COACH_SMOKE_MODE=live`
 (process env or `.env.local`; default `contract`) adds one real LLM turn that only logs latency and
-never rolls a release back. A stale market heartbeat only warns during deploy (the poller is
-stopped); missing model configuration, knowledge base or item data remain fatal.
+never rolls a release back.
 
-After a successful deploy the newest 3 release directories and newest 5 pre-deploy product DB
-backups are kept; the live `current` target and the previous release are never deleted. Every
-pruned path is logged, and a pruning failure warns without undoing the deploy.
+The Coach health gate is fatal for missing model configuration, knowledge base, item data, a
+failed agent build (`agent_ready`: model client plus strict tool schemas, no model call) and a
+broken market database schema (`market_schema_ready`, e.g. a wrong `POE_DB_PATH`). Market
+freshness only warns. The poller is stopped just before the health check, for a minute or two,
+which is far inside the 30-minute freshness window, so a stale heartbeat means polling was already
+failing before the deploy (usually a poe.ninja outage). The warning is deliberate so such an
+outage does not block UI-only deploys; investigate the poller when it appears. During an automatic
+rollback the gate accepts the previous release's older health contract. Coach embeds the knowledge
+corpus in a background task at start-up (`COACH_WARM_KNOWLEDGE_ON_START`, default on), so the first
+knowledge question does not pay for it; the outcome is logged as `coach_knowledge_warmup`.
+
+After a successful deploy the newest 3 release directories, the newest 5 pre-deploy product DB
+backups and the newest 5 systemd unit backups (`backups/units-*`) are kept; the live `current`
+target and the previous release are never deleted, and quarantined `failed-*` files are left
+alone. Every pruned path is logged, and a pruning failure warns without undoing the deploy.
 The site-specific `/etc/caddy/Caddyfile` is intentionally not overwritten during app updates;
 copy, validate and restart it separately only when the repository Caddy config actually changes.
 

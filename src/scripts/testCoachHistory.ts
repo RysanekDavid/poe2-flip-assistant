@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import Database from "better-sqlite3";
+import { applicationSchemaSql } from "../db/schemaFiles";
 import {
   CoachHistoryError,
   beginCoachTurn,
@@ -17,7 +16,7 @@ import {
 
 const db = new Database(":memory:");
 db.pragma("foreign_keys = ON");
-db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
+db.exec(applicationSchemaSql());
 db.prepare(`
   INSERT INTO users (id, name, password_hash, api_key, role)
   VALUES (?, ?, 'hash', ?, 'member')

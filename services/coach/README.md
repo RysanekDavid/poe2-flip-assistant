@@ -53,7 +53,13 @@ tied to conversations, so pruning or deleting history keeps the cost record. Not
 the UI yet.
 
 Input safety runs once, at the HTTP boundary: a rejected message answers `400 request_rejected`
-before the agent is built or any model is called. The deploy contract smoke relies on that path.
+before the agent is built or any model is called. The deploy contract smoke relies on that path,
+so `/health` covers what it skips: `agent_ready` builds the graph (model client, strict tool
+schemas, compile) without calling a model. Market readiness is split into `market_schema_ready`
+(database and tables present; false is a configuration defect) and `market_fresh` (a poll cycle
+succeeded in the last 30 minutes; false is operational). `market_ready` remains their conjunction.
+The dense knowledge index is built by a background start-up task (`COACH_WARM_KNOWLEDGE_ON_START`,
+default on; failures are logged and the first query rebuilds on demand).
 Answers carry no appended disclaimer; the UI shows one verify-in-game notice under the composer.
 
 Production runs exactly one Uvicorn worker bound to `127.0.0.1:8000`; the in-memory Qdrant index

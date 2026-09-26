@@ -3,7 +3,7 @@
 import json
 import sqlite3
 from contextlib import closing
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from statistics import fmean
 from typing import Annotated, NoReturn
@@ -13,18 +13,8 @@ from langchain_core.tools import InjectedToolArg, tool
 from src.config import get_settings
 from src.errors import ToolInvalidInput, ToolNoResult, ToolSourceUnavailable
 from src.evidence import evidence_id
+from src.tools.market_readiness import market_readiness
 
-_REQUIRED_COLUMNS = {
-    "league",
-    "item_id",
-    "item_name",
-    "category",
-    "chaos_equiv",
-    "volume",
-    "fetched_at",
-}
-_HEARTBEAT_COLUMNS = {"league", "item_id", "updated_at"}
-_READINESS_MAX_AGE = timedelta(minutes=30)
 _UNAVAILABLE_SQLITE_CODES = {
     sqlite3.SQLITE_BUSY,
     sqlite3.SQLITE_LOCKED,
@@ -82,64 +72,7 @@ def current_market_values(
 
 def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bool:
     """Validate schema and require a recent successful local market refresh cycle."""
-    target = path or get_settings().poe_db_path
-    if not target.is_file():
-        return False
-    try:
-        with closing(_connect_read_only(target)) as connection:
-            columns = {
-                str(row["name"])
-                for row in connection.execute("PRAGMA table_info(price_snapshots)").fetchall()
-            }
-            if not columns >= _REQUIRED_COLUMNS:
-                return False
-            heartbeat_columns = {
-                str(row["name"])
-                for row in connection.execute("PRAGMA table_info(item_spark)").fetchall()
-            }
-            if not heartbeat_columns >= _HEARTBEAT_COLUMNS:
-                return False
-            # Market data is league-scoped, so the correlated lookup joins on league as well as
-            # item_id: without it a spark row from the live league would be paired with a price
-            # row from a retired one, and readiness would be decided by a dead market.
-            #
-            # The check itself stays league-AGNOSTIC on purpose. It answers "did a poll cycle
-            # recently succeed", which is a deploy gate, not a per-request scope — pinning it to
-            # one league would make the gate flap during a league switch. The tools themselves
-            # are filtered to the asking user's league.
-            heartbeat = connection.execute(
-                """SELECT MAX(datetime(spark.updated_at)) AS updated_at
-                FROM item_spark AS spark
-                WHERE COALESCE((
-                    SELECT CASE
-                        WHEN snapshot.category = 'Currency'
-                             AND snapshot.chaos_equiv > 0 THEN 1
-                        ELSE 0
-                    END
-                    FROM price_snapshots AS snapshot
-                    INDEXED BY idx_snapshots_item_time
-                    WHERE snapshot.league = spark.league
-                      AND snapshot.item_id = spark.item_id
-                    ORDER BY snapshot.fetched_at DESC
-                    LIMIT 1
-                ), 0) = 1"""
-            ).fetchone()
-            return (
-                heartbeat is not None
-                and heartbeat["updated_at"] is not None
-                and _is_fresh(str(heartbeat["updated_at"]), now or datetime.now(UTC))
-            )
-    except (sqlite3.Error, TypeError, ValueError):
-        return False
-
-
-def _is_fresh(timestamp: str, now: datetime) -> bool:
-    parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=UTC)
-    current = now if now.tzinfo is not None else now.replace(tzinfo=UTC)
-    age = current.astimezone(UTC) - parsed.astimezone(UTC)
-    return timedelta(0) <= age <= _READINESS_MAX_AGE
+    return market_readiness(path or get_settings().poe_db_path, now=now).ready
 
 
 def _connect_read_only(path: Path) -> sqlite3.Connection:
