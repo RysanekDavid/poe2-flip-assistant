@@ -27,7 +27,8 @@ export function HuntPanel() {
   const [editing, setEditing] = useState<Hunt | null>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [perHuntSound, setPerHuntSound] = useState<Record<number, boolean>>({});
-  const { hunts, liveEnabled, hits, status, flashIds, feedError, loadHunts, loadHits } = useHuntFeed(soundOn, perHuntSound);
+  const feed = useHuntFeed(soundOn, perHuntSound);
+  const { hunts, liveEnabled, hits, status, flashIds, feedError, loadHunts, loadHits } = feed;
 
   const scan = () => {
     setScanning(true);
@@ -35,10 +36,11 @@ export function HuntPanel() {
     fetch("/api/hunts/scan", { method: "POST" })
       .then((r) => r.json())
       .then((s) => {
-        // the poller runs the scan (single trade2 limiter owner); hits + per-hunt errors show up on the next refresh
-        setMsg(s.error ? `error: ${s.error}` : "scan queued — results appear on the next refresh");
+        // the poller runs the scan (single trade2 limiter owner); refresh quickly for a minute so its hits show promptly
+        setMsg(s.error ? `error: ${s.error}` : "scan queued — results appear within about a minute");
         loadHits();
         loadHunts();
+        if (!s.error) feed.burstAfterScan();
       })
       .catch((e) => setMsg(String(e)))
       .finally(() => setScanning(false));

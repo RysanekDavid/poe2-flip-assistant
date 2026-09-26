@@ -41,7 +41,36 @@ export interface HuntStatus {
 const MIN_POLL_SEC = 15;
 const DEFAULT_POLL_SEC = 60;
 
+/**
+ * A queued manual scan waits for the poller's 20s drain and then takes ~40s per hunt, so right
+ * after "run saved searches" the feed refreshes every 5s for a minute instead of waiting a lap.
+ */
+const BURST_EVERY_MS = 5_000;
+const BURST_FOR_MS = 60_000;
+
 type FeedSource = "hunts" | "hits" | "status";
+
+/** Returns a trigger that runs `refresh` every BURST_EVERY_MS for BURST_FOR_MS (restarts if re-triggered). */
+function useBurstRefresh(refresh: () => void): () => void {
+  const refreshRef = useRef(refresh);
+  const timer = useRef<number | null>(null);
+  useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
+  const stop = useCallback(() => {
+    if (timer.current != null) window.clearInterval(timer.current);
+    timer.current = null;
+  }, []);
+  useEffect(() => stop, [stop]);
+  return useCallback(() => {
+    stop();
+    const until = Date.now() + BURST_FOR_MS;
+    timer.current = window.setInterval(() => {
+      if (Date.now() >= until) return stop();
+      refreshRef.current();
+    }, BURST_EVERY_MS);
+  }, [stop]);
+}
 
 function beep(): void {
   try {
@@ -84,28 +113,15 @@ function useFeedErrors(): { feedError: string | null; fail: (s: FeedSource, e: u
   return { feedError: messages.length > 0 ? messages.join(" · ") : null, fail, clear };
 }
 
-/** Saved hunts, live hits and scan status, polled at the scan cadence while the tab is visible. */
-export function useHuntFeed(soundOn: boolean, perHuntSound: Record<number, boolean>) {
-  const [hunts, setHunts] = useState<Hunt[]>([]);
-  const [liveEnabled, setLiveEnabled] = useState(true);
+type FeedErrors = ReturnType<typeof useFeedErrors>;
+
+/** Live hits, flashing + beeping for ones that arrived since the previous load. */
+function useHits(soundOn: boolean, perHuntSound: Record<number, boolean>, { clear, fail }: FeedErrors) {
   const [hits, setHits] = useState<Hit[]>([]);
-  const [status, setStatus] = useState<HuntStatus | null>(null);
   const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
-  const { feedError, fail, clear } = useFeedErrors();
   // ids of hits seen in the previous poll, to detect freshly-arrived ones
   const knownIds = useRef<Set<number>>(new Set());
   const firstHits = useRef(true);
-
-  const loadHunts = useCallback(() => {
-    fetch("/api/hunts")
-      .then((r) => assertOk(r, "/api/hunts").json())
-      .then((h) => {
-        setHunts(h.hunts ?? []);
-        setLiveEnabled(h.liveEnabled ?? false);
-        clear("hunts");
-      })
-      .catch((e: unknown) => fail("hunts", e));
-  }, [clear, fail]);
 
   const loadHits = useCallback(() => {
     fetch("/api/hunts/hits")
@@ -126,6 +142,29 @@ export function useHuntFeed(soundOn: boolean, perHuntSound: Record<number, boole
       .catch((e: unknown) => fail("hits", e));
   }, [soundOn, perHuntSound, clear, fail]);
 
+  return { hits, flashIds, loadHits };
+}
+
+/** Saved hunts, live hits and scan status, polled at the scan cadence while the tab is visible. */
+export function useHuntFeed(soundOn: boolean, perHuntSound: Record<number, boolean>) {
+  const [hunts, setHunts] = useState<Hunt[]>([]);
+  const [liveEnabled, setLiveEnabled] = useState(true);
+  const [status, setStatus] = useState<HuntStatus | null>(null);
+  const errors = useFeedErrors();
+  const { feedError, fail, clear } = errors;
+  const { hits, flashIds, loadHits } = useHits(soundOn, perHuntSound, errors);
+
+  const loadHunts = useCallback(() => {
+    fetch("/api/hunts")
+      .then((r) => assertOk(r, "/api/hunts").json())
+      .then((h) => {
+        setHunts(h.hunts ?? []);
+        setLiveEnabled(h.liveEnabled ?? false);
+        clear("hunts");
+      })
+      .catch((e: unknown) => fail("hunts", e));
+  }, [clear, fail]);
+
   const loadStatus = useCallback(() => {
     fetch("/api/hunts/status")
       .then((r) => assertOk(r, "/api/hunts/status").json())
@@ -142,6 +181,11 @@ export function useHuntFeed(soundOn: boolean, perHuntSound: Record<number, boole
   useEffect(() => {
     loadHunts();
   }, [loadHunts]);
+  const refreshFeed = useCallback(() => {
+    loadHits();
+    loadStatus();
+  }, [loadHits, loadStatus]);
+  const burstAfterScan = useBurstRefresh(refreshFeed);
 
-  return { hunts, liveEnabled, hits, status, flashIds, feedError, loadHunts, loadHits };
+  return { hunts, liveEnabled, hits, status, flashIds, feedError, loadHunts, loadHits, burstAfterScan };
 }

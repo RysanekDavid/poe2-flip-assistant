@@ -23,8 +23,12 @@ function useLeagueStatus(): { status: LeagueStatus | null; reload: () => void } 
     fetch("/api/league/status")
       .then((r) => assertOk(r, "/api/league/status").json())
       .then((s: LeagueStatus) => setStatus(s))
-      // header-level nicety: a failed poll must not break the dashboard, but it must be diagnosable
-      .catch(warnOnFailure("[league-banner] status poll"));
+      // header-level nicety: a failed poll must not break the dashboard, but it must be diagnosable —
+      // and a stale "switch league" prompt must not outlive the status it was based on.
+      .catch((error: unknown) => {
+        warnOnFailure("[league-banner] status poll")(error);
+        setStatus(null);
+      });
   }, []);
 
   useEffect(() => {
