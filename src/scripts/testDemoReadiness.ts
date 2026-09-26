@@ -11,12 +11,15 @@ const farm = source("src", "components", "FarmAdvisor.tsx");
 const craft = source("src", "components", "CraftTopPicks.tsx");
 const comparable = source("src", "components", "craft", "MarginBreakdown.tsx");
 const coach = source("src", "components", "coach", "CoachMessage.tsx");
+const composer = source("src", "components", "coach", "CoachComposer.tsx");
 
 assert.match(discover, /heuristic · not executable/);
 assert.match(farm, /basket heat .*not Div\/hour/);
 assert.match(craft, /modelled EV · curated hit rates · observed asks/);
 assert.match(comparable, /not a guaranteed sale/);
-assert.match(coach, /Read-only guidance · verify prices and item state in-game before acting/);
+// Exactly one verify-in-game notice: the composer footer, never repeated per message.
+assert.match(composer, /Read-only guidance · verify prices and item state in-game before acting/);
+assert.doesNotMatch(coach, /verify prices/i);
 assert.match(coach, /No external tools or sources were used for this response/);
 
 const recipe = RECIPES.find((candidate) => candidate.key === "boots_putrefaction");

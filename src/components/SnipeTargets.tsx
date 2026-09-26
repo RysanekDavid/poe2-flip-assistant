@@ -8,7 +8,7 @@ interface Target {
   type: string;
   valueDiv: number;
   quantity: number;
-  turnover: number;
+  sellThrough: number; // avg share of listings gone per scrape (0..1) — a proxy, not sales
   momentumPct: number;
   reason: string;
 }
@@ -120,7 +120,10 @@ function TargetCard({ t }: { t: Target }) {
           )}
         </div>
         <div className="mt-1 text-xs text-neutral-600">
-          {t.quantity} listed · turns ~{fmt(t.turnover)}
+          {t.quantity} listed ·{" "}
+          <span title="average share of listings gone between poe2scout scrapes — a sell-through proxy, not sales">
+            ~{fmt(t.sellThrough * 100)}% sell-through
+          </span>
         </div>
       </button>
 

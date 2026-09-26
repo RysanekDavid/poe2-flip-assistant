@@ -1,20 +1,21 @@
 """Latest market values from the application's locally polled poe.ninja data."""
 
 import json
+from typing import Annotated
 
-from langchain_core.tools import tool
+from langchain_core.tools import InjectedToolArg, tool
 
 from src.evidence import evidence_id
 from src.tools.market import current_market_values
 
 
 @tool
-def fetch_live_prices(items: list[str]) -> str:
+def fetch_live_prices(items: list[str], league: Annotated[str, InjectedToolArg]) -> str:
     """Return the latest locally polled values for 1-5 item names.
 
     Values are in Divine Orbs and are reference mids, not executable bid/ask quotes.
     """
-    results, timestamp = current_market_values(items)
+    results, timestamp = current_market_values(items, league)
     sources = [_live_source(result) for result in results]
     return json.dumps(
         {

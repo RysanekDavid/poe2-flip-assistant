@@ -1,9 +1,7 @@
-"""Deterministic input and output safety rails."""
+"""Deterministic input safety rail, enforced once at the HTTP boundary."""
 
 import re
 from dataclasses import dataclass
-
-DISCLAIMER = "Verify prices in-game before trading."
 
 _INJECTION_PATTERNS = (
     re.compile(r"ignore\s+(all\s+)?(previous|prior|system)\s+instructions?", re.I),
@@ -63,11 +61,3 @@ def inspect_input(message: str) -> GuardDecision:
 
 def _is_injection(message: str) -> bool:
     return any(pattern.search(message) is not None for pattern in _INJECTION_PATTERNS)
-
-
-def enforce_disclaimer(answer: str) -> str:
-    """Append the required human-verification boundary exactly once."""
-    cleaned = answer.strip()
-    if DISCLAIMER.lower() in cleaned.lower():
-        return cleaned
-    return f"{cleaned}\n\n{DISCLAIMER}"

@@ -11,53 +11,6 @@ CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Persisted public Coach history. Only completed user/assistant turns are stored; tool protocol,
--- reasoning traces, provider ids and partial attempts never enter the application database.
-CREATE TABLE IF NOT EXISTS coach_conversations (
-  user_id INTEGER NOT NULL,
-  id TEXT NOT NULL CHECK (length(id) = 36),
-  title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 80),
-  turn_count INTEGER NOT NULL DEFAULT 0 CHECK (turn_count BETWEEN 0 AND 50),
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  last_message_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS coach_turns (
-  user_id INTEGER NOT NULL,
-  conversation_id TEXT NOT NULL CHECK (length(conversation_id) = 36),
-  turn_id TEXT NOT NULL CHECK (length(turn_id) = 36),
-  ordinal INTEGER NOT NULL CHECK (ordinal BETWEEN 1 AND 50),
-  user_message TEXT NOT NULL CHECK (length(user_message) BETWEEN 1 AND 8000),
-  assistant_answer TEXT NOT NULL CHECK (length(assistant_answer) BETWEEN 1 AND 64000),
-  tools_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(tools_json) AND json_type(tools_json) = 'array'),
-  processors_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(processors_json) AND json_type(processors_json) = 'array'),
-  sources_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(sources_json) AND json_type(sources_json) = 'array'),
-  completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, conversation_id, turn_id),
-  UNIQUE (user_id, conversation_id, ordinal),
-  FOREIGN KEY (user_id, conversation_id)
-    REFERENCES coach_conversations(user_id, id) ON DELETE CASCADE
-);
-
--- A lease deliberately references only the user. First-turn leases must not create an empty
--- conversation row, and a successful atomic completion creates that row together with the turn.
-CREATE TABLE IF NOT EXISTS coach_conversation_leases (
-  user_id INTEGER NOT NULL,
-  conversation_id TEXT NOT NULL CHECK (length(conversation_id) = 36),
-  turn_id TEXT NOT NULL CHECK (length(turn_id) = 36),
-  expires_at INTEGER NOT NULL,
-  PRIMARY KEY (user_id, conversation_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_coach_conversations_recent
-  ON coach_conversations(user_id, last_message_at DESC, id DESC);
-CREATE INDEX IF NOT EXISTS idx_coach_leases_expiry
-  ON coach_conversation_leases(expires_at);
-
 -- Price snapshots (one row per item per fetch) — SHARED across all users (market data), but
 -- LEAGUE-SCOPED: a switch must not mix two markets' prices, and must not destroy either.
 -- The '' default exists only so the additive migration can ALTER an existing table; every row
@@ -261,6 +214,8 @@ CREATE TABLE IF NOT EXISTS craft_margin_reports (
   ev_div REAL NOT NULL,
   margin_pct REAL NOT NULL,
   scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_error TEXT,                -- transient scan failure that did NOT replace the good report above
+  last_error_at DATETIME,
   PRIMARY KEY (league, recipe_key)
 );
 
@@ -313,7 +268,10 @@ CREATE TABLE IF NOT EXISTS balance_snapshots (
   net_worth_div REAL NOT NULL,    -- divine + exalted/exalt_per_div + chaos/chaos_per_div + other_div
   source TEXT NOT NULL,           -- 'trade' | 'stash' | 'ocr' | 'manual'
   note TEXT,
-  fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  listed_seen INTEGER,            -- trade read: listings returned (trade2 caps a search at 100)
+  listed_total INTEGER,           -- trade read: listings trade2 says exist (> seen = truncated)
+  gear_at_ask_div REAL            -- part of other_div valued at the seller's OWN asking price
 );
 
 -- open flip positions: a BUY leg placed but not yet sold (the standing-order flip loop).

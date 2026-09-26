@@ -482,6 +482,10 @@ export interface BalanceSnapshot {
   source: BalanceSource;
   note: string | null;
   fetched_at: string;
+  league: string | null;
+  listed_seen: number | null; // listings trade2 returned (a trade read caps at 100)
+  listed_total: number | null; // listings trade2 says exist — > listed_seen means truncated
+  gear_at_ask_div: number | null; // part of other_div valued at the seller's own asking price
 }
 
 export interface BalanceInput {
@@ -516,68 +520,8 @@ export function insertBalance(userId: number, league: string, b: BalanceInput): 
   return getDb().prepare("SELECT * FROM balance_snapshots WHERE id = ?").get(Number(info.lastInsertRowid)) as BalanceSnapshot;
 }
 
-export function getBalances(userId: number, limit = 500): BalanceSnapshot[] {
-  return getDb()
-    .prepare("SELECT * FROM balance_snapshots WHERE user_id = ? ORDER BY fetched_at DESC LIMIT ?")
-    .all(userId, limit) as BalanceSnapshot[];
-}
-
-/** Newest snapshot at or before `agoHours` ago — for %-change baselines. */
-function balanceBefore(userId: number, agoHours: number): BalanceSnapshot | undefined {
-  return getDb()
-    .prepare(
-      `SELECT * FROM balance_snapshots WHERE user_id = ? AND fetched_at <= datetime('now', ?) ORDER BY fetched_at DESC LIMIT 1`,
-    )
-    .get(userId, `-${agoHours} hours`) as BalanceSnapshot | undefined;
-}
-
-export interface BalanceStats {
-  latest: BalanceSnapshot | null;
-  first: BalanceSnapshot | null; // earliest snapshot — all-time baseline
-  change24hPct: number | null;
-  change7dPct: number | null;
-  changeAllPct: number | null;
-  count: number;
-}
-
-function pctDelta(now: number, then: number | undefined): number | null {
-  if (then == null || !(then > 0)) return null;
-  return ((now - then) / then) * 100;
-}
-
-export function balanceStats(userId: number): BalanceStats {
-  const db = getDb();
-  const latest = db
-    .prepare("SELECT * FROM balance_snapshots WHERE user_id = ? ORDER BY fetched_at DESC LIMIT 1")
-    .get(userId) as BalanceSnapshot | undefined;
-  const first = db
-    .prepare("SELECT * FROM balance_snapshots WHERE user_id = ? ORDER BY fetched_at ASC LIMIT 1")
-    .get(userId) as BalanceSnapshot | undefined;
-  const count = (db.prepare("SELECT COUNT(*) c FROM balance_snapshots WHERE user_id = ?").get(userId) as { c: number }).c;
-  if (!latest) return { latest: null, first: null, change24hPct: null, change7dPct: null, changeAllPct: null, count: 0 };
-  const now = latest.net_worth_div;
-  return {
-    latest,
-    first: first ?? null,
-    change24hPct: pctDelta(now, balanceBefore(userId, 24)?.net_worth_div),
-    change7dPct: pctDelta(now, balanceBefore(userId, 24 * 7)?.net_worth_div),
-    changeAllPct: pctDelta(now, first?.net_worth_div),
-    count,
-  };
-}
-
 // --- per-stash-tab breakdown ---
 
-export interface TabRow {
-  tab: string;
-  divine: number;
-  exalted: number;
-  chaos: number;
-  other_div: number;
-  value_div: number;
-  items: number;
-  unpriced: number;
-}
 export interface TabInput {
   tab: string;
   divine: number;
@@ -600,39 +544,4 @@ export function insertTabs(snapshotId: number, tabs: TabInput[]): void {
     for (const r of rows) stmt.run({ ...r, snapshotId });
   });
   tx(tabs);
-}
-
-/** This user's per-tab breakdown of their most recent snapshot that has tabs, value-descending. */
-export function latestTabs(userId: number): TabRow[] {
-  const snap = getDb()
-    .prepare(
-      `SELECT bt.snapshot_id FROM balance_tabs bt
-       JOIN balance_snapshots bs ON bt.snapshot_id = bs.id
-       WHERE bs.user_id = ? ORDER BY bt.id DESC LIMIT 1`,
-    )
-    .get(userId) as { snapshot_id: number } | undefined;
-  if (!snap) return [];
-  return getDb()
-    .prepare("SELECT tab, divine, exalted, chaos, other_div, value_div, items, unpriced FROM balance_tabs WHERE snapshot_id = ? ORDER BY value_div DESC")
-    .all(snap.snapshot_id) as TabRow[];
-}
-
-export interface TabSeriesPoint {
-  tab: string;
-  fetched_at: string;
-  value_div: number;
-}
-
-/** This user's per-tab value over time (joined to snapshot timestamps) — pivot client-side for charts. */
-export function tabSeries(userId: number, limitSnapshots = 60): TabSeriesPoint[] {
-  return getDb()
-    .prepare(
-      `SELECT bt.tab, bs.fetched_at, bt.value_div
-       FROM balance_tabs bt JOIN balance_snapshots bs ON bt.snapshot_id = bs.id
-       WHERE bs.user_id = ? AND bs.id IN (
-         SELECT id FROM balance_snapshots WHERE user_id = ? ORDER BY fetched_at DESC LIMIT ?
-       )
-       ORDER BY bs.fetched_at ASC`,
-    )
-    .all(userId, userId, limitSnapshots) as TabSeriesPoint[];
 }

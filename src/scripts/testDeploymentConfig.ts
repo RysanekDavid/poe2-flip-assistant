@@ -68,19 +68,40 @@ assert.match(deploy, /health\.build !== expected/);
 assert.match(deploy, /"\$\{TARGET_SHA:0:12\}"/);
 assert.match(deploy, /npm run verify:poe2-data/);
 assert.match(deploy, /\.env\.local must have mode 600/);
-assert.match(deploy, /Omen of Sinistral Annulment/);
 assert.match(deploy, /ROLLBACK_READY_TIMEOUT_SECONDS=45/);
 assert.match(deploy, /wait_for_http poe2flip-web/);
 assert.match(deploy, /wait_for_coach_health/);
-assert.match(deploy, /health\.status !== "ok"/);
-assert.match(deploy, /--max-time 180/);
+assert.match(deploySources, /health\.status !== "ok"/);
+assert.match(deploySources, /--max-time 180/);
 assert.match(deploy, /validate_timeout_hierarchy/);
-assert.match(deploy, /signSession\(1, 420_000\)/);
-assert.match(deploy, /I want a Dueling Wand for a Blood Mage/);
-assert.match(deploy, /PRESENTATION_ELAPSED_MS/);
-assert.match(deploy, /tools\.includes\("lookup_poe2_game_data"\)/);
-assert.match(deploy, /source\.type === "game_data"/);
-assert.match(deploy, /answer\.includes\(`\[\$\{source\.id\}\]`\)/);
+// Deploy smokes run as the dedicated no-login smoke member, never as the owner (user 1).
+assert.doesNotMatch(deploySources, /signSession\(1\b/);
+assert.match(deploy, /deploySmoke\.ts ensure/);
+assert.match(deploy, /deploySmoke\.ts cleanup/);
+// Deterministic contract smoke: no paid/LLM-dependent assertions, one optional non-fatal live turn.
+assert.match(deploy, /assert_rejected_coach_smoke "\$REJECTED_SMOKE"/);
+assert.match(deploy, /assert_rejected_coach_smoke "\$REPLAYED_SMOKE"/);
+assert.match(deploy, /api\/coach\/conversations\/\$SMOKE_CONVERSATION_ID"\)" = "404"/);
+assert.match(deploy, /run_nonfatal "live Coach smoke turn" live_coach_smoke/);
+assert.match(deploy, /COACH_SMOKE_MODE must be contract or live/);
+assert.doesNotMatch(deploySources, /Dueling Wand|Omen of Sinistral Annulment|PRESENTATION_/);
+assert.equal((deploy.match(/live_coach_smoke/g) ?? []).length, 1, "at most one live turn");
+// Stale market (poller stopped mid-deploy) warns; model/knowledge/item data stay fatal.
+assert.match(deploy, /coach_health_gate "\$COACH_HEALTH"/);
+assert.match(deploy, /coach_health_gate "\$WEB_COACH_HEALTH"/);
+assert.doesNotMatch(deploy, /!health\.market_ready/);
+// Rollback restores an older Coach whose /health lacks the newer flags; only it gets the lenient gate.
+assert.match(deploy, /coach_health_gate "\$body" rollback/);
+assert.equal((deploy.match(/coach_health_gate "[^"]+" rollback/g) ?? []).length, 1);
+assert.match(deployHelpers, /"agent_ready", "market_schema_ready"/);
+assert.match(deployHelpers, /UNIT_BACKUP_NAME_PATTERN/);
+// Housekeeping after the ERR trap is cleared, so it can never roll a healthy release back.
+assert.match(deploy, /prune_releases "\$APP_DIR\/releases" 3 "\$RELEASE_DIR" "\$PREVIOUS_TARGET"/);
+assert.match(deploy, /prune_backups "\$APP_DIR\/backups" 5/);
+// Pre-flight pruning runs before the rollback trap is armed; post-deploy pruning after it is cleared.
+assert.match(deploy, /run_nonfatal "pre-flight release pruning" prune_releases "\$APP_DIR\/releases" 2 "\$PREVIOUS_TARGET"/);
+assert.ok(deploy.indexOf("pre-flight release pruning") < deploy.indexOf("trap rollback ERR"));
+assert.ok(deploy.lastIndexOf("trap - ERR") < deploy.lastIndexOf("prune_releases"));
 assert.doesNotMatch(deploy, /date \+%s%3N/);
 assert.doesNotMatch(productEnv, /^COACH_TIMEOUT_MS=/m);
 assert.match(productEnv, /^DATA_SOURCE_CONTACT=$/m);

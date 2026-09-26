@@ -16,6 +16,7 @@ import { CraftMarginPanel } from "../components/CraftMarginPanel";
 import { CraftTopPicks } from "../components/CraftTopPicks";
 import { CraftPnlPanel } from "../components/CraftPnlPanel";
 import { MaterialsPanel } from "../components/MaterialsPanel";
+import { CraftMarginsProvider } from "../components/craft/CraftMarginsContext";
 import { DemandBoard } from "../components/DemandBoard";
 import { HuntPanel } from "../components/HuntPanel";
 import { AutoSnipeBar } from "../components/AutoSnipeBar";
@@ -155,7 +156,8 @@ export default function DashboardPage() {
       )}
 
       {tab === "craft" && (
-        <>
+        // one shared /api/craft/margins poller for top picks + the four domain windows
+        <CraftMarginsProvider>
           {/* what pays TODAY, across all domains */}
           <CraftTopPicks />
           {/* one crafting window per item domain — the procedures differ per class */}
@@ -167,7 +169,7 @@ export default function DashboardPage() {
           <CraftPnlPanel />
           {/* live prices for the recipe inputs */}
           <MaterialsPanel />
-        </>
+        </CraftMarginsProvider>
       )}
 
       {tab === "wealth" && <BalancePanel />}

@@ -19,8 +19,6 @@ from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from src.config import Settings
-from src.demo_policy import required_tools
-from src.guardrails import inspect_input
 from src.items import get_item_catalog, inspect_item_text, looks_like_item_text
 from src.items.catalog import ItemCatalog
 from src.prompts import system_prompt
@@ -35,12 +33,13 @@ _FINAL_ANSWER_INSTRUCTION = (
 
 
 class AgentState(MessagesState):
-    """Conversation messages plus deterministic safety and item context."""
+    """Conversation messages plus deterministic item and request context.
 
-    blocked: bool
+    Input safety is enforced once, at the HTTP boundary (api.py), before a graph run starts.
+    """
+
     item_incomplete: bool
     item_inspection: dict[str, object] | None
-    required_tools: list[str]
     request_id: str
     league: str
 
@@ -49,25 +48,25 @@ AgentNode = Callable[[AgentState], Awaitable[dict[str, object]]]
 
 
 def build_agent(settings: Settings) -> CompiledStateGraph:
-    """Compile a bounded guard → model ⇄ tools graph with a forced final answer."""
+    """Compile a bounded inspect → model ⇄ tools graph with a forced final answer."""
     tools = get_tools(settings)
     catalog = get_item_catalog(settings.item_catalog_path)
     model = build_chat_model(settings)
     model_with_tools = model.bind_tools(tools, strict=True)
 
-    guard = _guard_node(catalog)
-    call_model = _model_node(model_with_tools, "model", settings.league_name)
-    call_final_model = _model_node(model, "final_model", settings.league_name, force_final=True)
+    inspect = _inspect_node(catalog)
+    call_model = _model_node(model_with_tools, "model")
+    call_final_model = _model_node(model, "final_model", force_final=True)
     call_tools = _tools_node(tool_node(tools))
 
     builder = StateGraph(AgentState)
-    builder.add_node("guard", guard)
+    builder.add_node("inspect", inspect)
     builder.add_node("agent", call_model)
     builder.add_node("tools", call_tools)
     builder.add_node("final", call_final_model)
-    builder.add_edge(START, "guard")
+    builder.add_edge(START, "inspect")
     builder.add_conditional_edges(
-        "guard", _route_after_guard, {"blocked": END, "incomplete": END, "agent": "agent"}
+        "inspect", _route_after_inspect, {"incomplete": END, "agent": "agent"}
     )
     builder.add_conditional_edges("agent", _route_after_model, {"tools": "tools", "end": END})
     builder.add_conditional_edges(
@@ -94,56 +93,33 @@ def build_chat_model(settings: Settings) -> ChatOpenAI:
     )
 
 
-def _guard_node(catalog: ItemCatalog) -> AgentNode:
-    async def guard(state: AgentState) -> dict[str, object]:
+def _inspect_node(catalog: ItemCatalog) -> AgentNode:
+    async def inspect(state: AgentState) -> dict[str, object]:
         message = _last_human_text(state)
-        decision = inspect_input(message)
-        if decision.allowed:
-            mandatory = list(required_tools(message))
-            if looks_like_item_text(catalog, message):
-                inspection = inspect_item_text(catalog, message)
-                if not inspection.complete:
-                    return {
-                        "blocked": False,
-                        "item_incomplete": True,
-                        "item_inspection": inspection.model_dump(mode="json"),
-                        "required_tools": mandatory,
-                        "messages": [AIMessage(content=_incomplete_item_answer(inspection))],
-                    }
-                return {
-                    "blocked": False,
-                    "item_incomplete": False,
-                    "item_inspection": inspection.model_dump(mode="json"),
-                    "required_tools": mandatory,
-                }
-            return {
-                "blocked": False,
-                "item_incomplete": False,
-                "item_inspection": None,
-                "required_tools": mandatory,
-            }
-        return {
-            "blocked": True,
-            "item_incomplete": False,
-            "item_inspection": None,
-            "required_tools": [],
-            "messages": [AIMessage(content=decision.reason or "Blocked.")],
+        if not looks_like_item_text(catalog, message):
+            return {"item_incomplete": False, "item_inspection": None}
+        inspection = inspect_item_text(catalog, message)
+        update: dict[str, object] = {
+            "item_incomplete": not inspection.complete,
+            "item_inspection": inspection.model_dump(mode="json"),
         }
+        if not inspection.complete:
+            update["messages"] = [AIMessage(content=_incomplete_item_answer(inspection))]
+        return update
 
-    return guard
+    return inspect
 
 
 def _model_node(
     model: Runnable[object, BaseMessage],
     step: str,
-    default_league: str,
     *,
     force_final: bool = False,
 ) -> AgentNode:
     async def call_model(state: AgentState) -> dict[str, object]:
         started = monotonic()
         outcome = "ok"
-        messages, previous_response_id = _model_request(state, default_league)
+        messages, previous_response_id = _model_request(state)
         if force_final:
             messages.insert(0, SystemMessage(content=_FINAL_ANSWER_INSTRUCTION))
         try:
@@ -180,7 +156,7 @@ def _tools_node(node: AgentNode) -> AgentNode:
     return call_tools
 
 
-def _model_request(state: AgentState, default_league: str) -> tuple[list[BaseMessage], str | None]:
+def _model_request(state: AgentState) -> tuple[list[BaseMessage], str | None]:
     """Continue provider state only while returning outputs for an active tool call."""
     history = _recent_messages(state["messages"])
     instructions = _turn_instructions(state)
@@ -188,7 +164,11 @@ def _model_request(state: AgentState, default_league: str) -> tuple[list[BaseMes
     if continuation is not None:
         response_id, tool_outputs = continuation
         return [*instructions, *tool_outputs], response_id
-    league = state.get("league") or default_league
+    league = state.get("league")
+    if not league:
+        # The API resolves the league before every run; a missing one is a wiring defect, and
+        # guessing would answer about a market the user is not looking at.
+        raise RuntimeError("Agent state has no league")
     messages = [SystemMessage(content=system_prompt(league)), *instructions]
     messages.extend(_visible_history(history))
     return messages, None
@@ -199,9 +179,6 @@ def _turn_instructions(state: AgentState) -> list[BaseMessage]:
     context = state.get("item_inspection")
     if context is not None:
         turn_instructions.append(SystemMessage(content=_inspection_prompt(context)))
-    mandatory = state.get("required_tools", [])
-    if mandatory:
-        turn_instructions.append(SystemMessage(content=_required_tools_prompt(mandatory)))
     return turn_instructions
 
 
@@ -250,17 +227,7 @@ def _message_text(content: object) -> str:
     return "\n".join(parts).strip()
 
 
-def _required_tools_prompt(mandatory: Sequence[str]) -> str:
-    return (
-        "This turn must call these tools before answering: "
-        f"{', '.join(mandatory)}. For retrieve_knowledge, pass the user's "
-        "complete current question as the query. Do not call any other tool."
-    )
-
-
-def _route_after_guard(state: AgentState) -> Literal["blocked", "incomplete", "agent"]:
-    if state.get("blocked", False):
-        return "blocked"
+def _route_after_inspect(state: AgentState) -> Literal["incomplete", "agent"]:
     return "incomplete" if state.get("item_incomplete", False) else "agent"
 
 
