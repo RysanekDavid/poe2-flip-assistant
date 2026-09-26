@@ -8,6 +8,7 @@ interface Metrics {
   explicitAny: number;
   lines: number;
   longFunctions: number;
+  silentPromiseCatches: number;
 }
 
 const root = process.cwd();
@@ -57,9 +58,11 @@ function inspect(path: string, source: string): Metrics {
   const functionLines: number[] = [];
   let emptyCatches = 0;
   let explicitAny = 0;
+  let silentPromiseCatches = 0;
   const visit = (node: ts.Node): void => {
     if (node.kind === ts.SyntaxKind.AnyKeyword) explicitAny += 1;
     if (ts.isCatchClause(node) && node.block.statements.length === 0) emptyCatches += 1;
+    if (isSilentPromiseCatch(node)) silentPromiseCatches += 1;
     if (ts.isFunctionLike(node)) functionLines.push(nodeLines(file, node));
     ts.forEachChild(node, visit);
   };
@@ -69,7 +72,22 @@ function inspect(path: string, source: string): Metrics {
     explicitAny,
     lines: source.split(/\r?\n/).length,
     longFunctions: functionLines.filter((lines) => lines > 60).length,
+    silentPromiseCatches,
   };
+}
+
+/** `.catch(() => {})` / `.catch(() => undefined)` / `.catch(() => void 0)`: the promise-chain
+ *  twin of an empty catch block. Handlers that map to a value (`() => null`) stay allowed. */
+function isSilentPromiseCatch(node: ts.Node): boolean {
+  if (!ts.isCallExpression(node)) return false;
+  const callee = node.expression;
+  if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "catch") return false;
+  const handler = node.arguments[0];
+  if (!handler || !(ts.isArrowFunction(handler) || ts.isFunctionExpression(handler))) return false;
+  if (ts.isBlock(handler.body)) return handler.body.statements.length === 0;
+  let body: ts.Expression = handler.body;
+  while (ts.isParenthesizedExpression(body)) body = body.expression;
+  return (ts.isIdentifier(body) && body.text === "undefined") || ts.isVoidExpression(body);
 }
 
 function nodeLines(file: ts.SourceFile, node: ts.Node): number {
@@ -81,6 +99,13 @@ function nodeLines(file: ts.SourceFile, node: ts.Node): number {
 function validate(path: string, current: Metrics, baseline: Metrics | null): void {
   compareDebt(path, "explicit TypeScript any", current.explicitAny, baseline?.explicitAny ?? 0, 0);
   compareDebt(path, "empty catch blocks", current.emptyCatches, baseline?.emptyCatches ?? 0, 0);
+  compareDebt(
+    path,
+    "silent .catch(() => {}) handlers",
+    current.silentPromiseCatches,
+    baseline?.silentPromiseCatches ?? 0,
+    0,
+  );
   compareDebt(path, "file lines", current.lines, baseline?.lines ?? 0, 500);
   compareDebt(path, "long functions", current.longFunctions, baseline?.longFunctions ?? 0, 0);
 }
