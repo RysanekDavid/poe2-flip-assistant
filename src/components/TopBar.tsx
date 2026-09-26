@@ -6,6 +6,7 @@ import { BookOpen, LogOut } from "lucide-react";
 import { z } from "zod";
 import { BellIcon, XIcon } from "./ui/icons";
 import { AlertsPanel } from "./AlertFeed";
+import { assertOk, warnOnFailure } from "../lib/clientWarn";
 
 const DIVINE_ART =
   "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png";
@@ -19,9 +20,9 @@ export function TopBar() {
   useEffect(() => {
     const load = () =>
       fetch("/api/alerts?unseen=1")
-        .then((r) => r.json())
+        .then((r) => assertOk(r, "/api/alerts").json())
         .then((d) => setUnread((d.alerts ?? []).length))
-        .catch(() => {});
+        .catch(warnOnFailure("[topbar] unread alert count"));
     load();
     const id = setInterval(load, 30_000);
     const onChange = () => load();
@@ -64,9 +65,9 @@ function WealthChip() {
   useEffect(() => {
     const load = () =>
       fetch("/api/balance/summary")
-        .then((r) => r.json())
+        .then((r) => assertOk(r, "/api/balance/summary").json())
         .then(setData)
-        .catch(() => {});
+        .catch(warnOnFailure("[topbar] net-worth chip"));
     load();
     const id = setInterval(load, 120_000);
     return () => clearInterval(id);
@@ -130,7 +131,10 @@ function UserMenu() {
   const name = useSignedInName();
 
   async function logout(): Promise<void> {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    // Leave for /login either way, but a failed logout may have left the session cookie set.
+    await fetch("/api/auth/logout", { method: "POST" })
+      .then((r) => assertOk(r, "/api/auth/logout"))
+      .catch((error: unknown) => console.error("[auth] logout request failed — session may still be active", error));
     router.replace("/login");
     router.refresh();
   }

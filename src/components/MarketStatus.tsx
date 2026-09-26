@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRightLeft } from "lucide-react";
 import { fmtSmart } from "../lib/format";
+import { assertOk, warnOnFailure } from "../lib/clientWarn";
 
 type CcyKey = "div" | "ex" | "chaos";
 const CCY_LABEL: Record<CcyKey, string> = { div: "Div", ex: "Ex", chaos: "Chaos" };
@@ -147,9 +148,9 @@ export function MarketStatus() {
   useEffect(() => {
     const load = () =>
       fetch("/api/health")
-        .then((r) => r.json())
+        .then((r) => assertOk(r, "/api/health").json())
         .then(setHealth)
-        .catch(() => {});
+        .catch(warnOnFailure("[market-status] health poll"));
     load();
     const poll = setInterval(load, 60_000);
     const tick = setInterval(() => setNow(Date.now()), 30_000);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { roundPrice } from "../lib/format";
+import { assertOk, describeError, warnOnFailure } from "../lib/clientWarn";
 import { EmptySection } from "./ui/EmptySection";
 
 type Ccy = "DIVINE" | "EXALT" | "CHAOS";
@@ -39,17 +40,22 @@ export function PositionsPanel() {
   const [committed, setCommitted] = useState(0);
   const [unrealized, setUnrealized] = useState(0);
   const [closing, setClosing] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(
     () =>
       fetch("/api/positions")
-        .then((r) => r.json())
+        .then((r) => assertOk(r, "/api/positions").json())
         .then((d) => {
           setPositions(d.positions ?? []);
           setCommitted(d.committedTotal ?? 0);
           setUnrealized(d.unrealizedTotal ?? 0);
+          setError(null);
         })
-        .catch(() => {}),
+        .catch((e: unknown) => {
+          warnOnFailure("[positions] load")(e);
+          setError(describeError(e));
+        }),
     [],
   );
 
@@ -75,7 +81,7 @@ export function PositionsPanel() {
     return (
       <EmptySection
         title="Open Positions"
-        hint="none open — in a Flip Plan, hit “buy → open position” after placing a buy order; mark-to-market shows here until you sell"
+        hint={error ? `could not load positions — ${error}` : "none open — in a Flip Plan, hit “buy → open position” after placing a buy order; mark-to-market shows here until you sell"}
       />
     );
   }
@@ -93,6 +99,7 @@ export function PositionsPanel() {
           </span>
         </span>
       </header>
+      {error && <p role="alert" className="mb-2 text-xs text-bad">refresh failed — {error}</p>}
 
       <table className="w-full text-sm">
         <thead className="text-left text-xs text-neutral-400">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { roundPrice } from "../lib/format";
+import { assertOk, describeError, warnOnFailure } from "../lib/clientWarn";
 import { EmptySection } from "./ui/EmptySection";
 
 interface Flip {
@@ -24,13 +25,20 @@ const CCY_SHORT: Record<string, string> = { DIVINE: "Div", EXALT: "Ex", CHAOS: "
  *  shows the history + running P&L and lets you delete a mistaken entry. */
 export function FlipLog() {
   const [flips, setFlips] = useState<Flip[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(
     () =>
       fetch("/api/flips")
-        .then((r) => r.json())
-        .then((d) => setFlips(d.flips ?? []))
-        .catch(() => {}),
+        .then((r) => assertOk(r, "/api/flips").json())
+        .then((d) => {
+          setFlips(d.flips ?? []);
+          setError(null);
+        })
+        .catch((e: unknown) => {
+          warnOnFailure("[flip-log] load")(e);
+          setError(describeError(e));
+        }),
     [],
   );
 
@@ -72,7 +80,7 @@ export function FlipLog() {
     return (
       <EmptySection
         title="Flip History"
-        hint="no flips logged — set qty + prices in a Flip Plan and hit “log flip”; P&L and win-rate build here"
+        hint={error ? `could not load flips — ${error}` : "no flips logged — set qty + prices in a Flip Plan and hit “log flip”; P&L and win-rate build here"}
       />
     );
   }
@@ -85,6 +93,7 @@ export function FlipLog() {
           export CSV
         </button>
       </header>
+      {error && <p role="alert" className="mb-2 text-xs text-bad">refresh failed — {error}</p>}
 
       <div className="mb-3 grid grid-cols-4 gap-2 text-center">
         <Stat label="Profit (Div)" value={totalDiv.toFixed(2)} tone={totalDiv >= 0 ? "text-good" : "text-bad"} />

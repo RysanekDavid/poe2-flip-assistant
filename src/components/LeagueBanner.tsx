@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
+import { assertOk, warnOnFailure } from "../lib/clientWarn";
 
 interface LeagueStatus {
   tracked: string;
@@ -20,9 +21,10 @@ function useLeagueStatus(): { status: LeagueStatus | null; reload: () => void } 
 
   const reload = useCallback(() => {
     fetch("/api/league/status")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((s: LeagueStatus | null) => setStatus(s))
-      .catch(() => {}); // header-level nicety; a failed poll must not break the dashboard
+      .then((r) => assertOk(r, "/api/league/status").json())
+      .then((s: LeagueStatus) => setStatus(s))
+      // header-level nicety: a failed poll must not break the dashboard, but it must be diagnosable
+      .catch(warnOnFailure("[league-banner] status poll"));
   }, []);
 
   useEffect(() => {

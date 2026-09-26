@@ -34,8 +34,9 @@ for (const { name, count } of rows) {
     try {
       const r = db.prepare(`SELECT MIN(${col}) AS lo, MAX(${col}) AS hi FROM "${name}"`).get() as { lo: string; hi: string };
       span = `  ${r.lo} → ${r.hi}`;
-    } catch {
-      /* no such column */
+    } catch (error: unknown) {
+      // a table without the expected time column still gets its row count; say why the span is missing
+      span = `  (no time span: ${error instanceof Error ? error.message : String(error)})`;
     }
   }
   console.log(name.padEnd(24), String(count).padStart(12), span);

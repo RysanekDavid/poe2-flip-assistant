@@ -1,39 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { SCROLL_BOX } from "../lib/tableStyle";
 import { BellIcon, PlusIcon, XIcon } from "./ui/icons";
 import { huntReq, type Hunt } from "./huntApi";
 import { HuntForm } from "./HuntForm";
-
-interface Hit {
-  id: number;
-  hunt_id: number;
-  item_name: string;
-  base_type: string | null;
-  price_amount: number;
-  price_ccy: string;
-  price_div: number | null; // null = ask currency outside the rates ladder
-  margin_pct: number | null;
-  account: string | null;
-  whisper: string | null;
-  listing_id: string | null;
-  seller_online: number | null;
-  listed_at: string | null;
-  seen: number;
-  found_at: string;
-}
-
-interface Status {
-  scannedHunts: number;
-  last_scan_at: string | null;
-  last_error: string | null;
-  updated_at: string | null;
-  liveEnabled: boolean;
-  huntEnabled: boolean;
-  scanSec: number;
-}
-
+import { useHuntFeed, type Hit, type HuntStatus } from "./useHuntFeed";
 
 function ageOf(iso: string | null): string {
   if (!iso) return "—";
@@ -48,86 +20,14 @@ function ageOf(iso: string | null): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-function beep(): void {
-  try {
-    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const t = ctx.currentTime;
-    osc.type = "sine";
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.2, t + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(t + 0.24);
-    osc.onended = () => ctx.close();
-  } catch {
-    /* audio unavailable — silent */
-  }
-}
-
 export function HuntPanel() {
-  const [hunts, setHunts] = useState<Hunt[]>([]);
-  const [hits, setHits] = useState<Hit[]>([]);
-  const [status, setStatus] = useState<Status | null>(null);
-  const [liveEnabled, setLiveEnabled] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Hunt | null>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [perHuntSound, setPerHuntSound] = useState<Record<number, boolean>>({});
-
-  // ids of hits seen in the previous poll, to detect freshly-arrived ones
-  const knownIds = useRef<Set<number>>(new Set());
-  const firstHits = useRef(true);
-  const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
-
-  const loadHunts = useCallback(() => {
-    fetch("/api/hunts")
-      .then((r) => r.json())
-      .then((h) => { setHunts(h.hunts ?? []); setLiveEnabled(h.liveEnabled ?? false); })
-      .catch(() => {});
-  }, []);
-
-  const loadHits = useCallback(() => {
-    fetch("/api/hunts/hits")
-      .then((r) => r.json())
-      .then((d: { hits?: Hit[] }) => {
-        const next = d.hits ?? [];
-        const fresh = next.filter((h) => !knownIds.current.has(h.id));
-        if (firstHits.current) firstHits.current = false;
-        else if (fresh.length > 0) {
-          setFlashIds(new Set(fresh.map((h) => h.id)));
-          window.setTimeout(() => setFlashIds(new Set()), 2500);
-          if (soundOn || fresh.some((h) => perHuntSound[h.hunt_id])) beep();
-        }
-        knownIds.current = new Set(next.map((h) => h.id));
-        setHits(next);
-      })
-      .catch(() => {});
-  }, [soundOn, perHuntSound]);
-
-  const loadStatus = useCallback(() => {
-    fetch("/api/hunts/status").then((r) => r.json()).then((s: Status) => setStatus(s)).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    loadHunts();
-    loadStatus();
-    const s = setInterval(loadStatus, 5000);
-    return () => clearInterval(s);
-  }, [loadHunts, loadStatus]);
-
-  useEffect(() => {
-    loadHits();
-    const h = setInterval(loadHits, 3000);
-    return () => clearInterval(h);
-  }, [loadHits]);
+  const { hunts, liveEnabled, hits, status, flashIds, feedError, loadHunts, loadHits } = useHuntFeed(soundOn, perHuntSound);
 
   const scan = () => {
     setScanning(true);
@@ -136,7 +36,7 @@ export function HuntPanel() {
       .then((r) => r.json())
       .then((s) => {
         // the poller runs the scan (single trade2 limiter owner); hits + per-hunt errors show up on the next refresh
-        setMsg(s.error ? `error: ${s.error}` : "scan queued — results appear within ~30s");
+        setMsg(s.error ? `error: ${s.error}` : "scan queued — results appear on the next refresh");
         loadHits();
         loadHunts();
       })
@@ -179,7 +79,7 @@ export function HuntPanel() {
         <span className="text-xs text-neutral-500">read-only · you buy manually, never auto</span>
       </header>
 
-      <StatusBar status={status} />
+      <StatusBar status={status} feedError={feedError} />
 
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[320px_1fr]">
         {/* LEFT — saved searches */}
@@ -284,8 +184,9 @@ export function HuntPanel() {
   );
 }
 
-function StatusBar({ status }: { status: Status | null }) {
-  if (!status) return <div className="rounded border border-neutral-800 bg-neutral-950/40 px-3 py-2 text-xs text-neutral-500">connecting…</div>;
+function StatusBar({ status, feedError }: { status: HuntStatus | null; feedError: string | null }) {
+  const feed = feedError && <span className="truncate text-bad" title={feedError}>⚠ feed refresh failed — {feedError}</span>;
+  if (!status) return <div className="rounded border border-neutral-800 bg-neutral-950/40 px-3 py-2 text-xs text-neutral-500">{feed || "connecting…"}</div>;
 
   const dim = "bg-neutral-700/60 text-neutral-300";
   let chip = { txt: "waiting for first scan", cls: dim };
@@ -303,6 +204,7 @@ function StatusBar({ status }: { status: Status | null }) {
         searches <span className="font-semibold tabular-nums text-neutral-200">{status.scannedHunts}</span>
       </span>
       {status.last_error && <span className="truncate text-bad" title={status.last_error}>⚠ {status.last_error}</span>}
+      {feed}
     </div>
   );
 }
