@@ -20,11 +20,13 @@ const errText = (e: unknown): string => (e instanceof Error ? e.message : String
 /**
  * One user's expired cookie is that hunt's own error (shown on its row), not a broken subsystem;
  * the heartbeat goes red only when nothing worked or mod capture is broken for everyone.
+ * `scanned` counts SUCCESSFUL hunts only (errors are not included), so "nothing worked" is
+ * scanned === 0 with at least one error — which also covers the scan-setup failure path.
  */
 export function huntProblem(s: ScanSummary): string | null {
   if (s.diag.zeroModRares > 0) return `${s.diag.zeroModRares}/${s.diag.rares} rare listings had no mods — mod capture broken`;
   const first = s.errors[0];
-  if (first && s.errors.length >= s.scanned) return `every hunt failed — ${first.hunt}: ${first.error}`;
+  if (first && s.scanned === 0) return `every hunt failed — ${first.hunt}: ${first.error}`;
   return null;
 }
 
@@ -39,7 +41,9 @@ export function autoSnipeProblem(r: ScanReport): string | null {
 export function runHuntScan(reason: string, only?: { userId: number; cred: TradeCred }): boolean {
   if (huntScanning) return false;
   huntScanning = true;
-  withHeartbeat("hunts", "", () => scanAll(only), { problem: huntProblem })
+  // A one-user manual lap says nothing about the background loop's health — keep it off the heartbeat.
+  const scan = only ? scanAll(only) : withHeartbeat("hunts", "", () => scanAll(), { problem: huntProblem });
+  scan
     .then((s) => {
       if (s.hits > 0) console.log(`[hunt] ${reason}: ${s.hits} new across ${s.scanned} hunt(s)`);
       if (s.errors.length > 0) console.warn(`[hunt] ${reason}: ${s.errors.length} hunt error(s): ${s.errors.map((e) => `${e.hunt}: ${e.error}`).join("; ")}`);

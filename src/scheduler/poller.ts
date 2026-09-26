@@ -108,9 +108,13 @@ function startCraftMargin(ownerCred: TradeCred | null): void {
   let craftRefreshing = false;
   const exclusive = (run: () => Promise<void>): void => {
     craftRefreshing = true;
-    run().finally(() => {
-      craftRefreshing = false;
-    });
+    // craftTick/craftSweep catch their own errors today; this catch keeps a future throw from
+    // becoming an unhandled rejection that takes the whole poller down.
+    run()
+      .catch((e) => console.error("[craft-margin] run failed:", errText(e)))
+      .finally(() => {
+        craftRefreshing = false;
+      });
   };
   cron.schedule(`*/${config.craftMargin.intervalMin} * * * *`, () => {
     if (craftRefreshing) return;

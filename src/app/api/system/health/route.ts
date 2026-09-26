@@ -1,5 +1,5 @@
 import { getCurrentUser } from "../../../../auth/session";
-import { systemHealthResponse } from "../../../../core/systemHealth";
+import { systemHealthResponse } from "../../../../lib/systemHealthResponse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

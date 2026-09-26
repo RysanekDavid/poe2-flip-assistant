@@ -44,7 +44,7 @@ const errText = (e: unknown): string => (e instanceof Error ? e.message : String
  * Daily-guarded scout unique-price refresh. Its failure must not block the currency read (the
  * web read behaves the same), but it is logged and recorded on its own heartbeat, never dropped.
  */
-export async function refreshUniquesTracked(league: string, refresh: BalanceLoopDeps["refreshUniques"]): Promise<void> {
+async function refreshUniquesTracked(league: string, refresh: BalanceLoopDeps["refreshUniques"]): Promise<void> {
   try {
     await withHeartbeat("unique-values", "", () => refresh(league));
   } catch (e: unknown) {

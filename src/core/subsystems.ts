@@ -40,8 +40,27 @@ export type SubsystemConfig = Pick<
 const LEAGUE_WATCH_SEC = 6 * 60 * 60;
 const SCAN_DRAIN_SEC = 20;
 
+/**
+ * One hunt costs ~40s of the shared trade2 search pace (see config.hunt), and the heartbeat is
+ * written once per LAP, so a lap over N active hunts takes ~N×40s however small scanSec is.
+ */
+export const HUNT_LAP_SEC_PER_HUNT = 40;
+
+/** Expected seconds between hunt heartbeats: the configured tick, or the lap time if longer. */
+export function huntExpectedSec(scanSec: number, activeHunts: number): number {
+  return Math.max(scanSec, Math.max(0, activeHunts) * HUNT_LAP_SEC_PER_HUNT);
+}
+
+/** Live facts the cadences depend on, read when the payload is built. */
+export interface SubsystemLoad {
+  activeHunts: number;
+}
+
 /** Cadences come from the same config the poller schedules with, so they cannot drift apart. */
-export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemName, SubsystemSpec> {
+export function subsystemSpecs(
+  cfg: SubsystemConfig = config,
+  load: SubsystemLoad = { activeHunts: 0 },
+): Record<SubsystemName, SubsystemSpec> {
   const cycle = cfg.pollIntervalMin * 60;
   const balance = cfg.balanceIntervalMin > 0 ? cfg.balanceIntervalMin * 60 : null;
   return {
@@ -49,7 +68,7 @@ export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemN
     "cx-rates": { label: "Exchange rates", hint: "GGG currency-exchange digest → Div/Ex/Chaos rates (only fetched when stored rates are stale).", perLeague: false, expectedSec: cycle, enabled: true },
     "cx-history": { label: "Exchange history", hint: "Backfill missing hours of GGG exchange history for Top Flips.", perLeague: false, expectedSec: cycle, enabled: true },
     prune: { label: "Retention prune", hint: "Age out old snapshots, observations, craft EV history and exchange hours.", perLeague: false, expectedSec: cycle, enabled: true },
-    hunts: { label: "Hunt scans", hint: "Per-user saved trade2 searches (poll-diff). A lap takes ~40s per active hunt.", perLeague: false, expectedSec: cfg.hunt.scanSec, enabled: cfg.hunt.enabled },
+    hunts: { label: "Hunt scans", hint: "Per-user saved trade2 searches (poll-diff). A lap takes ~40s per active hunt.", perLeague: false, expectedSec: huntExpectedSec(cfg.hunt.scanSec, load.activeHunts), enabled: cfg.hunt.enabled },
     autosnipe: { label: "Auto-snipe", hint: "Autonomous rare-snipe scan under the owner's POESESSID.", perLeague: false, expectedSec: cfg.autoSnipe.intervalMin * 60, enabled: cfg.autoSnipe.enabled },
     "craft-margin": { label: "Craft margin tick", hint: "Refresh the stalest craft recipe's EV from trade2.", perLeague: false, expectedSec: cfg.craftMargin.intervalMin * 60, enabled: cfg.craftMargin.enabled },
     "craft-sweep": { label: "Craft refresh-all", hint: "Owner-requested sweep of every recipe (on demand).", perLeague: false, expectedSec: null, enabled: cfg.craftMargin.enabled },
@@ -98,7 +117,11 @@ function emptyRow(name: string, league: string): HeartbeatRow {
   return { name, league, last_ok_at: null, last_error_at: null, last_error: null, duration_ms: null, runs: 0 };
 }
 
-/** Stored rows plus a synthetic "never" row for every enabled loop that has not reported yet. */
+/**
+ * Stored rows plus a synthetic "never" row for every enabled SCHEDULED loop that has not reported
+ * yet. On-demand loops (expectedSec null, e.g. craft refresh-all) not having run is normal, so
+ * they only appear once they have a real row.
+ */
 function withMissingRows(
   rows: readonly HeartbeatRow[],
   specs: Record<SubsystemName, SubsystemSpec>,
@@ -109,7 +132,7 @@ function withMissingRows(
   const missing: HeartbeatRow[] = [];
   for (const name of SUBSYSTEM_NAMES) {
     const spec = specs[name];
-    if (!spec.enabled) continue;
+    if (!spec.enabled || spec.expectedSec == null) continue;
     for (const league of spec.perLeague ? polledLeagues : [""]) {
       if (!have.has(key(name, league))) missing.push(emptyRow(name, league));
     }

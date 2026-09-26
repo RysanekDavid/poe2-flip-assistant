@@ -4,7 +4,8 @@ import type { RateRule, RateStore, TradeEndpoint } from "../api/tradeRateLimit";
 import { config } from "../config/env";
 import { getDb } from "../db/database";
 import { recordHeartbeat } from "../db/heartbeatQueries";
-import { buildSystemHealth, fetchCoachSummary, systemHealthResponse, tradeGovernorState } from "../core/systemHealth";
+import { buildSystemHealth, fetchCoachSummary, tradeGovernorState } from "../core/systemHealth";
+import { systemHealthResponse } from "../lib/systemHealthResponse";
 import { subsystemSpecs } from "../core/subsystems";
 import { systemHealthSchema, type SystemHealth } from "../lib/systemHealthContract";
 

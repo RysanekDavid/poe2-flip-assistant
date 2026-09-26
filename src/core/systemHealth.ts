@@ -1,12 +1,11 @@
 import type Database from "better-sqlite3";
-import { NextResponse } from "next/server";
 import { DEFAULT_RULES, type RateStore, type TradeEndpoint } from "../api/tradeRateLimit";
 import { config } from "../config/env";
 import { getDb } from "../db/database";
 import { listHeartbeats } from "../db/heartbeatQueries";
+import { getHunts } from "../db/huntQueries";
 import { freeDiskBytes, readDbStats } from "../db/maintenance";
 import { dbRateStore } from "../db/tradeRateQueries";
-import type { UserRole } from "../db/userQueries";
 import { buildIdentifier } from "../lib/buildInfo";
 import { coachHealthSchema } from "../lib/coachContract";
 import { coachEndpoint } from "../lib/coachServer";
@@ -94,7 +93,8 @@ function liveDeps(): SystemHealthDeps {
     dbPath: config.dbPath,
     nowMs: Date.now(),
     build: buildIdentifier(),
-    specs: subsystemSpecs(),
+    // Hunt laps stretch with the number of active hunts, so the stale window must too.
+    specs: subsystemSpecs(config, { activeHunts: getHunts(true).length }),
     polledLeagues: getPolledLeagues(),
     rateStore: dbRateStore(),
     freeDisk: freeDiskBytes,
@@ -114,17 +114,4 @@ export async function buildSystemHealth(deps: SystemHealthDeps = liveDeps()): Pr
     coach,
     trade2: tradeGovernorState(deps.rateStore, deps.nowMs),
   };
-}
-
-/**
- * Owner gate for GET /api/system/health, separate from the route so tests can drive it without a
- * request context. Members get a bare 403: the panel's existence is itself owner-only information.
- */
-export async function systemHealthResponse(
-  user: { role: UserRole } | null,
-  build: () => Promise<SystemHealth> = () => buildSystemHealth(),
-): Promise<Response> {
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  if (user.role !== "owner") return NextResponse.json({ error: "owner only" }, { status: 403 });
-  return NextResponse.json(await build(), { headers: { "Cache-Control": "no-store" } });
 }
