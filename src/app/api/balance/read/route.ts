@@ -1,14 +1,27 @@
 import { NextResponse } from "next/server";
-import { balanceStats, insertBalance, insertTabs } from "../../../../db/queries";
+import { balanceStats } from "../../../../db/balanceQueries";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
-import { fetchScout } from "../../../../api/scoutClient";
-import { readCurrencyFromTrade } from "../../../../api/accountScan";
+import { recordTradeBalance } from "../../../../core/balanceRead";
 import { refreshUniqueValues } from "../../../../core/valuation";
 import { getDefaultLeague } from "../../../../core/leagueState";
+import { resolveRates } from "../../../../core/rates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Daily-guarded unique-price refresh. A scout outage must not block the read (currency still
+ *  counts), but it must be visible: stale unique prices undervalue showcase gear. */
+async function refreshUniquesWarning(): Promise<string | null> {
+  try {
+    await refreshUniqueValues();
+    return null;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    console.warn(`[balance/read] unique-price refresh failed: ${message}`);
+    return `unique prices not refreshed (${message}) — uniques may be valued from an older cache`;
+  }
+}
 
 /**
  * POST /api/balance/read → read your currency from your own PUBLIC stash tabs via a trade
@@ -27,23 +40,16 @@ export async function POST(): Promise<Response> {
       { status: 400 },
     );
   }
+  // The trade2 stash read runs in the app default league — price and tag it there.
+  const league = getDefaultLeague();
+  const resolved = resolveRates(league);
+  if (!resolved) {
+    return NextResponse.json({ error: `no exchange rates available for ${league} — cannot price a snapshot` }, { status: 409 });
+  }
   try {
-    await refreshUniqueValues(); // daily-guarded; makes sure showcase items can be valued
-    const { rates } = await fetchScout();
-    const c = await readCurrencyFromTrade(cred.account, rates, cred);
-    // scout rates + the trade2 stash read both run in the app default league.
-    const snapshot = insertBalance(user.id, getDefaultLeague(), {
-      divine: c.divine,
-      exalted: c.exalted,
-      chaos: c.chaos,
-      exaltPerDiv: rates.exaltPerDivine,
-      chaosPerDiv: rates.chaosPerDivine,
-      otherDiv: c.otherDiv,
-      source: "trade",
-      note: `${c.listingsSeen}/${c.total} listed · gear ~${c.otherDiv.toFixed(1)} Div · ${c.tabs.length} tabs${c.unpriced ? ` · ${c.unpriced} unpriced` : ""}`,
-    });
-    insertTabs(snapshot.id, c.tabs);
-    return NextResponse.json({ snapshot, stats: balanceStats(user.id), scan: c });
+    const warning = await refreshUniquesWarning();
+    const { snapshot, scan } = await recordTradeBalance(user.id, league, cred.account, resolved.rates, cred);
+    return NextResponse.json({ snapshot, stats: balanceStats(user.id, league), scan, warning, computedLeague: league });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }
