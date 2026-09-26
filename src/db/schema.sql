@@ -313,7 +313,10 @@ CREATE TABLE IF NOT EXISTS balance_snapshots (
   net_worth_div REAL NOT NULL,    -- divine + exalted/exalt_per_div + chaos/chaos_per_div + other_div
   source TEXT NOT NULL,           -- 'trade' | 'stash' | 'ocr' | 'manual'
   note TEXT,
-  fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  listed_seen INTEGER,            -- trade read: listings returned (trade2 caps a search at 100)
+  listed_total INTEGER,           -- trade read: listings trade2 says exist (> seen = truncated)
+  gear_at_ask_div REAL            -- part of other_div valued at the seller's OWN asking price
 );
 
 -- open flip positions: a BUY leg placed but not yet sold (the standing-order flip loop).
