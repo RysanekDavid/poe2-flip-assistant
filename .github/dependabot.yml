@@ -1,0 +1,32 @@
+version: 2
+
+# Minor/patch bumps are grouped into one PR per ecosystem so security patches land as a single
+# reviewable change; majors stay separate because they need a deliberate migration.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
+
+  # uv (not pip): deploy runs `uv sync --locked`, so a PR must update uv.lock together with
+  # pyproject.toml or the release build fails.
+  - package-ecosystem: uv
+    directory: /services/coach
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      coach-minor-patch:
+        update-types: [minor, patch]

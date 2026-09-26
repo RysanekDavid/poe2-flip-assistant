@@ -23,6 +23,7 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       # Build first: it generates next-env.d.ts (gitignored), which declares the
       # image module types that typecheck needs.
       - run: npm run build
