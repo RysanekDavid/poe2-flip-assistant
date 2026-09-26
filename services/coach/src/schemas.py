@@ -71,6 +71,16 @@ class EvidenceSource(BaseModel):
     url: HttpUrl | None = None
 
 
+class TurnUsage(BaseModel):
+    """Cost and latency of one completed turn; carries no conversation content."""
+
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    total_tokens: int = Field(ge=0)
+    model_calls: int = Field(ge=0)
+    duration_ms: int = Field(ge=0)
+
+
 class ChatResponse(BaseModel):
     """A completed agent response with traceable tool evidence."""
 
@@ -80,6 +90,7 @@ class ChatResponse(BaseModel):
     tools_used: list[str]
     processors_used: list[str]
     sources: list[EvidenceSource]
+    usage: TurnUsage
 
 
 class CoachErrorDetail(BaseModel):

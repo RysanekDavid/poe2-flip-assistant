@@ -14,11 +14,6 @@ from openai import APIConnectionError, APIStatusError, APITimeoutError, BadReque
 
 from src.agent import build_agent
 from src.config import Settings, get_settings
-from src.demo_policy import (
-    deterministic_demo_answer,
-    validate_demo_answer,
-    validate_required_tools,
-)
 from src.errors import ContractViolation, PublicCoachError
 from src.failure_handling import (
     log_request_timing,
@@ -30,10 +25,11 @@ from src.failure_handling import (
 from src.guardrails import inspect_input
 from src.items import catalog_ready
 from src.items.models import ItemInspection
+from src.league import resolve_default_league
 from src.patch_readiness import read_patch_readiness
 from src.rate_limit import RateLimitExceeded, SlidingWindowRateLimiter
 from src.request_auth import InvalidProxyIdentity, actor_id, request_id
-from src.response import citations_are_valid, final_answer, turn_trace
+from src.response import citations_are_valid, final_answer, turn_trace, turn_usage
 from src.retrieval import RetrievalService
 from src.schemas import (
     ChatRequest,
@@ -290,7 +286,7 @@ async def _locked_chat_response(
     started: float,
 ) -> ChatResponse:
     try:
-        response = await _invoke_agent(payload, provider, settings, request_id)
+        response = await _invoke_agent(payload, provider, settings, request_id, started)
         log_request_timing(request_id, started, "ok")
         return response
     except asyncio.CancelledError:
@@ -316,6 +312,7 @@ async def _invoke_agent(
     provider: AgentProvider,
     settings: Settings,
     request_id: str,
+    started: float,
 ) -> ChatResponse:
     agent = await provider.get()
     async with asyncio.timeout(settings.total_request_timeout_seconds):
@@ -329,32 +326,31 @@ async def _invoke_agent(
             {
                 "messages": [*history, HumanMessage(content=payload.message)],
                 "request_id": request_id,
-                # Per-request league from the Next.js proxy; settings stay the fallback.
-                "league": payload.league or settings.league_name,
+                # Per-request league from the Next.js proxy; the app's default league (same
+                # resolution order as the web app) is only the fallback for direct callers.
+                "league": payload.league or resolve_default_league(settings),
             },
             {
                 "configurable": {"thread_id": str(payload.thread_id)},
                 "recursion_limit": settings.max_tool_iterations * 2 + 4,
             },
         )
-        return _completed_response(result, payload, request_id)
+        return _completed_response(result, payload, request_id, started)
 
 
 def _completed_response(
-    result: dict[str, object], payload: ChatRequest, request_id: str
+    result: dict[str, object], payload: ChatRequest, request_id: str, started: float
 ) -> ChatResponse:
     """Validate one graph result and expose only grounded evidence."""
     try:
         messages = _validated_messages(result)
         tools, sources = turn_trace(messages)
         processors: list[str] = []
-        validate_required_tools(result.get("required_tools"), tools)
         _merge_item_inspection(result, processors, sources)
-        model_answer = final_answer(messages)
-        answer = deterministic_demo_answer(payload.message, sources) or model_answer
+        answer = final_answer(messages)
         if not citations_are_valid(answer, sources):
             raise ContractViolation("Agent returned an ungrounded citation set")
-        validate_demo_answer(payload.message, answer, sources)
+        usage = turn_usage(messages, duration_ms=round((monotonic() - started) * 1000))
     except ContractViolation:
         raise
     except (LookupError, RuntimeError, ValueError) as error:
@@ -366,6 +362,7 @@ def _completed_response(
         tools_used=tools,
         processors_used=processors,
         sources=sources,
+        usage=usage,
     )
 
 

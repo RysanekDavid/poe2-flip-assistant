@@ -139,7 +139,7 @@ async def test_compiled_graph_runs_two_tool_rounds_then_unbound_final_model(
     graph = build_agent(settings)
 
     result = await graph.ainvoke(
-        {"messages": [HumanMessage(content="complex request")], "request_id": "test-request"},
+        {"messages": [HumanMessage(content="complex request")], "league": "Test League"},
         {"recursion_limit": 8},
     )
 
@@ -195,6 +195,7 @@ async def test_compiled_graph_continues_after_safe_no_result_tool_error(
         {
             "messages": [HumanMessage(content="Explain an unknown mechanic")],
             "request_id": "test-request",
+            "league": "Test League",
         },
         {"recursion_limit": 8},
     )
@@ -242,14 +243,7 @@ def test_followup_payload_links_tool_output_to_previous_response() -> None:
     tool_call_id = "call_retrieve_knowledge"
     response_id = "resp_reasoning_turn"
     messages, previous_response_id = _model_request(
-        AgentState(
-            messages=_reasoning_tool_messages(response_id, tool_call_id),
-            blocked=False,
-            item_incomplete=False,
-            item_inspection=None,
-            required_tools=["retrieve_knowledge"],
-        ),
-        "Runes of Aldur",
+        _state(_reasoning_tool_messages(response_id, tool_call_id)),
     )
 
     payload = model._get_request_payload(messages, previous_response_id=previous_response_id)
@@ -258,20 +252,19 @@ def test_followup_payload_links_tool_output_to_previous_response() -> None:
     assert payload["reasoning"] == {"effort": "medium"}
     assert payload["input"] == [
         {
-            "content": (
-                "This turn must call these tools before answering: retrieve_knowledge. "
-                "For retrieve_knowledge, pass the user's complete current question as the "
-                "query. Do not call any other tool."
-            ),
-            "role": "system",
-            "type": "message",
-        },
-        {
             "type": "function_call_output",
             "output": '{"sources":[{"id":"K0123456789ab"}]}',
             "call_id": tool_call_id,
         },
     ]
+
+
+def test_model_request_without_a_league_fails_loudly() -> None:
+    state = _state([HumanMessage(content="current")])
+    state["league"] = ""
+
+    with pytest.raises(RuntimeError, match="no league"):
+        _model_request(state)
 
 
 def test_ninth_turn_starts_a_bounded_provider_chain() -> None:
@@ -290,7 +283,7 @@ def test_ninth_turn_starts_a_bounded_provider_chain() -> None:
         )
     history.append(HumanMessage(content="current-turn-10"))
 
-    messages, previous_response_id = _model_request(_state(history), "Runes of Aldur")
+    messages, previous_response_id = _model_request(_state(history))
     payload = model._get_request_payload(messages)
     serialized = str(payload["input"])
 
@@ -302,14 +295,13 @@ def test_ninth_turn_starts_a_bounded_provider_chain() -> None:
     assert "current-turn-10" in serialized
 
 
-def _state(messages: list[BaseMessage], required_tools: list[str] | None = None) -> AgentState:
+def _state(messages: list[BaseMessage]) -> AgentState:
     return AgentState(
         messages=messages,
-        blocked=False,
         item_incomplete=False,
         item_inspection=None,
-        required_tools=required_tools or [],
         request_id="opaque-test-request",
+        league="Runes of Aldur",
     )
 
 

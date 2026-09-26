@@ -41,8 +41,9 @@ def tool_node(
 
     async def execute(state: dict[str, object]) -> dict[str, object]:
         calls = _pending_calls(state)
+        context = _injected_context(state)
         messages = await asyncio.gather(
-            *(_execute_one(registry, call, _request_id(state)) for call in calls)
+            *(_execute_one(registry, call, _request_id(state), context) for call in calls)
         )
         return {"messages": messages}
 
@@ -50,7 +51,10 @@ def tool_node(
 
 
 async def _execute_one(
-    registry: dict[str, BaseTool], call: ToolCall, request_id: str
+    registry: dict[str, BaseTool],
+    call: ToolCall,
+    request_id: str,
+    context: dict[str, object],
 ) -> ToolMessage:
     name = str(call.get("name", "unknown"))
     started = monotonic()
@@ -61,7 +65,7 @@ async def _execute_one(
         if tool is None:
             raise RuntimeError(f"Model requested unregistered tool {name!r}")
         _validate_call(tool, call)
-        result = await tool.ainvoke(call)
+        result = await tool.ainvoke(_with_injected_args(tool, call, context))
         if not isinstance(result, ToolMessage):
             raise RuntimeError("Tool returned an invalid message type")
         return result
@@ -77,7 +81,7 @@ async def _execute_one(
             raise
         outcome = classified
         exception_name = type(error).__name__
-        return _safe_error_message(call, name, classified)
+        return _safe_error_message(call, name, classified, _public_detail(error))
     finally:
         _log_tool(request_id, name, started, outcome, exception_name)
 
@@ -123,7 +127,39 @@ def _validate_call(tool: BaseTool, call: ToolCall) -> None:
         raise ToolInvalidInput("Tool arguments failed schema validation") from error
 
 
-def _safe_error_message(call: ToolCall, name: str, code: CoachErrorCode) -> ToolMessage:
+def _injected_context(state: dict[str, object]) -> dict[str, object]:
+    """Server-owned request context that tools receive but the model can never set."""
+    league = state.get("league")
+    return {"league": league} if isinstance(league, str) and league.strip() else {}
+
+
+def _with_injected_args(tool: BaseTool, call: ToolCall, context: dict[str, object]) -> ToolCall:
+    """Overwrite hidden (InjectedToolArg) parameters from request state.
+
+    The model-facing schema omits them, so a missing context value is a wiring defect and fails
+    loudly instead of letting the tool guess a default.
+    """
+    visible = set(tool.tool_call_schema.model_fields)
+    hidden = set(tool.get_input_schema().model_fields) - visible
+    if not hidden:
+        return call
+    missing = hidden - context.keys()
+    if missing:
+        raise RuntimeError(f"Tool {tool.name!r} needs request context {sorted(missing)}")
+    args = call.get("args")
+    if not isinstance(args, dict):
+        raise RuntimeError("Tool call arguments must be an object")
+    injected = {key: context[key] for key in hidden}
+    return {**call, "args": {**args, **injected}}
+
+
+def _public_detail(error: Exception) -> str | None:
+    return error.public_detail if isinstance(error, ToolNoResult) else None
+
+
+def _safe_error_message(
+    call: ToolCall, name: str, code: CoachErrorCode, detail: str | None = None
+) -> ToolMessage:
     messages = {
         "tool_invalid_input": (
             "The tool rejected its input. Explain the limitation without guessing."
@@ -135,7 +171,10 @@ def _safe_error_message(call: ToolCall, name: str, code: CoachErrorCode) -> Tool
             "The tool source is temporarily unavailable. Give only supported partial guidance."
         ),
     }
-    content = json.dumps({"ok": False, "error": {"code": code, "message": messages[code]}})
+    error: dict[str, str] = {"code": code, "message": messages[code]}
+    if detail is not None:
+        error["detail"] = detail
+    content = json.dumps({"ok": False, "error": error})
     return ToolMessage(
         content=content,
         name=name,

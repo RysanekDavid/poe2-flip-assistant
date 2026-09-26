@@ -6,9 +6,9 @@ from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from statistics import fmean
-from typing import NoReturn
+from typing import Annotated, NoReturn
 
-from langchain_core.tools import tool
+from langchain_core.tools import InjectedToolArg, tool
 
 from src.config import get_settings
 from src.errors import ToolInvalidInput, ToolNoResult, ToolSourceUnavailable
@@ -37,7 +37,9 @@ _UNAVAILABLE_SQLITE_CODES = {
 
 
 @tool
-def analyze_market_history(items: list[str], days: int) -> str:
+def analyze_market_history(
+    items: list[str], days: int, league: Annotated[str, InjectedToolArg]
+) -> str:
     """Analyze 1-5 items over 1-30 days from the application's price history.
 
     Values are in Divine Orbs, not executable bid/ask quotes.
@@ -47,7 +49,8 @@ def analyze_market_history(items: list[str], days: int) -> str:
         raise ToolInvalidInput("days must be between 1 and 30")
     try:
         with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
-            results = [_analyze_item(connection, name, days) for name in names]
+            _require_league_data(connection, league)
+            results = [_analyze_item(connection, name, days, league) for name in names]
     except sqlite3.Error as error:
         _raise_market_source_error(error)
     sources = [_market_source(result) for result in results]
@@ -62,12 +65,15 @@ def analyze_market_history(items: list[str], days: int) -> str:
     )
 
 
-def current_market_values(items: list[str]) -> tuple[list[dict[str, object]], str]:
-    """Return latest locally polled values for validated item names."""
+def current_market_values(
+    items: list[str], league: str
+) -> tuple[list[dict[str, object]], str]:
+    """Return latest locally polled values for validated item names in one league."""
     names = _validated_items(items)
     try:
         with closing(_connect_read_only(get_settings().poe_db_path)) as connection:
-            results = [_current_item(connection, name) for name in names]
+            _require_league_data(connection, league)
+            results = [_current_item(connection, name, league) for name in names]
     except sqlite3.Error as error:
         _raise_market_source_error(error)
     timestamp = max(str(result["fetched_at"]) for result in results)
@@ -99,8 +105,8 @@ def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bo
             #
             # The check itself stays league-AGNOSTIC on purpose. It answers "did a poll cycle
             # recently succeed", which is a deploy gate, not a per-request scope — pinning it to
-            # one league would make the gate flap during a league switch. Per-request league
-            # filtering of the actual tools is a separate change.
+            # one league would make the gate flap during a league switch. The tools themselves
+            # are filtered to the asking user's league.
             heartbeat = connection.execute(
                 """SELECT MAX(datetime(spark.updated_at)) AS updated_at
                 FROM item_spark AS spark
@@ -173,30 +179,35 @@ def _raise_market_source_error(error: sqlite3.Error) -> NoReturn:
     raise error
 
 
-def _latest_league(connection: sqlite3.Connection, canonical: str) -> str:
-    """The league this item was most recently observed in.
+def _require_league_data(connection: sqlite3.Connection, league: str) -> None:
+    """Refuse to answer from another market when the asking user's league has no data yet.
 
-    Market history is retained per league rather than purged on a switch, so a plain time
-    window spans BOTH markets for a while after one. Two leagues price the same orb very
-    differently, and blending them reports a change_pct that never happened (measured: +800%).
-    Anchoring every series to the item's newest league keeps "its history" one real market's.
+    A young league (first poll cycles after a switch) or an unpolled one has no rows. Falling
+    back to whichever league was polled last would present a different economy's prices as the
+    user's own, so the tool reports the gap instead.
     """
     row = connection.execute(
         """
-        SELECT league FROM price_snapshots
-        WHERE item_name = ? AND category = 'Currency'
-        ORDER BY id DESC LIMIT 1
+        SELECT 1 FROM price_snapshots
+        WHERE league = ? AND category = 'Currency'
+        LIMIT 1
         """,
-        (canonical,),
+        (league,),
     ).fetchone()
     if row is None:
-        raise ToolNoResult(f"No market observations found for {canonical!r}")
-    return str(row["league"])
+        raise ToolNoResult(
+            f"No market data for league {league!r}",
+            public_detail=(
+                f"No market data has been collected for the league {league!r} yet; it is new "
+                "or not polled. Say so and do not substitute prices from another league."
+            ),
+        )
 
 
-def _analyze_item(connection: sqlite3.Connection, requested: str, days: int) -> dict[str, object]:
-    canonical = _resolve_name(connection, requested)
-    league = _latest_league(connection, canonical)
+def _analyze_item(
+    connection: sqlite3.Connection, requested: str, days: int, league: str
+) -> dict[str, object]:
+    canonical = _resolve_name(connection, requested, league)
     rows = connection.execute(
         """
         SELECT chaos_equiv AS value_div, volume, fetched_at
@@ -234,17 +245,16 @@ def _analyze_item(connection: sqlite3.Connection, requested: str, days: int) -> 
     }
 
 
-def _current_item(connection: sqlite3.Connection, requested: str) -> dict[str, object]:
-    canonical = _resolve_name(connection, requested)
-    # Same league anchor as the history tool, stated explicitly: relying on `id DESC` alone to
-    # land in the live league is an accident of insert order, not a guarantee.
-    league = _latest_league(connection, canonical)
+def _current_item(
+    connection: sqlite3.Connection, requested: str, league: str
+) -> dict[str, object]:
+    canonical = _resolve_name(connection, requested, league)
     row = connection.execute(
         """
         SELECT item_name, league, chaos_equiv AS value_div, volume, fetched_at
         FROM price_snapshots
         WHERE item_name = ? AND category = 'Currency' AND league = ?
-        ORDER BY id DESC LIMIT 1
+        ORDER BY fetched_at DESC, id DESC LIMIT 1
         """,
         (canonical, league),
     ).fetchone()
@@ -253,20 +263,22 @@ def _current_item(connection: sqlite3.Connection, requested: str) -> dict[str, o
     return dict(row)
 
 
-def _resolve_name(connection: sqlite3.Connection, requested: str) -> str:
+def _resolve_name(connection: sqlite3.Connection, requested: str, league: str) -> str:
+    # Resolved inside the league: an item that exists only in another league is unknown here,
+    # not a reason to read that league's rows.
     row = connection.execute(
         """
         SELECT item_name FROM price_snapshots
-        WHERE category = 'Currency'
+        WHERE category = 'Currency' AND league = ?
           AND (lower(item_name) = lower(?) OR lower(item_name) LIKE lower(?))
         GROUP BY item_name
         ORDER BY CASE WHEN lower(item_name) = lower(?) THEN 0 ELSE 1 END, item_name
         LIMIT 1
         """,
-        (requested, f"%{requested}%", requested),
+        (league, requested, f"%{requested}%", requested),
     ).fetchone()
     if row is None:
-        raise ToolNoResult(f"Unknown market item: {requested!r}")
+        raise ToolNoResult(f"Unknown market item in league {league!r}: {requested!r}")
     return str(row["item_name"])
 
 

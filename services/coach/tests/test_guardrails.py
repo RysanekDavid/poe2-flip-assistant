@@ -1,8 +1,8 @@
-"""Deterministic product guardrail and output-boundary regression tests."""
+"""Deterministic product input-guardrail regression tests."""
 
 import pytest
 
-from src.guardrails import DISCLAIMER, enforce_disclaimer, inspect_input
+from src.guardrails import inspect_input
 
 
 @pytest.mark.parametrize(
@@ -31,9 +31,3 @@ def test_unsafe_inputs_are_blocked(message: str) -> None:
 )
 def test_benign_inputs_are_allowed(message: str) -> None:
     assert inspect_input(message).allowed is True
-
-
-def test_disclaimer_is_present_exactly_once() -> None:
-    answer = enforce_disclaimer(enforce_disclaimer("Evidence-linked answer."))
-
-    assert answer.count(DISCLAIMER) == 1
