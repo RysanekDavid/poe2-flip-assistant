@@ -8,6 +8,7 @@ import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
 import { ensureCxTables } from "./cxMigrations";
 import { CX_EDGE_DETAIL_COLUMNS } from "./cxEdgeDetail";
 import { applicationSchemaSql } from "./schemaFiles";
+import { ensureNotifySchema } from "./notifyMigrations";
 
 let db: Database.Database | null = null;
 
@@ -84,6 +85,7 @@ export function getDb(): Database.Database {
     // Signed into every session token; bumping it revokes them. Default 0 matches tokens that
     // predate the column, so existing logins survive the deploy.
     ["session_version", "INTEGER NOT NULL DEFAULT 0"],
+    ["discord_webhook_enc", "TEXT"], // AES-GCM token from secretbox (the webhook URL embeds a secret)
   ]);
 
   // Multi-tenancy: every private table gains user_id (existing rows backfill to owner id=1).
@@ -102,6 +104,7 @@ export function getDb(): Database.Database {
   migrateLeagueScope(conn);
   seedLeagueRegistry(conn);
   purgeLegacyPriceBook(conn);
+  ensureNotifySchema(conn); // after users.discord_webhook_enc exists — its trigger reads the column
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.
   conn.exec(`

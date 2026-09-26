@@ -9,7 +9,7 @@ import { dbRateStore } from "../db/tradeRateQueries";
 import { createRateGovernor } from "../api/tradeRateLimit";
 import { fireAlert } from "../core/alertEngine";
 import { emptyReport } from "../core/autoSnipe";
-import { getAlerts } from "../db/alertQueries";
+import { getAlertCounts, getAlertFeed, markVisibleSeen } from "../db/alertQueries";
 import { feedPriceBook, newBookCounters, bookReference } from "../core/priceBookFeed";
 import { consumeScanRequests, isScanPending, requestScan } from "../db/scanRequestQueries";
 import {
@@ -72,18 +72,21 @@ db.prepare(
   "INSERT INTO alerts (user_id, league, type, item_id, item_name, message) VALUES (?, ?, 'LEAGUE', 'league', ?, 'new league')",
 ).run(USER, B, B);
 db.prepare("INSERT INTO alerts (user_id, league, type, item_id, item_name, message) VALUES (?, NULL, 'SPREAD', 'legacy', 'x', 'old')").run(USER);
-const alphaFeed = getAlerts(USER, A);
+const alphaFeed = getAlertFeed(USER, A);
 ok("Alpha viewer does not see Beta MARKET alerts (spread)", !alphaFeed.some((a) => a.item_id === "beta-spread"));
 const betaSnipe = alphaFeed.find((a) => a.item_id === "listing-beta");
 ok("Beta SNIPE (default-league pipeline) still shown to its owner, labeled Beta", betaSnipe?.foreign_league === B, JSON.stringify(betaSnipe?.foreign_league));
 ok("Alpha alerts shown unlabeled", alphaFeed.find((a) => a.item_id === "listing-1")?.foreign_league === null);
 ok("LEAGUE news reaches every league view", alphaFeed.some((a) => a.type === "LEAGUE"));
 ok("legacy NULL-league rows stay visible", alphaFeed.some((a) => a.item_id === "legacy"));
-ok("league match is case-insensitive", getAlerts(USER, "league beta").some((a) => a.item_id === "beta-spread"));
-const seenId = alphaFeed[0]!.id;
-db.prepare("UPDATE alerts SET seen = 1 WHERE id = ?").run(seenId);
-const unseenFeed = getAlerts(USER, A, true);
-ok("unseen filter drops the seen alert", unseenFeed.length === alphaFeed.length - 1 && !unseenFeed.some((a) => a.id === seenId));
+ok("league match is case-insensitive", getAlertFeed(USER, "league beta").some((a) => a.item_id === "beta-spread"));
+const alphaUnseen = (): number => getAlertCounts(USER, A).reduce((n, c) => n + c.unseen, 0);
+const before = alphaUnseen();
+markVisibleSeen(USER, A, "LEAGUE");
+ok("per-type mark-seen clears only that type", alphaUnseen() === before - 1 && getAlertFeed(USER, A).find((a) => a.type === "LEAGUE")?.seen === 1);
+markVisibleSeen(USER, A, null);
+ok("mark all seen clears the Alpha view", alphaUnseen() === 0);
+ok("Beta market alert (hidden from Alpha) left unseen", getAlertFeed(USER, B).find((a) => a.item_id === "beta-spread")?.seen === 0);
 
 // --- price book refuses zero-mod observations, counts them ---
 const book = newBookCounters();
