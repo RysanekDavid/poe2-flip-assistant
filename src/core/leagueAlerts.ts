@@ -1,6 +1,7 @@
 import notifier from "node-notifier";
 import type Database from "better-sqlite3";
 import { getDb } from "../db/database";
+import { config } from "../config/env";
 
 /**
  * A league change is market-wide news, not a per-watchlist signal, so it lands in EVERY user's
@@ -19,8 +20,10 @@ export function fireLeagueAlert(
     `INSERT INTO alerts (user_id, league, type, item_id, item_name, message, value, threshold)
      VALUES (?, ?, 'LEAGUE', 'league', ?, ?, NULL, NULL)`,
   );
+  // Discord delivery is queued by the trg_alerts_notify trigger on each of these rows.
   for (const u of users) insert.run(u.id, league, league, message);
 
+  if (!config.desktopNotify) return users.length; // same switch as alertEngine (tests, headless)
   try {
     // Callback form: on a headless box the notify backend fails ASYNCHRONOUSLY, and without a
     // callback node-notifier would surface that as an unhandled error instead of this warning.

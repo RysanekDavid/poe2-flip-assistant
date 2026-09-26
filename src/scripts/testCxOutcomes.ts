@@ -6,6 +6,7 @@ import { CX_HOUR_SECONDS } from "../api/cxClient";
 import { absentRetryAt, ingestCxDigest, MAX_ABSENCES, resetCxIngestState, syncCxHistory } from "../core/cx/cxIngest";
 import { leagueStats } from "../core/cx/cxItemMarkets";
 import { cxPersistedNextHour, trackCxOutcomes } from "../core/cx/cxOutcomes";
+import { slowerLegDivPerHour } from "../core/cx/cxPersistence";
 import { getDb } from "../db/database";
 import {
   FR,
@@ -41,6 +42,24 @@ function outcomes(): Row[] {
     .all(FR) as Row[];
 }
 
+/** The gate's own numbers are stored beside the published edge — the Coach reads them verbatim. */
+function assertDetailMatchesGate(): void {
+  const stats = leagueStats(FR, H0).get(IDS.simulacrum);
+  assert.ok(stats?.edge != null);
+  const row = getDb()
+    .prepare(
+      `SELECT persistence6, slower_div_per_hour, net_div_per_unit, buy_price, sell_price, fee_complete
+       FROM cx_edge_outcomes WHERE league = ? AND item = ? AND hour = ?`,
+    )
+    .get(FR, IDS.simulacrum, H0) as Record<string, number | null>;
+  assert.equal(row.persistence6, stats.edge.persistence6);
+  assert.equal(row.slower_div_per_hour, slowerLegDivPerHour(stats));
+  assert.equal(row.net_div_per_unit, stats.edge.netDivPerUnit);
+  assert.equal(row.buy_price, stats.edge.buy.priceQuote);
+  assert.equal(row.sell_price, stats.edge.sell.priceQuote);
+  assert.equal(row.fee_complete, stats.edge.feeComplete ? 1 : 0);
+}
+
 /**
  * Newest hour first, older hours backfilled later (the real cold-start order): the memoized stats
  * for that newest hour must be recomputed once the window fills, not stay "sporadic".
@@ -62,6 +81,7 @@ export function runCxOutcomeTests(): void {
   assert.ok(first != null);
   assert.deepEqual([first.item, first.hour, first.buy_quote, first.sell_quote], [IDS.simulacrum, H0, IDS.divine, IDS.exalted]);
   assert.equal(first.outcome, null, "pending until the next hour is stored");
+  assertDetailMatchesGate();
 
   // Next hour: the same direction still clears the threshold → hit.
   ingestCxDigest(digestAt(H0 + CX_HOUR_SECONDS, simulacrumMarkets(12)), [FR], stubNames);

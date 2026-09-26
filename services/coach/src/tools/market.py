@@ -6,24 +6,16 @@ from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 from statistics import fmean
-from typing import Annotated, NoReturn
+from typing import Annotated
 
 from langchain_core.tools import InjectedToolArg, tool
 
 from src.config import get_settings
-from src.errors import ToolInvalidInput, ToolNoResult, ToolSourceUnavailable
+from src.errors import ToolInvalidInput, ToolNoResult
 from src.evidence import evidence_id
 from src.tools.market_readiness import market_readiness
-
-_UNAVAILABLE_SQLITE_CODES = {
-    sqlite3.SQLITE_BUSY,
-    sqlite3.SQLITE_LOCKED,
-    sqlite3.SQLITE_CANTOPEN,
-    sqlite3.SQLITE_IOERR,
-    sqlite3.SQLITE_CORRUPT,
-    sqlite3.SQLITE_NOTADB,
-    sqlite3.SQLITE_READONLY,
-}
+from src.tools.sqlite_source import connect_read_only as _connect_read_only
+from src.tools.sqlite_source import raise_source_error as _raise_market_source_error
 
 
 @tool
@@ -55,9 +47,7 @@ def analyze_market_history(
     )
 
 
-def current_market_values(
-    items: list[str], league: str
-) -> tuple[list[dict[str, object]], str]:
+def current_market_values(items: list[str], league: str) -> tuple[list[dict[str, object]], str]:
     """Return latest locally polled values for validated item names in one league."""
     names = _validated_items(items)
     try:
@@ -75,41 +65,11 @@ def market_ready(path: Path | None = None, *, now: datetime | None = None) -> bo
     return market_readiness(path or get_settings().poe_db_path, now=now).ready
 
 
-def _connect_read_only(path: Path) -> sqlite3.Connection:
-    if not path.is_file():
-        raise FileNotFoundError(f"Application database does not exist: {path}")
-    connection = sqlite3.connect(f"{path.as_uri()}?mode=ro", uri=True)
-    connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA query_only=ON")
-    return connection
-
-
 def _validated_items(items: list[str]) -> list[str]:
     cleaned = [item.strip() for item in items if item.strip()]
     if not 1 <= len(cleaned) <= 5:
         raise ToolInvalidInput("items must contain between 1 and 5 non-empty names")
     return cleaned
-
-
-def _raise_market_source_error(error: sqlite3.Error) -> NoReturn:
-    code = getattr(error, "sqlite_errorcode", None)
-    if isinstance(code, int):
-        if code & 0xFF in _UNAVAILABLE_SQLITE_CODES:
-            raise ToolSourceUnavailable("Market database is temporarily unavailable") from error
-        raise error
-    unavailable = (
-        "unable to open database",
-        "database is locked",
-        "database table is locked",
-        "database is busy",
-        "disk i/o error",
-        "database disk image is malformed",
-        "file is not a database",
-        "readonly database",
-    )
-    if any(marker in str(error).casefold() for marker in unavailable):
-        raise ToolSourceUnavailable("Market database is temporarily unavailable") from error
-    raise error
 
 
 def _require_league_data(connection: sqlite3.Connection, league: str) -> None:
@@ -178,9 +138,7 @@ def _analyze_item(
     }
 
 
-def _current_item(
-    connection: sqlite3.Connection, requested: str, league: str
-) -> dict[str, object]:
+def _current_item(connection: sqlite3.Connection, requested: str, league: str) -> dict[str, object]:
     canonical = _resolve_name(connection, requested, league)
     row = connection.execute(
         """

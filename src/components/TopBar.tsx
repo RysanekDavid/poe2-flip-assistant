@@ -7,6 +7,7 @@ import { z } from "zod";
 import { BellIcon, XIcon } from "./ui/icons";
 import { AlertsPanel } from "./AlertFeed";
 import { assertOk, warnOnFailure } from "../lib/clientWarn";
+import { useAlertCenter } from "./alerts/AlertsContext";
 
 const DIVINE_ART =
   "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png";
@@ -15,23 +16,8 @@ const DIVINE_ART =
  *  gone: rates + converter live in the header strip, holdings live in the Wealth tab.) */
 export function TopBar() {
   const [open, setOpen] = useState(false);
-  const [unread, setUnread] = useState(0);
-
-  useEffect(() => {
-    const load = () =>
-      fetch("/api/alerts?unseen=1")
-        .then((r) => assertOk(r, "/api/alerts").json())
-        .then((d) => setUnread((d.alerts ?? []).length))
-        .catch(warnOnFailure("[topbar] unread alert count"));
-    load();
-    const id = setInterval(load, 30_000);
-    const onChange = () => load();
-    window.addEventListener("alerts-changed", onChange);
-    return () => {
-      clearInterval(id);
-      window.removeEventListener("alerts-changed", onChange);
-    };
-  }, []);
+  // badge = unseen alerts of unmuted types, from the page's single shared alert poll
+  const { unseen: unread } = useAlertCenter();
 
   return (
     <div className="relative flex items-center gap-3">

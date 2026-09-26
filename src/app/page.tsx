@@ -23,6 +23,8 @@ import { AutoSnipeBar } from "../components/AutoSnipeBar";
 import { SnipeTargets } from "../components/SnipeTargets";
 import { FlipDetailCard } from "../components/FlipDetailCard";
 import { AlertTicker } from "../components/AlertTicker";
+import { AlertsProvider } from "../components/alerts/AlertsContext";
+import { NotificationsSettings } from "../components/NotificationsSettings";
 import { FarmAdvisor } from "../components/FarmAdvisor";
 import { PositionsPanel } from "../components/PositionsPanel";
 import { FlipLog } from "../components/FlipLog";
@@ -41,7 +43,7 @@ const TABS = [
   { id: "market", label: "Web Market", hint: "trade site · uniques · snipe", icon: iconMarket },
   { id: "craft", label: "Craft", hint: "recipes · sessions · P&L", icon: iconCraft },
   { id: "wealth", label: "Wealth", hint: "net worth · realized profit", icon: iconWealth },
-  { id: "settings", label: "Settings", hint: "your trade2 connection (POESESSID)", icon: iconSettings },
+  { id: "settings", label: "Settings", hint: "trade2 connection (POESESSID) · Discord notifications", icon: iconSettings },
 ] as const;
 type TabId = (typeof TABS)[number]["id"] | "coach";
 
@@ -58,6 +60,8 @@ export default function DashboardPage() {
   };
 
   return (
+    // one alert poll for the TopBar badge, its popover and the Exchange ticker
+    <AlertsProvider>
     <main className="mx-auto max-w-screen-2xl space-y-4 p-6">
       <Onboarding />
       {/* stale-league warning — every price below is wrong if this fires */}
@@ -178,9 +182,15 @@ export default function DashboardPage() {
       {/* Keep the chat mounted while switching tabs so the active conversation is not lost. */}
       <CoachPanel active={tab === "coach"} />
 
-      {tab === "settings" && <SettingsPanel />}
-      {/* owner-only; renders nothing for members */}
-      {tab === "settings" && <SystemHealthPanel />}
+      {tab === "settings" && (
+        <>
+          <SettingsPanel />
+          <NotificationsSettings />
+          {/* owner-only; renders nothing for members */}
+          <SystemHealthPanel />
+        </>
+      )}
     </main>
+    </AlertsProvider>
   );
 }

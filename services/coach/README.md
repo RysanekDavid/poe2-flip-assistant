@@ -13,6 +13,19 @@ Python/LangGraph sidecar used only through the authenticated Next.js `/api/coach
   server-side; the model cannot choose it). A league without collected data is reported as such,
   never answered from another league. Direct callers without a league fall back to the web app's
   default chain: runtime `app_settings.league`, then `LEAGUE_NAME`, then the app's built-in default.
+- Exposes the app's own engines as read-only tools, each answering from what the Node app
+  persisted rather than re-deriving it: `get_top_flips` (edges the rank gate published into
+  `cx_edge_outcomes`, with the gate's stored persistence and slower-leg Div/h, ordered by
+  edge % rather than the Top Flips tab's score), `get_craft_margins` (`craft_margin_reports`;
+  failed, stale and unreadable reports are excluded and counted, the rest are gated like the
+  Craft tab), `get_snipe_report` (`autosnipe_report`, only when the league stamped into the
+  report is the asker's and it is under 3 × `AUTOSNIPE_INTERVAL_MIN` old) and `get_farm_advice`
+  (FarmAdvisor's basket heat, recomputed from the same snapshot query because the app never
+  stores it). Values the database cannot provide (recipe labels, gate constants, FarmAdvisor
+  tables) are mirrored in Python and pinned to the TypeScript by `tests/test_engine_drift.py`.
+  Each payload is capped at 4 KB by trimming its lowest-ranked rows. The craft staleness gate
+  reads `CRAFT_MARGIN_INTERVAL_MIN` and the snipe gate `AUTOSNIPE_INTERVAL_MIN` (both default
+  10, same as the web app); set them in the Coach environment too if the web app overrides them.
 - Uses the authenticated application's SQLite history as the only conversational memory.
 - Does not expose or use `POESESSID`, receives no product decryption key, and cannot perform
   in-game actions.

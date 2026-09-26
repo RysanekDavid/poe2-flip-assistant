@@ -6,7 +6,9 @@ import { hashPasswordSync, genApiKey } from "../auth/credentials";
 import { migratePatchProvenance } from "./sourceMigrations";
 import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
 import { ensureCxTables } from "./cxMigrations";
+import { CX_EDGE_DETAIL_COLUMNS } from "./cxEdgeDetail";
 import { applicationSchemaSql } from "./schemaFiles";
+import { ensureNotifySchema } from "./notifyMigrations";
 
 let db: Database.Database | null = null;
 
@@ -23,6 +25,7 @@ export function getDb(): Database.Database {
 
   conn.exec(applicationSchemaSql());
   ensureCxTables(conn);
+  ensureColumns(conn, "cx_edge_outcomes", CX_EDGE_DETAIL_COLUMNS);
   migratePatchProvenance(conn);
 
   // Additive migrations — CREATE TABLE IF NOT EXISTS won't add columns to an existing DB,
@@ -82,6 +85,7 @@ export function getDb(): Database.Database {
     // Signed into every session token; bumping it revokes them. Default 0 matches tokens that
     // predate the column, so existing logins survive the deploy.
     ["session_version", "INTEGER NOT NULL DEFAULT 0"],
+    ["discord_webhook_enc", "TEXT"], // AES-GCM token from secretbox (the webhook URL embeds a secret)
   ]);
 
   // Multi-tenancy: every private table gains user_id (existing rows backfill to owner id=1).
@@ -100,6 +104,7 @@ export function getDb(): Database.Database {
   migrateLeagueScope(conn);
   seedLeagueRegistry(conn);
   purgeLegacyPriceBook(conn);
+  ensureNotifySchema(conn); // after users.discord_webhook_enc exists — its trigger reads the column
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.
   conn.exec(`
@@ -228,7 +233,7 @@ export function purgeLegacyPriceBook(conn: Database.Database): number {
 }
 
 /** Add any missing columns to a table (idempotent). */
-function ensureColumns(conn: Database.Database, table: string, cols: Array<[string, string]>): void {
+export function ensureColumns(conn: Database.Database, table: string, cols: Array<[string, string]>): void {
   const existing = new Set(
     (conn.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map((r) => r.name),
   );

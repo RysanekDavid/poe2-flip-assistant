@@ -13,6 +13,7 @@ import { startPatchNotesWatcher } from "../sources/patchNotes/watcher";
 import { startLeagueWatcher } from "./leagueWatcher";
 import { getPolledLeagues } from "../core/leagueUsers";
 import { balanceProblem, snapshotBalancesAll } from "./balanceLoop";
+import { startNotifyDrainer } from "../core/notify/drainer";
 
 const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under the owner's cred
 
@@ -36,6 +37,7 @@ function start(): void {
   startAutoSnipe(ownerCred);
   startCraftMargin(ownerCred);
   startBalanceLoop();
+  startNotifyDrainer(); // Discord deliveries queued by the alerts trigger (core/notify)
 }
 
 function startMarketCycle(): void {
