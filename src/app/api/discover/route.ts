@@ -8,6 +8,8 @@ import { type ExchangeRates } from "../../../core/priceEngine";
 import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 import { scoreItem, type FlipRow } from "../../../core/flipModel";
+import { cxRankGate, loadCxMarketView, type CxMarketView } from "../../../core/cx/cxItemMarkets";
+import { cxPersistedNextHour } from "../../../core/cx/cxOutcomes";
 import type { PricedItem } from "../../../api/types";
 
 export const runtime = "nodejs";
@@ -15,12 +17,30 @@ export const dynamic = "force-dynamic";
 
 const BASE_IDS = new Set(["divine"]); // base unit — zero spread, not flippable vs itself
 
-/** Score every liquid, non-base item, ranked by flipScore (margin × turnover). */
-function scoreAll(prices: PricedItem[], rates: ExchangeRates): FlipRow[] {
+/**
+ * Score every liquid, non-base item, ranked by worthScore. Items with a market in GGG's stored
+ * exchange history are scored on it; the rest fall back to the labelled estimate.
+ */
+function scoreAll(prices: PricedItem[], rates: ExchangeRates, cx: CxMarketView | null): FlipRow[] {
   return prices
     .filter((p) => !BASE_IDS.has(p.itemId) && p.volume >= config.minVolume && p.baseValue > 0)
-    .map((p) => scoreItem(p, rates))
+    .map((p) => scoreItem(p, rates, null, null, cx?.byItemId.get(p.itemId) ?? null))
     .sort((a, b) => b.worthScore - a.worthScore);
+}
+
+/**
+ * Where the exchange numbers came from, the gate a row must pass to be ranked, and how many
+ * published edges still showed in the next hour's digest (the outcome loop) — enough for the UI
+ * to label the table honestly without hardcoding any threshold.
+ */
+function cxSummary(league: string, cx: CxMarketView | null) {
+  if (cx == null) return null;
+  return {
+    newestHour: cx.newestHour,
+    coverage: cx.coverage,
+    rankGate: cxRankGate(),
+    persistedNextHour: cxPersistedNextHour(league),
+  };
 }
 
 /** GET /api/discover?limit=80&q=essence → market-wide flip scan; `q` searches the WHOLE market by name. */
@@ -36,13 +56,15 @@ export async function GET(req: Request) {
   if (!resolved) {
     return NextResponse.json({ rates: null, candidates: [], note: "no exalt/chaos price yet — poll first" });
   }
-  let scored = scoreAll(prices, resolved.rates);
+  const cx = loadCxMarketView(league, prices);
+  let scored = scoreAll(prices, resolved.rates, cx);
   if (q) scored = scored.filter((c) => c.item.toLowerCase().includes(q));
   return NextResponse.json({
     rates: resolved.rates,
     ratesSource: resolved.source,
     ratesFetchedAt: resolved.fetchedAt,
     fetchedAt: latestFetchedAt(league),
+    cx: cxSummary(league, cx),
     candidates: scored.slice(0, limit),
   });
 }
@@ -63,7 +85,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no exalt/chaos price yet — poll first" }, { status: 409 });
   }
 
-  const scored = scoreAll(prices, resolved.rates); // flipScore desc
+  const scored = scoreAll(prices, resolved.rates, loadCxMarketView(league, prices)); // worthScore desc
   const perCount = new Map<string, number>();
   const added: Array<{ itemId: string; item: string; category: string }> = [];
 

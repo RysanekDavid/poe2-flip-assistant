@@ -145,6 +145,32 @@ export const config = {
     alertMinEvDiv: num("CRAFT_MARGIN_ALERT_MIN_EV_DIV", 1), // …and EV ≥ this many Divine (skip trivial edges)
   },
 
+  // Top Flips on GGG's own currency-exchange history (core/cx). Tunables, not facts: each one
+  // is an assumption the owner can move without a deploy.
+  cx: {
+    historyDays: num("CX_HISTORY_DAYS", 14), // stored market-hours older than this are pruned
+    backfillHours: num("CX_BACKFILL_HOURS", 24), // hours walked back to fill gaps (persistence needs 24)
+    // Gold is not tradable, so its Div value cannot be observed — this is the owner's valuation
+    // (same approach as poe2-arb's POE2ARB_GOLD_PER_EX). Lower = gold dearer = fees bite harder.
+    goldPerExalt: num("CX_GOLD_PER_EXALT", 5000),
+    edgeThresholdPct: num("CX_EDGE_THRESHOLD_PCT", 5), // an hour "held" the edge at ≥ this net %
+    flowSharePct: num("CX_FLOW_SHARE_PCT", 10), // share of the slower leg's flow you can expect to fill
+    hintPositionDiv: num("CX_HINT_POSITION_DIV", 10), // position size the time-to-sell hint is quoted for
+    liquiditySafeDivH: num("CX_LIQ_SAFE_DIV_H", 1000), // slower-leg turnover (Div/h) for a "safe" tier
+    liquidityRiskyDivH: num("CX_LIQ_RISKY_DIV_H", 100), // …and for "risky"; below it is "thin"
+    // Leg guards: a quote below either floor, or on a ratio grid coarser than maxGridStepPct
+    // (each leg ≥ 10 quote units per item or ≥ 10 items per quote unit), cannot carry an edge —
+    // see core/cx/cxMarketModel. Live data put every computable edge at 43–48% under looser
+    // values (25% grid / 50% cap): those were quantisation and dumps, not flips.
+    minLegUnits: num("CX_MIN_LEG_UNITS", 20), // item units/h per leg
+    minLegDivPerHour: num("CX_MIN_LEG_DIV_H", 20), // Div/h per leg-hour (also a route hour's floor)
+    maxGridStepPct: num("CX_MAX_GRID_STEP_PCT", 10),
+    maxPlausibleEdgePct: num("CX_MAX_PLAUSIBLE_EDGE_PCT", 30), // above = artefact, never ranked
+    // lowest/highest_ratio look like resting-order extremes, not fills, in real digests —
+    // band (market-making) edges stay off until that is verified.
+    bandEdges: (process.env.CX_BAND_EDGES ?? "false").toLowerCase() === "true",
+  },
+
   buyExaltDiscount: num("BUY_EXALT_DISCOUNT", 0.92),
   sellChaosBonus: num("SELL_CHAOS_BONUS", 1.08),
   minVolume: num("MIN_VOLUME", 50), // below this = illiquid (orders won't fill fast)

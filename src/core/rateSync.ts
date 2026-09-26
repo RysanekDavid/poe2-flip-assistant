@@ -1,5 +1,6 @@
 import { deriveCxRates, fetchCxDigest, type CxDigest, type CxRates } from "../api/cxClient";
 import { fetchScoutLeagues } from "../api/scoutClient";
+import { ingestCxDigest, LIVE_HISTORY_SOURCES } from "./cx/cxIngest";
 import type { LeagueOption } from "../api/types";
 import {
   ratesFetchedAt,
@@ -33,11 +34,19 @@ const ALWAYS_TRACKED = "Standard";
 export interface RateSources {
   digest: () => Promise<CxDigest>;
   scoutLeagues: () => Promise<LeagueOption[]>;
+  /**
+   * Also keep the digest this refresh already paid for in the market history (core/cx), so the
+   * steady-state hour costs one request, not two. Optional: rate tests leave it out.
+   */
+  ingest?: (digest: CxDigest, leagues: readonly string[]) => void;
 }
 
 const LIVE_SOURCES: RateSources = {
   digest: () => fetchCxDigest(),
   scoutLeagues: fetchScoutLeagues,
+  ingest: (digest, leagues) => {
+    ingestCxDigest(digest, leagues, LIVE_HISTORY_SOURCES.resolveNames);
+  },
 };
 
 function toUpserts(rates: CxRates): RateUpsert[] {
@@ -100,12 +109,23 @@ export async function refreshCxRatesIfStale(
     const digest = await sources.digest();
     lastGoodDigestAt = Date.now();
     const written = storeDigestRates(digest, [...leagues, ALWAYS_TRACKED]);
+    keepHistory(digest, leagues, sources);
     if (written.length > 0) console.log(`[cx] rates updated for ${written.join(", ")}`);
     else console.warn(`[cx] digest has no currency-exchange activity for ${stale.join(", ")} yet`);
     return written;
   } catch (err) {
     console.warn(`[cx] rate refresh failed: ${err instanceof Error ? err.message : String(err)}`);
     return [];
+  }
+}
+
+/** History is a bonus on top of the rates: its failure is reported, never allowed to cost them. */
+function keepHistory(digest: CxDigest, leagues: readonly string[], sources: RateSources): void {
+  if (sources.ingest == null) return;
+  try {
+    sources.ingest(digest, leagues);
+  } catch (err) {
+    console.warn(`[cx-history] ingest of refreshed digest failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 

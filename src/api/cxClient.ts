@@ -31,8 +31,8 @@ export const CX_CURRENCY_IDS = {
 /** Private leagues are published in the same payload; their names always carry this suffix. */
 const PRIVATE_LEAGUE = /\(PL\d+\)$/;
 
-// Extra keys (lowest_stock/highest_stock, and anything GGG adds) pass through untouched; only
-// the fields the rate maths actually consumes are declared, so a new field is not an outage.
+// Anything GGG adds passes through untouched; only the fields the rate maths and the market
+// history actually consume are declared, so a new field is not an outage.
 const CxMarketSchema = z
   .object({
     league: z.string(),
@@ -41,6 +41,8 @@ const CxMarketSchema = z
     volume_traded: z.record(z.number()),
     lowest_ratio: z.record(z.number()).nullish(),
     highest_ratio: z.record(z.number()).nullish(),
+    lowest_stock: z.record(z.number()).nullish(),
+    highest_stock: z.record(z.number()).nullish(),
   })
   .passthrough();
 
@@ -52,7 +54,10 @@ const CxDigestSchema = z
   .passthrough();
 
 export type CxDigest = z.infer<typeof CxDigestSchema>;
-type CxMarket = z.infer<typeof CxMarketSchema>;
+export type CxMarket = z.infer<typeof CxMarketSchema>;
+
+/** Length of one digest window; digest ids are unix-second hour boundaries. */
+export const CX_HOUR_SECONDS = HOUR_SECONDS;
 
 export type CxPair = "exalt_per_divine" | "chaos_per_divine" | "exalt_per_chaos";
 

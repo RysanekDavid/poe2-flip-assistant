@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { compact, fmtSmart } from "../lib/format";
-import { formatDenom, type Denom } from "../core/treasury";
+import { formatDenom, formatObservedDenom, type Denom } from "../core/treasury";
 import { categoryColor, marginTint, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { FlameIcon, ArrowDownIcon } from "./ui/icons";
 import { EmptySection } from "./ui/EmptySection";
 import { Sparkline } from "./ui/Sparkline";
+import { EdgeBadge, edgeTooltip, type FlipEdgeInfo, type RankGate } from "./FlipEdge";
 
-interface FlipRow {
+interface FlipRow extends FlipEdgeInfo {
   itemId: string;
   item: string;
   category: string;
@@ -36,6 +37,17 @@ type SortKey = "item" | "midDivine" | "buyExalt" | "sellChaos" | "marginPct" | "
 type SortDir = "asc" | "desc";
 const NUMERIC: Set<SortKey> = new Set(["midDivine", "buyExalt", "sellChaos", "marginPct", "change7d", "volume", "throughputDivDay", "oscScore", "worthScore"]);
 
+/** Observed exchange legs keep their precision; your own and estimated prices keep whole orbs. */
+function legText(r: FlipRow, d: Denom): string {
+  return r.mode === "RECO" && r.source === "cx" ? formatObservedDenom(d) : formatDenom(d);
+}
+
+/** Only a ranked margin earns a tint: never an estimate (a volume lookup) nor an unranked edge. */
+function marginTone(r: FlipRow): string {
+  if (!r.ranked) return "text-neutral-500";
+  return r.mode === "RECO" && r.source === "estimated" ? "text-neutral-500" : marginTint(r.marginPct);
+}
+
 function cmp(a: FlipRow, b: FlipRow, key: SortKey, dir: SortDir): number {
   let d: number;
   if (NUMERIC.has(key)) d = ((a[key] as number | null) ?? -Infinity) - ((b[key] as number | null) ?? -Infinity);
@@ -51,6 +63,7 @@ export function SpreadTable({
   onSelect?: (s: { id: string; name: string }) => void;
 }) {
   const [rows, setRows] = useState<FlipRow[]>([]);
+  const [gate, setGate] = useState<RankGate | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("worthScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [filter, setFilter] = useState("");
@@ -62,6 +75,7 @@ export function SpreadTable({
         .then((r) => r.json())
         .then((d) => {
           setRows(d.spreads ?? []);
+          setGate(d.rankGate ?? null);
           setErr(null);
         })
         .catch((e) => setErr(String(e))),
@@ -180,10 +194,10 @@ export function SpreadTable({
                   </span>
                 </td>
                 <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{fmtSmart(r.midDivine)}</td>
-                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.buyDisp)}</td>
-                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.sellDisp)}</td>
+                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{legText(r, r.buyDisp)}</td>
+                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{legText(r, r.sellDisp)}</td>
                 <td className={`${CELL} text-right`}>
-                  <span className={`rounded px-1.5 py-0.5 font-semibold tabular-nums ${marginTint(r.marginPct)}`}>{r.marginPct.toFixed(1)}%</span>
+                  <span className={`rounded px-1.5 py-0.5 font-semibold tabular-nums ${marginTone(r)}`}>{r.marginPct.toFixed(1)}%</span>
                 </td>
                 <td className={`${CELL} whitespace-nowrap text-right`}>
                   <span className="inline-flex items-center justify-end gap-1.5">
@@ -224,7 +238,9 @@ export function SpreadTable({
                       est ⏳
                     </span>
                   ) : (
-                    <span className="text-xs text-neutral-500">est</span>
+                    <span title={edgeTooltip(r, gate)}>
+                      <EdgeBadge row={r} />
+                    </span>
                   )}
                 </td>
               </tr>

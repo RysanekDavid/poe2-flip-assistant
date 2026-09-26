@@ -7,13 +7,15 @@ import { type Currency } from "../../../core/priceEngine";
 import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 import { scoreItem } from "../../../core/flipModel";
+import { cxRankGate, loadCxMarketView } from "../../../core/cx/cxItemMarkets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/spreads → flip plan per watched item (same model as discovery).
- * REAL mode when manual Ange prices set, else volume-adaptive RECO. Ranked by flipScore.
+ * REAL mode when manual Ange prices set, else the market estimate: GGG exchange history when the
+ * item has a market there, the labelled heuristic otherwise. Ranked by worthScore.
  * Per-user: the watchlist is private, so spreads are scoped to the logged-in account.
  */
 export async function GET() {
@@ -33,6 +35,7 @@ export async function GET() {
   }
 
   const staleMs = config.manualStaleHours * 3600_000;
+  const cx = loadCxMarketView(league, prices);
   const spreads = watch
     .map((w) => {
       const price = byId.get(w.item_id);
@@ -48,7 +51,7 @@ export async function GET() {
         stale || w.manual_sell_chaos == null
           ? null
           : { amount: w.manual_sell_chaos, ccy: (w.manual_sell_ccy ?? "CHAOS") as Currency };
-      const row = scoreItem(price, resolved.rates, mBuy, mSell);
+      const row = scoreItem(price, resolved.rates, mBuy, mSell, cx?.byItemId.get(w.item_id) ?? null);
       return {
         ...row,
         thresholdPct: w.buy_threshold_pct,
@@ -71,6 +74,7 @@ export async function GET() {
     ratesSource: resolved.source,
     ratesFetchedAt: resolved.fetchedAt,
     spreads,
+    rankGate: cxRankGate(),
     currencyIcons,
   });
 }

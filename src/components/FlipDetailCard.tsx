@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Save, ArrowRightCircle, CheckCircle2 } from "lucide-react";
 import { roundPrice } from "../lib/format";
-import { formatDenom, type Denom } from "../core/treasury";
+import { formatAmount, formatDenom, type Denom } from "../core/treasury";
 
 /** Ninja's native quote unit is Divine — show it the way ninja does so numbers reconcile at a glance. */
 function fmtMid(div: number): string {
@@ -24,7 +24,7 @@ interface FlipRow {
   marginPct: number;
   mode: "REAL" | "RECO";
   profitChaos: number;
-  marketMarginPct: number;
+  edgePct: number;
   buyDisp: Denom;
   sellDisp: Denom;
   marketBuyDisp: Denom;
@@ -46,7 +46,7 @@ interface WatchItem {
 /** A currency icon + amount, e.g. (◇) 49 Div. Falls back to text if the icon isn't loaded. */
 function CcyAmount({ denom, icons, className = "" }: { denom: Denom; icons: Icons; className?: string }) {
   const icon = icons[denom.unit];
-  const a = denom.unit === "DIVINE" ? Math.round(denom.amount).toLocaleString("en-US") : roundPrice(denom.amount);
+  const a = formatAmount(denom);
   return (
     <span className={`inline-flex items-center gap-1 tabular-nums ${className}`}>
       {icon && (
@@ -292,10 +292,10 @@ export function FlipDetailCard({ selectedId }: { selectedId?: string }) {
 
           {/* market estimate — single compact line */}
           <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded bg-neutral-800/40 px-2.5 py-1.5 text-xs text-neutral-400">
-            <span><span className="font-semibold text-neutral-300">Market</span> mid {fmtMid(row.midDivine)} Div · buy ~{formatDenom(row.marketBuyDisp)} · sell ~{formatDenom(row.marketSellDisp)} · {row.marketMarginPct.toFixed(1)}%</span>
+            <span><span className="font-semibold text-neutral-300">Market</span> mid {fmtMid(row.midDivine)} Div · buy ~{formatDenom(row.marketBuyDisp)} · sell ~{formatDenom(row.marketSellDisp)} · {row.edgePct.toFixed(1)}%</span>
             {row.mode === "REAL" &&
               (() => {
-                const d = row.marginPct - row.marketMarginPct;
+                const d = row.marginPct - row.edgePct;
                 const up = d >= 0;
                 return (
                   <span className={`rounded px-1.5 py-0.5 text-xs font-bold ${up ? "bg-good/20 text-good" : "bg-bad/20 text-bad"}`}>

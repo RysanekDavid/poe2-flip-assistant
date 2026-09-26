@@ -5,6 +5,7 @@ import { config } from "../config/env";
 import { hashPasswordSync, genApiKey } from "../auth/credentials";
 import { migratePatchProvenance } from "./sourceMigrations";
 import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
+import { ensureCxTables } from "./cxMigrations";
 import { applicationSchemaSql } from "./schemaFiles";
 
 let db: Database.Database | null = null;
@@ -21,6 +22,7 @@ export function getDb(): Database.Database {
   conn.pragma("foreign_keys = ON");
 
   conn.exec(applicationSchemaSql());
+  ensureCxTables(conn);
   migratePatchProvenance(conn);
 
   // Additive migrations — CREATE TABLE IF NOT EXISTS won't add columns to an existing DB,

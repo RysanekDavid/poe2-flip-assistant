@@ -1,14 +1,17 @@
 import { fetchAll } from "../api/ninjaClient";
 import { config } from "../config/env";
 import { fireAlert } from "../core/alertEngine";
+import { loadCxMarketView, type CxMarketView } from "../core/cx/cxItemMarkets";
+import { pruneCxMarketHistory, syncCxHistory } from "../core/cx/cxIngest";
+import { trackCxOutcomes } from "../core/cx/cxOutcomes";
 import { scoreItem } from "../core/flipModel";
 import { getPolledLeagues, leagueForUser, sameLeague } from "../core/leagueUsers";
 import { type Currency, type ExchangeRates } from "../core/priceEngine";
 import { resolveRates } from "../core/rates";
 import { refreshCxRatesIfStale } from "../core/rateSync";
-import { analyzeTrend } from "../core/trendDetector";
+import { advanceTrends, type TrendEvent } from "../core/trendAlerts";
 import { pruneMarginHistory } from "../db/craftQueries";
-import { insertSnapshots, pruneObservations, priceHistory, pruneSnapshots } from "../db/marketQueries";
+import { insertSnapshots, pruneObservations, pruneSnapshots } from "../db/marketQueries";
 import { listUsers, type UserPublic } from "../db/userQueries";
 import { getWatchlistForLeague, manualAgeMs, type WatchItem } from "../db/watchlistQueries";
 import { roundPrice } from "../lib/format";
@@ -48,11 +51,28 @@ export async function runCycle(): Promise<void> {
     }
   }
 
+  // Fill gaps in the stored exchange history AFTER the sweeps, so a cold backfill (bounded,
+  // 2s between requests) never delays fresh ninja prices. Fail-quiet like the refresh above.
+  await syncCxHistory(leagues);
+  for (const league of leagues) trackOutcomes(league);
+
   // Retention is global, not per league — run it once the sweeps have added this tick's rows.
   const pruned = pruneSnapshots(config.retentionDays);
   pruneObservations(); // age out stale price-book observations
   pruneMarginHistory(config.retentionDays); // keep craft EV history bounded like everything else
-  console.log(`[poll] cycle done — pruned ${pruned} snapshot(s) older than ${config.retentionDays}d`);
+  const cxPruned = pruneCxMarketHistory(); // null = not due (hourly)
+  const cxNote = cxPruned == null ? "" : `, ${cxPruned} exchange market-hour(s) older than ${config.cx.historyDays}d`;
+  console.log(`[poll] cycle done — pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${cxNote}`);
+}
+
+/** Settle and publish exchange edges for the outcome log. A failure is logged, never fatal. */
+function trackOutcomes(league: string): void {
+  try {
+    const { resolved, published } = trackCxOutcomes(league);
+    if (resolved + published > 0) console.log(`[cx-outcomes] "${league}" resolved ${resolved}, published ${published}`);
+  } catch (err: unknown) {
+    console.error(`[cx-outcomes] "${league}" failed:`, err instanceof Error ? err.message : err);
+  }
 }
 
 /** Fetch, store and alert for a single league. */
@@ -69,11 +89,20 @@ async function sweepLeague(league: string): Promise<void> {
   else console.log(`[poll] "${league}" rates from ${resolved?.source}`);
 
   const byId = new Map<string, PricedItem>(items.map((i) => [i.itemId, i]));
+  const cx = loadCxMarketView(league, items);
   const viewers = usersViewing(league);
+  const watches = viewers.map((user) => ({ user, rows: getWatchlistForLeague(user.id, league) }));
+  // Every market item's state advances every sweep, watched or not — so someone who starts
+  // watching an item mid-trend inherits its real state instead of a stale one.
+  const trends = advanceTrends(league, items);
   console.log(`[poll] "${league}" evaluating watchlists for ${viewers.length} user(s)`);
-  for (const user of viewers) {
-    for (const watch of getWatchlistForLeague(user.id, league)) {
-      evaluateWatch(user.id, league, watch, byId.get(watch.item_id), rates);
+  for (const { user, rows } of watches) {
+    for (const watch of rows) {
+      const current = byId.get(watch.item_id);
+      if (!current) continue;
+      if (rates != null) fireSpreadAlert(user.id, league, watch, current, rates, cx);
+      const trend = trends.get(watch.item_id);
+      if (trend != null) fireTrendAlert(user.id, league, watch, trend);
     }
   }
 }
@@ -89,26 +118,14 @@ function usersViewing(league: string): UserPublic[] {
   return listUsers().filter((u) => sameLeague(leagueForUser(u.id), league));
 }
 
-/** Spread + trend evaluation for one watched item. */
-function evaluateWatch(
-  userId: number,
-  league: string,
-  watch: WatchItem,
-  current: PricedItem | undefined,
-  rates: ExchangeRates | null,
-): void {
-  if (!current) return;
-  if (rates != null) fireSpreadAlert(userId, league, watch, current, rates);
-  fireTrendAlert(userId, league, watch, current);
-}
-
-/** REAL-mode spread alert only; the RECO margin is a heuristic, not a signal. */
+/** REAL-mode spread alert only; the market estimate is context, not a signal. */
 function fireSpreadAlert(
   userId: number,
   league: string,
   w: WatchItem,
   current: PricedItem,
   rates: ExchangeRates,
+  cx: CxMarketView | null,
 ): void {
   const ageMs = manualAgeMs(w.manual_set_at);
   const fresh = ageMs != null && ageMs <= config.manualStaleHours * 3600_000;
@@ -121,40 +138,19 @@ function fireSpreadAlert(
       ? { amount: w.manual_sell_chaos, ccy: (w.manual_sell_ccy ?? "CHAOS") as Currency }
       : null;
 
-  const flip = scoreItem(current, rates, mBuy, mSell);
+  const flip = scoreItem(current, rates, mBuy, mSell, cx?.byItemId.get(w.item_id) ?? null);
   if (flip.mode !== "REAL" || flip.marginPct < w.buy_threshold_pct || flip.marginPct > SANE_MAX_MARGIN) return;
+  const market = `${flip.source === "cx" ? "exchange" : "est."} ~${flip.edgePct.toFixed(0)}%`;
   fireAlert(userId, league, {
     type: "SPREAD",
     itemId: w.item_id,
     itemName: w.item_name,
-    message: `${flip.marginPct.toFixed(1)}% — buy ${roundPrice(flip.buyExalt)}ex → sell ${roundPrice(flip.sellChaos)}c · market ~${flip.marketMarginPct.toFixed(0)}%`,
+    message: `${flip.marginPct.toFixed(1)}% — buy ${roundPrice(flip.buyExalt)}ex → sell ${roundPrice(flip.sellChaos)}c · ${market}`,
     value: flip.marginPct,
     threshold: w.buy_threshold_pct,
   });
 }
 
-/** Trend signal, or — failing that — a bare 7d spike on a watched item. */
-function fireTrendAlert(userId: number, league: string, w: WatchItem, current: PricedItem): void {
-  const history = priceHistory(league, w.item_id, 168);
-  const trend = analyzeTrend(w.item_name, current.change7d, history, current.volume);
-  if (trend.signal === "BUY" || trend.signal === "SELL") {
-    fireAlert(userId, league, {
-      type: "TREND",
-      itemId: w.item_id,
-      itemName: w.item_name,
-      message: `${trend.signal}: ${trend.reason}`,
-      value: trend.change7d,
-      threshold: config.thresholds.change7dPct,
-    });
-    return;
-  }
-  if (current.change7d == null || current.change7d < config.thresholds.change7dPct) return;
-  fireAlert(userId, league, {
-    type: "SPIKE",
-    itemId: w.item_id,
-    itemName: w.item_name,
-    message: `+${current.change7d.toFixed(0)}% 7d — spiking, watch for a flip window`,
-    value: current.change7d,
-    threshold: config.thresholds.change7dPct,
-  });
+function fireTrendAlert(userId: number, league: string, w: WatchItem, event: TrendEvent): void {
+  fireAlert(userId, league, { ...event, itemId: w.item_id, itemName: w.item_name });
 }

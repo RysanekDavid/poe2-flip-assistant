@@ -4,11 +4,13 @@ import { pathToFileURL } from "node:url";
 const targets = {
   auth: "src/scripts/testAuth.ts",
   craft: "src/scripts/testCraftMargin.ts",
+  cx: "src/scripts/testCxHistory.ts",
   "craft-valuation": "src/scripts/testCraftValuation.ts",
   "craft-guides": "src/scripts/testCraftGuides.ts",
   balance: "src/scripts/testBalanceLeague.ts",
   demand: "src/scripts/testDemandHeat.ts",
   db: "src/scripts/testDbCompact.ts",
+  flips: "src/scripts/testFlipModel.ts",
   market: "src/scripts/testMarketLeague.ts",
   rates: "src/scripts/testRates.ts",
   "snipe-db": "src/scripts/testSnipeDb.ts",

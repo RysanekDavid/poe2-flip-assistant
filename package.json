@@ -22,6 +22,8 @@
     "test:user-league": "tsx src/scripts/runWithTestEnv.ts user-league",
     "test:market-league": "tsx src/scripts/runWithTestEnv.ts market",
     "test:rates": "tsx src/scripts/runWithTestEnv.ts rates",
+    "test:cx": "tsx src/scripts/runWithTestEnv.ts cx",
+    "test:flips": "tsx src/scripts/runWithTestEnv.ts flips",
     "test:craft": "tsx src/scripts/runWithTestEnv.ts craft && tsx src/scripts/runWithTestEnv.ts craft-valuation && tsx src/scripts/runWithTestEnv.ts craft-guides && tsx src/scripts/runWithTestEnv.ts balance && tsx src/scripts/runWithTestEnv.ts demand",
     "test:db": "tsx src/scripts/runWithTestEnv.ts db",
     "test:valuation": "tsx src/scripts/testValuation.ts",

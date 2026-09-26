@@ -1,15 +1,21 @@
 import type { PricedItem } from "../api/types";
-import {
-  recommendOffsets,
-  divineToExalt,
-  divineToChaos,
-  toDivine,
-  divineTo,
-  type ExchangeRates,
-  type Currency,
-} from "./priceEngine";
+import { config } from "../config/env";
+import { divineToExalt, divineToChaos, toDivine, divineTo, type ExchangeRates, type Currency } from "./priceEngine";
 import { denominateIn, pickUnit, type Denom } from "./treasury";
 import { oscillationScore } from "./trendDetector";
+import { isPublishable, type CxItemStats } from "./cx/cxPersistence";
+import {
+  cxRowFields,
+  liquidityTier,
+  marketEstimate,
+  throughputDivDay,
+  timeToSellHint,
+  type CxRowFields,
+  type LiquidityTier,
+  type MarketEstimate,
+  type MarketSource,
+  type TimeToSellHint,
+} from "./flipMarket";
 
 export type FlipMode = "REAL" | "RECO";
 
@@ -40,13 +46,13 @@ export interface ManualPrice {
   ccy: Currency;
 }
 
-export interface FlipRow {
+export interface FlipRow extends CxRowFields {
   itemId: string;
   item: string;
   category: string;
   icon: string | null;
   midDivine: number;
-  volume: number;
+  volume: number; // poe.ninja volumePrimaryValue — Div-denominated, time unit unverified
   change7d: number | null;
   change24h: number | null; // derived from the tail of ninja's 7d sparkline
   spark: number[] | null; // downsampled 7d sparkline (cumulative %) for row sparklines
@@ -56,12 +62,20 @@ export interface FlipRow {
   mode: FlipMode;
   profitChaos: number; // profit per single flip, in Chaos
   profitDiv: number; // profit per single flip, in Divine (canonical)
-  throughputDivDay: number; // profitDiv × daily volume — UPPER BOUND Div/day if you moved all flow
-  flipScore: number; // profitChaos × volume — raw, for reference
+  throughputDivDay: number; // profit/unit × units you can fill per day (flow share of the slower leg)
   oscScore: number; // 7d wiggle beyond drift — high = repeats well
-  worthScore: number; // 0–100 composite: margin + liquidity + oscillation − risk
-  marketMarginPct: number;
-  // display, in the trade currencies (REAL = your chosen units; RECO = auto-denominated)
+  worthScore: number; // 0–100: margin + liquidity + oscillation, × persistence/estimate confidence − risk
+  /** Where the market numbers come from: GGG's exchange history, or the labelled heuristic. */
+  source: MarketSource;
+  /** Market edge %: net of priced gold fees, 6h median (cx) — or the heuristic target (estimated). */
+  edgePct: number;
+  /** False when the row is kept out of ranking (see isRanked); its worthScore is then 0. */
+  ranked: boolean;
+  liquidityTier: LiquidityTier;
+  /** Div per hour the slower leg (cx) or the market (estimated) moves. */
+  slowerLegDivPerHour: number;
+  timeToSellHint: TimeToSellHint | null;
+  // display, in the trade currencies (REAL = your chosen units; market = the legs' own currencies)
   buyDisp: Denom;
   sellDisp: Denom;
   marketBuyDisp: Denom;
@@ -72,104 +86,155 @@ export interface FlipRow {
   stable: boolean;
 }
 
+/** Estimated rows rank below observed ones at equal inputs: their margin is a guess. */
+const ESTIMATED_PENALTY = 0.5;
+
+interface TradeLegs {
+  mode: FlipMode;
+  buyDivine: number;
+  sellDivine: number;
+  marginPct: number;
+  buyDisp: Denom;
+  sellDisp: Denom;
+}
+
+/** REAL mode = your observed Ange prices; otherwise the market estimate IS the trade. */
+function tradeLegs(
+  market: MarketEstimate,
+  rates: ExchangeRates,
+  manualBuy: ManualPrice | null,
+  manualSell: ManualPrice | null,
+): TradeLegs {
+  if (manualBuy == null || manualSell == null) {
+    const { buyDivine, sellDivine, buyDisp, sellDisp } = market;
+    return { mode: "RECO", buyDivine, sellDivine, marginPct: market.edgePct, buyDisp, sellDisp };
+  }
+  const buyDivine = toDivine(manualBuy.amount, manualBuy.ccy, rates);
+  const sellDivine = toDivine(manualSell.amount, manualSell.ccy, rates);
+  return {
+    mode: "REAL",
+    buyDivine,
+    sellDivine,
+    marginPct: buyDivine > 0 ? ((sellDivine - buyDivine) / buyDivine) * 100 : 0,
+    buyDisp: { amount: manualBuy.amount, unit: manualBuy.ccy },
+    sellDisp: { amount: manualSell.amount, unit: manualSell.ccy },
+  };
+}
+
+/** Market legs in the trade currencies: mirror your REAL units, else the market's own legs. */
+function marketDisplay(market: MarketEstimate, legs: TradeLegs, p: PricedItem, rates: ExchangeRates): [Denom, Denom] {
+  if (legs.mode === "REAL") {
+    return [
+      { amount: divineTo(market.buyDivine, legs.buyDisp.unit, rates), unit: legs.buyDisp.unit },
+      { amount: divineTo(market.sellDivine, legs.sellDisp.unit, rates), unit: legs.sellDisp.unit },
+    ];
+  }
+  if (market.source === "cx") return [market.buyDisp, market.sellDisp];
+  const unit = pickUnit(p.baseValue, rates);
+  return [denominateIn(market.buyDivine, unit, rates), denominateIn(market.sellDivine, unit, rates)];
+}
+
 /**
- * Single source of truth for flip math. Discovery and watchlist both go through
- * here so numbers never diverge.
+ * 0–100 "worth": margin × liquidity × repeatability, scaled by how many recent hours the edge
+ * actually held (cx) or by the estimate penalty, and discounted for hold-risk.
+ */
+function worthScore(legs: TradeLegs, market: MarketEstimate, osc: number, risky: boolean): number {
+  if (!isRanked(legs, market)) return 0;
+  // An estimated margin is a lookup on volume, not an observation — scoring it would just count
+  // liquidity twice (the audit's "Score ≈ volume rank"), so it contributes nothing.
+  const observed = legs.mode === "REAL" || market.source === "cx";
+  const marginN = observed ? Math.min(Math.max(legs.marginPct, 0) / 20, 1) : 0;
+  const liqN = Math.min(Math.log10(market.turnoverDivPerHour + 1) / Math.log10(50000), 1);
+  const oscN = Math.min(osc / 100, 1);
+  // Multiplicative liquidity gate: a fat edge on a leg below the "risky" flow is not a flip you
+  // can run, so it must never outrank a modest edge on a liquid market.
+  const liquidity = Math.min(1, market.turnoverDivPerHour / config.cx.liquidityRiskyDivH);
+  const base = 0.45 * marginN + 0.4 * liqN + 0.15 * oscN;
+  return Math.round(100 * base * liquidity * confidence(legs, market) * (risky ? 0.75 : 1));
+}
+
+/**
+ * Ranked rows compete in the score; unranked ones are shown with their numbers but score 0.
+ * Your own prices always rank. An observed edge ranks only through the shared publish gate
+ * (held ≥ 4 of 6 hours, slower leg ≥ the "risky" liquidity tier). Implausible data never ranks.
+ */
+function isRanked(legs: TradeLegs, market: MarketEstimate): boolean {
+  if (legs.mode === "REAL") return true;
+  if (market.cx?.edge != null) return isPublishable(market.cx, config.cx.liquidityRiskyDivH);
+  return market.cx?.issue !== "implausible";
+}
+
+/** How much the margin can be trusted: your own prices fully, observed edges by persistence. */
+function confidence(legs: TradeLegs, market: MarketEstimate): number {
+  if (legs.mode === "REAL") return 1;
+  // Floor 0.25: a one-hour spike keeps a quarter of its score, never zero — it may be the start
+  // of a real window, it just must not outrank edges that have held for hours.
+  if (market.edge != null) return 0.25 + 0.75 * (market.edge.persistence6 / 6);
+  return ESTIMATED_PENALTY;
+}
+
+function riskOf(c7: number | null): "PUMP" | "DECLINE" | null {
+  return c7 == null ? null : c7 > 100 ? "PUMP" : c7 < -20 ? "DECLINE" : null;
+}
+
+/**
+ * Single source of truth for flip math. Discovery and watchlist both go through here so numbers
+ * never diverge.
  *
- * REAL mode (both manual prices given): true spread from observed prices, in
- * whatever currencies you entered. RECO mode: volume-adaptive recommendation.
+ * REAL mode (both manual prices given): true spread from observed prices. Otherwise the market
+ * estimate: GGG's exchange history when `cx` is given for this item, the labelled volume
+ * heuristic when it is not.
  */
 export function scoreItem(
   p: PricedItem,
   rates: ExchangeRates,
   manualBuy: ManualPrice | null = null,
   manualSell: ManualPrice | null = null,
+  cx: CxItemStats | null = null,
 ): FlipRow {
-  const hasManual = manualBuy != null && manualSell != null;
-  const buyCcy: Currency = manualBuy?.ccy ?? "EXALT";
-  const sellCcy: Currency = manualSell?.ccy ?? "CHAOS";
-
-  // market estimate — always computed so REAL rows can still compare against it
-  const reco = recommendOffsets(p.volume);
-  const marketBuyDivine = p.baseValue * reco.buyDiscount;
-  const marketSellDivine = p.baseValue * reco.sellBonus;
-  const marketMarginPct = reco.marginPct;
-
-  let buyDivine: number;
-  let sellDivine: number;
-  let marginPct: number;
-  let profitChaos: number;
-  let mode: FlipMode;
-  let buyDisp: Denom;
-  let sellDisp: Denom;
-
-  if (hasManual) {
-    mode = "REAL";
-    buyDivine = toDivine(manualBuy.amount, buyCcy, rates);
-    sellDivine = toDivine(manualSell.amount, sellCcy, rates);
-    marginPct = buyDivine > 0 ? ((sellDivine - buyDivine) / buyDivine) * 100 : 0;
-    profitChaos = divineToChaos(sellDivine - buyDivine, rates);
-    buyDisp = { amount: manualBuy.amount, unit: buyCcy };
-    sellDisp = { amount: manualSell.amount, unit: sellCcy };
-  } else {
-    mode = "RECO";
-    buyDivine = marketBuyDivine;
-    sellDivine = marketSellDivine;
-    marginPct = marketMarginPct;
-    profitChaos = divineToChaos(p.baseValue * 2 * reco.offset, rates);
-    // one currency for both legs (picked off the mid) so buy/sell read in the same unit
-    const unit = pickUnit(p.baseValue, rates);
-    buyDisp = denominateIn(buyDivine, unit, rates);
-    sellDisp = denominateIn(sellDivine, unit, rates);
-  }
-
-  // market estimate shown in the trade currencies: mirror your REAL units, auto-denominate for RECO
-  const marketUnit = pickUnit(p.baseValue, rates);
-  const marketBuyDisp: Denom = hasManual
-    ? { amount: divineTo(marketBuyDivine, buyCcy, rates), unit: buyCcy }
-    : denominateIn(marketBuyDivine, marketUnit, rates);
-  const marketSellDisp: Denom = hasManual
-    ? { amount: divineTo(marketSellDivine, sellCcy, rates), unit: sellCcy }
-    : denominateIn(marketSellDivine, marketUnit, rates);
-
-  const c7 = p.change7d;
-  const risk: "PUMP" | "DECLINE" | null = c7 == null ? null : c7 > 100 ? "PUMP" : c7 < -20 ? "DECLINE" : null;
-
-  // composite "worth" 0–100: margin × liquidity × repeatability, discounted for hold-risk
+  const market = marketEstimate(p, rates, cx);
+  const legs = tradeLegs(market, rates, manualBuy, manualSell);
+  const [marketBuyDisp, marketSellDisp] = marketDisplay(market, legs, p, rates);
+  const profitDiv = legs.mode === "REAL" ? legs.sellDivine - legs.buyDivine : market.netDivPerUnit;
+  const profitChaos = divineToChaos(profitDiv, rates);
+  const risk = riskOf(p.change7d);
   const osc = oscillationScore(p.spark7d);
-  const marginN = Math.min(Math.max(marginPct, 0) / 20, 1);
-  const liqN = p.volume > 0 ? Math.min(Math.log10(p.volume + 1) / Math.log10(50000), 1) : 0;
-  const oscN = Math.min(osc / 100, 1);
-  const riskFactor = risk ? 0.75 : 1;
-  const worthScore = Math.round(100 * (0.45 * marginN + 0.4 * liqN + 0.15 * oscN) * riskFactor);
-
   return {
+    ...cxRowFields(market),
     itemId: p.itemId,
     item: p.itemName,
     category: p.category,
     icon: p.icon,
     midDivine: p.baseValue,
     volume: p.volume,
-    change7d: c7,
+    change7d: p.change7d,
     change24h: change24hFromSpark(p.spark7d),
     spark: downsampleSpark(p.spark7d),
-    buyExalt: divineToExalt(buyDivine, rates),
-    sellChaos: divineToChaos(sellDivine, rates),
-    marginPct,
-    mode,
+    buyExalt: divineToExalt(legs.buyDivine, rates),
+    sellChaos: divineToChaos(legs.sellDivine, rates),
+    marginPct: legs.marginPct,
+    mode: legs.mode,
     profitChaos,
-    profitDiv: sellDivine - buyDivine,
-    throughputDivDay: Math.max(sellDivine - buyDivine, 0) * p.volume,
-    flipScore: profitChaos * p.volume,
+    profitDiv,
+    throughputDivDay: throughputDivDay(profitDiv, market.unitsPerHour),
     oscScore: osc,
-    worthScore,
-    marketMarginPct,
-    buyDisp,
-    sellDisp,
+    worthScore: worthScore(legs, market, osc, risk != null),
+    source: market.source,
+    edgePct: market.edgePct,
+    ranked: isRanked(legs, market),
+    liquidityTier: liquidityTier(market.turnoverDivPerHour),
+    slowerLegDivPerHour: market.turnoverDivPerHour,
+    timeToSellHint: timeToSellHint(legs.sellDivine, market.unitsPerHour),
+    buyDisp: legs.buyDisp,
+    sellDisp: legs.sellDisp,
     marketBuyDisp,
     marketSellDisp,
-    liveVsNinjaPct: hasManual && p.baseValue > 0 ? ((buyDivine + sellDivine) / 2 / p.baseValue - 1) * 100 : null,
+    liveVsNinjaPct: liveVsNinja(legs, p.baseValue),
     risk,
-    stable: c7 != null && Math.abs(c7) < 30,
+    stable: p.change7d != null && Math.abs(p.change7d) < 30,
   };
+}
+
+function liveVsNinja(legs: TradeLegs, mid: number): number | null {
+  return legs.mode === "REAL" && mid > 0 ? ((legs.buyDivine + legs.sellDivine) / 2 / mid - 1) * 100 : null;
 }
