@@ -30,9 +30,10 @@ export interface RecipeLegSpec {
   pdpsMin?: number; // weapon result legs are valued by physical DPS, not just mods
   esMin?: number; // armour legs: select ES (caster) bases
   evMin?: number; // armour legs: select evasion (attack) bases
-  // Absolute ask floor for this leg (Div). Default ABS_FLOOR_DIV (0.05); set lower ONLY for legs
-  // whose honest price is ~1 exalt (cheap putrefaction / plain rare bases), or they never price.
-  minAskDiv?: number;
+  // Absolute ask floor for this leg in EXALTS (converted at scan-time rates). Unset = the default
+  // ABS_FLOOR_DIV (0.05 Div); set ONLY for legs whose honest price is ~1 exalt (cheap putrefaction
+  // / plain rare bases), or they never price.
+  minAskEx?: number;
   corrupted?: boolean | "any"; // default false; "any" = don't filter (vaal-gamble outputs mix both)
   stats: RecipeStatSpec[];
   note: string; // approximation caveat shown in the UI

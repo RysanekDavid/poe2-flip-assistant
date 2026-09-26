@@ -318,5 +318,12 @@ export function upsertCraftBaseHunt(
     setHuntActive(userId, existing, true);
   }
   db.prepare("UPDATE hunts SET recipe_key = ? WHERE user_id = ? AND id = ?").run(recipeKey, userId, id);
+  // The old label-keyed upsert let repeated clicks stack duplicates, each still scanning with a
+  // junk-floor cap. The keyed row above is now the one; switch the leftovers off (kept, not
+  // deleted — they are the user's rows and carry hit history).
+  db.prepare(
+    `UPDATE hunts SET active = 0
+     WHERE user_id = ? AND league = ? AND mode = 'CRAFT_BASE' AND recipe_key IS NULL AND label = ? AND id != ?`,
+  ).run(userId, league, hunt.label, id);
   return { id, created: existing == null };
 }

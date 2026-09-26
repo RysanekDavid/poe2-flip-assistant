@@ -4,11 +4,13 @@ import { Flame } from "lucide-react";
 import { evLabel } from "./craft/craftView";
 import { useCraftMargins } from "./craft/CraftMarginsContext";
 import { ComputedLeague } from "./ui/ComputedLeague";
+import { RETURN_FLAG_MULTIPLE } from "../core/craftValuation";
 
 /**
  * "What to craft right now" — the top recipes across all domains ranked by modelled EV. Only
  * reports that pass the server's confidence gate (≥8 listed and ≥5 usable asks per leg, bait not
- * dominating, uncapped return) are eligible: a 3-of-5 whale-ask cluster must never top the list.
+ * dominating, fresh, ≥20 result listings when the return is flagged) are eligible: a thin whale-ask
+ * cluster must never top the list.
  */
 export function CraftTopPicks() {
   const { data, error } = useCraftMargins();
@@ -39,6 +41,14 @@ export function CraftTopPicks() {
             )}
             <span className="text-neutral-300">{r.label}</span>
             <span className={`font-semibold tabular-nums ${ev >= 0 ? "text-emerald-400" : "text-bad"}`}>{evLabel(ev, ex)}</span>
+            {r.report?.returnFlagged && (
+              <span
+                className="text-xs text-amber-500"
+                title={`expected return is over ${RETURN_FLAG_MULTIPLE}× the attempt cost — normal for 1-ex bases, but open the result search and check the asks are real`}
+              >
+                ⚠ &gt;{RETURN_FLAG_MULTIPLE}× cost
+              </span>
+            )}
           </span>
         );
       })}

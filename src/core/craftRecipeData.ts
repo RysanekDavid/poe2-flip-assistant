@@ -1,6 +1,6 @@
 import { MATS } from "./craftMaterials";
 import { GUIDES } from "./craftGuideData";
-import { CHEAP_BASE_FLOOR_DIV } from "./craftValuation";
+import { CHEAP_BASE_FLOOR_EX } from "./craftValuation";
 import type { CraftRecipe } from "./craftRecipes";
 
 /**
@@ -244,7 +244,7 @@ export const RECIPES: CraftRecipe[] = [
     source: "XTheFarmerX putrefaction craft (scraps+sockets FIRST → omen+rib → reveal discipline)",
     base: {
       label: "Cheap rare ES boots (not desecrated)",
-      minAskDiv: CHEAP_BASE_FLOOR_DIV, // honest price ~1 ex — the default 0.05 floor would reject every real ask
+      minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       category: "armour.boots",
       rarity: "rare",
       ilvlMin: 82,
@@ -273,7 +273,7 @@ export const RECIPES: CraftRecipe[] = [
     source: "XTheFarmerX putrefaction craft — evasion variant for the attack meta",
     base: {
       label: "Cheap rare evasion boots (not desecrated)",
-      minAskDiv: CHEAP_BASE_FLOOR_DIV, // honest price ~1 ex — the default 0.05 floor would reject every real ask
+      minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       category: "armour.boots",
       rarity: "rare",
       ilvlMin: 82,

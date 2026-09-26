@@ -8,12 +8,15 @@ import {
   rankGate,
   computeMargin,
   ABS_FLOOR_DIV,
-  CHEAP_BASE_FLOOR_DIV,
+  CHEAP_BASE_FLOOR_EX,
+  CHEAP_BASE_FLOOR_FALLBACK_DIV,
+  GATE_FLAGGED_MIN_RESULT_TOTAL,
+  legFloorDiv,
   MIN_LEG_SAMPLES,
   RESULT_PERCENTILE,
   RETURN_FLAG_MULTIPLE,
 } from "../core/craftValuation";
-import { listingDiv, shouldAlert, keepPreviousReport } from "../core/craftMargin";
+import { listingDiv, shouldAlert, keepPreviousReport, pickStalest } from "../core/craftMargin";
 import { RECIPES } from "../core/craftRecipes";
 import { prefillCosts, presetCap } from "../core/craftPrefill";
 import { parseStoredReport } from "../core/craftReports";
@@ -62,17 +65,24 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   // a legitimately ~1-ex base (putrefaction boots): the default floor rejects it, the per-leg floor prices it
   const oneEx = Array.from({ length: 20 }, (_, i) => 0.003 + i * 0.0002);
   ok("cheap base under the DEFAULT floor is rejected", floorValue(oneEx, 0.25).kept === 0);
-  const cheap = floorValue(oneEx, 0.25, CHEAP_BASE_FLOOR_DIV);
+  const cheapFloor = legFloorDiv({ minAskEx: CHEAP_BASE_FLOOR_EX }, { exaltPerDivine: 300, chaosPerDivine: 10 });
+  const cheap = floorValue(oneEx, 0.25, cheapFloor);
   ok("cheap base with its per-leg floor prices at p25 (~0.004 Div)", cheap.kept === 20 && near(cheap.value, 0.00395), String(cheap.value));
-  const cheapBait = floorValue([...oneEx, 0.0001, 0.0002], 0.25, CHEAP_BASE_FLOOR_DIV);
+  const cheapBait = floorValue([...oneEx, 0.0001, 0.0002], 0.25, cheapFloor);
+  // late-league inflation: at 600 ex/div a 1-ex base is 0.00167 Div — a fixed 0.002 Div floor
+  // would reject it, the exalt-denominated floor (0.7 ex) still admits it
+  const inflated = legFloorDiv({ minAskEx: CHEAP_BASE_FLOOR_EX }, { exaltPerDivine: 600, chaosPerDivine: 20 });
+  ok("exalt floor tracks inflation: 1 ex at 600 ex/div still clears it", 1 / 600 >= inflated && inflated < 0.002, String(inflated));
+  ok("no rates → Div fallback floor", legFloorDiv({ minAskEx: CHEAP_BASE_FLOOR_EX }, null) === CHEAP_BASE_FLOOR_FALLBACK_DIV);
+  ok("legs without minAskEx keep the default floor", legFloorDiv({}, null) === ABS_FLOOR_DIV);
   ok("per-leg floor still drops sub-exalt dumps", cheapBait.dropped === 2);
-  const legFloors = RECIPES.filter((r) => r.base.minAskDiv != null).map((r) => r.key).sort().join(",");
+  const legFloors = RECIPES.filter((r) => r.base.minAskEx != null).map((r) => r.key).sort().join(",");
   ok(
     "exactly the ~1-ex-base recipes carry a cheap base floor",
     legFloors === "amulet_giga_spirit,armour_putrefaction,boots_putrefaction,boots_putrefaction_ev,gloves_projectile_plus2",
     legFloors,
   );
-  ok("no result leg lowers its floor", RECIPES.every((r) => r.result.minAskDiv == null));
+  ok("no result leg lowers its floor", RECIPES.every((r) => r.result.minAskEx == null));
   const nan = floorValue([Number.NaN, -1, 0, 1, 2, 3], 0.5);
   ok("NaN/≤0 prices discarded, not counted as bait", nan.kept === 3 && nan.dropped === 0, `${nan.kept}/${nan.dropped}`);
 }
@@ -101,7 +111,7 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   ok("cheap-base craft: EV 1.697 is NOT altered by the high-return flag", near(armour.evDiv, 1.697), String(armour.evDiv));
   ok(`cheap-base craft: return > ${RETURN_FLAG_MULTIPLE}× cost is flagged`, armour.returnFlagged);
   const armourReport = report({
-    base: leg({ priceDiv: 0.003, floorDiv: CHEAP_BASE_FLOOR_DIV, percentile: 0.25 }),
+    base: leg({ priceDiv: 0.003, floorDiv: CHEAP_BASE_FLOOR_FALLBACK_DIV, percentile: 0.25 }),
     result: leg({ priceDiv: 6 }),
     materialsDiv: 0.1,
     evDiv: armour.evDiv,
@@ -110,6 +120,25 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   });
   ok("flagged cheap-base report still ranks (flag is not a gate)", rankGate(armourReport).ok, rankGate(armourReport).reasons.join("; "));
   ok("flagged cheap-base report still alerts", shouldAlert(armourReport));
+
+  // boundary: a 5-of-8 whale cluster (asks 200–800 Div) clears the base gate but is flagged →
+  // needs ≥20 result listings, so it must neither rank nor alert
+  const whaleAsks = floorValue([200, 350, 500, 650, 800], RESULT_PERCENTILE);
+  const whaleEv = computeMargin(2, whaleAsks.value, 1, 0.3);
+  const whale5of8 = report({
+    result: leg({ priceDiv: whaleAsks.value, total: 8, samples: 5, outliersDropped: 0 }),
+    evDiv: whaleEv.evDiv,
+    marginPct: whaleEv.marginPct,
+    returnFlagged: whaleEv.returnFlagged,
+  });
+  ok("5-of-8 whale cluster is flagged", whaleEv.returnFlagged, String(whaleEv.evDiv));
+  ok(`flagged 5-of-8 whale: not a top pick (needs ≥${GATE_FLAGGED_MIN_RESULT_TOTAL} result listings)`, !rankGate(whale5of8).ok, rankGate(whale5of8).reasons.join("; "));
+  ok("flagged 5-of-8 whale: no alert", !shouldAlert(whale5of8));
+
+  // a kept report stops ranking once its last good scan is stale
+  ok("fresh report ranks", rankGate(report(), { ageMs: 3_600_000, maxAgeMs: 7 * 3_600_000 }).ok);
+  const stale = rankGate(report(), { ageMs: 10 * 3_600_000, maxAgeMs: 7 * 3_600_000 });
+  ok("stale kept report does not rank", !stale.ok && stale.reasons.some((r) => r.startsWith("stale")), stale.reasons.join("; "));
 }
 
 // --- stored-report compatibility: pre-rework rows still parse, as legacy ---
@@ -169,6 +198,27 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   const other = upsertCraftBaseHunt(1, "Other League", "test-recipe", hunt);
   ok("same recipe in another league is a separate hunt", other.created && other.id !== first.id);
   // a pre-recipe_key preset row (label identity) is adopted once, not duplicated
+  const dupA = Number(
+    db
+      .prepare(
+        "INSERT INTO hunts (user_id, league, label, mode, max_amount, max_ccy) VALUES (1, 'Test League', 'base · test-dup', 'CRAFT_BASE', 1, 'divine')",
+      )
+      .run().lastInsertRowid,
+  );
+  const dupB = Number(
+    db
+      .prepare(
+        "INSERT INTO hunts (user_id, league, label, mode, max_amount, max_ccy) VALUES (1, 'Test League', 'base · test-dup', 'CRAFT_BASE', 1, 'divine')",
+      )
+      .run().lastInsertRowid,
+  );
+  const dupKept = upsertCraftBaseHunt(1, "Test League", "test-dup-key", { ...hunt, label: "base · test-dup" });
+  const dupRows = db.prepare("SELECT id, active FROM hunts WHERE label = 'base · test-dup' ORDER BY id").all() as Array<{ id: number; active: number }>;
+  ok(
+    "adoption keeps one legacy duplicate active and switches the others off",
+    dupKept.id === dupA && dupRows.find((r) => r.id === dupA)?.active === 1 && dupRows.find((r) => r.id === dupB)?.active === 0,
+    JSON.stringify(dupRows),
+  );
   const legacyId = Number(
     db
       .prepare(
@@ -179,6 +229,28 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   const adopted = upsertCraftBaseHunt(1, "Test League", "test-legacy-key", { ...hunt, label: "base · test-legacy" });
   ok("legacy label-keyed preset row adopted and keyed", !adopted.created && adopted.id === legacyId);
   db.prepare("DELETE FROM hunts WHERE label LIKE 'base · test-%'").run();
+}
+
+// --- round-robin: a recipe that keeps failing transiently must not starve the others ---
+{
+  const keys = ["a", "b", "c"];
+  const rows = [
+    { recipe_key: "a", scanned_at: "2026-09-01 00:00:00", last_error_at: null as string | null },
+    { recipe_key: "b", scanned_at: "2026-09-01 00:10:00", last_error_at: null as string | null },
+    { recipe_key: "c", scanned_at: "2026-09-01 00:20:00", last_error_at: null as string | null },
+  ];
+  ok("never-scanned recipe goes first", pickStalest([...keys, "d"], rows) === "d");
+  const picked: string[] = [];
+  for (let tick = 0; tick < 6; tick++) {
+    const key = pickStalest(keys, rows)!;
+    picked.push(key);
+    const row = rows.find((r) => r.recipe_key === key)!;
+    const now = `2026-09-02 00:${String(tick).padStart(2, "0")}:00`;
+    // "a" has a PERSISTENT transient error: its scanned_at never moves, only last_error_at does
+    if (key === "a") row.last_error_at = now;
+    else row.scanned_at = now;
+  }
+  ok("persistent-error recipe does not starve the round-robin", picked.join("") === "abcabc", picked.join(""));
 }
 
 // --- transient scan failures never overwrite a good report ---

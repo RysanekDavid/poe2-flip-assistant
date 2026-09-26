@@ -1,7 +1,7 @@
 import { MATS } from "./craftMaterials";
 import { GUIDES_2 } from "./craftGuideData2";
 import { PUTREFACTION_MATS } from "./craftRecipeData";
-import { CHEAP_BASE_FLOOR_DIV } from "./craftValuation";
+import { CHEAP_BASE_FLOOR_EX } from "./craftValuation";
 import type { CraftRecipe } from "./craftRecipes";
 
 /**
@@ -23,7 +23,7 @@ export const RECIPES_2: CraftRecipe[] = [
     source: "XTheFarmerX putrefaction craft [S10] — body-armour variant (scraps+sockets FIRST → omen+rib)",
     base: {
       label: "Cheap rare body armour (not desecrated)",
-      minAskDiv: CHEAP_BASE_FLOOR_DIV, // honest price ~1 ex — the default 0.05 floor would reject every real ask
+      minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       category: "armour.chest",
       rarity: "rare",
       ilvlMin: 80,
@@ -54,7 +54,7 @@ export const RECIPES_2: CraftRecipe[] = [
     source: "Fubgun/XTheFarmerX +2 projectile gloves [S5] (chaos-spam → ribcage blocker → fracture at 4 mods → Hysteria)",
     base: {
       label: "Rare glove base (high ilvl)",
-      minAskDiv: CHEAP_BASE_FLOOR_DIV, // honest price ~1 ex — the default 0.05 floor would reject every real ask
+      minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       category: "armour.gloves",
       rarity: "rare",
       ilvlMin: 82,
@@ -143,7 +143,7 @@ export const RECIPES_2: CraftRecipe[] = [
     source: "XTheFarmerX expert/giga Spirit amulet [S11] (desecration Spirit hunt → Enhancement convert → catalysed res)",
     base: {
       label: "Magic Gold/Solar amulet",
-      minAskDiv: CHEAP_BASE_FLOOR_DIV, // honest price ~1 ex — the default 0.05 floor would reject every real ask
+      minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       type: "Solar Amulet",
       rarity: "magic",
       ilvlMin: 75,

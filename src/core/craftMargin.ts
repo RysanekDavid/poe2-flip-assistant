@@ -12,6 +12,7 @@ import {
   getMaterialPrices,
   getCurrencyDivMap,
   type MaterialPrice,
+  type CraftMarginRow,
 } from "../db/craftQueries";
 import { ALL_MATERIALS } from "./craftMaterials";
 import { getDefaultLeague } from "./leagueState";
@@ -25,6 +26,8 @@ import {
   RESULT_PERCENTILE,
   floorValue,
   computeMargin,
+  legFloorDiv,
+  RETURN_FLAG_MULTIPLE,
   rankGate,
 } from "./craftValuation";
 import {
@@ -133,7 +136,7 @@ async function priceLeg(leg: RecipeLegSpec, pctl: number, ctx: LegContext): Prom
   const { total, listings, searchUrl } = await sampleListings(query, ctx.cred);
   const priced = listings.filter((l) => l.price && l.online);
   const divs = priced.map((l) => listingDiv(l.price!.amount, l.price!.currency, ctx.rates, ctx.currencyDiv));
-  const { value, kept, dropped, floorDiv } = floorValue(divs, pctl, leg.minAskDiv);
+  const { value, kept, dropped, floorDiv } = floorValue(divs, pctl, legFloorDiv(leg, ctx.rates));
   if (kept < MIN_LEG_SAMPLES) {
     throw new LegFloorError(
       `${leg.label}: only ${kept} ask(s) at or above the ${floorDiv.toFixed(3)} Div floor (need ${MIN_LEG_SAMPLES}); ` +
@@ -280,7 +283,9 @@ function maybeAlert(recipe: CraftRecipe, report: RecipeMarginReport): void {
       type: "CRAFT_MARGIN",
       itemId: recipe.key,
       itemName: recipe.label,
-      message: `EV ~${report.evDiv.toFixed(1)} div/attempt · ${report.marginPct.toFixed(0)}% margin (hit ${(report.hitRate * 100).toFixed(0)}%, ${report.result.samples} comps)`,
+      message:
+        `EV ~${report.evDiv.toFixed(1)} div/attempt · ${report.marginPct.toFixed(0)}% margin (hit ${(report.hitRate * 100).toFixed(0)}%, ${report.result.samples} comps)` +
+        (report.returnFlagged ? ` · ⚠ return >${RETURN_FLAG_MULTIPLE}× cost — check the result asks` : ""),
       value: report.marginPct,
       threshold: alertMarginPct,
       link: report.result.searchUrl,
@@ -288,43 +293,62 @@ function maybeAlert(recipe: CraftRecipe, report: RecipeMarginReport): void {
   }
 }
 
-function persist(league: string, recipe: CraftRecipe, outcome: ScanOutcome): RecipeMarginReport {
+/** What a scan did to the stored state — logged by the poller as the real outcome. */
+export interface PersistResult {
+  key: string;
+  kept: boolean; // transient failure: the previous good report was kept, `error` recorded beside it
+  report: RecipeMarginReport; // the report now stored (the kept one when `kept`)
+  error: string | null; // the scan's error (transient when kept)
+}
+
+function persist(league: string, recipe: CraftRecipe, outcome: ScanOutcome): PersistResult {
   const report = outcome.report;
   const previous = storedReport(league, recipe.key);
-  if (keepPreviousReport(previous, outcome)) {
-    console.warn(`[craft-margin] ${recipe.key}: transient scan failure, keeping the last good report — ${report.error}`);
-    recordCraftScanError(league, recipe.key, report.error ?? "transient scan failure");
-    return previous!;
+  if (previous && keepPreviousReport(previous, outcome)) {
+    const error = report.error ?? "transient scan failure";
+    recordCraftScanError(league, recipe.key, error);
+    return { key: recipe.key, kept: true, report: previous, error };
   }
   upsertCraftMargin(league, report.key, JSON.stringify(report), report.evDiv, report.marginPct);
   // Only successful scans feed the EV history — a failed/missing report's evDiv 0 would render as
   // a fake sparkline dip, misrepresenting the trend.
   if (report.status === "ok") insertMarginHistory(league, report.key, report.evDiv, report.marginPct);
   maybeAlert(recipe, report);
-  return report;
+  return { key: recipe.key, kept: false, report, error: report.error };
 }
 
-/** Is scan-time `a` staler than `b`? Never-scanned (null) beats any real timestamp. */
-function isStaler(a: string | null, b: string | null): boolean {
-  if (a === null) return b !== null;
-  if (b === null) return false;
-  return a < b; // sqlite "YYYY-MM-DD HH:MM:SS" sorts lexicographically
+/** When a recipe was last ATTEMPTED: the later of its last stored scan and its last transient
+ *  failure. sqlite "YYYY-MM-DD HH:MM:SS" stamps sort lexicographically. */
+function lastAttempt(row: Pick<CraftMarginRow, "scanned_at" | "last_error_at">): string {
+  return row.last_error_at != null && row.last_error_at > row.scanned_at ? row.last_error_at : row.scanned_at;
 }
 
-/** The recipe whose stored report is oldest (or never scanned) — the round-robin pick. */
-function stalestRecipe(league: string): CraftRecipe | null {
-  if (RECIPES.length === 0) return null;
-  const scanned = new Map(getCraftMargins(league).map((r) => [r.recipe_key, r.scanned_at]));
-  let best: CraftRecipe | null = null;
+/**
+ * Pure round-robin pick: the recipe attempted longest ago (never-scanned first). Ordering on the
+ * last ATTEMPT, not the last good scan — a recipe whose rescans keep failing transiently keeps an
+ * old scanned_at forever and would otherwise be picked on every tick, starving all the others.
+ */
+export function pickStalest(
+  keys: readonly string[],
+  rows: ReadonlyArray<Pick<CraftMarginRow, "recipe_key" | "scanned_at" | "last_error_at">>,
+): string | null {
+  const attempted = new Map(rows.map((r) => [r.recipe_key, lastAttempt(r)]));
+  let best: string | null = null;
   let bestAt: string | null = null;
-  for (const r of RECIPES) {
-    const at = scanned.get(r.key) ?? null;
-    if (best === null || isStaler(at, bestAt)) {
-      best = r;
+  for (const key of keys) {
+    const at = attempted.get(key) ?? null;
+    if (at === null) return key; // never scanned beats everything
+    if (best === null || (bestAt !== null && at < bestAt)) {
+      best = key;
       bestAt = at;
     }
   }
   return best;
+}
+
+function stalestRecipe(league: string): CraftRecipe | null {
+  const key = pickStalest(RECIPES.map((r) => r.key), getCraftMargins(league));
+  return RECIPES.find((r) => r.key === key) ?? null;
 }
 
 /** Shared per-scan context. Rates may be null (no source answered) — listingDiv then falls back to
@@ -337,7 +361,7 @@ async function scanContext(league: string, cred: TradeCred): Promise<LegContext>
 }
 
 /** Refresh the single stalest recipe (the poller's per-tick unit of work, ≤ 10 trade2 calls). */
-export async function refreshStalestRecipe(cred: TradeCred): Promise<RecipeMarginReport | null> {
+export async function refreshStalestRecipe(cred: TradeCred): Promise<PersistResult | null> {
   const league = getDefaultLeague();
   const recipe = stalestRecipe(league);
   if (!recipe) return null;
@@ -348,11 +372,11 @@ export async function refreshStalestRecipe(cred: TradeCred): Promise<RecipeMargi
 
 /** Refresh every recipe now (manual owner trigger, ≤ 10 trade2 calls per recipe through the
  *  shared limiter). buildReport never throws, so one recipe's failure never aborts the rest. */
-export async function refreshAllRecipes(cred: TradeCred): Promise<RecipeMarginReport[]> {
+export async function refreshAllRecipes(cred: TradeCred): Promise<PersistResult[]> {
   const league = getDefaultLeague();
   const ctx = await scanContext(league, cred);
   const prices = getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id));
-  const reports: RecipeMarginReport[] = [];
+  const reports: PersistResult[] = [];
   for (const recipe of RECIPES) {
     reports.push(persist(league, recipe, await buildReport(recipe, ctx, prices)));
   }

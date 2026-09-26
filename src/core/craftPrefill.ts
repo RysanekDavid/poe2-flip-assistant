@@ -34,7 +34,7 @@ export function prefillCosts(
   const why: string[] = [];
   if (base == null) {
     needs.push("baseCostDiv");
-    why.push("no floor-validated base price (the base leg failed its ask floor or has not been rescanned) — enter what you paid for the base");
+    why.push("no fresh floor-validated base price (the base leg failed its ask floor, has not been rescanned, or its last good scan is stale) — enter what you paid for the base");
   }
   if (matsCost == null) {
     needs.push("matsCostDiv");
@@ -59,7 +59,7 @@ export function presetCap(report: RecipeMarginReport | null, rates: ExchangeRate
     return {
       ok: false,
       error:
-        "no floor-validated base price for this recipe yet (its base leg failed the ask floor or predates the valuation fix) — " +
+        "no fresh floor-validated base price for this recipe (its base leg failed the ask floor, predates the valuation fix, or its last good scan is stale) — " +
         "wait for the next margin scan or set up the hunt manually with your own cap",
     };
   }

@@ -6,7 +6,7 @@ import { ALL_MATERIALS } from "../../../../core/craftMaterials";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 import { RECIPES, type CraftRecipe } from "../../../../core/craftRecipes";
-import { parseStoredReport } from "../../../../core/craftReports";
+import { parseStoredReport, rowFreshness } from "../../../../core/craftReports";
 import { rankGate } from "../../../../core/craftValuation";
 import { config } from "../../../../config/env";
 
@@ -62,7 +62,7 @@ export async function GET(): Promise<Response> {
     return {
       ...recipeMeta(r),
       report,
-      gate: report ? rankGate(report) : { ok: false, reasons: ["not scanned yet"] },
+      gate: report && row ? rankGate(report, rowFreshness(row)) : { ok: false, reasons: ["not scanned yet"] },
       scannedAt: row?.scanned_at ?? null,
       // a transient trade2 failure since that scan — the report above is the last GOOD one
       lastError: row?.last_error ?? null,

@@ -7,7 +7,7 @@ import { resolveRates } from "../../../../core/rates";
 import { fetchTradeMeta } from "../../../../api/tradeMeta";
 import { buildStatIndex } from "../../../../core/statResolver";
 import { legToQuery } from "../../../../core/craftMargin";
-import { storedReport } from "../../../../core/craftReports";
+import { actionableReport } from "../../../../core/craftReports";
 import { presetCap } from "../../../../core/craftPrefill";
 import { RECIPES } from "../../../../core/craftRecipes";
 
@@ -33,7 +33,7 @@ export async function POST(req: Request): Promise<Response> {
   // Hunts and the margin scan both run under the shared owner cred in the app default league;
   // building the preset from another league's price would cap the hunt at a foreign price.
   const league = getDefaultLeague();
-  const preset = presetCap(storedReport(league, recipe.key), resolveRates(league)?.rates ?? null);
+  const preset = presetCap(actionableReport(league, recipe.key), resolveRates(league)?.rates ?? null);
   if (!preset.ok) return NextResponse.json({ error: preset.error }, { status: 409 });
 
   const { stats } = await fetchTradeMeta();

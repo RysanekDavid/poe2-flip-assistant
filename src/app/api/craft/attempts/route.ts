@@ -11,7 +11,7 @@ import {
   getMaterialPrices,
 } from "../../../../db/craftQueries";
 import { RECIPES } from "../../../../core/craftRecipes";
-import { parseStoredReport, storedReport } from "../../../../core/craftReports";
+import { parseStoredReport, actionableReport } from "../../../../core/craftReports";
 import { priceMaterials } from "../../../../core/craftMargin";
 import { prefillCosts } from "../../../../core/craftPrefill";
 import { getDefaultLeague } from "../../../../core/leagueState";
@@ -102,7 +102,7 @@ export async function POST(req: Request): Promise<Response> {
   const recipe = RECIPES.find((r) => r.key === b.recipeKey)!;
   const { lines, missing } = priceMaterials(recipe, getMaterialPrices(league, recipe.materials.map((m) => m.material.id)));
   const totalDiv = lines.reduce((s, l) => s + (l.totalDiv ?? 0), 0);
-  const costs = prefillCosts(storedReport(league, recipe.key), b, { totalDiv, missing });
+  const costs = prefillCosts(actionableReport(league, recipe.key), b, { totalDiv, missing });
   if (!costs.ok) return NextResponse.json({ error: costs.error, needs: costs.needs }, { status: 409 });
 
   const id = addCraftAttempt(user.id, { recipeKey: b.recipeKey, ...costs, note: b.note ?? null });

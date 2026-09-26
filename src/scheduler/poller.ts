@@ -103,7 +103,9 @@ function start(): void {
       craftRefreshing = true;
       refreshStalestRecipe(ownerCred)
         .then((r) => {
-          if (r) console.log(`[craft-margin] ${r.key}: ${r.status} · EV ${r.evDiv.toFixed(1)} div · ${r.marginPct.toFixed(0)}%`);
+          if (!r) return;
+          if (r.kept) console.warn(`[craft-margin] ${r.key}: transient failure, kept previous report — ${r.error}`);
+          else console.log(`[craft-margin] ${r.key}: ${r.report.status} · EV ${r.report.evDiv.toFixed(1)} div · ${r.report.marginPct.toFixed(0)}%`);
         })
         .catch((e) => console.error("[craft-margin] refresh failed:", e instanceof Error ? e.message : e))
         .finally(() => {
@@ -118,7 +120,7 @@ function start(): void {
       craftRefreshing = true;
       console.log("[craft-margin] manual refresh dequeued — refreshing all recipes");
       refreshAllRecipes(ownerCred)
-        .then((rs) => console.log(`[craft-margin] manual refresh done — ${rs.length} recipe(s)`))
+        .then((rs) => console.log(`[craft-margin] manual refresh done — ${rs.length} recipe(s), ${rs.filter((r) => r.kept).length} kept previous after a transient failure`))
         .catch((e) => console.error("[craft-margin] manual refresh failed:", e instanceof Error ? e.message : e))
         .finally(() => {
           craftRefreshing = false;

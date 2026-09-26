@@ -6,7 +6,7 @@ import type { DemandItem } from "../api/scoutClient";
  * types a search; we rank the market for the "medium-volume sweet spot":
  *   - valuable enough to bother (value ≥ minTargetDiv)
  *   - NOT whale/mirror tier — can't afford to buy or resell fast (value ≤ maxTargetDiv)
- *   - liquid enough to resell (quantity ≥ minListings, some listings actually leave: sellThrough > 0)
+ *   - liquid enough to resell (quantity ≥ minListings); sell-through then SCORES speed, it does not gate
  *   - NOT so liquid that bots own it and fair prices vanish in <1s (quantity ≤ maxListings)
  *   - enough price history to trust the value (samples ≥ minSampleLogs)
  *
@@ -39,7 +39,6 @@ export function rankSnipeTargets(items: DemandItem[], exaltPerDivine: number): S
         valueDiv <= maxTargetDiv &&
         it.quantity >= minListings &&
         it.quantity <= maxListings &&
-        it.sellThrough > 0 &&
         it.samples >= minSampleLogs,
     )
     .map(({ it, valueDiv }) => {
