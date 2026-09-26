@@ -47,9 +47,7 @@ def analyze_market_history(
     )
 
 
-def current_market_values(
-    items: list[str], league: str
-) -> tuple[list[dict[str, object]], str]:
+def current_market_values(items: list[str], league: str) -> tuple[list[dict[str, object]], str]:
     """Return latest locally polled values for validated item names in one league."""
     names = _validated_items(items)
     try:
@@ -140,9 +138,7 @@ def _analyze_item(
     }
 
 
-def _current_item(
-    connection: sqlite3.Connection, requested: str, league: str
-) -> dict[str, object]:
+def _current_item(connection: sqlite3.Connection, requested: str, league: str) -> dict[str, object]:
     canonical = _resolve_name(connection, requested, league)
     row = connection.execute(
         """
