@@ -1,4 +1,5 @@
 import { getDb } from "./database";
+import type { PublishedEdgeDetail } from "./cxEdgeDetail";
 
 /** Persistence for the edge outcome loop (table cx_edge_outcomes, see cxMigrations.ts). */
 
@@ -8,6 +9,7 @@ export interface PublishedEdge {
   buyQuote: string;
   sellQuote: string;
   edgePct: number;
+  detail: PublishedEdgeDetail;
 }
 
 export interface PendingOutcome {
@@ -24,12 +26,19 @@ export function recordPublished(league: string, edges: readonly PublishedEdge[])
   if (edges.length === 0) return 0;
   const db = getDb();
   const stmt = db.prepare(
-    `INSERT INTO cx_edge_outcomes (league, item, hour, buy_quote, sell_quote, edge_pct)
-     VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(league, item, hour) DO NOTHING`,
+    `INSERT INTO cx_edge_outcomes (league, item, hour, buy_quote, sell_quote, edge_pct,
+       persistence6, slower_div_per_hour, net_div_per_unit, buy_price, sell_price, fee_complete)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(league, item, hour) DO NOTHING`,
   );
   let added = 0;
   db.transaction(() => {
-    for (const e of edges) added += stmt.run(league, e.item, e.hour, e.buyQuote, e.sellQuote, e.edgePct).changes;
+    for (const e of edges) {
+      const d = e.detail;
+      added += stmt.run(
+        league, e.item, e.hour, e.buyQuote, e.sellQuote, e.edgePct,
+        d.persistence6, d.slowerDivPerHour, d.netDivPerUnit, d.buyPrice, d.sellPrice, d.feeComplete ? 1 : 0,
+      ).changes;
+    }
   })();
   return added;
 }

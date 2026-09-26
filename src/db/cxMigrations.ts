@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { ensureCxEdgeDetailColumns } from "./cxEdgeDetail";
 
 /**
  * Tables for GGG's currency-exchange market history and the trend-alert state machine.
@@ -12,6 +13,7 @@ import type Database from "better-sqlite3";
 export function ensureCxTables(conn: Database.Database): void {
   conn.exec(MARKET_HISTORY_SQL);
   conn.exec(DERIVED_STATE_SQL);
+  ensureCxEdgeDetailColumns(conn);
 }
 
 const MARKET_HISTORY_SQL = `
