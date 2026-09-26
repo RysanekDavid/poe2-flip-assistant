@@ -9,6 +9,8 @@ import { POST as login } from "../app/api/auth/login/route";
 import { signSession, verifySession } from "../auth/auth";
 import { hashPassword, hashPasswordSync, verifyPassword } from "../auth/credentials";
 import { clientIp, createLoginRateLimiter, loginRateLimitKey } from "../auth/loginRateLimit";
+import { meResponse } from "../auth/meResponse";
+import { changePassword } from "../auth/passwordChange";
 import { resolveSessionUser } from "../auth/session";
 import {
   authenticate,
@@ -124,6 +126,59 @@ async function testLoginRoute(): Promise<void> {
   assert.equal((await login(loginRequest("", "x", "192.0.2.12"))).status, 400);
 }
 
+type LimiterModule = typeof import("../auth/loginRateLimit");
+
+/** Next inlines the limiter module into each route bundle; both copies must share one Map. */
+function testLimiterSurvivesModuleDuplication(): void {
+  const path = require.resolve("../auth/loginRateLimit");
+  const first = require(path) as LimiterModule;
+  delete require.cache[path];
+  const copy = require(path) as LimiterModule;
+  assert.notEqual(copy.createLoginRateLimiter, first.createLoginRateLimiter, "a genuinely separate module copy");
+  assert.equal(copy.loginRateLimiter, first.loginRateLimiter, "both copies use the process-wide limiter");
+}
+
+function passwordRequest(current: string, next: string, ip: string): Request {
+  return new Request("http://127.0.0.1:3000/api/auth/password", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-forwarded-for": ip },
+    body: JSON.stringify({ current, next }),
+  });
+}
+
+async function testSharedBudgetAcrossRoutes(): Promise<void> {
+  const changer = await createUser("budget-a", "budget-a-password", "member");
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const wrong = await changePassword(passwordRequest("wrong", "new-password-a", "192.0.2.20"), changer);
+    assert.equal(wrong.status, 403);
+  }
+  const login429 = await login(loginRequest("budget-a", "budget-a-password", "192.0.2.20"));
+  assert.equal(login429.status, 429, "password-change failures exhaust the login budget");
+
+  const guesser = await createUser("budget-b", "budget-b-password", "member");
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    assert.equal((await login(loginRequest("BUDGET-B", "wrong", "192.0.2.21"))).status, 401);
+  }
+  const change429 = await changePassword(passwordRequest("budget-b-password", "new-password-b", "192.0.2.21"), guesser);
+  assert.equal(change429.status, 429, "login failures exhaust the password-change budget");
+  assert.ok(Number(change429.headers.get("retry-after")) > 0);
+  assert.equal(await authenticate("budget-b", "new-password-b"), null, "throttled change did not apply");
+}
+
+async function testMeClearsRevokedCookie(): Promise<void> {
+  const user = await createUser("me-revoked", "me-password", "member");
+  const token = signSession(user.id, 60_000);
+  const live = meResponse(token);
+  assert.deepEqual(await live.json(), { user: { id: user.id, name: "me-revoked", role: "member" } });
+  assert.equal(live.headers.get("set-cookie"), null, "a valid session is left alone");
+  bumpSessionVersion(user.id);
+  const revoked = meResponse(token);
+  assert.deepEqual(await revoked.json(), { user: null });
+  assert.match(revoked.headers.get("set-cookie") ?? "", /poe2flip_session=;.*Max-Age=0/i, "revoked cookie is cleared");
+  const anonymous = meResponse(undefined);
+  assert.equal(anonymous.headers.get("set-cookie"), null, "no cookie, nothing to clear");
+}
+
 async function main(): Promise<void> {
   // Fresh DB every run: the test creates fixed usernames.
   for (const suffix of ["", "-wal", "-shm"]) rmSync(`${config.dbPath}${suffix}`, { force: true });
@@ -132,7 +187,10 @@ async function main(): Promise<void> {
   await testPasswordHashing();
   await testSessionRevocation();
   await testLoginRoute();
-  console.log("ALL PASS — login rate limit, async scrypt compat, session revocation");
+  testLimiterSurvivesModuleDuplication();
+  await testSharedBudgetAcrossRoutes();
+  await testMeClearsRevokedCookie();
+  console.log("ALL PASS — login rate limit (shared across routes), async scrypt compat, session revocation");
 }
 
 main().catch((error: unknown) => {

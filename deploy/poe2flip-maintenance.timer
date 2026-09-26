@@ -3,7 +3,8 @@ Description=Monthly PoE2 Flip SQLite VACUUM (low-traffic window, after the night
 
 [Timer]
 OnCalendar=*-*-01 04:30:00
-Persistent=true
+# No Persistent=: a catch-up run right after a reboot would VACUUM at a random, possibly busy
+# hour; skipping one month only leaves the freelist a little larger until the next 1st.
 
 [Install]
 WantedBy=timers.target

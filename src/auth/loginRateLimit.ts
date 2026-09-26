@@ -94,4 +94,12 @@ export function loginRateLimitKey(ip: string, username: string): string {
   return `${ip}\u0000${username.trim().toLowerCase()}`;
 }
 
-export const loginRateLimiter = createLoginRateLimiter();
+const processScope = globalThis as typeof globalThis & { __poe2flipLoginLimiter?: LoginRateLimiter };
+
+/**
+ * The process-wide limiter. Held on globalThis because Next inlines this module into every route
+ * bundle separately; a module-level instance would give /api/auth/login and /api/auth/password
+ * independent Maps, and the password route would not share the login budget.
+ */
+export const loginRateLimiter: LoginRateLimiter =
+  (processScope.__poe2flipLoginLimiter ??= createLoginRateLimiter());

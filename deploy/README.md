@@ -146,6 +146,14 @@ The middleware also rejects (403) any POST/PUT/PATCH/DELETE whose `Origin` heade
 differs from `APP_ORIGIN` — so it must be the exact public origin browsers use (scheme + host, no
 path, no `www.`). Requests without `Origin` (local agent, curl, deploy smoke) are unaffected.
 
+`APP_ORIGIN` must match `^https://host(:port)?$` in production (`http://` is accepted only outside
+production): no path, query, credentials or whitespace; a single trailing `/` is tolerated. Good:
+`APP_ORIGIN=https://flip.example.com`. Bad: `https://flip.example.com/app`, `flip.example.com`,
+`http://flip.example.com`. A missing or malformed value does **not** take the site down: the web
+journal logs `[middleware] APP_ORIGIN=... is invalid` once, mutations are then accepted only when
+their `Origin` host equals the request's `Host` header, and unauthenticated page loads are served
+the login page in place instead of being redirected. Fix the value and restart `poe2flip-web`.
+
 The Caddyfile sends HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy` and an enforcing
 Content-Security-Policy. `script-src`/`style-src` include `'unsafe-inline'` because Next.js streams
 its RSC payload through inline scripts and React/Recharts/driver.js use inline style attributes;
@@ -266,7 +274,11 @@ the `poe2flip` user, reading `DB_PATH` from `.env.local`:
 
 Neither stops the web or poller. The VACUUM waits up to 60 s (`--wait=60`) for the write lock and
 then **fails the unit** rather than skipping; `systemctl --failed` / `journalctl` shows it. It needs
-free disk of about twice the live data size while it runs. The app's own connections wait 5 s on a
+free disk of about twice the live data size while it runs and checks that first: with less than 2×
+(DB + WAL) free on the data filesystem it fails with `refusing to VACUUM ... free disk space first`
+before touching the file. The backup timer is `Persistent=true` (a night missed during downtime
+runs at the next boot); the VACUUM timer deliberately is not, so a reboot never triggers a catch-up
+VACUUM at a busy hour — a skipped month just waits for the next 1st. The app's own connections wait 5 s on a
 lock, so run the **first** VACUUM of a long-unvacuumed database manually with the poller stopped
 (`systemctl stop poe2flip-poller`, `sudo -u poe2flip bash -c 'cd /opt/poe2flip/current && npm run db:maintain'`,
 `systemctl start poe2flip-poller`); later monthly runs only reclaim a month of churn and are quick.

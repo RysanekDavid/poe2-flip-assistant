@@ -25,7 +25,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (pathname.startsWith("/api")) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  return NextResponse.redirect(loginUrl(req));
+  return loginRedirect(req);
 }
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -34,32 +34,80 @@ function isCrossOriginMutation(req: NextRequest): boolean {
   if (!MUTATING_METHODS.has(req.method.toUpperCase())) return false;
   const origin = req.headers.get("origin");
   if (origin === null) return false;
-  return origin !== appOrigin(req);
+  const config = originConfig();
+  if (config.kind === "invalid") return !matchesHostHeader(origin, req.headers.get("host"));
+  return origin !== (config.kind === "configured" ? config.origin : new URL(req.url).origin);
 }
 
-function loginUrl(req: NextRequest): URL {
-  return new URL("/login", appOrigin(req));
+/** Fallback when APP_ORIGIN is broken: the browser's Origin must at least name the Host it hit. */
+function matchesHostHeader(origin: string, host: string | null): boolean {
+  if (!host) return false;
+  try {
+    return new URL(origin).host === host.toLowerCase();
+  } catch (error: unknown) {
+    // "null" or garbage Origin: unparseable means it cannot match, so reject the mutation.
+    if (error instanceof TypeError) return false;
+    throw error;
+  }
 }
+
+function loginRedirect(req: NextRequest): NextResponse {
+  const config = originConfig();
+  if (config.kind === "invalid") {
+    // Serve the login page in place: an internal rewrite never puts the Host header or the
+    // internal upstream address into a response, and Next's adapter rejects relative Locations.
+    return NextResponse.rewrite(new URL("/login", req.url));
+  }
+  const base = config.kind === "configured" ? config.origin : new URL(req.url).origin;
+  return NextResponse.redirect(new URL("/login", base));
+}
+
+type OriginConfig = { kind: "configured"; origin: string } | { kind: "dev-request" } | { kind: "invalid" };
+
+// A lone trailing slash was accepted before this check existed; URL.origin drops it anyway.
+const ORIGIN_SHAPE = /^https?:\/\/(?:[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*|\[[0-9A-Fa-f:.]+\])(?::\d{1,5})?\/?$/;
+const ORIGIN_FALLBACK = "falling back to Origin-vs-Host checks and in-place login rewrites";
+let originCache: { key: string; config: OriginConfig } | null = null;
 
 /**
- * The public origin: validated APP_ORIGIN, never the internal upstream or a Host header.
- * Dev without APP_ORIGIN falls back to the request's own origin.
+ * The public origin: APP_ORIGIN, never the internal upstream or a Host header. Dev without
+ * APP_ORIGIN uses the request's own origin. A missing (production) or malformed value is logged
+ * once and degrades to Origin-vs-Host checks and in-place login rewrites instead of throwing —
+ * a throw here would 500 every request, including the login needed to fix anything.
  */
-function appOrigin(req: NextRequest): string {
-  const configured = process.env.APP_ORIGIN;
-  if (!configured) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("APP_ORIGIN is required in production (redirects + Origin check)");
-    }
-    return new URL(req.url).origin;
+function originConfig(): OriginConfig {
+  const raw = process.env.APP_ORIGIN ?? "";
+  const production = process.env.NODE_ENV === "production";
+  const key = `${production ? "prod" : "dev"}|${raw}`;
+  if (originCache?.key !== key) originCache = { key, config: parseOriginConfig(raw, production) };
+  return originCache.config;
+}
+
+function parseOriginConfig(raw: string, production: boolean): OriginConfig {
+  if (raw === "") {
+    if (!production) return { kind: "dev-request" };
+    console.error(`[middleware] APP_ORIGIN is not set in production; ${ORIGIN_FALLBACK}`);
+    return { kind: "invalid" };
   }
-  const origin = new URL(configured);
-  const invalidShape = origin.username !== "" || origin.password !== "" ||
-    origin.pathname !== "/" || origin.search !== "" || origin.hash !== "";
-  if (invalidShape || (process.env.NODE_ENV === "production" && origin.protocol !== "https:")) {
-    throw new Error("APP_ORIGIN must be a bare HTTPS origin in production");
+  const origin = ORIGIN_SHAPE.test(raw) ? parsedOrigin(raw) : null;
+  if (origin === null || (production && !origin.startsWith("https://"))) {
+    console.error(
+      `[middleware] APP_ORIGIN=${JSON.stringify(raw)} is invalid — expected ` +
+        `${production ? "https" : "http(s)"}://host[:port] with no path, query or credentials; ${ORIGIN_FALLBACK}`,
+    );
+    return { kind: "invalid" };
   }
-  return origin.origin;
+  return { kind: "configured", origin };
+}
+
+/** Normalized origin, or null when the shape passed but URL still rejects it (e.g. port 99999). */
+function parsedOrigin(raw: string): string | null {
+  try {
+    return new URL(raw).origin;
+  } catch (error: unknown) {
+    if (error instanceof TypeError) return null;
+    throw error;
+  }
 }
 
 async function verifyEdgeSession(token: string, secret: string | undefined): Promise<boolean> {

@@ -14,20 +14,23 @@ interface Metrics {
 const root = process.cwd();
 const sourceRoot = join(root, "src");
 const failures: string[] = [];
+const baseline = resolveBaseline();
 
 for (const path of sourceFiles(sourceRoot)) {
   const current = readFileSync(path, "utf8");
   const display = relative(root, path).split(sep).join("/");
   const metrics = inspect(display, current);
-  const baseline = baselineSource(display);
-  validate(display, metrics, baseline ? inspect(display, baseline) : null);
+  const previous = baselineSource(display);
+  validate(display, metrics, previous ? inspect(display, previous) : null);
 }
 
 if (failures.length > 0) {
   console.error(failures.join("\n"));
   process.exit(1);
 }
-console.log("ALL PASS — TypeScript policy lint (no new size debt, explicit any, or silent catches)");
+console.log(
+  `ALL PASS — TypeScript policy lint vs ${baseline.label} (no new size debt, explicit any, or silent catches)`,
+);
 
 function sourceFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -37,8 +40,40 @@ function sourceFiles(directory: string): string[] {
   });
 }
 
+interface Baseline {
+  commit: string;
+  label: string;
+}
+
+/**
+ * The ratchet compares against the code this change started from. Baselining on HEAD only works
+ * for uncommitted edits: in CI HEAD *is* the commit under test, so new debt would always pass.
+ *   1. LINT_BASE_REF (CI sets the pre-push SHA) — must resolve, else fail loudly
+ *   2. merge-base with origin/master (feature branches, local or CI)
+ *   3. HEAD (no origin/master, e.g. a fresh clone without remotes)
+ */
+function resolveBaseline(): Baseline {
+  const override = process.env.LINT_BASE_REF?.trim();
+  if (override) {
+    const commit = git(["rev-parse", "--verify", "--quiet", `${override}^{commit}`]);
+    if (commit === null) {
+      console.error(`LINT_BASE_REF=${override} does not resolve to a commit (shallow clone? force push?)`);
+      process.exit(1);
+    }
+    return { commit: commit.trim(), label: `LINT_BASE_REF ${override.slice(0, 12)}` };
+  }
+  const mergeBase = git(["merge-base", "origin/master", "HEAD"]);
+  if (mergeBase !== null) return { commit: mergeBase.trim(), label: `merge-base ${mergeBase.slice(0, 12)}` };
+  return { commit: "HEAD", label: "HEAD" };
+}
+
 function baselineSource(path: string): string | null {
-  const result = spawnSync("git", ["show", `HEAD:${path}`], {
+  return git(["show", `${baseline.commit}:${path}`]);
+}
+
+/** stdout of a git command, or null when it exits non-zero (missing ref/path). */
+function git(args: string[]): string | null {
+  const result = spawnSync("git", args, {
     cwd: root,
     encoding: "utf8",
     env: {
@@ -49,6 +84,7 @@ function baselineSource(path: string): string | null {
     },
     stdio: ["ignore", "pipe", "ignore"],
   });
+  if (result.error) throw new Error(`git could not start: ${result.error.message}`, { cause: result.error });
   return result.status === 0 ? result.stdout : null;
 }
 
@@ -96,28 +132,28 @@ function nodeLines(file: ts.SourceFile, node: ts.Node): number {
   return last - first + 1;
 }
 
-function validate(path: string, current: Metrics, baseline: Metrics | null): void {
-  compareDebt(path, "explicit TypeScript any", current.explicitAny, baseline?.explicitAny ?? 0, 0);
-  compareDebt(path, "empty catch blocks", current.emptyCatches, baseline?.emptyCatches ?? 0, 0);
+function validate(path: string, current: Metrics, previous: Metrics | null): void {
+  compareDebt(path, "explicit TypeScript any", current.explicitAny, previous?.explicitAny ?? 0, 0);
+  compareDebt(path, "empty catch blocks", current.emptyCatches, previous?.emptyCatches ?? 0, 0);
   compareDebt(
     path,
     "silent .catch(() => {}) handlers",
     current.silentPromiseCatches,
-    baseline?.silentPromiseCatches ?? 0,
+    previous?.silentPromiseCatches ?? 0,
     0,
   );
-  compareDebt(path, "file lines", current.lines, baseline?.lines ?? 0, 500);
-  compareDebt(path, "long functions", current.longFunctions, baseline?.longFunctions ?? 0, 0);
+  compareDebt(path, "file lines", current.lines, previous?.lines ?? 0, 500);
+  compareDebt(path, "long functions", current.longFunctions, previous?.longFunctions ?? 0, 0);
 }
 
 function compareDebt(
   path: string,
   label: string,
   current: number,
-  baseline: number,
+  baselineCount: number,
   allowed: number,
 ): void {
   if (current <= allowed) return;
-  if (baseline > allowed && current <= baseline) return;
-  failures.push(`${path}: ${label} ${current} exceeds ${allowed} (HEAD baseline ${baseline})`);
+  if (baselineCount > allowed && current <= baselineCount) return;
+  failures.push(`${path}: ${label} ${current} exceeds ${allowed} (baseline ${baselineCount})`);
 }

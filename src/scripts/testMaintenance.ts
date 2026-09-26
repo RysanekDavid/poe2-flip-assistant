@@ -3,11 +3,11 @@
 import assert from "node:assert/strict";
 import Database from "better-sqlite3";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
-import { vacuumDatabase } from "../db/maintenance";
+import { assertVacuumHeadroom, freeDiskBytes, vacuumDatabase } from "../db/maintenance";
 import { backupDatabase } from "../db/maintenanceBackup";
 
 const root = mkdtempSync(join(tmpdir(), "poe2flip-maintenance-"));
@@ -40,6 +40,21 @@ function testVacuum(): void {
   check.close();
 }
 
+function testVacuumDiskPreflight(): void {
+  const path = join(root, "no-space.db");
+  seedDatabase(path);
+  const bytes = statSync(path).size;
+  assert.throws(
+    () => vacuumDatabase(path, 1000, () => bytes),
+    /refusing to VACUUM .*needs ~.* free .*only .* available/,
+    "less than 2x the DB free fails loudly before touching the file",
+  );
+  assert.equal(statSync(path).size, bytes, "preflight failure leaves the DB untouched");
+  assert.throws(() => assertVacuumHeadroom(path, 100, 199), /refusing to VACUUM/);
+  assert.doesNotThrow(() => assertVacuumHeadroom(path, 100, 200));
+  assert.ok(freeDiskBytes(path) > 0, "statfs reports free space for the real filesystem");
+}
+
 function testVacuumFailsLoudWhenLocked(): void {
   const path = join(root, "locked.db");
   seedDatabase(path);
@@ -63,10 +78,20 @@ async function testBackup(): Promise<void> {
   const dir = join(root, "nightly");
   const unrelated = join(root, "keep-me.db.gz");
   writeFileSync(unrelated, "not a backup");
-  for (let day = 1; day <= 5; day += 1) {
-    const now = new Date(Date.UTC(2026, 8, day, 3, 15));
-    await backupDatabase({ dbPath: path, dir, keep: 3, busyTimeoutMs: 1000, now });
+  const warnings: string[] = [];
+  const originalWarn = console.warn;
+  console.warn = (...args: unknown[]): void => {
+    warnings.push(args.map(String).join(" "));
+  };
+  try {
+    for (let day = 1; day <= 5; day += 1) {
+      const now = new Date(Date.UTC(2026, 8, day, 3, 15));
+      await backupDatabase({ dbPath: path, dir, keep: 3, busyTimeoutMs: 1000, now });
+    }
+  } finally {
+    console.warn = originalWarn;
   }
+  assert.deepEqual(warnings, [], "one-step snapshot never restarts on an idle DB");
   live.close();
   const files = readdirSync(dir).sort();
   assert.deepEqual(files, [
@@ -118,8 +143,9 @@ function testSystemdUnits(): void {
     assert.match(service, /^User=poe2flip$/m);
     assert.match(service, /^EnvironmentFile=\/opt\/poe2flip\/\.env\.local$/m);
     assert.match(service, new RegExp(`^ExecStart=/opt/poe2flip/current/node_modules/\\.bin/tsx src/db/maintenanceCli\\.ts ${command} --wait=\\d+$`, "m"));
-    assert.match(read(`${unit}.timer`), /^Persistent=true$/m);
   }
+  assert.match(read("poe2flip-backup.timer"), /^Persistent=true$/m, "a missed nightly backup catches up");
+  assert.doesNotMatch(read("poe2flip-maintenance.timer"), /^Persistent=/m, "no catch-up VACUUM at boot");
   assert.match(read("poe2flip-backup.service"), /^Environment=BACKUP_DIR=\/opt\/poe2flip\/backups\/nightly$/m);
   assert.match(read("poe2flip-backup.timer"), /^OnCalendar=\*-\*-\* 03:15:00$/m);
   assert.match(read("poe2flip-maintenance.timer"), /^OnCalendar=\*-\*-01 04:30:00$/m);
@@ -131,13 +157,14 @@ async function main(): Promise<void> {
   try {
     testSystemdUnits();
     testVacuum();
+    testVacuumDiskPreflight();
     testVacuumFailsLoudWhenLocked();
     await testBackup();
     testCli();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-  console.log("ALL PASS — VACUUM + checkpoint, lock failure, nightly backup rotation, CLI");
+  console.log("ALL PASS — VACUUM + checkpoint, disk preflight, lock failure, nightly backup rotation, CLI");
 }
 
 main().catch((error: unknown) => {

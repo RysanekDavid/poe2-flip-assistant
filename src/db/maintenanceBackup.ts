@@ -48,10 +48,29 @@ export async function backupDatabase(options: BackupOptions): Promise<BackupRepo
   return { file, pruned, offBox: Boolean(options.rcloneRemote) };
 }
 
+/** sqlite3_backup_step page count better-sqlite3 accepts; large enough to mean "everything". */
+const ALL_PAGES = 0x7fffffff;
+
+/**
+ * better-sqlite3 copies 100 pages per event-loop turn by default, and SQLite restarts an online
+ * backup from page 1 whenever another connection commits between steps — on a DB the poller
+ * writes every few seconds that can loop for a long time. Copying everything in one step holds a
+ * single read snapshot (WAL), so concurrent commits cannot restart it.
+ */
 async function snapshot(dbPath: string, destination: string, busyTimeoutMs: number): Promise<void> {
   const source = new Database(dbPath, { readonly: true, fileMustExist: true, timeout: busyTimeoutMs });
+  let steps = 0;
   try {
-    await source.backup(destination);
+    await source.backup(destination, {
+      progress: ({ totalPages, remainingPages }) => {
+        steps += 1;
+        // Call 1 follows the zero-page probe step; any later call means the full copy was restarted.
+        if (steps > 1) {
+          console.warn(`[backup] snapshot restarted (step ${steps}, ${remainingPages}/${totalPages} pages left)`);
+        }
+        return ALL_PAGES;
+      },
+    });
   } finally {
     source.close();
   }

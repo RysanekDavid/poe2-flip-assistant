@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the lint ratchet diffs against the pre-push commit, not HEAD.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -29,6 +32,9 @@ jobs:
       - run: npm run build
       - run: npm run typecheck
       - run: npm run lint
+        env:
+          # Commit master pointed at before this push (empty on manual dispatch → merge-base).
+          LINT_BASE_REF: ${{ github.event.before }}
       - run: npm run test:coach
       - run: npm run test:deploy-config
       - run: npm run test:league
