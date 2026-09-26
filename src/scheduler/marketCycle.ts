@@ -2,13 +2,14 @@ import { fetchAll } from "../api/ninjaClient";
 import { config } from "../config/env";
 import { fireAlert } from "../core/alertEngine";
 import { loadCxMarketView, type CxMarketView } from "../core/cx/cxItemMarkets";
-import { pruneCxMarketHistory, syncCxHistory } from "../core/cx/cxIngest";
+import { cxHistoryProblem, pruneCxMarketHistory, syncCxHistory } from "../core/cx/cxIngest";
 import { trackCxOutcomes } from "../core/cx/cxOutcomes";
 import { scoreItem } from "../core/flipModel";
 import { getPolledLeagues, leagueForUser, sameLeague } from "../core/leagueUsers";
 import { type Currency, type ExchangeRates } from "../core/priceEngine";
 import { resolveRates } from "../core/rates";
-import { refreshCxRatesIfStale } from "../core/rateSync";
+import { LIVE_RATE_SOURCES, refreshCxRatesIfStale, type RateSources } from "../core/rateSync";
+import { withHeartbeat } from "../core/heartbeat";
 import { advanceTrends, type TrendEvent } from "../core/trendAlerts";
 import { pruneMarginHistory } from "../db/craftQueries";
 import { insertSnapshots, pruneObservations, pruneSnapshots } from "../db/marketQueries";
@@ -40,11 +41,11 @@ export async function runCycle(): Promise<void> {
 
   // GGG's hourly currency-exchange digest — ONE request covers every league, so this runs before
   // the sweeps and serves all of them. Fail-quiet: a CDN hiccup must not abort the cycle.
-  await refreshCxRatesIfStale(leagues);
+  await refreshRatesTracked(leagues);
 
   for (const league of leagues) {
     try {
-      await sweepLeague(league);
+      await withHeartbeat("ninja-sweep", league, () => sweepLeague(league));
     } catch (err: unknown) {
       // One league's outage must not cost the others their cycle.
       console.error(`[poll] "${league}" failed:`, err instanceof Error ? err.message : err);
@@ -53,16 +54,48 @@ export async function runCycle(): Promise<void> {
 
   // Fill gaps in the stored exchange history AFTER the sweeps, so a cold backfill (bounded,
   // 2s between requests) never delays fresh ninja prices. Fail-quiet like the refresh above.
-  await syncCxHistory(leagues);
+  await syncHistoryTracked(leagues);
   for (const league of leagues) trackOutcomes(league);
 
   // Retention is global, not per league — run it once the sweeps have added this tick's rows.
+  const note = await withHeartbeat("prune", "", pruneAll);
+  console.log(`[poll] cycle done — ${note}`);
+}
+
+function pruneAll(): string {
   const pruned = pruneSnapshots(config.retentionDays);
   pruneObservations(); // age out stale price-book observations
   pruneMarginHistory(config.retentionDays); // keep craft EV history bounded like everything else
   const cxPruned = pruneCxMarketHistory(); // null = not due (hourly)
   const cxNote = cxPruned == null ? "" : `, ${cxPruned} exchange market-hour(s) older than ${config.cx.historyDays}d`;
-  console.log(`[poll] cycle done — pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${cxNote}`);
+  return `pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${cxNote}`;
+}
+
+const errText = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+
+/**
+ * The rate refresh logs and swallows a failed digest by design (the cycle must go on), so the
+ * heartbeat watches the fetch itself to tell "nothing was stale" apart from "GGG's CDN is down".
+ */
+async function refreshRatesTracked(leagues: readonly string[]): Promise<void> {
+  let failure: string | null = null;
+  const sources: RateSources = {
+    ...LIVE_RATE_SOURCES,
+    digest: async () => {
+      try {
+        return await LIVE_RATE_SOURCES.digest();
+      } catch (err: unknown) {
+        failure = `digest fetch failed: ${errText(err)}`;
+        throw err;
+      }
+    },
+  };
+  await withHeartbeat("cx-rates", "", () => refreshCxRatesIfStale(leagues, sources), { problem: () => failure });
+}
+
+/** The backfill reports its own attempts and failure back-offs; cxHistoryProblem judges them. */
+async function syncHistoryTracked(leagues: readonly string[]): Promise<void> {
+  await withHeartbeat("cx-history", "", () => syncCxHistory(leagues), { problem: cxHistoryProblem });
 }
 
 /** Settle and publish exchange edges for the outcome log. A failure is logged, never fatal. */

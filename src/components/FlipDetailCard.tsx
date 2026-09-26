@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Save, ArrowRightCircle, CheckCircle2 } from "lucide-react";
 import { roundPrice } from "../lib/format";
+import { assertOk, warnOnFailure } from "../lib/clientWarn";
 import { formatAmount, formatDenom, type Denom } from "../core/treasury";
 
 /** Ninja's native quote unit is Divine — show it the way ninja does so numbers reconcile at a glance. */
@@ -166,9 +167,8 @@ export function FlipDetailCard({ selectedId }: { selectedId?: string }) {
   useEffect(() => {
     const grab = () =>
       fetch("/api/balance")
-        .then((r) => r.json())
-        .then((d) => setNetWorth(d?.stats?.latest?.net_worth_div ?? null))
-        .catch(() => {});
+        .then((r) => assertOk(r, "/api/balance").json()).then((d) => setNetWorth(d?.stats?.latest?.net_worth_div ?? null))
+        .catch(warnOnFailure("[flip-card] bankroll for position sizing"));
     grab();
     const onFlips = () => grab();
     window.addEventListener("flips-changed", onFlips);

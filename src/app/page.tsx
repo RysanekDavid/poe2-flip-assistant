@@ -34,6 +34,7 @@ import { LeagueBanner } from "../components/LeagueBanner";
 import { LeagueSelect } from "../components/LeagueSelect";
 import { MarketStatus } from "../components/MarketStatus";
 import { SettingsPanel } from "../components/SettingsPanel";
+import { SystemHealthPanel } from "../components/system/SystemHealthPanel";
 import { CoachPanel } from "../components/coach/CoachPanel";
 import { EmptySection } from "../components/ui/EmptySection";
 
@@ -185,6 +186,8 @@ export default function DashboardPage() {
         <>
           <SettingsPanel />
           <NotificationsSettings />
+          {/* owner-only; renders nothing for members */}
+          <SystemHealthPanel />
         </>
       )}
     </main>

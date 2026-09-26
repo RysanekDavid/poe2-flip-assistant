@@ -41,7 +41,8 @@ export interface RateSources {
   ingest?: (digest: CxDigest, leagues: readonly string[]) => void;
 }
 
-const LIVE_SOURCES: RateSources = {
+/** Exported so the poller can wrap `digest` and see a failure this module deliberately swallows. */
+export const LIVE_RATE_SOURCES: RateSources = {
   digest: () => fetchCxDigest(),
   scoutLeagues: fetchScoutLeagues,
   ingest: (digest, leagues) => {
@@ -97,7 +98,7 @@ let lastGoodDigestAt = 0;
  */
 export async function refreshCxRatesIfStale(
   leagues: readonly string[],
-  sources: RateSources = LIVE_SOURCES,
+  sources: RateSources = LIVE_RATE_SOURCES,
 ): Promise<string[]> {
   const stale = leagues.filter((l) => {
     const age = cxAgeMs(l);
@@ -154,7 +155,7 @@ async function bootstrapFromScout(league: string, sources: RateSources): Promise
  */
 export async function bootstrapRatesForLeague(
   league: string,
-  sources: RateSources = LIVE_SOURCES,
+  sources: RateSources = LIVE_RATE_SOURCES,
 ): Promise<"cx" | "scout" | "skipped" | "failed"> {
   const age = cxAgeMs(league);
   if (age != null && age < BOOTSTRAP_DEBOUNCE_MS) return "skipped";

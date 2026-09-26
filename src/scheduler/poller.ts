@@ -1,34 +1,46 @@
 import cron from "node-cron";
 import { config } from "../config/env";
 import { pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries";
-import { listUsers } from "../db/userQueries";
 import { credForUser } from "../auth/credForUser";
-import { POLLER_MAX_INLINE_WAIT_MS, setMaxInlineWaitMs } from "../api/tradeClient";
+import { POLLER_MAX_INLINE_WAIT_MS, setMaxInlineWaitMs, type TradeCred } from "../api/tradeClient";
 import { runCycle } from "./marketCycle";
 import { runHuntScan, runAutoSnipe, drainScanRequests } from "./tradeScans";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
 import { refreshStalestRecipe, refreshAllRecipes } from "../core/craftMargin";
 import { RECIPES } from "../core/craftRecipes";
-import { readCurrencyFromTrade } from "../api/accountScan";
-import { refreshUniqueValues } from "../core/valuation";
-import { fetchScout } from "../api/scoutClient";
-import { insertBalance, insertTabs } from "../db/queries";
+import { withHeartbeat } from "../core/heartbeat";
 import { startPatchNotesWatcher } from "../sources/patchNotes/watcher";
 import { startLeagueWatcher } from "./leagueWatcher";
 import { getPolledLeagues } from "../core/leagueUsers";
-import { getDefaultLeague } from "../core/leagueState";
+import { balanceProblem, snapshotBalancesAll } from "./balanceLoop";
 import { startNotifyDrainer } from "../core/notify/drainer";
 
 const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under the owner's cred
 
+const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+
 function start(): void {
-  const expr = `*/${config.pollIntervalMin} * * * *`;
-  console.log(`poller starting — cron "${expr}", leagues "${getPolledLeagues().join(", ")}"`);
+  console.log(`poller starting — cron "*/${config.pollIntervalMin} * * * *", leagues "${getPolledLeagues().join(", ")}"`);
   // background scans may sit out the shared trade2 pace inline; web requests fail fast instead
   setMaxInlineWaitMs(POLLER_MAX_INLINE_WAIT_MS);
   startPatchNotesWatcher();
   startLeagueWatcher();
+  startMarketCycle();
 
+  // The owner's cred (stored or .env) backs the shared auto-snipe market scan.
+  const ownerCred = credForUser({ id: OWNER_ID, role: "owner" });
+
+  // Drop stored reports/history for recipes that no longer exist in code (removed/renamed keys).
+  pruneStaleRecipeReports(RECIPES.map((r) => r.key));
+
+  startTradeScans();
+  startAutoSnipe(ownerCred);
+  startCraftMargin(ownerCred);
+  startBalanceLoop();
+  startNotifyDrainer(); // Discord deliveries queued by the alerts trigger (core/notify)
+}
+
+function startMarketCycle(): void {
   // In-flight guard: a cold sweep of all ninja categories can exceed the 5-min cron interval
   // (13 categories × rate-limited fetch), so a new tick must not stack on an unfinished one.
   let cycleRunning = false;
@@ -39,7 +51,7 @@ function start(): void {
     }
     cycleRunning = true;
     runCycle()
-      .catch((e) => console.error(`[poll] ${reason} failed:`, e instanceof Error ? e.message : e))
+      .catch((e) => console.error(`[poll] ${reason} failed:`, errText(e)))
       .finally(() => {
         cycleRunning = false;
       });
@@ -47,14 +59,10 @@ function start(): void {
 
   // Run once immediately so the dashboard has data without waiting a full interval.
   safeRunCycle("initial cycle");
-  cron.schedule(expr, () => safeRunCycle("cycle"));
+  cron.schedule(`*/${config.pollIntervalMin} * * * *`, () => safeRunCycle("cycle"));
+}
 
-  // The owner's cred (stored or .env) backs the shared auto-snipe market scan.
-  const ownerCred = credForUser({ id: OWNER_ID, role: "owner" });
-
-  // Drop stored reports/history for recipes that no longer exist in code (removed/renamed keys).
-  pruneStaleRecipeReports(RECIPES.map((r) => r.key));
-
+function startTradeScans(): void {
   // Hunt = near-live per-user poll-diff scan (newest listings first, de-duped by listing id).
   // The trade WebSocket path is gone: trade2 live sockets require a saved on-account search AND
   // a browser TLS fingerprint — Cloudflare reaps plain Node clients seconds after connect. A
@@ -62,13 +70,18 @@ function start(): void {
   // is still draining through the rate limiter, so many hunts degrade gracefully to slower laps.
   if (config.hunt.enabled) {
     console.log(`[hunt] per-user scan every ${config.hunt.scanSec}s`);
-    // runHuntScan skips the tick while the previous cycle is still queued behind the limiter
     setInterval(() => runHuntScan("scan"), config.hunt.scanSec * 1000);
   }
   // Manual scans from the web are queued in the DB and run HERE, on this process's limiter.
-  setInterval(() => drainScanRequests(() => credForUser({ id: OWNER_ID, role: "owner" })), 20_000);
-  startNotifyDrainer(); // Discord deliveries queued by the alerts trigger (core/notify)
+  setInterval(() => {
+    const ownerCredNow = (): TradeCred | null => credForUser({ id: OWNER_ID, role: "owner" });
+    withHeartbeat("scan-drain", "", () => drainScanRequests(ownerCredNow), {
+      problem: (errors) => (errors.length > 0 ? errors.join("; ") : null),
+    }).catch((e) => console.error("[scan-drain] failed:", errText(e)));
+  }, 20_000);
+}
 
+function startAutoSnipe(ownerCred: TradeCred | null): void {
   // Autonomous rare-snipe scanner — OFF unless AUTOSNIPE_ENABLED=true. Rotates the built-in
   // valuable archetypes, values each from its own search, alerts EVERY user on underpriced
   // listings. Shared market scan → runs once under the owner's cred (per-user would multiply
@@ -80,92 +93,90 @@ function start(): void {
   } else if (config.autoSnipe.enabled) {
     console.warn("[autosnipe] AUTOSNIPE_ENABLED=true but owner POESESSID missing — scanner stays off");
   }
+}
 
+function startCraftMargin(ownerCred: TradeCred | null): void {
+  if (!config.craftMargin.enabled) return;
+  if (!ownerCred) {
+    console.warn("[craft-margin] CRAFT_MARGIN_ENABLED=true but owner POESESSID missing — engine stays off");
+    return;
+  }
   // Craft-margin engine — ranks curated recipes by live EV/attempt. Shared market scan under the
   // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so ≤2 searches + 8 fetches is
   // the whole per-tick cost through the shared trade2 limiter.
-  if (config.craftMargin.enabled && ownerCred) {
-    const cmExpr = `*/${config.craftMargin.intervalMin} * * * *`;
-    console.log(`[craft-margin] refreshing 1/${RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
-    // One craft scan at a time: the tick skips while a manual sweep runs, and a queued manual
-    // sweep waits for the tick (its flag stays set until consumed), so no recipe is scanned twice.
-    let craftRefreshing = false;
-    cron.schedule(cmExpr, () => {
-      if (craftRefreshing) return;
-      craftRefreshing = true;
-      refreshStalestRecipe(ownerCred)
-        .then((r) => {
-          if (!r) return;
-          if (r.kept) console.warn(`[craft-margin] ${r.key}: transient failure, kept previous report — ${r.error}`);
-          else console.log(`[craft-margin] ${r.key}: ${r.report.status} · EV ${r.report.evDiv.toFixed(1)} div · ${r.report.marginPct.toFixed(0)}%`);
-        })
-        .catch((e) => console.error("[craft-margin] refresh failed:", e instanceof Error ? e.message : e))
-        .finally(() => {
-          craftRefreshing = false;
-        });
-    });
+  console.log(`[craft-margin] refreshing 1/${RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
+  // One craft scan at a time: the tick skips while a manual sweep runs, and a queued manual
+  // sweep waits for the tick (its flag stays set until consumed), so no recipe is scanned twice.
+  let craftRefreshing = false;
+  const exclusive = (run: () => Promise<void>): void => {
+    craftRefreshing = true;
+    // craftTick/craftSweep catch their own errors today; this catch keeps a future throw from
+    // becoming an unhandled rejection that takes the whole poller down.
+    run()
+      .catch((e) => console.error("[craft-margin] run failed:", errText(e)))
+      .finally(() => {
+        craftRefreshing = false;
+      });
+  };
+  cron.schedule(`*/${config.craftMargin.intervalMin} * * * *`, () => {
+    if (craftRefreshing) return;
+    exclusive(() => craftTick(ownerCred));
+  });
 
-    // Manual "refresh all" from the web POST is a flag, not an inline call — the web process shares
-    // this account+IP's rate budget, so we consume the flag here and run the sweep on THIS limiter.
-    setInterval(() => {
-      if (craftRefreshing || !consumeCraftRefresh()) return;
-      craftRefreshing = true;
-      console.log("[craft-margin] manual refresh dequeued — refreshing all recipes");
-      refreshAllRecipes(ownerCred)
-        .then((rs) => console.log(`[craft-margin] manual refresh done — ${rs.length} recipe(s), ${rs.filter((r) => r.kept).length} kept previous after a transient failure`))
-        .catch((e) => console.error("[craft-margin] manual refresh failed:", e instanceof Error ? e.message : e))
-        .finally(() => {
-          craftRefreshing = false;
-        });
-    }, 20_000);
-  } else if (config.craftMargin.enabled) {
-    console.warn("[craft-margin] CRAFT_MARGIN_ENABLED=true but owner POESESSID missing — engine stays off");
-  }
+  // Manual "refresh all" from the web POST is a flag, not an inline call — the web process shares
+  // this account+IP's rate budget, so we consume the flag here and run the sweep on THIS limiter.
+  setInterval(() => {
+    if (craftRefreshing || !consumeCraftRefresh()) return;
+    exclusive(() => craftSweep(ownerCred));
+  }, 20_000);
+}
 
-  // Auto net-worth snapshot per user from their own public tabs. Off unless BALANCE_INTERVAL_MIN
-  // > 0; each user needs a stored POESESSID + account name (set in Settings) to be read.
-  if (config.balanceIntervalMin > 0) {
-    const balExpr = `*/${config.balanceIntervalMin} * * * *`;
-    console.log(`[balance] auto-read every ${config.balanceIntervalMin}m (per-user public tabs via trade)`);
-    cron.schedule(balExpr, () => {
-      void snapshotBalancesAll();
+async function craftTick(ownerCred: TradeCred): Promise<void> {
+  try {
+    const r = await withHeartbeat("craft-margin", "", () => refreshStalestRecipe(ownerCred), {
+      problem: (res) => (res?.kept ? `${res.key}: kept previous report — ${res.error}` : null),
     });
-    void snapshotBalancesAll(); // one immediately so the curve starts without waiting
+    if (!r) return;
+    if (r.kept) console.warn(`[craft-margin] ${r.key}: transient failure, kept previous report — ${r.error}`);
+    else console.log(`[craft-margin] ${r.key}: ${r.report.status} · EV ${r.report.evDiv.toFixed(1)} div · ${r.report.marginPct.toFixed(0)}%`);
+  } catch (e: unknown) {
+    console.error("[craft-margin] refresh failed:", errText(e));
   }
 }
 
-/** Read every connected user's public-tab currency and store a net-worth snapshot each. */
-async function snapshotBalancesAll(): Promise<void> {
-  await refreshUniqueValues().catch(() => {}); // daily-guarded scout unique-price refresh for valuation
-  let rates;
+async function craftSweep(ownerCred: TradeCred): Promise<void> {
+  console.log("[craft-margin] manual refresh dequeued — refreshing all recipes");
   try {
-    rates = (await fetchScout()).rates;
-  } catch (e) {
-    console.error("[balance] scout rates failed:", e instanceof Error ? e.message : e);
-    return;
+    const rs = await withHeartbeat("craft-sweep", "", () => refreshAllRecipes(ownerCred), {
+      problem: (all) => (all.length > 0 && all.every((r) => r.kept) ? `every recipe kept its previous report` : null),
+    });
+    console.log(`[craft-margin] manual refresh done — ${rs.length} recipe(s), ${rs.filter((r) => r.kept).length} kept previous after a transient failure`);
+  } catch (e: unknown) {
+    console.error("[craft-margin] manual refresh failed:", errText(e));
   }
+}
 
-  for (const u of listUsers()) {
-    const cred = credForUser(u);
-    if (!cred || !cred.account) continue; // user hasn't connected POESESSID + account
-    try {
-      const c = await readCurrencyFromTrade(cred.account, rates, cred);
-      const snap = insertBalance(u.id, getDefaultLeague(), {
-        divine: c.divine,
-        exalted: c.exalted,
-        chaos: c.chaos,
-        exaltPerDiv: rates.exaltPerDivine,
-        chaosPerDiv: rates.chaosPerDivine,
-        otherDiv: c.otherDiv,
-        source: "trade",
-        note: `${c.listingsSeen}/${c.total} listed · gear ~${c.otherDiv.toFixed(1)} Div · ${c.tabs.length} tabs${c.unpriced ? ` · ${c.unpriced} unpriced` : ""}`,
-      });
-      insertTabs(snap.id, c.tabs);
-      console.log(`[balance] ${u.name}: ${c.divine}d ${c.exalted}ex ${c.chaos}c (${c.tabs.length} tabs, ${c.unpriced} unpriced)`);
-    } catch (e) {
-      console.error(`[balance] ${u.name} auto-read failed:`, e instanceof Error ? e.message : e);
+function startBalanceLoop(): void {
+  // Auto net-worth snapshot per user from their own public tabs. Off unless BALANCE_INTERVAL_MIN
+  // > 0; each user needs a stored POESESSID + account name (set in Settings) to be read.
+  if (config.balanceIntervalMin <= 0) return;
+  console.log(`[balance] auto-read every ${config.balanceIntervalMin}m (per-user public tabs via trade)`);
+  let reading = false;
+  const run = (): void => {
+    if (reading) {
+      console.warn("[balance] auto-read skipped — previous read still running");
+      return;
     }
-  }
+    reading = true;
+    withHeartbeat("balance", "", () => snapshotBalancesAll(), { problem: balanceProblem })
+      .then((r) => console.log(`[balance] ${r.league}: ${r.read} read, ${r.skipped} not connected, ${r.failed.length} failed`))
+      .catch((e) => console.error("[balance] auto-read failed:", errText(e)))
+      .finally(() => {
+        reading = false;
+      });
+  };
+  cron.schedule(`*/${config.balanceIntervalMin} * * * *`, run);
+  run(); // one immediately so the curve starts without waiting
 }
 
 // Only auto-start when run as the entrypoint (not when imported by an API route).

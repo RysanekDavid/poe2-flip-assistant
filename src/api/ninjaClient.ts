@@ -10,19 +10,28 @@ import {
 } from "./types";
 import { ninjaLimiter } from "./rateLimiter";
 import { getDefaultLeague } from "../core/leagueState";
+import { config } from "../config/env";
 
 const BASE = "https://poe.ninja/poe2/api/economy";
 
-/** Cloudflare on poe.ninja rejects requests lacking a same-site Referer. */
+/**
+ * Identify the tool honestly, like scoutClient does — no browser User-Agent. The same-site Referer
+ * stays: poe.ninja's Cloudflare edge rule was observed rejecting (404) API requests without one,
+ * and although a dev-box probe on 2026-09-26 got 200 without it, the production Hetzner IP could
+ * not be probed. A Referer naming the page the data belongs to is not identity spoofing.
+ */
+const NINJA_CONTACT = config.dataSourceContact;
+export const NINJA_USER_AGENT = `poe2-flip-assistant/1.0${NINJA_CONTACT ? ` (contact: ${NINJA_CONTACT})` : ""}`;
+
 function leagueSlug(league: string): string {
   return league.toLowerCase().replace(/\s+/g, "");
 }
 
-function browserHeaders(league: string): Record<string, string> {
+/** Same Referer value the client always sent, so only the User-Agent changes. */
+export function ninjaHeaders(league: string): Record<string, string> {
   return {
     Referer: `https://poe.ninja/poe2/economy/${leagueSlug(league)}/currency`,
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "User-Agent": NINJA_USER_AGENT,
   };
 }
 
@@ -58,7 +67,7 @@ export async function fetchCategory(
       const res = await axios.get(url, {
         params: { league, type: category.type },
         timeout: 20_000,
-        headers: browserHeaders(league),
+        headers: ninjaHeaders(league),
       });
       return res.data;
     } catch (err) {
@@ -141,10 +150,11 @@ export function parseNinjaLeagues(raw: unknown): LeagueOption[] {
 
 /** Leagues poe.ninja indexes, newest first — the ninja half of league-switch detection. */
 export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
+  // Resolved outside the try: a DB failure here must not be reported as a poe.ninja fetch failure.
   const league = getDefaultLeague();
   const raw = await ninjaLimiter.schedule(async () => {
     try {
-      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: browserHeaders(league) });
+      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: ninjaHeaders(league) });
       return res.data as unknown;
     } catch (err) {
       const ax = err as AxiosError;

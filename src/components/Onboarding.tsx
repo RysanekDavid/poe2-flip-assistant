@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Compass, Flame, Wallet, ShieldAlert, X } from "lucide-react";
+import { assertOk, warnOnFailure } from "../lib/clientWarn";
 import "driver.js/dist/driver.css";
 
 const INTRO_VERSION = "v1"; // bump to re-show the welcome to everyone after a big change
@@ -52,13 +53,13 @@ export function Onboarding() {
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => r.json())
+      .then((r) => assertOk(r, "/api/auth/me").json())
       .then((d: { user: Me | null }) => {
         if (!d.user) return;
         setUser(d.user);
         if (!localStorage.getItem(`poe2flip_intro_${INTRO_VERSION}_${d.user.id}`)) setOpen(true);
       })
-      .catch(() => {});
+      .catch(warnOnFailure("[onboarding] current user"));
   }, []);
 
   useEffect(() => {
