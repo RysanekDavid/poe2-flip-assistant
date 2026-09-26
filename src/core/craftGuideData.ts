@@ -118,7 +118,9 @@ export const GUIDES: Record<string, CraftGuide> = {
             do: "Well of Souls: Omen of Abyssal Echoes in the inventory, then unveil and pick.",
             why: "Echoes = one reroll of the three options if the first set is bad.",
             mats: [MATS.omenAbyssalEchoes],
-            pick: ["Adds # to # Physical Damage (best)", "high flat Fire/Cold/Lightning"],
+            // KB §5 + poe2-bow-crafting-0.5.md §2: Dextral forces a SUFFIX; the Amanamu bow suffix pool
+            // is Attack Speed (12–18%) and Pierce (40–60%) — flat damage is a prefix and can't appear here.
+            pick: ["Attack Speed 12–18% (Amanamu jackpot)", "Pierce 40–60% (fallback)"],
           },
         ],
       },
@@ -126,7 +128,8 @@ export const GUIDES: Record<string, CraftGuide> = {
         title: "Fill + finish",
         steps: [
           {
-            do: "Omen of Greater Exaltation + one Greater Exalted Orb (applies twice).",
+            do: "Omen of Greater Exaltation + one Greater Exalted Orb (applies twice) — fishing the open prefixes for flat Physical (best) or high flat Fire/Cold/Lightning.",
+            // flat-damage advice lives here: it's a PREFIX target (poe2-bow-crafting-0.5.md §2), not a reveal pick
             why: "Perfect exalts trim one tier for ~3 div more — not worth it under mirror tier.",
             mats: [MATS.omenGreaterExaltation, MATS.greaterExalted],
           },
@@ -192,7 +195,10 @@ export const GUIDES: Record<string, CraftGuide> = {
             do: "Reveal with Omen of Abyssal Echoes active.",
             mats: [MATS.omenAbyssalEchoes],
             pick: ["flat Cold/Fire/Lightning to Attacks", "% Rarity of Items found", "high flat Life"],
-            onFail: "Junk reveal → Omen of Light re-reveal costs ~4–5 div, only worth it with filled suffixes.",
+            // RePoE catalog: Omen of Light = "next Orb of Annulment removes only Desecrated modifiers" — a
+            // strip, not a reroll; the reveal reroll is Abyssal Echoes (KB §4).
+            onFail:
+              "Junk reveal → Omen of Light + Orb of Annulment strips only the desecrated mod, re-desecrate with a fresh Collarbone (+Echoes) — only worth it with filled suffixes.",
           },
           {
             do: "Re-catalyse to 20% before listing.",
@@ -217,6 +223,9 @@ export const GUIDES: Record<string, CraftGuide> = {
           {
             do: "Open prefix? Perfect Orb of Augmentation.",
             mats: [MATS.perfectAug],
+            // KB §1: the Augmentation family works on MAGIC items with an open affix only — open issue,
+            // the source procedure applies it to a rare base; not rewritten without a verified route.
+            warning: "Augmentation only works on a MAGIC item with an open affix (KB §1) — a rare +3 amulet refuses it. Unverified step: skip it on a rare base.",
           },
           {
             do: "Essence of Opulence → T1 rarity.",
@@ -224,9 +233,14 @@ export const GUIDES: Record<string, CraftGuide> = {
           },
           {
             do: "Omen of Sinistral Necromancy + Preserved Collarbone → prefix desecration.",
-            why: "The desecrated mod can't be fractured — it blocks one of three slots → clean 1-in-3 on the +3.",
+            why: "The desecrated mod can't be fractured but counts toward the 4-mod minimum — it's the blocker.",
             mats: [MATS.omenSinistralNecromancy, MATS.preservedCollarbone],
-            check: "3 prefixes: +3 skills, desecrated mod, one more.",
+          },
+          {
+            // KB §2 (poe2-crafting-knowledge.md): fracture needs a rare with ≥4 mods; desecrated counts, can't be fractured
+            do: "Count the mods before fracturing.",
+            why: "Non-desecrated mods = N → fracture odds 1/N. The item needs ≥4 mods total (the desecrated one counts).",
+            check: "Exactly 4 mods: +3 keeper + desecrated blocker + 2 others → 1-in-3. More mods = worse odds.",
           },
         ],
       },
@@ -235,9 +249,9 @@ export const GUIDES: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Fracturing Orb.",
-            why: "1-in-3 to lock the +3 forever → unbrickable craft base worth 40+ div bare.",
+            why: "1-in-3 at exactly 4 mods (≥4 required) to lock the +3 forever → unbrickable craft base worth 40+ div bare.",
             mats: [MATS.fracturing],
-            warning: "One fracture per item, ever. No re-rolls.",
+            warning: "Needs at least 4 mods. One fracture per item, ever. No re-rolls.",
             onFail: "Wrong mod fractured → sell as a normal +3, only the orb is lost.",
           },
         ],

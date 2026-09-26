@@ -49,7 +49,7 @@ export const RECIPES_2: CraftRecipe[] = [
     key: "gloves_projectile_plus2",
     domain: "armour",
     label: "Gloves · +2 Projectile Skills",
-    source: "Fubgun/XTheFarmerX +2 projectile gloves [S5] (chaos-spam → fracture → Hysteria + ribcage)",
+    source: "Fubgun/XTheFarmerX +2 projectile gloves [S5] (chaos-spam → ribcage blocker → fracture at 4 mods → Hysteria)",
     base: {
       label: "Rare glove base (high ilvl)",
       category: "armour.gloves",
@@ -69,11 +69,13 @@ export const RECIPES_2: CraftRecipe[] = [
     materials: [
       { material: MATS.chaos, qtyPerAttempt: 15, note: "Method 1: chaos-spam the rare toward +2 Projectile Skills." },
       { material: MATS.annul, qtyPerAttempt: 5, note: "Clear wrong mods between chaos passes — 50/50 gamble each with 2+ mods." },
-      { material: MATS.fracturing, qtyPerAttempt: 1, note: "~1-in-3 to lock the +2 (best odds at ~3 total mods). Miss = restart on a fresh base — the loss lives in hitRate." },
+      // KB §2 (poe2-crafting-knowledge.md): fracture needs ≥4 mods; desecrated counts, can't be fractured
+      { material: MATS.fracturing, qtyPerAttempt: 1, note: "1-in-3 to lock the +2 at exactly 4 mods (+2 + 2 junk + unrevealed desecrated blocker; ≥4 required). Miss = restart on a fresh base — the loss lives in hitRate." },
       { material: MATS.essenceOfHysteria, qtyPerAttempt: 1, note: "Guaranteed suffix, straight 50/50 (Crit Spell Damage Bonus vs Cold Res)." },
       { material: MATS.exalted, qtyPerAttempt: 2, note: "Fill the remaining prefix/suffix after the lock." },
-      { material: MATS.ancientRib, qtyPerAttempt: 1, note: "Desecrate the last slot (T1 flat Cold/Lightning/Physical, or Suppress). Ancient tier for the ilvl82 base." },
-      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "Reroll the desecration options once." },
+      // KB §5: Ancient bone = modifier level 40+ floor; Preserved already works on any item level
+      { material: MATS.ancientRib, qtyPerAttempt: 1, note: "The fracture blocker, revealed afterwards as the finish (T1 flat Cold/Lightning/Physical, or Suppress). Ancient for its mod-level-40 reveal floor — not an ilvl need (Preserved works on any ilvl)." },
+      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "Reroll the desecration reveal options once." },
       { material: MATS.artificers, qtyPerAttempt: 1, note: "Socket for a rune (rune ~1 ex, not tracked)." },
     ],
     hitRate: 0.2,
@@ -110,13 +112,15 @@ export const RECIPES_2: CraftRecipe[] = [
     },
     materials: [
       { material: MATS.greaterEssenceSeeking, qtyPerAttempt: 1, note: "Guaranteed T3 crit chance suffix." },
-      { material: MATS.astridsCreativity, qtyPerAttempt: 1, note: "The 'additional crafted modifier' orb (~4-5 div) — holds a slot for the final bench craft." },
+      // RePoE catalog lists Astrid's Creativity as a SoulCore (Augment socket), and 0.5 has no crafting bench
+      { material: MATS.astridsCreativity, qtyPerAttempt: 1, note: "UNVERIFIED: guide calls it the 'additional crafted modifier' orb (~4-5 div) for a final bench craft — RePoE says it's a Soul Core for an Augment socket, and 0.5 has no bench." },
       { material: MATS.omenSinistralCrystallisation, qtyPerAttempt: 1, note: "Prefix Crystallisation — forces the alloy onto a prefix." },
       { material: MATS.transcendentAlloy, qtyPerAttempt: 1, note: "Converts a prefix into its guaranteed near-min-tier mod (cast speed)." },
       { material: MATS.essenceOfTheAbyss, qtyPerAttempt: 1, note: "Mana-block route: marks a mod for the Jawbone conversion." },
       { material: MATS.preservedJawbone, qtyPerAttempt: 1.5, note: "Converts the mark to a Desecrated slot — the conversion bug needs repeat attempts (~1.5 avg)." },
       { material: MATS.omenGreaterExaltation, qtyPerAttempt: 1 },
-      { material: MATS.exalted, qtyPerAttempt: 1, note: "Perfect-exalt the last prefix for T1 spell damage / elemental-gain (~1-in-3 to 1-in-4)." },
+      // KB §1: Perfect Exalted Orb floor = modifier level 50 — the odds below assume it, so price the Perfect orb
+      { material: MATS.perfectExalted, qtyPerAttempt: 1, note: "Perfect-exalt the last prefix for T1 spell damage / elemental-gain (~1-in-3 to 1-in-4; mod-level-50 floor)." },
       { material: MATS.annul, qtyPerAttempt: 0.5, note: "Fail path: recover from a bad hit before re-slamming." },
     ],
     hitRate: 0.3,
@@ -126,6 +130,9 @@ export const RECIPES_2: CraftRecipe[] = [
   // 4) Grind Spirit via desecration on a MAGIC amulet, convert a suffix to global defence, catalyse res.
   //    hitRate 0.4: the Spirit hunt is a grind-until-hit (so a completed craft almost always carries
   //    Spirit), but T1-vs-T2 Spirit and the finishing slams swing whether it clears the comparable.
+  //    UNVERIFIED: the repeat-desecrate loop contradicts KB §5 (one desecrated mod per item) and the
+  //    RePoE bone text (desecrates a RARE item) — hitRate 0.4 and the 30-bone / 15-echo budget are
+  //    unconfirmed; the guide step carries an `unverified` badge.
   {
     key: "amulet_giga_spirit",
     domain: "jewellery",
@@ -148,7 +155,7 @@ export const RECIPES_2: CraftRecipe[] = [
       note: "Valued at the +30 Spirit floor — Spirit gates aura/Arctic-Armour thresholds (40 is the huge breakpoint). ~70 div in → ~180 div sale in the source session. Global-defence + res push real sales higher.",
     },
     materials: [
-      { material: MATS.preservedCollarbone, qtyPerAttempt: 30, note: "Spirit hunt: repeated desecration until Spirit lands (T2 ~30 attempts; T1 far more). Dominates the craft cost." },
+      { material: MATS.preservedCollarbone, qtyPerAttempt: 30, note: "UNVERIFIED loop (KB §5: one desecrated mod per item): Spirit hunt by repeated desecration (T2 ~30 attempts; T1 far more). Dominates the craft cost." },
       { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 15, note: "Reroll dead reveal sets during the hunt (~half the attempts)." },
       { material: MATS.omenDextralExaltation, qtyPerAttempt: 1, note: "Force a guaranteed suffix to convert." },
       { material: MATS.omenDextralCrystallisation, qtyPerAttempt: 1, note: "Pairs with Perfect Essence of Enhancement." },
@@ -278,8 +285,13 @@ export const RECIPES_2: CraftRecipe[] = [
       { material: MATS.perfectExalted, qtyPerAttempt: 2 },
       { material: MATS.omenWhittling, qtyPerAttempt: 22, note: "The cost core (~20-26 expected). Early league 3-4 div each = green light; expensive whittles kill the craft." },
       { material: MATS.greaterChaos, qtyPerAttempt: 22, note: "One per whittle." },
-      { material: MATS.preservedCollarbone, qtyPerAttempt: 12, note: "Prefix desecrations: the ilvl-75 whittle shield + the final-prefix Light loop." },
-      { material: MATS.omenLight, qtyPerAttempt: 10, note: "Desecration rerolls (shield fishing + final prefix)." },
+      // RePoE catalog: Omen of Light makes the next Annulment remove only Desecrated mods (a strip, not a
+      // reroll); reveal rerolls are Omen of Abyssal Echoes (KB §4). ~12 desecrations → ~12 reveals (one
+      // Echoes each) and ~10 misses, each stripped by Light + Annulment before re-desecrating.
+      { material: MATS.preservedCollarbone, qtyPerAttempt: 12, note: "Prefix desecrations: the ilvl-75 whittle shield + the final-prefix loop (~12 total)." },
+      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 12, note: "One options reroll per reveal (~12 reveals)." },
+      { material: MATS.omenLight, qtyPerAttempt: 10, note: "Strip each missed desecration (~10): Light + Annulment removes only the desecrated mod." },
+      { material: MATS.annul, qtyPerAttempt: 10, note: "Paired with each Omen of Light strip." },
     ],
     hitRate: 0.7,
     guide: GUIDES_2.ring_fractured_t1res!,

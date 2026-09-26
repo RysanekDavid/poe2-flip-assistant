@@ -107,9 +107,10 @@ export const RECIPES: CraftRecipe[] = [
       { material: MATS.omenDextralNecromancy, qtyPerAttempt: 1, note: "Jawbone desecration → suffix." },
       { material: MATS.omenTheLiege, qtyPerAttempt: 1, note: "Forces an Amanamu mod — attack speed is the jackpot of its 3-mod pool." },
       { material: MATS.preservedJawbone, qtyPerAttempt: 1, note: "Ancient tier on expensive bases only." },
-      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "Unveil flat phys (best) or high flat ele." },
+      // KB §5: the Dextral-forced Amanamu reveal is suffix-only — Attack Speed 12–18% > Pierce
+      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "One reroll of the suffix reveal: Attack Speed 12–18% (jackpot) > Pierce." },
       { material: MATS.omenGreaterExaltation, qtyPerAttempt: 1 },
-      { material: MATS.greaterExalted, qtyPerAttempt: 1, note: "Applies twice under the omen." },
+      { material: MATS.greaterExalted, qtyPerAttempt: 1, note: "Applies twice under the omen — fish the prefixes for flat phys (best) or high flat ele." },
       { material: MATS.artificers, qtyPerAttempt: 2, note: "Sockets for iron runes (runes ~1 ex each, not tracked)." },
     ],
     hitRate: 0.3,
@@ -144,7 +145,8 @@ export const RECIPES: CraftRecipe[] = [
     materials: [
       { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Open-suffix bases: fish rarity/res before essencing." },
       { material: MATS.greaterEssenceOpulence, qtyPerAttempt: 1, note: "Guaranteed T1 rarity (or Insulation for T3 res when rarity already rolled)." },
-      { material: MATS.tulsCatalyst, qtyPerAttempt: 24, note: "~20 to reach 20% quality + 4 to re-catalyse for listing. Cold tag: 2× slam weight at 20%, no brick mods in pool." },
+      // KB §4/§8: Omen of Catalysing Exaltation turns catalyst quality into a 5× tag weight at 20% (7.5× at 40%)
+      { material: MATS.tulsCatalyst, qtyPerAttempt: 24, note: "~20 to reach 20% quality + 4 to re-catalyse for listing. Cold tag: 5× weight at 20% (7.5× at 40%) via Omen of Catalysing Exaltation; no brick mods in pool." },
       { material: MATS.omenCatalysingExaltation, qtyPerAttempt: 1, note: "Biases the FIRST of Greater Exaltation's two mods only (player-confirmed, wiki disputed)." },
       { material: MATS.omenGreaterExaltation, qtyPerAttempt: 1 },
       { material: MATS.greaterExalted, qtyPerAttempt: 1 },
@@ -182,12 +184,14 @@ export const RECIPES: CraftRecipe[] = [
       note: "trade2 query can't filter 'fractured' — proxied as +3 + life, an UNDERestimate: a real fractured +3 is a permanent craft base and sells well above this comparable (+3+rarity pieces were <5 listed, too thin to price).",
     },
     materials: [
-      { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Only on open-prefix bases." },
+      { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Only on open-prefix bases — and Augmentation needs a MAGIC item (KB §1); unverified on this rare base." },
       { material: MATS.greaterEssenceOpulence, qtyPerAttempt: 1, note: "Guaranteed T1 rarity." },
-      { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 1, note: "Prefix desecration — the desecrated mod can't be fractured, blocking one of three slots." },
+      // KB §2 (poe2-crafting-knowledge.md): fracture needs ≥4 mods; desecrated counts, can't be fractured
+      { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 1, note: "Prefix desecration — the blocker: counts toward the 4-mod minimum but can't be fractured." },
       { material: MATS.preservedCollarbone, qtyPerAttempt: 1 },
-      { material: MATS.fracturing, qtyPerAttempt: 1, note: "The 1-in-3. Miss = base survives as a normal +3 (resellable), only the orb is burned." },
+      { material: MATS.fracturing, qtyPerAttempt: 1, note: "The 1-in-3 at exactly 4 mods (+3 + blocker + 2 others; ≥4 required). Miss = base survives as a normal +3 (resellable), only the orb is burned." },
     ],
+    // 1/3 = odds at exactly 4 mods with one desecrated blocker (KB §2); more mods on the item = lower odds
     hitRate: 0.33,
     guide: GUIDES.amulet_fracture_plus3!,
   },
