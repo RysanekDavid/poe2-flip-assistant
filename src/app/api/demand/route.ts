@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { fetchDemand } from "../../../api/scoutClient";
+import { fetchDemand, type DemandItem, type ScoutRates } from "../../../api/scoutClient";
 import { getCurrentUser } from "../../../auth/session";
 import { getDefaultLeague } from "../../../core/leagueState";
 import { tradeSearchUrl } from "../../../lib/tradeLink";
 import { denominate, type Denom } from "../../../core/treasury";
+import { heatScore } from "../../../core/demandHeat";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,65 +15,59 @@ export interface DemandRow {
   type: string;
   category: string;
   icon: string | null;
-  market: Denom; // current price (outlier-guarded — see scoutClient.fetchDemand)
+  market: Denom; // cheapest listed ask (poe2scout CurrentPrice, outlier-guarded) — NOT a sale price
   marketDivine: number;
-  quantity: number;
-  turnover: number;
+  quantity: number; // live listing count
+  listedAvg: number; // average listing count over the price log (supply, not flow)
+  sellThrough: number; // avg per-step FRACTION of listings gone (0..1) — sell-through proxy
   momentumPct: number;
   spark: number[]; // daily log prices oldest→newest — row sparkline
-  heat: number; // 0–100: flow + positive momentum
+  heat: number; // 0–100: sell-through proxy + positive momentum (see core/demandHeat)
   trust: "ok" | "thin" | "noisy"; // price reliability — see below
   divergePct: number; // |shown − headline| / shown, % — >0 only when the outlier guard fired
   tradeUrl: string;
 }
 
+function toRow(it: DemandItem, rates: ScoutRates, league: string): DemandRow {
+  const marketDivine = it.priceExalt / rates.exaltPerDivine;
+  const divergePct = it.priceExalt > 0 ? (Math.abs(it.priceExalt - it.rawPriceExalt) / it.priceExalt) * 100 : 0;
+  // thin = too few data points / listings to trust; noisy = headline was an outlier (guard fired)
+  const trust: DemandRow["trust"] = it.samples < 3 || it.quantity < 3 ? "thin" : divergePct > 40 ? "noisy" : "ok";
+  return {
+    id: it.id,
+    name: it.name,
+    type: it.type,
+    category: it.category,
+    icon: it.icon,
+    market: denominate(marketDivine, rates),
+    marketDivine,
+    quantity: it.quantity,
+    listedAvg: Math.round(it.listedAvg),
+    sellThrough: it.sellThrough,
+    momentumPct: it.momentumPct,
+    spark: it.sparkPrices,
+    heat: heatScore(it.sellThrough, it.momentumPct),
+    trust,
+    divergePct,
+    tradeUrl: tradeSearchUrl(league, { name: it.name, type: it.type }),
+  };
+}
+
 /**
- * GET /api/demand — "what's hot" gear-unique board from poe2scout flow + momentum.
- * Heat blends turnover (how much actually trades) with positive price momentum;
- * a true build-meta signal (desired affixes) isn't exposed by any PoE2 API, so this
- * is an honest liquidity+trend proxy, not "what players theory-craft".
+ * GET /api/demand — "what's hot" gear-unique board from poe2scout listing history + momentum.
+ * Heat blends a sell-through PROXY (drops in listing count between scrapes) with positive price
+ * momentum. poe2scout has no sales data; listing count alone measures supply, so it no longer
+ * drives Heat. A true build-meta signal (desired affixes) isn't exposed by any PoE2 API either.
  */
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  // scoutClient fetches flow/momentum for the app default league — the deep links stay there
-  // too, or a row would price one economy and link into another.
+  // scoutClient fetches the app default league — the deep links stay there too, or a row would
+  // price one economy and link into another.
   const league = getDefaultLeague();
   try {
     const { rates, items } = await fetchDemand();
-    const maxTurnover = items.reduce((m, i) => Math.max(m, i.turnover), 0);
-    const norm = (t: number) => (maxTurnover > 0 ? Math.log10(t + 1) / Math.log10(maxTurnover + 1) : 0);
-
-    const rows: DemandRow[] = items
-      .map((it) => {
-        const liqN = norm(it.turnover);
-        const momN = Math.min(Math.max(it.momentumPct, 0) / 50, 1);
-        const heat = Math.round(100 * (0.6 * liqN + 0.4 * momN));
-        const marketDivine = it.priceExalt / rates.exaltPerDivine;
-        const divergePct = it.priceExalt > 0 ? (Math.abs(it.priceExalt - it.rawPriceExalt) / it.priceExalt) * 100 : 0;
-        // thin = too few data points / listings to trust; noisy = headline was an outlier (guard fired)
-        const trust: DemandRow["trust"] =
-          it.samples < 3 || it.quantity < 3 ? "thin" : divergePct > 40 ? "noisy" : "ok";
-        return {
-          id: it.id,
-          name: it.name,
-          type: it.type,
-          category: it.category,
-          icon: it.icon,
-          market: denominate(marketDivine, rates),
-          marketDivine,
-          quantity: it.quantity,
-          turnover: Math.round(it.turnover),
-          momentumPct: it.momentumPct,
-          spark: it.sparkPrices,
-          heat,
-          trust,
-          divergePct,
-          tradeUrl: tradeSearchUrl(league, { name: it.name, type: it.type }),
-        };
-      })
-      .sort((a, b) => b.heat - a.heat);
-
+    const rows = items.map((it) => toRow(it, rates, league)).sort((a, b) => b.heat - a.heat);
     return NextResponse.json({ rows, computedLeague: league, fetchedAt: new Date().toISOString() });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });

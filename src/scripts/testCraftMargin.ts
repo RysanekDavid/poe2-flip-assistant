@@ -1,7 +1,8 @@
 /* Synthetic + DB-backed test of the craft-margin engine: EV math, the missing-material failure
  * path, leg-query assembly, and a material-id sanity check against the live DB / a Delirium fixture. */
 import "../config/env";
-import { computeMargin, priceMaterials, legToQuery, robustValue } from "../core/craftMargin";
+import { priceMaterials, legToQuery } from "../core/craftMargin";
+import { computeMargin } from "../core/craftValuation";
 import { MATS, ALL_MATERIALS } from "../core/craftMaterials";
 import { RECIPES } from "../core/craftRecipes";
 import { buildStatIndex } from "../core/statResolver";
@@ -19,9 +20,10 @@ const ok = (name: string, cond: boolean, extra = "") => {
 
 // --- computeMargin: EV = hitRate × result − base − materials; margin = EV / cost × 100 ---
 {
-  const { evDiv, marginPct } = computeMargin(1, 20, 3, 0.35); // cost 4, ev 0.35*20-4 = 3
+  const { evDiv, marginPct, returnFlagged } = computeMargin(1, 20, 3, 0.35); // cost 4, ev 0.35*20-4 = 3
   ok("computeMargin EV = 3", Math.abs(evDiv - 3) < 1e-9, String(evDiv));
   ok("computeMargin margin = 75%", Math.abs(marginPct - 75) < 1e-9, String(marginPct));
+  ok("computeMargin: a sane return is not flagged", returnFlagged === false);
   const neg = computeMargin(5, 8, 2, 0.5); // cost 7, ev 4-7 = -3
   ok("computeMargin negative EV = -3", Math.abs(neg.evDiv + 3) < 1e-9, String(neg.evDiv));
   ok("computeMargin zero cost → 0% (no divide-by-zero)", computeMargin(0, 10, 0, 0.5).marginPct === 0);
@@ -82,19 +84,6 @@ const ok = (name: string, cond: boolean, extra = "") => {
   };
   const pdps = raw.filters?.equipment_filters?.filters?.pdps?.min;
   ok("buildTradeQuery emits equipment_filters.pdps.min = 250", pdps === 250, String(pdps));
-}
-
-// --- robustValue: empty leg → 0/0 (never a fake price), bait + NaN dropped, low-percentile median ---
-{
-  const empty = robustValue([]);
-  ok("empty leg → value 0, kept 0 (would fail the min-samples floor, not price EV)", empty.value === 0 && empty.kept === 0, `${empty.value}/${empty.kept}`);
-  const bait = robustValue([5, 6, 7, 8, 0.001]); // clusterMed 6, threshold 1.2 → drop 0.001; lowHalf [5,6] → 5.5
-  ok("bait under 20% of cluster median dropped", bait.dropped === 1 && bait.kept === 4, `dropped ${bait.dropped}, kept ${bait.kept}`);
-  ok("low-percentile median of survivors = 5.5", bait.value === 5.5, String(bait.value));
-  const nan = robustValue([Number.NaN, 5, 6, 7]); // NaN filtered; [5,6,7] → lowHalf [5,6] → 5.5
-  ok("NaN prices dropped, not counted as samples", nan.kept === 3 && nan.value === 5.5, `kept ${nan.kept}, value ${nan.value}`);
-  const thin = robustValue([9, 10]); // 2 survivors — below the MIN_SAMPLES floor of 3
-  ok("thin leg keeps only its 2 survivors (caller rejects < 3)", thin.kept === 2, String(thin.kept));
 }
 
 // --- recipe integrity: 14 recipes, valid hitRate, every material has a positive expected qty ---

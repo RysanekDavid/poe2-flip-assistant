@@ -6,6 +6,10 @@ import type { CraftGuide } from "./craftRecipes";
  * items 1-5,7,8). Split out of craftGuideData.ts to keep both files under the 500-line cap.
  * Same DOMAIN-CONTENT contract: tight prose, wallet-warnings inline, mechanics cited from the KB.
  */
+// Gloves reorder (desecrate → fracture) is derived from KB §2, not from the source video.
+const UNREVEALED_BLOCKER =
+  "The creator video fractures BEFORE desecrating; fracturing with an UNREVEALED desecrated blocker (then revealing it as the finish) is our reordering from KB §2 — the KB confirms a desecrated mod counts and can't be fractured, but not that an unrevealed one behaves the same.";
+
 export const GUIDES_2: Record<string, CraftGuide> = {
   armour_putrefaction: {
     goal: "6-mod body armour: high flat/% ES (or Evasion) + two 30%+ resistances (± Spirit/rarity jackpot).",
@@ -77,16 +81,26 @@ export const GUIDES_2: Record<string, CraftGuide> = {
         title: "Roll + lock the +2",
         steps: [
           {
-            do: "Chaos/Annulment-spam the base toward +2 to Level of all Projectile Skills.",
-            why: "The value driver. Best fracture odds sit at ~3 total mods.",
+            do: "Chaos/Annulment-spam the base toward +2 to Level of all Projectile Skills, stopping at exactly 3 mods: the +2 + 2 junk.",
+            why: "The value driver. The desecrated blocker next makes it the 4th mod.",
             mats: [MATS.chaos, MATS.annul],
             warning: "Annulment with 2+ mods is a real coinflip — it can strip the +2 before you lock it.",
           },
           {
-            do: "Fracturing Orb once the +2 is on with ~3 mods.",
-            why: "~1-in-3 to lock it forever → an unbrickable craft base.",
+            // KB §2 (poe2-crafting-knowledge.md): fracture needs ≥4 mods; desecrated counts, can't be fractured.
+            // KB §5: Ancient bone = modifier level 40+ floor (Preserved already works on any ilvl).
+            do: "Ancient Rib desecration — leave it UNREVEALED as the blocker.",
+            why: "Counts toward the 4-mod minimum but can't be fractured. Ancient = mod level 40+ reveals (cuts low tiers), not an ilvl need — Preserved works on any ilvl.",
+            mats: [MATS.ancientRib],
+            check: "Exactly 4 mods: +2 keeper + 2 junk + unrevealed desecrated blocker.",
+            unverified: UNREVEALED_BLOCKER,
+          },
+          {
+            do: "Fracturing Orb at exactly 4 mods.",
+            why: "Needs ≥4 mods; the blocker can't be picked → 1-in-3 to lock the +2 forever → an unbrickable craft base.",
             mats: [MATS.fracturing],
             onFail: "Wrong mod fractured → sell as a normal rare, restart on a fresh base (loss lives in hitRate).",
+            unverified: UNREVEALED_BLOCKER,
           },
         ],
       },
@@ -94,15 +108,15 @@ export const GUIDES_2: Record<string, CraftGuide> = {
         title: "Finish prefixes + suffixes",
         steps: [
           {
+            do: "Well of Souls: reveal the desecrated blocker; keep an Abyssal Echoes for one reroll of the options.",
+            why: "The blocker becomes the finish — target T1 flat Lightning/Cold/Physical or Suppress Chance.",
+            mats: [MATS.omenAbyssalEchoes],
+            pick: ["T1 flat Cold/Lightning/Physical (32+ phys breakpoint)", "Suppress Chance"],
+          },
+          {
             do: "Exalted Orb for a prefix, Essence of Hysteria for a suffix.",
             why: "Hysteria is a straight 50/50 reforge (e.g. Crit Spell Damage Bonus vs Cold Res) — no omen needed.",
             mats: [MATS.exalted, MATS.essenceOfHysteria],
-          },
-          {
-            do: "Ancient Ribcage bone at the Well of Souls for the last slot; keep an Abyssal Echoes for the reveal.",
-            why: "Target T1 flat Lightning/Cold/Physical or Suppress Chance. Ancient tier for the ilvl82 base.",
-            mats: [MATS.ancientRib, MATS.omenAbyssalEchoes],
-            pick: ["T1 flat Cold/Lightning/Physical (32+ phys breakpoint)", "Suppress Chance"],
           },
           {
             do: "Artificer socket + a rune, then list.",
@@ -132,6 +146,9 @@ export const GUIDES_2: Record<string, CraftGuide> = {
             do: "Astrid's Creativity to add a crafted-mod slot.",
             why: "The 'additional crafted modifier' orb (~4-5 div) — holds the slot until you overwrite it with a real bench craft (e.g. +X Spell Skills) at the end.",
             mats: [MATS.astridsCreativity],
+            // RePoE catalog: Astrid's Creativity is a SoulCore ("Place into an empty Augment Socket…")
+            unverified:
+              "RePoE lists Astrid's Creativity as a Soul Core for an empty Augment socket, not a crafted-slot orb — test on a cheap wand first.",
           },
         ],
       },
@@ -155,14 +172,17 @@ export const GUIDES_2: Record<string, CraftGuide> = {
         title: "Perfect-exalt the finish",
         steps: [
           {
-            do: "Omen of Greater Exaltation + an Exalted Orb on the last prefix, targeting T1 spell damage / elemental-gain.",
-            why: "At Perfect-Exalt's effective ilvl50 pool with mana blocked, the T1 'gain' mod is ~1-in-3 to 1-in-4.",
-            mats: [MATS.omenGreaterExaltation, MATS.exalted],
+            // KB §1: Perfect Exalted Orb = min modifier level 50 — the step's odds assume that floor
+            do: "Omen of Greater Exaltation + a Perfect Exalted Orb on the last prefix, targeting T1 spell damage / elemental-gain.",
+            why: "At the Perfect Exalt's mod-level-50 floor with mana blocked, the T1 'gain' mod is ~1-in-3 to 1-in-4.",
+            mats: [MATS.omenGreaterExaltation, MATS.perfectExalted],
             onFail: "Off-element/bad hit → Annulment (Sinistral/Dextral) to recover, then re-slam.",
           },
           {
             do: "Overwrite the crafted placeholder with a real bench craft, then list.",
             mats: [MATS.annul],
+            // PoE2 0.5 has no crafting bench (KB §7: the crafted slot is written by essences/alloys)
+            unverified: "PoE2 0.5 has no crafting bench — 'bench craft' is PoE1 vocabulary; the overwrite route is unconfirmed.",
           },
         ],
       },
@@ -185,6 +205,9 @@ export const GUIDES_2: Record<string, CraftGuide> = {
             mats: [MATS.preservedCollarbone, MATS.omenAbyssalEchoes],
             warning: "Spirit only adds while MAGIC — do NOT Regal to Rare before it lands, it forecloses Spirit permanently.",
             check: "Amulet carries a Spirit prefix.",
+            // KB §5: max ONE desecrated mod per item; RePoE bone text: bones desecrate RARE items
+            unverified:
+              "Contradicts KB §5 (one desecrated mod per item) and the bone text (desecrates a RARE item) — a repeat-desecrate loop on a magic amulet is unconfirmed; hit rate and the 30-bone cost are unverified.",
           },
         ],
       },
@@ -342,9 +365,11 @@ export const GUIDES_2: Record<string, CraftGuide> = {
             onFail: "Tiny full-brick window here (~1 in 80–200) — priced into the variance.",
           },
           {
-            do: "Desecrate the open prefix (Preserved Collarbone), Omen of Light rerolls until ANY item-level-75 mod lands (T1 mana, a flat, T1 %damage).",
+            // RePoE catalog: Omen of Light = next Annulment removes only Desecrated mods (a strip);
+            // Abyssal Echoes = one reroll of the reveal options (KB §4)
+            do: "Desecrate the open prefix (Preserved Collarbone), reveal with Abyssal Echoes (one options reroll); no item-level-75 mod (T1 mana, a flat, T1 %damage)? Omen of Light + Orb of Annulment strips just the desecrated mod — re-desecrate with a fresh Collarbone.",
             why: "Whittling removes the LOWEST modifier level — an ilvl-75 desecrated prefix shields the prefixes so every further whittle lands on suffixes (‘whittle in peace’). An ilvl-65 pick works until whittles reach it again.",
-            mats: [MATS.preservedCollarbone, MATS.omenLight],
+            mats: [MATS.preservedCollarbone, MATS.omenAbyssalEchoes, MATS.omenLight, MATS.annul],
           },
           {
             do: "Whittle suffixes to TWO tier-one resistances (~1 in 5 each), then settle the third.",
@@ -364,9 +389,9 @@ export const GUIDES_2: Record<string, CraftGuide> = {
         title: "Final prefix",
         steps: [
           {
-            do: "Omen of Light + collarbone loop on the desecrated prefix until T1 phys flat, T1 fire flat, or rarity (~10–15 of each budgeted).",
-            why: "Each reveal shows three options and the Light rerolls them once — real odds much better than the raw 1/30–1/60 weights.",
-            mats: [MATS.omenLight, MATS.preservedCollarbone],
+            do: "Collarbone loop on the desecrated prefix until T1 phys flat, T1 fire flat, or rarity: reveal with Abyssal Echoes; a miss → Omen of Light + Orb of Annulment strips only the desecrated mod, re-desecrate.",
+            why: "Each reveal shows three options and Echoes rerolls them once — real odds much better than the raw 1/30–1/60 weights. Light only strips the desecrated mod.",
+            mats: [MATS.preservedCollarbone, MATS.omenAbyssalEchoes, MATS.omenLight, MATS.annul],
           },
           {
             do: "Price by the PACKAGE: weighted flat total + res spread. All-res versions sell at a premium (pairs with a mirrored Kalandra ring for 90 res).",
