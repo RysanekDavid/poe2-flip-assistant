@@ -36,6 +36,7 @@ export interface TradeQuery {
   esMin?: number; // minimum energy shield — selects ES-base armour (caster gear)
   evMin?: number; // minimum evasion rating — selects EV-base armour (attack gear)
   stats?: StatFilter[]; // explicit/implicit mod thresholds (AND-combined)
+  account?: string; // restrict to one seller account (own-stash reads)
 }
 
 /** The inner `query` object — shared by the deep-link URL and the live POST search. */
@@ -71,6 +72,7 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
     tradeFilters.price = { max: q.maxPrice.amount, option: q.maxPrice.currency };
   }
   if (q.indexedWindow) tradeFilters.indexed = { option: q.indexedWindow };
+  if (q.account) tradeFilters.account = { input: q.account };
   if (Object.keys(tradeFilters).length > 0) filters.trade_filters = { filters: tradeFilters };
   if (Object.keys(filters).length > 0) query.filters = filters;
 
@@ -90,6 +92,14 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
       ]
     : [];
   return query;
+}
+
+/**
+ * Trade-site page for a search id returned by a POST search. The site ignores `?q=` payloads for
+ * saved searches, so an id-based URL is the only deep link that reopens the exact query.
+ */
+export function tradeSearchPageUrl(league: string, searchId: string): string {
+  return `${TRADE2_SEARCH}/${encodeURIComponent(league)}/${searchId}`;
 }
 
 /** Build a prefilled, price-ascending live search URL for the given league. */

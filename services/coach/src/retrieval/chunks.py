@@ -1,4 +1,4 @@
-"""Deterministic, heading-aware Markdown chunking."""
+"""Deterministic, heading-aware Markdown chunking over the manifest-listed corpus."""
 
 import hashlib
 import re
@@ -8,21 +8,10 @@ from pathlib import Path
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from src.retrieval.manifest import CorpusEntry, load_manifest
+
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _EXCLUDED = re.compile(r"refuted|open questions?|unverified", re.I)
-_CORPUS_FILES = (
-    "docs/kb/README.md",
-    "docs/kb/currency-core.md",
-    "docs/kb/breach.md",
-    "docs/kb/desecration-abyss.md",
-    "docs/kb/delirium.md",
-    "docs/kb/expedition-ritual.md",
-    "docs/kb/atlas-juicing.md",
-    "docs/kb/economy-meta.md",
-    "docs/kb/league-mechanics-misc.md",
-    "docs/kb/drop-sources.md",
-    "docs/research/poe2-crafting-knowledge.md",
-)
 
 
 @dataclass(frozen=True)
@@ -35,24 +24,25 @@ class MarkdownSection:
 
 
 def load_corpus(corpus_dir: Path) -> list[Document]:
-    """Load and split every curated Markdown file in deterministic path order."""
+    """Load and split every manifest-listed Markdown file in manifest order."""
     if not corpus_dir.is_dir():
         raise FileNotFoundError(f"Knowledge corpus directory does not exist: {corpus_dir}")
     documents: list[Document] = []
-    for relative in _CORPUS_FILES:
-        path = corpus_dir / relative
+    for entry in load_manifest(corpus_dir).corpus:
+        path = corpus_dir / entry.path
         if not path.is_file():
-            raise FileNotFoundError(f"Allowlisted knowledge file is missing: {relative}")
-        documents.extend(_documents_for_file(path, corpus_dir))
+            raise FileNotFoundError(f"Manifest-listed knowledge file is missing: {entry.path}")
+        documents.extend(_documents_for_file(path, entry))
     if not documents:
         raise RuntimeError(f"Knowledge corpus contains no usable Markdown chunks: {corpus_dir}")
     return documents
 
 
-def _documents_for_file(path: Path, corpus_dir: Path) -> list[Document]:
-    relative = path.relative_to(corpus_dir).as_posix()
-    sections = parse_sections(path.read_text(encoding="utf-8"), relative)
-    base_docs = [_section_document(section) for section in sections if not _excluded(section)]
+def _documents_for_file(path: Path, entry: CorpusEntry) -> list[Document]:
+    sections = parse_sections(path.read_text(encoding="utf-8"), entry.path)
+    base_docs = [
+        _section_document(section, entry) for section in sections if not _excluded(section)
+    ]
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1_000,
         chunk_overlap=150,
@@ -88,7 +78,7 @@ def _append_section(
         sections.append(MarkdownSection(source=source, heading=heading, content=content))
 
 
-def _section_document(section: MarkdownSection) -> Document:
+def _section_document(section: MarkdownSection, entry: CorpusEntry) -> Document:
     evidence_id = f"{section.source}#{_slug(section.heading)}"
     return Document(
         page_content=section.content,
@@ -97,6 +87,10 @@ def _section_document(section: MarkdownSection) -> Document:
             "heading": section.heading,
             "evidence_id": evidence_id,
             "content_hash": hashlib.sha256(section.content.encode()).hexdigest(),
+            # Stamps travel with every chunk so a citation can say which patch/league it is from.
+            "patch": entry.patch,
+            "league": entry.league,
+            "stamped_at": entry.stamped_at.isoformat(),
         },
     )
 

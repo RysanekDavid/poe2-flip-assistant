@@ -51,7 +51,6 @@ function AssistantMessage({ message }: { message: Message }) {
             tools={message.toolsUsed}
             sources={message.sources}
           />
-          <p className="mt-3 text-[10px] text-neutral-600">Read-only guidance · verify prices and item state in-game before acting.</p>
         </div>
       </div>
     </article>
@@ -80,7 +79,9 @@ function Evidence({ processors, tools, sources }: {
   sources: CoachSource[];
 }) {
   return (
-    <details open className="group mt-5 border-t border-dashed border-neutral-800 pt-3">
+    // Collapsed by default: inline citations already link each claim to its source, and an open
+    // panel under every answer doubled the reading length of a conversation.
+    <details className="group mt-5 border-t border-dashed border-neutral-800 pt-3">
       <summary className="flex cursor-pointer list-none items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500 hover:text-neutral-300">
         <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
         Evidence

@@ -194,31 +194,6 @@ export async function searchListingsLinked(
   return { total: search.total ?? listings.length, listings, searchUrl: searchPageUrl(search.id) };
 }
 
-/**
- * Search every item YOU have listed (in public stash tabs), by account name. This is how
- * PoE2 net-worth tools read your stash — the official stash API is PoE1-only, but a trade
- * search filtered to your own account returns all your indexed (public-tab) listings,
- * currency stacks included. Read-only; only sees PUBLIC tabs.
- */
-export async function searchAccountListings(
-  account: string,
-  limit = 200,
-  cred: TradeCred = configCred(),
-): Promise<{ total: number; listings: Listing[] }> {
-  const league = encodeURIComponent(getDefaultLeague());
-  const body = {
-    query: { filters: { trade_filters: { filters: { account: { input: account } } } } },
-    sort: { price: "asc" },
-  };
-  const search = await call<SearchResp>("post", `/search/poe2/${league}?realm=poe2`, cred, body);
-  const ids = (search.result ?? []).slice(0, limit);
-  const listings: Listing[] = [];
-  for (let i = 0; i < ids.length; i += 10) {
-    listings.push(...(await fetchListings(ids.slice(i, i + 10), search.id, cred)));
-  }
-  return { total: search.total ?? listings.length, listings };
-}
-
 export const liveSearchEnabled = (cred: TradeCred = configCred()): boolean => cred.poesessid.length > 0;
 export const accountReadEnabled = (cred: TradeCred = configCred()): boolean =>
   cred.poesessid.length > 0 && (cred.account ?? "").length > 0;

@@ -147,10 +147,8 @@ wait_for_http() {
 coach_health_ok() {
   local body
   body=$(curl --fail --silent --max-time 3 http://127.0.0.1:8000/health) || return 1
-  node -e '
-  const health = JSON.parse(process.argv[1]);
-  if (health.status !== "ok") process.exit(1);
-' "$body"
+  # Only called while restoring the previous release, whose /health may predate newer flags.
+  coach_health_gate "$body" rollback
 }
 
 wait_for_coach_health() {
@@ -274,6 +272,14 @@ if [[ -z "$patch_notes_enabled" || "${patch_notes_enabled,,}" == "true" ]]; then
     exit 1
   fi
 fi
+# contract (default): deterministic, free Coach smoke. live: additionally one real, non-fatal
+# LLM turn that only logs latency. The process environment wins over .env.local.
+COACH_SMOKE_MODE=${COACH_SMOKE_MODE:-$(awk -F= '$1 == "COACH_SMOKE_MODE" { value=substr($0, index($0, "=") + 1) } END { print value }' .env.local)}
+COACH_SMOKE_MODE=${COACH_SMOKE_MODE:-contract}
+if [[ "$COACH_SMOKE_MODE" != "contract" && "$COACH_SMOKE_MODE" != "live" ]]; then
+  echo "COACH_SMOKE_MODE must be contract or live, got: $COACH_SMOKE_MODE" >&2
+  exit 1
+fi
 for key in OPENAI_API_KEY COACH_PROXY_SECRET POE_DB_PATH POE2_DATA_MANIFEST; do
   if ! grep -Eq "^${key}=.+$" .coach.env; then
     echo "missing required value for $key in $APP_DIR/.coach.env" >&2
@@ -314,6 +320,12 @@ PREVIOUS_COACH_ACTIVE=$(was_active poe2flip-coach)
 PREVIOUS_WEB_ENABLED=$(was_enabled poe2flip-web)
 PREVIOUS_POLLER_ENABLED=$(was_enabled poe2flip-poller)
 PREVIOUS_COACH_ENABLED=$(was_enabled poe2flip-coach)
+# Reclaim space BEFORE the free-disk gate and before the rollback trap is armed: releases and backups accumulated unpruned for months
+# (every failed release is also kept for inspection), and a full disk otherwise blocks the very
+# deploy that would prune them. The live `current` target is always protected.
+run_nonfatal "pre-flight release pruning" prune_releases "$APP_DIR/releases" 2 "$PREVIOUS_TARGET"
+run_nonfatal "pre-flight backup pruning" prune_backups "$APP_DIR/backups" 5
+
 trap rollback ERR
 
 available_kb=$(df -Pk "$APP_DIR" | awk 'NR==2 {print $4}')
@@ -393,30 +405,24 @@ for _ in {1..30}; do
   sleep 1
 done
 COACH_HEALTH=$(curl --fail --silent --max-time 10 http://127.0.0.1:8000/health)
-node -e '
-  const health = JSON.parse(process.argv[1]);
-  if (health.status !== "ok" || !health.market_ready || !health.knowledge_ready || !health.model_configured) {
-    console.error("Coach health is degraded", health);
-    process.exit(1);
-  }
-' "$COACH_HEALTH"
+coach_health_gate "$COACH_HEALTH"
 echo "==> starting web"
 systemctl start poe2flip-web
 for _ in {1..30}; do
   curl --fail --silent --max-time 5 http://127.0.0.1:3000/login >/dev/null && break
   sleep 1
 done
-SESSION_TOKEN=$(run_in_release "$RELEASE_DIR/node_modules/.bin/tsx" -e 'import { signSession } from "./src/auth/auth"; console.log(signSession(1, 420_000));')
-CONVERSATION_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
-# The persisted-history contract requires a stable turn id and the expected turn count.
-CHAT_TURN_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
+# Smokes run as a dedicated no-login member, never the owner: persisted smoke conversations used
+# to evict the owner's real history (prune-to-20) and billed two LLM turns per deploy.
+SESSION_TOKEN=$(run_in_release "$RELEASE_DIR/node_modules/.bin/tsx" src/scripts/deploySmoke.ts ensure | tail -n 1)
+[[ "$SESSION_TOKEN" =~ ^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$ ]] || {
+  echo "deploy smoke session token is malformed" >&2
+  false
+}
 WEB_COACH_HEALTH=$(curl --fail --silent --max-time 30 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
   http://127.0.0.1:3000/api/coach/health)
-node -e '
-  const health = JSON.parse(process.argv[1]);
-  if (health.status !== "ok") process.exit(1);
-' "$WEB_COACH_HEALTH"
+coach_health_gate "$WEB_COACH_HEALTH"
 APP_HEALTH=$(curl --fail --silent --max-time 10 \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
   http://127.0.0.1:3000/api/health)
@@ -428,52 +434,25 @@ node -e '
     process.exit(1);
   }
 ' "$APP_HEALTH" "${TARGET_SHA:0:12}"
-CHAT_STARTED_NS=$(date +%s%N)
-CHAT_RESPONSE=$(curl --fail --silent --max-time 180 \
-  --cookie "poe2flip_session=$SESSION_TOKEN" \
-  --header 'Content-Type: application/json' \
-  --data "{\"message\":\"On a desecrated Time-Lost jewel, when should I use Omen of Light versus Omen of Sinistral Annulment? Use only verified knowledge-base evidence; do not discuss drop sources or current prices.\",\"conversationId\":\"$CONVERSATION_ID\",\"turnId\":\"$CHAT_TURN_ID\",\"expectedTurnCount\":0}" \
-  http://127.0.0.1:3000/api/coach/chat)
-CHAT_ELAPSED_MS=$((($(date +%s%N) - CHAT_STARTED_NS) / 1000000))
-node -e '
-  const response = JSON.parse(process.argv[1]);
-  const answer = typeof response.answer === "string" ? response.answer : "";
-  const lowered = answer.toLowerCase();
-  const sources = Array.isArray(response.sources) ? response.sources : [];
-  const exactTools = JSON.stringify(response.toolsUsed) === JSON.stringify(["retrieve_knowledge"]);
-  const exactSources = sources.length > 0 && sources.every(source => source.type === "knowledge" && /desecration-abyss/i.test(source.title) && /deterministic scope/i.test(source.title));
-  const cited = sources.some(source => answer.includes(`[${source.id}]`));
-  const processors = Array.isArray(response.processorsUsed) && response.processorsUsed.length === 0;
-  const forbidden = ["drop source", "drops from", "current price"].some(term => lowered.includes(term));
-  if (!exactTools || !exactSources || !cited || !processors || forbidden || !answer.includes("Verify prices in-game before trading.")) {
-    console.error("Coach demo contract failed");
-    process.exit(1);
-  }
-' "$CHAT_RESPONSE"
-echo "Coach demo latency: ${CHAT_ELAPSED_MS}ms"
 
-PRESENTATION_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
-PRESENTATION_TURN_ID=$(node -e 'console.log(require("node:crypto").randomUUID())')
-PRESENTATION_STARTED_NS=$(date +%s%N)
-PRESENTATION_RESPONSE=$(curl --fail --silent --max-time 180 \
+echo "==> Coach contract smoke (deterministic; the input guard rejects before any model call)"
+# Exercises session auth -> history lease -> signed proxy -> FastAPI auth/rate limit/guard ->
+# correlated error contract -> lease release, without a paid or nondeterministic LLM turn.
+SMOKE_CONVERSATION_ID=$(new_uuid)
+SMOKE_TURN_ID=$(new_uuid)
+REJECTED_SMOKE=$(coach_chat "$COACH_REJECTED_PROMPT" "$SMOKE_CONVERSATION_ID" "$SMOKE_TURN_ID")
+assert_rejected_coach_smoke "$REJECTED_SMOKE"
+# The same turn id again: a lease leaked by the failed turn would answer 409 conversation_busy.
+REPLAYED_SMOKE=$(coach_chat "$COACH_REJECTED_PROMPT" "$SMOKE_CONVERSATION_ID" "$SMOKE_TURN_ID")
+assert_rejected_coach_smoke "$REPLAYED_SMOKE"
+# A rejected turn must persist nothing.
+test "$(curl --silent --max-time 10 --output /dev/null --write-out '%{http_code}' \
   --cookie "poe2flip_session=$SESSION_TOKEN" \
-  --header 'Content-Type: application/json' \
-  --data "{\"message\":\"I want a Dueling Wand for a Blood Mage with spell damage, level of all spell skills, maximum mana, damage as extra cold damage, critical hit chance for spells, and cast speed. How should I craft it?\",\"conversationId\":\"$PRESENTATION_ID\",\"turnId\":\"$PRESENTATION_TURN_ID\",\"expectedTurnCount\":0}" \
-  http://127.0.0.1:3000/api/coach/chat)
-PRESENTATION_ELAPSED_MS=$((($(date +%s%N) - PRESENTATION_STARTED_NS) / 1000000))
-node -e '
-  const response = JSON.parse(process.argv[1]);
-  const answer = typeof response.answer === "string" ? response.answer.trim() : "";
-  const tools = Array.isArray(response.toolsUsed) ? response.toolsUsed : [];
-  const sources = Array.isArray(response.sources) ? response.sources : [];
-  const gameSources = sources.filter(source => source.type === "game_data");
-  const citedGameData = gameSources.some(source => answer.includes(`[${source.id}]`));
-  if (answer.length < 40 || !tools.includes("lookup_poe2_game_data") || !citedGameData) {
-    console.error("Coach presentation smoke failed");
-    process.exit(1);
-  }
-' "$PRESENTATION_RESPONSE"
-echo "Coach presentation latency: ${PRESENTATION_ELAPSED_MS}ms"
+  "http://127.0.0.1:3000/api/coach/conversations/$SMOKE_CONVERSATION_ID")" = "404"
+if [[ "$COACH_SMOKE_MODE" == "live" ]]; then
+  run_nonfatal "live Coach smoke turn" live_coach_smoke
+fi
+run_in_release "$RELEASE_DIR/node_modules/.bin/tsx" src/scripts/deploySmoke.ts cleanup
 
 echo "==> starting poller"
 systemctl start poe2flip-poller
@@ -485,4 +464,8 @@ chmod 0600 "$APP_DIR/.deployed-revision"
 systemctl --no-pager --lines=0 status poe2flip-web poe2flip-poller poe2flip-coach
 
 trap - ERR
+# Housekeeping after success only: failure warns loudly but never un-deploys a healthy release.
+echo "==> pruning old releases and pre-deploy backups"
+run_nonfatal "release pruning" prune_releases "$APP_DIR/releases" 3 "$RELEASE_DIR" "$PREVIOUS_TARGET"
+run_nonfatal "backup pruning" prune_backups "$APP_DIR/backups" 5
 echo "done: $RELEASE_ID"

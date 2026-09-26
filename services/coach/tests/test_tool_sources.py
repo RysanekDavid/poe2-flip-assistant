@@ -45,6 +45,7 @@ async def test_locked_market_database_becomes_safe_source_error(
     state = {
         "request_id": "abcdef0123456789abcdef01",
         "messages": [_market_call()],
+        "league": "Test League",
     }
     result = await tool_node([market.analyze_market_history])(state)
     message = result["messages"][0]
@@ -71,6 +72,7 @@ async def test_market_query_programming_error_propagates(
     state = {
         "request_id": "abcdef0123456789abcdef01",
         "messages": [_market_call()],
+        "league": "Test League",
     }
 
     with pytest.raises(sqlite3.OperationalError, match="no such column"):

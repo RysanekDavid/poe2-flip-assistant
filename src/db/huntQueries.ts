@@ -22,12 +22,13 @@ export interface Hunt {
   last_scan_at: string | null;
   last_hit_at: string | null;
   last_error: string | null; // why the last scan of THIS hunt failed; null after a clean scan
+  recipe_key: string | null; // craft-base preset identity; set only by upsertCraftBaseHunt
   created_at: string;
 }
 
 export type HuntFields = Omit<
   Hunt,
-  "id" | "user_id" | "active" | "last_scan_at" | "last_hit_at" | "last_error" | "created_at"
+  "id" | "user_id" | "active" | "last_scan_at" | "last_hit_at" | "last_error" | "recipe_key" | "created_at"
 >;
 
 /** All active hunts across every user — for the server/agent scanner. */

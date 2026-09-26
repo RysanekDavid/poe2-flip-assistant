@@ -33,6 +33,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const requestId = createCoachRequestId();
+  const startedMs = Date.now();
   const body: unknown = await request.json().catch(() => null);
   const parsed = coachBrowserRequestSchema.safeParse(body);
   if (!parsed.success) {
@@ -70,6 +71,11 @@ export async function POST(request: Request) {
         toolsUsed: response.tools_used,
         processorsUsed: response.processors_used,
         sources: response.sources,
+        usage: {
+          requestId: response.request_id,
+          usage: response.usage,
+          proxyDurationMs: Date.now() - startedMs,
+        },
       });
       return NextResponse.json(browserTurn(stored, response.request_id, stored.ordinal, false));
     } catch (error: unknown) {

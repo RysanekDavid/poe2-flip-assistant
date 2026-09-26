@@ -1,10 +1,11 @@
 import Database from "better-sqlite3";
-import { readFileSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { config } from "../config/env";
 import { hashPassword, genApiKey } from "../auth/auth";
 import { migratePatchProvenance } from "./sourceMigrations";
 import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
+import { applicationSchemaSql } from "./schemaFiles";
 
 let db: Database.Database | null = null;
 
@@ -19,8 +20,7 @@ export function getDb(): Database.Database {
   conn.pragma("journal_mode = WAL");
   conn.pragma("foreign_keys = ON");
 
-  const schema = readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8");
-  conn.exec(schema);
+  conn.exec(applicationSchemaSql());
   migratePatchProvenance(conn);
 
   // Additive migrations — CREATE TABLE IF NOT EXISTS won't add columns to an existing DB,
@@ -52,9 +52,21 @@ export function getDb(): Database.Database {
     ["category", "TEXT"],
     ["ilvl_min", "INTEGER"],
     ["last_error", "TEXT"], // per-hunt failure reason, so a broken hunt is visible instead of silently idle
+    ["recipe_key", "TEXT"], // craft-base preset identity: one hunt per user × recipe × league
   ]);
   relaxHuntHitPriceDiv(conn);
-  ensureColumns(conn, "balance_snapshots", [["other_div", "REAL NOT NULL DEFAULT 0"]]);
+  // A transient trade2 failure is recorded beside the last good craft report instead of replacing it.
+  ensureColumns(conn, "craft_margin_reports", [
+    ["last_error", "TEXT"],
+    ["last_error_at", "DATETIME"],
+  ]);
+  ensureColumns(conn, "balance_snapshots", [
+    ["other_div", "REAL NOT NULL DEFAULT 0"],
+    // What a trade read actually saw — NULL for manual entries and pre-annotation rows.
+    ["listed_seen", "INTEGER"],
+    ["listed_total", "INTEGER"],
+    ["gear_at_ask_div", "REAL"],
+  ]);
   ensureColumns(conn, "balance_tabs", [["unpriced", "INTEGER NOT NULL DEFAULT 0"]]);
   // Per-user trade2 credentials: encrypted POESESSID + identifying contact + account name.
   ensureColumns(conn, "users", [
