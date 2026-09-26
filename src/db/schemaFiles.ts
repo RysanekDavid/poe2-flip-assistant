@@ -3,9 +3,9 @@ import { join } from "node:path";
 
 /**
  * DDL files in execution order. coachSchema.sql references `users`, which schema.sql creates, so
- * the order is load-bearing. Both are idempotent (CREATE ... IF NOT EXISTS).
+ * the order is load-bearing. All are idempotent (CREATE ... IF NOT EXISTS).
  */
-const SCHEMA_FILES = ["src/db/schema.sql", "src/db/coachSchema.sql"] as const;
+const SCHEMA_FILES = ["src/db/schema.sql", "src/db/coachSchema.sql", "src/db/opsSchema.sql"] as const;
 
 /** The full application DDL, as getDb() applies it before running migrations. */
 export function applicationSchemaSql(root: string = process.cwd()): string {

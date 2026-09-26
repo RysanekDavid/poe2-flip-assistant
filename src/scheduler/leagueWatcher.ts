@@ -7,6 +7,7 @@ import { markLeagueAlerted, readLeagueState, recordLeagueDetection } from "../db
 import { fireLeagueAlert } from "../core/leagueAlerts";
 import { clearLeagueListCache } from "../core/leagueSwitch";
 import { getDefaultLeague } from "../core/leagueState";
+import { withHeartbeat } from "../core/heartbeat";
 
 /** A new PoE2 league drops a few times a year — 6h is timely without being noise. */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -123,6 +124,23 @@ export async function checkLeagueOnce(
   return { agreed: detection.agreed, alerted: true };
 }
 
+/**
+ * Live sources that also report failures — askSource deliberately swallows a dead source, so the
+ * heartbeat would otherwise record "ok" while detection is blind.
+ */
+function observedSources(onFailure: (message: string) => void): LeagueSources {
+  const observe =
+    (source: string, fetchLeagues: () => Promise<LeagueOption[]>) => async (): Promise<LeagueOption[]> => {
+      try {
+        return await fetchLeagues();
+      } catch (err: unknown) {
+        onFailure(`${source}: ${err instanceof Error ? err.message : String(err)}`);
+        throw err;
+      }
+    };
+  return { scout: observe("poe2scout", LIVE_SOURCES.scout), ninja: observe("poe.ninja", LIVE_SOURCES.ninja) };
+}
+
 /** Start the 6h detection loop. Returns a stop handle, like the patch-notes watcher. */
 export function startLeagueWatcher(): () => void {
   console.log("[league] checking poe.ninja + poe2scout for a new league every 6h");
@@ -130,7 +148,10 @@ export function startLeagueWatcher(): () => void {
   const run = (): void => {
     if (running) return; // previous check still draining through the ninja limiter
     running = true;
-    void checkLeagueOnce()
+    const failures: string[] = [];
+    const sources = observedSources((m) => failures.push(m));
+    const problem = (): string | null => (failures.length > 0 ? `source unavailable — ${failures.join("; ")}` : null);
+    void withHeartbeat("league-watch", "", () => checkLeagueOnce(sources), { problem })
       .catch((err: unknown) => {
         // checkLeagueOnce swallows source failures itself; anything here is a DB/programming bug.
         console.error("[league] check failed:", err instanceof Error ? err.message : err);
