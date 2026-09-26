@@ -26,6 +26,7 @@
     "test:flips": "tsx src/scripts/runWithTestEnv.ts flips",
     "test:craft": "tsx src/scripts/runWithTestEnv.ts craft && tsx src/scripts/runWithTestEnv.ts craft-valuation && tsx src/scripts/runWithTestEnv.ts craft-guides && tsx src/scripts/runWithTestEnv.ts balance && tsx src/scripts/runWithTestEnv.ts demand",
     "test:db": "tsx src/scripts/runWithTestEnv.ts db",
+    "test:notify": "tsx src/scripts/runWithTestEnv.ts notify && tsx src/scripts/runWithTestEnv.ts notify-drain && tsx src/scripts/runWithTestEnv.ts alert-center",
     "test:valuation": "tsx src/scripts/testValuation.ts",
     "test:auto-snipe": "tsx src/scripts/testAutoSnipe.ts",
     "test:snipe": "tsx src/scripts/testSnipe.ts && tsx src/scripts/runWithTestEnv.ts snipe-db",

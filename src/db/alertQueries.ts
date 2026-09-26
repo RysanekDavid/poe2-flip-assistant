@@ -72,6 +72,12 @@ export interface AlertFeedRow extends AlertRow {
   foreign_league: string | null; // the alert's league when it differs from the viewed one
 }
 
+/** The feed's visibility rule (see getAlerts), shared by the grouped feed, counts and mark-seen. */
+const VISIBLE_SQL = `user_id = @userId AND (league = @league COLLATE NOCASE OR league IS NULL OR type IN (${EVERY_VIEW_ALERT_TYPES.map((t) => `'${t}'`).join(", ")}))`;
+const FOREIGN_LEAGUE_SQL = "CASE WHEN league IS NOT NULL AND league != @league COLLATE NOCASE THEN league END";
+const FEED_COLUMNS =
+  "id, league, type, item_id, item_name, message, value, threshold, whisper, link, seen, created_at, foreign_league";
+
 /**
  * This user's feed for the league they view. Market alerts (spreads, trends, spikes) from another
  * economy are noise at best and a wrong trade at worst, so those are filtered; pre-league-scoping
@@ -79,15 +85,46 @@ export interface AlertFeedRow extends AlertRow {
  */
 export function getAlerts(userId: number, league: string, unseenOnly = false, limit = 100): AlertFeedRow[] {
   const unseen = unseenOnly ? "AND seen = 0" : "";
-  const everyView = EVERY_VIEW_ALERT_TYPES.map((t) => `'${t}'`).join(", ");
   return getDb()
     .prepare(
-      `SELECT *, CASE WHEN league IS NOT NULL AND league != @league COLLATE NOCASE THEN league END AS foreign_league
+      `SELECT *, ${FOREIGN_LEAGUE_SQL} AS foreign_league
        FROM alerts
-       WHERE user_id = @userId AND (league = @league COLLATE NOCASE OR league IS NULL OR type IN (${everyView})) ${unseen}
+       WHERE ${VISIBLE_SQL} ${unseen}
        ORDER BY created_at DESC, id DESC LIMIT @limit`,
     )
     .all({ userId, league, limit }) as AlertFeedRow[];
+}
+
+/**
+ * The alert center's feed: the newest `perType` alerts OF EACH TYPE. A flat newest-100 list let
+ * one chatty type (TREND on a busy market) push every snipe out of the popover.
+ */
+export function getAlertFeed(userId: number, league: string, perType = 15): AlertFeedRow[] {
+  return getDb()
+    .prepare(
+      `SELECT ${FEED_COLUMNS} FROM (
+         SELECT *, ${FOREIGN_LEAGUE_SQL} AS foreign_league,
+                ROW_NUMBER() OVER (PARTITION BY type ORDER BY created_at DESC, id DESC) AS rn
+         FROM alerts WHERE ${VISIBLE_SQL}
+       ) WHERE rn <= @perType ORDER BY created_at DESC, id DESC`,
+    )
+    .all({ userId, league, perType }) as AlertFeedRow[];
+}
+
+export interface AlertTypeCount {
+  type: string;
+  total: number;
+  unseen: number;
+}
+
+/** Exact per-type totals for the visible feed (the row list above is capped per type). */
+export function getAlertCounts(userId: number, league: string): AlertTypeCount[] {
+  return getDb()
+    .prepare(
+      `SELECT type, COUNT(*) AS total, SUM(seen = 0) AS unseen FROM alerts
+       WHERE ${VISIBLE_SQL} GROUP BY type ORDER BY type`,
+    )
+    .all({ userId, league }) as AlertTypeCount[];
 }
 
 /** Mark alerts seen — scoped to the user so one account can't touch another's feed. */
@@ -97,4 +134,16 @@ export function markAlertsSeen(userId: number, ids: number[]): void {
   getDb()
     .prepare(`UPDATE alerts SET seen = 1 WHERE user_id = ? AND id IN (${placeholders})`)
     .run(userId, ...ids);
+}
+
+/**
+ * "Mark all seen" (type = null) or per type, over everything the viewer's feed shows — not just
+ * the capped rows the client holds. Alerts hidden from this league view stay unseen.
+ */
+export function markVisibleSeen(userId: number, league: string, type: string | null): number {
+  const byType = type == null ? "" : "AND type = @type";
+  const params = type == null ? { userId, league } : { userId, league, type };
+  return getDb()
+    .prepare(`UPDATE alerts SET seen = 1 WHERE ${VISIBLE_SQL} AND seen = 0 ${byType}`)
+    .run(params).changes;
 }

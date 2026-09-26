@@ -25,6 +25,9 @@ export type AlertType =
  * Throttled: the same item+type won't re-alert within ALERT_COOLDOWN_MIN (default
  * 60m) — otherwise a still-profitable item would ping every poll (5m). Desktop
  * notif is best-effort; DB failures propagate (we want to know if logging breaks).
+ *
+ * Discord delivery is not wired here: the alerts insert trigger (db/notifyMigrations) queues it
+ * per the recipient's routing prefs, and the poller's drainer (core/notify) sends it.
  */
 export function fireAlert(
   userId: number,

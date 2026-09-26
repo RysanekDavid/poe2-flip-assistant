@@ -1,30 +1,45 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAlerts, markAlertsSeen } from "../../../db/alertQueries";
+import { getAlertCounts, getAlertFeed, markAlertsSeen, markVisibleSeen } from "../../../db/alertQueries";
+import { tickerMutedTypes } from "../../../db/notifyQueries";
 import { getCurrentUser } from "../../../auth/session";
 import { leagueForUser } from "../../../core/leagueUsers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** GET /api/alerts?unseen=1 → this user's alert feed for the league they are viewing */
-export async function GET(req: Request) {
+/**
+ * GET /api/alerts → the alert center for the league this user views: the newest alerts of each
+ * type, exact per-type counts, and the types this user muted in the ticker. One endpoint so the
+ * whole page shares a single poll.
+ */
+export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const unseen = new URL(req.url).searchParams.get("unseen") === "1";
-  return NextResponse.json({ alerts: getAlerts(user.id, leagueForUser(user.id), unseen, 100) });
+  const league = leagueForUser(user.id);
+  return NextResponse.json({
+    alerts: getAlertFeed(user.id, league),
+    counts: getAlertCounts(user.id, league),
+    tickerMuted: tickerMutedTypes(user.id),
+  });
 }
 
-const SeenBody = z.object({ ids: z.array(z.number().int()) });
+const SeenBody = z.union([
+  z.object({ ids: z.array(z.number().int()).max(500) }),
+  z.object({ type: z.string().regex(/^[A-Z_]{2,32}$/) }),
+  z.object({ all: z.literal(true) }),
+]);
 
-/** POST /api/alerts { ids: number[] } → mark this user's alerts seen */
+/** POST /api/alerts { ids } | { type } | { all: true } → mark this user's alerts seen */
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = SeenBody.safeParse(await req.json());
+  const body = SeenBody.safeParse(await req.json().catch(() => null));
   if (!body.success) {
     return NextResponse.json({ error: body.error.issues }, { status: 400 });
   }
-  markAlertsSeen(user.id, body.data.ids);
+  const b = body.data;
+  if ("ids" in b) markAlertsSeen(user.id, b.ids);
+  else markVisibleSeen(user.id, leagueForUser(user.id), "type" in b ? b.type : null);
   return NextResponse.json({ ok: true });
 }
