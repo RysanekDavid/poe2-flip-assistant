@@ -1,12 +1,13 @@
 """Snipe report: the latest autonomous snipe scan the app stored (src/core/autoSnipe.ts).
 
-The scanner runs under one shared account in the app's default league and keeps a single
-`autosnipe_report` row plus a separate `autosnipe_failure` row, so a transient failed scan never
-wipes the last good findings. Neither row carries a league, so the report is served only to a
-user whose league IS that default league.
+The scanner keeps a single `autosnipe_report` row plus a separate `autosnipe_failure` row, so a
+transient failed scan never wipes the last good findings. The report names the league it was
+scanned in; it is served only when that league is the asking user's league, because a league
+switch leaves the previous league's report in place until the next successful scan.
 """
 
 import json
+import logging
 import sqlite3
 from contextlib import closing
 from datetime import UTC, datetime
@@ -18,7 +19,6 @@ from pydantic.alias_generators import to_camel
 
 from src.config import get_settings
 from src.errors import ToolNoResult, ToolSourceUnavailable
-from src.league import resolve_default_league
 from src.tools.engine_common import (
     age_minutes,
     engine_source,
@@ -29,17 +29,22 @@ from src.tools.engine_common import (
 )
 from src.tools.sqlite_source import connect_read_only, raise_source_error
 
+logger = logging.getLogger("uvicorn.error")
 _CAVEAT = (
     "Reference value = trimmed median of comparable instant-buyout asks, not sales; a listing "
     "may already be gone. Verify in-game before buying."
 )
+#: A report older than this many scan intervals no longer describes the listings on trade.
+STALE_AFTER_INTERVALS = 3
 
 
 class _Stored(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="ignore", strict=True)
 
 
-class _Finding(_Stored):
+class SnipeFinding(_Stored):
+    """The fields of a stored SnipeFinding the answer uses (seller identity is never read)."""
+
     label: str
     item_name: str
     base_type: str
@@ -51,8 +56,11 @@ class _Finding(_Stored):
     samples: float
 
 
-class _ScanReport(_Stored):
-    findings: list[_Finding]
+class ScanReport(_Stored):
+    """A stored ScanReport. `league` is absent on reports written before it was stamped."""
+
+    league: str | None = None
+    findings: list[SnipeFinding]
 
 
 @tool
@@ -66,9 +74,8 @@ def get_snipe_report(limit: int, league: Annotated[str, InjectedToolArg]) -> str
     settings = get_settings()
     now = datetime.now(UTC)
     try:
-        _require_scanned_league(league, resolve_default_league(settings))
         with closing(connect_read_only(settings.poe_db_path)) as connection:
-            report = connection.execute(
+            stored = connection.execute(
                 "SELECT report_json, scanned_at FROM autosnipe_report WHERE id = 1"
             ).fetchone()
             failure = connection.execute(
@@ -76,15 +83,14 @@ def get_snipe_report(limit: int, league: Annotated[str, InjectedToolArg]) -> str
             ).fetchone()
     except sqlite3.Error as error:
         raise_source_error(error)
-    failing = _current_failure(report, failure)
-    if report is None:
-        raise ToolNoResult(
-            "No stored snipe scan",
-            public_detail=_no_scan_detail(failing is not None),
-        )
-    findings = _findings(str(report["report_json"]))
-    scanned_at = str(report["scanned_at"])
-    if not findings:
+    failing = _current_failure(stored, failure)
+    if stored is None:
+        raise ToolNoResult("No stored snipe scan", public_detail=_no_scan_detail(failing))
+    report = _parse(str(stored["report_json"]))
+    scanned_at = str(stored["scanned_at"])
+    _require_scanned_league(report, league)
+    _require_fresh(scanned_at, now, STALE_AFTER_INTERVALS * settings.autosnipe_interval_min)
+    if not report.findings:
         raise ToolNoResult(
             "Latest snipe scan has no findings",
             public_detail=(
@@ -93,24 +99,56 @@ def get_snipe_report(limit: int, league: Annotated[str, InjectedToolArg]) -> str
                 + (" Newer scans are failing." if failing is not None else "")
             ),
         )
-    return _payload(league, findings, scanned_at, failing, count, now)
+    return _payload(league, _ranked(report.findings), scanned_at, failing, count, now)
 
 
-def _require_scanned_league(league: str, scanned: str) -> None:
-    if league != scanned:
+def _parse(text: str) -> ScanReport:
+    try:
+        return ScanReport.model_validate(json.loads(text))
+    except json.JSONDecodeError as error:
+        logger.warning("coach_snipe_report_unreadable reason=json pos=%d", error.pos)
+        raise ToolSourceUnavailable("Stored snipe report is not JSON") from error
+    except ValidationError as error:
+        first = error.errors()[0]
+        logger.warning(
+            "coach_snipe_report_unreadable reason=schema loc=%s type=%s",
+            ".".join(str(part) for part in first["loc"]),
+            first["type"],
+        )
+        raise ToolSourceUnavailable("Stored snipe report failed schema validation") from error
+
+
+def _require_scanned_league(report: ScanReport, league: str) -> None:
+    if report.league == league:
+        return
+    scanned = (
+        f"the league {report.league!r}"
+        if report.league is not None
+        else "an unrecorded league (the report predates league stamping)"
+    )
+    raise ToolNoResult(
+        f"Snipe report is not for {league!r}",
+        public_detail=(
+            f"The latest stored snipe scan ran in {scanned}, not in {league!r}. Say there is no "
+            "snipe scan for this league; listings from another league cannot be bought here."
+        ),
+    )
+
+
+def _require_fresh(scanned_at: str, now: datetime, max_age_min: int) -> None:
+    age = age_minutes(scanned_at, now)
+    if age > max_age_min:
         raise ToolNoResult(
-            f"Snipe scan is not for {league!r}",
+            f"Snipe report is {age} min old",
             public_detail=(
-                f"The autonomous snipe scanner runs only in the app's default league "
-                f"({scanned!r}), not in {league!r}. Say there is no snipe scan for this league; "
-                "listings from another league cannot be bought here."
+                f"The latest successful snipe scan is {age} min old (stale after "
+                f"{max_age_min} min), so its listings are likely gone. Say the snipe scanner "
+                "has no current results."
             ),
         )
 
 
-def _current_failure(
-    report: sqlite3.Row | None, failure: sqlite3.Row | None
-) -> sqlite3.Row | None:
+def _current_failure(report: sqlite3.Row | None, failure: sqlite3.Row | None) -> sqlite3.Row | None:
     """A failure matters only while it is newer than the last good report (as the UI shows it)."""
     if failure is None:
         return None
@@ -120,24 +158,20 @@ def _current_failure(
     return failure if newer else None
 
 
-def _no_scan_detail(failing: bool) -> str:
+def _no_scan_detail(failing: sqlite3.Row | None) -> str:
     base = "The autonomous snipe scanner has not stored a completed scan yet"
-    tail = "; its latest attempt failed." if failing else "."
+    tail = "; its latest attempt failed." if failing is not None else "."
     return base + tail + " Say there is no snipe evidence right now."
 
 
-def _findings(text: str) -> list[_Finding]:
-    try:
-        report = _ScanReport.model_validate(json.loads(text))
-    except (json.JSONDecodeError, ValidationError) as error:
-        raise ToolSourceUnavailable("Stored snipe report failed schema validation") from error
+def _ranked(findings: list[SnipeFinding]) -> list[SnipeFinding]:
     # Best discount first; ties by item name so the order never depends on scan order.
-    return sorted(report.findings, key=lambda finding: (-finding.margin_pct, finding.item_name))
+    return sorted(findings, key=lambda finding: (-finding.margin_pct, finding.item_name))
 
 
 def _payload(
     league: str,
-    findings: list[_Finding],
+    findings: list[SnipeFinding],
     scanned_at: str,
     failing: sqlite3.Row | None,
     count: int,
@@ -165,7 +199,7 @@ def _payload(
     return fit_payload(payload, "findings")
 
 
-def _finding(finding: _Finding) -> dict[str, object]:
+def _finding(finding: SnipeFinding) -> dict[str, object]:
     return {
         "item": finding.item_name,
         "base_type": finding.base_type,

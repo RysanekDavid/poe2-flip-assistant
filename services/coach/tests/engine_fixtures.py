@@ -21,7 +21,11 @@ CX_DETAIL_COLUMNS = (
 def settings_for(path: Path, **extra: object) -> SimpleNamespace:
     """The subset of Settings the engine tools read."""
     return SimpleNamespace(
-        poe_db_path=path, league_name=None, craft_margin_interval_min=10, **extra
+        poe_db_path=path,
+        league_name=None,
+        craft_margin_interval_min=10,
+        autosnipe_interval_min=10,
+        **extra,
     )
 
 
@@ -69,10 +73,15 @@ def create_cx_tables(path: Path, *, with_detail: bool = True) -> None:
         )
 
 
-def add_ingest(path: Path, league: str, hour: int) -> None:
+def add_ingest(
+    path: Path, league: str, hour: int, *, ingested: timedelta = timedelta(minutes=10)
+) -> None:
+    """Store a digest hour; `ingested` is how long ago (default: past the publish grace)."""
+    stamp = sqlite_stamp(datetime.now(UTC) - ingested)
     with sqlite3.connect(path) as connection:
         connection.execute(
-            "INSERT INTO cx_ingest (league, hour, markets) VALUES (?, ?, 10)", (league, hour)
+            "INSERT INTO cx_ingest (league, hour, markets, ingested_at) VALUES (?, ?, 10, ?)",
+            (league, hour, stamp),
         )
 
 
@@ -182,7 +191,7 @@ def add_craft(
         )
 
 
-def create_snipe_tables(path: Path, default_league: str) -> None:
+def create_snipe_tables(path: Path) -> None:
     with sqlite3.connect(path) as connection:
         connection.executescript(
             """
@@ -192,10 +201,8 @@ def create_snipe_tables(path: Path, default_league: str) -> None:
             CREATE TABLE autosnipe_failure (
               id INTEGER PRIMARY KEY CHECK (id = 1), error TEXT NOT NULL,
               failed_at DATETIME DEFAULT CURRENT_TIMESTAMP);
-            CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
             """
         )
-        connection.execute("INSERT INTO app_settings VALUES ('league', ?)", (default_league,))
 
 
 def finding(item: str, margin: float, **overrides: object) -> dict[str, object]:

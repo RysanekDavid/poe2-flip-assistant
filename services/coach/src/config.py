@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     craft_margin_interval_min: int = Field(
         default=10, gt=0, validation_alias="CRAFT_MARGIN_INTERVAL_MIN"
     )
+    # The web app's autosnipe cadence (AUTOSNIPE_INTERVAL_MIN); the snipe report goes stale at a
+    # multiple of it.
+    autosnipe_interval_min: int = Field(default=10, gt=0, validation_alias="AUTOSNIPE_INTERVAL_MIN")
     corpus_dir: Path = APP_ROOT
     qdrant_collection: str = "poe2_knowledge"
     # Embeds the corpus in a background task at start-up so no user turn pays for it.
