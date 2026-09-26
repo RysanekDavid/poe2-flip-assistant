@@ -113,6 +113,21 @@ export const config = {
     alertMinEvDiv: num("CRAFT_MARGIN_ALERT_MIN_EV_DIV", 1), // …and EV ≥ this many Divine (skip trivial edges)
   },
 
+  // Top Flips on GGG's own currency-exchange history (core/cx). Tunables, not facts: each one
+  // is an assumption the owner can move without a deploy.
+  cx: {
+    historyDays: num("CX_HISTORY_DAYS", 14), // stored market-hours older than this are pruned
+    backfillHours: num("CX_BACKFILL_HOURS", 24), // hours walked back to fill gaps (persistence needs 24)
+    // Gold is not tradable, so its Div value cannot be observed — this is the owner's valuation
+    // (same approach as poe2-arb's POE2ARB_GOLD_PER_EX). Lower = gold dearer = fees bite harder.
+    goldPerExalt: num("CX_GOLD_PER_EXALT", 5000),
+    edgeThresholdPct: num("CX_EDGE_THRESHOLD_PCT", 5), // an hour "held" the edge at ≥ this net %
+    flowSharePct: num("CX_FLOW_SHARE_PCT", 10), // share of the slower leg's flow you can expect to fill
+    hintPositionDiv: num("CX_HINT_POSITION_DIV", 10), // position size the time-to-sell hint is quoted for
+    liquiditySafeDivH: num("CX_LIQ_SAFE_DIV_H", 1000), // slower-leg turnover (Div/h) for a "safe" tier
+    liquidityRiskyDivH: num("CX_LIQ_RISKY_DIV_H", 100), // …and for "risky"; below it is "thin"
+  },
+
   buyExaltDiscount: num("BUY_EXALT_DISCOUNT", 0.92),
   sellChaosBonus: num("SELL_CHAOS_BONUS", 1.08),
   minVolume: num("MIN_VOLUME", 50), // below this = illiquid (orders won't fill fast)
