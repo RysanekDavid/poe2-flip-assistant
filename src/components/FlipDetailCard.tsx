@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Save, ArrowRightCircle, CheckCircle2 } from "lucide-react";
 import { roundPrice } from "../lib/format";
-import { formatDenom, type Denom } from "../core/treasury";
+import { formatAmount, formatDenom, type Denom } from "../core/treasury";
 
 /** Ninja's native quote unit is Divine — show it the way ninja does so numbers reconcile at a glance. */
 function fmtMid(div: number): string {
@@ -46,7 +46,7 @@ interface WatchItem {
 /** A currency icon + amount, e.g. (◇) 49 Div. Falls back to text if the icon isn't loaded. */
 function CcyAmount({ denom, icons, className = "" }: { denom: Denom; icons: Icons; className?: string }) {
   const icon = icons[denom.unit];
-  const a = denom.unit === "DIVINE" ? Math.round(denom.amount).toLocaleString("en-US") : roundPrice(denom.amount);
+  const a = formatAmount(denom);
   return (
     <span className={`inline-flex items-center gap-1 tabular-nums ${className}`}>
       {icon && (

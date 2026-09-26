@@ -35,9 +35,27 @@ export function denominate(divValue: number, r: ExchangeRates): Denom {
   return denominateIn(divValue, pickUnit(divValue, r), r);
 }
 
-/** Divine shows as a whole number (no fractional orbs); Ex/Ch via roundPrice. */
+/**
+ * Divine ≥ 1 shows as a whole number (no fractional orbs); Ex/Ch via roundPrice. A sub-Divine
+ * amount is a real exchange price (an item trading several-per-Divine) — rounding it to "0 Div"
+ * would erase it, so it keeps two significant digits.
+ */
+export function formatAmount(d: Denom): string {
+  if (d.unit !== "DIVINE") return roundPrice(d.amount);
+  return Math.abs(d.amount) >= 1 || d.amount === 0 ? Math.round(d.amount).toLocaleString("en-US") : d.amount.toPrecision(2);
+}
+
 export function formatDenom(d: Denom): string {
-  const a = d.unit === "DIVINE" ? Math.round(d.amount).toLocaleString("en-US") : roundPrice(d.amount);
+  return `${formatAmount(d)} ${CCY_UNIT[d.unit]}`;
+}
+
+/**
+ * An OBSERVED exchange price (VWAP / band leg), where whole-Divine rounding would erase the very
+ * edge being shown (8.2 → 8.6 Div reads "8 → 9"). Three significant digits in every currency.
+ */
+export function formatObservedDenom(d: Denom): string {
+  const abs = Math.abs(d.amount);
+  const a = abs >= 100 ? Math.round(d.amount).toLocaleString("en-US") : Number(d.amount.toPrecision(3)).toString();
   return `${a} ${CCY_UNIT[d.unit]}`;
 }
 

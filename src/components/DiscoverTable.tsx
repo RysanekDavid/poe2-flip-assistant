@@ -1,34 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { compact, fmtSmart } from "../lib/format";
-import { formatDenom, type Denom } from "../core/treasury";
-import { categoryColor, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
-import { FlameIcon, ArrowDownIcon, PlusIcon } from "./ui/icons";
-import { Sparkline } from "./ui/Sparkline";
+import { SCROLL_BOX, THEAD_STICKY, CELL } from "../lib/tableStyle";
+import { MarketSourceBadge } from "./FlipEdge";
+import { DiscoverRow, type Candidate } from "./DiscoverRow";
+import { CxRoutesStrip } from "./CxRoutesStrip";
 
-interface Candidate {
-  itemId: string;
-  item: string;
-  category: string;
-  icon: string | null;
-  buyExalt: number;
-  sellChaos: number;
-  buyDisp: Denom;
-  sellDisp: Denom;
-  marginPct: number;
-  midDivine: number;
-  volume: number;
-  change7d: number | null;
-  change24h: number | null;
-  spark: number[] | null;
-  profitChaos: number;
-  profitDiv: number;
-  throughputDivDay: number;
-  oscScore: number;
-  worthScore: number;
-  risk: "PUMP" | "DECLINE" | null;
-  stable: boolean;
+interface CxSummary {
+  newestHour: number;
+  coverage: { cxItems: number; mapped: number; unnamed: number; unmatched: number; ambiguous: number };
 }
 
 type SortKey =
@@ -37,6 +17,7 @@ type SortKey =
   | "midDivine"
   | "buyExalt"
   | "sellChaos"
+  | "edgePct"
   | "change24h"
   | "change7d"
   | "volume"
@@ -49,6 +30,7 @@ const NUMERIC: Set<SortKey> = new Set([
   "midDivine",
   "buyExalt",
   "sellChaos",
+  "edgePct",
   "change24h",
   "change7d",
   "volume",
@@ -85,6 +67,7 @@ export function DiscoverTable({
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [seeding, setSeeding] = useState(false);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
+  const [cx, setCx] = useState<CxSummary | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [err, setErr] = useState<string | null>(null);
 
@@ -103,10 +86,13 @@ export function DiscoverTable({
     const term = query.trim();
     const url = `/api/discover?limit=1000${term ? `&q=${encodeURIComponent(term)}` : ""}`;
     return fetch(url)
-      .then((response) => responseJson<{ candidates?: Candidate[]; fetchedAt?: string | null }>(response, "discover"))
+      .then((response) =>
+        responseJson<{ candidates?: Candidate[]; fetchedAt?: string | null; cx?: CxSummary | null }>(response, "discover"),
+      )
       .then((d) => {
         setRows(d.candidates ?? []);
         setFetchedAt(d.fetchedAt ?? null);
+        setCx(d.cx ?? null);
         setErr(null);
       })
       .catch((e) => setErr(String(e)));
@@ -208,12 +194,11 @@ export function DiscoverTable({
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-baseline gap-2">
           <h2 className="text-lg font-semibold">Top Flips — whole market</h2>
-          <span
-            className="rounded border border-amber-900/50 bg-amber-950/20 px-1.5 py-0.5 text-[10px] text-amber-300"
-            title="Risk-adjusted score from observed prices, liquidity and oscillation; not a live bid or ask."
-          >
-            heuristic · not executable
-          </span>
+          <MarketSourceBadge
+            newestHour={cx?.newestHour ?? null}
+            observed={rows.filter((r) => r.source === "cx").length}
+            total={rows.length}
+          />
           {dataAge && (
             <span className="text-xs text-neutral-500" title="poe.ninja refreshes ~hourly, so prices move slowly">
               · data {dataAge}
@@ -246,6 +231,7 @@ export function DiscoverTable({
         placeholder="search item… (e.g. kulemak, rune, reliquary)"
         className="mb-3 w-full rounded border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm focus:border-neutral-600 focus:outline-none"
       />
+      <CxRoutesStrip onSelect={onSelect} />
       {err && <p className="text-bad text-sm">error: {err}</p>}
 
       <div className={SCROLL_BOX}>
@@ -257,12 +243,19 @@ export function DiscoverTable({
               <Th k="midDivine" label="Mid (Div)" right />
               <Th k="buyExalt" label="Buy" right />
               <Th k="sellChaos" label="Sell" right />
+              <th
+                onClick={() => toggleSort("edgePct")}
+                title="net edge after priced gold fees, median of the last 6 hours on GGG's exchange · chip = hours of 6 it held · est. = no exchange market, heuristic target"
+                className={`${CELL} cursor-pointer select-none text-right font-medium hover:text-neutral-200`}
+              >
+                Edge{arrow("edgePct")}
+              </th>
               <Th k="change24h" label="24h" right />
               <Th k="change7d" label="7d" right />
               <Th k="volume" label="Vol" right />
               <th
                 onClick={() => toggleSort("throughputDivDay")}
-                title="upper-bound throughput: profit/unit (Div) × daily volume — money this spread moves if you captured ALL flow. Ranks money-makers over thin high-margin items."
+                title="profit/unit (Div, net of priced fees) × units you can fill per day — assumes you take 10% of the slower leg's flow"
                 className={`${CELL} cursor-pointer select-none text-right font-medium hover:text-neutral-200`}
               >
                 Div/day{arrow("throughputDivDay")}
@@ -276,7 +269,7 @@ export function DiscoverTable({
               </th>
               <th
                 onClick={() => toggleSort("worthScore")}
-                title="0–100 overall: 45% margin + 40% liquidity + 15% oscillation, ×0.75 if pump/decline. Higher = better flip."
+                title="0–100 overall: 45% edge + 40% liquidity + 15% oscillation, scaled by hours the edge held (of 6) · est. rows: no edge term, ×0.5 · ×0.75 if pump/decline"
                 className={`${CELL} cursor-pointer select-none text-right font-medium hover:text-neutral-200`}
               >
                 Score{arrow("worthScore")}
@@ -286,109 +279,21 @@ export function DiscoverTable({
           </thead>
           <tbody>
             {shown.map((r) => (
-              <tr
+              <DiscoverRow
                 key={r.itemId}
-                onClick={() => onSelect?.({ id: r.itemId, name: r.item })}
-                className={`${ROW_BASE} cursor-pointer ${selectedId === r.itemId ? "bg-sky-950/40" : ""}`}
-                title="click → flip detail + price chart"
-              >
-                <td className={`${CELL} font-medium`}>
-                  <span className="inline-flex items-center gap-1.5 align-middle">
-                    {r.icon && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.icon} alt="" className="h-5 w-5 shrink-0 object-contain" loading="lazy" />
-                    )}
-                    {r.item}
-                    {r.risk === "PUMP" && (
-                      <span className="text-warn" title="spiked >100% 7d — wide spreads, risky to hold">
-                        <FlameIcon />
-                      </span>
-                    )}
-                    {r.risk === "DECLINE" && (
-                      <span className="text-bad" title="down >20% 7d">
-                        <ArrowDownIcon />
-                      </span>
-                    )}
-                    {r.stable && <span className="text-xs text-good/70">stable</span>}
-                  </span>
-                </td>
-                <td className={CELL}>
-                  <span className={`rounded px-1.5 py-0.5 text-xs ${categoryColor(r.category)}`}>{r.category}</span>
-                </td>
-                <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{fmtSmart(r.midDivine)}</td>
-                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.buyDisp)}</td>
-                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.sellDisp)}</td>
-                <td
-                  className={`${CELL} text-right font-semibold tabular-nums ${
-                    r.change24h == null ? "text-neutral-600" : r.change24h >= 0 ? "text-good" : "text-bad"
-                  }`}
-                >
-                  {r.change24h == null ? "—" : `${r.change24h >= 0 ? "+" : ""}${r.change24h.toFixed(0)}%`}
-                </td>
-                <td className={`${CELL} whitespace-nowrap text-right`}>
-                  <span className="inline-flex items-center justify-end gap-1.5">
-                    {r.spark && <Sparkline data={r.spark} />}
-                    <span
-                      className={`tabular-nums ${
-                        r.change7d == null ? "text-neutral-600" : r.change7d >= 0 ? "text-good" : "text-bad"
-                      }`}
-                    >
-                      {r.change7d == null ? "—" : `${r.change7d >= 0 ? "+" : ""}${r.change7d.toFixed(0)}%`}
-                    </span>
-                  </span>
-                </td>
-                <td className={`${CELL} text-right`}>
-                  <span className="inline-flex flex-col items-end gap-0.5">
-                    <span className="tabular-nums text-neutral-400">{compact(r.volume)}</span>
-                    <span className="h-0.5 w-12 overflow-hidden rounded bg-neutral-800">
-                      <span
-                        className="block h-full rounded bg-sky-500/60"
-                        style={{ width: `${maxVol > 0 ? (Math.log10(r.volume + 1) / Math.log10(maxVol + 1)) * 100 : 0}%` }}
-                      />
-                    </span>
-                  </span>
-                </td>
-                <td className={`${CELL} text-right tabular-nums ${r.throughputDivDay >= 1 ? "font-semibold text-emerald-300" : "text-neutral-500"}`}>
-                  {r.throughputDivDay >= 0.1 ? compact(r.throughputDivDay) : "—"}
-                </td>
-                <td className={`${CELL} text-right tabular-nums`}>
-                  <span className={maxOsc > 0 && r.oscScore >= maxOsc * 0.6 ? "font-semibold text-sky-300" : "text-neutral-400"}>
-                    {r.oscScore >= 10 ? "〰 " : ""}
-                    {r.oscScore.toFixed(0)}
-                  </span>
-                </td>
-                <td className={`${CELL} text-right text-base font-bold tabular-nums ${worthTone(r.worthScore)}`}>{r.worthScore}</td>
-                <td className={`${CELL} text-center`}>
-                  {watched.has(r.itemId) ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        unwatch(r.itemId);
-                      }}
-                      className="group inline-flex items-center gap-1 rounded-md border border-good/40 px-2 py-1 text-xs text-good transition-colors hover:border-bad/60 hover:text-bad"
-                      title="tracked — click to unwatch"
-                    >
-                      <span className="group-hover:hidden">✓ watching</span>
-                      <span className="hidden group-hover:inline">✕ unwatch</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addWatch(r);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-300 transition-colors hover:border-good/60 hover:text-good"
-                    >
-                      <PlusIcon className="h-3 w-3" />
-                      watch
-                    </button>
-                  )}
-                </td>
-              </tr>
+                r={r}
+                selected={selectedId === r.itemId}
+                watched={watched.has(r.itemId)}
+                maxOsc={maxOsc}
+                maxVol={maxVol}
+                onSelect={() => onSelect?.({ id: r.itemId, name: r.item })}
+                onWatch={() => addWatch(r)}
+                onUnwatch={() => unwatch(r.itemId)}
+              />
             ))}
             {shown.length === 0 && !err && (
               <tr>
-                <td colSpan={12} className="py-3 text-center text-neutral-500">
+                <td colSpan={13} className="py-3 text-center text-neutral-500">
                   no candidates — run a poll first
                 </td>
               </tr>
@@ -398,10 +303,8 @@ export function DiscoverTable({
       </div>
 
       <p className="mt-2 text-xs text-neutral-600">
-        Click a row for its flip plan + price chart, a column to sort. <span className="text-good">Score</span> 0–100 =
-        overall flip quality (45% margin + 40% liquidity + 15% oscillation, −25% if risky) ·{" "}
-        <span className="text-sky-300">Osc</span> = repeatability · <span className="text-warn">flame</span> = spiking,
-        risky to hold.
+        Click a row for its flip plan + price chart · hover <span className="text-good">Edge</span> for band, fees and
+        time to sell · <span className="text-warn">flame</span> = spiking, risky to hold.
       </p>
     </section>
   );

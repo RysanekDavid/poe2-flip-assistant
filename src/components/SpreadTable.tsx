@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { compact, fmtSmart } from "../lib/format";
-import { formatDenom, type Denom } from "../core/treasury";
+import { formatDenom, formatObservedDenom, type Denom } from "../core/treasury";
 import { categoryColor, marginTint, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { FlameIcon, ArrowDownIcon } from "./ui/icons";
 import { EmptySection } from "./ui/EmptySection";
 import { Sparkline } from "./ui/Sparkline";
+import { EdgeBadge, edgeTooltip, type FlipEdgeInfo } from "./FlipEdge";
 
-interface FlipRow {
+interface FlipRow extends FlipEdgeInfo {
   itemId: string;
   item: string;
   category: string;
@@ -35,6 +36,16 @@ interface FlipRow {
 type SortKey = "item" | "midDivine" | "buyExalt" | "sellChaos" | "marginPct" | "change7d" | "volume" | "throughputDivDay" | "oscScore" | "worthScore";
 type SortDir = "asc" | "desc";
 const NUMERIC: Set<SortKey> = new Set(["midDivine", "buyExalt", "sellChaos", "marginPct", "change7d", "volume", "throughputDivDay", "oscScore", "worthScore"]);
+
+/** Observed exchange legs keep their precision; your own and estimated prices keep whole orbs. */
+function legText(r: FlipRow, d: Denom): string {
+  return r.mode === "RECO" && r.source === "cx" ? formatObservedDenom(d) : formatDenom(d);
+}
+
+/** An estimated margin is a volume lookup — never tint it as a good flip. */
+function marginTone(r: FlipRow): string {
+  return r.mode === "RECO" && r.source === "estimated" ? "text-neutral-500" : marginTint(r.marginPct);
+}
 
 function cmp(a: FlipRow, b: FlipRow, key: SortKey, dir: SortDir): number {
   let d: number;
@@ -180,10 +191,10 @@ export function SpreadTable({
                   </span>
                 </td>
                 <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{fmtSmart(r.midDivine)}</td>
-                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.buyDisp)}</td>
-                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{formatDenom(r.sellDisp)}</td>
+                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{legText(r, r.buyDisp)}</td>
+                <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{legText(r, r.sellDisp)}</td>
                 <td className={`${CELL} text-right`}>
-                  <span className={`rounded px-1.5 py-0.5 font-semibold tabular-nums ${marginTint(r.marginPct)}`}>{r.marginPct.toFixed(1)}%</span>
+                  <span className={`rounded px-1.5 py-0.5 font-semibold tabular-nums ${marginTone(r)}`}>{r.marginPct.toFixed(1)}%</span>
                 </td>
                 <td className={`${CELL} whitespace-nowrap text-right`}>
                   <span className="inline-flex items-center justify-end gap-1.5">
@@ -224,7 +235,9 @@ export function SpreadTable({
                       est ⏳
                     </span>
                   ) : (
-                    <span className="text-xs text-neutral-500">est</span>
+                    <span title={edgeTooltip(r)}>
+                      <EdgeBadge row={r} />
+                    </span>
                   )}
                 </td>
               </tr>
