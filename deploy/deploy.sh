@@ -320,6 +320,12 @@ PREVIOUS_COACH_ACTIVE=$(was_active poe2flip-coach)
 PREVIOUS_WEB_ENABLED=$(was_enabled poe2flip-web)
 PREVIOUS_POLLER_ENABLED=$(was_enabled poe2flip-poller)
 PREVIOUS_COACH_ENABLED=$(was_enabled poe2flip-coach)
+# Reclaim space BEFORE the free-disk gate and before the rollback trap is armed: releases and backups accumulated unpruned for months
+# (every failed release is also kept for inspection), and a full disk otherwise blocks the very
+# deploy that would prune them. The live `current` target is always protected.
+run_nonfatal "pre-flight release pruning" prune_releases "$APP_DIR/releases" 2 "$PREVIOUS_TARGET"
+run_nonfatal "pre-flight backup pruning" prune_backups "$APP_DIR/backups" 5
+
 trap rollback ERR
 
 available_kb=$(df -Pk "$APP_DIR" | awk 'NR==2 {print $4}')

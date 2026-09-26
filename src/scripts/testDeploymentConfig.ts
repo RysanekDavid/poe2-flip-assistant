@@ -81,7 +81,10 @@ assert.match(deployHelpers, /UNIT_BACKUP_NAME_PATTERN/);
 // Housekeeping after the ERR trap is cleared, so it can never roll a healthy release back.
 assert.match(deploy, /prune_releases "\$APP_DIR\/releases" 3 "\$RELEASE_DIR" "\$PREVIOUS_TARGET"/);
 assert.match(deploy, /prune_backups "\$APP_DIR\/backups" 5/);
-assert.ok(deploy.lastIndexOf("trap - ERR") < deploy.indexOf("prune_releases"));
+// Pre-flight pruning runs before the rollback trap is armed; post-deploy pruning after it is cleared.
+assert.match(deploy, /run_nonfatal "pre-flight release pruning" prune_releases "\$APP_DIR\/releases" 2 "\$PREVIOUS_TARGET"/);
+assert.ok(deploy.indexOf("pre-flight release pruning") < deploy.indexOf("trap rollback ERR"));
+assert.ok(deploy.lastIndexOf("trap - ERR") < deploy.lastIndexOf("prune_releases"));
 assert.doesNotMatch(deploy, /date \+%s%3N/);
 assert.doesNotMatch(productEnv, /^COACH_TIMEOUT_MS=/m);
 assert.match(productEnv, /^DATA_SOURCE_CONTACT=$/m);
