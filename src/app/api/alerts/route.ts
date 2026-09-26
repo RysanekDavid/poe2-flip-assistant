@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAlertCounts, getAlertFeed, markAlertsSeen, markVisibleSeen } from "../../../db/alertQueries";
+import { getAlertCounts, getAlertFeed, markVisibleSeen } from "../../../db/alertQueries";
 import { tickerMutedTypes } from "../../../db/notifyQueries";
 import { getCurrentUser } from "../../../auth/session";
 import { leagueForUser } from "../../../core/leagueUsers";
@@ -24,13 +24,9 @@ export async function GET() {
   });
 }
 
-const SeenBody = z.union([
-  z.object({ ids: z.array(z.number().int()).max(500) }),
-  z.object({ type: z.string().regex(/^[A-Z_]{2,32}$/) }),
-  z.object({ all: z.literal(true) }),
-]);
+const SeenBody = z.union([z.object({ type: z.string().regex(/^[A-Z_]{2,32}$/) }), z.object({ all: z.literal(true) })]);
 
-/** POST /api/alerts { ids } | { type } | { all: true } → mark this user's alerts seen */
+/** POST /api/alerts { type } | { all: true } → mark this user's visible alerts seen */
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -38,8 +34,6 @@ export async function POST(req: Request) {
   if (!body.success) {
     return NextResponse.json({ error: body.error.issues }, { status: 400 });
   }
-  const b = body.data;
-  if ("ids" in b) markAlertsSeen(user.id, b.ids);
-  else markVisibleSeen(user.id, leagueForUser(user.id), "type" in b ? b.type : null);
+  markVisibleSeen(user.id, leagueForUser(user.id), "type" in body.data ? body.data.type : null);
   return NextResponse.json({ ok: true });
 }
