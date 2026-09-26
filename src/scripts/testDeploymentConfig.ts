@@ -36,6 +36,23 @@ assert.match(caddy, /www\.\{\$SITE_ADDRESS\}/);
 assert.match(caddy, /redir https:\/\/\{\$SITE_ADDRESS\}\{uri\} permanent/);
 assert.doesNotMatch(caddy, /tls internal|0\.0\.0\.0/);
 assert.match(ipTest, /tls internal/);
+assert.match(caddy, /Strict-Transport-Security "max-age=31536000"/);
+assert.doesNotMatch(caddy, /max-age=\d+;"/, "no stray ';' at the end of HSTS");
+for (const site of [caddy, ipTest]) {
+  const csp = /Content-Security-Policy "([^"]+)"/.exec(site)?.[1] ?? "";
+  for (const directive of [
+    "default-src 'self'",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "img-src 'self' data: https://web.poecdn.com https://*.poecdn.com",
+  ]) {
+    assert.ok(csp.split("; ").includes(directive), `CSP must contain ${directive}`);
+  }
+  assert.doesNotMatch(csp, /unsafe-eval|\*;|default-src \*/, "CSP must not allow eval or wildcards");
+  assert.match(site, /Referrer-Policy "strict-origin-when-cross-origin"/);
+  assert.match(site, /Permissions-Policy "[^"]*camera=\(\)[^"]*microphone=\(\)[^"]*geolocation=\(\)/);
+}
 assert.match(webUnit, /EnvironmentFile=\/opt\/poe2flip\/current\/\.release\.env/);
 assert.ok(webUnit.indexOf("/.env.local") < webUnit.indexOf("/current/deploy/runtime-timeouts.env"));
 assert.match(webUnit, /--hostname 127\.0\.0\.1/);
