@@ -171,10 +171,21 @@ git merge --ff-only origin/master
 ```
 
 `deploy.sh` installs and builds beside the running release, then stops the app briefly for
-consistent SQLite backups, migration and an atomic `current` switch. It performs a real Coach
-chat turn, checks all services, and automatically restores the previous symlink and databases on
-failure. Keep the pre-deploy backups until the release has passed a browser smoke test. Old
-releases/backups are intentionally not auto-deleted; prune them manually only after verification.
+consistent SQLite backups, migration and an atomic `current` switch. It checks all services and
+automatically restores the previous symlink and databases on failure.
+
+The Coach smoke is deterministic and free: it runs as a dedicated `deploy-smoke` member (created
+idempotently with a random non-scrypt password hash, so it can never log in; the owner is never
+used), sends a prompt the FastAPI input guard rejects, and asserts the full proxy -> FastAPI ->
+history contract (`400 request_rejected` from the guard, lease released on replay, nothing
+persisted). The smoke user's conversations are deleted afterwards. `COACH_SMOKE_MODE=live`
+(process env or `.env.local`; default `contract`) adds one real LLM turn that only logs latency and
+never rolls a release back. A stale market heartbeat only warns during deploy (the poller is
+stopped); missing model configuration, knowledge base or item data remain fatal.
+
+After a successful deploy the newest 3 release directories and newest 5 pre-deploy product DB
+backups are kept; the live `current` target and the previous release are never deleted. Every
+pruned path is logged, and a pruning failure warns without undoing the deploy.
 The site-specific `/etc/caddy/Caddyfile` is intentionally not overwritten during app updates;
 copy, validate and restart it separately only when the repository Caddy config actually changes.
 
