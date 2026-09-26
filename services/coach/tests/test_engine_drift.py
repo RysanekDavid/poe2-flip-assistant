@@ -64,6 +64,14 @@ def test_craft_gate_constants_match_craft_valuation() -> None:
     assert field.default == int(default.group(1))
 
 
+def test_autosnipe_interval_default_matches_the_web_app() -> None:
+    env = _ts("src/config/env.ts")
+    default = re.search(r'num\("AUTOSNIPE_INTERVAL_MIN", (\d+)\)', env)
+    assert default is not None
+    field = Settings.model_fields["autosnipe_interval_min"]
+    assert field.default == int(default.group(1))
+
+
 def test_farm_tables_match_farm_advisor() -> None:
     source = _ts("src/core/farmAdvisor.ts")
     overrides_block = source.split("const SOURCE_OVERRIDES", 1)[1].split("};", 1)[0]

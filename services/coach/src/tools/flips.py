@@ -1,4 +1,4 @@
-"""Top Flips: the exchange edges the app's rank gate published for the asking user's league.
+"""Ranked exchange edges: what the app's rank gate published for the asking user's league.
 
 Source of truth is `cx_edge_outcomes` (written by src/core/cx/cxOutcomes.ts): every edge that
 passed the rank gate at a league's newest digest hour, with the gate's own numbers stored beside

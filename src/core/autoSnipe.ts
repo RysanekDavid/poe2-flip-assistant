@@ -260,11 +260,13 @@ export function emptyReport(exaltPerDivine: number, league: string): ScanReport 
 
 
 async function runScan(cred: TradeCred): Promise<ScanReport> {
-  const rates = scanRates();
+  // Read once, before any await: the rates and the report's league stamp must be the same
+  // league even if the default switches while trade metadata loads.
+  const league = getDefaultLeague();
+  const rates = scanRates(league);
   const { stats } = await fetchTradeMeta();
   const { picked, next } = pickArchetypes(SNIPE_PROFILES, rotationCursor, config.autoSnipe.archetypesPerScan);
   rotationCursor = next;
-  const league = getDefaultLeague();
   const report = emptyReport(rates.exaltPerDivine, league);
   const ctx: ScanCtx = { idx: buildStatIndex(stats), rates, cred, league, report, meter: newMeter() };
 

@@ -34,6 +34,7 @@ _CAVEAT = (
     "Reference value = trimmed median of comparable instant-buyout asks, not sales; a listing "
     "may already be gone. Verify in-game before buying."
 )
+_FAILING_TAIL = " Newer scans are failing."
 #: A report older than this many scan intervals no longer describes the listings on trade.
 STALE_AFTER_INTERVALS = 3
 
@@ -89,14 +90,17 @@ def get_snipe_report(limit: int, league: Annotated[str, InjectedToolArg]) -> str
     report = _parse(str(stored["report_json"]))
     scanned_at = str(stored["scanned_at"])
     _require_scanned_league(report, league)
-    _require_fresh(scanned_at, now, STALE_AFTER_INTERVALS * settings.autosnipe_interval_min)
+    _require_fresh(
+        scanned_at, now, STALE_AFTER_INTERVALS * settings.autosnipe_interval_min, failing
+    )
     if not report.findings:
         raise ToolNoResult(
             "Latest snipe scan has no findings",
             public_detail=(
                 f"The latest snipe scan ({age_minutes(scanned_at, now)} min ago) found no "
                 "listing under the discount gate. Say nothing is flagged right now."
-                + (" Newer scans are failing." if failing is not None else "")
+                + _FAILING_TAIL
+                * (failing is not None)
             ),
         )
     return _payload(league, _ranked(report.findings), scanned_at, failing, count, now)
@@ -135,7 +139,9 @@ def _require_scanned_league(report: ScanReport, league: str) -> None:
     )
 
 
-def _require_fresh(scanned_at: str, now: datetime, max_age_min: int) -> None:
+def _require_fresh(
+    scanned_at: str, now: datetime, max_age_min: int, failing: sqlite3.Row | None
+) -> None:
     age = age_minutes(scanned_at, now)
     if age > max_age_min:
         raise ToolNoResult(
@@ -143,7 +149,7 @@ def _require_fresh(scanned_at: str, now: datetime, max_age_min: int) -> None:
             public_detail=(
                 f"The latest successful snipe scan is {age} min old (stale after "
                 f"{max_age_min} min), so its listings are likely gone. Say the snipe scanner "
-                "has no current results."
+                "has no current results." + _FAILING_TAIL * (failing is not None)
             ),
         )
 

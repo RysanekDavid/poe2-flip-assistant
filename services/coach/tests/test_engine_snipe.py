@@ -110,6 +110,19 @@ def test_stale_report_is_no_result(snipe_db: Path, market_league: str) -> None:
         _invoke(market_league)
 
     assert "stale after 30 min" in str(raised.value.public_detail)
+    assert "Newer scans are failing" not in str(raised.value.public_detail)
+
+
+def test_stale_report_says_newer_scans_are_failing(snipe_db: Path, market_league: str) -> None:
+    now = datetime.now(UTC)
+    report = _report(market_league, finding("Doom Song", 25.0))
+    set_snipe_report(snipe_db, report, now - timedelta(minutes=45))
+    set_snipe_failure(snipe_db, now - timedelta(minutes=2))
+
+    with pytest.raises(ToolNoResult) as raised:
+        _invoke(market_league)
+
+    assert "Newer scans are failing." in str(raised.value.public_detail)
 
 
 def test_empty_scan_is_no_result(snipe_db: Path, market_league: str) -> None:
