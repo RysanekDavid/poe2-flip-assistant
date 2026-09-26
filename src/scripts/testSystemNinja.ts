@@ -27,10 +27,11 @@ export async function testNinjaUserAgent(): Promise<void> {
   assert.equal(headers["User-Agent"], NINJA_USER_AGENT);
   assert.match(NINJA_USER_AGENT, /^poe2-flip-assistant\/1\.0( \(contact: .+\))?$/);
   if (config.dataSourceContact) assert.ok(NINJA_USER_AGENT.includes(config.dataSourceContact), "contact included when configured");
-  assert.ok(!Object.keys(headers).some((k) => k.toLowerCase() === "referer"), "no spoofed Referer");
+  // Cloudflare edge rule: the same-site Referer stays exactly as before, only the UA changed.
+  assert.equal(headers.Referer, "https://poe.ninja/poe2/economy/uatestleague/currency", "league-specific same-site Referer kept");
   assert.ok(!String(headers["User-Agent"]).includes("Mozilla"), "no browser UA");
   assert.deepEqual(calls[0]?.cfg?.params, { league: "UA Test League", type: category(0) }, "request otherwise unchanged");
-  console.log(`PASS  poe.ninja User-Agent is honest ("${NINJA_USER_AGENT}"), no Referer`);
+  console.log(`PASS  poe.ninja User-Agent is honest ("${NINJA_USER_AGENT}"), same-site Referer kept`);
 }
 
 function category(i: number): string {

@@ -15,13 +15,25 @@ import { config } from "../config/env";
 const BASE = "https://poe.ninja/poe2/api/economy";
 
 /**
- * Identify the tool honestly, like scoutClient does. The old spoofed Chrome UA + same-site Referer
- * was a workaround for an earlier Cloudflare block; verified live 2026-09-26, poe.ninja answers
- * 200 to this UA with no Referer at all, so impersonating a browser is no longer justified.
+ * Identify the tool honestly, like scoutClient does — no browser User-Agent. The same-site Referer
+ * stays: poe.ninja's Cloudflare edge rule was observed rejecting (404) API requests without one,
+ * and although a dev-box probe on 2026-09-26 got 200 without it, the production Hetzner IP could
+ * not be probed. A Referer naming the page the data belongs to is not identity spoofing.
  */
 const NINJA_CONTACT = config.dataSourceContact;
 export const NINJA_USER_AGENT = `poe2-flip-assistant/1.0${NINJA_CONTACT ? ` (contact: ${NINJA_CONTACT})` : ""}`;
-const NINJA_HEADERS: Record<string, string> = { "User-Agent": NINJA_USER_AGENT };
+
+function leagueSlug(league: string): string {
+  return league.toLowerCase().replace(/\s+/g, "");
+}
+
+/** Same Referer value the client always sent, so only the User-Agent changes. */
+export function ninjaHeaders(league: string): Record<string, string> {
+  return {
+    Referer: `https://poe.ninja/poe2/economy/${leagueSlug(league)}/currency`,
+    "User-Agent": NINJA_USER_AGENT,
+  };
+}
 
 /** In-memory cache; poe.ninja updates ~hourly, so 1h TTL is safe. */
 const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -55,7 +67,7 @@ export async function fetchCategory(
       const res = await axios.get(url, {
         params: { league, type: category.type },
         timeout: 20_000,
-        headers: NINJA_HEADERS,
+        headers: ninjaHeaders(league),
       });
       return res.data;
     } catch (err) {
@@ -140,7 +152,7 @@ export function parseNinjaLeagues(raw: unknown): LeagueOption[] {
 export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
   const raw = await ninjaLimiter.schedule(async () => {
     try {
-      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: NINJA_HEADERS });
+      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: ninjaHeaders(getDefaultLeague()) });
       return res.data as unknown;
     } catch (err) {
       const ax = err as AxiosError;
