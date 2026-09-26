@@ -253,6 +253,14 @@ CREATE TABLE IF NOT EXISTS autosnipe_report (
   scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Last FAILED auto-snipe scan, kept apart from autosnipe_report so one transient failure (rates
+-- stale, trade2 busy) can't wipe the last good findings. The UI shows it as a banner when newer.
+CREATE TABLE IF NOT EXISTS autosnipe_failure (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  error TEXT NOT NULL,
+  failed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Latest craft-margin report per recipe (poller writes, the UI reads across processes) — SHARED.
 -- report_json is the full itemized RecipeMarginReport (base/result legs + materials + EV math).
 CREATE TABLE IF NOT EXISTS craft_margin_reports (

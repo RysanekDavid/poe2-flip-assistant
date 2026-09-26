@@ -1,7 +1,8 @@
 import type { TradeCred } from "../api/tradeClient";
 import { credForUser } from "../auth/credForUser";
 import { scanAll } from "../core/huntEngine";
-import { scanAutoSnipes, saveFailedSnipeReport } from "../core/autoSnipe";
+import { scanAutoSnipes } from "../core/autoSnipe";
+import { saveSnipeFailure } from "../db/huntQueries";
 import { consumeScanRequests, requestScan } from "../db/scanRequestQueries";
 import { listUsers } from "../db/userQueries";
 
@@ -60,7 +61,7 @@ function drainAutoSnipe(ownerCredNow: () => TradeCred | null): void {
   }
   const msg = "manual scan requested but the owner has no POESESSID stored";
   console.error(`[autosnipe] ${msg}`);
-  saveFailedSnipeReport(msg); // the UI is waiting on a report — give it the reason
+  saveSnipeFailure(msg); // the UI is waiting on this scan — give it the reason
 }
 
 function drainHunts(): void {

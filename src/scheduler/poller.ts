@@ -3,6 +3,7 @@ import { config } from "../config/env";
 import { pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries";
 import { listUsers } from "../db/userQueries";
 import { credForUser } from "../auth/credForUser";
+import { POLLER_MAX_INLINE_WAIT_MS, setMaxInlineWaitMs } from "../api/tradeClient";
 import { runCycle } from "./marketCycle";
 import { runHuntScan, runAutoSnipe, drainScanRequests } from "./tradeScans";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
@@ -22,6 +23,8 @@ const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under 
 function start(): void {
   const expr = `*/${config.pollIntervalMin} * * * *`;
   console.log(`poller starting — cron "${expr}", leagues "${getPolledLeagues().join(", ")}"`);
+  // background scans may sit out the shared trade2 pace inline; web requests fail fast instead
+  setMaxInlineWaitMs(POLLER_MAX_INLINE_WAIT_MS);
   startPatchNotesWatcher();
   startLeagueWatcher();
 

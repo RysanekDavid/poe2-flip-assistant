@@ -11,7 +11,17 @@ import { fireAlert } from "../core/alertEngine";
 import { getAlerts } from "../db/alertQueries";
 import { feedPriceBook, newBookCounters, bookReference } from "../core/priceBookFeed";
 import { consumeScanRequests, isScanPending, requestScan } from "../db/scanRequestQueries";
-import { addHunt, getHuntsForUser, insertHit, getHits, touchHuntScan } from "../db/huntQueries";
+import {
+  addHunt,
+  getHits,
+  getHuntsForUser,
+  getSnipeFailure,
+  getSnipeReport,
+  insertHit,
+  saveSnipeFailure,
+  saveSnipeReport,
+  touchHuntScan,
+} from "../db/huntQueries";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -124,6 +134,12 @@ const cols = legacy.prepare("PRAGMA table_info(hunt_hits)").all() as Array<{ nam
 ok("migration: price_div nullable", cols.find((c) => c.name === "price_div")?.notnull === 0);
 ok("migration: ALTER-added column + row preserved", (legacy.prepare("SELECT listing_id FROM hunt_hits").get() as { listing_id: string }).listing_id === "L");
 legacy.close();
+
+// --- a failed autosnipe scan never wipes the last good report ---
+saveSnipeReport(JSON.stringify({ findings: [{ listingId: "good-1" }] }));
+saveSnipeFailure("scan failed: no fresh exchange rates");
+ok("failure recorded separately", getSnipeFailure()?.error === "scan failed: no fresh exchange rates");
+ok("last good report survives the failure", getSnipeReport()?.report_json.includes("good-1") === true);
 
 // --- one-time price-book cutover purge ---
 db.prepare("DELETE FROM app_settings WHERE key LIKE 'price_book_cutover%'").run();

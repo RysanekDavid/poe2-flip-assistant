@@ -49,8 +49,10 @@ export async function POST(req: Request): Promise<Response> {
   if (cred && cred.account) {
     try {
       otherDiv = (await readCurrencyFromTrade(cred.account, rates, cred)).otherDiv;
-    } catch {
-      otherDiv = 0; // no public tab / trade hiccup — just store the currency you typed
+    } catch (e) {
+      // no public tab / trade hiccup / shared trade2 budget busy — store the currency you typed
+      console.warn(`[balance] gear value skipped: ${e instanceof Error ? e.message : String(e)}`);
+      otherDiv = 0;
     }
   }
 

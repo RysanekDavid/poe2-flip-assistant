@@ -11,7 +11,7 @@ function num(key: string, fallback: number): number {
   const v = process.env[key];
   if (v == null || v === "") return fallback;
   const n = Number(v);
-  if (!Number.isFinite(n)) throw new Error(`env ${key} not a number: "${v}"`);
+  if (!Number.isFinite(n)) throw new Error(`Invalid configuration: ${key}="${v}" is not a number (default ${fallback}).`);
   return n;
 }
 
@@ -21,7 +21,14 @@ function num(key: string, fallback: number): number {
  */
 export function pos(key: string, fallback: number, max = Infinity): number {
   const n = num(key, fallback);
-  if (!(n > 0) || n > max) throw new Error(`env ${key} must be > 0${Number.isFinite(max) ? ` and ≤ ${max}` : ""}: got ${n}`);
+  if (!(n > 0) || n > max) {
+    const range = Number.isFinite(max) ? `a number in (0, ${max}]` : "a number > 0";
+    // one line that names the key, the bad value and the fix — it lands in journalctl at boot
+    throw new Error(
+      `Invalid configuration: ${key}=${process.env[key] ?? "(unset)"} — must be ${range} (default ${fallback}). ` +
+        `Fix or remove ${key} in .env.local / the service environment and restart.`,
+    );
+  }
   return n;
 }
 
@@ -54,9 +61,11 @@ export const config = {
     // Background poll-diff scan: ON by default — a hunt that only fires when you press a button
     // isn't a hunt. Per-user creds; users without a stored POESESSID are simply skipped.
     enabled: (process.env.HUNT_ENABLED ?? "true").toLowerCase() === "true",
-    // Lap cadence. The binding limit is 600 searches per 6h per IP (≈1 per 36s, shared with
-    // autosnipe/craft); the trade2 governor paces every search to that, and the poller skips a
-    // tick while the previous lap is still draining — so N hunts simply take N×~40s per lap.
+    // Lap cadence. The binding limit is GGG's 600 searches per 6h per IP (≈1 per 36s), shared by
+    // hunts, autosnipe and craft margins; the trade2 governor paces every search to it and the
+    // poller skips a tick while the previous lap is still draining. Budget reality: ONE hunt at a
+    // 60s cadence plus autosnipe already saturates it, and each extra active hunt adds ~40s per
+    // lap — so N hunts means each is re-checked roughly every N×40s, not every scanSec.
     scanSec: pos("HUNT_SCAN_SEC", 60),
     perScan: num("HUNT_PER_SCAN", 10), // listings fetched per hunt per scan (≤10 = one fetch call)
     minRequestMs: num("HUNT_MIN_REQUEST_MS", 6000), // floor between trade2 requests (rate-limit guard)

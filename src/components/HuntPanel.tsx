@@ -226,6 +226,11 @@ export function HuntPanel() {
             ))}
             {hunts.length === 0 && <li className="py-3 text-center text-xs text-neutral-500">no searches yet — “new” above</li>}
           </ul>
+          {hunts.some((h) => h.active) && (
+            <p className="text-xs text-neutral-600" title="GGG allows ~600 trade searches per 6h per IP, shared by hunts, auto-snipe and craft margins">
+              each active hunt costs ~40s of the shared search budget — {hunts.filter((h) => h.active).length} active ≈ one lap every ~{hunts.filter((h) => h.active).length * 40}s
+            </p>
+          )}
 
           <div className="mt-1 flex items-center gap-2">
             <button

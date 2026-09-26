@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { tradeErrorResponse } from "../../../../lib/tradeRouteError";
 import { balanceStats, insertBalance, insertTabs } from "../../../../db/queries";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
@@ -45,6 +46,6 @@ export async function POST(): Promise<Response> {
     insertTabs(snapshot.id, c.tabs);
     return NextResponse.json({ snapshot, stats: balanceStats(user.id), scan: c });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
+    return tradeErrorResponse(e);
   }
 }

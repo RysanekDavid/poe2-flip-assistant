@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { SNIPE_PROFILES } from "../../../../core/snipeProfiles";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
-import { getSnipeReport } from "../../../../db/huntQueries";
+import { getSnipeFailure, getSnipeReport } from "../../../../db/huntQueries";
 import { isScanPending, requestScan } from "../../../../db/scanRequestQueries";
 import { config } from "../../../../config/env";
 
@@ -15,6 +15,9 @@ export async function GET(): Promise<Response> {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const cred = await getCallerCred();
   const last = getSnipeReport();
+  const failure = getSnipeFailure();
+  // a failure only matters while it is newer than the last good report (sqlite UTC text sorts)
+  const failureCurrent = failure != null && (last == null || failure.failed_at >= last.scanned_at);
   return NextResponse.json({
     enabled: config.autoSnipe.enabled,
     live: cred != null,
@@ -23,6 +26,8 @@ export async function GET(): Promise<Response> {
     lastReport: last ? JSON.parse(last.report_json) : null,
     lastScanAt: last?.scanned_at ?? null,
     pending: isScanPending("autosnipe"),
+    lastError: failureCurrent ? failure.error : null,
+    failedAt: failure?.failed_at ?? null,
   });
 }
 

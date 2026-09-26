@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import type Bottleneck from "bottleneck";
 import type { TradeEndpoint } from "./tradeRateLimit";
 
 /**
@@ -6,6 +7,11 @@ import type { TradeEndpoint } from "./tradeRateLimit";
  * made from that async context (and only that one) is counted. The first budget version read a
  * process-global counter, so hunt/craft/balance requests queued on the shared limiter ate the
  * autosnipe budget — with two active hunts it valued nothing, ever.
+ *
+ * The meter must be read SYNCHRONOUSLY at the call site, before the request enters the limiter
+ * queue: Bottleneck starts a queued job from the completion chain of whichever job ran before it,
+ * so inside the job the AsyncLocalStorage store belongs to that other consumer. Reading it there
+ * charged a hunt's searches to the scan (starving it) and the scan's to nobody (budget unenforced).
  */
 export interface TradeMeter {
   search: number;
@@ -21,8 +27,19 @@ export function metered<T>(meter: TradeMeter, fn: () => Promise<T>): Promise<T> 
   return storage.run(meter, fn);
 }
 
-/** Called by the trade client for every request it issues. No-op outside a metered context. */
-export function countRequest(kind: TradeEndpoint): void {
-  const m = storage.getStore();
-  if (m) m[kind]++;
+/**
+ * Schedule a trade2 job on `limiter`, charging it to the CALLER's meter (captured now, not when
+ * the job starts). The job calls `count()` once the request is actually going out, so a request
+ * the budget governor refuses is never charged.
+ */
+export function scheduleMetered<T>(
+  limiter: Bottleneck,
+  kind: TradeEndpoint,
+  job: (count: () => void) => Promise<T>,
+): Promise<T> {
+  const meter = storage.getStore();
+  const count = (): void => {
+    if (meter) meter[kind]++;
+  };
+  return limiter.schedule(() => job(count));
 }

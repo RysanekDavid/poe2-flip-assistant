@@ -3,7 +3,7 @@ import { metered, newMeter, type TradeMeter } from "../api/tradeMeter";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
-import { saveSnipeReport } from "../db/huntQueries";
+import { saveSnipeFailure, saveSnipeReport } from "../db/huntQueries";
 import { getDefaultLeague } from "./leagueState";
 import { listUsers } from "../db/userQueries";
 import { buildStatIndex, type StatIndex, type ResolvedStat } from "./statResolver";
@@ -73,7 +73,6 @@ export interface ScanReport {
   findings: SnipeFinding[];
   diags: ProfileDiag[];
   errors: Array<{ profile: string; error: string }>;
-  error?: string; // set when the scan failed as a whole (the UI shows it instead of waiting forever)
 }
 
 interface ScanCtx {
@@ -255,10 +254,6 @@ function emptyReport(exaltPerDivine: number): ScanReport {
   };
 }
 
-/** Persist a scan that failed as a whole, so the UI stops waiting and shows why. */
-export function saveFailedSnipeReport(error: string): void {
-  saveSnipeReport(JSON.stringify({ ...emptyReport(0), error }));
-}
 
 async function runScan(cred: TradeCred): Promise<ScanReport> {
   const rates = scanRates();
@@ -279,7 +274,7 @@ async function runScan(cred: TradeCred): Promise<ScanReport> {
 /**
  * Run one autonomous scan over the next slice of archetypes. Throws if a scan is already in
  * flight in this process (the poller also guards, this makes the invariant local). A scan that
- * fails as a whole still writes a report carrying the error.
+ * fails as a whole records its error apart from the report, so the last good findings survive.
  */
 export async function scanAutoSnipes(cred: TradeCred): Promise<ScanReport> {
   if (running) throw new Error("autosnipe scan already running");
@@ -289,7 +284,7 @@ export async function scanAutoSnipes(cred: TradeCred): Promise<ScanReport> {
     saveSnipeReport(JSON.stringify(report)); // the UI reads the latest scan across processes
     return report;
   } catch (e) {
-    saveFailedSnipeReport(`scan failed: ${e instanceof Error ? e.message : String(e)}`);
+    saveSnipeFailure(`scan failed: ${e instanceof Error ? e.message : String(e)}`); // last good report kept
     throw e;
   } finally {
     running = false;

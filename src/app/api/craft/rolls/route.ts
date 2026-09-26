@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { tradeErrorResponse } from "../../../../lib/tradeRouteError";
 import { z } from "zod";
 import { searchListings } from "../../../../api/tradeClient";
 import { getCallerCred } from "../../../../auth/tradeCred";
@@ -90,6 +91,6 @@ export async function POST(req: Request): Promise<Response> {
 
     return NextResponse.json({ total, sampled: listings.length, rolls });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
+    return tradeErrorResponse(e);
   }
 }

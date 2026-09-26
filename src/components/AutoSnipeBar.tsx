@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { Radar, Loader2, Play, Target, Copy, Check, ExternalLink } from "lucide-react";
 import { fmtDivOrEx } from "../lib/format";
 
-// a paced scan is a handful of searches ≥36s apart plus the 20s drain tick — 6 min is generous
-const SCAN_WAIT_TIMEOUT_MS = 6 * 60_000;
+// A scan is paced by the shared trade2 budget: ~6 searches × 36s + ~8 fetches × 21.6s ≈ 3–6 min,
+// plus hunt laps interleaving on the same queue. 15 min is the point where "slow" means "broken".
+const SCAN_WAIT_TIMEOUT_MS = 15 * 60_000;
 
 interface Status {
   enabled: boolean;
@@ -15,6 +16,8 @@ interface Status {
   lastReport?: ScanResult | null;
   lastScanAt?: string | null;
   pending?: boolean; // a manual scan is queued for the poller
+  lastError?: string | null; // newest scan failed — shown over the last GOOD report
+  failedAt?: string | null;
   error?: string;
 }
 interface Finding {
@@ -79,9 +82,13 @@ export function AutoSnipeBar() {
   const [lastScanAt, setLastScanAt] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  // a queued manual scan: the report timestamp it started from + when it was queued
-  const waiting = useRef<{ from: string | null; at: number } | null>(null);
-  const failed = (error: string): ScanResult => ({ profiles: 0, searched: 0, exaltPerDivine: 0, valuations: 0, maxValuations: 0, findings: [], diags: [], errors: [], error });
+  // client-side problems (queue request failed, scan never reported back) — shown as a banner
+  // OVER the last good report, never instead of it
+  const [notice, setNotice] = useState<string | null>(null);
+  // a queued manual scan: the report/failure stamps it started from + when it was queued
+  const waiting = useRef<{ from: string; at: number } | null>(null);
+  const stampOf = (s: { lastScanAt?: string | null; failedAt?: string | null } | null): string =>
+    `${s?.lastScanAt ?? ""}|${s?.failedAt ?? ""}`;
 
   // load status + the last persisted scan (cron or manual), and keep polling so
   // background-scan results appear without pressing anything
@@ -92,15 +99,15 @@ export function AutoSnipeBar() {
         .then((s: Status) => {
           setStatus(s);
           setLastScanAt(s.lastScanAt ?? null);
-          if (s.lastReport) setResult(s.lastReport); // failed scans persist an error report too
+          if (s.lastReport) setResult(s.lastReport);
           const w = waiting.current;
-          if (w && !s.pending && (s.lastScanAt ?? null) !== w.from) {
-            waiting.current = null;
+          if (w && !s.pending && stampOf(s) !== w.from) {
+            waiting.current = null; // a new report OR a new failure landed
             setScanning(false);
           } else if (w && Date.now() - w.at > SCAN_WAIT_TIMEOUT_MS) {
             waiting.current = null;
             setScanning(false);
-            setResult(failed("scan did not report back within 6 min — is the poller running? check its log"));
+            setNotice("scan did not report back within 15 min — is the poller running? check its log");
           }
         })
         .catch(() => setStatus({ enabled: false, live: false, intervalMin: 0, profiles: [], error: "failed to load" }));
@@ -113,17 +120,19 @@ export function AutoSnipeBar() {
   const scanNow = () => {
     if (scanning) return;
     setScanning(true);
+    setNotice(null);
     fetch("/api/snipe/scan", { method: "POST" })
       .then((r) => r.json())
       .then((b: { queued?: boolean; error?: string }) => {
-        if (b.queued) waiting.current = { from: lastScanAt, at: Date.now() };
+        if (b.queued) waiting.current = { from: stampOf(status), at: Date.now() };
         else throw new Error(b.error ?? "scan was not queued");
       })
       .catch((e: unknown) => {
         setScanning(false);
-        setResult(failed(`scan failed: ${e instanceof Error ? e.message : String(e)}`));
+        setNotice(`scan failed: ${e instanceof Error ? e.message : String(e)}`);
       });
   };
+  const banner = notice ?? status?.lastError ?? null;
 
   const copyWhisper = (id: string, whisper: string) => {
     navigator.clipboard?.writeText(whisper).then(() => {
@@ -182,6 +191,12 @@ export function AutoSnipeBar() {
       )}
 
       {result?.error && <p className="mt-3 text-sm text-amber-500">{result.error}</p>}
+      {banner && (
+        <p className="mt-3 rounded border border-amber-600/40 bg-amber-500/10 px-2 py-1 text-sm text-amber-400">
+          ⚠ {banner}
+          {result && !result.error && <span className="text-amber-600"> — showing the last good scan below</span>}
+        </p>
+      )}
 
       {result && !result.error && (
         <div className="mt-3 space-y-4">

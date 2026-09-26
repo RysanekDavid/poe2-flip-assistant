@@ -11,9 +11,13 @@ import { buildStatIndex } from "../core/statResolver";
 import { rankCandidates, pickCandidates, pickArchetypes } from "../core/autoSnipeCandidates";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
 import { computeWaitMs, createRateGovernor, memoryRateStore, paceMs, parseRules } from "../api/tradeRateLimit";
-import { countRequest, metered, newMeter } from "../api/tradeMeter";
+import { AsyncLocalStorage } from "node:async_hooks";
+import Bottleneck from "bottleneck";
+import { metered, newMeter, scheduleMetered, type TradeMeter } from "../api/tradeMeter";
 import { fmtDivOrEx } from "../lib/format";
 import { pos } from "../config/env";
+import { TradeRateLimitedError } from "../api/tradeErrors";
+import { tradeErrorResponse } from "../lib/tradeRouteError";
 import { snipeAlertMessage } from "../core/snipeAlert";
 import { parseHuntBody } from "../lib/huntSchema";
 import { buildTradeQuery } from "../lib/tradeLink";
@@ -236,27 +240,66 @@ ok("env: 0 threshold rejected at boot", throws(() => pos("TEST_POS_ZERO", 1)));
 ok("env: negative threshold rejected", throws(() => pos("TEST_POS_NEG", 1)));
 ok("env: above max (discount > 100%) rejected", throws(() => pos("TEST_POS_BIG", 40, 100)));
 ok("env: valid value + fallback accepted", pos("TEST_POS_OK", 1) === 0.05 && pos("TEST_POS_UNSET", 7) === 7);
+const bootMsg = ((): string => {
+  try {
+    pos("TEST_POS_BIG", 40, 100);
+    return "";
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+})();
+ok("env: boot error names the key, the bad value and the valid range", bootMsg.includes("TEST_POS_BIG=150") && bootMsg.includes("(0, 100]"), bootMsg);
 
-// --- 9. scan-local meter: requests from OTHER async work (hunts on the shared limiter) don't count ---
-async function meterCheck(): Promise<void> {
-  const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 1));
-  const hunt = async (): Promise<void> => {
-    for (let i = 0; i < 5; i++) {
-      await tick();
-      countRequest("search");
-    }
+// --- web routes answer a busy shared budget with 503 + Retry-After, not a hung request ---
+const busy = tradeErrorResponse(new TradeRateLimitedError("search", 31_200));
+ok("budget busy → 503 with Retry-After (seconds, rounded up)", busy.status === 503 && busy.headers.get("Retry-After") === "32");
+ok("other trade2 failures stay 502", tradeErrorResponse(new Error("trade2 400")).status === 502);
+
+// --- 9. scan-local meter THROUGH a real Bottleneck queue (the production path) ---
+// Bottleneck starts a queued job from the previous job's completion chain, so async context read
+// INSIDE the job belongs to whoever ran before. These checks queue a metered scan behind hunts.
+const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+async function runQueueScenario(
+  request: (lim: Bottleneck, kind: "search" | "fetch") => Promise<void>,
+  wrap: <T>(m: TradeMeter, fn: () => Promise<T>) => Promise<T>,
+): Promise<{ scan: TradeMeter; hunt: TradeMeter }> {
+  const lim = new Bottleneck({ maxConcurrent: 1 });
+  const huntLap = async (n: number): Promise<void> => {
+    for (let i = 0; i < n; i++) await request(lim, "search");
   };
-  const meter = newMeter();
-  const scan = metered(meter, async () => {
-    for (let i = 0; i < 3; i++) {
-      await tick();
-      countRequest("search");
-    }
-    await tick();
-    countRequest("fetch");
+  const unmeteredHunt = huntLap(4); // grabs the slot first — the scan queues behind it
+  const hunt = newMeter();
+  const meteredHunt = wrap(hunt, () => huntLap(3));
+  const scan = newMeter();
+  const scanRun = wrap(scan, async () => {
+    for (let i = 0; i < 3; i++) await request(lim, "search");
+    await Promise.all([request(lim, "fetch"), request(lim, "fetch")]);
   });
-  await Promise.all([scan, hunt(), hunt()]);
-  ok("meter counts only the scan's own requests despite 10 interleaved hunt searches", meter.search === 3 && meter.fetch === 1, JSON.stringify(meter));
+  await Promise.all([unmeteredHunt, meteredHunt, scanRun]);
+  return { scan, hunt };
+}
+
+async function meterCheck(): Promise<void> {
+  const viaClientPath = (lim: Bottleneck, kind: "search" | "fetch"): Promise<void> =>
+    scheduleMetered(lim, kind, async (count) => {
+      await pause(3);
+      count();
+    });
+  const good = await runQueueScenario(viaClientPath, metered);
+  ok("queued behind hunts: scan meter = exactly its own 3 searches + 2 fetches", good.scan.search === 3 && good.scan.fetch === 2, JSON.stringify(good.scan));
+  ok("no leakage the other way: metered hunt = exactly its own 3 searches", good.hunt.search === 3 && good.hunt.fetch === 0, JSON.stringify(good.hunt));
+
+  // control: the pre-fix pattern (read the store inside the job) — proves the scenario bites
+  const als = new AsyncLocalStorage<TradeMeter>();
+  const naive = (lim: Bottleneck, kind: "search" | "fetch"): Promise<void> =>
+    lim.schedule(async () => {
+      await pause(3);
+      const m = als.getStore();
+      if (m) m[kind]++;
+    });
+  const bad = await runQueueScenario(naive, (m, fn) => als.run(m, fn));
+  ok("control: in-job context read mis-attributes under the same queue", !(bad.scan.search === 3 && bad.scan.fetch === 2 && bad.hunt.search === 3), `${JSON.stringify(bad.scan)} / ${JSON.stringify(bad.hunt)}`);
 }
 
 void meterCheck().then(() => {
