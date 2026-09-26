@@ -77,6 +77,12 @@ export interface QuoteObs {
 }
 
 /**
+ * An edge must be wider than this many times the legs' combined grid steps. At exactly the grid
+ * a single tick of rounding on each leg would erase it; the factor 2 leaves a real margin.
+ */
+export const GRID_SAFETY = 2;
+
+/**
  * Relative spacing of the exchange's N:1 fill grid at a price p (quote units per item). At
  * p = 150 the neighbours are 149/151 (~0.7%); at p = 2 they are 1 and 3 (50%); p < 1 is the
  * mirror case (N items : 1 quote). 100 / max(p, 1/p) captures both sides.

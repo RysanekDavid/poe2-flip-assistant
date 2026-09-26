@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { SCROLL_BOX, THEAD_STICKY, CELL } from "../lib/tableStyle";
-import { MarketSourceBadge } from "./FlipEdge";
+import { edgeSortTier, MarketSourceBadge, type HitRate } from "./FlipEdge";
 import { DiscoverRow, type Candidate } from "./DiscoverRow";
 import { CxRoutesStrip } from "./CxRoutesStrip";
 
 interface CxSummary {
   newestHour: number;
   coverage: { cxItems: number; mapped: number; unnamed: number; unmatched: number; ambiguous: number };
+  hitRate: HitRate;
 }
 
 type SortKey =
@@ -40,6 +41,8 @@ const NUMERIC: Set<SortKey> = new Set([
 ]);
 
 function cmp(a: Candidate, b: Candidate, key: SortKey, dir: SortDir): number {
+  // Edge sorts by rank tier first in BOTH directions: an unranked fat number never tops the list.
+  if (key === "edgePct" && edgeSortTier(a) !== edgeSortTier(b)) return edgeSortTier(b) - edgeSortTier(a);
   let d: number;
   if (NUMERIC.has(key)) d = ((a[key] as number | null) ?? -Infinity) - ((b[key] as number | null) ?? -Infinity);
   else d = String(a[key]).localeCompare(String(b[key]));
@@ -198,6 +201,7 @@ export function DiscoverTable({
             newestHour={cx?.newestHour ?? null}
             observed={rows.filter((r) => r.source === "cx").length}
             total={rows.length}
+            hitRate={cx?.hitRate ?? null}
           />
           {dataAge && (
             <span className="text-xs text-neutral-500" title="poe.ninja refreshes ~hourly, so prices move slowly">

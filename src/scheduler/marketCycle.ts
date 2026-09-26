@@ -3,6 +3,7 @@ import { config } from "../config/env";
 import { fireAlert } from "../core/alertEngine";
 import { loadCxMarketView, type CxMarketView } from "../core/cx/cxItemMarkets";
 import { pruneCxMarketHistory, syncCxHistory } from "../core/cx/cxIngest";
+import { trackCxOutcomes } from "../core/cx/cxOutcomes";
 import { scoreItem } from "../core/flipModel";
 import { getPolledLeagues, leagueForUser, sameLeague } from "../core/leagueUsers";
 import { type Currency, type ExchangeRates } from "../core/priceEngine";
@@ -53,6 +54,7 @@ export async function runCycle(): Promise<void> {
   // Fill gaps in the stored exchange history AFTER the sweeps, so a cold backfill (bounded,
   // 2s between requests) never delays fresh ninja prices. Fail-quiet like the refresh above.
   await syncCxHistory(leagues);
+  for (const league of leagues) trackOutcomes(league);
 
   // Retention is global, not per league — run it once the sweeps have added this tick's rows.
   const pruned = pruneSnapshots(config.retentionDays);
@@ -61,6 +63,16 @@ export async function runCycle(): Promise<void> {
   const cxPruned = pruneCxMarketHistory(); // null = not due (hourly)
   const cxNote = cxPruned == null ? "" : `, ${cxPruned} exchange market-hour(s) older than ${config.cx.historyDays}d`;
   console.log(`[poll] cycle done — pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${cxNote}`);
+}
+
+/** Settle and publish exchange edges for the outcome log. A failure is logged, never fatal. */
+function trackOutcomes(league: string): void {
+  try {
+    const { resolved, published } = trackCxOutcomes(league);
+    if (resolved + published > 0) console.log(`[cx-outcomes] "${league}" resolved ${resolved}, published ${published}`);
+  } catch (err: unknown) {
+    console.error(`[cx-outcomes] "${league}" failed:`, err instanceof Error ? err.message : err);
+  }
 }
 
 /** Fetch, store and alert for a single league. */

@@ -5,11 +5,11 @@ import { cxItemNames, cxMarketsSince } from "../../db/cxMarketQueries";
 import type { Currency } from "../priceEngine";
 import { freshNewestHour, groupByHour, resolveItemIds } from "./cxItemMarkets";
 import { modelParams } from "./cxMarketModel";
-import { SHORT_WINDOW_HOURS } from "./cxPersistence";
+import { MIN_HELD_HOURS, SHORT_WINDOW_HOURS } from "./cxPersistence";
 import { hourRoutes, persistentRoutes, type Route } from "./cxRoutes";
 
 /** A loop must have paid in at least this many of the last 6 hours to be listed. */
-export const ROUTE_MIN_HELD = 4;
+export const ROUTE_MIN_HELD = MIN_HELD_HOURS;
 
 export interface RouteRow {
   /** Our item id when the exchange item maps to a ninja line, else null (still tradable). */
@@ -68,7 +68,7 @@ export function loadCxRoutes(
   const params = modelParams();
   const rows = cxMarketsSince(league, newestHour - (SHORT_WINDOW_HOURS - 1) * CX_HOUR_SECONDS);
   const hours = [...groupByHour(rows)].flatMap(([hour, hourRows]) => hourRoutes(hour, hourRows, params));
-  const routes = persistentRoutes(hours, newestHour, config.cx.edgeThresholdPct, ROUTE_MIN_HELD);
+  const routes = persistentRoutes(hours, newestHour, config.cx.edgeThresholdPct);
   const names = cxItemNames();
   const { itemIdOf } = resolveItemIds(new Set(routes.map((r) => r.item)), names, ninja);
   const byId = new Map(ninja.map((p) => [p.itemId, p]));

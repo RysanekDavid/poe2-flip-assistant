@@ -87,6 +87,13 @@ export function cxMarketsSince(league: string, fromHour: number): CxMarketRow[] 
     .all(league, fromHour) as CxMarketRow[];
 }
 
+/** Every stored market of one league-hour. */
+export function cxMarketsAt(league: string, hour: number): CxMarketRow[] {
+  return getDb()
+    .prepare(`SELECT ${COLUMNS.join(", ")} FROM cx_markets WHERE league = ? AND hour = ?`)
+    .all(league, hour) as CxMarketRow[];
+}
+
 /** Newest digest hour stored for a league, or null when there is no history yet. */
 export function newestCxHour(league: string): number | null {
   const row = getDb().prepare("SELECT MAX(hour) AS mx FROM cx_ingest WHERE league = ?").get(league) as {
@@ -107,11 +114,13 @@ export function pruneCxHistory(beforeHour: number): number {
   const leagues = db.prepare("SELECT DISTINCT league FROM cx_ingest").all() as Array<{ league: string }>;
   const markets = db.prepare("DELETE FROM cx_markets WHERE league = ? AND hour < ?");
   const ingest = db.prepare("DELETE FROM cx_ingest WHERE league = ? AND hour < ?");
+  const outcomes = db.prepare("DELETE FROM cx_edge_outcomes WHERE league = ? AND hour < ?");
   let removed = 0;
   db.transaction(() => {
     for (const { league } of leagues) {
       removed += markets.run(league, beforeHour).changes;
       ingest.run(league, beforeHour);
+      outcomes.run(league, beforeHour);
     }
   })();
   return removed;

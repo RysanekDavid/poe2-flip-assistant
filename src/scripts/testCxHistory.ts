@@ -35,6 +35,7 @@ import {
   thinRibMarkets,
 } from "./cxTestFixtures";
 import { runCxModelTests } from "./testCxMarkets";
+import { runAbsentLeagueTests, runCxOutcomeTests } from "./testCxOutcomes";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -66,7 +67,9 @@ async function main(): Promise<void> {
   testLeagueViewAndStaleness();
   testRouteView();
   testRetention();
-  console.log("  ok — ingest, backfill, league view, retention");
+  runCxOutcomeTests(); // appends hours after H0 — keep last among the stored-history tests
+  await runAbsentLeagueTests(NOW);
+  console.log("  ok — ingest, backfill, league view, retention, outcome loop, absent leagues");
 }
 
 function count(sql: string, ...args: unknown[]): number {

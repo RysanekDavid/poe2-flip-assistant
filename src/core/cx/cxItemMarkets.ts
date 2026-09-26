@@ -73,7 +73,8 @@ export function statsFromRows(
   return out;
 }
 
-function statsForLeague(league: string, newestHour: number): Map<string, CxItemStats> {
+/** Per-base-id stats of one league at `newestHour`, memoized per league. */
+export function leagueStats(league: string, newestHour: number): Map<string, CxItemStats> {
   const params = modelParams();
   const key = `${newestHour}|${config.cx.edgeThresholdPct}|${JSON.stringify(params)}`;
   const hit = memo.get(league);
@@ -150,6 +151,6 @@ export function loadCxMarketView(
 ): CxMarketView | null {
   const newestHour = freshNewestHour(league, nowMs);
   if (newestHour == null) return null;
-  const { byItemId, coverage } = mapToItemIds(statsForLeague(league, newestHour), cxItemNames(), ninja);
+  const { byItemId, coverage } = mapToItemIds(leagueStats(league, newestHour), cxItemNames(), ninja);
   return { newestHour, byItemId, coverage };
 }

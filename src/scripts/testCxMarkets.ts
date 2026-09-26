@@ -17,6 +17,7 @@ import {
   IDS,
   PARAMS,
   REAL_DIGEST,
+  crossMarkets,
   persistentAndSpikeRows,
   rowsOf,
   digestAt,
@@ -29,6 +30,7 @@ import {
   thinRibMarkets,
   TEST_NAMES,
 } from "./cxTestFixtures";
+import { runCxProbeTests } from "./testCxProbes";
 import { runCxRouteTests } from "./testCxRoutes";
 
 const GOLD = PARAMS.goldPerExalt;
@@ -43,8 +45,9 @@ export function runCxModelTests(): void {
   testFeeTable();
   testPersistenceAndSpikes();
   testMappingIsExactAndCounted();
+  runCxProbeTests();
   runCxRouteTests();
-  console.log("  ok — model, guards, fees, persistence, routes, mapping");
+  console.log("  ok — model, guards, fees, persistence, review probes A–C, routes, mapping");
 }
 
 const edgesAt = (extra: Parameters<typeof digestAt>[1], p = PARAMS) => hourEdges(H0, rowsOf(H0, digestAt(H0, extra).markets), p);
@@ -92,11 +95,14 @@ function testGuards(): void {
   const rib = all.get(IDS.preservedRib);
   assert.equal(rib?.edge, null);
   assert.equal(rib?.issue, "thin");
-  // 8.4 Div fills only at 8:1 / 9:1 (11.9% grid): a 6% Div-vs-Ex gap is quantisation.
+  // 8.4 Div fills only at 8:1 / 9:1 — an 11.9% grid, over the 10% leg limit: not even quotable.
   const omen = all.get(IDS.omenOfLight);
   assert.equal(omen?.edge, null);
   assert.equal(omen?.issue, "coarse");
-  assert.ok(omen?.rawNetPct != null && omen.rawNetPct > 0, "the rejected number stays visible for the tooltip");
+  // Quotable legs (40 Div → 2.5% grid) but a 4% gap is inside 2 × the combined grid.
+  const narrow = edgesAt(crossMarkets(IDS.simulacrum, 40, 4)).get(IDS.simulacrum);
+  assert.equal(narrow?.issue, "coarse");
+  assert.ok(narrow?.rawNetPct != null && narrow.rawNetPct > 0, "the rejected number stays visible for the tooltip");
   // Liquid and fine-grained, but worth < 1 Ex with an unknown per-item gold fee.
   assert.equal(all.get(IDS.gnawedRib)?.issue, "fee-unknown");
   // Liquid, fine-grained, +80%: never a real edge.
@@ -159,13 +165,16 @@ function testPersistenceAndSpikes(): void {
   assert.equal(median([]), null);
   const stats = statsFromRows(persistentAndSpikeRows(), H0, PARAMS, 5);
   const sim = stats.get(IDS.simulacrum)?.edge;
-  const kul = stats.get(IDS.kulemak)?.edge;
-  assert.ok(sim && kul);
+  assert.ok(sim);
   assert.equal(sim.persistence6, 5, "the 0% hour fails the grid guard → a miss, not a hit");
-  assert.equal(sim.persistence24, 5);
+  assert.equal(sim.validHours6, 5);
   assert.equal(sim.legsHour, H0, "legs come from the newest valid hour");
-  assert.equal(kul.persistence6, 1, "a single-hour spike holds 1 of 6 hours");
-  assert.ok(near(kul.slowerUnitsPerHour, 25 / 6), "silent hours count as zero flow");
+  assert.ok(near(sim.slowerUnitsPerHour, (5 * 100) / 6), "the invalid hour counts as zero flow");
+  // One valid print in six hours is not a market: no edge at all (probe C).
+  const kul = stats.get(IDS.kulemak);
+  assert.equal(kul?.edge, null);
+  assert.equal(kul?.issue, "sporadic");
+  assert.equal(stats.get(IDS.vaalSiphoner)?.issue, "implausible");
   const rib = stats.get(IDS.preservedRib);
   assert.ok(rib != null && rib.edge == null, "six hours of a thin +127% never become an edge");
   assert.equal(rib.issue, "thin");

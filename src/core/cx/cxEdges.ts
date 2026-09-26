@@ -2,6 +2,7 @@ import type { CxMarketRow } from "../../db/cxMarketQueries";
 import { goldToDivine, sumLegFees } from "./cxFees";
 import {
   baseMarkets,
+  GRID_SAFETY,
   hourRates,
   quotesByItem,
   type HourRates,
@@ -13,14 +14,17 @@ import {
 /**
  * The best honest flip one hour supports for one item, or the reason there is none. Pure.
  *
- * An edge is only reported when it survives every guard: both legs quotable (liquid enough and
- * on a fine enough ratio grid), the gross edge wider than the two legs' grid steps combined (so
- * it is not quantisation), a priceable fee on anything cheaper than an Exalt, and a net edge
- * below the plausibility cap. Everything else is an explicit `issue`, never a number.
+ * Every viable (buy quote → sell quote) pair is evaluated, not just the widest one: one dumped
+ * market must not hide a clean edge between the other two. A pair is valid only when it survives
+ * every guard — both legs quotable (liquid enough, fine enough ratio grid), gross edge wider than
+ * GRID_SAFETY × the legs' combined grid steps (so it is not quantisation), a priceable fee on
+ * anything cheaper than an Exalt, and a net edge under the plausibility cap. The hour is
+ * `implausible` only when no pair is valid and the best rejected one was.
  */
 
 export type EdgeKind = "cross" | "band";
-export type EdgeIssue = LegIssue | "single-market" | "fee-unknown" | "implausible";
+/** `sporadic` is assigned over a window (cxPersistence), never to a single hour. */
+export type EdgeIssue = LegIssue | "single-market" | "fee-unknown" | "implausible" | "sporadic";
 
 export interface LegPrice {
   quote: string;
@@ -60,9 +64,14 @@ interface Legs {
   kind: EdgeKind;
   buy: LegPrice;
   sell: LegPrice;
-  /** Combined grid step (%) of the two legs — the edge must be wider than this. */
+  /** Combined grid step (%) of the two legs. */
   gridPct: number;
   slowerUnits: number;
+}
+
+export interface Judged {
+  edge: HourEdge;
+  issue: EdgeIssue | null;
 }
 
 const legPrice = (q: QuoteObs, priceQuote: number = q.priceQuote): LegPrice => ({
@@ -71,12 +80,7 @@ const legPrice = (q: QuoteObs, priceQuote: number = q.priceQuote): LegPrice => (
   priceDiv: priceQuote * (q.priceDiv / q.priceQuote),
 });
 
-/** Buy where the item is cheapest in Div, sell where it is dearest — needs two quotable legs. */
-function crossLegs(viable: readonly QuoteObs[]): Legs | null {
-  if (viable.length < 2) return null;
-  const sorted = [...viable].sort((x, y) => x.priceDiv - y.priceDiv);
-  const buy = sorted[0]!;
-  const sell = sorted[sorted.length - 1]!;
+function crossLegs(buy: QuoteObs, sell: QuoteObs): Legs {
   return {
     kind: "cross",
     buy: legPrice(buy),
@@ -84,6 +88,13 @@ function crossLegs(viable: readonly QuoteObs[]): Legs | null {
     gridPct: buy.gridStepPct + sell.gridStepPct,
     slowerUnits: Math.min(buy.units, sell.units),
   };
+}
+
+/** Every ordered pair of quotable legs where the sell side is dearer in Div. */
+function crossCandidates(viable: readonly QuoteObs[]): Legs[] {
+  const out: Legs[] = [];
+  for (const buy of viable) for (const sell of viable) if (sell.priceDiv > buy.priceDiv) out.push(crossLegs(buy, sell));
+  return out;
 }
 
 /**
@@ -131,17 +142,38 @@ function isSubExalt(priceDiv: number, rates: HourRates): boolean {
   return rates.exaltPerDivine == null || priceDiv * rates.exaltPerDivine < 1;
 }
 
-function edgeIssue(edge: HourEdge, legs: Legs, rates: HourRates, p: ModelParams): EdgeIssue | null {
-  if (edge.grossPct <= legs.gridPct) return "coarse";
-  if (!edge.feeComplete && isSubExalt(edge.buy.priceDiv, rates)) return "fee-unknown";
-  if (edge.netPct > p.maxPlausibleEdgePct) return "implausible";
-  return null;
+function judge(item: string, legs: Legs, rates: HourRates, p: ModelParams): Judged {
+  const edge = priceLegs(item, legs, rates, p);
+  let issue: EdgeIssue | null = null;
+  if (edge.grossPct <= GRID_SAFETY * legs.gridPct) issue = "coarse";
+  else if (!edge.feeComplete && isSubExalt(edge.buy.priceDiv, rates)) issue = "fee-unknown";
+  else if (edge.netPct > p.maxPlausibleEdgePct) issue = "implausible";
+  return { edge, issue };
 }
 
 /** Why no candidate could even be formed from these quotes. */
 function quoteIssue(quotes: readonly QuoteObs[]): EdgeIssue {
   if (quotes.length < 2) return "single-market";
   return quotes.some((q) => q.issue === "thin") ? "thin" : "coarse";
+}
+
+/**
+ * One specific direction (buy in `buyQuote`, sell in `sellQuote`) judged for one hour, or null
+ * when either leg did not trade or is not quotable. Same quote on both sides = the band edge.
+ */
+export function judgePair(
+  item: string,
+  buyQuote: string,
+  sellQuote: string,
+  quotes: readonly QuoteObs[],
+  rates: HourRates,
+  p: ModelParams,
+): Judged | null {
+  const buy = quotes.find((q) => q.quote === buyQuote && q.issue == null);
+  const sell = quotes.find((q) => q.quote === sellQuote && q.issue == null);
+  if (buy == null || sell == null) return null;
+  const legs = buy === sell ? (p.bandEdges ? bandLegs(buy) : null) : crossLegs(buy, sell);
+  return legs == null ? null : judge(item, legs, rates, p);
 }
 
 /** The hour's best guarded edge for one item, or the reason there is none. */
@@ -156,16 +188,12 @@ export function itemHour(item: string, hour: number, quotes: readonly QuoteObs[]
     marketUnits: liquid.units,
   };
   const viable = quotes.filter((q) => q.issue == null);
-  const candidates = [crossLegs(viable), p.bandEdges && liquid.issue == null ? bandLegs(liquid) : null].filter(
-    (l): l is Legs => l != null,
-  );
+  const band = p.bandEdges && liquid.issue == null ? bandLegs(liquid) : null;
+  const candidates = band == null ? crossCandidates(viable) : [...crossCandidates(viable), band];
   if (candidates.length === 0) return { ...base, edge: null, issue: quoteIssue(quotes), rawNetPct: null };
 
-  const judged = candidates.map((legs) => {
-    const edge = priceLegs(item, legs, rates, p);
-    return { edge, issue: edgeIssue(edge, legs, rates, p) };
-  });
-  const byNet = (x: { edge: HourEdge }, y: { edge: HourEdge }): number => y.edge.netPct - x.edge.netPct;
+  const judged = candidates.map((legs) => judge(item, legs, rates, p));
+  const byNet = (x: Judged, y: Judged): number => y.edge.netPct - x.edge.netPct;
   const valid = judged.filter((j) => j.issue == null).sort(byNet)[0];
   if (valid != null) return { ...base, edge: valid.edge, issue: null, rawNetPct: null };
   const rejected = [...judged].sort(byNet)[0]!;

@@ -9,6 +9,7 @@ import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
 import { scoreItem, type FlipRow } from "../../../core/flipModel";
 import { loadCxMarketView, type CxMarketView } from "../../../core/cx/cxItemMarkets";
+import { cxHitRate } from "../../../core/cx/cxOutcomes";
 import type { PricedItem } from "../../../api/types";
 
 export const runtime = "nodejs";
@@ -27,9 +28,12 @@ function scoreAll(prices: PricedItem[], rates: ExchangeRates, cx: CxMarketView |
     .sort((a, b) => b.worthScore - a.worthScore);
 }
 
-/** Where the exchange numbers came from — enough for the UI to label the table honestly. */
-function cxSummary(cx: CxMarketView | null) {
-  return cx == null ? null : { newestHour: cx.newestHour, coverage: cx.coverage };
+/**
+ * Where the exchange numbers came from, and how often a published edge still held an hour later
+ * (the outcome loop) — enough for the UI to label the table honestly.
+ */
+function cxSummary(league: string, cx: CxMarketView | null) {
+  return cx == null ? null : { newestHour: cx.newestHour, coverage: cx.coverage, hitRate: cxHitRate(league) };
 }
 
 /** GET /api/discover?limit=80&q=essence → market-wide flip scan; `q` searches the WHOLE market by name. */
@@ -53,7 +57,7 @@ export async function GET(req: Request) {
     ratesSource: resolved.source,
     ratesFetchedAt: resolved.fetchedAt,
     fetchedAt: latestFetchedAt(league),
-    cx: cxSummary(cx),
+    cx: cxSummary(league, cx),
     candidates: scored.slice(0, limit),
   });
 }

@@ -3,7 +3,7 @@ import { config } from "../config/env";
 import { divineToExalt, divineToChaos, toDivine, divineTo, type ExchangeRates, type Currency } from "./priceEngine";
 import { denominateIn, pickUnit, type Denom } from "./treasury";
 import { oscillationScore } from "./trendDetector";
-import type { CxItemStats } from "./cx/cxPersistence";
+import { isPublishable, type CxItemStats } from "./cx/cxPersistence";
 import {
   cxRowFields,
   liquidityTier,
@@ -69,7 +69,7 @@ export interface FlipRow extends CxRowFields {
   source: MarketSource;
   /** Market edge %: net of priced gold fees, 6h median (cx) — or the heuristic target (estimated). */
   edgePct: number;
-  /** False when the row is kept out of ranking (implausible exchange data); worthScore is 0. */
+  /** False when the row is kept out of ranking (see isRanked); its worthScore is then 0. */
   ranked: boolean;
   liquidityTier: LiquidityTier;
   /** Div per hour the slower leg (cx) or the market (estimated) moves. */
@@ -153,9 +153,15 @@ function worthScore(legs: TradeLegs, market: MarketEstimate, osc: number, risky:
   return Math.round(100 * base * liquidity * confidence(legs, market) * (risky ? 0.75 : 1));
 }
 
-/** Implausible exchange data is shown but never ranked — unless you entered real prices. */
+/**
+ * Ranked rows compete in the score; unranked ones are shown with their numbers but score 0.
+ * Your own prices always rank. An observed edge ranks only through the shared publish gate
+ * (held ≥ 4 of 6 hours, slower leg ≥ the "risky" liquidity tier). Implausible data never ranks.
+ */
 function isRanked(legs: TradeLegs, market: MarketEstimate): boolean {
-  return legs.mode === "REAL" || market.cx?.issue !== "implausible";
+  if (legs.mode === "REAL") return true;
+  if (market.cx?.edge != null) return isPublishable(market.cx, config.cx.liquidityRiskyDivH);
+  return market.cx?.issue !== "implausible";
 }
 
 /** How much the margin can be trusted: your own prices fully, observed edges by persistence. */

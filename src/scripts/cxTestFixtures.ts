@@ -146,18 +146,28 @@ export function rowsOf(id: number, markets = REAL_DIGEST.markets, league = FR): 
     .filter((r): r is CxMarketRow => r != null);
 }
 
+/** Kulemak at 40 Div with a valid 20% gap — used as a single-hour print. */
+export const kulemakSpike = (): CxMarket[] => crossMarkets(IDS.kulemak, 40, 20, { div: 25, ex: 25 });
+
+/** Stored rows for hours k = 0..n−1 (newest first), each hour's extra markets from `extraAt(k)`. */
+export function hoursOf(n: number, extraAt: (k: number) => CxMarket[]): CxMarketRow[] {
+  const rows: CxMarketRow[] = [];
+  for (let k = 0; k < n; k++) rows.push(...rowsOf(hourId(k), digestAt(hourId(k), extraAt(k)).markets));
+  return rows;
+}
+
 /**
- * Six hours: Simulacrum holds a 12% gap in 5 of 6 (hour 3 collapses to 0%); Kulemak trades only
- * in the newest hour, at a 40% gap; the thin rib prints its fake "+127%" every single hour.
+ * Six hours: Simulacrum holds a 12% gap in 5 of 6 (hour 3 collapses to 0%); Kulemak prints one
+ * valid 20% hour and is silent otherwise; the thin rib prints its fake "+127%" every hour; the
+ * +80% artefact prints every hour.
  */
 export function persistentAndSpikeRows(): CxMarketRow[] {
-  const rows: CxMarketRow[] = [];
-  for (let k = 0; k < 6; k++) {
-    const extra = [...simulacrumMarkets(k === 3 ? 0 : 12), ...thinRibMarkets(), ...implausibleMarkets()];
-    if (k === 0) extra.push(...crossMarkets(IDS.kulemak, 10, 40, { div: 25, ex: 25 }));
-    rows.push(...rowsOf(hourId(k), digestAt(hourId(k), extra).markets));
-  }
-  return rows;
+  return hoursOf(6, (k) => [
+    ...simulacrumMarkets(k === 3 ? 0 : 12),
+    ...thinRibMarkets(),
+    ...implausibleMarkets(),
+    ...(k === 0 ? kulemakSpike() : []),
+  ]);
 }
 
 export function near(actual: number | null | undefined, expected: number, eps = 1e-9): boolean {

@@ -127,11 +127,13 @@ export const config = {
     liquiditySafeDivH: num("CX_LIQ_SAFE_DIV_H", 1000), // slower-leg turnover (Div/h) for a "safe" tier
     liquidityRiskyDivH: num("CX_LIQ_RISKY_DIV_H", 100), // …and for "risky"; below it is "thin"
     // Leg guards: a quote below either floor, or on a ratio grid coarser than maxGridStepPct
-    // (price within 1/4..4 quote units), cannot carry an edge — see core/cx/cxMarketModel.
+    // (each leg ≥ 10 quote units per item or ≥ 10 items per quote unit), cannot carry an edge —
+    // see core/cx/cxMarketModel. Live data put every computable edge at 43–48% under looser
+    // values (25% grid / 50% cap): those were quantisation and dumps, not flips.
     minLegUnits: num("CX_MIN_LEG_UNITS", 20), // item units/h per leg
-    minLegDivPerHour: num("CX_MIN_LEG_DIV_H", 5), // Div/h per leg (also a route hour's floor)
-    maxGridStepPct: num("CX_MAX_GRID_STEP_PCT", 25),
-    maxPlausibleEdgePct: num("CX_MAX_PLAUSIBLE_EDGE_PCT", 50), // above = artefact, never ranked
+    minLegDivPerHour: num("CX_MIN_LEG_DIV_H", 20), // Div/h per leg-hour (also a route hour's floor)
+    maxGridStepPct: num("CX_MAX_GRID_STEP_PCT", 10),
+    maxPlausibleEdgePct: num("CX_MAX_PLAUSIBLE_EDGE_PCT", 30), // above = artefact, never ranked
     // lowest/highest_ratio look like resting-order extremes, not fills, in real digests —
     // band (market-making) edges stay off until that is verified.
     bandEdges: (process.env.CX_BAND_EDGES ?? "false").toLowerCase() === "true",

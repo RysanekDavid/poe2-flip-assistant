@@ -52,12 +52,25 @@ export const LIVE_HISTORY_SOURCES: CxHistorySources = {
   resolveNames: resolveBaseItemNames,
 };
 
+/** A polled league missing from the same hour's digest this many times: stop asking. */
+export const MAX_ABSENCES = 3;
+
+/** When an hour that found a polled league absent `seen` times may be asked again (never, at the cap). */
+export function absentRetryAt(seen: number, nowMs: number): number {
+  return seen >= MAX_ABSENCES ? Infinity : nowMs + ABSENT_RETRY_MS;
+}
+
 /** Request hour → earliest time it may be fetched again. */
 const retryAt = new Map<number, number>();
+/** Request hour → how many fetches found a polled league absent. */
+const absences = new Map<number, number>();
+const emptyWarnedAt = new Map<string, number>();
 
-/** Forget retry back-off — test fixtures only. */
+/** Forget retry back-off and warning throttles — test fixtures only. */
 export function resetCxIngestState(): void {
   retryAt.clear();
+  absences.clear();
+  emptyWarnedAt.clear();
 }
 
 /** One digest market → a stored row with item_a < item_b, or null when a side has no volume. */
@@ -173,9 +186,13 @@ async function fetchAndIngest(
     }
     const { absent } = ingestCxDigest(digest, leagues, sources.resolveNames);
     // A league GGG does not list may be dead or misspelled: re-asking every 30 min for 24 hours
-    // of it would cost ~48 full-digest downloads an hour, so its hours wait much longer.
-    if (absent.length > 0) retryAt.set(hour, nowMs + ABSENT_RETRY_MS);
-    else retryAt.delete(hour);
+    // of it would cost ~48 full-digest downloads an hour, so its hours wait much longer — and
+    // after MAX_ABSENCES the hour is given up on for the life of the process.
+    if (absent.length > 0) {
+      const seen = (absences.get(hour) ?? 0) + 1;
+      absences.set(hour, seen);
+      retryAt.set(hour, absentRetryAt(seen, nowMs));
+    } else retryAt.delete(hour);
     return true;
   } catch (err) {
     retryAt.set(hour, nowMs + RETRY_AFTER_MS);
@@ -202,7 +219,23 @@ export async function syncCxHistory(
     if (await fetchAndIngest(hour, leagues, sources, nowMs)) stored++;
   }
   if (stored > 0) console.log(`[cx-history] stored ${stored}/${due.length} digest hour(s) for ${leagues.join(", ")}`);
+  warnEmptyLeagues(leagues, nowMs);
   return stored;
+}
+
+/**
+ * A polled league with NO stored hour anywhere in the backfill window is almost certainly not a
+ * league GGG's digest knows (dead, or spelled differently) — say so, at most once an hour each,
+ * instead of letting its Top Flips silently fall back to estimates forever.
+ */
+function warnEmptyLeagues(leagues: readonly string[], nowMs: number): void {
+  const fromId = previousCompletedHour(nowMs) - (config.cx.backfillHours - 2) * CX_HOUR_SECONDS;
+  for (const league of leagues) {
+    if (isPrivateLeague(league) || ingestedCxHours(league, fromId).size > 0) continue;
+    if (nowMs - (emptyWarnedAt.get(league) ?? -Infinity) < 60 * 60 * 1000) continue;
+    emptyWarnedAt.set(league, nowMs);
+    console.warn(`[cx-history] polled league "${league}" has no exchange history in the last ${config.cx.backfillHours}h — is it in GGG's digest under this exact name?`);
+  }
 }
 
 /** Retention runs hourly, not every 5-minute cycle — the data only changes once an hour. */

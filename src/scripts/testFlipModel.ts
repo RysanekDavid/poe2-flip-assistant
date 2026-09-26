@@ -65,6 +65,7 @@ function edge(over: Partial<CxEdgeStats> = {}): CxEdgeStats {
     edgeMedian24Pct: 7,
     persistence6: 6,
     persistence24: 20,
+    validHours6: 6,
     netDivPerUnit: 0.16,
     slowerUnitsPerHour: 300,
     buy: { quote: IDS.divine, priceQuote: 2, priceDiv: 2 },
@@ -131,8 +132,13 @@ function testObservedRowUsesTheExchange(): void {
 
 function testPersistenceDrivesTheScore(): void {
   const held = scoreItem(item(), RATES, null, null, stats(edge({ persistence6: 6 }))).worthScore;
-  const spike = scoreItem(item(), RATES, null, null, stats(edge({ persistence6: 1 }))).worthScore;
-  assert.ok(held > spike * 2, `held ${held} vs one-hour spike ${spike}`);
+  const four = scoreItem(item(), RATES, null, null, stats(edge({ persistence6: 4 }))).worthScore;
+  assert.ok(held > four && four > 0, `6/6 ${held} > 4/6 ${four} > 0`);
+  // Below 4/6 an observed edge is shown but not ranked (probe C).
+  const three = scoreItem(item(), RATES, null, null, stats(edge({ persistence6: 3 })));
+  assert.equal(three.ranked, false);
+  assert.equal(three.worthScore, 0);
+  assert.equal(three.source, "cx", "…its numbers are still observed, just not ranked");
   const estimated = scoreItem(item({ volume: 600 }), RATES).worthScore;
   assert.ok(estimated < held, `estimate ${estimated} must not outrank an observed, persistent edge ${held}`);
 }
@@ -144,7 +150,12 @@ function testThinFakeEdgeNeverOutranksALiquidOne(): void {
   const thin = scoreItem(item({ itemId: "preserved-rib", baseValue: 0.001 }), RATES, null, null, stats(thinEdge, { midDiv: 0.001 }));
   assert.equal(thin.liquidityTier, "thin");
   assert.ok(thin.worthScore < liquid, `thin ${thin.worthScore} must score below liquid ${liquid}`);
-  assert.equal(thin.worthScore, 0, "0.003 Div/h is 0.003% of the risky tier — effectively unranked");
+  assert.equal(thin.ranked, false, "hard gate: slower leg under the risky tier (100 Div/h) never ranks");
+  assert.equal(thin.worthScore, 0);
+  // Just under the gate (99 Div/h) is still out; at 100 it ranks.
+  const at = (divH: number) => scoreItem(item(), RATES, null, null, stats(edge({ slowerUnitsPerHour: divH / 2 }))).ranked;
+  assert.equal(at(99), false);
+  assert.equal(at(100), true);
 }
 
 function testGuardedMarketFallsBackWithItsReason(): void {
