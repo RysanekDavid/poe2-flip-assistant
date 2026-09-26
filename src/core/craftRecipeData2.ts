@@ -1,6 +1,7 @@
 import { MATS } from "./craftMaterials";
 import { GUIDES_2 } from "./craftGuideData2";
 import { PUTREFACTION_MATS } from "./craftRecipeData";
+import { CHEAP_BASE_FLOOR_DIV } from "./craftValuation";
 import type { CraftRecipe } from "./craftRecipes";
 
 /**
@@ -22,6 +23,7 @@ export const RECIPES_2: CraftRecipe[] = [
     source: "XTheFarmerX putrefaction craft [S10] — body-armour variant (scraps+sockets FIRST → omen+rib)",
     base: {
       label: "Cheap rare body armour (not desecrated)",
+      minAskDiv: CHEAP_BASE_FLOOR_DIV, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       category: "armour.chest",
       rarity: "rare",
       ilvlMin: 80,
@@ -52,6 +54,7 @@ export const RECIPES_2: CraftRecipe[] = [
     source: "Fubgun/XTheFarmerX +2 projectile gloves [S5] (chaos-spam → ribcage blocker → fracture at 4 mods → Hysteria)",
     base: {
       label: "Rare glove base (high ilvl)",
+      minAskDiv: CHEAP_BASE_FLOOR_DIV, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       category: "armour.gloves",
       rarity: "rare",
       ilvlMin: 82,
@@ -70,11 +73,11 @@ export const RECIPES_2: CraftRecipe[] = [
       { material: MATS.chaos, qtyPerAttempt: 15, note: "Method 1: chaos-spam the rare toward +2 Projectile Skills." },
       { material: MATS.annul, qtyPerAttempt: 5, note: "Clear wrong mods between chaos passes — 50/50 gamble each with 2+ mods." },
       // KB §2 (poe2-crafting-knowledge.md): fracture needs ≥4 mods; desecrated counts, can't be fractured
-      { material: MATS.fracturing, qtyPerAttempt: 1, note: "1-in-3 to lock the +2 at exactly 4 mods (+2 + 2 junk + unrevealed desecrated blocker; ≥4 required). Miss = restart on a fresh base — the loss lives in hitRate." },
+      { material: MATS.fracturing, qtyPerAttempt: 1, note: "UNVERIFIED ordering (fracture with an unrevealed desecrated blocker). 1-in-3 to lock the +2 at exactly 4 mods (+2 + 2 junk + unrevealed desecrated blocker; ≥4 required). Miss = restart on a fresh base — the loss lives in hitRate." },
       { material: MATS.essenceOfHysteria, qtyPerAttempt: 1, note: "Guaranteed suffix, straight 50/50 (Crit Spell Damage Bonus vs Cold Res)." },
       { material: MATS.exalted, qtyPerAttempt: 2, note: "Fill the remaining prefix/suffix after the lock." },
       // KB §5: Ancient bone = modifier level 40+ floor; Preserved already works on any item level
-      { material: MATS.ancientRib, qtyPerAttempt: 1, note: "The fracture blocker, revealed afterwards as the finish (T1 flat Cold/Lightning/Physical, or Suppress). Ancient for its mod-level-40 reveal floor — not an ilvl need (Preserved works on any ilvl)." },
+      { material: MATS.ancientRib, qtyPerAttempt: 1, note: "UNVERIFIED ordering: the fracture blocker, revealed afterwards as the finish (T1 flat Cold/Lightning/Physical, or Suppress). Ancient for its mod-level-40 reveal floor — not an ilvl need (Preserved works on any ilvl)." },
       { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "Reroll the desecration reveal options once." },
       { material: MATS.artificers, qtyPerAttempt: 1, note: "Socket for a rune (rune ~1 ex, not tracked)." },
     ],
@@ -140,6 +143,7 @@ export const RECIPES_2: CraftRecipe[] = [
     source: "XTheFarmerX expert/giga Spirit amulet [S11] (desecration Spirit hunt → Enhancement convert → catalysed res)",
     base: {
       label: "Magic Gold/Solar amulet",
+      minAskDiv: CHEAP_BASE_FLOOR_DIV, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       type: "Solar Amulet",
       rarity: "magic",
       ilvlMin: 75,

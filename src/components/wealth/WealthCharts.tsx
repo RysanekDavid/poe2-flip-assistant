@@ -2,6 +2,7 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import type { Pnl, TabRow, TabSeriesPoint } from "./useBalance";
+import { ComputedLeague } from "../ui/ComputedLeague";
 
 export const fmt = (n: number, d = 1): string => n.toLocaleString("en-US", { maximumFractionDigits: d });
 
@@ -52,12 +53,15 @@ export function ValueChart({ points, height, label, empty }: {
 }
 
 /** HERO — realized profit from logged flips (auto, frictionless, no stash read). */
-export function PnlHero({ pnl }: { pnl: Pnl | null }) {
+export function PnlHero({ pnl, league }: { pnl: Pnl | null; league: string | null }) {
   const points = (pnl?.points ?? []).map((p) => ({ t: p.t.slice(5, 16), value: p.cum }));
   return (
     <div className="mb-4 grid grid-cols-1 gap-4 rounded border border-neutral-800 bg-neutral-950/40 p-3 lg:grid-cols-[260px_1fr]">
       <div className="flex flex-col justify-center">
-        <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">realized P&amp;L · logged flips</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">realized P&amp;L · logged flips</span>
+          <ComputedLeague league={league} />
+        </div>
         {pnl && pnl.count > 0 ? (
           <>
             <div className="mt-1 flex items-baseline gap-1.5">

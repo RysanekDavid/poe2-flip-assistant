@@ -8,18 +8,29 @@
  * proxy — a delisting or a price-edit re-index is not a sale — which the UI tooltip says.
  */
 
-/** Mean per-step decrease in listing count, oldest→newest, increases clipped at 0. */
+/**
+ * Mean per-step FRACTIONAL decrease in listing count, oldest→newest: each step contributes
+ * max(0, prev − next) / prev. Fractional, not absolute — a 900-listing unique that loses 10
+ * listings per scrape (1%) is churn, a 12-listing unique that loses 3 (25%) is selling through.
+ * Increases (new supply) are clipped at 0. Result is 0..1.
+ */
 export function sellThroughProxy(qtys: readonly number[]): number {
   if (qtys.length < 2) return 0;
   let drops = 0;
-  for (let i = 1; i < qtys.length; i++) drops += Math.max(0, qtys[i - 1]! - qtys[i]!);
+  for (let i = 1; i < qtys.length; i++) {
+    const prev = qtys[i - 1]!;
+    if (prev > 0) drops += Math.max(0, prev - qtys[i]!) / prev;
+  }
   return drops / (qtys.length - 1);
 }
 
-/** log-normalize a non-negative value against the board maximum → 0..1 (long-tailed counts). */
-export function logNorm(v: number, max: number): number {
-  if (!(max > 0) || !(v > 0)) return 0;
-  return Math.min(1, Math.log10(v + 1) / Math.log10(max + 1));
+/** A per-step drop of this fraction (20% of the listings gone each scrape) counts as fully hot. */
+export const SELL_THROUGH_SATURATION = 0.2;
+
+/** Sell-through contribution 0..1, saturating at SELL_THROUGH_SATURATION. */
+export function sellThroughNorm(fraction: number): number {
+  if (!(fraction > 0)) return 0;
+  return Math.min(1, fraction / SELL_THROUGH_SATURATION);
 }
 
 /** Momentum contribution: only RISING price counts, saturating at +50%. */
@@ -27,7 +38,8 @@ export function momentumNorm(momentumPct: number): number {
   return Math.min(Math.max(momentumPct, 0) / 50, 1);
 }
 
-/** Heat 0–100: half sell-through proxy (vs the board's max), half positive momentum. */
-export function heatScore(sellThrough: number, maxSellThrough: number, momentumPct: number): number {
-  return Math.round(100 * (0.5 * logNorm(sellThrough, maxSellThrough) + 0.5 * momentumNorm(momentumPct)));
+/** Heat 0–100: half sell-through proxy, half positive momentum. Board-independent, so an item's
+ *  heat does not move just because another item on the board changed. */
+export function heatScore(sellThrough: number, momentumPct: number): number {
+  return Math.round(100 * (0.5 * sellThroughNorm(sellThrough) + 0.5 * momentumNorm(momentumPct)));
 }

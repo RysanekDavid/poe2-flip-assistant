@@ -16,9 +16,15 @@ import type { RecipeMarginReport } from "./craftRecipes";
  *  a manual full refresh is RECIPES.length × 10, all queued through the shared trade2 limiter. */
 export const LEG_SAMPLE = 40;
 
-/** Asks under this are junk/bait for any leg this engine prices (1-alch dumps, price-fixers). */
+/** Default absolute ask floor: under this an ask is junk/bait (1-alch dumps, price-fixers) for a
+ *  leg worth real money. Legs whose correct price IS ~1 exalt (putrefaction bases, plain rare
+ *  glove/amulet bases) override it via RecipeLegSpec.minAskDiv — at 0.05 they could never price. */
 export const ABS_FLOOR_DIV = 0.05;
-/** …and asks under this share of the cluster median are bait relative to the item's own market. */
+/** Absolute floor for legs whose honest price is ~1 exalt (≈0.003–0.005 Div): cheap putrefaction
+ *  bases, plain high-ilvl rare glove bases, magic amulet bases. Still above the sub-exalt
+ *  alch/aug/transmute dumps; the relative floor still applies on top. */
+export const CHEAP_BASE_FLOOR_DIV = 0.002;
+/** On every leg, asks under this share of the cluster median are bait relative to the item's own market. */
 export const REL_FLOOR = 0.05;
 /** Fewer floor-passing asks than this and the leg is rejected (never priced at a guess). */
 export const MIN_LEG_SAMPLES = 3;
@@ -32,9 +38,10 @@ export const RESULT_PERCENTILE = 0.3;
 /** Alert / top-pick gate: a leg needs a real market behind it, not a handful of listings. */
 export const GATE_MIN_TOTAL = 8;
 export const GATE_MIN_SAMPLES = 5;
-/** Expected return (hitRate × result) above this multiple of the attempt cost is capped and
- *  flagged: at that ratio the result leg is almost certainly pricing outlier asks. */
-export const RETURN_CAP_MULTIPLE = 10;
+/** Expected return (hitRate × result) above this multiple of the attempt cost is FLAGGED for a
+ *  manual look. Flag only: cheap-base crafts (1-ex putrefaction base → multi-div result)
+ *  legitimately return 10×+ cost, and the listings/asks gate already stops whale clusters. */
+export const RETURN_FLAG_MULTIPLE = 10;
 
 /** Linear-interpolated percentile of an ASCENDING array; 0 for an empty one. */
 export function percentile(sortedAsc: readonly number[], p: number): number {
@@ -56,29 +63,31 @@ export interface FloorValuation {
 
 /**
  * Floor-and-percentile leg value from raw comparable Div prices. NaN/≤0 prices (currencies we
- * cannot rate) are discarded before anything else and are not counted as dropped bait.
+ * cannot rate) are discarded before anything else and are not counted as dropped bait. The
+ * relative floor (REL_FLOOR × cluster p50) always applies; `absFloorDiv` is the leg's own
+ * absolute floor (ABS_FLOOR_DIV unless the recipe says the leg is legitimately cheap).
  */
-export function floorValue(divs: readonly number[], pctl: number): FloorValuation {
+export function floorValue(divs: readonly number[], pctl: number, absFloorDiv: number = ABS_FLOOR_DIV): FloorValuation {
   const clean = divs.filter((d) => Number.isFinite(d) && d > 0).sort((a, b) => a - b);
   const clusterP50 = percentile(clean, 0.5);
-  const floorDiv = Math.max(ABS_FLOOR_DIV, REL_FLOOR * clusterP50);
+  const floorDiv = Math.max(absFloorDiv, REL_FLOOR * clusterP50);
   const kept = clean.filter((d) => d >= floorDiv);
   return { value: percentile(kept, pctl), kept: kept.length, dropped: clean.length - kept.length, floorDiv };
 }
 
-/** EV per attempt with the expected return capped at RETURN_CAP_MULTIPLE × cost (flagged). */
-export function cappedMargin(
+/** EV per attempt = hitRate × result − base − materials, plus a high-return FLAG. The EV itself
+ *  is never altered — a flag must not rewrite the number that feeds the EV history. */
+export function computeMargin(
   baseDiv: number,
   resultDiv: number,
   materialsDiv: number,
   hitRate: number,
-): { evDiv: number; marginPct: number; returnCapped: boolean } {
+): { evDiv: number; marginPct: number; returnFlagged: boolean } {
   const cost = baseDiv + materialsDiv;
-  const rawReturn = hitRate * resultDiv;
-  const cap = cost * RETURN_CAP_MULTIPLE;
-  const returnCapped = cost > 0 && rawReturn > cap;
-  const evDiv = (returnCapped ? cap : rawReturn) - cost;
-  return { evDiv, marginPct: cost > 0 ? (evDiv / cost) * 100 : 0, returnCapped };
+  const expectedReturn = hitRate * resultDiv;
+  const evDiv = expectedReturn - cost;
+  const returnFlagged = cost > 0 && expectedReturn > cost * RETURN_FLAG_MULTIPLE;
+  return { evDiv, marginPct: cost > 0 ? (evDiv / cost) * 100 : 0, returnFlagged };
 }
 
 export interface RankGate {
@@ -89,6 +98,7 @@ export interface RankGate {
 /**
  * May this report drive a CRAFT_MARGIN alert or a "craft right now" top pick? A report that is
  * shown but fails this gate is still visible in the recipe list — it just can't be broadcast.
+ * The high-return flag is deliberately NOT a gate reason (see RETURN_FLAG_MULTIPLE).
  */
 export function rankGate(report: RecipeMarginReport): RankGate {
   const reasons: string[] = [];
@@ -100,6 +110,5 @@ export function rankGate(report: RecipeMarginReport): RankGate {
     if (leg.outliersDropped >= leg.samples) reasons.push(`${name}: more asks dropped as bait than kept`);
     if (leg.unresolvedStats.length > 0) reasons.push(`${name}: search widened (unresolved stats)`);
   }
-  if (report.returnCapped) reasons.push(`return capped at ${RETURN_CAP_MULTIPLE}× cost — result likely priced from outliers`);
   return { ok: reasons.length === 0, reasons };
 }

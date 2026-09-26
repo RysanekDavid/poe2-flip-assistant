@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 const Body = z.object({ recipeKey: z.string().min(1) });
 
 /**
- * POST /api/craft/hunt-preset { recipeKey } → create OR update (one per user × recipe × league)
+ * POST /api/craft/hunt-preset { recipeKey } → create OR update (one per user × recipe_key × league)
  * the hunt for the recipe's craft base, capped at ~120% of the floor-validated base price. Refuses
  * with a clear 409 when the base leg never cleared the ask floor — a cap derived from a junk
  * floor would scan for garbage forever. Uses only cached/local data (tradeMeta 24h cache +
@@ -42,7 +42,7 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: `unresolved base stats: ${unresolved.join("; ")}` }, { status: 409 });
   }
 
-  const { id, created } = upsertCraftBaseHunt(user.id, league, {
+  const { id, created } = upsertCraftBaseHunt(user.id, league, recipe.key, {
     label: `base · ${recipe.label}`,
     mode: "CRAFT_BASE",
     item_name: null,

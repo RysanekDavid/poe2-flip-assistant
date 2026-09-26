@@ -55,6 +55,7 @@ export interface TabSeriesPoint {
 
 interface BalanceResp {
   computedLeague?: string;
+  pnlLeague?: string;
   balances?: Snapshot[];
   stats?: Stats;
   pnl?: Pnl;
@@ -66,6 +67,7 @@ interface BalanceResp {
 
 export interface BalanceData {
   league: string | null;
+  pnlLeague: string | null; // realized P&L follows the viewer's league, not the net-worth league
   series: Snapshot[]; // oldest → newest for the chart
   stats: Stats | null;
   pnl: Pnl | null;
@@ -74,7 +76,7 @@ export interface BalanceData {
   tabSeries: TabSeriesPoint[];
 }
 
-const EMPTY: BalanceData = { league: null, series: [], stats: null, pnl: null, stashEnabled: false, tabs: [], tabSeries: [] };
+const EMPTY: BalanceData = { league: null, pnlLeague: null, series: [], stats: null, pnl: null, stashEnabled: false, tabs: [], tabSeries: [] };
 
 /** POST JSON and throw the server's `error` on a non-2xx — callers render it, never swallow it. */
 export async function postJson<T>(url: string, body?: unknown): Promise<T> {
@@ -103,6 +105,7 @@ export function useBalance(): { data: BalanceData; error: string | null; load: (
       .then((d) => {
         setData({
           league: d.computedLeague ?? null,
+          pnlLeague: d.pnlLeague ?? null,
           series: (d.balances ?? []).slice().reverse(),
           stats: d.stats ?? null,
           pnl: d.pnl ?? null,

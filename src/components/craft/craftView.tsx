@@ -20,6 +20,8 @@ export interface RecipeView {
   report: RecipeMarginReport | null;
   gate: RankGate; // may this report drive a top pick / alert (server-computed)
   scannedAt: string | null;
+  lastError: string | null; // transient failure of a newer scan; the report is the last good one
+  lastErrorAt: string | null;
   evHistory: number[];
 }
 

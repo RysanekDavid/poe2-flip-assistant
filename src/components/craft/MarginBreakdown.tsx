@@ -7,7 +7,7 @@ import type { LegReport } from "../../core/craftRecipes";
 import { CraftSessionInline } from "./CraftSessionWizard";
 import { MaterialsTable } from "./MaterialsTable";
 import { evLabel, priceLabel, type RecipeView } from "./craftView";
-import { RETURN_CAP_MULTIPLE } from "../../core/craftValuation";
+import { RETURN_FLAG_MULTIPLE } from "../../core/craftValuation";
 
 /** How a leg's number was derived — a percentile of floor-passing asks, never "the price". */
 function legBasis(leg: LegReport): string {
@@ -119,6 +119,11 @@ export function MarginBreakdown({ r, ex, icons }: { r: RecipeView; ex: number | 
   return (
     <div className="space-y-3 border-t border-neutral-800 bg-neutral-950/30 p-4">
       {rep?.error && <p className="text-sm text-bad">⚠ {rep.error}</p>}
+      {r.lastError && (
+        <p className="text-xs text-amber-500" title={r.lastError}>
+          ⚠ latest rescan failed ({r.lastErrorAt ?? "recently"}, transient) — showing the last good scan; it retries next tick: {r.lastError}
+        </p>
+      )}
       {rep && !r.gate.ok && rep.status === "ok" && (
         <p className="text-xs text-amber-500" title={r.gate.reasons.join("\n")}>
           ⚠ low confidence — not ranked or alerted: {r.gate.reasons.join(" · ")}
@@ -134,7 +139,11 @@ export function MarginBreakdown({ r, ex, icons }: { r: RecipeView; ex: number | 
         <p className="rounded-md bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">
           <span className="text-neutral-500">EV = </span>
           hit {(rep.hitRate * 100).toFixed(0)}% × {priceLabel(rep.result.priceDiv, ex)}
-          {rep.returnCapped && <span className="text-amber-500" title={`hit × result exceeded ${RETURN_CAP_MULTIPLE}× the attempt cost — capped`}> (capped at {RETURN_CAP_MULTIPLE}× cost)</span>}
+          {rep.returnFlagged && (
+            <span className="text-amber-500" title={`hit × result is over ${RETURN_FLAG_MULTIPLE}× the attempt cost — plausible for cheap bases, but open the result search and check the asks are real`}>
+              {" "}(&gt;{RETURN_FLAG_MULTIPLE}× cost — verify)
+            </span>
+          )}
           <span className="text-neutral-500"> − </span>base {priceLabel(rep.base.priceDiv, ex)}
           <span className="text-neutral-500"> − </span>mats {priceLabel(rep.materialsDiv, ex)}
           <span className="text-neutral-500"> = </span>

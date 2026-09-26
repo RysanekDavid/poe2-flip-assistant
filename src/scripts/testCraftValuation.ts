@@ -6,13 +6,15 @@ import {
   floorValue,
   percentile,
   rankGate,
-  cappedMargin,
+  computeMargin,
   ABS_FLOOR_DIV,
+  CHEAP_BASE_FLOOR_DIV,
   MIN_LEG_SAMPLES,
   RESULT_PERCENTILE,
-  RETURN_CAP_MULTIPLE,
+  RETURN_FLAG_MULTIPLE,
 } from "../core/craftValuation";
-import { listingDiv, shouldAlert } from "../core/craftMargin";
+import { listingDiv, shouldAlert, keepPreviousReport } from "../core/craftMargin";
+import { RECIPES } from "../core/craftRecipes";
 import { prefillCosts, presetCap } from "../core/craftPrefill";
 import { parseStoredReport } from "../core/craftReports";
 import { upsertCraftBaseHunt, addCraftAttempt, closeCraftAttempt, craftPnlByRecipe } from "../db/craftQueries";
@@ -35,7 +37,7 @@ function leg(over: Partial<LegReport> = {}): LegReport {
 function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   return {
     key: "t", status: "ok", base: leg({ priceDiv: 2 }), result: leg({ priceDiv: 40 }), materials: [], materialsDiv: 1,
-    hitRate: 0.3, evDiv: 9, marginPct: 300, error: null, valuation: "floor-percentile", returnCapped: false, ...over,
+    hitRate: 0.3, evDiv: 9, marginPct: 300, error: null, valuation: "floor-percentile", returnFlagged: false, ...over,
   };
 }
 
@@ -57,6 +59,20 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
 
   const rel = floorValue([...Array.from({ length: 10 }, () => 100), 3], 0.25);
   ok("relative floor: ask under 5% of the cluster p50 dropped", rel.dropped === 1 && near(rel.floorDiv, 5), `floor ${rel.floorDiv}`);
+  // a legitimately ~1-ex base (putrefaction boots): the default floor rejects it, the per-leg floor prices it
+  const oneEx = Array.from({ length: 20 }, (_, i) => 0.003 + i * 0.0002);
+  ok("cheap base under the DEFAULT floor is rejected", floorValue(oneEx, 0.25).kept === 0);
+  const cheap = floorValue(oneEx, 0.25, CHEAP_BASE_FLOOR_DIV);
+  ok("cheap base with its per-leg floor prices at p25 (~0.004 Div)", cheap.kept === 20 && near(cheap.value, 0.00395), String(cheap.value));
+  const cheapBait = floorValue([...oneEx, 0.0001, 0.0002], 0.25, CHEAP_BASE_FLOOR_DIV);
+  ok("per-leg floor still drops sub-exalt dumps", cheapBait.dropped === 2);
+  const legFloors = RECIPES.filter((r) => r.base.minAskDiv != null).map((r) => r.key).sort().join(",");
+  ok(
+    "exactly the ~1-ex-base recipes carry a cheap base floor",
+    legFloors === "amulet_giga_spirit,armour_putrefaction,boots_putrefaction,boots_putrefaction_ev,gloves_projectile_plus2",
+    legFloors,
+  );
+  ok("no result leg lowers its floor", RECIPES.every((r) => r.result.minAskDiv == null));
   const nan = floorValue([Number.NaN, -1, 0, 1, 2, 3], 0.5);
   ok("NaN/≤0 prices discarded, not counted as bait", nan.kept === 3 && nan.dropped === 0, `${nan.kept}/${nan.dropped}`);
 }
@@ -80,16 +96,27 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   const baity = report({ result: leg({ samples: 6, outliersDropped: 9 }) });
   ok("more bait dropped than kept → suppressed", !rankGate(baity).ok);
   ok("legacy (pre-floor) report never ranks", !rankGate(report({ valuation: "legacy-cheapest" })).ok);
-  ok("return-capped report never ranks", !rankGate(report({ returnCapped: true })).ok);
-  const cap = cappedMargin(1, 1000, 1, 0.5); // cost 2, raw return 500 → capped at 20
-  ok(`return capped at ${RETURN_CAP_MULTIPLE}× cost + flagged`, cap.returnCapped && near(cap.evDiv, 18), String(cap.evDiv));
+  // armour_putrefaction-like: base 0.003, mats 0.1, result p30 6 Div, hit 0.3 → return 1.8 ≈ 17× cost
+  const armour = computeMargin(0.003, 6, 0.1, 0.3);
+  ok("cheap-base craft: EV 1.697 is NOT altered by the high-return flag", near(armour.evDiv, 1.697), String(armour.evDiv));
+  ok(`cheap-base craft: return > ${RETURN_FLAG_MULTIPLE}× cost is flagged`, armour.returnFlagged);
+  const armourReport = report({
+    base: leg({ priceDiv: 0.003, floorDiv: CHEAP_BASE_FLOOR_DIV, percentile: 0.25 }),
+    result: leg({ priceDiv: 6 }),
+    materialsDiv: 0.1,
+    evDiv: armour.evDiv,
+    marginPct: armour.marginPct,
+    returnFlagged: true,
+  });
+  ok("flagged cheap-base report still ranks (flag is not a gate)", rankGate(armourReport).ok, rankGate(armourReport).reasons.join("; "));
+  ok("flagged cheap-base report still alerts", shouldAlert(armourReport));
 }
 
 // --- stored-report compatibility: pre-rework rows still parse, as legacy ---
 {
   const legacy = { ...report(), base: { ...leg() }, result: { ...leg() } } as Record<string, unknown>;
   delete legacy.valuation;
-  delete legacy.returnCapped;
+  delete legacy.returnFlagged;
   for (const k of ["floorDiv", "percentile", "sampled"]) {
     delete (legacy.base as Record<string, unknown>)[k];
     delete (legacy.result as Record<string, unknown>)[k];
@@ -127,15 +154,41 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
     label: "base · test-recipe", mode: "CRAFT_BASE" as const, item_name: null, base_type: null, category: "weapon.bow",
     ilvl_min: 75, rarity: null, stats_json: null, max_amount: 1, max_ccy: "divine", target_div: null,
   };
-  const first = upsertCraftBaseHunt(1, "Test League", hunt);
+  const first = upsertCraftBaseHunt(1, "Test League", "test-recipe", hunt);
   db.prepare("UPDATE hunts SET active = 0 WHERE id = ?").run(first.id);
-  const second = upsertCraftBaseHunt(1, "Test League", { ...hunt, max_amount: 2.5 });
-  const rows = db.prepare("SELECT id, max_amount, active FROM hunts WHERE label = 'base · test-recipe' AND league = 'Test League'").all() as Array<{ id: number; max_amount: number; active: number }>;
-  ok("hunt preset upserts: one row after two clicks", rows.length === 1 && first.created && !second.created && first.id === second.id, JSON.stringify(rows));
+  const second = upsertCraftBaseHunt(1, "Test League", "test-recipe", { ...hunt, max_amount: 2.5, label: "base · test-renamed" });
+  const rows = db
+    .prepare("SELECT id, max_amount, active, label FROM hunts WHERE recipe_key = 'test-recipe' AND league = 'Test League'")
+    .all() as Array<{ id: number; max_amount: number; active: number; label: string }>;
+  ok(
+    "hunt preset upserts by recipe_key: one row after two clicks, survives a label rename",
+    rows.length === 1 && first.created && !second.created && first.id === second.id && rows[0]?.label === "base · test-renamed",
+    JSON.stringify(rows),
+  );
   ok("upsert moves the cap and re-activates", rows[0]?.max_amount === 2.5 && rows[0]?.active === 1);
-  const other = upsertCraftBaseHunt(1, "Other League", hunt);
+  const other = upsertCraftBaseHunt(1, "Other League", "test-recipe", hunt);
   ok("same recipe in another league is a separate hunt", other.created && other.id !== first.id);
+  // a pre-recipe_key preset row (label identity) is adopted once, not duplicated
+  const legacyId = Number(
+    db
+      .prepare(
+        "INSERT INTO hunts (user_id, league, label, mode, max_amount, max_ccy) VALUES (1, 'Test League', 'base · test-legacy', 'CRAFT_BASE', 1, 'divine')",
+      )
+      .run().lastInsertRowid,
+  );
+  const adopted = upsertCraftBaseHunt(1, "Test League", "test-legacy-key", { ...hunt, label: "base · test-legacy" });
+  ok("legacy label-keyed preset row adopted and keyed", !adopted.created && adopted.id === legacyId);
   db.prepare("DELETE FROM hunts WHERE label LIKE 'base · test-%'").run();
+}
+
+// --- transient scan failures never overwrite a good report ---
+{
+  const good = report();
+  const failed = report({ status: "leg-failed", base: null, result: null, error: "trade2 rate-limited (429)" });
+  ok("transient failure keeps the previous good report", keepPreviousReport(good, { report: failed, transient: true }));
+  ok("floor failure (a market verdict) replaces it", !keepPreviousReport(good, { report: failed, transient: false }));
+  ok("transient failure with no good report is stored", !keepPreviousReport(null, { report: failed, transient: true }));
+  ok("transient failure over a failed report is stored", !keepPreviousReport(failed, { report: failed, transient: true }));
 }
 
 // --- P&L: an unsold hit is pending, not a loss ---

@@ -13,6 +13,8 @@ export interface CraftMarginRow {
   ev_div: number;
   margin_pct: number;
   scanned_at: string;
+  last_error: string | null; // transient failure kept beside (not over) the last good report
+  last_error_at: string | null;
 }
 
 /** Upsert the latest report for one recipe (poller writes it each scan). */
@@ -29,16 +31,31 @@ export function upsertCraftMargin(
        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
        ON CONFLICT(league, recipe_key) DO UPDATE SET
          report_json = excluded.report_json, ev_div = excluded.ev_div,
-         margin_pct = excluded.margin_pct, scanned_at = CURRENT_TIMESTAMP`,
+         margin_pct = excluded.margin_pct, scanned_at = CURRENT_TIMESTAMP,
+         last_error = NULL, last_error_at = NULL`,
     )
     .run(league, key, reportJson, evDiv, marginPct);
+}
+
+/**
+ * Record a transient scan failure (trade2 transport / rate-limit) WITHOUT touching the stored
+ * report: a good report stays visible and rankable, the failure is shown beside it. scanned_at is
+ * left alone on purpose, so the recipe stays stalest and the next tick retries it.
+ */
+export function recordCraftScanError(league: string, key: string, error: string): void {
+  getDb()
+    .prepare(
+      `UPDATE craft_margin_reports SET last_error = ?, last_error_at = CURRENT_TIMESTAMP
+       WHERE league = ? AND recipe_key = ?`,
+    )
+    .run(error, league, key);
 }
 
 /** One league's stored recipe reports, newest scan first. */
 export function getCraftMargins(league: string): CraftMarginRow[] {
   return getDb()
     .prepare(
-      `SELECT recipe_key, report_json, ev_div, margin_pct, scanned_at FROM craft_margin_reports
+      `SELECT recipe_key, report_json, ev_div, margin_pct, scanned_at, last_error, last_error_at FROM craft_margin_reports
        WHERE league = ? ORDER BY scanned_at DESC`,
     )
     .all(league) as CraftMarginRow[];
@@ -277,22 +294,29 @@ export type CraftBaseHunt = Omit<Hunt, "id" | "user_id" | "active" | "last_scan_
 /**
  * Create or refresh the user's craft-base hunt for one recipe in one league. Clicking
  * "hunt this base" again must move the existing hunt's cap, not stack a duplicate that scans
- * (and spends trade2 budget) twice. The deterministic preset label is the recipe identity; the
- * hunt is re-activated because re-clicking means "I want this running".
+ * (and spends trade2 budget) twice. Identity is hunts.recipe_key (survives a label rename); a
+ * pre-recipe_key preset row is adopted by its deterministic label once, then keyed. The hunt is
+ * re-activated because re-clicking means "I want this running".
  */
 export function upsertCraftBaseHunt(
   userId: number,
   league: string,
+  recipeKey: string,
   hunt: CraftBaseHunt,
 ): { id: number; created: boolean } {
-  const existing = getDb()
+  const db = getDb();
+  const existing = (db
     .prepare(
-      `SELECT id FROM hunts WHERE user_id = ? AND league = ? AND mode = 'CRAFT_BASE' AND label = ?
-       ORDER BY id LIMIT 1`,
+      `SELECT id FROM hunts WHERE user_id = ? AND league = ? AND mode = 'CRAFT_BASE'
+         AND (recipe_key = ? OR (recipe_key IS NULL AND label = ?))
+       ORDER BY (recipe_key IS NULL), id LIMIT 1`,
     )
-    .get(userId, league, hunt.label) as { id: number } | undefined;
-  if (!existing) return { id: addHunt(userId, league, hunt), created: true };
-  updateHunt(userId, existing.id, hunt);
-  setHuntActive(userId, existing.id, true);
-  return { id: existing.id, created: false };
+    .get(userId, league, recipeKey, hunt.label) as { id: number } | undefined)?.id;
+  const id = existing ?? addHunt(userId, league, hunt);
+  if (existing != null) {
+    updateHunt(userId, existing, hunt);
+    setHuntActive(userId, existing, true);
+  }
+  db.prepare("UPDATE hunts SET recipe_key = ? WHERE user_id = ? AND id = ?").run(recipeKey, userId, id);
+  return { id, created: existing == null };
 }

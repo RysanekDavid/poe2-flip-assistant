@@ -90,22 +90,29 @@ function start(): void {
   }
 
   // Craft-margin engine — ranks curated recipes by live EV/attempt. Shared market scan under the
-  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so 2 searches + 2 fetches is
+  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so ≤2 searches + 8 fetches is
   // the whole per-tick cost through the shared trade2 limiter.
   if (config.craftMargin.enabled && ownerCred) {
     const cmExpr = `*/${config.craftMargin.intervalMin} * * * *`;
     console.log(`[craft-margin] refreshing 1/${RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
+    // One craft scan at a time: the tick skips while a manual sweep runs, and a queued manual
+    // sweep waits for the tick (its flag stays set until consumed), so no recipe is scanned twice.
+    let craftRefreshing = false;
     cron.schedule(cmExpr, () => {
+      if (craftRefreshing) return;
+      craftRefreshing = true;
       refreshStalestRecipe(ownerCred)
         .then((r) => {
           if (r) console.log(`[craft-margin] ${r.key}: ${r.status} · EV ${r.evDiv.toFixed(1)} div · ${r.marginPct.toFixed(0)}%`);
         })
-        .catch((e) => console.error("[craft-margin] refresh failed:", e instanceof Error ? e.message : e));
+        .catch((e) => console.error("[craft-margin] refresh failed:", e instanceof Error ? e.message : e))
+        .finally(() => {
+          craftRefreshing = false;
+        });
     });
 
     // Manual "refresh all" from the web POST is a flag, not an inline call — the web process shares
     // this account+IP's rate budget, so we consume the flag here and run the sweep on THIS limiter.
-    let craftRefreshing = false;
     setInterval(() => {
       if (craftRefreshing || !consumeCraftRefresh()) return;
       craftRefreshing = true;

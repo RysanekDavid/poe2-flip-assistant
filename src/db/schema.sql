@@ -261,6 +261,8 @@ CREATE TABLE IF NOT EXISTS craft_margin_reports (
   ev_div REAL NOT NULL,
   margin_pct REAL NOT NULL,
   scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_error TEXT,                -- transient scan failure that did NOT replace the good report above
+  last_error_at DATETIME,
   PRIMARY KEY (league, recipe_key)
 );
 

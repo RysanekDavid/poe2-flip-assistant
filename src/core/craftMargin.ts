@@ -6,6 +6,7 @@ import { config } from "../config/env";
 import { listUsers } from "../db/userQueries";
 import {
   upsertCraftMargin,
+  recordCraftScanError,
   insertMarginHistory,
   getCraftMargins,
   getMaterialPrices,
@@ -15,6 +16,7 @@ import {
 import { ALL_MATERIALS } from "./craftMaterials";
 import { getDefaultLeague } from "./leagueState";
 import { resolveRates } from "./rates";
+import { storedReport } from "./craftReports";
 import type { ExchangeRates } from "./priceEngine";
 import {
   LEG_SAMPLE,
@@ -22,7 +24,7 @@ import {
   BASE_PERCENTILE,
   RESULT_PERCENTILE,
   floorValue,
-  cappedMargin,
+  computeMargin,
   rankGate,
 } from "./craftValuation";
 import {
@@ -39,7 +41,7 @@ import { tradeSearchPageUrl, type StatFilter, type TradeQuery } from "../lib/tra
  * Craft-margin engine. Prices each recipe's base + result legs live (floor-and-percentile over up
  * to LEG_SAMPLE comparables — see craftValuation), prices its materials free from the ninja
  * snapshot pipeline, and computes EV per attempt:
- *   EV = min(hitRate × result, RETURN_CAP_MULTIPLE × cost) − base − materials.
+ *   EV = hitRate × result − base − materials  (flagged when the return is > 10× cost).
  * Read-only: it ranks and alerts; the human crafts. Legs share the trade2 Bottleneck, so the
  * poller runs ONE recipe per tick (the stalest) to stay well inside the rate budget.
  */
@@ -120,6 +122,10 @@ async function sampleListings(
   return { total: search.total ?? listings.length, listings, searchUrl: tradeSearchPageUrl(getDefaultLeague(), search.id) };
 }
 
+/** A leg the market itself failed to price (too few asks above its floor) — a real finding about
+ *  the market. Any OTHER error from a leg (transport, 429, a rate governor giving up) is transient. */
+class LegFloorError extends Error {}
+
 /** Price one leg at `pctl` of its floor-passing asks. Throws (→ "leg-failed", naming the leg)
  *  when fewer than MIN_LEG_SAMPLES asks clear the floor, so a junk price never reaches EV. */
 async function priceLeg(leg: RecipeLegSpec, pctl: number, ctx: LegContext): Promise<LegReport> {
@@ -127,9 +133,9 @@ async function priceLeg(leg: RecipeLegSpec, pctl: number, ctx: LegContext): Prom
   const { total, listings, searchUrl } = await sampleListings(query, ctx.cred);
   const priced = listings.filter((l) => l.price && l.online);
   const divs = priced.map((l) => listingDiv(l.price!.amount, l.price!.currency, ctx.rates, ctx.currencyDiv));
-  const { value, kept, dropped, floorDiv } = floorValue(divs, pctl);
+  const { value, kept, dropped, floorDiv } = floorValue(divs, pctl, leg.minAskDiv);
   if (kept < MIN_LEG_SAMPLES) {
-    throw new Error(
+    throw new LegFloorError(
       `${leg.label}: only ${kept} ask(s) at or above the ${floorDiv.toFixed(3)} Div floor (need ${MIN_LEG_SAMPLES}); ` +
         `${total} listed, ${listings.length} sampled, ${dropped} below the floor — leg not priced`,
     );
@@ -186,23 +192,32 @@ export function priceMaterials(
   return { lines, missing };
 }
 
-/** Price one leg, turning a failure into an error string instead of an exception. */
-async function tryLeg(leg: RecipeLegSpec, pctl: number, ctx: LegContext): Promise<LegReport | string> {
+interface LegFailure {
+  error: string;
+  transient: boolean; // transport / rate-limit, not a verdict about the market
+}
+
+/** Price one leg, turning a failure into a classified LegFailure instead of an exception. */
+async function tryLeg(leg: RecipeLegSpec, pctl: number, ctx: LegContext): Promise<LegReport | LegFailure> {
   try {
     return await priceLeg(leg, pctl, ctx);
   } catch (e) {
-    return e instanceof Error ? e.message : String(e);
+    return { error: e instanceof Error ? e.message : String(e), transient: !(e instanceof LegFloorError) };
   }
+}
+
+const isFailure = (x: LegReport | LegFailure): x is LegFailure => "error" in x;
+
+/** A scan outcome: the report plus whether its failure was only transient. */
+export interface ScanOutcome {
+  report: RecipeMarginReport;
+  transient: boolean;
 }
 
 /** Build a full report for one recipe: materials (free) → both legs (live) → EV. Never throws.
  *  Each leg is priced independently, so a base that cleared the floor stays in the report (and
  *  can prefill attempt costs) even when the result leg failed. */
-async function buildReport(
-  recipe: CraftRecipe,
-  ctx: LegContext,
-  prices: Map<string, MaterialPrice>,
-): Promise<RecipeMarginReport> {
+async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: Map<string, MaterialPrice>): Promise<ScanOutcome> {
   const { lines, missing } = priceMaterials(recipe, prices);
   const materialsDiv = lines.reduce((s, l) => s + (l.totalDiv ?? 0), 0);
   const shell: RecipeMarginReport = {
@@ -217,33 +232,38 @@ async function buildReport(
     marginPct: 0,
     error: null,
     valuation: "floor-percentile",
-    returnCapped: false,
+    returnFlagged: false,
   };
   if (missing.length > 0) {
-    return {
-      ...shell,
-      status: "missing-materials",
-      error: `no price for: ${missing.join(", ")} — add to a fetched ninja category or set manualPriceDiv`,
-    };
+    const error = `no price for: ${missing.join(", ")} — add to a fetched ninja category or set manualPriceDiv`;
+    return { report: { ...shell, status: "missing-materials", error }, transient: false };
   }
   const base = await tryLeg(recipe.base, BASE_PERCENTILE, ctx);
   const result = await tryLeg(recipe.result, RESULT_PERCENTILE, ctx);
-  if (typeof base === "string" || typeof result === "string") {
-    const errors = [base, result].filter((x): x is string => typeof x === "string");
-    return {
+  if (isFailure(base) || isFailure(result)) {
+    const failures = [base, result].filter(isFailure);
+    const report: RecipeMarginReport = {
       ...shell,
       status: "leg-failed",
-      base: typeof base === "string" ? null : base,
-      result: typeof result === "string" ? null : result,
-      error: errors.join(" | "),
+      base: isFailure(base) ? null : base,
+      result: isFailure(result) ? null : result,
+      error: failures.map((f) => f.error).join(" | "),
     };
+    return { report, transient: failures.some((f) => f.transient) };
   }
-  const { evDiv, marginPct, returnCapped } = cappedMargin(base.priceDiv, result.priceDiv, materialsDiv, recipe.hitRate);
-  return { ...shell, base, result, evDiv, marginPct, returnCapped };
+  const { evDiv, marginPct, returnFlagged } = computeMargin(base.priceDiv, result.priceDiv, materialsDiv, recipe.hitRate);
+  return { report: { ...shell, base, result, evDiv, marginPct, returnFlagged }, transient: false };
+}
+
+/** Pure: keep the stored report instead of the new one? Only when the new scan failed for a
+ *  transient reason AND what we already have is a good report — a 429 or a rate-governor timeout
+ *  must not wipe a valid EV (and its rank / prefill / hunt-preset) until the next clean scan. */
+export function keepPreviousReport(previous: RecipeMarginReport | null, outcome: ScanOutcome): boolean {
+  return outcome.transient && previous?.status === "ok";
 }
 
 /** Pure: does this report warrant a CRAFT_MARGIN alert? EV + margin thresholds AND the confidence
- *  gate (≥8 listed, ≥5 usable asks per leg, bait not dominating, no widened search, uncapped). */
+ *  gate (≥8 listed, ≥5 usable asks per leg, bait not dominating, no widened search). */
 export function shouldAlert(report: RecipeMarginReport): boolean {
   const { alertMarginPct, alertMinEvDiv } = config.craftMargin;
   return rankGate(report).ok && report.marginPct >= alertMarginPct && report.evDiv >= alertMinEvDiv;
@@ -268,12 +288,20 @@ function maybeAlert(recipe: CraftRecipe, report: RecipeMarginReport): void {
   }
 }
 
-function persist(league: string, recipe: CraftRecipe, report: RecipeMarginReport): void {
+function persist(league: string, recipe: CraftRecipe, outcome: ScanOutcome): RecipeMarginReport {
+  const report = outcome.report;
+  const previous = storedReport(league, recipe.key);
+  if (keepPreviousReport(previous, outcome)) {
+    console.warn(`[craft-margin] ${recipe.key}: transient scan failure, keeping the last good report — ${report.error}`);
+    recordCraftScanError(league, recipe.key, report.error ?? "transient scan failure");
+    return previous!;
+  }
   upsertCraftMargin(league, report.key, JSON.stringify(report), report.evDiv, report.marginPct);
   // Only successful scans feed the EV history — a failed/missing report's evDiv 0 would render as
   // a fake sparkline dip, misrepresenting the trend.
   if (report.status === "ok") insertMarginHistory(league, report.key, report.evDiv, report.marginPct);
   maybeAlert(recipe, report);
+  return report;
 }
 
 /** Is scan-time `a` staler than `b`? Never-scanned (null) beats any real timestamp. */
@@ -315,9 +343,7 @@ export async function refreshStalestRecipe(cred: TradeCred): Promise<RecipeMargi
   if (!recipe) return null;
   const ctx = await scanContext(league, cred);
   const prices = getMaterialPrices(league, recipe.materials.map((m) => m.material.id));
-  const report = await buildReport(recipe, ctx, prices);
-  persist(league, recipe, report);
-  return report;
+  return persist(league, recipe, await buildReport(recipe, ctx, prices));
 }
 
 /** Refresh every recipe now (manual owner trigger, ≤ 10 trade2 calls per recipe through the
@@ -328,9 +354,7 @@ export async function refreshAllRecipes(cred: TradeCred): Promise<RecipeMarginRe
   const prices = getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id));
   const reports: RecipeMarginReport[] = [];
   for (const recipe of RECIPES) {
-    const report = await buildReport(recipe, ctx, prices);
-    persist(league, recipe, report);
-    reports.push(report);
+    reports.push(persist(league, recipe, await buildReport(recipe, ctx, prices)));
   }
   return reports;
 }

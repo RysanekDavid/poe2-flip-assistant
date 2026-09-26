@@ -51,6 +51,12 @@ export function getDb(): Database.Database {
   ensureColumns(conn, "hunts", [
     ["category", "TEXT"],
     ["ilvl_min", "INTEGER"],
+    ["recipe_key", "TEXT"], // craft-base preset identity: one hunt per user × recipe × league
+  ]);
+  // A transient trade2 failure is recorded beside the last good craft report instead of replacing it.
+  ensureColumns(conn, "craft_margin_reports", [
+    ["last_error", "TEXT"],
+    ["last_error_at", "DATETIME"],
   ]);
   ensureColumns(conn, "balance_snapshots", [
     ["other_div", "REAL NOT NULL DEFAULT 0"],

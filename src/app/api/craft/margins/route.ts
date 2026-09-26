@@ -64,6 +64,9 @@ export async function GET(): Promise<Response> {
       report,
       gate: report ? rankGate(report) : { ok: false, reasons: ["not scanned yet"] },
       scannedAt: row?.scanned_at ?? null,
+      // a transient trade2 failure since that scan — the report above is the last GOOD one
+      lastError: row?.last_error ?? null,
+      lastErrorAt: row?.last_error_at ?? null,
       evHistory: getMarginHistory(league, r.key).map((h) => h.ev_div),
     };
   });

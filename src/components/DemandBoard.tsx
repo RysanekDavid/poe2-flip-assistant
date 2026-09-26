@@ -115,7 +115,7 @@ function FilterBar({ f, set, cats, onRefresh }: { f: Filters; set: (p: Partial<F
 function Explainer() {
   return (
     <p className="mb-3 text-xs text-neutral-600">
-      Every tradeable unique, ranked. <b>Heat</b> = sell-through proxy (drops in listing count between scrapes) blended
+      Every tradeable unique, ranked. <b>Heat</b> = sell-through proxy (share of listings gone between scrapes) blended
       with rising price. <b>cheapest ask</b> = poe2scout&apos;s lowest listed price (outlier-guarded), not a sale price —{" "}
       <span className="text-warn">⚠</span> = headline was an outlier, showing recent median (verify on trade),{" "}
       <span className="text-neutral-500">~</span> = thin data. Set <b>budget</b> to see only what you can afford. Click a

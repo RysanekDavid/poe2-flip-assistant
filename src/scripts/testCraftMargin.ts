@@ -2,7 +2,7 @@
  * path, leg-query assembly, and a material-id sanity check against the live DB / a Delirium fixture. */
 import "../config/env";
 import { priceMaterials, legToQuery } from "../core/craftMargin";
-import { cappedMargin } from "../core/craftValuation";
+import { computeMargin } from "../core/craftValuation";
 import { MATS, ALL_MATERIALS } from "../core/craftMaterials";
 import { RECIPES } from "../core/craftRecipes";
 import { buildStatIndex } from "../core/statResolver";
@@ -18,15 +18,15 @@ const ok = (name: string, cond: boolean, extra = "") => {
   if (!cond) fail++;
 };
 
-// --- cappedMargin: EV = hitRate × result − base − materials; margin = EV / cost × 100 ---
+// --- computeMargin: EV = hitRate × result − base − materials; margin = EV / cost × 100 ---
 {
-  const { evDiv, marginPct, returnCapped } = cappedMargin(1, 20, 3, 0.35); // cost 4, ev 0.35*20-4 = 3
-  ok("cappedMargin EV = 3", Math.abs(evDiv - 3) < 1e-9, String(evDiv));
-  ok("cappedMargin margin = 75%", Math.abs(marginPct - 75) < 1e-9, String(marginPct));
-  ok("cappedMargin: a sane return is not capped", returnCapped === false);
-  const neg = cappedMargin(5, 8, 2, 0.5); // cost 7, ev 4-7 = -3
-  ok("cappedMargin negative EV = -3", Math.abs(neg.evDiv + 3) < 1e-9, String(neg.evDiv));
-  ok("cappedMargin zero cost → 0% (no divide-by-zero)", cappedMargin(0, 10, 0, 0.5).marginPct === 0);
+  const { evDiv, marginPct, returnFlagged } = computeMargin(1, 20, 3, 0.35); // cost 4, ev 0.35*20-4 = 3
+  ok("computeMargin EV = 3", Math.abs(evDiv - 3) < 1e-9, String(evDiv));
+  ok("computeMargin margin = 75%", Math.abs(marginPct - 75) < 1e-9, String(marginPct));
+  ok("computeMargin: a sane return is not flagged", returnFlagged === false);
+  const neg = computeMargin(5, 8, 2, 0.5); // cost 7, ev 4-7 = -3
+  ok("computeMargin negative EV = -3", Math.abs(neg.evDiv + 3) < 1e-9, String(neg.evDiv));
+  ok("computeMargin zero cost → 0% (no divide-by-zero)", computeMargin(0, 10, 0, 0.5).marginPct === 0);
 }
 
 // --- priceMaterials: ninja price, manual fallback, and the fail-loud missing path ---

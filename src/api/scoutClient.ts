@@ -98,8 +98,7 @@ let cache: { at: number; league: string; rates: ScoutRates; items: ScoutItem[] }
  * Identify honestly instead of spoofing a browser: poe2scout is a FastAPI service without a
  * Cloudflare wall, so a descriptive agent + an operator contact (env DATA_SOURCE_CONTACT /
  * POE_CONTACT, never hardcoded — the repo is committed) lets its operator reach us instead of
- * blocking blind. Live acceptance of this UA was NOT verifiable from the dev sandbox — confirm
- * one request against the API before merging.
+ * blocking blind. Verified live: api.poe2scout.com answers 200 to this UA (2026-09-26).
  */
 const SCOUT_CONTACT = config.dataSourceContact;
 const SCOUT_USER_AGENT = `poe2-flip-assistant/1.0${SCOUT_CONTACT ? ` (contact: ${SCOUT_CONTACT})` : ""}`;
@@ -210,7 +209,7 @@ export interface DemandItem {
   // Log `Quantity` is how many are LISTED at each point, not how many traded — an average of it
   // measures supply, never flow. Named for what it is so no panel mistakes it for sales.
   listedAvg: number; // avg listing count across the price log
-  sellThrough: number; // avg per-step DROP in listing count (clipped ≥ 0) — sell-through proxy
+  sellThrough: number; // avg per-step FRACTION of listings gone (0..1, increases clipped) — sell-through proxy
   momentumPct: number; // price change first→last of the log
   samples: number; // price-log points behind the median — low = untrustworthy
   sparkPrices: number[]; // daily log prices, oldest→newest — for row sparklines

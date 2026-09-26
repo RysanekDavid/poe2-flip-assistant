@@ -42,7 +42,7 @@ const COLUMNS: ReadonlyArray<{ k: SortKey; label: string; right?: boolean; tip?:
     k: "sellThrough",
     label: "sell-through",
     right: true,
-    tip: "average drop in listing count between scrapes (rises clipped to 0) — a proxy: a delisting or re-index is not a sale",
+    tip: "average share of listings gone between scrapes (rises clipped to 0) — a proxy: a delisting or re-index is not a sale",
   },
   { k: "momentumPct", label: "Trend", right: true },
   { k: "heat", label: "Heat", right: true, tip: "sell-through proxy blended with rising price" },
@@ -92,7 +92,7 @@ function DemandRowView({ r }: { r: DemandRow }) {
       <AskCell r={r} />
       <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{compact(r.quantity)}</td>
       <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{compact(r.listedAvg)}</td>
-      <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{r.sellThrough.toFixed(1)}</td>
+      <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{(r.sellThrough * 100).toFixed(0)}%</td>
       <td className={`${CELL} whitespace-nowrap text-right`}>
         <span className="inline-flex items-center justify-end gap-1.5">
           {r.spark.length >= 2 && <Sparkline data={r.spark} />}

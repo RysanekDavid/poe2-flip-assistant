@@ -86,7 +86,7 @@ export function BalancePanel() {
       </header>
       {error && <p role="alert" className="mb-3 text-sm text-bad">wealth data unavailable: {error}</p>}
 
-      <PnlHero pnl={data.pnl} />
+      <PnlHero pnl={data.pnl} league={data.pnlLeague} />
 
       <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">stash net worth · trade auto / manual</div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">

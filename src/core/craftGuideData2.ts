@@ -6,6 +6,10 @@ import type { CraftGuide } from "./craftRecipes";
  * items 1-5,7,8). Split out of craftGuideData.ts to keep both files under the 500-line cap.
  * Same DOMAIN-CONTENT contract: tight prose, wallet-warnings inline, mechanics cited from the KB.
  */
+// Gloves reorder (desecrate → fracture) is derived from KB §2, not from the source video.
+const UNREVEALED_BLOCKER =
+  "The creator video fractures BEFORE desecrating; fracturing with an UNREVEALED desecrated blocker (then revealing it as the finish) is our reordering from KB §2 — the KB confirms a desecrated mod counts and can't be fractured, but not that an unrevealed one behaves the same.";
+
 export const GUIDES_2: Record<string, CraftGuide> = {
   armour_putrefaction: {
     goal: "6-mod body armour: high flat/% ES (or Evasion) + two 30%+ resistances (± Spirit/rarity jackpot).",
@@ -89,12 +93,14 @@ export const GUIDES_2: Record<string, CraftGuide> = {
             why: "Counts toward the 4-mod minimum but can't be fractured. Ancient = mod level 40+ reveals (cuts low tiers), not an ilvl need — Preserved works on any ilvl.",
             mats: [MATS.ancientRib],
             check: "Exactly 4 mods: +2 keeper + 2 junk + unrevealed desecrated blocker.",
+            unverified: UNREVEALED_BLOCKER,
           },
           {
             do: "Fracturing Orb at exactly 4 mods.",
             why: "Needs ≥4 mods; the blocker can't be picked → 1-in-3 to lock the +2 forever → an unbrickable craft base.",
             mats: [MATS.fracturing],
             onFail: "Wrong mod fractured → sell as a normal rare, restart on a fresh base (loss lives in hitRate).",
+            unverified: UNREVEALED_BLOCKER,
           },
         ],
       },

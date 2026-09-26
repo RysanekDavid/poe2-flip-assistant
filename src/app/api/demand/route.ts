@@ -19,7 +19,7 @@ export interface DemandRow {
   marketDivine: number;
   quantity: number; // live listing count
   listedAvg: number; // average listing count over the price log (supply, not flow)
-  sellThrough: number; // avg per-step drop in listing count — sell-through proxy
+  sellThrough: number; // avg per-step FRACTION of listings gone (0..1) — sell-through proxy
   momentumPct: number;
   spark: number[]; // daily log prices oldest→newest — row sparkline
   heat: number; // 0–100: sell-through proxy + positive momentum (see core/demandHeat)
@@ -28,7 +28,7 @@ export interface DemandRow {
   tradeUrl: string;
 }
 
-function toRow(it: DemandItem, rates: ScoutRates, maxSellThrough: number, league: string): DemandRow {
+function toRow(it: DemandItem, rates: ScoutRates, league: string): DemandRow {
   const marketDivine = it.priceExalt / rates.exaltPerDivine;
   const divergePct = it.priceExalt > 0 ? (Math.abs(it.priceExalt - it.rawPriceExalt) / it.priceExalt) * 100 : 0;
   // thin = too few data points / listings to trust; noisy = headline was an outlier (guard fired)
@@ -46,7 +46,7 @@ function toRow(it: DemandItem, rates: ScoutRates, maxSellThrough: number, league
     sellThrough: it.sellThrough,
     momentumPct: it.momentumPct,
     spark: it.sparkPrices,
-    heat: heatScore(it.sellThrough, maxSellThrough, it.momentumPct),
+    heat: heatScore(it.sellThrough, it.momentumPct),
     trust,
     divergePct,
     tradeUrl: tradeSearchUrl(league, { name: it.name, type: it.type }),
@@ -67,8 +67,7 @@ export async function GET(): Promise<Response> {
   const league = getDefaultLeague();
   try {
     const { rates, items } = await fetchDemand();
-    const maxSellThrough = items.reduce((m, i) => Math.max(m, i.sellThrough), 0);
-    const rows = items.map((it) => toRow(it, rates, maxSellThrough, league)).sort((a, b) => b.heat - a.heat);
+    const rows = items.map((it) => toRow(it, rates, league)).sort((a, b) => b.heat - a.heat);
     return NextResponse.json({ rows, computedLeague: league, fetchedAt: new Date().toISOString() });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });

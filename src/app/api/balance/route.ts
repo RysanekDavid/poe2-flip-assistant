@@ -24,12 +24,15 @@ export async function GET(): Promise<Response> {
   // stash auto-read works for any user who has connected their own POESESSID + account in Settings
   const cred = await getCallerCred();
   const league = getDefaultLeague();
+  // Realized flip P&L is logged per the VIEWER's league (flips are per-league ledgers), which can
+  // differ from the default league net worth is read in — so it carries its own league label.
+  const pnlLeague = leagueForUser(user.id);
   return NextResponse.json({
     computedLeague: league,
+    pnlLeague,
     balances: getBalances(user.id, league, 500),
     stats: balanceStats(user.id, league),
-    // Realized P&L is per-league — a Divine is not the same wealth in two economies.
-    pnl: realizedPnl(user.id, leagueForUser(user.id)),
+    pnl: realizedPnl(user.id, pnlLeague),
     stashEnabled: accountReadEnabled(cred ?? undefined),
     tabs: latestTabs(user.id, league),
     tabSeries: tabSeries(user.id, league, 60),

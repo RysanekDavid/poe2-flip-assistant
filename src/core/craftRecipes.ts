@@ -30,6 +30,9 @@ export interface RecipeLegSpec {
   pdpsMin?: number; // weapon result legs are valued by physical DPS, not just mods
   esMin?: number; // armour legs: select ES (caster) bases
   evMin?: number; // armour legs: select evasion (attack) bases
+  // Absolute ask floor for this leg (Div). Default ABS_FLOOR_DIV (0.05); set lower ONLY for legs
+  // whose honest price is ~1 exalt (cheap putrefaction / plain rare bases), or they never price.
+  minAskDiv?: number;
   corrupted?: boolean | "any"; // default false; "any" = don't filter (vaal-gamble outputs mix both)
   stats: RecipeStatSpec[];
   note: string; // approximation caveat shown in the UI
@@ -138,7 +141,7 @@ export const RecipeMarginReportSchema = z.object({
   marginPct: z.number(), // ev / (base + materials) × 100
   error: z.string().nullable(),
   valuation: z.enum(["legacy-cheapest", "floor-percentile"]).default("legacy-cheapest"),
-  returnCapped: z.boolean().default(false), // hitRate × result was capped at a multiple of cost
+  returnFlagged: z.boolean().default(false), // hitRate × result > RETURN_FLAG_MULTIPLE × cost — verify the result leg
 });
 export type RecipeMarginReport = z.infer<typeof RecipeMarginReportSchema>;
 
