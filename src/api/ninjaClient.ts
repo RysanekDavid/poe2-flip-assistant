@@ -10,21 +10,18 @@ import {
 } from "./types";
 import { ninjaLimiter } from "./rateLimiter";
 import { getDefaultLeague } from "../core/leagueState";
+import { config } from "../config/env";
 
 const BASE = "https://poe.ninja/poe2/api/economy";
 
-/** Cloudflare on poe.ninja rejects requests lacking a same-site Referer. */
-function leagueSlug(league: string): string {
-  return league.toLowerCase().replace(/\s+/g, "");
-}
-
-function browserHeaders(league: string): Record<string, string> {
-  return {
-    Referer: `https://poe.ninja/poe2/economy/${leagueSlug(league)}/currency`,
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-  };
-}
+/**
+ * Identify the tool honestly, like scoutClient does. The old spoofed Chrome UA + same-site Referer
+ * was a workaround for an earlier Cloudflare block; verified live 2026-09-26, poe.ninja answers
+ * 200 to this UA with no Referer at all, so impersonating a browser is no longer justified.
+ */
+const NINJA_CONTACT = config.dataSourceContact;
+export const NINJA_USER_AGENT = `poe2-flip-assistant/1.0${NINJA_CONTACT ? ` (contact: ${NINJA_CONTACT})` : ""}`;
+const NINJA_HEADERS: Record<string, string> = { "User-Agent": NINJA_USER_AGENT };
 
 /** In-memory cache; poe.ninja updates ~hourly, so 1h TTL is safe. */
 const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -58,7 +55,7 @@ export async function fetchCategory(
       const res = await axios.get(url, {
         params: { league, type: category.type },
         timeout: 20_000,
-        headers: browserHeaders(league),
+        headers: NINJA_HEADERS,
       });
       return res.data;
     } catch (err) {
@@ -141,10 +138,9 @@ export function parseNinjaLeagues(raw: unknown): LeagueOption[] {
 
 /** Leagues poe.ninja indexes, newest first — the ninja half of league-switch detection. */
 export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
-  const league = getDefaultLeague();
   const raw = await ninjaLimiter.schedule(async () => {
     try {
-      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: browserHeaders(league) });
+      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: NINJA_HEADERS });
       return res.data as unknown;
     } catch (err) {
       const ax = err as AxiosError;
