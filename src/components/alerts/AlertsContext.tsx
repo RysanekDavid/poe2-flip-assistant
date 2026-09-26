@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { AlertCenterSchema, groupAlerts, unmutedUnseen, type AlertCenterData, type AlertGroup } from "../../lib/alertCenter";
 import { raiseBrowserNotifications } from "./browserNotify";
 
-const POLL_MS = 30_000; // visible tabs only — see the effect below
+const POLL_MS = 30_000;
 const CHANGED_EVENT = "alerts-changed";
 
 interface AlertCenterState {
@@ -29,16 +29,14 @@ export function announceAlertsChanged(): void {
 }
 
 /**
- * Run `load` now, every POLL_MS while the tab is visible, on "alerts-changed", and immediately
- * when the tab becomes visible again. A background tab (the game is fullscreen most of the time)
- * skips the poll — Discord covers that gap — and is never stale when the user looks.
+ * Run `load` now, every POLL_MS, on "alerts-changed", and immediately when the tab becomes
+ * visible again. The poll deliberately keeps running in background tabs: browser notifications
+ * are raised from it, and a background tab is exactly when users rely on them.
  */
-function useVisiblePoll(load: () => void): void {
+function useAlertPoll(load: () => void): void {
   useEffect(() => {
     load();
-    const id = window.setInterval(() => {
-      if (!document.hidden) load();
-    }, POLL_MS);
+    const id = window.setInterval(load, POLL_MS);
     const onVisible = (): void => {
       if (!document.hidden) load();
     };
@@ -78,7 +76,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
-  useVisiblePoll(load);
+  useAlertPoll(load);
 
   // Actions report failure through `error` (shown by the ticker), so callers can fire and forget.
   const act = useCallback(async (url: string, body: unknown) => {
