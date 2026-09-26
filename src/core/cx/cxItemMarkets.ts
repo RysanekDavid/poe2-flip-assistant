@@ -1,7 +1,8 @@
 import { CX_HOUR_SECONDS } from "../../api/cxClient";
 import { config } from "../../config/env";
 import { cxItemNames, cxMarketsSince, newestCxHour, type CxMarketRow } from "../../db/cxMarketQueries";
-import { hourEdges, type ItemHourEdge } from "./cxMarketModel";
+import { hourEdges, type ItemHour } from "./cxEdges";
+import { modelParams, type ModelParams } from "./cxMarketModel";
 import { aggregateItem, LONG_WINDOW_HOURS, type CxItemStats } from "./cxPersistence";
 
 /**
@@ -9,15 +10,16 @@ import { aggregateItem, LONG_WINDOW_HOURS, type CxItemStats } from "./cxPersiste
  * Flips can attach it to its rows.
  *
  * Identity: GGG base id → name (cx_items, resolved from RePoE at ingest) → the ninja line with
- * that exact name. Nothing fuzzy: a name two exchange ids share is ambiguous and dropped, and
- * every miss is counted in `coverage` so a mapping regression is visible, not silent.
+ * that exact name. Nothing fuzzy: a name that two exchange ids share ANYWHERE in cx_items (not
+ * just in this window) is ambiguous and dropped, and every miss is counted in `coverage` so a
+ * mapping regression is visible, not silent.
  */
 
 /** Past this, the newest stored hour is no longer "the market now" and rows fall back. */
 const CX_MAX_AGE_MS = 3 * 60 * 60 * 1000;
 
 export interface CxCoverage {
-  /** Exchange items with a quotable market in the short window. */
+  /** Exchange items that traded in the short window. */
   cxItems: number;
   mapped: number;
   /** Base ids the RePoE catalog had no name for. */
@@ -34,7 +36,8 @@ export interface CxMarketView {
   coverage: CxCoverage;
 }
 
-let memo: { key: string; stats: Map<string, CxItemStats> } | null = null;
+/** One memo slot PER LEAGUE: several polled leagues must not evict each other every request. */
+const memo = new Map<string, { key: string; stats: Map<string, CxItemStats> }>();
 
 /** Stored rows bucketed by digest hour. */
 export function groupByHour(rows: readonly CxMarketRow[]): Map<number, CxMarketRow[]> {
@@ -51,71 +54,68 @@ export function groupByHour(rows: readonly CxMarketRow[]): Map<number, CxMarketR
 export function statsFromRows(
   rows: readonly CxMarketRow[],
   newestHour: number,
-  goldPerExalt: number,
+  params: ModelParams,
   thresholdPct: number,
 ): Map<string, CxItemStats> {
-  const perItem = new Map<string, ItemHourEdge[]>();
+  const perItem = new Map<string, ItemHour[]>();
   for (const [hour, hourRows] of groupByHour(rows)) {
-    for (const [item, edge] of hourEdges(hour, hourRows, goldPerExalt)) {
+    for (const [item, result] of hourEdges(hour, hourRows, params)) {
       const list = perItem.get(item) ?? [];
-      list.push(edge);
+      list.push(result);
       perItem.set(item, list);
     }
   }
   const out = new Map<string, CxItemStats>();
-  for (const [item, edges] of perItem) {
-    const stats = aggregateItem(edges, newestHour, thresholdPct);
+  for (const [item, hours] of perItem) {
+    const stats = aggregateItem(hours, newestHour, thresholdPct);
     if (stats != null) out.set(item, stats);
   }
   return out;
 }
 
 function statsForLeague(league: string, newestHour: number): Map<string, CxItemStats> {
-  const { goldPerExalt, edgeThresholdPct } = config.cx;
-  const key = `${league}|${newestHour}|${goldPerExalt}|${edgeThresholdPct}`;
-  if (memo?.key === key) return memo.stats;
+  const params = modelParams();
+  const key = `${newestHour}|${config.cx.edgeThresholdPct}|${JSON.stringify(params)}`;
+  const hit = memo.get(league);
+  if (hit?.key === key) return hit.stats;
   const rows = cxMarketsSince(league, newestHour - (LONG_WINDOW_HOURS - 1) * CX_HOUR_SECONDS);
-  const stats = statsFromRows(rows, newestHour, goldPerExalt, edgeThresholdPct);
-  memo = { key, stats };
+  const stats = statsFromRows(rows, newestHour, params, config.cx.edgeThresholdPct);
+  memo.set(league, { key, stats });
   return stats;
 }
 
-function uniqueIndex<T>(entries: ReadonlyArray<[string, T]>): { unique: Map<string, T>; dup: Set<string> } {
-  const unique = new Map<string, T>();
+/** Keys that occur more than once. */
+function duplicates(keys: Iterable<string>): Set<string> {
+  const seen = new Set<string>();
   const dup = new Set<string>();
-  for (const [k, v] of entries) {
-    if (unique.has(k) || dup.has(k)) {
-      unique.delete(k);
-      dup.add(k);
-    } else unique.set(k, v);
-  }
-  return { unique, dup };
+  for (const k of keys) (seen.has(k) ? dup : seen).add(k);
+  return dup;
 }
 
-/** GGG base id → ninja item id, by exact name, with every miss counted. Pure. */
+/**
+ * GGG base id → ninja item id, by exact name, with every miss counted. Pure.
+ * `names` must be ALL resolved names (cx_items), so ambiguity is judged globally.
+ */
 export function resolveItemIds(
   baseIds: Iterable<string>,
   names: ReadonlyMap<string, string>,
   ninja: ReadonlyArray<{ itemId: string; itemName: string }>,
 ): { itemIdOf: Map<string, string>; coverage: CxCoverage } {
   const coverage: CxCoverage = { cxItems: 0, mapped: 0, unnamed: 0, unmatched: 0, ambiguous: 0 };
-  const named: Array<[string, string]> = [];
+  const cxDup = duplicates(names.values());
+  const ninjaDup = duplicates(ninja.map((n) => n.itemName));
+  const ninjaByName = new Map(ninja.map((n) => [n.itemName, n.itemId]));
+  const itemIdOf = new Map<string, string>();
   for (const baseId of baseIds) {
     coverage.cxItems++;
     const name = names.get(baseId);
     if (name == null) coverage.unnamed++;
-    else named.push([name, baseId]);
-  }
-  const cxByName = uniqueIndex(named);
-  const ninjaByName = uniqueIndex(ninja.map((n): [string, string] => [n.itemName, n.itemId]));
-  coverage.ambiguous = named.filter(([name]) => cxByName.dup.has(name) || ninjaByName.dup.has(name)).length;
-
-  const itemIdOf = new Map<string, string>();
-  for (const [name, baseId] of cxByName.unique) {
-    if (ninjaByName.dup.has(name)) continue;
-    const itemId = ninjaByName.unique.get(name);
-    if (itemId == null) coverage.unmatched++;
-    else itemIdOf.set(baseId, itemId);
+    else if (cxDup.has(name) || ninjaDup.has(name)) coverage.ambiguous++;
+    else {
+      const itemId = ninjaByName.get(name);
+      if (itemId == null) coverage.unmatched++;
+      else itemIdOf.set(baseId, itemId);
+    }
   }
   coverage.mapped = itemIdOf.size;
   return { itemIdOf, coverage };

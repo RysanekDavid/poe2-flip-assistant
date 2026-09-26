@@ -4,10 +4,10 @@
 import assert from "node:assert/strict";
 import type { PricedItem } from "../api/types";
 import { config } from "../config/env";
-import type { CxItemStats } from "../core/cx/cxPersistence";
+import type { CxEdgeStats, CxItemStats } from "../core/cx/cxPersistence";
 import { scoreItem } from "../core/flipModel";
 import type { ExchangeRates } from "../core/priceEngine";
-import { advanceTrend, isTransition, trendAlertState } from "../core/trendAlerts";
+import { advanceTrend, advanceTrends, isTransition, trendAlertState } from "../core/trendAlerts";
 import type { TrendSignal } from "../core/trendDetector";
 import { getDb } from "../db/database";
 import { getTrendState } from "../db/trendStateQueries";
@@ -26,14 +26,17 @@ const SHARE = config.cx.flowSharePct / 100;
 const LEAGUE = "Flip Test League";
 
 try {
-  testEstimatedRowIsLabelledAndUnitCorrect();
+  testEstimatedRowIsLabelledAndUnitUncertain();
   testObservedRowUsesTheExchange();
   testPersistenceDrivesTheScore();
+  testThinFakeEdgeNeverOutranksALiquidOne();
+  testGuardedMarketFallsBackWithItsReason();
   testManualModeKeepsItsMargin();
   testTrendStateMachine();
   testTrendTransitionsAgainstTheDb();
+  testEveryItemAdvancesNotOnlyWatchedOnes();
   db.close();
-  console.log("ALL PASS — flip scoring on exchange data, estimate fallback, throughput units, trend de-spam");
+  console.log("ALL PASS — flip scoring on exchange data, guards in ranking, estimate fallback, throughput units, trend de-spam");
 } catch (error: unknown) {
   db.close();
   console.error(error);
@@ -46,7 +49,7 @@ function item(over: Partial<PricedItem> = {}): PricedItem {
     itemName: "Omen of Light",
     category: "Ritual",
     baseValue: 2,
-    volume: 1000, // Div per hour (poe.ninja volumePrimaryValue)
+    volume: 1000, // poe.ninja volumePrimaryValue (Div-denominated, time unit unverified)
     change7d: 5,
     spark7d: null,
     icon: null,
@@ -54,9 +57,8 @@ function item(over: Partial<PricedItem> = {}): PricedItem {
   };
 }
 
-function stats(over: Partial<CxItemStats> = {}): CxItemStats {
+function edge(over: Partial<CxEdgeStats> = {}): CxEdgeStats {
   return {
-    newestHour: 1_789_570_800,
     kind: "cross",
     edgePct: 8,
     edgeLatestPct: 9,
@@ -65,10 +67,9 @@ function stats(over: Partial<CxItemStats> = {}): CxItemStats {
     persistence24: 20,
     netDivPerUnit: 0.16,
     slowerUnitsPerHour: 300,
-    midDiv: 2,
-    bandDiv: { low: 1.9, high: 2.1 },
     buy: { quote: IDS.divine, priceQuote: 2, priceDiv: 2 },
     sell: { quote: IDS.exalted, priceQuote: 880, priceDiv: 2.2 },
+    legsHour: 1_789_570_800,
     feeGoldPerUnit: 105_600,
     feeDivPerUnit: 0.04,
     feeComplete: false,
@@ -76,63 +77,100 @@ function stats(over: Partial<CxItemStats> = {}): CxItemStats {
   };
 }
 
+function stats(e: CxEdgeStats | null = edge(), over: Partial<CxItemStats> = {}): CxItemStats {
+  return {
+    newestHour: 1_789_570_800,
+    midDiv: 2,
+    bandDiv: { low: 1.9, high: 2.1 },
+    marketUnitsPerHour: 500,
+    edge: e,
+    issue: e == null ? "coarse" : null,
+    rawNetPct: e == null ? 6 : null,
+    ...over,
+  };
+}
 
-function testEstimatedRowIsLabelledAndUnitCorrect(): void {
+function testEstimatedRowIsLabelledAndUnitUncertain(): void {
   const row = scoreItem(item(), RATES);
   assert.equal(row.source, "estimated");
   assert.equal(row.mode, "RECO");
   assert.equal(row.edgeKind, null);
   assert.equal(row.persistence6, null);
-  assert.equal(row.feeComplete, false);
+  assert.equal(row.cxIssue, null, "no exchange market at all");
+  assert.equal(row.flowObserved, false, "ninja volume: unit not established");
+  assert.equal(row.ranked, true);
   // recommendOffsets(1000) → ±7% around a 2 Div mid → 0.28 Div per unit
   assert.ok(near(row.profitDiv, 2 * 1.07 - 2 * 0.93));
-  // 1000 Div/h ÷ 2 Div = 500 units/h; the old bug multiplied by 1000 (Div) instead
+  // units = volume ÷ price, never Div/unit × a Div volume (the old unit error)
   assert.ok(near(row.throughputDivDay, row.profitDiv * 500 * SHARE * 24), `throughput ${row.throughputDivDay}`);
-  assert.equal(row.slowerLegDivPerHour, 1000);
-  // The volume-lookup margin is not an observation, so it adds nothing to the score: liquidity
-  // only (no sparkline → no oscillation), at the estimate's half confidence.
+  // No margin credit for a volume lookup: liquidity only, ×0.5 estimate confidence, gate saturated.
   assert.equal(row.worthScore, Math.round(100 * 0.4 * (Math.log10(1001) / Math.log10(50000)) * 0.5));
-  assert.equal(row.liquidityTier, "safe");
-  const hint = row.timeToSellHint;
-  assert.ok(hint != null);
-  assert.equal(hint.sizeUnits, Math.round(config.cx.hintPositionDiv / (2 * 1.07)), "units of a 10 Div position");
-  assert.ok(near(hint.hours, hint.sizeUnits / (500 * SHARE)));
 }
 
 function testObservedRowUsesTheExchange(): void {
-  const cx = stats();
-  const row = scoreItem(item(), RATES, null, null, cx);
+  const row = scoreItem(item(), RATES, null, null, stats());
   assert.equal(row.source, "cx");
   assert.equal(row.edgePct, 8);
-  assert.equal(row.marginPct, 8, "no synthetic RECO margin when the exchange has data");
-  assert.equal(row.marketMarginPct, 8);
+  assert.equal(row.marginPct, 8, "no synthetic RECO margin when the exchange has an edge");
   assert.equal(row.profitDiv, 0.16);
   assert.ok(near(row.throughputDivDay, 0.16 * 300 * SHARE * 24));
   assert.deepEqual(row.buyDisp, { amount: 2, unit: "DIVINE" }, "legs shown in the currency they trade in");
   assert.deepEqual(row.sellDisp, { amount: 880, unit: "EXALT" });
-  assert.equal(row.persistence6, 6);
-  assert.equal(row.edgeKind, "cross");
+  assert.equal(row.legsHour, 1_789_570_800, "the UI labels these legs as the last hour's");
+  assert.equal(row.flowObserved, true);
   assert.deepEqual(row.band, { lowDiv: 1.9, highDiv: 2.1 });
-  assert.equal(row.feeDiv, 0.04);
   assert.ok(near(row.slowerLegDivPerHour, 600));
   assert.equal(row.liquidityTier, "risky", "300 units/h × 2 Div = 600 Div/h on the slower leg");
-  assert.throws(() => scoreItem(item(), RATES, null, null, stats({ buy: { quote: IDS.greaterExalted, priceQuote: 1, priceDiv: 1 } })));
+  const hint = row.timeToSellHint;
+  assert.ok(hint != null);
+  assert.equal(hint.sizeUnits, Math.round(config.cx.hintPositionDiv / 2.2));
+  assert.ok(near(hint.hours, hint.sizeUnits / (300 * SHARE)));
+  const bogusQuote = edge({ buy: { quote: IDS.greaterExalted, priceQuote: 1, priceDiv: 1 } });
+  assert.throws(() => scoreItem(item(), RATES, null, null, stats(bogusQuote)));
 }
 
 function testPersistenceDrivesTheScore(): void {
-  const held = scoreItem(item(), RATES, null, null, stats({ persistence6: 6 })).worthScore;
-  const spike = scoreItem(item(), RATES, null, null, stats({ persistence6: 1 })).worthScore;
+  const held = scoreItem(item(), RATES, null, null, stats(edge({ persistence6: 6 }))).worthScore;
+  const spike = scoreItem(item(), RATES, null, null, stats(edge({ persistence6: 1 }))).worthScore;
   assert.ok(held > spike * 2, `held ${held} vs one-hour spike ${spike}`);
-  // The same margin/liquidity as an estimate ranks at half confidence.
   const estimated = scoreItem(item({ volume: 600 }), RATES).worthScore;
   assert.ok(estimated < held, `estimate ${estimated} must not outrank an observed, persistent edge ${held}`);
+}
+
+/** The reviewer's repro: a fat edge on a 0.003 Div/h leg outscored a real 8% edge at 600 Div/h. */
+function testThinFakeEdgeNeverOutranksALiquidOne(): void {
+  const liquid = scoreItem(item(), RATES, null, null, stats()).worthScore;
+  const thinEdge = edge({ edgePct: 45, netDivPerUnit: 0.00045, slowerUnitsPerHour: 3 });
+  const thin = scoreItem(item({ itemId: "preserved-rib", baseValue: 0.001 }), RATES, null, null, stats(thinEdge, { midDiv: 0.001 }));
+  assert.equal(thin.liquidityTier, "thin");
+  assert.ok(thin.worthScore < liquid, `thin ${thin.worthScore} must score below liquid ${liquid}`);
+  assert.equal(thin.worthScore, 0, "0.003 Div/h is 0.003% of the risky tier — effectively unranked");
+}
+
+function testGuardedMarketFallsBackWithItsReason(): void {
+  // An exchange market whose edge failed a guard: estimated legs, OBSERVED flow, reason attached.
+  const coarse = scoreItem(item(), RATES, null, null, stats(null));
+  assert.equal(coarse.source, "estimated");
+  assert.equal(coarse.cxIssue, "coarse");
+  assert.equal(coarse.cxRawNetPct, 6);
+  assert.equal(coarse.flowObserved, true);
+  assert.ok(near(coarse.slowerLegDivPerHour, 500 * 2), "the market's own flow, not ninja's");
+  assert.equal(coarse.ranked, true);
+  // Implausible data is shown but never ranked.
+  const artefact = scoreItem(item(), RATES, null, null, stats(null, { issue: "implausible", rawNetPct: 364 }));
+  assert.equal(artefact.ranked, false);
+  assert.equal(artefact.worthScore, 0);
+  // …unless you entered your own prices: your REAL margin is still yours.
+  const manual = scoreItem(item(), RATES, { amount: 800, ccy: "EXALT" }, { amount: 25, ccy: "CHAOS" }, stats(null, { issue: "implausible" }));
+  assert.equal(manual.ranked, true);
+  assert.ok(manual.worthScore > 0);
 }
 
 function testManualModeKeepsItsMargin(): void {
   const row = scoreItem(item(), RATES, { amount: 800, ccy: "EXALT" }, { amount: 25, ccy: "CHAOS" }, stats());
   assert.equal(row.mode, "REAL");
   assert.ok(near(row.marginPct, (2.5 / 2 - 1) * 100));
-  assert.equal(row.marketMarginPct, 8, "the market line shows the observed edge");
+  assert.equal(row.edgePct, 8, "the market line shows the observed edge");
   assert.equal(row.source, "cx");
   assert.ok(near(row.throughputDivDay, 0.5 * 300 * SHARE * 24), "your own profit × the slower leg's fillable flow");
 }
@@ -168,4 +206,20 @@ function testTrendTransitionsAgainstTheDb(): void {
   assert.equal(advanceTrend("Other League", "kulemak", "Kulemak's Invitation", spiking)?.type, "SPIKE");
   db.prepare("INSERT OR REPLACE INTO trend_state (league, item_id, state) VALUES (?, ?, 'BOGUS')").run(LEAGUE, "kulemak");
   assert.throws(() => advanceTrend(LEAGUE, "kulemak", "Kulemak's Invitation", spiking), /unknown state/);
+}
+
+/**
+ * Every market item advances each sweep, watched or not: an item that entered SPIKE while nobody
+ * watched it is already SPIKE when someone starts watching — no stale "new" alert, and its real
+ * next transition still fires.
+ */
+function testEveryItemAdvancesNotOnlyWatchedOnes(): void {
+  const league = "Sweep League";
+  const market = [item({ itemId: "a", change7d: 80 }), item({ itemId: "b", change7d: 5 }), item({ itemId: "c", change7d: 90 })];
+  const first = advanceTrends(league, market);
+  assert.deepEqual([...first.keys()].sort(), ["a", "c"]);
+  assert.equal(getTrendState(league, "b"), "NONE", "quiet items are recorded too");
+  assert.equal(advanceTrends(league, market).size, 0, "a second sweep of the same market is silent");
+  const later = advanceTrends(league, [item({ itemId: "a", change7d: 80 }), item({ itemId: "b", change7d: 70 })]);
+  assert.deepEqual([...later.keys()], ["b"], "only the real transition fires");
 }

@@ -2,10 +2,13 @@
 
 import { compact, fmtSmart } from "../lib/format";
 
+type EdgeIssue = "thin" | "coarse" | "single-market" | "fee-unknown" | "implausible";
+
 /** The observed-market fields a flip row carries (see core/flipModel FlipRow). */
 export interface FlipEdgeInfo {
   source: "cx" | "estimated";
   edgePct: number;
+  ranked: boolean;
   edgeKind: "cross" | "band" | null;
   edgeLatestPct: number | null;
   edgeMedian24Pct: number | null;
@@ -18,7 +21,20 @@ export interface FlipEdgeInfo {
   feeGold: number | null;
   feeDiv: number | null;
   feeComplete: boolean;
+  legsHour: number | null;
+  cxIssue: EdgeIssue | null;
+  cxRawNetPct: number | null;
+  flowObserved: boolean;
 }
+
+/** Why an item that trades on the exchange still has no computable edge. */
+const ISSUE_TEXT: Record<EdgeIssue, string> = {
+  thin: "a leg trades too little to quote",
+  coarse: "prices sit on the exchange's N:1 ratio grid — the gap is quantisation, not an edge",
+  "single-market": "only one currency market — no cross edge to measure",
+  "fee-unknown": "item's own gold fee unknown and it is worth under an Exalt",
+  implausible: "edge above the plausibility cap — treated as a data artefact",
+};
 
 const pct = (n: number | null): string => (n == null ? "—" : `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`);
 
@@ -28,31 +44,45 @@ function hours(h: number): string {
   return `${(h / 24).toFixed(0)}d`;
 }
 
+const clock = (unixHour: number): string =>
+  new Date(unixHour * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
 function feeLine(r: FlipEdgeInfo): string {
   const gold = r.feeGold == null ? "?" : `${compact(r.feeGold)} gold`;
   const div = r.feeDiv == null ? "" : ` ≈ ${fmtSmart(r.feeDiv)} Div`;
   return `fee/unit ${gold}${div}${r.feeComplete ? "" : " (this item's own fee unknown — only the currency leg counted)"}`;
 }
 
+function flowLines(r: FlipEdgeInfo): string[] {
+  const unit = r.flowObserved ? "Div/h" : "Div/? (poe.ninja volume, time unit unverified)";
+  const liquidity = `liquidity ${r.liquidityTier} · ${compact(r.slowerLegDivPerHour)} ${unit}`;
+  const sell = r.timeToSellHint
+    ? `~${hours(r.timeToSellHint.hours)} to clear ${r.timeToSellHint.sizeUnits} units at your share of flow${r.flowObserved ? "" : " (unit-uncertain)"}`
+    : "time to clear: unknown";
+  return [liquidity, sell];
+}
+
+function estimatedTooltip(r: FlipEdgeInfo): string {
+  const why =
+    r.cxIssue == null
+      ? "no exchange market for this item"
+      : `exchange edge not computable: ${ISSUE_TEXT[r.cxIssue]}${r.cxRawNetPct == null ? "" : ` (would read ${pct(r.cxRawNetPct)})`}`;
+  return [`ESTIMATED — ${why}`, "legs + margin are a volume-based target, not an observed edge", ...flowLines(r)].join("\n");
+}
+
 /** Everything behind the number, for the hover tooltip — prose stays out of the table. */
 export function edgeTooltip(r: FlipEdgeInfo): string {
-  const liquidity = `liquidity ${r.liquidityTier} · slower leg ${compact(r.slowerLegDivPerHour)} Div/h`;
-  const sell = r.timeToSellHint
-    ? `~${hours(r.timeToSellHint.hours)} to clear ${r.timeToSellHint.sizeUnits} units at your share of flow`
-    : "time to clear: unknown";
-  if (r.source === "estimated") {
-    return ["ESTIMATED — no exchange market for this item; volume-based target, not an observed edge", liquidity, sell].join("\n");
-  }
+  if (r.source === "estimated") return estimatedTooltip(r);
   const kind = r.edgeKind === "cross" ? "cross-market (buy in one currency, sell in another)" : "in-market band";
-  const band = r.band ? `traded band ${fmtSmart(r.band.lowDiv)}–${fmtSmart(r.band.highDiv)} Div` : "no band published";
+  const band = r.band ? `ratio extremes ${fmtSmart(r.band.lowDiv)}–${fmtSmart(r.band.highDiv)} Div (not fills)` : "no ratio extremes published";
   return [
     `GGG exchange · ${kind}`,
     `net edge 6h median ${pct(r.edgePct)} · last hour ${pct(r.edgeLatestPct)} · 24h median ${pct(r.edgeMedian24Pct)}`,
+    `buy/sell shown = last valid hour${r.legsHour == null ? "" : ` (to ${clock(r.legsHour)})`}, not the median`,
     `held ${r.persistence6 ?? 0}/6h · ${r.persistence24 ?? 0}/24h`,
     band,
     feeLine(r),
-    liquidity,
-    sell,
+    ...flowLines(r),
   ].join("\n");
 }
 
@@ -62,13 +92,14 @@ function persistTone(p: number): string {
   return "border-neutral-700 text-neutral-500";
 }
 
-/** Small chip after an edge: how many of the last 6h held it, or "est." for heuristic rows. */
+const CHIP = "rounded border px-1 text-[10px]";
+
+/** Chip after an edge: hours of 6 it held, "est." for heuristic rows, "n/a" for artefacts. */
 export function EdgeBadge({ row }: { row: FlipEdgeInfo }) {
-  if (row.source === "estimated") {
-    return <span className="rounded border border-neutral-700 px-1 text-[10px] text-neutral-500">est.</span>;
-  }
+  if (!row.ranked) return <span className={`${CHIP} border-bad/40 text-bad/80`}>n/a</span>;
+  if (row.source === "estimated") return <span className={`${CHIP} border-neutral-700 text-neutral-500`}>est.</span>;
   const p = row.persistence6 ?? 0;
-  return <span className={`rounded border px-1 text-[10px] tabular-nums ${persistTone(p)}`}>{p}/6h</span>;
+  return <span className={`${CHIP} tabular-nums ${persistTone(p)}`}>{p}/6h</span>;
 }
 
 function edgeTone(n: number): string {
@@ -96,17 +127,16 @@ export function MarketSourceBadge({ newestHour, observed, total }: { newestHour:
     return (
       <span
         className="rounded border border-amber-900/50 bg-amber-950/20 px-1.5 py-0.5 text-[10px] text-amber-300"
-        title="No exchange history stored yet — every row is a volume-based estimate, not an observed edge."
+        title="No computable exchange edge — every row is a volume-based estimate, not an observed edge."
       >
         estimated · not executable
       </span>
     );
   }
-  const asOf = new Date(newestHour * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return (
     <span
       className="rounded border border-emerald-900/50 bg-emerald-950/20 px-1.5 py-0.5 text-[10px] text-emerald-300"
-      title={`Edges from GGG's hourly exchange digest, last closed hour ${asOf}. Hour's traded extremes — not a live bid/ask. ${total - observed} row(s) without an exchange market are marked "est.".`}
+      title={`Edges from GGG's hourly exchange digest (volume-weighted fills), last closed hour to ${clock(newestHour)}. Not a live bid/ask. ${total - observed} row(s) without a computable exchange edge are marked "est.".`}
     >
       GGG exchange · {observed}/{total}
     </span>

@@ -95,12 +95,34 @@ export function newestCxHour(league: string): number | null {
   return row.mx ?? null;
 }
 
-/** Drop history older than `beforeHour` for every league. Returns market rows removed. */
+/**
+ * Drop history older than `beforeHour`, one league at a time. Returns market rows removed.
+ *
+ * `hour` is the SECOND column of the primary key, so a bare `WHERE hour < ?` scans the whole
+ * table; `league = ? AND hour < ?` is a key range. Leagues come from cx_ingest (small), so a
+ * league that is no longer polled still ages out.
+ */
 export function pruneCxHistory(beforeHour: number): number {
   const db = getDb();
-  const removed = db.prepare("DELETE FROM cx_markets WHERE hour < ?").run(beforeHour).changes;
-  db.prepare("DELETE FROM cx_ingest WHERE hour < ?").run(beforeHour);
+  const leagues = db.prepare("SELECT DISTINCT league FROM cx_ingest").all() as Array<{ league: string }>;
+  const markets = db.prepare("DELETE FROM cx_markets WHERE league = ? AND hour < ?");
+  const ingest = db.prepare("DELETE FROM cx_ingest WHERE league = ? AND hour < ?");
+  let removed = 0;
+  db.transaction(() => {
+    for (const { league } of leagues) {
+      removed += markets.run(league, beforeHour).changes;
+      ingest.run(league, beforeHour);
+    }
+  })();
   return removed;
+}
+
+/** Market rows stored for one league-hour, or null when that hour was never ingested. */
+export function ingestedMarketCount(league: string, hour: number): number | null {
+  const row = getDb().prepare("SELECT markets FROM cx_ingest WHERE league = ? AND hour = ?").get(league, hour) as
+    | { markets: number }
+    | undefined;
+  return row?.markets ?? null;
 }
 
 /** Base ids that already have a resolved name — the rest need a catalog lookup. */

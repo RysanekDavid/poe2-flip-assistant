@@ -4,6 +4,7 @@ import { config } from "../../config/env";
 import { cxItemNames, cxMarketsSince } from "../../db/cxMarketQueries";
 import type { Currency } from "../priceEngine";
 import { freshNewestHour, groupByHour, resolveItemIds } from "./cxItemMarkets";
+import { modelParams } from "./cxMarketModel";
 import { SHORT_WINDOW_HOURS } from "./cxPersistence";
 import { hourRoutes, persistentRoutes, type Route } from "./cxRoutes";
 
@@ -64,10 +65,10 @@ export function loadCxRoutes(
 ): { newestHour: number; routes: RouteRow[] } | null {
   const newestHour = freshNewestHour(league, nowMs);
   if (newestHour == null) return null;
-  const { goldPerExalt, edgeThresholdPct } = config.cx;
+  const params = modelParams();
   const rows = cxMarketsSince(league, newestHour - (SHORT_WINDOW_HOURS - 1) * CX_HOUR_SECONDS);
-  const hours = [...groupByHour(rows)].flatMap(([hour, hourRows]) => hourRoutes(hour, hourRows, goldPerExalt));
-  const routes = persistentRoutes(hours, newestHour, edgeThresholdPct, ROUTE_MIN_HELD);
+  const hours = [...groupByHour(rows)].flatMap(([hour, hourRows]) => hourRoutes(hour, hourRows, params));
+  const routes = persistentRoutes(hours, newestHour, config.cx.edgeThresholdPct, ROUTE_MIN_HELD);
   const names = cxItemNames();
   const { itemIdOf } = resolveItemIds(new Set(routes.map((r) => r.item)), names, ninja);
   const byId = new Map(ninja.map((p) => [p.itemId, p]));

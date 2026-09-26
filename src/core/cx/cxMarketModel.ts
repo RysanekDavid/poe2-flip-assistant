@@ -1,15 +1,21 @@
 import { CX_CURRENCY_IDS } from "../../api/cxClient";
+import { config } from "../../config/env";
 import type { CxMarketRow } from "../../db/cxMarketQueries";
-import { goldToDivine, sumLegFees } from "./cxFees";
 
 /**
- * One hour of one league's exchange, turned into per-item observed prices and edges. Pure.
+ * One hour of one league's exchange, turned into per-item observed quotes. Pure.
  *
  * Semantics (GGG publishes none for the ratio fields — docs/research/poe2-flip-snipe-competitors):
  *  - VWAP: volume_traded[quote] / volume_traded[item] = quote paid per item over the hour.
- *  - band: lowest_ratio / highest_ratio read as the hour's TRADED extremes, not a live bid/ask.
+ *  - lowest/highest_ratio: kept for display only. In real digests they look like resting-order
+ *    extremes, not fills, so nothing is scored on them unless config.cx.bandEdges is switched on.
  *  - Every price is converted to Divine through the SAME hour's Ex/Div and Chaos/Div VWAPs, so
  *    two quotes of one item can be compared: that divergence is the cross-market edge.
+ *
+ * The exchange only fills at N:1 ratios (every real ratio map has one side = 1). An item worth
+ * ~1–3 Ex can only trade at 1:1, 1:2, 1:3 in the Ex market — a 33–100% price grid — while its
+ * Div market fills on a <1% grid, so the two VWAPs diverge every hour BY CONSTRUCTION. Hence the
+ * leg guards below: a quote too thin or too coarse to carry an edge is not quotable at all.
  */
 
 const { divine: DIV, exalted: EX, chaos: CHAOS } = CX_CURRENCY_IDS;
@@ -17,11 +23,41 @@ const { divine: DIV, exalted: EX, chaos: CHAOS } = CX_CURRENCY_IDS;
 /** The only currencies an item is priced against here; ids compare with === only. */
 export const CX_QUOTES: readonly string[] = [DIV, EX, CHAOS];
 
+/** Thresholds the model applies. Pure functions take them explicitly; the app reads config. */
+export interface ModelParams {
+  goldPerExalt: number;
+  /** Item units per hour a leg must move to be quotable. */
+  minLegUnits: number;
+  /** Div per hour a leg must move to be quotable. */
+  minLegDivPerHour: number;
+  /** A leg whose N:1 ratio grid is coarser than this (%) is not quotable. */
+  maxGridStepPct: number;
+  /** A net edge above this (%) is treated as a data artefact, never ranked. */
+  maxPlausibleEdgePct: number;
+  /** Score in-market band edges (off until ratio semantics are verified). */
+  bandEdges: boolean;
+}
+
+export function modelParams(): ModelParams {
+  const c = config.cx;
+  return {
+    goldPerExalt: c.goldPerExalt,
+    minLegUnits: c.minLegUnits,
+    minLegDivPerHour: c.minLegDivPerHour,
+    maxGridStepPct: c.maxGridStepPct,
+    maxPlausibleEdgePct: c.maxPlausibleEdgePct,
+    bandEdges: c.bandEdges,
+  };
+}
+
 /** The hour's base rates, each null when its market did not trade. */
 export interface HourRates {
   exaltPerDivine: number | null;
   chaosPerDivine: number | null;
 }
+
+/** Why a leg cannot carry an edge. */
+export type LegIssue = "thin" | "coarse";
 
 /** One item priced in one quote currency during one hour. */
 export interface QuoteObs {
@@ -29,50 +65,50 @@ export interface QuoteObs {
   /** VWAP in units of `quote` per item. */
   priceQuote: number;
   priceDiv: number;
-  /** Hour's band in quote units per item, or null when GGG published no ratios. */
+  /** Hour's ratio extremes in quote units per item, or null when GGG published none. */
   lowQuote: number | null;
   highQuote: number | null;
   /** Item units that changed hands in this market this hour. */
   units: number;
+  /** Relative spacing (%) of the N:1 fill grid at this price. */
+  gridStepPct: number;
+  /** Null when the leg is quotable. */
+  issue: LegIssue | null;
 }
 
-export type EdgeKind = "cross" | "band";
-
-/** The best flip the hour supports for one item, net of the gold fees we can price. */
-export interface ItemHourEdge {
-  hour: number;
-  kind: EdgeKind;
-  buy: { quote: string; priceQuote: number; priceDiv: number };
-  sell: { quote: string; priceQuote: number; priceDiv: number };
-  grossPct: number;
-  netPct: number;
-  netDivPerUnit: number;
-  feeGoldPerUnit: number;
-  feeDivPerUnit: number | null;
-  feeComplete: boolean;
-  /** Item units/hour on the slower leg — the liquidity cap. */
-  slowerUnits: number;
-  /** Most-liquid quote's VWAP in Div and its band in Div — the row's reference market. */
-  midDiv: number;
-  bandDiv: { low: number; high: number } | null;
+/**
+ * Relative spacing of the exchange's N:1 fill grid at a price p (quote units per item). At
+ * p = 150 the neighbours are 149/151 (~0.7%); at p = 2 they are 1 and 3 (50%); p < 1 is the
+ * mirror case (N items : 1 quote). 100 / max(p, 1/p) captures both sides.
+ */
+export function gridStepPct(priceQuote: number): number {
+  return 100 / Math.max(priceQuote, 1 / priceQuote);
 }
 
-function sideVolume(row: CxMarketRow, id: string): number | null {
-  if (row.item_a === id) return row.volume_a;
-  if (row.item_b === id) return row.volume_b;
-  return null;
+/** The three base-currency markets of one hour, keyed "a|b" in stored (sorted) order. */
+export type BaseMarkets = Map<string, CxMarketRow>;
+
+export function baseMarkets(rows: readonly CxMarketRow[]): BaseMarkets {
+  const out: BaseMarkets = new Map();
+  for (const r of rows) if (CX_QUOTES.includes(r.item_a) && CX_QUOTES.includes(r.item_b)) out.set(`${r.item_a}|${r.item_b}`, r);
+  return out;
+}
+
+/** Units of `a` paid per unit of `b` on their own market, plus b's volume — or null. */
+export function baseRate(base: BaseMarkets, a: string, b: string): { aPerB: number; bVolume: number } | null {
+  const m = base.get(a < b ? `${a}|${b}` : `${b}|${a}`);
+  if (m == null) return null;
+  const va = m.item_a === a ? m.volume_a : m.volume_b;
+  const vb = m.item_a === a ? m.volume_b : m.volume_a;
+  return va > 0 && vb > 0 ? { aPerB: va / vb, bVolume: vb } : null;
 }
 
 /** Ex/Div and Chaos/Div VWAPs of the hour, from their own markets. */
-export function hourRates(rows: readonly CxMarketRow[]): HourRates {
-  const rate = (numerator: string): number | null => {
-    const m = rows.find((r) => (r.item_a === numerator && r.item_b === DIV) || (r.item_b === numerator && r.item_a === DIV));
-    if (m == null) return null;
-    const num = sideVolume(m, numerator);
-    const den = sideVolume(m, DIV);
-    return num != null && den != null && num > 0 && den > 0 ? num / den : null;
+export function hourRates(base: BaseMarkets): HourRates {
+  return {
+    exaltPerDivine: baseRate(base, EX, DIV)?.aPerB ?? null,
+    chaosPerDivine: baseRate(base, CHAOS, DIV)?.aPerB ?? null,
   };
-  return { exaltPerDivine: rate(EX), chaosPerDivine: rate(CHAOS) };
 }
 
 /** Units of a quote currency per Divine this hour, or null when that rate did not trade. */
@@ -91,13 +127,21 @@ function ratioPrice(row: CxMarketRow, kind: "low" | "high", item: Side, quote: S
   return q != null && i != null && q > 0 && i > 0 ? q / i : null;
 }
 
-function observe(row: CxMarketRow, item: Side, quote: Side, rates: HourRates): QuoteObs | null {
+function legIssue(units: number, priceDiv: number, stepPct: number, p: ModelParams): LegIssue | null {
+  if (units < p.minLegUnits || units * priceDiv < p.minLegDivPerHour) return "thin";
+  if (stepPct > p.maxGridStepPct) return "coarse";
+  return null;
+}
+
+function observe(row: CxMarketRow, item: Side, quote: Side, rates: HourRates, p: ModelParams): QuoteObs | null {
   const quoteId = quote === "a" ? row.item_a : row.item_b;
   const qpd = quotePerDivine(quoteId, rates);
   const units = item === "a" ? row.volume_a : row.volume_b;
   const quoteUnits = quote === "a" ? row.volume_a : row.volume_b;
   if (qpd == null || !(units > 0) || !(quoteUnits > 0)) return null;
   const priceQuote = quoteUnits / units;
+  const priceDiv = priceQuote / qpd;
+  const stepPct = gridStepPct(priceQuote);
   // Which ratio field is numerically lower depends on the pair's orientation — take min/max.
   const band = [ratioPrice(row, "low", item, quote), ratioPrice(row, "high", item, quote)].filter(
     (n): n is number => n != null,
@@ -105,15 +149,17 @@ function observe(row: CxMarketRow, item: Side, quote: Side, rates: HourRates): Q
   return {
     quote: quoteId,
     priceQuote,
-    priceDiv: priceQuote / qpd,
+    priceDiv,
     lowQuote: band.length > 0 ? Math.min(...band) : null,
     highQuote: band.length > 0 ? Math.max(...band) : null,
     units,
+    gridStepPct: stepPct,
+    issue: legIssue(units, priceDiv, stepPct, p),
   };
 }
 
 /** Every item's quotes this hour, keyed by the item's base id. An item is never its own quote. */
-export function quotesByItem(rows: readonly CxMarketRow[], rates: HourRates): Map<string, QuoteObs[]> {
+export function quotesByItem(rows: readonly CxMarketRow[], rates: HourRates, p: ModelParams): Map<string, QuoteObs[]> {
   const out = new Map<string, QuoteObs[]>();
   const add = (item: string, obs: QuoteObs | null): void => {
     if (obs == null) return;
@@ -122,110 +168,8 @@ export function quotesByItem(rows: readonly CxMarketRow[], rates: HourRates): Ma
     out.set(item, list);
   };
   for (const row of rows) {
-    if (CX_QUOTES.includes(row.item_b)) add(row.item_a, observe(row, "a", "b", rates));
-    if (CX_QUOTES.includes(row.item_a)) add(row.item_b, observe(row, "b", "a", rates));
-  }
-  return out;
-}
-
-interface Legs {
-  kind: EdgeKind;
-  buy: { quote: string; priceQuote: number; priceDiv: number };
-  sell: { quote: string; priceQuote: number; priceDiv: number };
-  slowerUnits: number;
-}
-
-/** Buy where the item is cheapest in Div, sell where it is dearest — needs two quotes. */
-function crossLegs(quotes: readonly QuoteObs[]): Legs | null {
-  if (quotes.length < 2) return null;
-  const sorted = [...quotes].sort((x, y) => x.priceDiv - y.priceDiv);
-  const buy = sorted[0]!;
-  const sell = sorted[sorted.length - 1]!;
-  return {
-    kind: "cross",
-    buy: { quote: buy.quote, priceQuote: buy.priceQuote, priceDiv: buy.priceDiv },
-    sell: { quote: sell.quote, priceQuote: sell.priceQuote, priceDiv: sell.priceDiv },
-    slowerUnits: Math.min(buy.units, sell.units),
-  };
-}
-
-/**
- * Market-making inside one market: resting orders below and above the VWAP by the SAME distance
- * d = HALF the tighter side of the traded band. Tighter side, so one outlier fill cannot inflate
- * it; half, because the extremes are where the hour's rarest fills happened — quoting at them
- * would promise fills the hour barely produced.
- */
-export const BAND_CAPTURE = 0.5;
-
-function bandLegs(q: QuoteObs): Legs | null {
-  if (q.lowQuote == null || q.highQuote == null) return null;
-  const tighter = Math.min(q.highQuote / q.priceQuote - 1, 1 - q.lowQuote / q.priceQuote);
-  const d = Math.max(0, tighter * BAND_CAPTURE);
-  const perDiv = q.priceDiv / q.priceQuote;
-  const buyQuote = q.priceQuote * (1 - d);
-  const sellQuote = q.priceQuote * (1 + d);
-  return {
-    kind: "band",
-    buy: { quote: q.quote, priceQuote: buyQuote, priceDiv: buyQuote * perDiv },
-    sell: { quote: q.quote, priceQuote: sellQuote, priceDiv: sellQuote * perDiv },
-    slowerUnits: q.units,
-  };
-}
-
-function priceLegs(item: string, legs: Legs, rates: HourRates, goldPerExalt: number) {
-  // Buying requests the item itself; selling requests the sell-side currency.
-  const fees = sumLegFees([
-    { baseId: item, units: 1 },
-    { baseId: legs.sell.quote, units: legs.sell.priceQuote },
-  ]);
-  const feeDiv = goldToDivine(fees.knownGold, rates.exaltPerDivine, goldPerExalt);
-  const netDivPerUnit = legs.sell.priceDiv - legs.buy.priceDiv - (feeDiv ?? 0);
-  return {
-    ...legs,
-    grossPct: (legs.sell.priceDiv / legs.buy.priceDiv - 1) * 100,
-    netPct: (netDivPerUnit / legs.buy.priceDiv) * 100,
-    netDivPerUnit,
-    feeGoldPerUnit: fees.knownGold,
-    feeDivPerUnit: feeDiv,
-    // An unpriceable gold amount is as unknown as an unlisted item fee.
-    feeComplete: fees.complete && (feeDiv != null || fees.knownGold === 0),
-  };
-}
-
-/** The better (higher net %) of the cross-market and in-market edges for one item-hour. */
-export function itemHourEdge(
-  item: string,
-  hour: number,
-  quotes: readonly QuoteObs[],
-  rates: HourRates,
-  goldPerExalt: number,
-): ItemHourEdge | null {
-  if (quotes.length === 0) return null;
-  const liquid = [...quotes].sort((x, y) => y.units - x.units)[0]!;
-  const candidates = [crossLegs(quotes), bandLegs(liquid)]
-    .filter((l): l is Legs => l != null)
-    .map((l) => priceLegs(item, l, rates, goldPerExalt));
-  if (candidates.length === 0) return null;
-  const best = candidates.reduce((x, y) => (y.netPct > x.netPct ? y : x));
-  const perDiv = liquid.priceDiv / liquid.priceQuote;
-  return {
-    ...best,
-    hour,
-    midDiv: liquid.priceDiv,
-    bandDiv:
-      liquid.lowQuote != null && liquid.highQuote != null
-        ? { low: liquid.lowQuote * perDiv, high: liquid.highQuote * perDiv }
-        : null,
-  };
-}
-
-/** Every item's best edge for one hour's markets. */
-export function hourEdges(hour: number, rows: readonly CxMarketRow[], goldPerExalt: number): Map<string, ItemHourEdge> {
-  const rates = hourRates(rows);
-  const out = new Map<string, ItemHourEdge>();
-  for (const [item, quotes] of quotesByItem(rows, rates)) {
-    const edge = itemHourEdge(item, hour, quotes, rates, goldPerExalt);
-    if (edge != null) out.set(item, edge);
+    if (CX_QUOTES.includes(row.item_b)) add(row.item_a, observe(row, "a", "b", rates, p));
+    if (CX_QUOTES.includes(row.item_a)) add(row.item_b, observe(row, "b", "a", rates, p));
   }
   return out;
 }

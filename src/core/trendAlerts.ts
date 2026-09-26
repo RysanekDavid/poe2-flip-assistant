@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { PricedItem } from "../api/types";
 import { config } from "../config/env";
+import { getDb } from "../db/database";
 import { priceHistory } from "../db/marketQueries";
 import { getTrendState, setTrendState } from "../db/trendStateQueries";
 import { analyzeTrend, type TrendSignal } from "./trendDetector";
@@ -55,6 +56,21 @@ function eventFor(state: TrendAlertState, trend: TrendSignal, change7d: number |
     return { type: "SPIKE", message: `+${change7d.toFixed(0)}% 7d — spiking, watch for a flip window`, value: change7d, threshold };
   }
   return null;
+}
+
+/**
+ * Advance EVERY market item's state for one sweep (one transaction) and return the transitions
+ * that earn an alert, by item id. Alerts go only to watchers; the state machine covers all items.
+ */
+export function advanceTrends(league: string, items: readonly PricedItem[]): Map<string, TrendEvent> {
+  const events = new Map<string, TrendEvent>();
+  getDb().transaction(() => {
+    for (const item of items) {
+      const event = advanceTrend(league, item.itemId, item.itemName, item);
+      if (event != null) events.set(item.itemId, event);
+    }
+  })();
+  return events;
 }
 
 /**

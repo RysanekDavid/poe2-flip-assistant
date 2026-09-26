@@ -41,6 +41,11 @@ function legText(r: Candidate, d: Denom): string {
   return r.source === "cx" ? formatObservedDenom(d) : formatDenom(d);
 }
 
+/** Observed legs are the last valid hour's VWAPs; the Edge column is a 6h median. */
+function legTitle(r: Candidate): string {
+  return r.source === "cx" ? "last hour's volume-weighted fill (the Edge column is the 6h median)" : "volume-based estimate";
+}
+
 function changeTone(n: number | null): string {
   return n == null ? "text-neutral-600" : n >= 0 ? "text-good" : "text-bad";
 }
@@ -73,7 +78,7 @@ function VolumeBar({ r, maxVol }: { r: Candidate; maxVol: number }) {
   return (
     <span
       className="inline-flex flex-col items-end gap-0.5"
-      title={`${compact(r.volume)} Div/h (poe.ninja) · slower leg ${compact(r.slowerLegDivPerHour)} Div/h · ${r.liquidityTier}`}
+      title={`poe.ninja volume ${compact(r.volume)} (Div, time unit unverified) · traded ${compact(r.slowerLegDivPerHour)} ${r.flowObserved ? "Div/h" : "(ninja, unverified)"} · ${r.liquidityTier}`}
     >
       <span className="tabular-nums text-neutral-400">{compact(r.volume)}</span>
       <span className="h-0.5 w-12 overflow-hidden rounded bg-neutral-800">
@@ -137,8 +142,8 @@ export function DiscoverRow({ r, selected, watched, maxOsc, maxVol, onSelect, on
         <span className={`rounded px-1.5 py-0.5 text-xs ${categoryColor(r.category)}`}>{r.category}</span>
       </td>
       <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{fmtSmart(r.midDivine)}</td>
-      <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{legText(r, r.buyDisp)}</td>
-      <td className={`${CELL} whitespace-nowrap text-right tabular-nums`}>{legText(r, r.sellDisp)}</td>
+      <td className={`${CELL} whitespace-nowrap text-right tabular-nums`} title={legTitle(r)}>{legText(r, r.buyDisp)}</td>
+      <td className={`${CELL} whitespace-nowrap text-right tabular-nums`} title={legTitle(r)}>{legText(r, r.sellDisp)}</td>
       <td className={`${CELL} whitespace-nowrap text-right`}>
         <EdgeCell row={r} />
       </td>
@@ -153,7 +158,7 @@ export function DiscoverRow({ r, selected, watched, maxOsc, maxVol, onSelect, on
         <VolumeBar r={r} maxVol={maxVol} />
       </td>
       <td className={`${CELL} text-right tabular-nums ${perDayTone}`}>
-        {r.throughputDivDay >= 0.1 ? `${r.source === "cx" ? "" : "~"}${compact(r.throughputDivDay)}` : "—"}
+        {r.throughputDivDay >= 0.1 ? `${r.source === "cx" && r.flowObserved ? "" : "~"}${compact(r.throughputDivDay)}` : "—"}
       </td>
       <td className={`${CELL} text-right tabular-nums`}>
         <span className={oscTone}>

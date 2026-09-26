@@ -1,4 +1,5 @@
 import type { PricedItem } from "../api/types";
+import { config } from "../config/env";
 import { divineToExalt, divineToChaos, toDivine, divineTo, type ExchangeRates, type Currency } from "./priceEngine";
 import { denominateIn, pickUnit, type Denom } from "./treasury";
 import { oscillationScore } from "./trendDetector";
@@ -51,7 +52,7 @@ export interface FlipRow extends CxRowFields {
   category: string;
   icon: string | null;
   midDivine: number;
-  volume: number; // poe.ninja volumePrimaryValue: Div traded per hour
+  volume: number; // poe.ninja volumePrimaryValue — Div-denominated, time unit unverified
   change7d: number | null;
   change24h: number | null; // derived from the tail of ninja's 7d sparkline
   spark: number[] | null; // downsampled 7d sparkline (cumulative %) for row sparklines
@@ -62,16 +63,16 @@ export interface FlipRow extends CxRowFields {
   profitChaos: number; // profit per single flip, in Chaos
   profitDiv: number; // profit per single flip, in Divine (canonical)
   throughputDivDay: number; // profit/unit × units you can fill per day (flow share of the slower leg)
-  flipScore: number; // profitChaos × volume — raw, for reference
   oscScore: number; // 7d wiggle beyond drift — high = repeats well
   worthScore: number; // 0–100: margin + liquidity + oscillation, × persistence/estimate confidence − risk
-  marketMarginPct: number;
   /** Where the market numbers come from: GGG's exchange history, or the labelled heuristic. */
   source: MarketSource;
   /** Market edge %: net of priced gold fees, 6h median (cx) — or the heuristic target (estimated). */
   edgePct: number;
+  /** False when the row is kept out of ranking (implausible exchange data); worthScore is 0. */
+  ranked: boolean;
   liquidityTier: LiquidityTier;
-  /** Div per hour the slower leg moves. */
+  /** Div per hour the slower leg (cx) or the market (estimated) moves. */
   slowerLegDivPerHour: number;
   timeToSellHint: TimeToSellHint | null;
   // display, in the trade currencies (REAL = your chosen units; market = the legs' own currencies)
@@ -138,13 +139,23 @@ function marketDisplay(market: MarketEstimate, legs: TradeLegs, p: PricedItem, r
  * actually held (cx) or by the estimate penalty, and discounted for hold-risk.
  */
 function worthScore(legs: TradeLegs, market: MarketEstimate, osc: number, risky: boolean): number {
+  if (!isRanked(legs, market)) return 0;
   // An estimated margin is a lookup on volume, not an observation — scoring it would just count
   // liquidity twice (the audit's "Score ≈ volume rank"), so it contributes nothing.
   const observed = legs.mode === "REAL" || market.source === "cx";
   const marginN = observed ? Math.min(Math.max(legs.marginPct, 0) / 20, 1) : 0;
   const liqN = Math.min(Math.log10(market.turnoverDivPerHour + 1) / Math.log10(50000), 1);
   const oscN = Math.min(osc / 100, 1);
-  return Math.round(100 * (0.45 * marginN + 0.4 * liqN + 0.15 * oscN) * confidence(legs, market) * (risky ? 0.75 : 1));
+  // Multiplicative liquidity gate: a fat edge on a leg below the "risky" flow is not a flip you
+  // can run, so it must never outrank a modest edge on a liquid market.
+  const liquidity = Math.min(1, market.turnoverDivPerHour / config.cx.liquidityRiskyDivH);
+  const base = 0.45 * marginN + 0.4 * liqN + 0.15 * oscN;
+  return Math.round(100 * base * liquidity * confidence(legs, market) * (risky ? 0.75 : 1));
+}
+
+/** Implausible exchange data is shown but never ranked — unless you entered real prices. */
+function isRanked(legs: TradeLegs, market: MarketEstimate): boolean {
+  return legs.mode === "REAL" || market.cx?.issue !== "implausible";
 }
 
 /** How much the margin can be trusted: your own prices fully, observed edges by persistence. */
@@ -152,7 +163,7 @@ function confidence(legs: TradeLegs, market: MarketEstimate): number {
   if (legs.mode === "REAL") return 1;
   // Floor 0.25: a one-hour spike keeps a quarter of its score, never zero — it may be the start
   // of a real window, it just must not outrank edges that have held for hours.
-  if (market.cx != null) return 0.25 + 0.75 * (market.cx.persistence6 / 6);
+  if (market.edge != null) return 0.25 + 0.75 * (market.edge.persistence6 / 6);
   return ESTIMATED_PENALTY;
 }
 
@@ -183,7 +194,7 @@ export function scoreItem(
   const risk = riskOf(p.change7d);
   const osc = oscillationScore(p.spark7d);
   return {
-    ...cxRowFields(cx),
+    ...cxRowFields(market),
     itemId: p.itemId,
     item: p.itemName,
     category: p.category,
@@ -200,12 +211,11 @@ export function scoreItem(
     profitChaos,
     profitDiv,
     throughputDivDay: throughputDivDay(profitDiv, market.unitsPerHour),
-    flipScore: profitChaos * p.volume,
     oscScore: osc,
     worthScore: worthScore(legs, market, osc, risk != null),
-    marketMarginPct: market.edgePct,
     source: market.source,
     edgePct: market.edgePct,
+    ranked: isRanked(legs, market),
     liquidityTier: liquidityTier(market.turnoverDivPerHour),
     slowerLegDivPerHour: market.turnoverDivPerHour,
     timeToSellHint: timeToSellHint(legs.sellDivine, market.unitsPerHour),

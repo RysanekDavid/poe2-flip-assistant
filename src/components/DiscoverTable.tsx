@@ -255,7 +255,7 @@ export function DiscoverTable({
               <Th k="volume" label="Vol" right />
               <th
                 onClick={() => toggleSort("throughputDivDay")}
-                title="profit/unit (Div, net of priced fees) × units you can fill per day — assumes you take 10% of the slower leg's flow"
+                title="profit/unit (Div, net of priced fees) × units you can fill per day — assumes you take 10% of the slower leg's flow · ~ = estimated profit or ninja flow of unverified unit"
                 className={`${CELL} cursor-pointer select-none text-right font-medium hover:text-neutral-200`}
               >
                 Div/day{arrow("throughputDivDay")}

@@ -18,8 +18,22 @@ import { loadCxMarketView } from "../core/cx/cxItemMarkets";
 import { loadCxRoutes, ROUTE_MIN_HELD } from "../core/cx/cxRouteView";
 import type { PricedItem } from "../api/types";
 import { getDb } from "../db/database";
-import { cxItemNames, newestCxHour } from "../db/cxMarketQueries";
-import { FR, H0, IDS, PRIVATE, digestAt, hourId, market, omenMarkets, simulacrumMarkets, stubNames } from "./cxTestFixtures";
+import { cxItemNames, ingestedMarketCount, newestCxHour } from "../db/cxMarketQueries";
+import {
+  FR,
+  H0,
+  IDS,
+  PRIVATE,
+  REAL_DIGEST,
+  digestAt,
+  hourId,
+  implausibleMarkets,
+  market,
+  omenMarkets,
+  simulacrumMarkets,
+  stubNames,
+  thinRibMarkets,
+} from "./cxTestFixtures";
 import { runCxModelTests } from "./testCxMarkets";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
@@ -47,6 +61,7 @@ main()
 async function main(): Promise<void> {
   runCxModelTests();
   testIngestIsIdempotentAndExcludesPrivate();
+  testAbsentLeagueIsNotMarked();
   await testBackfillIsBoundedAndPolite();
   testLeagueViewAndStaleness();
   testRouteView();
@@ -61,8 +76,9 @@ function count(sql: string, ...args: unknown[]): number {
 function testIngestIsIdempotentAndExcludesPrivate(): void {
   const digest = digestAt(H0, [...omenMarkets(), ...omenMarkets(PRIVATE)]);
   const first = ingestCxDigest(digest, [FR, PRIVATE], stubNames);
-  assert.deepEqual(Object.keys(first), [FR], "a private league is refused even when asked for");
-  assert.equal(first[FR], 5, "3 real base markets + 2 omen markets");
+  assert.deepEqual(Object.keys(first.written), [FR], "a private league is refused even when asked for");
+  assert.equal(first.written[FR], 5, "3 real base markets + 2 omen markets");
+  assert.deepEqual(first.absent, []);
   assert.equal(count("SELECT COUNT(*) c FROM cx_markets WHERE league = ?", PRIVATE), 0);
   // "Standard" is in the payload but not polled → not stored
   assert.equal(count("SELECT COUNT(*) c FROM cx_markets WHERE league = 'Standard'"), 0);
@@ -78,6 +94,25 @@ function testIngestIsIdempotentAndExcludesPrivate(): void {
   assert.equal(count("SELECT COUNT(*) c FROM cx_markets WHERE hour = ? AND item_b = ?", H0, IDS.omenOfLight), 2);
   assert.equal(cxItemNames().get(IDS.omenOfLight), "Omen of Light", "names resolved at ingest");
   assert.throws(() => ingestCxDigest({ ...digest, markets: [] }, [FR], stubNames), /no markets/);
+}
+
+/** A polled league the digest does not list is reported, warned about, and NOT marked ingested. */
+function testAbsentLeagueIsNotMarked(): void {
+  const next = H0 + CX_HOUR_SECONDS;
+  const withoutFr = { ...REAL_DIGEST, next_change_id: next, markets: REAL_DIGEST.markets.filter((m) => m.league !== FR) };
+  const warnings: string[] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => warnings.push(args.map(String).join(" "));
+  try {
+    const result = ingestCxDigest(withoutFr, [FR, "Standard"], stubNames);
+    assert.deepEqual(result.absent, [FR]);
+    assert.ok((result.written.Standard ?? 0) > 0);
+  } finally {
+    console.warn = original;
+  }
+  assert.equal(ingestedMarketCount(FR, next), null, "no 0-row hour baked into the window");
+  assert.ok(warnings.some((w) => w.includes(`"${FR}" missing from digest`)), "loud: it had markets the hour before");
+  db.exec(`DELETE FROM cx_markets WHERE league = 'Standard'; DELETE FROM cx_ingest WHERE league = 'Standard';`);
 }
 
 function sources(available: ReadonlyMap<number, CxDigest>, calls: { fetched: number[]; slept: number[] }): CxHistorySources {
@@ -99,7 +134,9 @@ async function testBackfillIsBoundedAndPolite(): Promise<void> {
   db.exec("DELETE FROM cx_markets; DELETE FROM cx_ingest;");
   resetCxIngestState();
   const available = new Map<number, CxDigest>();
-  for (let k = 0; k < 6; k++) available.set(hourId(k), digestAt(hourId(k), [...omenMarkets(), ...simulacrumMarkets(12)]));
+  for (let k = 0; k < 6; k++) {
+    available.set(hourId(k), digestAt(hourId(k), [...omenMarkets(), ...simulacrumMarkets(12), ...thinRibMarkets(), ...implausibleMarkets()]));
+  }
   assert.equal(missingRequestHours([FR], NOW).length, config.cx.backfillHours);
 
   const calls = { fetched: [] as number[], slept: [] as number[] };
@@ -128,20 +165,22 @@ function testLeagueViewAndStaleness(): void {
     { itemId: "omen-of-light", itemName: "Omen of Light" },
     { itemId: "simulacrum", itemName: "Simulacrum" },
     { itemId: "chaos", itemName: "Chaos Orb" },
+    { itemId: "preserved-rib", itemName: "Preserved Rib" },
   ];
   const view = loadCxMarketView(FR, ninja, NOW);
   assert.ok(view != null);
   assert.equal(view.newestHour, H0);
-  assert.equal(view.byItemId.get("simulacrum")?.persistence6, 6);
-  assert.equal(view.byItemId.get("omen-of-light")?.kind, "band");
-  assert.ok(view.coverage.mapped >= 3);
+  assert.equal(view.byItemId.get("simulacrum")?.edge?.persistence6, 6);
+  assert.equal(view.byItemId.get("omen-of-light")?.issue, "coarse");
+  assert.equal(view.byItemId.get("preserved-rib")?.issue, "thin");
+  assert.equal(view.coverage.mapped, 4);
   assert.equal(loadCxMarketView(FR, ninja, NOW + 4 * 3_600_000), null, "a 4h-old newest hour is not the market now");
   assert.equal(loadCxMarketView("No Such League", ninja, NOW), null);
 }
 
 function testRouteView(): void {
   const ninja: PricedItem[] = [
-    { itemId: "simulacrum", itemName: "Simulacrum", category: "Fragments", baseValue: 3, volume: 600, change7d: null, spark7d: null, icon: "sim.png" },
+    { itemId: "simulacrum", itemName: "Simulacrum", category: "Fragments", baseValue: 40, volume: 600, change7d: null, spark7d: null, icon: "sim.png" },
   ];
   const view = loadCxRoutes(FR, ninja, NOW);
   assert.ok(view != null);
@@ -149,18 +188,31 @@ function testRouteView(): void {
   assert.ok(sim, "Div → Simulacrum → Ex → Div held all six hours");
   assert.equal(sim.held6, 6);
   assert.equal(sim.icon, "sim.png");
-  assert.ok(sim.capDivPerHour != null && Math.abs(sim.capDivPerHour - sim.capUnitsPerHour * 3) < 1e-9);
+  assert.ok(sim.capDivPerHour != null && Math.abs(sim.capDivPerHour - sim.capUnitsPerHour * 40) < 1e-9);
   assert.ok(view.routes.every((r) => r.held6 >= ROUTE_MIN_HELD));
+  assert.deepEqual(
+    view.routes.map((r) => r.item).filter((n) => n !== "Simulacrum"),
+    [],
+    "the stored thin rib and +80% artefact never become routes",
+  );
   assert.equal(loadCxRoutes(FR, ninja, NOW + 4 * 3_600_000), null);
 }
 
 function testRetention(): void {
   const oldHour = H0 - (config.cx.historyDays + 1) * 24 * CX_HOUR_SECONDS;
-  ingestCxDigest(digestAt(oldHour, [market(FR, IDS.omenOfLight, IDS.divine, 1, 8)]), [FR], stubNames);
+  // An old hour for the polled league AND for a league nobody polls any more: both age out.
+  ingestCxDigest(digestAt(oldHour, [market(FR, IDS.omenOfLight, IDS.divine, 1, 8)]), [FR, "Standard"], stubNames);
   const before = count("SELECT COUNT(*) c FROM cx_markets");
-  const removed = pruneCxMarketHistory(NOW);
-  assert.equal(removed, 4, "only the out-of-window hour (3 base + 1 omen market) is removed");
-  assert.equal(count("SELECT COUNT(*) c FROM cx_markets"), before - 4);
+  const oldStandard = count("SELECT COUNT(*) c FROM cx_markets WHERE league = 'Standard' AND hour = ?", oldHour);
+  assert.ok(oldStandard > 0);
+  const removed = pruneCxMarketHistory(NOW, true);
+  assert.equal(removed, 4 + oldStandard, "only out-of-window hours go (FR: 3 base + 1 omen), per league");
+  assert.equal(count("SELECT COUNT(*) c FROM cx_markets"), before - removed);
   assert.equal(count("SELECT COUNT(*) c FROM cx_ingest WHERE hour = ?", oldHour), 0);
   assert.equal(newestCxHour(FR), H0);
+  assert.equal(pruneCxMarketHistory(NOW + 60_000), null, "retention runs at most hourly");
+  assert.equal(pruneCxMarketHistory(NOW + 61 * 60_000), 0, "…and again once the hour has passed");
+  // the delete is a primary-key range per league, never a table scan
+  const plan = db.prepare("EXPLAIN QUERY PLAN DELETE FROM cx_markets WHERE league = ? AND hour < ?").all(FR, 0) as Array<{ detail: string }>;
+  assert.ok(plan.some((p) => /USING PRIMARY KEY|USING INDEX/.test(p.detail)), JSON.stringify(plan));
 }

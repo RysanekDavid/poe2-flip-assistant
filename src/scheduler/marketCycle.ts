@@ -8,7 +8,7 @@ import { getPolledLeagues, leagueForUser, sameLeague } from "../core/leagueUsers
 import { type Currency, type ExchangeRates } from "../core/priceEngine";
 import { resolveRates } from "../core/rates";
 import { refreshCxRatesIfStale } from "../core/rateSync";
-import { advanceTrend, type TrendEvent } from "../core/trendAlerts";
+import { advanceTrends, type TrendEvent } from "../core/trendAlerts";
 import { pruneMarginHistory } from "../db/craftQueries";
 import { insertSnapshots, pruneObservations, pruneSnapshots } from "../db/marketQueries";
 import { listUsers, type UserPublic } from "../db/userQueries";
@@ -58,11 +58,9 @@ export async function runCycle(): Promise<void> {
   const pruned = pruneSnapshots(config.retentionDays);
   pruneObservations(); // age out stale price-book observations
   pruneMarginHistory(config.retentionDays); // keep craft EV history bounded like everything else
-  const cxPruned = pruneCxMarketHistory();
-  console.log(
-    `[poll] cycle done — pruned ${pruned} snapshot(s) older than ${config.retentionDays}d, ` +
-      `${cxPruned} exchange market-hour(s) older than ${config.cx.historyDays}d`,
-  );
+  const cxPruned = pruneCxMarketHistory(); // null = not due (hourly)
+  const cxNote = cxPruned == null ? "" : `, ${cxPruned} exchange market-hour(s) older than ${config.cx.historyDays}d`;
+  console.log(`[poll] cycle done — pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${cxNote}`);
 }
 
 /** Fetch, store and alert for a single league. */
@@ -82,7 +80,9 @@ async function sweepLeague(league: string): Promise<void> {
   const cx = loadCxMarketView(league, items);
   const viewers = usersViewing(league);
   const watches = viewers.map((user) => ({ user, rows: getWatchlistForLeague(user.id, league) }));
-  const trends = trendEvents(league, watches.flatMap((w) => w.rows), byId);
+  // Every market item's state advances every sweep, watched or not — so someone who starts
+  // watching an item mid-trend inherits its real state instead of a stale one.
+  const trends = advanceTrends(league, items);
   console.log(`[poll] "${league}" evaluating watchlists for ${viewers.length} user(s)`);
   for (const { user, rows } of watches) {
     for (const watch of rows) {
@@ -104,20 +104,6 @@ async function sweepLeague(league: string): Promise<void> {
  */
 function usersViewing(league: string): UserPublic[] {
   return listUsers().filter((u) => sameLeague(leagueForUser(u.id), league));
-}
-
-/** One trend transition per watched market item, computed once and shared by every viewer. */
-function trendEvents(league: string, watches: readonly WatchItem[], byId: Map<string, PricedItem>): Map<string, TrendEvent> {
-  const events = new Map<string, TrendEvent>();
-  const seen = new Set<string>();
-  for (const w of watches) {
-    const current = byId.get(w.item_id);
-    if (current == null || seen.has(w.item_id)) continue;
-    seen.add(w.item_id);
-    const event = advanceTrend(league, w.item_id, w.item_name, current);
-    if (event != null) events.set(w.item_id, event);
-  }
-  return events;
 }
 
 /** REAL-mode spread alert only; the market estimate is context, not a signal. */
@@ -142,7 +128,7 @@ function fireSpreadAlert(
 
   const flip = scoreItem(current, rates, mBuy, mSell, cx?.byItemId.get(w.item_id) ?? null);
   if (flip.mode !== "REAL" || flip.marginPct < w.buy_threshold_pct || flip.marginPct > SANE_MAX_MARGIN) return;
-  const market = `${flip.source === "cx" ? "exchange" : "est."} ~${flip.marketMarginPct.toFixed(0)}%`;
+  const market = `${flip.source === "cx" ? "exchange" : "est."} ~${flip.edgePct.toFixed(0)}%`;
   fireAlert(userId, league, {
     type: "SPREAD",
     itemId: w.item_id,

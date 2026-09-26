@@ -1,55 +1,53 @@
-/* GGG currency-exchange market model, fees, persistence and item mapping — PURE parts.
+/* GGG currency-exchange market model, guards, fees, persistence and item mapping — PURE parts.
  * Run: npm run test:cx (src/scripts/runWithTestEnv.ts sets DB_PATH). NO NETWORK.
  * The storage/ingest half lives in testCxHistory.ts (same runner target). */
 import assert from "node:assert/strict";
 import { CX_HOUR_SECONDS } from "../api/cxClient";
-import { config } from "../config/env";
 import { goldFeeFor, goldToDivine, sumLegFees } from "../core/cx/cxFees";
-import { hourEdges, hourRates, itemHourEdge, quotesByItem } from "../core/cx/cxMarketModel";
+import { hourEdges, itemHour } from "../core/cx/cxEdges";
+import { baseMarkets, gridStepPct, hourRates, quotesByItem } from "../core/cx/cxMarketModel";
 import { aggregateItem, median } from "../core/cx/cxPersistence";
 import { mapToItemIds, statsFromRows } from "../core/cx/cxItemMarkets";
 import { toMarketRow } from "../core/cx/cxIngest";
-import { hourRoutes, persistentRoutes } from "../core/cx/cxRoutes";
-import { resolveBaseItemNames } from "../core/cx/repoeNames";
-import type { CxMarketRow } from "../db/cxMarketQueries";
 import {
   CHAOS_PER_DIV,
   EX_PER_DIV,
   FR,
   H0,
   IDS,
+  PARAMS,
   REAL_DIGEST,
+  persistentAndSpikeRows,
+  rowsOf,
   digestAt,
-  hourId,
+  implausibleMarkets,
   market,
   near,
   omenMarkets,
   simulacrumMarkets,
+  subExaltMarkets,
+  thinRibMarkets,
   TEST_NAMES,
 } from "./cxTestFixtures";
+import { runCxRouteTests } from "./testCxRoutes";
 
-const GOLD = config.cx.goldPerExalt;
+const GOLD = PARAMS.goldPerExalt;
 
 export function runCxModelTests(): void {
   testRowsNormalizeAndExactIds();
-  testHourRatesFromRealFixture();
-  testOmenVwapBandAndEdge();
-  testTriangleFeesAndCompleteness();
+  testHourRatesAndGrid();
+  testValidCrossEdge();
+  testGuards();
+  testBandEdgesAreGatedOff();
   testGreaterExaltedIsNotExalted();
   testFeeTable();
   testPersistenceAndSpikes();
-  testClosedRoutes();
   testMappingIsExactAndCounted();
-  testRepoeCatalogNames();
-  console.log("  ok — model, fees, persistence, routes, mapping");
+  runCxRouteTests();
+  console.log("  ok — model, guards, fees, persistence, routes, mapping");
 }
 
-function rowsOf(id: number, markets = REAL_DIGEST.markets, league = FR): CxMarketRow[] {
-  return markets
-    .filter((m) => m.league === league)
-    .map((m) => toMarketRow(m, id))
-    .filter((r): r is CxMarketRow => r != null);
-}
+const edgesAt = (extra: Parameters<typeof digestAt>[1], p = PARAMS) => hourEdges(H0, rowsOf(H0, digestAt(H0, extra).markets), p);
 
 function testRowsNormalizeAndExactIds(): void {
   const [row] = rowsOf(H0, omenMarkets());
@@ -63,77 +61,82 @@ function testRowsNormalizeAndExactIds(): void {
   assert.equal(toMarketRow({ ...omenMarkets()[0]!, volume_traded: {} }, H0), null);
 }
 
-function testHourRatesFromRealFixture(): void {
-  const rates = hourRates(rowsOf(H0));
+function testHourRatesAndGrid(): void {
+  const rates = hourRates(baseMarkets(rowsOf(H0)));
   assert.ok(near(rates.exaltPerDivine, EX_PER_DIV));
   assert.ok(near(rates.chaosPerDivine, CHAOS_PER_DIV));
+  // N:1 grid: 150 → ~0.67%, 2 (1:2 vs 1:1 / 1:3) → 50%, and the mirror side below 1
+  assert.ok(near(gridStepPct(150), 100 / 150));
+  assert.equal(gridStepPct(2), 50);
+  assert.equal(gridStepPct(0.5), 50);
+  assert.equal(gridStepPct(1), 100);
 }
 
-function testOmenVwapBandAndEdge(): void {
-  const rows = rowsOf(H0, [...REAL_DIGEST.markets, ...omenMarkets()]);
-  const quotes = quotesByItem(rows, hourRates(rows)).get(IDS.omenOfLight) ?? [];
-  const div = quotes.find((q) => q.quote === IDS.divine);
-  const ex = quotes.find((q) => q.quote === IDS.exalted);
-  assert.ok(div && ex);
-  assert.ok(near(div.priceDiv, 8.4));
-  assert.equal(div.lowQuote, 8);
-  assert.equal(div.highQuote, 9);
-  assert.ok(near(ex.priceQuote, 3920));
-  assert.ok(near(ex.priceDiv, 3920 / EX_PER_DIV));
-  assert.equal(ex.lowQuote, null, "no ratios published → no band");
-
-  const edge = hourEdges(H0, rows, GOLD).get(IDS.omenOfLight);
-  assert.ok(edge);
-  // band beats cross here: tighter side = 1 − 8/8.4 (0.4 Div), half of it captured → 8.2 / 8.6
-  assert.equal(edge.kind, "band");
-  assert.ok(near(edge.buy.priceDiv, 8.2));
-  assert.ok(near(edge.sell.priceDiv, 8.6));
-  const feeDiv = (8.6 * 800) / (GOLD * EX_PER_DIV); // selling requests 8.6 Div at 800 gold each
-  assert.ok(near(edge.feeDivPerUnit, feeDiv));
-  assert.ok(near(edge.netPct, ((0.4 - feeDiv) / 8.2) * 100));
-  const crossNet = ((3920 / EX_PER_DIV - 8.4 - (3920 * 120) / (GOLD * EX_PER_DIV)) / 8.4) * 100;
-  assert.ok(edge.netPct > crossNet, "the better of the two edges is kept");
-  assert.equal(edge.feeComplete, false, "Omen of Light's own fee is not in the table");
-  assert.equal(edge.slowerUnits, 1000);
-  assert.deepEqual(edge.bandDiv, { low: 8, high: 9 });
-}
-
-function testTriangleFeesAndCompleteness(): void {
-  // Chaos as the ITEM: Div market vs Ex market is the Ex→Chaos→Div triangle.
-  const rows = rowsOf(H0);
-  const rates = hourRates(rows);
-  const quotes = (quotesByItem(rows, rates).get(IDS.chaos) ?? []).map((q) => ({ ...q, lowQuote: null, highQuote: null }));
-  const edge = itemHourEdge(IDS.chaos, H0, quotes, rates, GOLD);
-  assert.ok(edge);
+function testValidCrossEdge(): void {
+  const edge = edgesAt(simulacrumMarkets(12)).get(IDS.simulacrum)?.edge;
+  assert.ok(edge, "40 Div item, 100–200 units/h, 12% gap → a real edge");
   assert.equal(edge.kind, "cross");
-  const viaDiv = 241_502 / 2_241_349;
-  const viaEx = 1_129_489 / 23_533 / EX_PER_DIV;
-  assert.ok(near(edge.buy.priceDiv, viaDiv));
-  assert.ok(near(edge.sell.priceDiv, viaEx));
-  const gold = 160 + (1_129_489 / 23_533) * 120; // request 1 Chaos, then request the Ex it sells for
-  assert.ok(near(edge.feeGoldPerUnit, gold));
-  assert.equal(edge.feeComplete, true);
-  assert.ok(near(edge.netDivPerUnit, viaEx - viaDiv - gold / (GOLD * EX_PER_DIV)));
-  assert.ok(edge.grossPct > 1 && edge.netPct < 0, "a ~1% triangle does not survive the gold fees");
+  assert.ok(near(edge.buy.priceDiv, 40));
+  const sellEx = Math.round(100 * 40 * 1.12 * EX_PER_DIV) / 100;
+  assert.ok(near(edge.sell.priceQuote, sellEx));
+  const feeDiv = (sellEx * 120) / (GOLD * EX_PER_DIV); // selling requests the Ex, 120 gold each
+  assert.ok(near(edge.feeDivPerUnit, feeDiv));
+  assert.ok(near(edge.netPct, ((sellEx / EX_PER_DIV - 40 - feeDiv) / 40) * 100));
+  assert.equal(edge.feeComplete, false, "Simulacrum's own fee is not in the table");
+  assert.equal(edge.slowerUnits, 100);
+}
+
+function testGuards(): void {
+  const all = edgesAt([...thinRibMarkets(), ...omenMarkets(), ...subExaltMarkets(), ...implausibleMarkets()]);
+  // The live failure: 3 ribs at 1:1 Ex vs 1000 ribs for 1 Div read "+127%" — both legs are thin.
+  const rib = all.get(IDS.preservedRib);
+  assert.equal(rib?.edge, null);
+  assert.equal(rib?.issue, "thin");
+  // 8.4 Div fills only at 8:1 / 9:1 (11.9% grid): a 6% Div-vs-Ex gap is quantisation.
+  const omen = all.get(IDS.omenOfLight);
+  assert.equal(omen?.edge, null);
+  assert.equal(omen?.issue, "coarse");
+  assert.ok(omen?.rawNetPct != null && omen.rawNetPct > 0, "the rejected number stays visible for the tooltip");
+  // Liquid and fine-grained, but worth < 1 Ex with an unknown per-item gold fee.
+  assert.equal(all.get(IDS.gnawedRib)?.issue, "fee-unknown");
+  // Liquid, fine-grained, +80%: never a real edge.
+  const vaal = all.get(IDS.vaalSiphoner);
+  assert.equal(vaal?.issue, "implausible");
+  assert.ok(vaal?.rawNetPct != null && vaal.rawNetPct > PARAMS.maxPlausibleEdgePct);
+  // The base currencies' own triangles are inside their ratio grids too.
+  for (const id of [IDS.chaos, IDS.exalted, IDS.divine]) assert.equal(all.get(id)?.issue, "coarse", id);
+  // Quotes carry their own leg verdicts.
+  const rates = hourRates(baseMarkets(rowsOf(H0)));
+  const ribQuotes = quotesByItem(rowsOf(H0, thinRibMarkets()), rates, PARAMS).get(IDS.preservedRib) ?? [];
+  assert.deepEqual(ribQuotes.map((q) => q.issue), ["thin", "thin"]);
+  const twoEx = quotesByItem(rowsOf(H0, [market(FR, IDS.kulemak, IDS.exalted, 5000, 10000)]), rates, PARAMS);
+  assert.equal(twoEx.get(IDS.kulemak)?.[0]?.issue, "coarse", "2 Ex each: 1:1 / 1:2 / 1:3 grid");
+}
+
+function testBandEdgesAreGatedOff(): void {
+  const single = [market(FR, IDS.kulemak, IDS.divine, 200, 8000, { low: [1, 36], high: [1, 44] })];
+  assert.equal(edgesAt(single).get(IDS.kulemak)?.issue, "single-market", "ratio extremes are not fills — off by default");
+  const on = edgesAt(single, { ...PARAMS, bandEdges: true }).get(IDS.kulemak)?.edge;
+  assert.ok(on);
+  assert.equal(on.kind, "band");
+  // half the tighter side (4 of 40) each way → 38 / 42 Div
+  assert.ok(near(on.buy.priceDiv, 38));
+  assert.ok(near(on.sell.priceDiv, 42));
 }
 
 function testGreaterExaltedIsNotExalted(): void {
-  // A digest whose only "exalted" market is the GREATER Exalt must not yield an Ex/Div rate.
   const markets = REAL_DIGEST.markets.map((m) =>
     m.league === FR && m.market_pair.includes(IDS.exalted) && m.market_pair.includes(IDS.divine)
       ? market(FR, IDS.greaterExalted, IDS.divine, 1000, 50)
       : m,
   );
-  const rows = rowsOf(H0, markets);
-  const rates = hourRates(rows);
-  assert.equal(rates.exaltPerDivine, null);
-  const quotes = quotesByItem(rows, rates);
-  assert.ok(near(quotes.get(IDS.greaterExalted)?.[0]?.priceDiv, 0.05), "priced as an item of its own");
+  const rows = rowsOf(H0, [...markets, ...simulacrumMarkets(12)]);
+  const rates = hourRates(baseMarkets(rows));
+  assert.equal(rates.exaltPerDivine, null, "only the GREATER Exalt traded against Div");
+  assert.ok(near(quotesByItem(rows, rates, PARAMS).get(IDS.greaterExalted)?.[0]?.priceDiv, 0.05), "priced as an item");
   assert.equal(goldFeeFor(IDS.greaterExalted, 1), null, "its fee is unknown, never the Exalt's 120");
-  // Without an Ex/Div rate gold cannot be priced → the fee is unknown, not zero.
-  const chaosEdge = hourEdges(H0, rows, GOLD).get(IDS.chaos);
-  assert.equal(chaosEdge?.feeDivPerUnit, null);
-  assert.equal(chaosEdge?.feeComplete, false);
+  // No Ex/Div rate → no Ex quote at all → Simulacrum has only its Div market left.
+  assert.equal(hourEdges(H0, rows, PARAMS).get(IDS.simulacrum)?.issue, "single-market");
 }
 
 function testFeeTable(): void {
@@ -150,92 +153,45 @@ function testFeeTable(): void {
   assert.equal(goldToDivine(800, 400, 0), null);
 }
 
-function persistentAndSpikeRows(): CxMarketRow[] {
-  const rows: CxMarketRow[] = [];
-  for (let k = 0; k < 6; k++) {
-    // Simulacrum holds a 12% gap in 5 of 6 hours (hour 3 collapses to 0%); Kulemak trades only
-    // in the newest hour, at a 40% gap — the one-hour VWAP spike the median must see through.
-    const extra = [...simulacrumMarkets(k === 3 ? 0 : 12)];
-    if (k === 0) {
-      extra.push(market(FR, IDS.kulemak, IDS.divine, 10, 20), market(FR, IDS.kulemak, IDS.exalted, 10, Math.round(28 * EX_PER_DIV)));
-    }
-    rows.push(...rowsOf(hourId(k), digestAt(hourId(k), extra).markets));
-  }
-  return rows;
-}
-
 function testPersistenceAndSpikes(): void {
   assert.equal(median([3, 1, 2]), 2);
   assert.equal(median([4, 1, 2, 3]), 2.5);
   assert.equal(median([]), null);
-  const stats = statsFromRows(persistentAndSpikeRows(), H0, GOLD, 5);
-  const sim = stats.get(IDS.simulacrum);
-  const kul = stats.get(IDS.kulemak);
+  const stats = statsFromRows(persistentAndSpikeRows(), H0, PARAMS, 5);
+  const sim = stats.get(IDS.simulacrum)?.edge;
+  const kul = stats.get(IDS.kulemak)?.edge;
   assert.ok(sim && kul);
-  assert.equal(sim.kind, "cross");
-  assert.equal(sim.persistence6, 5);
+  assert.equal(sim.persistence6, 5, "the 0% hour fails the grid guard → a miss, not a hit");
   assert.equal(sim.persistence24, 5);
-  // 12% gross minus the Ex leg's gold (≈3.36 Div of Ex × 120 gold each at the configured value)
-  const feeDiv = (3 * 1.12 * EX_PER_DIV * 120) / (GOLD * EX_PER_DIV);
-  assert.ok(near(sim.edgePct, ((3 * 0.12 - feeDiv) / 3) * 100, 1e-4), `median net edge ${sim.edgePct}`);
-  assert.equal(sim.feeComplete, false);
+  assert.equal(sim.legsHour, H0, "legs come from the newest valid hour");
   assert.equal(kul.persistence6, 1, "a single-hour spike holds 1 of 6 hours");
-  assert.ok(kul.edgeLatestPct != null && kul.edgeLatestPct > 30);
-  // silent hours count as zero flow: 10 units in one of six hours
-  assert.ok(near(kul.slowerUnitsPerHour, 10 / 6));
-  // an item whose last trade is older than the 6h window has no current market
-  const old = statsFromRows(persistentAndSpikeRows(), H0 + 6 * CX_HOUR_SECONDS, GOLD, 5);
-  assert.equal(old.get(IDS.kulemak), undefined);
+  assert.ok(near(kul.slowerUnitsPerHour, 25 / 6), "silent hours count as zero flow");
+  const rib = stats.get(IDS.preservedRib);
+  assert.ok(rib != null && rib.edge == null, "six hours of a thin +127% never become an edge");
+  assert.equal(rib.issue, "thin");
+  const later = statsFromRows(persistentAndSpikeRows(), H0 + 6 * CX_HOUR_SECONDS, PARAMS, 5);
+  assert.equal(later.get(IDS.kulemak), undefined, "no trade inside the 6h window → no current market");
   assert.equal(aggregateItem([], H0, 5), null);
-}
-
-function testClosedRoutes(): void {
-  const rows = rowsOf(H0, digestAt(H0, simulacrumMarkets(12)).markets);
-  const sim = hourRoutes(H0, rows, GOLD).filter((r) => r.item === IDS.simulacrum);
-  const divFirst = sim.find((r) => r.from === IDS.divine && r.to === IDS.exalted);
-  const exFirst = sim.find((r) => r.from === IDS.exalted && r.to === IDS.divine);
-  assert.ok(divFirst && exFirst);
-  const sellEx = Math.round(100 * 3 * 1.12 * EX_PER_DIV) / 100; // Ex received per Simulacrum
-  const backDiv = sellEx / EX_PER_DIV; // closing leg on the real Div/Ex market
-  const gold = sellEx * 120 + backDiv * 800; // request the Ex, then request the Div back
-  assert.ok(near(divFirst.netPct, ((backDiv - 3 - gold / (GOLD * EX_PER_DIV)) / 3) * 100));
-  assert.equal(divFirst.feeComplete, false, "the Simulacrum leg's own fee is unknown");
-  assert.equal(divFirst.capUnits, 100, "capped by the thinner item leg");
-  assert.ok(exFirst.netPct < 0, "the reverse loop loses");
-
-  const all = [0, 1, 2, 3, 4, 5].flatMap((k) =>
-    hourRoutes(hourId(k), persistentAndSpikeRows().filter((r) => r.hour === hourId(k)), GOLD),
-  );
-  const listed = persistentRoutes(all, H0, 5, 4);
-  assert.ok(listed.some((r) => r.item === IDS.simulacrum && r.from === IDS.divine && r.held6 === 5));
-  assert.ok(!listed.some((r) => r.item === IDS.kulemak), "a one-hour route is never listed");
-  assert.ok(listed.every((r, i) => i === 0 || listed[i - 1]!.medianNetPct >= r.medianNetPct));
+  const lone = itemHour(IDS.kulemak, H0, [], hourRates(baseMarkets(rowsOf(H0))), PARAMS);
+  assert.equal(lone, null);
 }
 
 function testMappingIsExactAndCounted(): void {
-  const stats = statsFromRows(persistentAndSpikeRows(), H0, GOLD, 5);
+  const stats = statsFromRows(persistentAndSpikeRows(), H0, PARAMS, 5);
   const names = new Map(TEST_NAMES);
   names.delete(IDS.exalted); // unnamed
-  names.set(IDS.kulemak, "Simulacrum"); // two exchange ids, one name → ambiguous, both dropped
+  // A name two exchange ids share ANYWHERE in cx_items is ambiguous, even if only one trades now.
+  names.set("Metadata/Items/QuestItems/Abyss/AbyssPinnacleKeyQuest", "Kulemak's Invitation");
   const ninja = [
     { itemId: "simulacrum", itemName: "Simulacrum" },
+    { itemId: "kulemaks-invitation", itemName: "Kulemak's Invitation" },
     { itemId: "chaos", itemName: "Chaos Orb" },
     { itemId: "chaos-orb-typo", itemName: "chaos orb" }, // case differs: no fuzzy match
   ];
   const { byItemId, coverage } = mapToItemIds(stats, names, ninja);
-  assert.deepEqual([...byItemId.keys()].sort(), ["chaos"]);
+  assert.deepEqual([...byItemId.keys()].sort(), ["chaos", "simulacrum"]);
   assert.equal(coverage.unnamed, 1);
-  assert.equal(coverage.ambiguous, 2);
-  assert.equal(coverage.mapped, 1);
+  assert.equal(coverage.ambiguous, 1);
+  assert.equal(coverage.mapped, 2);
   assert.equal(coverage.unmatched, coverage.cxItems - coverage.unnamed - coverage.ambiguous - coverage.mapped);
-}
-
-function testRepoeCatalogNames(): void {
-  const names = resolveBaseItemNames([IDS.divine, IDS.exalted, IDS.greaterExalted, IDS.omenOfLight, "Metadata/Nope"]);
-  assert.equal(names.get(IDS.divine), "Divine Orb");
-  assert.equal(names.get(IDS.exalted), "Exalted Orb");
-  assert.equal(names.get(IDS.greaterExalted), "Greater Exalted Orb");
-  assert.equal(names.get(IDS.omenOfLight), "Omen of Light");
-  assert.equal(names.has("Metadata/Nope"), false);
-  for (const [id, name] of TEST_NAMES) assert.equal(resolveBaseItemNames([id]).get(id), name, "fixture names match RePoE");
 }
