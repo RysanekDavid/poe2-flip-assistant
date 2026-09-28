@@ -3,7 +3,6 @@ import { DEFAULT_RULES, type RateStore, type TradeEndpoint } from "../api/tradeR
 import { config } from "../config/env";
 import { getDb } from "../db/database";
 import { listHeartbeats } from "../db/heartbeatQueries";
-import { getHunts } from "../db/huntQueries";
 import { freeDiskBytes, readDbStats } from "../db/maintenance";
 import { dbRateStore } from "../db/tradeRateQueries";
 import { buildIdentifier } from "../lib/buildInfo";
@@ -93,8 +92,7 @@ function liveDeps(): SystemHealthDeps {
     dbPath: config.dbPath,
     nowMs: Date.now(),
     build: buildIdentifier(),
-    // Hunt laps stretch with the number of active hunts, so the stale window must too.
-    specs: subsystemSpecs(config, { activeHunts: getHunts(true).length }),
+    specs: subsystemSpecs(config),
     polledLeagues: getPolledLeagues(),
     rateStore: dbRateStore(),
     freeDisk: freeDiskBytes,

@@ -87,7 +87,7 @@ export async function GET(): Promise<Response> {
 
 /**
  * POST /api/craft/margins → QUEUE a full refresh (owner only). The web process must not call
- * trade2 itself — it shares the account+IP rate budget with the poller's hunt/autosnipe traffic,
+ * trade2 itself — it shares the account+IP rate budget with the poller's autosnipe traffic,
  * so an inline sweep here would 429 the poller. Instead we set a flag the poller consumes
  * within ~20s under its own limiter. Returns immediately.
  */

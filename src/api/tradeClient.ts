@@ -25,7 +25,7 @@ const BASE = "https://www.pathofexile.com/api/trade2";
 // trade2 — the poller (scans) and the web server (interactive lookups: snipe listings, craft
 // rolls, balance reads) — so each has its own limiter; the shared account+IP budget is enforced by
 // the governor, whose request log and restriction state live in the DB both processes read.
-const limiter = new Bottleneck({ maxConcurrent: 1, minTime: config.hunt.minRequestMs });
+const limiter = new Bottleneck({ maxConcurrent: 1, minTime: config.trade.minRequestMs });
 let governor: RateGovernor | null = null;
 const gov = (): RateGovernor => (governor ??= createRateGovernor(dbRateStore()));
 

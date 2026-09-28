@@ -13,7 +13,9 @@ It never buys, sells, whispers, clicks, or controls the game.
 
 - **Currency Exchange:** reference converter, observed market history, risk-adjusted flip
   heuristics, alerts, and manual position tracking.
-- **Web Market:** poe2scout demand signals plus read-only trade2 hunting.
+- **Web Market:** poe2scout demand signals plus the read-only autosnipe scanner.
+- **Alerts:** one feed for snipes (full item card, whisper, trade link), craft margins, spreads
+  and league news, with per-type ticker / sound / desktop-popup / Discord routing.
 - **Craft:** fourteen curated recipes with observed comparables, modelled EV, interactive steps,
   and manual attempt/P&L tracking.
 - **Wealth:** opt-in read-only valuation of a user's public stash tabs.

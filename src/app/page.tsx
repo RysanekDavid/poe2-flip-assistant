@@ -18,7 +18,6 @@ import { CraftPnlPanel } from "../components/CraftPnlPanel";
 import { MaterialsPanel } from "../components/MaterialsPanel";
 import { CraftMarginsProvider } from "../components/craft/CraftMarginsContext";
 import { DemandBoard } from "../components/DemandBoard";
-import { HuntPanel } from "../components/HuntPanel";
 import { AutoSnipeBar } from "../components/AutoSnipeBar";
 import { SnipeTargets } from "../components/SnipeTargets";
 import { FlipDetailCard } from "../components/FlipDetailCard";
@@ -156,7 +155,6 @@ export default function DashboardPage() {
           <DemandBoard />
           <AutoSnipeBar />
           <SnipeTargets />
-          <HuntPanel />
         </>
       )}
 

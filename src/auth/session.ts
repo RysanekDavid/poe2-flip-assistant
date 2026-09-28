@@ -5,7 +5,7 @@ import { getUserById, getUserByApiKey, type UserRow } from "../db/userQueries";
 /**
  * Server-side auth resolution for route handlers (node runtime only).
  *  - getCurrentUser: the logged-in web user, from the signed session cookie
- *  - getAgentUser:   the local agent, from a Bearer api_key (balance/hunt push)
+ *  - getAgentUser:   the local agent, from a Bearer api_key (balance push)
  *
  * Both return null when unauthenticated; routes decide whether that's a 401.
  * The edge middleware can only check signature + expiry; revocation (session_version) is

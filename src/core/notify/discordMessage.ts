@@ -54,8 +54,6 @@ const BOT_NAME = "PoE2 Flip Assistant";
 
 const COLORS: Record<string, number> = {
   SNIPE: 0xfb923c,
-  CRAFT_BASE: 0xfb923c,
-  RESELL: 0xfb923c,
   CRAFT_MARGIN: 0xf59e0b,
   SPREAD: 0x22c55e,
   TREND: 0xfcd34d,

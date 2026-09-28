@@ -12,9 +12,7 @@ export const TYPE_TONE: Record<string, string> = {
   TREND: "text-amber-300",
   TREND_REVERSAL: "text-bad",
   SNIPE: "text-orange-400",
-  CRAFT_BASE: "text-orange-400",
   CRAFT_MARGIN: "text-amber-400",
-  RESELL: "text-orange-400",
   LEAGUE: "text-amber-200",
 };
 

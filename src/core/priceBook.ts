@@ -2,8 +2,7 @@
  * Price Book: value a rare item from observed market listings instead of a per-item live
  * search (which the trade2 rate limit can't sustain at scale). Every listing we see is
  * recorded under ONE signature scheme — `rollSignature` (base + resolved stat refs + roll
- * buckets) — by BOTH hunts and autosnipe, so the two engines feed and read the same space.
- * (They used to write two incompatible key spaces into one table.)
+ * buckets): autosnipe feeds it, the paste-to-price check reads the same space.
  */
 
 /**

@@ -9,16 +9,14 @@ export type AlertType =
   | "VOLUME"
   | "TREND"
   | "SNIPE"
-  | "CRAFT_BASE"
   | "CRAFT_MARGIN"
-  | "RESELL"
   | "LEAGUE"; // new league detected / league switched — fired by leagueAlerts, not this engine
 
 /**
  * Persist an alert and fire a desktop notification.
  *
  * `league` is the market the DETECTING pipeline ran in, passed by the caller — the multi-league
- * poller alerts per league, while the shared trade2 scanners (hunts, autosnipe, craft margins)
+ * poller alerts per league, while the shared trade2 scanners (autosnipe, craft margins)
  * only ever run in the app default. Reading the recipient's current view here would file a
  * default-league snipe under whatever league they happened to be looking at.
  *

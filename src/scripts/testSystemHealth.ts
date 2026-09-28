@@ -89,7 +89,7 @@ export async function testCoachSummary(): Promise<void> {
 async function ownerPayload(): Promise<SystemHealth> {
   const db = getDb();
   db.exec("DELETE FROM subsystem_heartbeat");
-  recordHeartbeat({ name: "hunts", league: "", at: new Date(NOW - 5_000).toISOString(), durationMs: 900, error: "every hunt failed — x: 401" }, db);
+  recordHeartbeat({ name: "league-watch", league: "", at: new Date(NOW - 5_000).toISOString(), durationMs: 900, error: "poe.ninja 503" }, db);
   return buildSystemHealth({
     db,
     dbPath: config.dbPath,
@@ -123,8 +123,7 @@ export async function testHealthRoute(): Promise<void> {
   assert.ok(body.db.pageCount > 0 && body.db.pageSize > 0, "real PRAGMA page stats");
   assert.deepEqual(body.coach, { reachable: false, error: "ECONNREFUSED" });
   assert.equal(body.trade2.length, 2, "search + fetch");
-  const hunts = body.heartbeats.find((h) => h.name === "hunts");
-  assert.equal(hunts?.status, config.hunt.enabled ? "failing" : "disabled");
+  assert.equal(body.heartbeats.find((h) => h.name === "league-watch")?.status, "failing");
   assert.ok(body.heartbeats.some((h) => h.name === "ninja-sweep" && h.league === "Rise" && h.status === "never"));
   console.log("PASS  /api/system/health owner-only gate + payload shape");
 }

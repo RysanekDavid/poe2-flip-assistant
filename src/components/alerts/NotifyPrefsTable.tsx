@@ -4,11 +4,9 @@ import type { PrefRow } from "../../core/notify/prefs";
 import { typeTone } from "./AlertBits";
 
 const TYPE_HINT: Record<PrefRow["type"], string> = {
-  SNIPE: "underpriced listing (autosnipe or your snipe hunts) — time-sensitive",
+  SNIPE: "underpriced listing found by the autosnipe scanner — time-sensitive",
   CRAFT_MARGIN: "a craft recipe's expected value clears its margin",
   SPREAD: "a watched exchange flip clears your threshold",
-  CRAFT_BASE: "new listings for your craft-base hunts",
-  RESELL: "new listings for your resell hunts",
   LEAGUE: "a new league started / the default league switched",
   TREND: "a watched item's trend state changed",
   SPIKE: "a watched item is spiking",

@@ -1,11 +1,10 @@
 import { z } from "zod";
 
 /**
- * Alert types a user can route. Hunt hits are not a separate type: a hunt fires its own mode
- * (SNIPE / CRAFT_BASE / RESELL), so muting "SNIPE" covers hunt snipes and autosnipe alike.
- * Pure module (no node imports) — the Settings UI and the ticker import it too.
+ * Alert types a user can route. Pure module (no node imports) — the Alerts tab and the ticker
+ * import it too.
  */
-export const NOTIFY_TYPES = ["SNIPE", "CRAFT_MARGIN", "SPREAD", "CRAFT_BASE", "RESELL", "LEAGUE", "TREND", "SPIKE"] as const;
+export const NOTIFY_TYPES = ["SNIPE", "CRAFT_MARGIN", "SPREAD", "LEAGUE", "TREND", "SPIKE"] as const;
 export type NotifyType = (typeof NOTIFY_TYPES)[number];
 
 export interface ChannelPrefs {
@@ -22,8 +21,6 @@ const DEFAULTS: Record<NotifyType, ChannelPrefs> = {
   SNIPE: { discord: true, ticker: true },
   CRAFT_MARGIN: { discord: true, ticker: true },
   SPREAD: { discord: true, ticker: true },
-  CRAFT_BASE: { discord: true, ticker: true }, // the user's own hunt — they asked for it
-  RESELL: { discord: true, ticker: true }, // the user's own hunt — they asked for it
   LEAGUE: { discord: true, ticker: true }, // rare and it invalidates every price on screen
   TREND: { discord: false, ticker: true },
   SPIKE: { discord: false, ticker: true },

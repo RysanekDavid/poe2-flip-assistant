@@ -261,7 +261,7 @@ async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: Map<str
 
 /** Pure: keep the stored report instead of the new one? Only when the new scan failed for a
  *  transient reason AND what we already have is a good report — a 429 or a rate-governor timeout
- *  must not wipe a valid EV (and its rank / prefill / hunt-preset) until the next clean scan. */
+ *  must not wipe a valid EV (and its rank / prefill) until the next clean scan. */
 export function keepPreviousReport(previous: RecipeMarginReport | null, outcome: ScanOutcome): boolean {
   return outcome.transient && previous?.status === "ok";
 }

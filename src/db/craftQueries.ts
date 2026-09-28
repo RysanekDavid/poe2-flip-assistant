@@ -1,5 +1,4 @@
 import { getDb } from "./database";
-import { addHunt, updateHunt, setHuntActive, type HuntFields } from "./huntQueries";
 
 /**
  * Craft-margin persistence — kept out of queries.ts, which is already over the file-size cap.
@@ -287,43 +286,4 @@ export function craftPnlByRecipe(userId: number): RecipePnl[] {
        FROM craft_attempts WHERE user_id = ? GROUP BY recipe_key`,
     )
     .all(userId) as RecipePnl[];
-}
-
-export type CraftBaseHunt = HuntFields;
-
-/**
- * Create or refresh the user's craft-base hunt for one recipe in one league. Clicking
- * "hunt this base" again must move the existing hunt's cap, not stack a duplicate that scans
- * (and spends trade2 budget) twice. Identity is hunts.recipe_key (survives a label rename); a
- * pre-recipe_key preset row is adopted by its deterministic label once, then keyed. The hunt is
- * re-activated because re-clicking means "I want this running".
- */
-export function upsertCraftBaseHunt(
-  userId: number,
-  league: string,
-  recipeKey: string,
-  hunt: CraftBaseHunt,
-): { id: number; created: boolean } {
-  const db = getDb();
-  const existing = (db
-    .prepare(
-      `SELECT id FROM hunts WHERE user_id = ? AND league = ? AND mode = 'CRAFT_BASE'
-         AND (recipe_key = ? OR (recipe_key IS NULL AND label = ?))
-       ORDER BY (recipe_key IS NULL), id LIMIT 1`,
-    )
-    .get(userId, league, recipeKey, hunt.label) as { id: number } | undefined)?.id;
-  const id = existing ?? addHunt(userId, league, hunt);
-  if (existing != null) {
-    updateHunt(userId, existing, hunt);
-    setHuntActive(userId, existing, true);
-  }
-  db.prepare("UPDATE hunts SET recipe_key = ? WHERE user_id = ? AND id = ?").run(recipeKey, userId, id);
-  // The old label-keyed upsert let repeated clicks stack duplicates, each still scanning with a
-  // junk-floor cap. The keyed row above is now the one; switch the leftovers off (kept, not
-  // deleted — they are the user's rows and carry hit history).
-  db.prepare(
-    `UPDATE hunts SET active = 0
-     WHERE user_id = ? AND league = ? AND mode = 'CRAFT_BASE' AND recipe_key IS NULL AND label = ? AND id != ?`,
-  ).run(userId, league, hunt.label, id);
-  return { id, created: existing == null };
 }

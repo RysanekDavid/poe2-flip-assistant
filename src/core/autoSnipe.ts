@@ -3,7 +3,7 @@ import { metered, newMeter, type TradeMeter } from "../api/tradeMeter";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
-import { saveSnipeFailure, saveSnipeReport } from "../db/huntQueries";
+import { saveSnipeFailure, saveSnipeReport } from "../db/snipeReportQueries";
 import { getDefaultLeague } from "./leagueState";
 import { listUsers } from "../db/userQueries";
 import { buildStatIndex, type StatIndex, type ResolvedStat } from "./statResolver";
@@ -25,8 +25,8 @@ import type { DivRates } from "./listingPrice";
  *      instant-buyout comparables, candidate excluded).
  *   4. Alert only what passes the shared snipe gate — once per listing, ever.
  *
- * Trade2 spend is capped per scan (scan-local search budget + archetype rotation) so hunts keep their
- * cadence. Read-only throughout: it alerts, the human buys.
+ * Trade2 spend is capped per scan (scan-local search budget + archetype rotation) so craft margins
+ * keep their cadence. Read-only throughout: it alerts, the human buys.
  */
 export interface SnipeFinding {
   profile: string;
@@ -84,7 +84,7 @@ interface ScanCtx {
   cred: TradeCred;
   league: string;
   report: ScanReport;
-  meter: TradeMeter; // counts only this scan's requests — hunts on the shared limiter don't eat it
+  meter: TradeMeter; // counts only this scan's requests — other consumers on the shared limiter don't eat it
 }
 
 // an archetype costs 1 search; a valuation up to 2 (distinctive + pseudo-only fallback)

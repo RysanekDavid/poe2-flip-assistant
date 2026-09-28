@@ -49,7 +49,6 @@ const ADDED_COLUMN_TABLES = ["price_snapshots", "price_book_obs", "craft_margin_
 export const TAGGED_TABLES = [
   "watchlist",
   "positions",
-  "hunts",
   "alerts",
   "balance_snapshots",
   "flips",
