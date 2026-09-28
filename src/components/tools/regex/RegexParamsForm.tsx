@@ -121,7 +121,7 @@ function MaxChars({ value, onChange }: { value: number; onChange: (n: number) =>
   return (
     <label
       className="flex items-center gap-2 text-xs text-neutral-400"
-      title={`Stash search character limit — ${REGEX_MAX_CHARS_DEFAULT} is a conservative guess, unconfirmed in-game. Saved in this browser only.`}
+      title={`Stash search character limit — ${REGEX_MAX_CHARS_DEFAULT} by default; if the game cuts your string short, lower it here. Saved in this browser only.`}
     >
       max
       <input
@@ -140,7 +140,6 @@ function MaxChars({ value, onChange }: { value: number; onChange: (n: number) =>
           reset
         </button>
       )}
-      <span className="text-warn/80">unconfirmed in-game</span>
     </label>
   );
 }
