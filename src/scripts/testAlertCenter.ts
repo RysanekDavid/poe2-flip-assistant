@@ -44,7 +44,8 @@ function testGrouping(): void {
   ok("rows newest first inside a group", groups.find((g) => g.type === "TREND")?.alerts.map((a) => a.id).join(",") === "3,1");
   ok("badge ignores muted types", unmutedUnseen(groups) === 3, String(unmutedUnseen(groups)));
   ok("ticker strip skips muted types", tickerRecent(alerts, ["TREND"], 3).map((a) => a.id).join(",") === "5,4,2");
-  ok("browser notify: only newer + unmuted", freshForNotify(alerts, 2, ["TREND"]).map((a) => a.id).join(",") === "5,4");
+  ok("browser notify: only newer alerts of the enabled types", freshForNotify(alerts, 2, ["SPREAD", "VOLUME"]).map((a) => a.id).join(",") === "5,4");
+  ok("browser notify: a type with the channel off never fires", freshForNotify(alerts, 0, ["SNIPE"]).map((a) => a.id).join(",") === "2");
   ok("notify baseline counts muted ids (unmute never replays)", maxAlertId(alerts) === 5);
   ok("empty feed → no groups", groupAlerts([], [], []).length === 0);
 }

@@ -96,6 +96,11 @@ export function getDb(): Database.Database {
   seedLeagueRegistry(conn);
   purgeLegacyPriceBook(conn);
   ensureNotifySchema(conn); // after users.discord_webhook_enc exists — its trigger reads the column
+  // Browser chime + desktop popup per type; NULL (rows from before) means "use the type's default".
+  ensureColumns(conn, "notify_prefs", [
+    ["sound", "INTEGER"],
+    ["popup", "INTEGER"],
+  ]);
   dropRetiredHunts(conn); // after ensureNotifySchema: it also clears the retired types' notify_prefs
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.

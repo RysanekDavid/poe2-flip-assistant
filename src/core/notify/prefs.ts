@@ -7,27 +7,29 @@ import { z } from "zod";
 export const NOTIFY_TYPES = ["SNIPE", "CRAFT_MARGIN", "SPREAD", "LEAGUE", "TREND", "SPIKE"] as const;
 export type NotifyType = (typeof NOTIFY_TYPES)[number];
 
-export interface ChannelPrefs {
-  discord: boolean;
-  ticker: boolean;
-}
+/** Delivery channels per alert type. `sound` and `popup` are the browser chime and desktop popup. */
+export const CHANNELS = ["ticker", "sound", "popup", "discord"] as const;
+export type Channel = (typeof CHANNELS)[number];
+export type ChannelPrefs = Record<Channel, boolean>;
 
 /**
  * Discord is the channel that reaches a fullscreen player, so it only carries what is worth
  * alt-tabbing for: actionable, time-sensitive finds. TREND/SPIKE fire every few polls on a busy
- * market and were most of the 672-alerts-in-11-days fatigue — ticker only by default.
+ * market and were most of the 672-alerts-in-11-days fatigue — ticker only by default. Sound and
+ * the desktop popup interrupt whatever the player is doing, so only a snipe (gone in minutes)
+ * earns them by default.
  */
 const DEFAULTS: Record<NotifyType, ChannelPrefs> = {
-  SNIPE: { discord: true, ticker: true },
-  CRAFT_MARGIN: { discord: true, ticker: true },
-  SPREAD: { discord: true, ticker: true },
-  LEAGUE: { discord: true, ticker: true }, // rare and it invalidates every price on screen
-  TREND: { discord: false, ticker: true },
-  SPIKE: { discord: false, ticker: true },
+  SNIPE: { ticker: true, sound: true, popup: true, discord: true },
+  CRAFT_MARGIN: { ticker: true, sound: false, popup: false, discord: true },
+  SPREAD: { ticker: true, sound: false, popup: false, discord: true },
+  LEAGUE: { ticker: true, sound: false, popup: false, discord: true }, // rare and it invalidates every price on screen
+  TREND: { ticker: true, sound: false, popup: false, discord: false },
+  SPIKE: { ticker: true, sound: false, popup: false, discord: false },
 };
 
-/** Types outside NOTIFY_TYPES (legacy VOLUME / TREND_REVERSAL rows) stay off Discord. */
-const UNKNOWN_TYPE_DEFAULT: ChannelPrefs = { discord: false, ticker: true };
+/** Types outside NOTIFY_TYPES (legacy VOLUME / TREND_REVERSAL rows): ticker only. */
+const UNKNOWN_TYPE_DEFAULT: ChannelPrefs = { ticker: true, sound: false, popup: false, discord: false };
 
 export function isNotifyType(type: string): type is NotifyType {
   return (NOTIFY_TYPES as readonly string[]).includes(type);
@@ -41,23 +43,43 @@ export const NotifyTypeSchema = z.enum(NOTIFY_TYPES);
 
 export const PrefRowSchema = z.object({
   type: NotifyTypeSchema,
-  discord: z.boolean(),
   ticker: z.boolean(),
+  sound: z.boolean(),
+  popup: z.boolean(),
+  discord: z.boolean(),
 });
 export type PrefRow = z.infer<typeof PrefRowSchema>;
 
+/** A stored notify_prefs row. sound/popup are NULL on rows written before those columns existed. */
+export interface StoredPref {
+  type: string;
+  ticker: number;
+  sound: number | null;
+  popup: number | null;
+  discord: number;
+}
+
+const flag = (stored: number | null | undefined, fallback: boolean): boolean => (stored == null ? fallback : stored === 1);
+
 /** Full per-type table for a user: stored overrides on top of the defaults, in display order. */
-export function resolvePrefs(stored: ReadonlyArray<{ type: string; discord: number; ticker: number }>): PrefRow[] {
+export function resolvePrefs(stored: readonly StoredPref[]): PrefRow[] {
   const byType = new Map(stored.map((s) => [s.type, s]));
   return NOTIFY_TYPES.map((type) => {
     const row = byType.get(type);
     const base = DEFAULTS[type];
     return {
       type,
-      discord: row ? row.discord === 1 : base.discord,
-      ticker: row ? row.ticker === 1 : base.ticker,
+      ticker: flag(row?.ticker, base.ticker),
+      sound: flag(row?.sound, base.sound),
+      popup: flag(row?.popup, base.popup),
+      discord: flag(row?.discord, base.discord),
     };
   });
+}
+
+/** Types whose `channel` is on — what the browser needs to decide chime / popup / ticker. */
+export function typesWith(prefs: readonly PrefRow[], channel: Channel, on: boolean): NotifyType[] {
+  return prefs.filter((p) => p[channel] === on).map((p) => p.type);
 }
 
 /**

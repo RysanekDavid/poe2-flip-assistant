@@ -127,7 +127,7 @@ export function NotificationsSettings() {
           {view.webhook.state !== "none" && <DeliveryStatus view={view} />}
           <NotifyPrefsTable
             prefs={view.prefs}
-            webhookSet={view.webhook.state === "set"}
+            dimmed={view.webhook.state === "set" ? {} : { discord: "save a webhook first" }}
             onChange={(type, change) => void run({ action: "pref", type, ...change })}
           />
           <label className="flex items-center gap-2 text-sm text-neutral-300" title="one Discord message a day: counts per type + the best snipes, craft margins and spreads">

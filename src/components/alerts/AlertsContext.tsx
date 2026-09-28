@@ -68,7 +68,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
       .then((d) => {
         setData(d);
         setError(null);
-        raiseBrowserNotifications(d.alerts, d.tickerMuted);
+        raiseBrowserNotifications(d.alerts, d);
       })
       .catch((e: unknown) => {
         console.error("[alerts] feed load failed", e);

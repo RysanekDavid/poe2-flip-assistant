@@ -25,6 +25,8 @@ export const AlertCenterSchema = z.object({
   alerts: z.array(AlertSchema),
   counts: z.array(AlertTypeCountSchema),
   tickerMuted: z.array(z.string()),
+  soundTypes: z.array(z.string()), // types that chime on arrival
+  popupTypes: z.array(z.string()), // types that raise a desktop (browser) popup
 });
 export type AlertCenterData = z.infer<typeof AlertCenterSchema>;
 
@@ -88,10 +90,10 @@ export function tickerRecent(alerts: readonly Alert[], muted: readonly string[],
   return alerts.filter((a) => !mutedSet.has(a.type)).sort(byNewest).slice(0, n);
 }
 
-/** Alerts newer than the last one a browser notification was raised for, muted types excluded. */
-export function freshForNotify(alerts: readonly Alert[], lastNotifiedId: number, muted: readonly string[]): Alert[] {
-  const mutedSet = new Set(muted);
-  return alerts.filter((a) => a.id > lastNotifiedId && !mutedSet.has(a.type)).sort((a, b) => b.id - a.id);
+/** Alerts newer than the last one the browser reacted to whose type has `channel` on, newest first. */
+export function freshForNotify(alerts: readonly Alert[], lastNotifiedId: number, types: readonly string[]): Alert[] {
+  const on = new Set(types);
+  return alerts.filter((a) => a.id > lastNotifiedId && on.has(a.type)).sort((a, b) => b.id - a.id);
 }
 
 /** Highest id in the feed — the browser-notify baseline, muted or not, so unmuting never replays history. */
