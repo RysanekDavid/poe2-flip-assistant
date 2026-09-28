@@ -203,9 +203,9 @@ async function noRatesIsTransient(): Promise<void> {
   ok("near-miss on a zero median → leg-failed, not a throw", zeroMedian.report.status === "leg-failed" && /engine error/.test(zeroMedian.report.error ?? ""));
 }
 
-// --- recipe integrity: 14 recipes, valid hitRate, every material has a positive expected qty ---
+// --- recipe integrity: 16 recipes, valid hitRate, every material has a positive expected qty ---
 {
-  ok("14 curated recipes", RECIPES.length === 14, String(RECIPES.length));
+  ok("16 curated recipes", RECIPES.length === 16, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));

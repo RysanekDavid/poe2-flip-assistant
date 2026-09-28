@@ -12,9 +12,10 @@ import type { Rarity } from "../lib/tradeLink";
  * expert refines the recipe data; the engine + itemization are the durable part.
  */
 
-/** Trade catalog group a stat spec searches. "fractured"/"desecrated" search the flagged twin
- *  itself (a fractured +3 is a different product from a plain +3); unset = explicit first. */
-export type StatGroup = "explicit" | "fractured" | "pseudo" | "desecrated";
+/** Trade catalog group a stat spec searches. "fractured"/"desecrated"/"crafted" search the flagged
+ *  twin itself (a fractured +3 is a different product from a plain +3; a liquid-emotion jewel mod
+ *  only ever exists as a Crafted modifier); unset = explicit first. */
+export type StatGroup = "explicit" | "fractured" | "pseudo" | "desecrated" | "crafted";
 
 /** One target/searched mod on a leg. `text` is the trade catalog template ('#' for the roll). */
 export interface RecipeStatSpec {
@@ -182,7 +183,9 @@ export type NearMiss = z.infer<typeof NearMissSchema>;
 
 import { RECIPES as CORE_RECIPES } from "./craftRecipeData";
 import { RECIPES_2 } from "./craftRecipeData2";
+import { RECIPES_3 } from "./craftRecipeData3";
 
-/** All curated recipes — the original batch (craftRecipeData) plus the creator-video batch
- *  (craftRecipeData2), split across two data files to respect the 500-line cap. */
-export const RECIPES: CraftRecipe[] = [...CORE_RECIPES, ...RECIPES_2];
+/** All curated recipes — the original batch (craftRecipeData), the creator-video batch
+ *  (craftRecipeData2) and the Potent-liquid jewels (craftRecipeData3), split across data files to
+ *  respect the 500-line cap. */
+export const RECIPES: CraftRecipe[] = [...CORE_RECIPES, ...RECIPES_2, ...RECIPES_3];

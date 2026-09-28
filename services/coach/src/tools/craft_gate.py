@@ -42,6 +42,8 @@ RECIPES: dict[str, RecipeMeta] = {
     "quarterstaff_desecrate_crit": RecipeMeta("Quarterstaff · desecrate-first crit", "weapon"),
     "amulet_desecrated_beginner": RecipeMeta("Amulet · beginner desecrated", "jewellery"),
     "ring_fractured_t1res": RecipeMeta("Ring · fractured flat + T1 res (high-end)", "jewellery"),
+    "jewel_liquid_5mod_budget": RecipeMeta("Sapphire · Contempt 5-mod (budget)", "jewel"),
+    "jewel_fractured_5mod": RecipeMeta("Sapphire · fractured 5-mod (high-end)", "jewel"),
 }
 
 # craftValuation.ts gate constants.

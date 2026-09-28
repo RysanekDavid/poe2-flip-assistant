@@ -135,7 +135,7 @@ export const config = {
   craftMargin: {
     enabled: (process.env.CRAFT_MARGIN_ENABLED ?? "true").toLowerCase() === "true",
     // 6 min: ≤3 searches + 8 fetches per tick ≈ 30 searches/h beside autosnipe's ~36, inside
-    // trade2's 600 searches / 6 h; a full cycle over 14 recipes ≈ 84 min
+    // trade2's 600 searches / 6 h; a full cycle over 16 recipes ≈ 96 min
     intervalMin: num("CRAFT_MARGIN_INTERVAL_MIN", 6), // cadence; paced further by the trade2 limiter
     alertMarginPct: num("CRAFT_MARGIN_ALERT_PCT", 40), // fire when EV margin ≥ this %
     alertMinEvDiv: num("CRAFT_MARGIN_ALERT_MIN_EV_DIV", 1), // …and EV ≥ this many Divine (skip trivial edges)

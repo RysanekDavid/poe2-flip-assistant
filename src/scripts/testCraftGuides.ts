@@ -110,15 +110,35 @@ const recipe = (key: string): CraftRecipe => {
   const clean = putrefaction.filter((r) => r.result.corrupted !== true).map((r) => r.key);
   ok("putrefaction result legs are corrupted comparables", putrefaction.length > 0 && clean.length === 0, clean.join(","));
   // KB §2: a fracture recipe sells a fractured mod — its result must search the fractured stat
-  const fractureResults = ["amulet_fracture_plus3", "gloves_projectile_plus2", "ring_fractured_t1res"].filter(
+  const fractureResults = ["amulet_fracture_plus3", "gloves_projectile_plus2", "ring_fractured_t1res", "jewel_fractured_5mod"].filter(
     (k) => !recipe(k).result.stats.some((s) => s.group === "fractured" && s.tier !== 2),
   );
   ok("fracture recipes value a FRACTURED defining mod", fractureResults.length === 0, fractureResults.join(","));
 }
 
+// --- KB §6: Potent liquids only on rare BASIC jewels, Ancient only on rare Time-Lost jewels ---
+{
+  const potent = new Set<string>([MATS.potentLiquidContempt.id, MATS.potentLiquidFerocity.id]);
+  const ancient = new Set<string>([MATS.ancientPotentLiquidContempt.id]);
+  const onTimeLost = (r: CraftRecipe): boolean => /Time-Lost/.test(r.base.type ?? "");
+  const wrongTier = RECIPES.filter((r) =>
+    r.materials.some((m) => (potent.has(m.material.id) && onTimeLost(r)) || (ancient.has(m.material.id) && !onTimeLost(r))),
+  );
+  ok("liquid tier matches the jewel base (Potent↔basic, Ancient↔Time-Lost)", wrongTier.length === 0, wrongTier.map((r) => r.key).join(","));
+  // the removal side and the over-cap strip are creator-observed only — badge them
+  const liquidSteps = ["jewel_liquid_5mod_budget", "jewel_fractured_5mod"].flatMap((k) =>
+    allSteps(recipe(k)).filter((s) => uses(s, MATS.potentLiquidContempt.id) || uses(s, MATS.omenSinistralAnnulment.id)),
+  );
+  ok("Contempt + Sinistral-strip steps carry an unverified badge", liquidSteps.length >= 4 && liquidSteps.every((s) => !!s.unverified), String(liquidSteps.length));
+  const threeSuffix = ["jewel_liquid_5mod_budget", "jewel_fractured_5mod"].filter(
+    (k) => !recipe(k).result.stats.some((s) => s.group === "pseudo" && /Suffix Modifiers/.test(s.text) && s.min === 3 && s.tier !== 2),
+  );
+  ok("5-mod jewel results require 3 suffixes as a tier-1 stat", threeSuffix.length === 0, threeSuffix.join(","));
+}
+
 // --- data integrity survives the edits ---
 {
-  ok("14 curated recipes", RECIPES.length === 14, String(RECIPES.length));
+  ok("16 curated recipes", RECIPES.length === 16, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));

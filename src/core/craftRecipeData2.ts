@@ -183,10 +183,7 @@ export const RECIPES_2: CraftRecipe[] = [
     guide: GUIDES_2.amulet_giga_spirit!,
   },
 
-  // (removed) "jewel_desecrated_liquid" — refuted 2026-07-15: non-Ancient Potent Liquid Contempt
-  // grants a FIXED damage prefix (Sapphire→chaos, Ruby→phys, Emerald→ele) on rare Basic jewels,
-  // NOT a strippable "+1 modifier"; that mod exists only from Ancient tier on Time-Lost jewels.
-  // Regular rare jewels also cap at 4 mods (5 = corrupted only), so a "budget 5-mod" can't exist.
+  // (5) the budget liquid-emotion jewel lives in craftRecipeData3.ts as `jewel_liquid_5mod_budget`.
   // 6) Quarterstaff desecrate-FIRST crit — no Amanamu pool for staffs, so a blind desecration with a
   //    hard stop-loss. hitRate 0.3: blind reveal from the weaker normal pool for a good crit/phys line,
   //    comparable to the bow craft but without the Liege-forced jackpot.

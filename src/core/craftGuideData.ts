@@ -51,26 +51,18 @@ export const GUIDES: Record<string, CraftGuide> = {
           },
         ],
       },
-      {
-        title: "Effect of Suffixes",
-        steps: [
-          {
-            do: "Slam Ancient Potent Liquid Ferocity.",
-            why: "Removes a random mod and grants (40–60)% increased Effect of Suffixes — with one junk prefix left, that's the mod you want eaten.",
-            mats: [MATS.ancientPotentLiquidFerocity],
-            onFail: "It removed a caster suffix instead → decide: continue as a weaker piece or sell as-is.",
-            check: "Suffixes intact + “increased Effect of Suffixes”.",
-          },
-        ],
-      },
+      // (removed) Ancient Potent Liquid Ferocity step: on Time-Lost jewels it grants a radius
+      // resistance, not "Effect of Suffixes" (poe2db + RePoE, KB §6, 2026-09-28).
       {
         title: "Fill prefixes",
         steps: [
           {
             do: "Omen of Sinistral Annulment + Orb of Annulment — pull the “+1 Suffix Modifier allowed” mod out.",
-            why: "It sits on the PREFIX side; Sinistral restricts the annul to prefixes, so it can't touch your suffixes. The 4 suffixes stay (over-cap is kept) and the prefix slots open up for exalts.",
+            why: "It sits on the PREFIX side; Sinistral restricts the annul to prefixes, so it can't touch your suffixes. The 3 suffixes stay (over-cap is kept) and the prefix slots open up for exalts.",
             mats: [MATS.omenSinistralAnnulment, MATS.annul],
-            check: "All 4 suffixes intact, “+1 Suffix Modifier allowed” gone, prefixes open.",
+            check: "All 3 suffixes intact, “+1 Suffix Modifier allowed” gone, prefixes open.",
+            unverified:
+              "That the over-cap 3rd suffix survives pulling the +1 mod is creator-demonstrated on BASIC jewels only — docs/kb/desecration-abyss.md keeps it as a stop condition, and nobody has shown it on a Time-Lost jewel.",
           },
           {
             do: "Fill the open prefixes with Exalted Orbs, fishing Spell Damage / Elemental Damage.",
