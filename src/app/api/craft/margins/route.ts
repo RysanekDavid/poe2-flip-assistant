@@ -8,6 +8,7 @@ import { resolveRates } from "../../../../core/rates";
 import { RECIPES, type CraftRecipe } from "../../../../core/craftRecipes";
 import { parseStoredReport, rowFreshness } from "../../../../core/craftReports";
 import { rankGate } from "../../../../core/craftValuation";
+import { rankCandidates } from "../../../../core/craftRank";
 import { config } from "../../../../config/env";
 
 export const runtime = "nodejs";
@@ -45,7 +46,8 @@ function materialIcons(league: string): Record<string, string> {
 }
 
 /** GET /api/craft/margins → stored reports + static recipe meta + EV-history sparkline + the
- *  confidence gate that decides whether a report may drive a top pick / alert. */
+ *  confidence gate that decides whether a report may drive a top pick / alert, and the recipe
+ *  keys split into pick / near-miss / unpriced tiers (craftRank) so every panel ranks alike. */
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -71,6 +73,8 @@ export async function GET(): Promise<Response> {
     };
   });
 
+  const tiers = rankCandidates(recipes);
+  const keys = (xs: ReadonlyArray<{ key: string }>): string[] => xs.map((x) => x.key);
   const resolved = resolveRates(league);
   return NextResponse.json({
     enabled: config.craftMargin.enabled,
@@ -82,6 +86,7 @@ export async function GET(): Promise<Response> {
     ratesFetchedAt: resolved?.fetchedAt ?? null,
     icons: materialIcons(league),
     recipes,
+    rank: { picks: keys(tiers.picks), nearMisses: keys(tiers.nearMisses), unpriced: keys(tiers.unpriced) },
   });
 }
 

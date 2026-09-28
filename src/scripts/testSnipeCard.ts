@@ -35,7 +35,7 @@ const decodeQ = (url: string): { query: { status: { option: string }; type?: str
   if (!q) throw new Error(`no ?q= in ${url}`);
   return JSON.parse(q) as { query: { status: { option: string }; type?: string; name?: string; filters?: Record<string, unknown> } };
 };
-const value: Valuation = { valueDiv: 4, minDiv: 3, samples: 6, dropped: 1, unrated: 0, total: 14 };
+const value: Valuation = { valueDiv: 4, minDiv: 3, samples: 6, dropped: 1, unrated: 0, total: 14, keptAsc: [3, 3.5, 4, 4, 4.5, 5] };
 const card = buildSnipeCard({
   listing: gl,
   league: "Runes of Aldur",

@@ -46,6 +46,7 @@ export interface ReferenceValue {
   samples: number; // comparables the value stands on (after trimming)
   dropped: number; // cheap outliers removed
   minDiv: number | null; // cheapest surviving comparable
+  keptAsc: number[]; // the surviving comparables, ascending — for a p25..p75 band around the median
 }
 
 const medianOf = (sortedAsc: number[]): number => {
@@ -66,6 +67,6 @@ export function referenceValue(prices: number[]): ReferenceValue {
     xs.shift();
     dropped++;
   }
-  if (xs.length === 0) return { valueDiv: null, samples: 0, dropped, minDiv: null };
-  return { valueDiv: medianOf(xs), samples: xs.length, dropped, minDiv: xs[0]! };
+  if (xs.length === 0) return { valueDiv: null, samples: 0, dropped, minDiv: null, keptAsc: [] };
+  return { valueDiv: medianOf(xs), samples: xs.length, dropped, minDiv: xs[0]!, keptAsc: xs };
 }

@@ -30,6 +30,7 @@ export interface Valuation {
   dropped: number; // cheap outliers (bait) trimmed away
   unrated: number; // comparables priced in currencies outside the rates ladder (not counted)
   total: number; // total live listings the search reported
+  keptAsc: number[]; // surviving comparables, ascending (craft result legs derive their band from it)
 }
 
 /** Keep only the stats worth searching on: pseudo totals + distinctive explicits (see buildPlan). */
@@ -172,6 +173,7 @@ export function valueFromComparables(
     dropped: ref.dropped,
     unrated: comps.filter((l) => l.price != null).length - rated.length,
     total,
+    keptAsc: ref.keptAsc,
   };
 }
 

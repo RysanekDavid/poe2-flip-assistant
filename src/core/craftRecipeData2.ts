@@ -31,13 +31,14 @@ export const RECIPES_2: CraftRecipe[] = [
       note: "Cheapest rare ilvl80+ body armour on an ES/ES-hybrid base — desecrated prefixes follow the base's defence type, and this recipe leans ES (caster buyers). 3-mod rares fine (all wiped). Non-corrupted (trade filters it), non-desecrated (eyeball).",
     },
     result: {
-      label: "Rare body armour · ES + res",
+      label: "Corrupted rare body armour · 200 ES + res",
       category: "armour.chest",
       rarity: "rare",
       ilvlMin: 80,
       esMin: 200,
-      stats: [{ text: "#% to Lightning Resistance", min: 30 }],
-      note: "Valued at a solid-ES + one 30%+ res floor (KB best ~230 ES / 45% ele res, listed ~18 div). Recorded batch sold 1/2/6/6/10/13 div — most hits sit well under the top roll.",
+      corrupted: true, // the putrefaction omen corrupts — uncorrupted listings are a different product
+      stats: [{ text: "+#% total Elemental Resistance", min: 60, group: "pseudo", tier: 2 }],
+      note: "Valued from instant-buyout CORRUPTED comparables: 200+ ES body armour with 60%+ total elemental res when enough are listed (else 200+ ES alone). Recorded batch sold 1/2/6/6/10/13 div — most hits sit well under the top roll.",
     },
     materials: PUTREFACTION_MATS,
     hitRate: 0.3,
@@ -66,8 +67,12 @@ export const RECIPES_2: CraftRecipe[] = [
       category: "armour.gloves",
       rarity: "rare",
       ilvlMin: 82,
-      stats: [{ text: "# to Level of all Projectile Skills", min: 2 }],
-      note: "Valued by the +2 Projectile prefix — the value driver for Ice Shot/Twisters. A lower T3 flat-damage pair sold 250 div, full BiS ~500; this floor prices the mod, not the god-roll suffixes.",
+      stats: [
+        { text: "# to Level of all Projectile Skills", min: 2, group: "fractured", tier: 1 },
+        // no pseudo for flat elemental attack damage exists; cold = the Ice Shot buyers the note names
+        { text: "Adds # to # Cold Damage to Attacks", tier: 2 },
+      ],
+      note: "Valued from instant-buyout comparables with a FRACTURED +2 Projectile Skills (the recipe's lock), plus a flat cold finish (Ice Shot buyers) when enough are listed (else the fractured +2 alone). A lower T3 flat-damage pair sold 250 div, full BiS ~500.",
     },
     materials: [
       { material: MATS.chaos, qtyPerAttempt: 15, note: "Method 1: chaos-spam the rare toward +2 Projectile Skills." },
@@ -107,11 +112,12 @@ export const RECIPES_2: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 80,
       stats: [
-        { text: "#% increased Spell Damage", min: 40 },
-        { text: "#% increased Cast Speed", min: 15 },
-        { text: "#% increased Critical Hit Chance for Spells" },
+        { text: "#% increased Spell Damage", min: 40, tier: 1 },
+        { text: "#% increased Cast Speed", min: 15, tier: 1 },
+        { text: "#% increased Critical Hit Chance for Spells", tier: 1 },
+        { text: "# to maximum Mana", tier: 2 },
       ],
-      note: "Valued at a budget caster-wand floor (cast speed + spell damage + crit present). Typical sale ~80-100 div; one lucky triple hit sold a 30 div craft for 400. The T1 'gain' tail isn't in this number.",
+      note: "Valued from instant-buyout comparables: spell damage 40%+, cast speed 15%+ and crit for spells, plus a mana line when enough are listed. Typical sale ~80-100 div; the T1 'gain' tail sits above the band.",
     },
     materials: [
       { material: MATS.greaterEssenceSeeking, qtyPerAttempt: 1, note: "Guaranteed T3 crit chance suffix." },
@@ -155,8 +161,12 @@ export const RECIPES_2: CraftRecipe[] = [
       category: "accessory.amulet",
       rarity: "rare",
       ilvlMin: 75,
-      stats: [{ text: "# to Spirit", min: 30 }],
-      note: "Valued at the +30 Spirit floor — Spirit gates aura/Arctic-Armour thresholds (40 is the huge breakpoint). ~70 div in → ~180 div sale in the source session. Global-defence + res push real sales higher.",
+      stats: [
+        { text: "# to Spirit", min: 30, tier: 1 },
+        { text: "#% increased Global Armour, Evasion and Energy Shield", tier: 2 },
+        { text: "#% to Fire Resistance", min: 30, tier: 2 },
+      ],
+      note: "Valued from instant-buyout comparables: +30 Spirit with the Enhancement global-defence convert and 30%+ fire res when enough are listed (else Spirit alone). ~70 div in → ~180 div sale in the source session.",
     },
     materials: [
       { material: MATS.preservedCollarbone, qtyPerAttempt: 30, note: "UNVERIFIED loop (KB §5: one desecrated mod per item): Spirit hunt by repeated desecration (T2 ~30 attempts; T1 far more). Dominates the craft cost." },
@@ -199,8 +209,9 @@ export const RECIPES_2: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 80,
       pdpsMin: 450,
-      stats: [],
-      note: "Valued by physical DPS floor (~550 flat phys ≈ 450+ pdps, the guide's sellable line). Crit Damage Bonus + 12% crit push real sales to 6-9+ div off a ~4 div base.",
+      // weapon crit damage is the local "+#% to" stat; "#% increased Critical Damage Bonus" is the global one
+      stats: [{ text: "#% to Critical Damage Bonus", tier: 2 }],
+      note: "Valued from instant-buyout comparables: 450+ pdps rare quarterstaff with a Crit Damage Bonus line when enough are listed (else pdps alone). Crit + 12% crit push real sales to 6-9+ div off a ~4 div base.",
     },
     materials: [
       { material: MATS.greaterEssenceAbrasion, qtyPerAttempt: 1, note: "Guaranteed flat Physical (Fizz)." },
@@ -234,8 +245,10 @@ export const RECIPES_2: CraftRecipe[] = [
       category: "accessory.amulet",
       rarity: "rare",
       ilvlMin: 75,
-      stats: [{ text: "#% increased Rarity of Items found", min: 25 }],
-      note: "Valued at the guaranteed T1-Rarity floor — profitable even without the ~1-in-15 Spirit/Rarity desecration jackpot. Rarity is low-value very early league; check current asks before batching.",
+      // No tier-2 Spirit / 2nd-Rarity stat: hitRate 0.5 is the GUARANTEED T1-rarity outcome, and
+      // pricing the ~1-in-15 jackpot archetype at that rate would overstate EV several-fold.
+      stats: [{ text: "#% increased Rarity of Items found", min: 25, tier: 1 }],
+      note: "Valued from instant-buyout comparables with the guaranteed T1 Rarity — the ~1-in-15 Spirit/Rarity desecration jackpot is upside NOT priced in. Rarity is low-value very early league.",
     },
     materials: [
       { material: MATS.perfectAug, qtyPerAttempt: 1, note: "On the open prefix (accept life/ES/evasion/Spirit/rarity)." },
@@ -264,8 +277,8 @@ export const RECIPES_2: CraftRecipe[] = [
       type: "Gold Ring",
       rarity: "rare",
       ilvlMin: 82,
-      stats: [{ text: "Adds # to # Cold Damage to Attacks", min: 20 }],
-      note: "Must have a FRACTURED tier-one flat elemental (trade can't filter fractured here — eyeball the fracture icon + tier before buying; 40% quality inflates T2 numbers). Cold preferred; fire/lightning fractures work too.",
+      stats: [{ text: "Adds # to # Cold Damage to Attacks", min: 20, group: "fractured" }],
+      note: "Must have a FRACTURED tier-one flat elemental — searched as the fractured stat itself (40% quality inflates T2 numbers, check the tier). Cold priced here; fire/lightning fractures work too.",
     },
     result: {
       label: "Gold Ring · T1 flat + T1 res package",
@@ -273,10 +286,11 @@ export const RECIPES_2: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 82,
       stats: [
-        { text: "Adds # to # Cold Damage to Attacks", min: 20 },
-        { text: "#% to Lightning Resistance", min: 36 },
+        { text: "Adds # to # Cold Damage to Attacks", min: 20, group: "fractured", tier: 1 },
+        { text: "#% to Lightning Resistance", min: 36, tier: 1 },
+        { text: "#% to Fire Resistance", min: 36, tier: 2 },
       ],
-      note: "Comparable = high flat + T2+ res on a Gold Ring (true T1+T1 pieces were 1-listed — too thin to price). The finished ring (TWO T1 res + premium settle) sells well above this floor: creator's 1:1 comp 625 div late league, 800-900 early.",
+      note: "Valued from instant-buyout comparables: FRACTURED flat cold 20+ with T1 lightning res, plus a second T1 (fire) res when enough are listed (else one T1 res). Creator's 1:1 comp 625 div late league, 800-900 early.",
     },
     materials: [
       { material: MATS.chaos, qtyPerAttempt: 500, note: "The second-T1-flat chaos spam (~400-600 expected; phys stays in the pool as a whittle out)." },

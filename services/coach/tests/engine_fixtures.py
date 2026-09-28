@@ -140,9 +140,31 @@ def leg(
         "outliersDropped": 1,
         "unresolvedStats": [],
         "icon": None,
-        "floorDiv": 0.05,
-        "percentile": 0.3,
-        "sampled": 40,
+        "floorDiv": None,
+        "percentile": None,
+        "sampled": 20,
+        "method": "comparable-median",
+        "band": {"p25": price * 0.8, "p50": price, "p75": price * 1.2},
+        "relaxed": False,
+        "unrated": 0,
+        **overrides,
+    }
+
+
+def near_miss(ev: float, **overrides: object) -> dict[str, object]:
+    """A stored NearMiss for a report costing 1.5 Div with a 6 Div result median."""
+    return {
+        "costDiv": 1.5,
+        "resultMedianDiv": 6.0,
+        "resultBandDiv": {"lo": 4.8, "hi": 7.2},
+        "evDiv": ev,
+        "evLowDiv": ev - 0.4,
+        "breakEvenHitRate": 0.25,
+        "modelHitRate": 0.35,
+        "hitRateGap": -0.1,
+        "resultNeededDiv": 4.286,
+        "gapDiv": max(0.0, -ev),
+        "confidence": "high",
         **overrides,
     }
 
@@ -159,8 +181,9 @@ def craft_report(key: str, ev: float, **overrides: object) -> dict[str, object]:
         "evDiv": ev,
         "marginPct": ev / 1.5 * 100,
         "error": None,
-        "valuation": "floor-percentile",
+        "valuation": "comparable-result",
         "returnFlagged": False,
+        "nearMiss": near_miss(ev),
         **overrides,
     }
 
