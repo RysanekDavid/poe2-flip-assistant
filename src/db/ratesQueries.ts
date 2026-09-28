@@ -80,7 +80,3 @@ export function ratesFetchedAt(league: string, source: RateSource): string | nul
     .get(league, source) as { mx: string | null };
   return row.mx ?? null;
 }
-
-// Read as local time, a zone-less SQLite stamp would be an hours-wide freshness bug in exactly the
-// check that decides whether a rate is still usable; the shared parser pins it to UTC.
-export { timestampAgeMs } from "../lib/sqliteTime";

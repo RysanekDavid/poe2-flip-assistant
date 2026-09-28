@@ -11,6 +11,7 @@ import {
   latestSnapshots,
   uniqueValueMap,
 } from "../../../db/marketQueries";
+import { parseSqliteTimestamp } from "../../../lib/sqliteTime";
 import type { DataAsOf } from "../../../lib/tools/regexContract";
 import { buildNamespace, memoNamespace, type Namespace } from "./namespace";
 
@@ -19,9 +20,8 @@ export interface LoadedNamespace {
   dataAsOf: DataAsOf;
 }
 
-/** sqlite "YYYY-MM-DD HH:MM:SS" (UTC, no zone marker) → ISO. */
 function sqliteUtcToIso(stamp: string | null): string | null {
-  return stamp ? new Date(`${stamp.replace(" ", "T")}Z`).toISOString() : null;
+  return stamp ? new Date(parseSqliteTimestamp(stamp)).toISOString() : null;
 }
 
 export async function loadRegexNamespace(league: string): Promise<LoadedNamespace> {
