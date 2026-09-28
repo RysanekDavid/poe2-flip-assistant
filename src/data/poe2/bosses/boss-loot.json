@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "patch": "0.5.5",
+  "dataAsOf": "2026-09-28",
+  "bosses": [
+    {
+      "id": "tangmazu",
+      "name": "Tangmazu, the Raven Trickster",
+      "mechanic": "Delirium",
+      "accessChain": "Clear wave 7 of a Simulacrum (300 Splinters) for a Raven's Reflection, then place it in the mirror at the Withered Willow. One Reflection is consumed per attempt (single-source). Every kill also drops one of six cheap uniques.",
+      "sources": [
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},
+        {"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"},
+        {"title":"Dads of Exile — Tangmazu","url":"https://dadsofexile.com/tangmazu","accessed":"2026-09-28"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "Raven's Reflection",
+          "entry": [{"itemId":"ravens-reflection","qty":1}],
+          "loot": [
+            {"name":"Raven-Touched Shard","priceRef":{"kind":"ninja","itemId":"raven-touched-shard"},"rate":{"kind":"range","lo":0.02,"hi":0.025},"confidence":"unverified","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}},
+            {"name":"Trickster's Shard","priceRef":{"kind":"scout","name":"Trickster's Shard"},"rate":{"kind":"point","p":0.043},"confidence":"unverified","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}},
+            {"name":"Tangmazu's Thurible","priceRef":{"kind":"scout","name":"Tangmazu's Thurible"},"rate":{"kind":"point","p":0.035},"confidence":"unverified","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}},
+            {"name":"Veilpiercer","priceRef":{"kind":"scout","name":"Veilpiercer"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}},
+            {"name":"Sadist's Mercy","priceRef":{"kind":"scout","name":"Sadist's Mercy"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}},
+            {"name":"The Auspex","priceRef":{"kind":"scout","name":"The Auspex"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}},
+            {"name":"Horror's Flight","priceRef":{"kind":"scout","name":"Horror's Flight"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}},
+            {"name":"The Raven's Flock","priceRef":{"kind":"scout","name":"The Raven's Flock"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}},
+            {"name":"Split Personality","priceRef":{"kind":"scout","name":"Split Personality"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "king-in-the-mists",
+      "name": "The King in the Mists",
+      "mechanic": "Ritual",
+      "accessChain": "Fill the Tribute to the King bar with unspent Ritual Tribute to get An Audience with the King, then use it at the Realmgate (Crux of Nothingness). The Audience is consumed.",
+      "sources": [{"title":"Maxroll — PoE2 Ritual resource","url":"https://maxroll.gg/poe2/resources/ritual","accessed":"2026-09-28"},{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "An Audience with the King",
+          "entry": [{"itemId":"an-audience-with-the-king","qty":1}],
+          "loot": [
+            {"name":"Head of the King","priceRef":{"kind":"ninja","itemId":"head-of-the-king"},"rate":{"kind":"guaranteed"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Ritual resource","url":"https://maxroll.gg/poe2/resources/ritual","accessed":"2026-09-28"}},
+            {
+              "name": "Omen (1 of 17, random)",
+              "priceRef": {"kind":"unpriced","reason":"a random pick from a 17-omen pool has no single market price"},
+              "rate": {"kind":"guaranteed"},
+              "confidence": "single-source",
+              "source": {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}
+            },
+            {"name":"Beetlebite","priceRef":{"kind":"scout","name":"Beetlebite"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Ingenuity","priceRef":{"kind":"scout","name":"Ingenuity"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"The Burden of Shadows","priceRef":{"kind":"scout","name":"The Burden of Shadows"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"From Nothing","priceRef":{"kind":"scout","name":"From Nothing"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Pragmatism","priceRef":{"kind":"scout","name":"Pragmatism"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Ritualistic Reliquary Key","priceRef":{"kind":"ninja","itemId":"ritualistic-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodach",
+      "name": "The Bodach",
+      "mechanic": "Ritual",
+      "accessChain": "Head of the King turns Atlas maps into Rites of the Nameless; each one's final altar drops a Call of the Shadows. Slot five into the Effigy at Caer Tarth — all five are consumed.",
+      "sources": [{"title":"Maxroll — PoE2 Ritual resource","url":"https://maxroll.gg/poe2/resources/ritual","accessed":"2026-09-28"},{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "5× Call of the Shadows",
+          "entry": [{"itemId":"call-of-the-shadows","qty":5}],
+          "loot": [
+            {"name":"Vestige of Darkness","priceRef":{"kind":"scout","name":"Vestige of Darkness"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Forgotten Warden","priceRef":{"kind":"scout","name":"Forgotten Warden"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Sylvan's Effigy","priceRef":{"kind":"scout","name":"Sylvan's Effigy"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Liminal Coil","priceRef":{"kind":"scout","name":"Liminal Coil"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Periphery","priceRef":{"kind":"scout","name":"Periphery"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Mórrigan's Insight","priceRef":{"kind":"scout","name":"Mórrigan's Insight"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Catha's Brilliance","priceRef":{"kind":"scout","name":"Catha's Brilliance"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Carved Mischief","priceRef":{"kind":"scout","name":"Carved Mischief"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Carved Majesty","priceRef":{"kind":"scout","name":"Carved Majesty"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Carved Cunning","priceRef":{"kind":"scout","name":"Carved Cunning"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Carved Tenacity","priceRef":{"kind":"scout","name":"Carved Tenacity"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vessel-of-kulemak",
+      "name": "Vessel of Kulemak",
+      "mechanic": "Abyss",
+      "accessChain": "Kulemak's Invitation drops from the Abyssal Commanders in level 79+ Abyssal Depths; use it at the Well of Souls to reach the Black Cathedral. Consumed on entry. Rates below come from one 100-run sample of the empowered fight; The Master's Reach needs the fully empowered fight (all three Liches).",
+      "sources": [
+        {"title":"timesaver.gg — Vessel of Kulemak guide","url":"https://timesaver.gg/blog/poe2-vessel-of-kulemak-guide","accessed":"2026-09-28"},
+        {"title":"Stratlore — Vessel of Kulemak","url":"https://poe2.stratlore.com/en/bosses/vessel-of-kulemak/","accessed":"2026-09-28"},
+        {"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "Kulemak's Invitation",
+          "entry": [{"itemId":"kulemaks-invitation","qty":1}],
+          "loot": [
+            {"name":"Grip of Kulemak","priceRef":{"kind":"scout","name":"Grip of Kulemak"},"rate":{"kind":"guaranteed"},"confidence":"confirmed","source":{"title":"timesaver.gg — Vessel of Kulemak guide","url":"https://timesaver.gg/blog/poe2-vessel-of-kulemak-guide","accessed":"2026-09-28"}},
+            {"name":"Ancient Jawbone","priceRef":{"kind":"ninja","itemId":"ancient-jawbone"},"rate":{"kind":"point","p":0.36},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
+            {"name":"Ancient Rib","priceRef":{"kind":"ninja","itemId":"ancient-rib"},"rate":{"kind":"point","p":0.35},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
+            {"name":"Ancient Collarbone","priceRef":{"kind":"ninja","itemId":"ancient-collarbone"},"rate":{"kind":"point","p":0.29},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
+            {"name":"Darkness Enthroned","priceRef":{"kind":"scout","name":"Darkness Enthroned"},"rate":{"kind":"point","p":0.59},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
+            {"name":"The Unborn Lich","priceRef":{"kind":"scout","name":"The Unborn Lich"},"rate":{"kind":"point","p":0.38},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
+            {"name":"Divine Orb","priceRef":{"kind":"ninja","itemId":"divine"},"rate":{"kind":"point","p":0.16},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
+            {"name":"Tecrod's Revenge","priceRef":{"kind":"scout","name":"Tecrod's Revenge"},"rate":{"kind":"point","p":0.07},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
+            {"name":"Undying Hate","priceRef":{"kind":"scout","name":"Undying Hate"},"rate":{"kind":"point","p":0.03},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
+            {"name":"The Master's Reach","priceRef":{"kind":"scout","name":"The Master's Reach"},"rate":{"kind":"unknown"},"confidence":"unverified","source":{"title":"timesaver.gg — The Master's Reach guide (0.5.4)","url":"https://timesaver.gg/blog/poe2-the-masters-reach-guide","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arbiter-of-ash",
+      "name": "The Arbiter of Ash",
+      "mechanic": "Precursor Fortress",
+      "accessChain": "Place one Weathered, one Faded and one Ancient Crisis Fragment in the Burning Monolith; all three are consumed. The uber version (Calamity Fragments) is not modelled.",
+      "sources": [{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},{"title":"timesaver.gg — Arbiter of Ash guide","url":"https://timesaver.gg/blog/poe2-arbiter-of-ash-guide","accessed":"2026-09-28"}],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "3 Crisis Fragments",
+          "entry": [{"itemId":"weathered-crisis-fragment","qty":1},{"itemId":"faded-crisis-fragment","qty":1},{"itemId":"ancient-crisis-fragment","qty":1}],
+          "loot": [
+            {"name":"Morior Invictus","priceRef":{"kind":"scout","name":"Morior Invictus"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Ab Aeterno","priceRef":{"kind":"scout","name":"Ab Aeterno"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Sine Aequo","priceRef":{"kind":"scout","name":"Sine Aequo"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Solus Ipse","priceRef":{"kind":"scout","name":"Solus Ipse"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Prism of Belief","priceRef":{"kind":"scout","name":"Prism of Belief"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Sacred Flame","priceRef":{"kind":"scout","name":"Sacred Flame"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"The Arbiter's Reliquary Key","priceRef":{"kind":"ninja","itemId":"the-arbiters-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trialmaster",
+      "name": "The Trialmaster",
+      "mechanic": "Trial of Chaos",
+      "accessChain": "Run a 10-trial Inscribed Ultimatum (area level 75+) and spend one Cowardly, one Deadly and one Victorious Fate to face the Trialmaster; the Fates are consumed. The Ultimatum itself is not on the exchange and is not priced here.",
+      "sources": [
+        {"title":"Maxroll — PoE2 Trial of Chaos resource","url":"https://maxroll.gg/poe2/resources/trial-of-chaos","accessed":"2026-09-28"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},
+        {"title":"timesaver.gg — PoE2 pinnacle bosses guide","url":"https://timesaver.gg/blog/poe2-pinnacle-bosses-guide","accessed":"2026-09-28"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "3 Fates",
+          "entry": [{"itemId":"cowardly-fate","qty":1},{"itemId":"deadly-fate","qty":1},{"itemId":"victorious-fate","qty":1}],
+          "loot": [
+            {"name":"Glimpse of Chaos","priceRef":{"kind":"scout","name":"Glimpse of Chaos"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Zerphi's Genesis","priceRef":{"kind":"scout","name":"Zerphi's Genesis"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Mahuxotl's Machination","priceRef":{"kind":"scout","name":"Mahuxotl's Machination"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Hateforge","priceRef":{"kind":"scout","name":"Hateforge"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"The Adorned","priceRef":{"kind":"scout","name":"The Adorned"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"The Trialmaster's Reliquary Key","priceRef":{"kind":"ninja","itemId":"the-trialmasters-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — PoE2 pinnacle bosses guide","url":"https://timesaver.gg/blog/poe2-pinnacle-bosses-guide","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arbiter-of-divinity",
+      "name": "The Arbiter of Divinity",
+      "mechanic": "Precursor Fortress",
+      "accessChain": "Phyx (Patriarch Halls) drops the Origin Spark and Phya (Matriarch Halls) the Origin Cradle, both on T15+ waystones. Forge one of each into an Origin Core at the Precursor Reactor and bring it to the top of the Origin Tower; the Core is consumed.",
+      "sources": [
+        {"title":"poe2wiki — The Arbiter of Divinity","url":"https://www.poe2wiki.net/wiki/The_Arbiter_of_Divinity","accessed":"2026-09-28"},
+        {"title":"poe2db — Origin Core (forge recipe)","url":"https://poe2db.tw/us/Origin_Core","accessed":"2026-09-28"},
+        {"title":"Dads of Exile — Precursor Fortress: Origin Spark to the Arbiter","url":"https://dadsofexile.com/precursor-fortress","accessed":"2026-09-28"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "Origin Core",
+          "entry": [{"itemId":"origin-core","qty":1,"craftFrom":[{"itemId":"origin-spark","qty":1},{"itemId":"origin-cradle","qty":1}]}],
+          "loot": [
+            {"name":"Decree of Loyalty","priceRef":{"kind":"scout","name":"Decree of Loyalty"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Decree of Acuity","priceRef":{"kind":"scout","name":"Decree of Acuity"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Decree of Flight","priceRef":{"kind":"scout","name":"Decree of Flight"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Decree of Opportunity","priceRef":{"kind":"scout","name":"Decree of Opportunity"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"The Ordained","priceRef":{"kind":"scout","name":"The Ordained"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Immaculate Adherence","priceRef":{"kind":"scout","name":"Immaculate Adherence"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Her Declaration","priceRef":{"kind":"scout","name":"Her Declaration"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Seraph's Heart","priceRef":{"kind":"scout","name":"Seraph's Heart"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "olroth",
+      "name": "Olroth, Origin of the Fall",
+      "mechanic": "Expedition",
+      "accessChain": "With Olroth's Saga active, the next level 79+ Logbook guarantees an Olroth encounter (Obscure Island); both are consumed. The Logbook's own Expedition loot is not counted, so net understates the run. Rates are timesaver.gg's difficulty-4 figures, method unstated.",
+      "sources": [
+        {"title":"poe2db — Olroth's Saga","url":"https://poe2db.tw/Olroths_Saga","accessed":"2026-09-28"},
+        {"title":"poe2wiki — Expedition Logbook","url":"https://www.poe2wiki.net/wiki/Expedition_Logbook","accessed":"2026-09-28"},
+        {"title":"timesaver.gg — Olroth guide (difficulty-4 drop rates)","url":"https://timesaver.gg/blog/poe2-olroth-guide","accessed":"2026-09-28"},
+        {"title":"poe2db — Olroth, Origin of the Fall","url":"https://poe2db.tw/us/Olroth%2C_Origin_of_the_Fall","accessed":"2026-09-28"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}
+      ],
+      "tiers": [
+        {
+          "id": "saga",
+          "label": "Logbook + Olroth's Saga",
+          "entry": [{"itemId":"expedition-logbook","qty":1},{"itemId":"olroths-saga","qty":1}],
+          "loot": [
+            {"name":"Shattered Triskelion","priceRef":{"kind":"ninja","itemId":"shattered-triskelion"},"rate":{"kind":"guaranteed"},"confidence":"confirmed","source":{"title":"timesaver.gg — Olroth guide (difficulty-4 drop rates)","url":"https://timesaver.gg/blog/poe2-olroth-guide","accessed":"2026-09-28"}},
+            {"name":"Olrovasara","priceRef":{"kind":"scout","name":"Olrovasara"},"rate":{"kind":"point","p":0.36},"confidence":"single-source","source":{"title":"timesaver.gg — Olroth guide (difficulty-4 drop rates)","url":"https://timesaver.gg/blog/poe2-olroth-guide","accessed":"2026-09-28"}},
+            {"name":"Keeper of the Arc","priceRef":{"kind":"scout","name":"Keeper of the Arc"},"rate":{"kind":"point","p":0.34},"confidence":"single-source","source":{"title":"timesaver.gg — Olroth guide (difficulty-4 drop rates)","url":"https://timesaver.gg/blog/poe2-olroth-guide","accessed":"2026-09-28"}},
+            {"name":"Svalinn","priceRef":{"kind":"scout","name":"Svalinn"},"rate":{"kind":"point","p":0.15},"confidence":"single-source","source":{"title":"timesaver.gg — Olroth guide (difficulty-4 drop rates)","url":"https://timesaver.gg/blog/poe2-olroth-guide","accessed":"2026-09-28"}},
+            {"name":"Heroic Tragedy","priceRef":{"kind":"scout","name":"Heroic Tragedy"},"rate":{"kind":"point","p":0.11},"confidence":"single-source","source":{"title":"timesaver.gg — Olroth guide (difficulty-4 drop rates)","url":"https://timesaver.gg/blog/poe2-olroth-guide","accessed":"2026-09-28"}},
+            {"name":"Olroth's Resolve","priceRef":{"kind":"scout","name":"Olroth's Resolve"},"rate":{"kind":"point","p":0.04},"confidence":"single-source","source":{"title":"timesaver.gg — Olroth guide (difficulty-4 drop rates)","url":"https://timesaver.gg/blog/poe2-olroth-guide","accessed":"2026-09-28"}},
+            {"name":"Olroth's Reliquary Key","priceRef":{"kind":"ninja","itemId":"olroths-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "xesht",
+      "name": "Xesht, We That Are One",
+      "mechanic": "Breach",
+      "accessChain": "Spend Breach Splinters at the Realmgate and pick a difficulty (50 / 100 / 150 splinters); the splinters are consumed. Since 0.5 a Breachstone reveals Breach Strongholds instead and is not the Xesht key. Rare uniques drop more often at higher difficulty — no numbers published.",
+      "sources": [
+        {"title":"poe2wiki — Xesht, We That Are One","url":"https://www.poewiki.net/wiki/poe2wiki:Xesht,_We_Who_Are_One","accessed":"2026-09-28"},
+        {"title":"poe2wiki — Breachstone (0.5 function; splinters at the Realmgate)","url":"https://www.poe2wiki.net/wiki/Breachstone","accessed":"2026-09-28"},
+        {"title":"poe-vault — Xesht boss guide (50/100/150 splinter tiers)","url":"https://www.poe-vault.com/poe2/guides/xesht-we-that-are-one-boss-guide","accessed":"2026-09-28"},
+        {"title":"timesaver.gg — Xesht guide (0.5.4c)","url":"https://timesaver.gg/blog/poe2-xesht-guide","accessed":"2026-09-28"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}
+      ],
+      "tiers": [
+        {
+          "id": "d1",
+          "label": "Difficulty 1 · 50 splinters",
+          "entry": [{"itemId":"breach-splinter","qty":50}],
+          "loot": [
+            {"name":"Beyond Reach","priceRef":{"kind":"scout","name":"Beyond Reach"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Choir of the Storm","priceRef":{"kind":"scout","name":"Choir of the Storm"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"The Pandemonius","priceRef":{"kind":"scout","name":"The Pandemonius"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xoph's Blood","priceRef":{"kind":"scout","name":"Xoph's Blood"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Hand of Wisdom and Action","priceRef":{"kind":"scout","name":"Hand of Wisdom and Action"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Skin of the Loyal","priceRef":{"kind":"scout","name":"Skin of the Loyal"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Controlled Metamorphosis","priceRef":{"kind":"scout","name":"Controlled Metamorphosis"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xesht's Reliquary Key","priceRef":{"kind":"ninja","itemId":"xeshts-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xoph's Pyre","priceRef":{"kind":"scout","name":"Xoph's Pyre"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Tul's Stillness","priceRef":{"kind":"scout","name":"Tul's Stillness"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Esh's Radiance","priceRef":{"kind":"scout","name":"Esh's Radiance"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Uul-Netol's Embrace","priceRef":{"kind":"scout","name":"Uul-Netol's Embrace"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}}
+          ]
+        },
+        {
+          "id": "d2",
+          "label": "Difficulty 2 · 100 splinters",
+          "entry": [{"itemId":"breach-splinter","qty":100}],
+          "loot": [
+            {"name":"Beyond Reach","priceRef":{"kind":"scout","name":"Beyond Reach"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Choir of the Storm","priceRef":{"kind":"scout","name":"Choir of the Storm"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"The Pandemonius","priceRef":{"kind":"scout","name":"The Pandemonius"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xoph's Blood","priceRef":{"kind":"scout","name":"Xoph's Blood"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Hand of Wisdom and Action","priceRef":{"kind":"scout","name":"Hand of Wisdom and Action"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Skin of the Loyal","priceRef":{"kind":"scout","name":"Skin of the Loyal"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Controlled Metamorphosis","priceRef":{"kind":"scout","name":"Controlled Metamorphosis"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xesht's Reliquary Key","priceRef":{"kind":"ninja","itemId":"xeshts-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xoph's Pyre","priceRef":{"kind":"scout","name":"Xoph's Pyre"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Tul's Stillness","priceRef":{"kind":"scout","name":"Tul's Stillness"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Esh's Radiance","priceRef":{"kind":"scout","name":"Esh's Radiance"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Uul-Netol's Embrace","priceRef":{"kind":"scout","name":"Uul-Netol's Embrace"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}}
+          ]
+        },
+        {
+          "id": "d3",
+          "label": "Difficulty 3 · 150 splinters",
+          "entry": [{"itemId":"breach-splinter","qty":150}],
+          "loot": [
+            {"name":"Beyond Reach","priceRef":{"kind":"scout","name":"Beyond Reach"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Choir of the Storm","priceRef":{"kind":"scout","name":"Choir of the Storm"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"The Pandemonius","priceRef":{"kind":"scout","name":"The Pandemonius"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xoph's Blood","priceRef":{"kind":"scout","name":"Xoph's Blood"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Hand of Wisdom and Action","priceRef":{"kind":"scout","name":"Hand of Wisdom and Action"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Skin of the Loyal","priceRef":{"kind":"scout","name":"Skin of the Loyal"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Controlled Metamorphosis","priceRef":{"kind":"scout","name":"Controlled Metamorphosis"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xesht's Reliquary Key","priceRef":{"kind":"ninja","itemId":"xeshts-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xoph's Pyre","priceRef":{"kind":"scout","name":"Xoph's Pyre"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Tul's Stillness","priceRef":{"kind":"scout","name":"Tul's Stillness"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Esh's Radiance","priceRef":{"kind":"scout","name":"Esh's Radiance"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Uul-Netol's Embrace","priceRef":{"kind":"scout","name":"Uul-Netol's Embrace"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    }
+  ]
+}
