@@ -49,6 +49,9 @@ const PREF: Record<string, string[]> = {
   explicit: ["explicit", "implicit"],
   crafted: ["explicit"],
   fractured: ["explicit"],
+  // a desecrated line is an ordinary explicit carrying a flag — trade2's desecratedMods bucket
+  // resolves the same way (tradeListing BUCKETS), so pasted and fetched items share one catalog group
+  desecrated: ["explicit"],
 };
 
 /** Groups whose mods are ordinary explicits carrying a flag (crafted/fractured/desecrated). */

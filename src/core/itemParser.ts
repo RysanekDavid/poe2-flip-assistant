@@ -5,7 +5,7 @@
  * parser dumb and robust to format drift: it just splits sections, reads the header, and
  * hands every plausible affix line downstream.
  */
-export type ModMarker = "implicit" | "rune" | "enchant" | "crafted" | "fractured" | "explicit";
+export type ModMarker = "implicit" | "rune" | "enchant" | "crafted" | "fractured" | "desecrated" | "explicit";
 
 export interface ParsedModLine {
   raw: string; // original line, marker stripped: "+45 to maximum Life"
@@ -32,6 +32,7 @@ const MARKERS: Record<string, ModMarker> = {
   enchant: "enchant",
   crafted: "crafted",
   fractured: "fractured",
+  desecrated: "desecrated",
 };
 
 /** Pull the trailing "(implicit)" / "(rune)" / … tag off a mod line, defaulting to explicit. */
