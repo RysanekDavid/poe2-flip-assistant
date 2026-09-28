@@ -29,6 +29,7 @@ const SECTION_SEP = /^-{3,}$/; // the "--------" divider
 const MARKERS: Record<string, ModMarker> = {
   implicit: "implicit",
   rune: "rune",
+  // the in-game suffix Exiled Exchange 2 also recognises (client_strings.js / advanced-mod-desc.ts)
   "added rune": "rune",
   enchant: "enchant",
   crafted: "crafted",
