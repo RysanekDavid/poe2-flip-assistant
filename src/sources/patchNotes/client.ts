@@ -1,9 +1,17 @@
-import type { ConditionalHeaders, HtmlFetchResult } from "./contracts";
+import { PATCH_FORUM_ID, type ConditionalHeaders, type HtmlFetchResult } from "./contracts";
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_REDIRECTS = 3;
 const ALLOWED_HOSTS = new Set(["pathofexile.com", "www.pathofexile.com"]);
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+// Post language is fixed by the forum id (PATCH_FORUM_ID), not negotiated: on 2026-09-28 the
+// German forum returned byte-identical German posts with and without this header. It is sent so
+// the page chrome (post dates, labels) stays English if GGG ever starts negotiating it.
+export const PATCH_ACCEPT_LANGUAGE = "en-US,en;q=0.9";
+const INDEX_PATH = new RegExp(`^/forum/view-forum/${PATCH_FORUM_ID}/?$`);
+const ALLOWED_PATH = new RegExp(
+  `^/forum/(view-forum/${PATCH_FORUM_ID}|view-thread/\\d+/filter-account-type/staff)/?$`,
+);
 
 export type HttpFetcher = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
@@ -21,6 +29,7 @@ export async function fetchPatchHtml(
   }
   const headers = new Headers({
     Accept: "text/html, application/xhtml+xml;q=0.9",
+    "Accept-Language": PATCH_ACCEPT_LANGUAGE,
     "User-Agent": `POE2TradeChecker/0.1 (+${identifyingContact})`,
   });
   if (conditional.etag) headers.set("If-None-Match", conditional.etag);
@@ -83,7 +92,7 @@ async function requestWithRedirects(
 }
 
 function patchResourceIdentity(url: URL): string {
-  if (/^\/forum\/view-forum\/2222\/?$/.test(url.pathname)) return "index:2222";
+  if (INDEX_PATH.test(url.pathname)) return `index:${PATCH_FORUM_ID}`;
   const thread = /^\/forum\/view-thread\/(\d+)\/filter-account-type\/staff\/?$/.exec(url.pathname);
   if (thread?.[1]) return `thread:${thread[1]}`;
   throw new Error(`unexpected patch-note path: ${url.pathname}`);
@@ -101,7 +110,7 @@ export function validatePatchUrl(value: string): URL {
   if (url.protocol !== "https:" || !ALLOWED_HOSTS.has(url.hostname.toLowerCase())) {
     throw new Error(`unsafe patch-note URL: ${url.href}`);
   }
-  if (!/^\/forum\/(view-forum\/2222|view-thread\/\d+\/filter-account-type\/staff)\/?$/.test(url.pathname)) {
+  if (!ALLOWED_PATH.test(url.pathname)) {
     throw new Error(`unexpected patch-note path: ${url.pathname}`);
   }
   return url;

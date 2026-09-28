@@ -218,7 +218,7 @@ Every observation needs league, observed time, source, sample size, and confiden
 
 Implement first:
 
-- Poll [PoE2 patch notes](https://www.pathofexile.com/forum/view-forum/2222) every 30 minutes with
+- Poll [PoE2 patch notes](https://www.pathofexile.com/forum/view-forum/2212) every 30 minutes with
   conditional requests or content hashes.
 - Fetch new staff threads, store immutable HTML, and extract version, title, publication time,
   headings, and bullets.
@@ -490,7 +490,7 @@ create a large, stale database that the agent cannot safely reason over.
 - [GGG developer docs](https://www.pathofexile.com/developer/docs)
 - [GGG API reference](https://www.pathofexile.com/developer/docs/reference)
 - [GGG data exports](https://www.pathofexile.com/developer/docs/data)
-- [Official PoE2 patch notes](https://www.pathofexile.com/forum/view-forum/2222)
+- [Official PoE2 patch notes](https://www.pathofexile.com/forum/view-forum/2212)
 - [poe.ninja API reference](https://poe.ninja/docs/api)
 - [poe.ninja PoE2 unique pricing source note](https://poe.ninja/posts/poe2-unique-items)
 - [PoEDB Developer API directory](https://poedb.tw/us/Developer_API)

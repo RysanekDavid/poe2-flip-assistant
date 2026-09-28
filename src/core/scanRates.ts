@@ -3,8 +3,8 @@ import { getDefaultLeague } from "./leagueState";
 import type { DivRates } from "./listingPrice";
 
 /**
- * Exchange rates for the shared trade2 scanners (hunts, autosnipe). They used to `await
- * fetchScout()` first, so a poe2scout outage killed every hunt. resolveRates walks the
+ * Exchange rates for the shared trade2 scanners (autosnipe). They used to `await
+ * fetchScout()` first, so a poe2scout outage killed every scan. resolveRates walks the
  * cx → ninja → scout ladder from our own DB instead; only when ALL are stale do we fail — loudly.
  */
 export function scanRates(league: string = getDefaultLeague()): DivRates {

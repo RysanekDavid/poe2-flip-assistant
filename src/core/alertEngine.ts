@@ -1,6 +1,7 @@
 import notifier from "node-notifier";
 import { insertAlert, hasRecentAlert, hasAlertEver } from "../db/alertQueries";
 import { config } from "../config/env";
+import { SnipeCardSchema, type SnipeCard } from "../lib/snipeCard";
 
 export type AlertType =
   | "SPREAD"
@@ -9,16 +10,14 @@ export type AlertType =
   | "VOLUME"
   | "TREND"
   | "SNIPE"
-  | "CRAFT_BASE"
   | "CRAFT_MARGIN"
-  | "RESELL"
   | "LEAGUE"; // new league detected / league switched — fired by leagueAlerts, not this engine
 
 /**
  * Persist an alert and fire a desktop notification.
  *
  * `league` is the market the DETECTING pipeline ran in, passed by the caller — the multi-league
- * poller alerts per league, while the shared trade2 scanners (hunts, autosnipe, craft margins)
+ * poller alerts per league, while the shared trade2 scanners (autosnipe, craft margins)
  * only ever run in the app default. Reading the recipient's current view here would file a
  * default-league snipe under whatever league they happened to be looking at.
  *
@@ -41,6 +40,7 @@ export function fireAlert(
     threshold: number;
     whisper?: string | null; // in-game whisper to copy (snipe alerts)
     link?: string | null; // trade-site deep link
+    details?: SnipeCard | null; // item card (SNIPE) — validated again here, it is persisted as-is
     // "once": alert at most once EVER per itemId+type — for listing-level snipes, where the
     // cooldown just re-pinged the same unsold bait every hour (Sol Trail ×12).
     dedupe?: "cooldown" | "once";
@@ -61,6 +61,7 @@ export function fireAlert(
     threshold: a.threshold,
     whisper: a.whisper,
     link: a.link,
+    details: a.details == null ? null : JSON.stringify(SnipeCardSchema.parse(a.details)),
   });
 
   if (!config.desktopNotify) return;

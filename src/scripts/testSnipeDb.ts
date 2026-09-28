@@ -1,10 +1,9 @@
-/* Snipe/hunt persistence contracts against a TEMP DB: once-per-listing SNIPE dedupe, the alerts
- * league filter, the zero-mod price-book refusal, the scan-request queue, per-hunt errors and the
- * hunt_hits price_div migration.
+/* Snipe persistence contracts against a TEMP DB: once-per-listing SNIPE dedupe, the alerts
+ * league filter, the zero-mod price-book refusal, the scan-request queue and the one-shot drop of
+ * the retired Hunt tables.
  * Run: npm run test:snipe (src/scripts/runWithTestEnv.ts snipe-db sets DB_PATH + disables toasts). */
-import Database from "better-sqlite3";
 import { config } from "../config/env";
-import { getDb, purgeLegacyPriceBook, relaxHuntHitPriceDiv } from "../db/database";
+import { getDb, purgeLegacyPriceBook } from "../db/database";
 import { dbRateStore } from "../db/tradeRateQueries";
 import { createRateGovernor } from "../api/tradeRateLimit";
 import { fireAlert } from "../core/alertEngine";
@@ -12,17 +11,8 @@ import { emptyReport } from "../core/autoSnipe";
 import { getAlertCounts, getAlertFeed, markVisibleSeen } from "../db/alertQueries";
 import { feedPriceBook, newBookCounters, bookReference } from "../core/priceBookFeed";
 import { consumeScanRequests, isScanPending, requestScan } from "../db/scanRequestQueries";
-import {
-  addHunt,
-  getHits,
-  getHuntsForUser,
-  getSnipeFailure,
-  getSnipeReport,
-  insertHit,
-  saveSnipeFailure,
-  saveSnipeReport,
-  touchHuntScan,
-} from "../db/huntQueries";
+import { getSnipeFailure, getSnipeReport, saveSnipeFailure, saveSnipeReport } from "../db/snipeReportQueries";
+import { dropRetiredHunts } from "../db/retiredMigrations";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -38,7 +28,6 @@ const ok = (name: string, cond: boolean, extra = ""): void => {
 const db = getDb();
 db.exec(`
   DELETE FROM alerts; DELETE FROM price_book_obs; DELETE FROM scan_request;
-  DELETE FROM hunt_hits; DELETE FROM hunts;
 `);
 const USER = 1;
 const A = "League Alpha";
@@ -104,40 +93,27 @@ ok("book reference excludes the judged listing", withSelf.samples === 5 && witho
 // --- manual scans are queued for the poller, not run in the web process ---
 requestScan("autosnipe");
 requestScan("autosnipe");
-requestScan("hunts", 7);
-ok("request pending", isScanPending("autosnipe") && isScanPending("hunts", 7));
+ok("request pending", isScanPending("autosnipe"));
 ok("duplicate requests collapse to one", consumeScanRequests("autosnipe").length === 1);
 ok("consumed request is gone", !isScanPending("autosnipe") && consumeScanRequests("autosnipe").length === 0);
-ok("hunt requests carry the user", consumeScanRequests("hunts").join(",") === "7");
 
-// --- per-hunt error + nullable hit price ---
-const huntId = addHunt(USER, A, {
-  label: "t", mode: "SNIPE", item_name: null, base_type: "Gold Ring", category: null, ilvl_min: null,
-  rarity: "rare", stats_json: null, max_amount: null, max_ccy: null, target_div: null,
-});
-touchHuntScan(huntId, false, "trade2 400 — bad stat id");
-const h = getHuntsForUser(USER).find((x) => x.id === huntId);
-ok("failed scan stamps last_error AND last_scan_at", h?.last_error === "trade2 400 — bad stat id" && h.last_scan_at != null);
-touchHuntScan(huntId, false, null);
-ok("clean scan clears last_error", getHuntsForUser(USER).find((x) => x.id === huntId)?.last_error === null);
-insertHit(USER, {
-  hunt_id: huntId, item_name: "Odd", base_type: "Gold Ring", price_amount: 4, price_ccy: "annul", price_div: null,
-  margin_pct: null, account: "x", whisper: null, listing_id: "u1", seller_online: 0, listed_at: null, sig: "s",
-});
-ok("unrated hit stored with price_div NULL (not a fake 0)", getHits(USER).find((x) => x.listing_id === "u1")?.price_div === null);
-
-// --- legacy NOT NULL hunt_hits is rebuilt nullable, rows + ALTER-added columns kept ---
-const legacy = new Database(":memory:");
-legacy.exec(`CREATE TABLE hunt_hits (id INTEGER PRIMARY KEY AUTOINCREMENT, hunt_id INTEGER NOT NULL, item_name TEXT NOT NULL,
-  price_amount REAL NOT NULL, price_ccy TEXT NOT NULL, price_div REAL NOT NULL, sig TEXT NOT NULL);
-  ALTER TABLE hunt_hits ADD COLUMN listing_id TEXT;
-  INSERT INTO hunt_hits (hunt_id, item_name, price_amount, price_ccy, price_div, sig, listing_id) VALUES (1, 'a', 1, 'divine', 1, 's', 'L');`);
-relaxHuntHitPriceDiv(legacy);
-relaxHuntHitPriceDiv(legacy); // idempotent
-const cols = legacy.prepare("PRAGMA table_info(hunt_hits)").all() as Array<{ name: string; notnull: number }>;
-ok("migration: price_div nullable", cols.find((c) => c.name === "price_div")?.notnull === 0);
-ok("migration: ALTER-added column + row preserved", (legacy.prepare("SELECT listing_id FROM hunt_hits").get() as { listing_id: string }).listing_id === "L");
-legacy.close();
+// --- the retired Hunt tables are dropped exactly once, with their alerts and routing rows ---
+ok("fresh schema has no hunt tables → nothing to drop", !dropRetiredHunts(db));
+db.exec(`
+  CREATE TABLE hunts (id INTEGER PRIMARY KEY, label TEXT);
+  CREATE TABLE hunt_hits (id INTEGER PRIMARY KEY, hunt_id INTEGER);
+  CREATE TABLE hunt_runtime (id INTEGER PRIMARY KEY);
+  INSERT INTO scan_request (kind, user_id) VALUES ('hunts', 7), ('autosnipe', 0);
+  INSERT INTO subsystem_heartbeat (name, league, runs) VALUES ('hunts', '', 3);
+  INSERT INTO notify_prefs (user_id, type, discord, ticker) VALUES (1, 'RESELL', 1, 1), (1, 'SNIPE', 0, 1);
+`);
+db.prepare("INSERT INTO alerts (user_id, league, type, item_id, item_name, message) VALUES (1, ?, 'CRAFT_BASE', 'cb-1', 'x', 'm')").run(A);
+ok("legacy hunt tables dropped", dropRetiredHunts(db) && count("SELECT COUNT(*) c FROM sqlite_master WHERE name LIKE 'hunt%'") === 0);
+ok("hunt scan requests + heartbeat gone, autosnipe request kept", isScanPending("autosnipe") && count("SELECT COUNT(*) c FROM scan_request WHERE kind = 'hunts'") === 0 && count("SELECT COUNT(*) c FROM subsystem_heartbeat WHERE name = 'hunts'") === 0);
+ok("hunt-only alert types + their prefs gone, SNIPE pref kept", count("SELECT COUNT(*) c FROM alerts WHERE type = 'CRAFT_BASE'") === 0 && count("SELECT COUNT(*) c FROM notify_prefs WHERE type = 'RESELL'") === 0 && count("SELECT COUNT(*) c FROM notify_prefs WHERE type = 'SNIPE'") === 1);
+ok("second run is a no-op", !dropRetiredHunts(db));
+consumeScanRequests("autosnipe");
+db.prepare("DELETE FROM notify_prefs").run();
 
 // --- a failed autosnipe scan never wipes the last good report ---
 saveSnipeReport(JSON.stringify({ findings: [{ listingId: "good-1" }] }));

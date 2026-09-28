@@ -4,7 +4,7 @@ import { pruneStaleRecipeReports, consumeCraftRefresh } from "../db/craftQueries
 import { credForUser } from "../auth/credForUser";
 import { POLLER_MAX_INLINE_WAIT_MS, setMaxInlineWaitMs, type TradeCred } from "../api/tradeClient";
 import { runCycle } from "./marketCycle";
-import { runHuntScan, runAutoSnipe, drainScanRequests } from "./tradeScans";
+import { runAutoSnipe, drainScanRequests } from "./tradeScans";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
 import { refreshStalestRecipe, refreshAllRecipes } from "../core/craftMargin";
 import { RECIPES } from "../core/craftRecipes";
@@ -15,7 +15,7 @@ import { getPolledLeagues } from "../core/leagueUsers";
 import { balanceProblem, snapshotBalancesAll } from "./balanceLoop";
 import { startNotifyDrainer } from "../core/notify/drainer";
 
-const OWNER_ID = 1; // seeded owner; the live socket + autosnipe scan run under the owner's cred
+const OWNER_ID = 1; // seeded owner; the autosnipe + craft-margin scans run under the owner's cred
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
@@ -63,15 +63,6 @@ function startMarketCycle(): void {
 }
 
 function startTradeScans(): void {
-  // Hunt = near-live per-user poll-diff scan (newest listings first, de-duped by listing id).
-  // The trade WebSocket path is gone: trade2 live sockets require a saved on-account search AND
-  // a browser TLS fingerprint — Cloudflare reaps plain Node clients seconds after connect. A
-  // 30s poll is the honest server-side equivalent; the tick is skipped while a previous cycle
-  // is still draining through the rate limiter, so many hunts degrade gracefully to slower laps.
-  if (config.hunt.enabled) {
-    console.log(`[hunt] per-user scan every ${config.hunt.scanSec}s`);
-    setInterval(() => runHuntScan("scan"), config.hunt.scanSec * 1000);
-  }
   // Manual scans from the web are queued in the DB and run HERE, on this process's limiter.
   setInterval(() => {
     const ownerCredNow = (): TradeCred | null => credForUser({ id: OWNER_ID, role: "owner" });
@@ -102,7 +93,7 @@ function startCraftMargin(ownerCred: TradeCred | null): void {
     return;
   }
   // Craft-margin engine — ranks curated recipes by live EV/attempt. Shared market scan under the
-  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so ≤2 searches + 8 fetches is
+  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so ≤3 searches + 8 fetches is
   // the whole per-tick cost through the shared trade2 limiter.
   console.log(`[craft-margin] refreshing 1/${RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
   // One craft scan at a time: the tick skips while a manual sweep runs, and a queued manual

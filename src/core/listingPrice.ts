@@ -1,6 +1,6 @@
 /**
  * Listing price → Divine, typed. The old `toDivine` returned NaN for currencies outside the rates
- * ladder, and callers variously filtered it, coerced it to 0 (`price_div: 0` in hunt hits) or fed
+ * ladder, and callers variously filtered it, coerced it to 0 (`price_div: 0` in the old hunt hits) or fed
  * it straight into comparisons. An unrated ask is now a distinct result a caller must handle.
  */
 export interface DivRates {

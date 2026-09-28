@@ -1,4 +1,5 @@
 import { getDb } from "./database";
+import { parseStoredCard, type SnipeCard } from "../lib/snipeCard";
 
 /**
  * Per-user alert feed. Rows carry the league of the pipeline that produced them (the caller
@@ -19,6 +20,11 @@ export interface AlertRow {
   created_at: string;
 }
 
+/** A row as stored: `details` is the card JSON text (SNIPE), parsed on the way out. */
+interface StoredAlertRow extends AlertRow {
+  details: string | null;
+}
+
 export function insertAlert(
   userId: number,
   league: string,
@@ -31,14 +37,15 @@ export function insertAlert(
     threshold: number;
     whisper?: string | null;
     link?: string | null;
+    details?: string | null; // SnipeCard JSON, already validated by the caller
   },
 ): void {
   getDb()
     .prepare(
-      `INSERT INTO alerts (user_id, league, type, item_id, item_name, message, value, threshold, whisper, link)
-       VALUES (@userId, @league, @type, @itemId, @itemName, @message, @value, @threshold, @whisper, @link)`,
+      `INSERT INTO alerts (user_id, league, type, item_id, item_name, message, value, threshold, whisper, link, details)
+       VALUES (@userId, @league, @type, @itemId, @itemName, @message, @value, @threshold, @whisper, @link, @details)`,
     )
-    .run({ ...a, whisper: a.whisper ?? null, link: a.link ?? null, userId, league });
+    .run({ ...a, whisper: a.whisper ?? null, link: a.link ?? null, details: a.details ?? null, userId, league });
 }
 
 /** True if an alert for this user's item+type fired within the last `minutes` — throttles repeats. */
@@ -60,16 +67,18 @@ export function hasAlertEver(userId: number, itemId: string, type: string): bool
 }
 
 /**
- * Alert types produced by the shared trade2 pipelines (hunts, autosnipe, craft margins), which
+ * Alert types produced by the shared trade2 pipelines (autosnipe, craft margins), which
  * only ever run in the app DEFAULT league on the owner's/user's creds. They are the user's own
  * watches — hiding them because the user is viewing another league would silently swallow a
  * snipe — so they show in every view, labeled with their league (`foreign_league`). LEAGUE news
  * ("a new league started") likewise matters most to someone still viewing the old one.
  */
-export const EVERY_VIEW_ALERT_TYPES = ["LEAGUE", "SNIPE", "CRAFT_BASE", "RESELL", "CRAFT_MARGIN"] as const;
+export const EVERY_VIEW_ALERT_TYPES = ["LEAGUE", "SNIPE", "CRAFT_MARGIN"] as const;
 
 export interface AlertFeedRow extends AlertRow {
   foreign_league: string | null; // the alert's league when it differs from the viewed one
+  details: SnipeCard | null; // the SNIPE item card; null for other types and pre-card rows
+  details_error: string | null; // set when a stored card no longer parses — shown, never hidden
 }
 
 /**
@@ -81,14 +90,21 @@ export interface AlertFeedRow extends AlertRow {
 const VISIBLE_SQL = `user_id = @userId AND (league = @league COLLATE NOCASE OR league IS NULL OR type IN (${EVERY_VIEW_ALERT_TYPES.map((t) => `'${t}'`).join(", ")}))`;
 const FOREIGN_LEAGUE_SQL = "CASE WHEN league IS NOT NULL AND league != @league COLLATE NOCASE THEN league END";
 const FEED_COLUMNS =
-  "id, league, type, item_id, item_name, message, value, threshold, whisper, link, seen, created_at, foreign_league";
+  "id, league, type, item_id, item_name, message, value, threshold, whisper, link, details, seen, created_at, foreign_league";
 
 /**
  * The alert center's feed for the viewed league: the newest `perType` alerts OF EACH TYPE. A flat
  * newest-100 list let one chatty type (TREND on a busy market) push every snipe out of the popover.
  */
+/**
+ * Alert ids whose stored card already failed to parse in this process. The feed is polled every
+ * 30 s per tab, so without this one corrupt row would log the same error forever; it is still
+ * returned as details_error on every read.
+ */
+const reportedCorruptCards = new Set<number>();
+
 export function getAlertFeed(userId: number, league: string, perType = 15): AlertFeedRow[] {
-  return getDb()
+  const rows = getDb()
     .prepare(
       `SELECT ${FEED_COLUMNS} FROM (
          SELECT *, ${FOREIGN_LEAGUE_SQL} AS foreign_league,
@@ -96,7 +112,12 @@ export function getAlertFeed(userId: number, league: string, perType = 15): Aler
          FROM alerts WHERE ${VISIBLE_SQL}
        ) WHERE rn <= @perType ORDER BY created_at DESC, id DESC`,
     )
-    .all({ userId, league, perType }) as AlertFeedRow[];
+    .all({ userId, league, perType }) as Array<StoredAlertRow & { foreign_league: string | null }>;
+  return rows.map((r) => {
+    const { card, error } = parseStoredCard(r.details, r.id, { log: !reportedCorruptCards.has(r.id) });
+    if (error) reportedCorruptCards.add(r.id);
+    return { ...r, details: card, details_error: error };
+  });
 }
 
 export interface AlertTypeCount {

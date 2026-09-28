@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { SNIPE_PROFILES } from "../../../../core/snipeProfiles";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
-import { getSnipeFailure, getSnipeReport } from "../../../../db/huntQueries";
+import { getSnipeFailure, getSnipeReport } from "../../../../db/snipeReportQueries";
 import { isScanPending, requestScan } from "../../../../db/scanRequestQueries";
 import { config } from "../../../../config/env";
 

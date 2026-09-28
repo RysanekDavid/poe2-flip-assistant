@@ -30,8 +30,9 @@ export function announceAlertsChanged(): void {
 
 /**
  * Run `load` now, every POLL_MS, on "alerts-changed", and immediately when the tab becomes
- * visible again. The poll deliberately keeps running in background tabs: browser notifications
- * are raised from it, and a background tab is exactly when users rely on them.
+ * visible again. The poll is not paused in background tabs, because popups and the chime are
+ * raised from it — but browsers throttle hidden tabs (timers down to ~1/min after ~5 min) and may
+ * discard them entirely, so this is best-effort. Discord is the reliable background channel.
  */
 function useAlertPoll(load: () => void): void {
   useEffect(() => {
@@ -68,7 +69,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
       .then((d) => {
         setData(d);
         setError(null);
-        raiseBrowserNotifications(d.alerts, d.tickerMuted);
+        raiseBrowserNotifications(d.alerts, d);
       })
       .catch((e: unknown) => {
         console.error("[alerts] feed load failed", e);
