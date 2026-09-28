@@ -5,14 +5,15 @@ import { gridStepPct } from "../../cx/cxMarketModel";
 import type { CxItemStats } from "../../cx/cxPersistence";
 import { liquidityTier } from "../../flipMarket";
 import { recommendOffsets, type Currency, type ExchangeRates } from "../../priceEngine";
-import { CCY_UNIT, denominateIn, formatObservedDenom, pickUnit } from "../../treasury";
+import { CCY_UNIT, RATIO_CAP, denominateIn, formatObservedDenom, pickUnit } from "../../treasury";
 
 /**
  * Selling on the Currency Exchange: expected price, gold fee, denomination and time to clear. Pure.
  *
  * Fee (cx/cxFees): gold per unit of the currency you RECEIVE, so the same Div value costs very
  * different gold as 1 Divine, ~20 Chaos or ~400 Exalted. Denomination: among the currencies that
- * keep the receipt within treasury's item cap AND at ≥ 1 whole unit, prefer those whose N:1 price
+ * keep the receipt within treasury's item cap, at ≥ 1 whole unit and inside the 65000:1 ratio
+ * clamp (treasury.RATIO_CAP), prefer those whose N:1 price
  * grid is no coarser than maxGridStepPct (a 1.5 Div item priced in Div can only sit at 1 or 2 —
  * a 33–67% step that costs far more than any fee), then pick the cheapest gold fee.
  */
@@ -40,6 +41,8 @@ interface DenomChoice {
   unit: Currency;
   receiveUnits: number;
   gridPct: number;
+  /** Items per currency unit or currency units per item, whichever is ≥ 1. */
+  ratio: number;
   feeGold: number | null;
 }
 
@@ -48,8 +51,12 @@ const unitsPerDivine = (c: Currency, r: ExchangeRates): number =>
 
 function choiceFor(unit: Currency, unitDiv: number, qty: number, rates: ExchangeRates): DenomChoice {
   const upd = unitsPerDivine(unit, rates);
+  const price = unitDiv * upd;
   const receiveUnits = unitDiv * qty * upd;
-  return { unit, receiveUnits, gridPct: gridStepPct(unitDiv * upd), feeGold: goldFeeFor(RECEIVE_ID[unit], receiveUnits) };
+  return {
+    unit, receiveUnits, gridPct: gridStepPct(price), ratio: Math.max(price, 1 / price),
+    feeGold: goldFeeFor(RECEIVE_ID[unit], receiveUnits),
+  };
 }
 
 const cheapest = (list: readonly DenomChoice[]): DenomChoice =>
@@ -58,7 +65,10 @@ const cheapest = (list: readonly DenomChoice[]): DenomChoice =>
 /** The receive currency for a whole order — see the file header for the rule. */
 export function chooseDenomination(unitDiv: number, qty: number, rates: ExchangeRates, maxGridStepPct: number): DenomChoice {
   const floor = pickUnit(unitDiv * qty, rates);
-  const inCap = LADDER.slice(LADDER.indexOf(floor)).map((c) => choiceFor(c, unitDiv, qty, rates));
+  // A ratio past the exchange's 65000:1 clamp cannot be posted at all, whatever it saves in gold.
+  const inCap = LADDER.slice(LADDER.indexOf(floor))
+    .map((c) => choiceFor(c, unitDiv, qty, rates))
+    .filter((c) => c.ratio <= RATIO_CAP);
   const whole = inCap.filter((c) => c.receiveUnits >= 1);
   const fine = whole.filter((c) => c.gridPct <= maxGridStepPct);
   if (fine.length > 0) return cheapest(fine);
@@ -88,6 +98,9 @@ function quoteWarnings(w: QuoteWarningInput): string[] {
   const perUnit = formatObservedDenom(denominateIn(w.midDiv, w.choice.unit, w.rates));
   if (w.choice.gridPct > w.maxGridStepPct) {
     out.push(`coarse price grid: at ${perUnit} each the exchange only moves in ~${Math.round(w.choice.gridPct)}% steps (N:1 ratios)`);
+  }
+  if (w.choice.ratio > RATIO_CAP) {
+    out.push(`~${Math.round(w.choice.ratio).toLocaleString("en-US")}:1 is past the exchange's 65000:1 cap — this order cannot be posted as is`);
   }
   if (w.choice.receiveUnits < 1) out.push(`the whole order is worth under 1 ${CCY_UNIT[w.choice.unit]} — the exchange cannot pay a fraction`);
   if (!w.observed) out.push("no fresh exchange history — mid is poe.ninja, time to sell unknown");

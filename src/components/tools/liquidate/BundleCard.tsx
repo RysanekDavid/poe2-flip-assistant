@@ -49,12 +49,15 @@ export function BundleCard({ bundle }: { bundle: LiquidateBundle }) {
           text only · you paste it
         </span>
       </header>
-      <div className="flex items-start gap-2">
-        <p className="min-w-0 flex-1 select-all break-words rounded bg-neutral-900 px-2 py-1.5 font-mono text-xs text-neutral-200" title="trade-chat WTS line">
-          {bundle.whisper}
-        </p>
-        <CopyButton text={bundle.whisper} label="WTS line" />
-      </div>
+      {bundle.lines.map((line, i) => (
+        <div key={line} className="flex items-start gap-2">
+          <p className="min-w-0 flex-1 select-all break-words rounded bg-neutral-900 px-2 py-1.5 font-mono text-xs text-neutral-200"
+            title={`trade-chat WTS line ${i + 1} of ${bundle.lines.length} — split to stay within the chat length`}>
+            {line}
+          </p>
+          <CopyButton text={line} label={`WTS line ${i + 1}`} />
+        </div>
+      ))}
       <ul className="flex flex-col gap-1">
         {bundle.notes.map((n) => (
           <li key={n.name} className="flex items-center gap-2 text-xs">

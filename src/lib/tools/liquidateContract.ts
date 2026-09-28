@@ -8,9 +8,10 @@ import { z } from "zod";
 
 export const LIQUIDATE_MAX_ITEMS = 200;
 export const LIQUIDATE_MAX_QTY = 100_000;
+export const LIQUIDATE_MAX_NAME = 120;
 
 export const liquidateInputSchema = z.object({
-  name: z.string().trim().min(1).max(120),
+  name: z.string().trim().min(1).max(LIQUIDATE_MAX_NAME),
   qty: z.number().int().min(1).max(LIQUIDATE_MAX_QTY),
   /** Your own per-unit value — the only way a rare (or anything the market can't see) gets priced. */
   manualDiv: z.number().finite().positive().optional(),
@@ -105,7 +106,8 @@ export const planSchema = z.object({ rows: z.array(planRowSchema), totals: planT
 export type LiquidationPlan = z.infer<typeof planSchema>;
 
 export const bundleSchema = z.object({
-  whisper: z.string(),
+  /** Trade-chat WTS lines, each within the chat length bound (core/tools/liquidate/bundle). */
+  lines: z.array(z.string()),
   notes: z.array(z.object({ name: z.string(), note: z.string() })),
 });
 export type LiquidateBundle = z.infer<typeof bundleSchema>;
@@ -152,9 +154,11 @@ export const stashItemSchema = z.object({
   qty: z.number().int(),
   rarity: z.string().nullable(),
   tabs: z.array(z.string()),
-  marketDiv: z.number().nullable(),
-  marketSource: z.string().nullable(),
-  /** Your own listing price per unit, when every listing of it was priced on the ladder. */
+  /**
+   * Listing ask ÷ stack, in Div, when every listing of it was priced on the ladder. It assumes a
+   * listing's price covers the whole stack — whether a PoE2 note prices the unit or the stack is
+   * unverified, so the panel shows it as a hint, never as a value.
+   */
   askDiv: z.number().nullable(),
 });
 export type StashItem = z.infer<typeof stashItemSchema>;

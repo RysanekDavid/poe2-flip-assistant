@@ -9,7 +9,7 @@ import { scanListings, type ScannedItem } from "../../api/accountScan";
 import { parseFetchResponse, type Listing } from "../../api/tradeListing";
 import type { PricedItem } from "../../api/types";
 import type { CxItemStats } from "../../core/cx/cxPersistence";
-import { bundleText } from "../../core/tools/liquidate/bundle";
+import { WTS_MAX_CHARS, bundleText, orderTotal, packLines } from "../../core/tools/liquidate/bundle";
 import { cxSellQuote } from "../../core/tools/liquidate/cxRoute";
 import { groupStashItems, planLiquidation, type PlanContext } from "../../core/tools/liquidate/plan";
 import { stashNote, tradeListingQuote } from "../../core/tools/liquidate/tradeRoute";
@@ -133,15 +133,49 @@ function testPlan(): void {
   near(t.fastDiv, plan.rows.reduce((s, r) => s + (r.fastTotalDiv ?? 0), 0), "fast total sums the priced rows");
 
   const bundle = bundleText(plan, RATES);
-  assert.equal(bundle.whisper, "WTS Headhunter @ 40 div · 2x Rune Loop @ 60 chaos (120 chaos) · 10x Thin Dust @ 20 ex (200 ex)");
+  assert.deepEqual(bundle.lines, ["WTS Headhunter @ 40 div · 2x Rune Loop @ 60 chaos (120 chaos) · 10x Thin Dust @ 20 ex (200 ex)"]);
   assert.deepEqual(bundle.notes, [
     { name: "Headhunter", note: "~price 40 divine" },
     { name: "Rune Loop", note: "~price 60 chaos" },
     { name: "Thin Dust", note: "~price 20 exalted" },
   ]);
-  assert.deepEqual(bundleText({ rows: [kul], totals: t }, RATES), { whisper: "", notes: [] }, "exchange rows are not advertised");
+  assert.deepEqual(bundleText({ rows: [kul], totals: t }, RATES), { lines: [], notes: [] }, "exchange rows are not advertised");
   assert.equal(liquidateRequestSchema.safeParse({ items: [{ name: "x", qty: 0 }] }).success, false, "qty ≥ 1");
   assert.equal(liquidateRequestSchema.safeParse({ items: [] }).success, false, "at least one item");
+}
+
+function testThinManual(): void {
+  // A thin exchange item is listed on trade, where YOUR value is the price — not ignored.
+  const plan = planLiquidation([{ name: "Thin Dust", qty: 10, manualDiv: 0.1 }, { name: "Kulemak's Invitation", qty: 1, manualDiv: 9 }], planContext());
+  const [dust, kul] = plan.rows;
+  assert.deepEqual([dust?.recommended, dust?.valueSource, dust?.unitDiv, dust?.trade?.note], ["trade", "manual", 0.1, "~price 40 exalted"]);
+  assert.deepEqual(dust?.warnings, [], "no 'ignored' warning on the trade path");
+  near(dust?.fastTotalDiv ?? NaN, 0.1 * 0.9 * 10, "totals use your value");
+  assert.ok(kul?.warnings.some((w) => w.includes("ignored")), "the exchange path still ignores it, loudly");
+}
+
+function testBundleTotals(): void {
+  // The total comes from the rounded unit note (50 chaos) × qty, so it can never contradict it.
+  assert.deepEqual(orderTotal({ amount: 49.6, unit: "CHAOS" }, 3, RATES), { amount: 150, unit: "CHAOS" }, "150 chaos stays in chaos");
+  near(orderTotal({ amount: 49.6, unit: "CHAOS" }, 5, RATES).amount, 12.5, "250 chaos is past the cap → 12.5 div");
+  const plan = planLiquidation([{ name: "Rare Ring", qty: 5, manualDiv: 2.48 }], planContext());
+  assert.deepEqual(bundleText(plan, RATES).lines, ["WTS 5x Rare Ring @ 50 chaos (12.5 div)"]);
+  // Lines stay under the chat bound; a part is never split across lines.
+  const parts = Array.from({ length: 12 }, (_, i) => `10x Some Long Item Name Number ${i} @ 20 ex (200 ex)`);
+  const lines = packLines(parts);
+  assert.ok(lines.length > 1, "long lists split");
+  assert.ok(lines.every((l) => l.length <= WTS_MAX_CHARS && l.startsWith("WTS ")), lines.join("\n"));
+  assert.equal(lines.join(" ").split(" · ").length + lines.length - 1, parts.length, "every part lands on exactly one line");
+  assert.deepEqual(packLines(["x".repeat(300)]), [`WTS ${"x".repeat(300)}`], "an oversized part gets its own line");
+}
+
+function testRatioCap(): void {
+  // 100,000 × 0.00001 Div: Divine is cheapest in gold (1 Div → 800) but 100,000:1 is past the 65000:1
+  // clamp, so Chaos (5,000:1) is the only postable receipt.
+  const q = quote(0.00001, cxStats(0.00001, 100_000), 100_000);
+  assert.equal(q.denom.unit, "CHAOS");
+  near(q.receiveUnits, 20, "receives 20 chaos");
+  assert.ok(!q.warnings.some((w) => w.includes("65000:1")), "the chosen receipt is within the clamp");
 }
 
 function snapshotFor(db: Database.Database, userId: number, league: string, hoursAgo: number): number {
@@ -188,7 +222,7 @@ function testBalanceItems(): void {
   const grouped = groupStashItems(latestStashItems(me, "L").items, RATES);
   assert.equal(grouped.skippedOrbs, 1, "raw orbs are never offered");
   assert.deepEqual(grouped.items, [
-    { name: "Item 2", qty: 3, rarity: null, tabs: ["sell"], marketDiv: 1.5, marketSource: "ninja", askDiv: 2 / 3 },
+    { name: "Item 2", qty: 3, rarity: null, tabs: ["sell"], askDiv: 2 / 3 },
   ]);
 }
 
@@ -219,8 +253,11 @@ function testAccountScanItems(): void {
 
 testCxQuote();
 testTradeQuote();
+testRatioCap();
 testPlan();
+testThinManual();
+testBundleTotals();
 testBalanceItems();
 testAccountScanItems();
 assertToolPanel("liquidate", "LiquidateTool");
-console.log("ALL PASS — cx quote (denomination, cap, grid, fee, ETA), trade quote, plan + bundle, balance_items retention + cascade, trade2 fixture items, panel wiring");
+console.log("ALL PASS — cx quote (denomination, cap, ratio clamp, grid, fee, ETA), trade quote, plan (thin + manual) + bundle (totals, line split), balance_items retention + cascade, trade2 fixture items, panel wiring");

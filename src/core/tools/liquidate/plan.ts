@@ -101,23 +101,26 @@ function exchangeRow(m: MergedInput, line: PricedItem, ctx: PlanContext): PlanRo
     if (m.manualDiv != null) return tradeRow(named, m.manualDiv, "manual", ctx, ["no usable market price right now"], line.icon);
     return unpricedRow(named, "exchange item with no usable price right now", line.icon);
   }
-  const warnings = [...m.warnings];
-  if (m.manualDiv != null) warnings.push(`your value (${m.manualDiv} Div) is ignored — exchange items are priced from the market`);
-  const base = { name: line.itemName, qty: m.qty, icon: line.icon, warnings };
+  const base = { name: line.itemName, qty: m.qty, icon: line.icon };
   const cx = cxSellQuote(line, stats, m.qty, ctx.rates, goldPerExalt, flowSharePct, maxGridStepPct);
-  const valueSource: ValueSource = cx.observed ? "cx" : "ninja";
+  const marketSource: ValueSource = cx.observed ? "cx" : "ninja";
   const flow = cx.observed ? `${fmtDivH((cx.unitsPerHour ?? 0) * cx.midDiv)} Div/h observed` : "ninja volume, unit unverified";
   if (cx.tier === "thin") {
-    const trade = tradeListingQuote(midDiv, m.qty, null, ctx.rates);
+    // A listing is priced by its seller, so your own value is exactly what goes on the note.
+    const unitDiv = m.manualDiv ?? midDiv;
+    const trade = tradeListingQuote(unitDiv, m.qty, null, ctx.rates);
     return {
-      ...base, valueSource, unitDiv: midDiv, cx, trade, recommended: "trade",
+      ...base, warnings: m.warnings, valueSource: m.manualDiv != null ? "manual" : marketSource, unitDiv, cx, trade,
+      recommended: "trade",
       reason: `exchange too thin (${flow}) — list it on trade`,
       fastTotalDiv: trade.quickDiv * m.qty, patientTotalDiv: trade.patientDiv * m.qty, feeTotalDiv: null,
     };
   }
+  const warnings = [...m.warnings];
+  if (m.manualDiv != null) warnings.push(`your value (${m.manualDiv} Div) is ignored — the exchange fills at the market price`);
   const feeTotalDiv = cx.feeDivPerUnit == null ? null : cx.feeDivPerUnit * m.qty;
   return {
-    ...base, valueSource, unitDiv: midDiv, cx, trade: null, recommended: "cx",
+    ...base, warnings, valueSource: marketSource, unitDiv: midDiv, cx, trade: null, recommended: "cx",
     reason: `${cx.tier} exchange market (${flow})`,
     fastTotalDiv: cx.fastDiv * m.qty - (feeTotalDiv ?? 0),
     patientTotalDiv: cx.patientDiv * m.qty - (feeTotalDiv ?? 0),
@@ -158,8 +161,6 @@ export interface StoredStashItem {
   item_name: string;
   rarity: string | null;
   stack_size: number;
-  market_div: number | null;
-  market_source: string | null;
   ask_amount: number | null;
   ask_currency: string | null;
 }
@@ -173,19 +174,17 @@ interface StashGroup {
 function addToGroup(g: StashGroup, r: StoredStashItem, rates: ExchangeRates): void {
   g.item.qty += r.stack_size;
   if (r.tab != null && !g.item.tabs.includes(r.tab)) g.item.tabs.push(r.tab);
-  if (r.market_div != null) g.item.marketDiv = (g.item.marketDiv ?? 0) + r.market_div;
-  if (g.item.marketSource == null) g.item.marketSource = r.market_source;
-  else if (r.market_source != null && r.market_source !== g.item.marketSource) g.item.marketSource = "mixed";
   const ask = r.ask_amount == null || r.ask_currency == null ? null : amountInDivine(r.ask_amount, r.ask_currency, rates);
-  // A listing's ask prices the whole listing (as accountScan values it), so it spreads over the stack.
+  // Assumes a listing's ask prices the whole listing (as accountScan values it), so it is spread
+  // over the stack: "listing ask ÷ stack". PoE2's per-unit vs per-stack note semantics are unverified.
   if (ask == null || !(ask > 0)) g.askComplete = false;
   else g.askTotal += ask;
 }
 
 /**
  * The stored rows of one stash read → one import entry per item name (stacks and tabs merged),
- * raw orbs left out and counted. `askDiv` is your own average ask per unit, only when every
- * listing of the item carried a ladder-priced ask.
+ * raw orbs left out and counted. `askDiv` is listing ask ÷ stack, only when every listing of the
+ * item carried a ladder-priced ask.
  */
 export function groupStashItems(rows: readonly StoredStashItem[], rates: ExchangeRates): { items: StashItem[]; skippedOrbs: number } {
   const groups = new Map<string, StashGroup>();
@@ -198,7 +197,7 @@ export function groupStashItems(rows: readonly StoredStashItem[], rates: Exchang
     }
     let g = groups.get(key);
     if (g == null) {
-      g = { item: { name: r.item_name, qty: 0, rarity: r.rarity, tabs: [], marketDiv: null, marketSource: null, askDiv: null }, askTotal: 0, askComplete: true };
+      g = { item: { name: r.item_name, qty: 0, rarity: r.rarity, tabs: [], askDiv: null }, askTotal: 0, askComplete: true };
       groups.set(key, g);
     }
     addToGroup(g, r, rates);
