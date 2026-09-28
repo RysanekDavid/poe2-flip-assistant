@@ -96,7 +96,9 @@ export const BuildResponseSchema = z.object({
 });
 export type BuildResponse = z.infer<typeof BuildResponseSchema>;
 
-export const ExplainRequestSchema = z.object({ text: z.string().min(1).max(2000) });
+// The in-game search box holds ≤250 chars; 500 leaves room for pasted guide strings while keeping
+// the linear literal scan (alternatives × namespace) around 50 ms per debounced keystroke.
+export const ExplainRequestSchema = z.object({ text: z.string().min(1).max(500) });
 
 const KindCounts = z.object({ exchange: z.number(), unique: z.number(), base: z.number(), stat: z.number() });
 export const ExplainResponseSchema = z.object({
