@@ -7,6 +7,8 @@ import iconMarket from "../assets/Web_market.png";
 import iconCraft from "../assets/Craft.png";
 import iconWealth from "../assets/Wealth.png";
 import iconCoach from "../assets/Coach.png";
+// placeholder until the owner supplies src/assets/Tools.png
+import iconTools from "../assets/swap_orbs.png";
 import iconSettings from "../assets/settings.png";
 import { TopBar } from "../components/TopBar";
 import { BalancePanel } from "../components/BalancePanel";
@@ -37,12 +39,14 @@ import { SettingsPanel } from "../components/SettingsPanel";
 import { SystemHealthPanel } from "../components/system/SystemHealthPanel";
 import { CoachPanel } from "../components/coach/CoachPanel";
 import { EmptySection } from "../components/ui/EmptySection";
+import { ToolsTab } from "../components/tools/ToolsTab";
 
 const TABS = [
   { id: "exchange", label: "Currency Exchange", hint: "in-game Ange currency flip", icon: iconExchange },
   { id: "market", label: "Web Market", hint: "trade site · uniques · snipe", icon: iconMarket },
   { id: "craft", label: "Craft", hint: "recipes · sessions · P&L", icon: iconCraft },
   { id: "wealth", label: "Wealth", hint: "net worth · realized profit", icon: iconWealth },
+  { id: "tools", label: "Tools", hint: "regex · craft moves · boss EV · liquidate", icon: iconTools },
   { id: "settings", label: "Settings", hint: "trade2 connection (POESESSID) · Discord notifications", icon: iconSettings },
 ] as const;
 type TabId = (typeof TABS)[number]["id"] | "coach";
@@ -178,6 +182,8 @@ export default function DashboardPage() {
       )}
 
       {tab === "wealth" && <BalancePanel />}
+
+      {tab === "tools" && <ToolsTab />}
 
       {/* Keep the chat mounted while switching tabs so the active conversation is not lost. */}
       <CoachPanel active={tab === "coach"} />
