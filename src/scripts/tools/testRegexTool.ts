@@ -209,8 +209,22 @@ function testParseAndExplain(): void {
   assert.deepEqual(out.terms[0]?.names.exchange, ["Zorblax"], "case-insensitive literal match");
   assert.equal(out.terms[0]?.counts.stat, 1, "stat lines counted");
   assert.deepEqual(explainSearch(parseSearch('"!zor"'), n).highlighted, ["Blorp"], "negation highlights the rest");
-  assert.throws(() => explainSearch(parseSearch("zo(r"), n, { regexMode: true }), SearchParseError);
-  assert.deepEqual(explainSearch(parseSearch("^zor"), n, { regexMode: true }).highlighted, ["Zorblax"]);
+  const redos = explainSearch(parseSearch("(.+)+x"), n);
+  assert.equal(redos.highlightedCount, 0, "regex syntax is matched literally — never evaluated server-side");
+  const dotted = ns({ exchange: [ex("St. Zorb", "Currency", 1), ex("Stoat Zorb", "Currency", 1)] });
+  assert.deepEqual(explainSearch(parseSearch("st\\."), dotted).highlighted, ["St. Zorb"], "a backslash-escape stands for the literal char");
+}
+
+function testTrashUncovered(): void {
+  const n = ns({ exchange: [ex("Zorblax", "Currency", 10), ex("Uncut Skill Gem (Level 20)", "UncutGems", 9)] });
+  const params = { minDiv: 1, categories: ["Currency", "UncutGems"], includeUniques: false, maxChars: 50 };
+  const trash = buildRegex(n, { ...params, mode: "trash" });
+  assert.equal(trash.mode, "trash");
+  const lit = trash.warnings.find((w) => w.code === "trash-uncovered-lit");
+  assert.ok(lit, "an uncovered valuable item in trash mode is flagged as lit");
+  assert.match(lit.detail, /^1 valuable items can't be protected/);
+  const keep = buildRegex(n, { ...params, mode: "keep" });
+  assert.equal(keep.warnings.some((w) => w.code === "trash-uncovered-lit"), false, "keep mode leaves uncovered items dark");
 }
 
 testSchemaOrder();
@@ -221,6 +235,7 @@ testFragments();
 testCoverAndSelect();
 testChunking();
 testParseAndExplain();
+testTrashUncovered();
 assertToolPanel("regex", "RegexTool");
 console.log(
   "ALL PASS — regex_presets schema + round-trip, namespace, collision-safe fragments, cover, chunking, parser/explain, panel wiring",

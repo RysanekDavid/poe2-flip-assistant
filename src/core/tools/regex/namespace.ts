@@ -8,8 +8,7 @@
  * fragment search stays fast over ~20k lines. Pure except for the per-signature memo at the end.
  */
 
-export const NAME_KINDS = ["exchange", "unique", "base", "stat"] as const;
-export type NameKind = (typeof NAME_KINDS)[number];
+import type { NameKind } from "../../../lib/tools/regexContract";
 
 export interface NameEntry {
   /** Lowercased identity; for stats the template with `#` removed and whitespace collapsed. */

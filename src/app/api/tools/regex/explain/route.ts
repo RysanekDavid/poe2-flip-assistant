@@ -14,7 +14,8 @@ function parseErrorResponse(error: SearchParseError): Response {
 
 /**
  * POST /api/tools/regex/explain → what a pasted stash-search string matches in our namespace.
- * Body: { text, regexMode? }. A malformed string is a 400 with the char position, never a guess.
+ * Body: { text }. Literal substring matching only (no server-side regex: ReDoS). A malformed
+ * string is a 400 with the char position, never a guess.
  */
 export async function POST(req: Request): Promise<Response> {
   const user = await getCurrentUser();
@@ -37,12 +38,6 @@ export async function POST(req: Request): Promise<Response> {
     const why = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: `reference data unavailable: ${why}` }, { status: 502 });
   }
-  try {
-    const body: ExplainResponse = explainSearch(ast, loaded.ns, { regexMode: parsed.data.regexMode });
-    return NextResponse.json(body);
-  } catch (error: unknown) {
-    // regex mode compiles each alternative; an invalid pattern is the player's input, not a crash
-    if (error instanceof SearchParseError) return parseErrorResponse(error);
-    throw error;
-  }
+  const body: ExplainResponse = explainSearch(ast, loaded.ns);
+  return NextResponse.json(body);
 }

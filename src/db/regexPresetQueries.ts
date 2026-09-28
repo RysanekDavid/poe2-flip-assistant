@@ -14,23 +14,23 @@ interface PresetRow {
   updated_at: string;
 }
 
-function describeInvalid(row: PresetRow): string | null {
+function parseParams(json: string): { params: PresetParams; invalid: null } | { params: null; invalid: string } {
   let raw: unknown;
   try {
-    raw = JSON.parse(row.params_json);
+    raw = JSON.parse(json);
   } catch (error: unknown) {
-    return `stored params are not JSON: ${error instanceof Error ? error.message : String(error)}`;
+    return { params: null, invalid: `stored params are not JSON: ${error instanceof Error ? error.message : String(error)}` };
   }
   const parsed = PresetParamsSchema.safeParse(raw);
-  if (parsed.success) return null;
-  return parsed.error.issues.map((i) => `${i.path.join(".") || "params"}: ${i.message}`).join("; ");
+  if (parsed.success) return { params: parsed.data, invalid: null };
+  const why = parsed.error.issues.map((i) => `${i.path.join(".") || "params"}: ${i.message}`).join("; ");
+  return { params: null, invalid: why };
 }
 
 // A row that no longer parses is returned flagged rather than dropped, so the owner sees it and
 // can delete it instead of wondering where their preset went.
 function toPreset(row: PresetRow): Preset {
-  const invalid = describeInvalid(row);
-  const params = invalid === null ? PresetParamsSchema.parse(JSON.parse(row.params_json)) : null;
+  const { params, invalid } = parseParams(row.params_json);
   return { id: row.id, name: row.name, league: row.league, params, invalid, updatedAt: row.updated_at };
 }
 

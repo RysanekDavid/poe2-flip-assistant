@@ -2,16 +2,9 @@
  * Target selection, greedy fragment cover and char-limited chunking for the price regex.
  * Pure: namespace in, search strings out. The route adds data provenance around the result.
  */
+import type { NameKind, RegexMode, UncoveredReason, WarningCode } from "../../../lib/tools/regexContract";
 import { shortestUniqueFragment } from "./fragment";
-import type { NameEntry, NameKind, Namespace } from "./namespace";
-
-/*
- * Conservative until the owner measures the real stash-search limit in-game (50 vs 250). It is a
- * game constant, so the UI keeps a per-browser override rather than a per-user DB preference.
- */
-export const REGEX_MAX_CHARS_DEFAULT = 50;
-export const REGEX_MODES = ["keep", "trash"] as const;
-export type RegexMode = (typeof REGEX_MODES)[number];
+import type { NameEntry, Namespace } from "./namespace";
 
 export interface RegexBuildParams {
   mode: RegexMode;
@@ -49,23 +42,22 @@ export interface CoveredRow {
   verify: boolean;
 }
 
-export const UNCOVERED_REASONS = ["fragment-too-long", "qualifier-not-item-text"] as const;
 export interface UncoveredRow {
   name: string;
   valueDiv: number;
   icon: string | null;
-  reason: (typeof UNCOVERED_REASONS)[number];
+  reason: UncoveredReason;
   detail: string;
 }
 
-export const WARNING_CODES = ["trash-negation-unconfirmed", "trash-multi-chunk", "verify-in-game"] as const;
 export interface RegexWarning {
-  code: (typeof WARNING_CODES)[number];
+  code: WarningCode;
   label: string;
   detail: string;
 }
 
 export interface BuildResult {
+  mode: RegexMode;
   chunks: RegexChunk[];
   covered: CoveredRow[];
   uncovered: UncoveredRow[];
@@ -180,8 +172,23 @@ function coveredRows(picks: readonly FragmentPick[], targets: readonly NameEntry
   });
 }
 
-function buildWarnings(mode: RegexMode, chunkCount: number, verifyCount: number): RegexWarning[] {
+interface WarningInputs {
+  mode: RegexMode;
+  chunkCount: number;
+  verifyCount: number;
+  uncoveredCount: number;
+}
+
+function buildWarnings({ mode, chunkCount, verifyCount, uncoveredCount }: WarningInputs): RegexWarning[] {
   const out: RegexWarning[] = [];
+  // In trash mode an item missing from every string is NOT excluded, so it lights up as trash.
+  if (mode === "trash" && uncoveredCount > 0) {
+    out.push({
+      code: "trash-uncovered-lit",
+      label: `${uncoveredCount} valuable lit as trash`,
+      detail: `${uncoveredCount} valuable items can't be protected and will be highlighted as trash — check the "not in any string" list before selling.`,
+    });
+  }
   if (mode === "trash") {
     out.push({
       code: "trash-negation-unconfirmed",
@@ -226,7 +233,8 @@ function emptyReason(params: RegexBuildParams): string {
 export function buildRegex(ns: Namespace, params: RegexBuildParams): BuildResult {
   const targets = selectTargets(ns, params);
   if (targets.length === 0) {
-    return { chunks: [], covered: [], uncovered: [], warnings: [], targetCount: 0, reason: emptyReason(params) };
+    const empty = { chunks: [], covered: [], uncovered: [], warnings: [], targetCount: 0 };
+    return { mode: params.mode, ...empty, reason: emptyReason(params) };
   }
   const searchable = targets.filter((t) => t.qualifier === undefined);
   const picks = coverWithFragments(searchable, ns);
@@ -241,10 +249,16 @@ export function buildRegex(ns: Namespace, params: RegexBuildParams): BuildResult
     .map((t) => uncoveredRow(t, params.maxChars));
   const verifyCount = covered.filter((c) => c.verify).length;
   return {
+    mode: params.mode,
     chunks,
     covered,
     uncovered,
-    warnings: buildWarnings(params.mode, chunks.length, verifyCount),
+    warnings: buildWarnings({
+      mode: params.mode,
+      chunkCount: chunks.length,
+      verifyCount,
+      uncoveredCount: uncovered.length,
+    }),
     targetCount: targets.length,
     reason: null,
   };

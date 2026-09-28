@@ -18,7 +18,7 @@ interface ExplainState {
 
 const DEBOUNCE_MS = 350;
 
-function useExplain(text: string, regexMode: boolean): ExplainState {
+function useExplain(text: string): ExplainState {
   const [state, setState] = useState<ExplainState>({ result: null, error: null, loading: false });
   useEffect(() => {
     if (text.trim() === "") {
@@ -28,7 +28,7 @@ function useExplain(text: string, regexMode: boolean): ExplainState {
     let live = true;
     setState((s) => ({ ...s, loading: true }));
     const t = setTimeout(() => {
-      requestRegexApi("/api/tools/regex/explain", { method: "POST", body: { text, regexMode } }, ExplainResponseSchema)
+      requestRegexApi("/api/tools/regex/explain", { method: "POST", body: { text } }, ExplainResponseSchema)
         .then((result) => live && setState({ result, error: null, loading: false }))
         .catch((e: unknown) => {
           if (!live) return;
@@ -40,7 +40,7 @@ function useExplain(text: string, regexMode: boolean): ExplainState {
       live = false;
       clearTimeout(t);
     };
-  }, [text, regexMode]);
+  }, [text]);
   return state;
 }
 
@@ -85,8 +85,8 @@ function ExplainResult({ result }: { result: ExplainResponse }) {
   return (
     <div className="flex flex-col gap-2 text-xs">
       <ul className="flex flex-col gap-1.5">
-        {result.terms.map((t) => (
-          <TermRow key={`${t.raw}-${t.alternatives.length}`} term={t} />
+        {result.terms.map((t, i) => (
+          <TermRow key={i} term={t} />
         ))}
       </ul>
       <div className="text-neutral-400" title={result.highlighted.join(", ")}>
@@ -99,8 +99,7 @@ function ExplainResult({ result }: { result: ExplainResponse }) {
 
 /** Paste any stash-search string (ours, poeregex, poe2.re) and see what it would light up. */
 export function RegexExplain({ text, onText }: { text: string; onText: (t: string) => void }) {
-  const [regexMode, setRegexMode] = useState(false);
-  const { result, error, loading } = useExplain(text, regexMode);
+  const { result, error, loading } = useExplain(text);
   return (
     <section className="flex flex-col gap-2 rounded-md border border-neutral-800 bg-neutral-900/40 p-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -111,10 +110,12 @@ export function RegexExplain({ text, onText }: { text: string; onText: (t: strin
           spellCheck={false}
           className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-neutral-100 placeholder:font-sans placeholder:text-neutral-600"
         />
-        <label className="flex items-center gap-1.5 text-xs text-neutral-400" title="treat each alternative as a regex (the in-game box is regex-aware) instead of a plain substring">
-          <input type="checkbox" checked={regexMode} onChange={(e) => setRegexMode(e.target.checked)} className="accent-amber-500" />
-          regex
-        </label>
+        <span
+          className="rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] uppercase text-neutral-500"
+          title="Alternatives are matched as plain text. The in-game box also accepts regex syntax (. * [ ] …), which this explainer does not evaluate — a string using it may light up more than shown."
+        >
+          literal · regex syntax not evaluated
+        </span>
         {loading && <span className="text-xs text-neutral-600">…</span>}
       </div>
       {error && <ErrorWithCaret text={text} error={error} />}

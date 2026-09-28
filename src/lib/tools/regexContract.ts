@@ -1,12 +1,29 @@
 /*
  * Wire contract for the Price regex tool: request bodies the routes validate and response shapes
- * the panel validates. Shared by server and client so the two cannot drift.
+ * the panel validates. Shared by server and client so the two cannot drift. Holds the enum
+ * constants too, so the client bundle never imports the server-side cover algorithm.
  */
 import { z } from "zod";
-import { REGEX_MAX_CHARS_DEFAULT, REGEX_MODES, UNCOVERED_REASONS, WARNING_CODES } from "../../core/tools/regex/compose";
-import { NAME_KINDS } from "../../core/tools/regex/namespace";
 
-export { REGEX_MAX_CHARS_DEFAULT };
+/*
+ * Conservative until the owner measures the real stash-search limit in-game (50 vs 250). It is a
+ * game constant, so the UI keeps a per-browser override rather than a per-user DB preference.
+ */
+export const REGEX_MAX_CHARS_DEFAULT = 50;
+export const REGEX_MODES = ["keep", "trash"] as const;
+export type RegexMode = (typeof REGEX_MODES)[number];
+export const NAME_KINDS = ["exchange", "unique", "base", "stat"] as const;
+export type NameKind = (typeof NAME_KINDS)[number];
+export const UNCOVERED_REASONS = ["fragment-too-long", "qualifier-not-item-text"] as const;
+export type UncoveredReason = (typeof UNCOVERED_REASONS)[number];
+export const WARNING_CODES = [
+  "trash-negation-unconfirmed",
+  "trash-multi-chunk",
+  "trash-uncovered-lit",
+  "verify-in-game",
+] as const;
+export type WarningCode = (typeof WARNING_CODES)[number];
+
 export const REGEX_MAX_CHARS_MIN = 20;
 export const REGEX_MAX_CHARS_MAX = 500;
 
@@ -67,6 +84,7 @@ export type DataAsOf = z.infer<typeof DataAsOfSchema>;
 
 export const BuildResponseSchema = z.object({
   league: z.string(),
+  mode: z.enum(REGEX_MODES),
   chunks: z.array(ChunkSchema),
   covered: z.array(CoveredSchema),
   uncovered: z.array(UncoveredSchema),
@@ -78,10 +96,7 @@ export const BuildResponseSchema = z.object({
 });
 export type BuildResponse = z.infer<typeof BuildResponseSchema>;
 
-export const ExplainRequestSchema = z.object({
-  text: z.string().min(1).max(2000),
-  regexMode: z.boolean().default(false),
-});
+export const ExplainRequestSchema = z.object({ text: z.string().min(1).max(2000) });
 
 const KindCounts = z.object({ exchange: z.number(), unique: z.number(), base: z.number(), stat: z.number() });
 export const ExplainResponseSchema = z.object({

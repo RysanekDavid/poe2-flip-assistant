@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Check, Copy, SearchCode } from "lucide-react";
 import { fmtSmart } from "../../../lib/format";
 import { CELL, ROW_BASE, SCROLL_BOX, THEAD_STICKY, categoryColor } from "../../../lib/tableStyle";
-import type { BuildResponse, CoveredView, DataAsOf, RegexChunkView, UncoveredView } from "../../../lib/tools/regexContract";
+import type {
+  BuildResponse,
+  CoveredView,
+  DataAsOf,
+  RegexChunkView,
+  RegexMode,
+  UncoveredView,
+} from "../../../lib/tools/regexContract";
 import { MatIcon } from "../../craft/craftView";
 
 const NINJA_STALE_MIN = 120; // same red line as the header's MarketStatus
@@ -166,11 +173,18 @@ function CoveredTable({ rows }: { rows: CoveredView[] }) {
   );
 }
 
-function UncoveredList({ rows }: { rows: UncoveredView[] }) {
+const UNCOVERED_HEADING: Record<RegexMode, string> = {
+  keep: "Not in any string — won't be highlighted",
+  trash: "Not in any string — WILL be highlighted as trash, pull these out by hand",
+};
+
+function UncoveredList({ rows, mode }: { rows: UncoveredView[]; mode: RegexMode }) {
   if (rows.length === 0) return null;
   return (
     <div className="rounded-md border border-bad/30 bg-bad/[0.04] px-3 py-2 text-xs">
-      <div className="mb-1 font-semibold text-bad">Not in any string ({rows.length})</div>
+      <div className="mb-1 font-semibold text-bad">
+        {UNCOVERED_HEADING[mode]} ({rows.length})
+      </div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1">
         {rows.map((r) => (
           <li key={r.name} title={r.detail} className="flex items-center gap-1.5 text-neutral-300">
@@ -207,7 +221,7 @@ export function RegexOutput({ result, maxChars, onExplain }: {
           <ChunkCard key={c.text} chunk={c} index={i} maxChars={maxChars} onExplain={onExplain} />
         ))}
       </div>
-      <UncoveredList rows={result.uncovered} />
+      <UncoveredList rows={result.uncovered} mode={result.mode} />
       <CoveredTable rows={result.covered} />
     </div>
   );

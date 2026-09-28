@@ -6,7 +6,8 @@
  * malformed string throws SearchParseError with a position — a half-parsed explanation would
  * describe a search the player never typed.
  */
-import { NAME_KINDS, type NameEntry, type NameKind, type Namespace } from "./namespace";
+import { NAME_KINDS, type NameKind } from "../../../lib/tools/regexContract";
+import type { NameEntry, Namespace } from "./namespace";
 
 export class SearchParseError extends Error {
   constructor(
@@ -75,17 +76,14 @@ export function parseSearch(text: string): SearchAst {
 
 type Matcher = (haystack: string) => boolean;
 
-function compileTerm(term: SearchTerm, regexMode: boolean): Matcher {
-  if (!regexMode) return (h) => term.alternatives.some((a) => h.includes(a));
-  const patterns = term.alternatives.map((alt) => {
-    try {
-      return new RegExp(alt, "i");
-    } catch (error: unknown) {
-      const why = error instanceof Error ? error.message : String(error);
-      throw new SearchParseError(`invalid regex "${alt}": ${why}`, term.position);
-    }
-  });
-  return (h) => patterns.some((p) => p.test(h));
+/*
+ * Literal substring matching only. Evaluating player-supplied regex on the server would let one
+ * pasted `(.+)+x` freeze the process (ReDoS); our own strings are plain text plus `\`-escapes in
+ * the full-name fallback, and an escaped character stands for itself, so literal is exact for them.
+ */
+function compileTerm(term: SearchTerm): Matcher {
+  const literals = term.alternatives.map((a) => a.replace(/\\(.)/g, "$1"));
+  return (h) => literals.some((a) => h.includes(a));
 }
 
 const NAME_LIST_CAP = 30;
@@ -117,8 +115,8 @@ function explainTerm(term: SearchTerm, match: Matcher, ns: Namespace): TermExpla
   return { raw: term.raw, negated: term.negated, alternatives: term.alternatives, names, counts };
 }
 
-export function explainSearch(ast: SearchAst, ns: Namespace, opts: { regexMode?: boolean } = {}): SearchExplanation {
-  const matchers = ast.terms.map((t) => compileTerm(t, opts.regexMode ?? false));
+export function explainSearch(ast: SearchAst, ns: Namespace): SearchExplanation {
+  const matchers = ast.terms.map(compileTerm);
   const terms = ast.terms.map((t, i) => explainTerm(t, matchers[i] ?? (() => false), ns));
   const lit = (e: NameEntry): boolean =>
     ast.terms.every((t, i) => (matchers[i]?.(e.haystack) ?? false) !== t.negated);
