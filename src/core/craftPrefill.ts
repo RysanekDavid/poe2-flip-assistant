@@ -9,9 +9,11 @@ import type { LegReport, RecipeMarginReport } from "./craftRecipes";
  * must refuse and ask the user for the number.
  */
 
-/** A base leg we may act on: priced by the floor-percentile engine, not a legacy cheapest-10. */
+/** A base leg we may act on: priced by the floor-percentile engine, not a legacy cheapest-10.
+ *  "comparable-result" reports still price the BASE by the floor percentile — only the result
+ *  leg's method changed — so their base is trusted too. */
 export function trustedBase(report: RecipeMarginReport | null): LegReport | null {
-  if (!report || report.valuation !== "floor-percentile") return null;
+  if (!report || report.valuation === "legacy-cheapest") return null;
   return report.base;
 }
 

@@ -102,7 +102,7 @@ function startCraftMargin(ownerCred: TradeCred | null): void {
     return;
   }
   // Craft-margin engine — ranks curated recipes by live EV/attempt. Shared market scan under the
-  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so ≤2 searches + 8 fetches is
+  // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so ≤3 searches + 8 fetches is
   // the whole per-tick cost through the shared trade2 limiter.
   console.log(`[craft-margin] refreshing 1/${RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
   // One craft scan at a time: the tick skips while a manual sweep runs, and a queued manual

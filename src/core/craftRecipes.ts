@@ -12,11 +12,19 @@ import type { Rarity } from "../lib/tradeLink";
  * expert refines the recipe data; the engine + itemization are the durable part.
  */
 
+/** Trade catalog group a stat spec searches. "fractured"/"desecrated" search the flagged twin
+ *  itself (a fractured +3 is a different product from a plain +3); unset = explicit first. */
+export type StatGroup = "explicit" | "fractured" | "pseudo" | "desecrated";
+
 /** One target/searched mod on a leg. `text` is the trade catalog template ('#' for the roll). */
 export interface RecipeStatSpec {
   text: string;
-  min?: number;
-  pseudoFirst?: boolean; // prefer the pseudo-group id when the text exists in several groups
+  min?: number; // lower bound of the sellable tier (result legs) / the buy requirement (base legs)
+  group?: StatGroup;
+  // Result legs only: 1 = defines the archetype (kept when the comparable search is relaxed),
+  // 2 = support mod that narrows the strict search and is dropped when that search is too thin.
+  // Unset = 1.
+  tier?: 1 | 2;
 }
 
 /** A leg to price via a live trade2 search — either the base you buy or the finished item you sell. */
@@ -127,8 +135,30 @@ export const LegReportSchema = z.object({
   floorDiv: z.number().nullable().default(null), // ask floor applied (Div)
   percentile: z.number().nullable().default(null), // which percentile of floor-passing asks priced the leg
   sampled: z.number().nullable().default(null), // listings fetched for this leg
+  // Result legs are valued from finished-item comparables (craftResultValuation); base legs keep
+  // the floor percentile. Defaults let rows written before the comparable rework still parse.
+  method: z.enum(["floor-percentile", "comparable-median"]).default("floor-percentile"),
+  band: z.object({ p25: z.number(), p50: z.number(), p75: z.number() }).nullable().default(null), // kept comparables
+  relaxed: z.boolean().default(false), // strict search too thin → priced on tier-1 stats only
+  unrated: z.number().default(0), // comparables priced in currencies outside the rates ladder
 });
 export type LegReport = z.infer<typeof LegReportSchema>;
+
+/** How far a priced recipe is from profit — computed for every report whose base AND result
+ *  priced, so a list with no pick still says which craft is closest and what it would need. */
+export const NearMissSchema = z.object({
+  costDiv: z.number(), // base + materials per attempt
+  resultMedianDiv: z.number(), // trimmed median of the result comparables
+  resultBandDiv: z.object({ lo: z.number(), hi: z.number() }), // p25..p75 of the kept comparables
+  evDiv: z.number(), // hitRate × median − cost
+  evLowDiv: z.number(), // hitRate × p25 − cost: the pessimistic sale
+  breakEvenHitRate: z.number(), // cost / median
+  modelHitRate: z.number(), // the curated estimate
+  hitRateGap: z.number(), // breakEven − model (> 0 = the model hit rate is short of break-even)
+  resultNeededDiv: z.number(), // cost / hitRate: what a hit must sell for to break even
+  gapDiv: z.number(), // max(0, −evDiv)
+  confidence: z.enum(["high", "medium", "low"]),
+});
 
 export const RecipeMarginReportSchema = z.object({
   key: z.string(),
@@ -141,10 +171,14 @@ export const RecipeMarginReportSchema = z.object({
   evDiv: z.number(), // hitRate × result − base − materials
   marginPct: z.number(), // ev / (base + materials) × 100
   error: z.string().nullable(),
-  valuation: z.enum(["legacy-cheapest", "floor-percentile"]).default("legacy-cheapest"),
+  // "comparable-result" = result leg valued from finished-item comparables; anything older is
+  // legacy for ranking purposes (rankGate) until the recipe is rescanned.
+  valuation: z.enum(["legacy-cheapest", "floor-percentile", "comparable-result"]).default("legacy-cheapest"),
   returnFlagged: z.boolean().default(false), // hitRate × result > RETURN_FLAG_MULTIPLE × cost — verify the result leg
+  nearMiss: NearMissSchema.nullable().default(null),
 });
 export type RecipeMarginReport = z.infer<typeof RecipeMarginReportSchema>;
+export type NearMiss = z.infer<typeof NearMissSchema>;
 
 import { RECIPES as CORE_RECIPES } from "./craftRecipeData";
 import { RECIPES_2 } from "./craftRecipeData2";

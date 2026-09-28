@@ -13,10 +13,14 @@ import {
   GATE_FLAGGED_MIN_RESULT_TOTAL,
   legFloorDiv,
   MIN_LEG_SAMPLES,
-  RESULT_PERCENTILE,
   RETURN_FLAG_MULTIPLE,
+  bandOf,
+  computeNearMiss,
+  confidenceOf,
 } from "../core/craftValuation";
-import { listingDiv, shouldAlert, keepPreviousReport, pickStalest } from "../core/craftMargin";
+import { referenceValue } from "../core/priceBook";
+import { shouldAlert, keepPreviousReport, pickStalest } from "../core/craftMargin";
+import { listingDiv } from "../core/craftLegPricing";
 import { RECIPES } from "../core/craftRecipes";
 import { prefillCosts, presetCap } from "../core/craftPrefill";
 import { parseStoredReport } from "../core/craftReports";
@@ -30,17 +34,21 @@ const ok = (name: string, cond: boolean, extra = "") => {
   if (!cond) fail++;
 };
 const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+// the percentile the result leg used before comparable valuation — floorValue is still generic
+const RESULT_PERCENTILE = 0.3;
 
 function leg(over: Partial<LegReport> = {}): LegReport {
   return {
     priceDiv: 10, samples: 20, total: 120, searchUrl: "u", outliersDropped: 2, unresolvedStats: [], icon: null,
-    floorDiv: 0.5, percentile: RESULT_PERCENTILE, sampled: 40, ...over,
+    floorDiv: 0.5, percentile: RESULT_PERCENTILE, sampled: 40, method: "floor-percentile", band: null, relaxed: false,
+    unrated: 0, ...over,
   };
 }
 function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   return {
     key: "t", status: "ok", base: leg({ priceDiv: 2 }), result: leg({ priceDiv: 40 }), materials: [], materialsDiv: 1,
-    hitRate: 0.3, evDiv: 9, marginPct: 300, error: null, valuation: "floor-percentile", returnFlagged: false, ...over,
+    hitRate: 0.3, evDiv: 9, marginPct: 300, error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null,
+    ...over,
   };
 }
 
@@ -106,6 +114,8 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   const baity = report({ result: leg({ samples: 6, outliersDropped: 9 }) });
   ok("more bait dropped than kept → suppressed", !rankGate(baity).ok);
   ok("legacy (pre-floor) report never ranks", !rankGate(report({ valuation: "legacy-cheapest" })).ok);
+  const p30 = rankGate(report({ valuation: "floor-percentile" }));
+  ok("floor-percentile (p30 result) report is legacy now — awaits a comparable rescan", !p30.ok && p30.reasons[0] === "legacy valuation — awaiting rescan", p30.reasons.join("; "));
   // armour_putrefaction-like: base 0.003, mats 0.1, result p30 6 Div, hit 0.3 → return 1.8 ≈ 17× cost
   const armour = computeMargin(0.003, 6, 0.1, 0.3);
   ok("cheap-base craft: EV 1.697 is NOT altered by the high-return flag", near(armour.evDiv, 1.697), String(armour.evDiv));
@@ -146,12 +156,18 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   const legacy = { ...report(), base: { ...leg() }, result: { ...leg() } } as Record<string, unknown>;
   delete legacy.valuation;
   delete legacy.returnFlagged;
-  for (const k of ["floorDiv", "percentile", "sampled"]) {
+  delete legacy.nearMiss;
+  for (const k of ["floorDiv", "percentile", "sampled", "method", "band", "relaxed", "unrated"]) {
     delete (legacy.base as Record<string, unknown>)[k];
     delete (legacy.result as Record<string, unknown>)[k];
   }
   const parsed = parseStoredReport("t", JSON.stringify(legacy));
   ok("legacy report parses with valuation legacy-cheapest", parsed?.valuation === "legacy-cheapest" && parsed.base?.floorDiv === null);
+  ok(
+    "pre-comparable rows parse with method/band/relaxed/unrated/nearMiss defaults",
+    parsed?.nearMiss === null && parsed.result?.method === "floor-percentile" && parsed.result.band === null &&
+      parsed.result.relaxed === false && parsed.result.unrated === 0,
+  );
 }
 
 // --- prefill refusal ---
@@ -163,6 +179,8 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   ok("base leg failed the floor → prefill refused, asks for baseCostDiv", !failedBase.ok && failedBase.needs.includes("baseCostDiv"));
   const legacy = prefillCosts(report({ valuation: "legacy-cheapest" }), {}, mats);
   ok("legacy junk-floor base → prefill refused", !legacy.ok);
+  const p30 = prefillCosts(report({ valuation: "floor-percentile" }), {}, mats);
+  ok("floor-percentile base still prefills (only the result method changed)", p30.ok && near(p30.baseCostDiv, 2));
   const manual = prefillCosts(null, { baseCostDiv: 3 }, mats);
   ok("manual base price accepted without any report", manual.ok && near(manual.baseCostDiv, 3));
   const missingMats = prefillCosts(report(), {}, { totalDiv: 0.2, missing: ["omen-of-light"] });
@@ -278,6 +296,49 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   ok("realized = brick + sold hit only (spent 6, sold 10)", row?.spent_div === 6 && row?.sold_div === 10, JSON.stringify(row));
   ok("kept hit + open attempt are pending (2, 6 div in)", row?.pending === 2 && row?.pending_cost_div === 6);
   db.prepare("DELETE FROM craft_attempts WHERE recipe_key = 'test-pnl'").run();
+}
+
+// --- comparable result valuation: band from the trimmed set, confidence tiers, near-miss math ---
+{
+  // 2 bait asks trimmed (< 30% of the median of the rest), 10 real comparables kept
+  const ref = referenceValue([0.5, 0.8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+  ok("referenceValue returns the kept comparables ascending", ref.keptAsc.join(",") === "10,11,12,13,14,15,16,17,18,19" && ref.dropped === 2, ref.keptAsc.join(","));
+  const band = bandOf(ref.keptAsc);
+  ok("band p50 = the trimmed median", near(band.p50, ref.valueDiv ?? NaN), `${band.p50} vs ${ref.valueDiv}`);
+  ok("band p25/p75 interpolate the kept set (12.25 / 16.75)", near(band.p25, 12.25) && near(band.p75, 16.75), JSON.stringify(band));
+
+  const deep = leg({ method: "comparable-median", samples: 8, total: 20, band: { p25: 7, p50: 10, p75: 13 }, percentile: null, floorDiv: null });
+  const cleanBase = leg({ priceDiv: 2 });
+  ok("high: ≥8 comps, ≥20 listed, spread 0.6, strict, clean base", confidenceOf(cleanBase, deep) === "high");
+  ok("wider than 0.6 spread → medium", confidenceOf(cleanBase, leg({ ...deep, band: { p25: 6.9, p50: 10, p75: 13 } })) === "medium");
+  ok("relaxed search is never high", confidenceOf(cleanBase, leg({ ...deep, relaxed: true })) === "medium");
+  ok("7 comparables → medium", confidenceOf(cleanBase, leg({ ...deep, samples: 7 })) === "medium");
+  ok("19 listed → medium", confidenceOf(cleanBase, leg({ ...deep, total: 19 })) === "medium");
+  ok("thin base (7 listed) caps it at medium", confidenceOf(leg({ total: 7 }), deep) === "medium");
+  ok("5 comps of 8 listed → medium (boundary)", confidenceOf(cleanBase, leg({ ...deep, samples: 5, total: 8 })) === "medium");
+  ok("4 comps → low", confidenceOf(cleanBase, leg({ ...deep, samples: 4, total: 8 })) === "low");
+  ok("7 listed → low", confidenceOf(cleanBase, leg({ ...deep, samples: 5, total: 7 })) === "low");
+
+  // cost 2 + 1 = 3; median 10; hit 0.2 → EV −1, low EV 0.2×7 − 3 = −1.6
+  const nm = computeNearMiss(2, { p25: 7, p50: 10, p75: 13 }, 1, 0.2, { base: cleanBase, result: deep });
+  ok("near-miss cost = base + materials", near(nm.costDiv, 3));
+  ok("near-miss EV = hit × median − cost (−1)", near(nm.evDiv, -1), String(nm.evDiv));
+  ok("near-miss pessimistic EV uses p25 (−1.6)", near(nm.evLowDiv, -1.6), String(nm.evLowDiv));
+  ok("break-even hit rate = cost / median (30%)", near(nm.breakEvenHitRate, 0.3));
+  ok("hit-rate gap = break-even − model (+10 pts)", near(nm.hitRateGap, 0.1));
+  ok("a hit must sell for cost / hitRate (15)", near(nm.resultNeededDiv, 15));
+  ok("gap = −EV when negative (1)", near(nm.gapDiv, 1));
+  ok("band carried as lo/hi", nm.resultBandDiv.lo === 7 && nm.resultBandDiv.hi === 13);
+  ok("confidence carried from the legs", nm.confidence === "high");
+  const profitable = computeNearMiss(1, { p25: 7, p50: 10, p75: 13 }, 1, 0.5, { base: cleanBase, result: deep });
+  ok("positive EV → gap 0, negative hit-rate gap", profitable.gapDiv === 0 && profitable.hitRateGap < 0);
+  let threw = false;
+  try {
+    computeNearMiss(1, { p25: 0, p50: 0, p75: 0 }, 1, 0.5, { base: cleanBase, result: deep });
+  } catch {
+    threw = true;
+  }
+  ok("zero median is a loud error, never a persisted Infinity", threw);
 }
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
