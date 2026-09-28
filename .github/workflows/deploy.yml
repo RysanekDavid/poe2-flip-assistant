@@ -51,9 +51,11 @@ jobs:
       - run: npm run test:snipe
       - run: npm run test:system
       - run: npm run test:notify
+      - run: npm run test:patch
       # KB staleness gate: every Coach knowledge file must match its patch-stamped manifest entry.
       - run: npm run kb:check
       - run: npm run test:craft
+      - run: npm run test:tools
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
