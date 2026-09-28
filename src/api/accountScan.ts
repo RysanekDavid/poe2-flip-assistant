@@ -1,7 +1,7 @@
 import { createSearch, fetchListings, type TradeCred } from "./tradeClient";
-import type { Listing } from "./tradeListing";
+import type { Listing, ListingPrice } from "./tradeListing";
 import { amountInDivine, ratedDiv } from "../core/listingPrice";
-import { buildValuer } from "../core/valuation";
+import { buildValuer, type Valuer } from "../core/valuation";
 import type { ExchangeRates } from "../core/priceEngine";
 
 const ORBS = new Set(["Divine Orb", "Exalted Orb", "Chaos Orb"]);
@@ -21,6 +21,24 @@ export interface TabValue {
   unpriced: number; // items with no market value AND no usable listing price (showcase sentinels)
 }
 
+/**
+ * Where a scanned item's Div value came from: the market (ninja/scout), the seller's OWN ask, or
+ * the rates ladder (raw Divine/Exalted/Chaos stacks). Null on the item means unpriced.
+ */
+export type ScannedValueSource = "ninja" | "scout" | "ask" | "ladder";
+
+/** One listing as read — stored per snapshot (balance_items) so Liquidate can plan per item. */
+export interface ScannedItem {
+  tab: string;
+  itemName: string;
+  baseType: string;
+  rarity: string | null;
+  stackSize: number; // ≥ 1: a non-stackable listing reports 0, which is one item
+  marketDiv: number | null; // the whole listing (unit × stack); null when unpriced
+  marketSource: ScannedValueSource | null;
+  ask: ListingPrice | null; // the listing's own price, kept even when the market valued it
+}
+
 export interface AccountCurrency {
   divine: number;
   exalted: number;
@@ -32,6 +50,7 @@ export interface AccountCurrency {
   total: number; // trade says this many of your items are listed
   truncated: boolean; // total > listingsSeen — the cheapest (total − seen) listings were not read
   tabs: TabValue[]; // per-stash-tab breakdown, value-descending
+  items: ScannedItem[]; // every listing read, in read order
 }
 
 type Rates = Pick<ExchangeRates, "exaltPerDivine" | "chaosPerDivine">;
@@ -63,14 +82,25 @@ async function readOwnListings(account: string, cred?: TradeCred): Promise<{ tot
   return { total: search.total ?? listings.length, listings };
 }
 
-/** Fold one listing into the account + tab totals. */
-function addListing(l: Listing, acc: AccountCurrency, t: TabAcc, valuer: ReturnType<typeof buildValuer>, rates: Rates): void {
+/** Raw orbs go to the currency totals (counted by stack, not market-valued); returns their Div. */
+function addOrbs(l: Listing, acc: AccountCurrency, t: TabAcc, rates: Rates): number {
+  if (l.itemName === "Divine Orb") { acc.divine += l.stackSize; t.divine += l.stackSize; return l.stackSize; }
+  if (l.itemName === "Exalted Orb") { acc.exalted += l.stackSize; t.exalted += l.stackSize; return ladderDiv(l.stackSize, "exalted", rates); }
+  acc.chaos += l.stackSize; t.chaos += l.stackSize;
+  return ladderDiv(l.stackSize, "chaos", rates);
+}
+
+/** Fold one listing into the account + tab totals, and keep it as a per-item row. */
+function addListing(l: Listing, acc: AccountCurrency, t: TabAcc, valuer: Valuer, rates: Rates): void {
   t.items++;
-  // raw orbs go to the currency totals (counted by stack, not market-valued)
+  const item: ScannedItem = {
+    tab: t.tab, itemName: l.itemName, baseType: l.baseType, rarity: l.rarity,
+    stackSize: Math.max(1, l.stackSize), marketDiv: null, marketSource: null, ask: l.price,
+  };
+  acc.items.push(item);
   if (ORBS.has(l.itemName) && l.stackSize > 0) {
-    if (l.itemName === "Divine Orb") { acc.divine += l.stackSize; t.divine += l.stackSize; }
-    else if (l.itemName === "Exalted Orb") { acc.exalted += l.stackSize; t.exalted += l.stackSize; }
-    else { acc.chaos += l.stackSize; t.chaos += l.stackSize; }
+    item.marketDiv = addOrbs(l, acc, t, rates);
+    item.marketSource = "ladder";
     return;
   }
   // everything else: value at MARKET first (ninja/scout × stack), so showcase-priced items still
@@ -79,28 +109,23 @@ function addListing(l: Listing, acc: AccountCurrency, t: TabAcc, valuer: ReturnT
   const mv = valuer.value(l.itemName, l.stackSize);
   if (mv) {
     acc.otherDiv += mv.div; t.otherDiv += mv.div;
+    item.marketDiv = mv.div; item.marketSource = mv.source;
     return;
   }
   const d = ratedDiv(l.price, rates);
   if (d != null) {
     acc.otherDiv += d; t.otherDiv += d; acc.gearAtAskDiv += d;
+    item.marketDiv = d; item.marketSource = "ask";
   } else {
     acc.unpriced++; t.unpriced++;
   }
 }
 
-/**
- * Total your Divine/Exalted/Chaos (and the value of other gear) from your own public-tab
- * listings, via a trade search on your account name. Read-only. Currency in a PRIVATE tab is
- * invisible to trade — make the tab public for it to count. Each listing carries its stash tab
- * name, so the worth is also broken down per tab (the per-tab charts).
- */
-export async function readCurrencyFromTrade(account: string, rates: Rates, cred?: TradeCred): Promise<AccountCurrency> {
-  const { listings, total } = await readOwnListings(account, cred);
-  const valuer = buildValuer(); // ninja (live) + scout (daily cache) — no network here
+/** Fold already-fetched listings into account totals, per-tab values and per-item rows. */
+export function scanListings(listings: readonly Listing[], total: number, rates: Rates, valuer: Valuer): AccountCurrency {
   const acc: AccountCurrency = {
     divine: 0, exalted: 0, chaos: 0, otherDiv: 0, gearAtAskDiv: 0, unpriced: 0,
-    listingsSeen: listings.length, total, truncated: total > listings.length, tabs: [],
+    listingsSeen: listings.length, total, truncated: total > listings.length, tabs: [], items: [],
   };
   const byTab = new Map<string, TabAcc>();
   for (const l of listings) {
@@ -113,4 +138,15 @@ export async function readCurrencyFromTrade(account: string, rates: Rates, cred?
     .map((t) => ({ ...t, valueDiv: tabValue(t, rates) }))
     .sort((a, b) => b.valueDiv - a.valueDiv);
   return acc;
+}
+
+/**
+ * Total your Divine/Exalted/Chaos (and the value of other gear) from your own public-tab
+ * listings, via a trade search on your account name. Read-only. Currency in a PRIVATE tab is
+ * invisible to trade — make the tab public for it to count. Each listing carries its stash tab
+ * name, so the worth is also broken down per tab (the per-tab charts).
+ */
+export async function readCurrencyFromTrade(account: string, rates: Rates, cred?: TradeCred): Promise<AccountCurrency> {
+  const { listings, total } = await readOwnListings(account, cred);
+  return scanListings(listings, total, rates, buildValuer()); // ninja (live) + scout (daily cache) — no network here
 }
