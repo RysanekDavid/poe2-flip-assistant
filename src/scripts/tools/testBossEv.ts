@@ -30,9 +30,11 @@ function testCuratedFile(): void {
   const today = new Date(NOW).toISOString().slice(0, 10);
   for (const boss of file.bosses) {
     assert.ok(boss.sources.length > 0, `${boss.id} cites its access chain`);
+    for (const s of boss.sources) assert.ok(!s.url.includes("poewiki.net/"), `${boss.id}: ${s.url} is the PoE1 wiki host`);
     for (const tier of boss.tiers) {
       for (const loot of tier.loot) {
         const where = `${boss.id}/${tier.id}/${loot.name}`;
+        assert.ok(!loot.source.url.includes("poewiki.net/"), `${where}: PoE1 wiki host`);
         assert.match(loot.source.accessed, /^\d{4}-\d{2}-\d{2}$/, `${where} source must be dated`);
         assert.ok(loot.source.accessed <= today, `${where} source accessed in the future`);
         assert.ok(loot.source.url.startsWith("https://"), `${where} source must be a link`);
