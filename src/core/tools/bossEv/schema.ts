@@ -6,10 +6,14 @@ import { z } from "zod";
  * Plain zod only (no node/DB imports): the client contract re-uses these schemas.
  */
 
+/** Round-trips through Date so an overflowing day (2026-02-30 → March 2) is rejected, not rolled over. */
 const isoDay = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "expected YYYY-MM-DD")
-  .refine((s) => !Number.isNaN(Date.parse(`${s}T00:00:00Z`)), "not a real calendar date");
+  .refine((s) => {
+    const ms = Date.parse(`${s}T00:00:00Z`);
+    return !Number.isNaN(ms) && new Date(ms).toISOString().slice(0, 10) === s;
+  }, "not a real calendar date");
 
 const probability = z.number().min(0).max(1);
 
@@ -116,25 +120,38 @@ export function parseBossLoot(raw: unknown): BossLootFile {
   return parsed.data;
 }
 
-/** PoE2 1.0 launch (announced for 2026-12-11): the 0.5 boss roster and loot tables stop applying. */
+/** PoE2 1.0 launch, announced for 2026-12-11. A date alone proves nothing changed, so it only nudges. */
 export const POE2_1_0_LAUNCH_MS = Date.parse("2026-12-11T00:00:00Z");
 
-/** "0.5.4d" → "0.5.4": a hotfix letter never reshuffles pinnacle loot tables, a patch number can. */
-function patchCore(patch: string): string {
-  const match = /^\d+\.\d+\.\d+/.exec(patch);
-  return match ? match[0] : patch;
+/** "0.5.4d" → [0, 5, 4, "d"]; throws on anything else so a malformed coverage file fails loudly. */
+function parsePatch(patch: string): [number, number, number, string] {
+  const m = /^(\d+)\.(\d+)\.(\d+)([a-z]?)$/.exec(patch);
+  if (!m) throw new Error(`unparseable patch version "${patch}"`);
+  return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] ?? ""];
+}
+
+/** <0 when a is older than b. A hotfix letter sorts after the bare patch: 0.5.4 < 0.5.4d < 0.5.5. */
+export function comparePatch(a: string, b: string): number {
+  const [pa, pb] = [parsePatch(a), parsePatch(b)];
+  for (let i = 0; i < 3; i += 1) {
+    const d = (pa[i] as number) - (pb[i] as number);
+    if (d !== 0) return d;
+  }
+  return pa[3] === pb[3] ? 0 : pa[3] < pb[3] ? -1 : 1;
 }
 
 /**
  * Why the curated tables may be out of date, or null. The coverage patch is the game-data
- * snapshot the app is verified against (patch-coverage.json).
+ * snapshot the app is verified against (patch-coverage.json): only when THAT has moved past the
+ * file's patch is there evidence the tables are stale. A file curated ahead of the snapshot is
+ * normal (tables get re-checked on patch day, the RePoE sync lags).
  */
 export function patchWarning(filePatch: string, coveragePatch: string, nowMs: number): string | null {
-  if (nowMs >= POE2_1_0_LAUNCH_MS) {
-    return `PoE2 1.0 is live (2026-12-11) — these ${filePatch} boss tables are likely obsolete until re-curated.`;
+  if (comparePatch(filePatch, coveragePatch) < 0) {
+    return `Game data is on ${coveragePatch}, newer than these ${filePatch} boss tables — access chains and loot may be obsolete until re-curated.`;
   }
-  if (patchCore(filePatch) !== patchCore(coveragePatch)) {
-    return `Boss tables were curated for ${filePatch}, but the app's game data covers ${coveragePatch} — re-check access chains and loot.`;
+  if (nowMs >= POE2_1_0_LAUNCH_MS) {
+    return `PoE2 1.0 launched 2026-12-11 — re-check these ${filePatch} boss tables.`;
   }
   return null;
 }

@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { TOOL_IDS, TOOLS } from "../../components/tools/toolRegistry";
 import { bossEv, evaluateBosses, jackpotOf } from "../../core/tools/bossEv/ev";
 import { loadPriceInputs, priceLookup, referencedNinjaIds, resolvePrice, type PriceInputs } from "../../core/tools/bossEv/pricing";
-import { parseBossLoot, patchWarning, type Tier } from "../../core/tools/bossEv/schema";
+import { comparePatch, parseBossLoot, patchWarning, type Tier } from "../../core/tools/bossEv/schema";
 import { insertSnapshots } from "../../db/marketQueries";
 import { getDb } from "../../db/database";
 import { bossEvResponseSchema } from "../../lib/tools/bossEvContract";
@@ -73,6 +73,9 @@ function testStrictness(): void {
   });
   rejects("impossible date", (raw) => {
     firstLoot(raw).source = { title: "x", url: "https://example.com", accessed: "2026-13-40" };
+  });
+  rejects("overflowing day that Date would roll into March", (raw) => {
+    firstLoot(raw).source = { title: "x", url: "https://example.com", accessed: "2026-02-30" };
   });
   rejects("inverted range", (raw) => {
     firstLoot(raw).rate = { kind: "range", lo: 0.5, hi: 0.1 };
@@ -206,9 +209,18 @@ function testDbPricing(): void {
 
 function testPatchWarning(): void {
   const before = Date.parse("2026-10-01T00:00:00Z");
-  assert.equal(patchWarning("0.5.5", "0.5.5b", before), null, "hotfix letters do not warn");
-  assert.match(patchWarning("0.5.5", "0.5.4d", before) ?? "", /curated for 0\.5\.5.*covers 0\.5\.4d/);
-  assert.match(patchWarning("0.5.5", "0.5.5", Date.parse("2026-12-11T00:00:00Z")) ?? "", /1\.0/);
+  const after = Date.parse("2026-12-11T00:00:00Z");
+  assert.ok(comparePatch("0.5.4", "0.5.4d") < 0 && comparePatch("0.5.4d", "0.5.5") < 0 && comparePatch("0.5.10", "0.5.9") > 0);
+  assert.equal(comparePatch("0.5.5b", "0.5.5b"), 0);
+  assert.equal(patchWarning("0.5.5", "0.5.4d", before), null, "tables curated AHEAD of the game-data snapshot are fine");
+  assert.equal(patchWarning("0.5.5", "0.5.5", before), null);
+  assert.match(patchWarning("0.5.5", "0.5.5b", before) ?? "", /newer than these 0\.5\.5 boss tables/, "a newer hotfix is newer");
+  assert.match(patchWarning("0.5.5", "0.6.0", before) ?? "", /obsolete/);
+  const soft = patchWarning("0.5.5", "0.5.5", after) ?? "";
+  assert.match(soft, /1\.0 launched.*re-check/, "after the date: a soft nudge only");
+  assert.doesNotMatch(soft, /obsolete/, "the date alone never claims the tables are obsolete");
+  assert.match(patchWarning("0.5.5", "1.0.0", after) ?? "", /obsolete/, "coverage past the file is what makes them obsolete");
+  assert.throws(() => patchWarning("0.5.5", "latest", before), /unparseable patch/);
 }
 
 function testCuratedEvaluates(): void {
