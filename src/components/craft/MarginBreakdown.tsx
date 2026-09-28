@@ -6,12 +6,19 @@ import { PNL_CHANGED_EVENT } from "../CraftPnlPanel";
 import type { LegReport } from "../../core/craftRecipes";
 import { CraftSessionInline } from "./CraftSessionWizard";
 import { MaterialsTable } from "./MaterialsTable";
+import { NearMissLine } from "./NearMissLine";
 import { evLabel, priceLabel, type RecipeView } from "./craftView";
 import { RETURN_FLAG_MULTIPLE } from "../../core/craftValuation";
 
-/** How a leg's number was derived — a percentile of floor-passing asks, never "the price". */
+/** How a leg's number was derived — a percentile of floor-passing asks or a comparable median,
+ *  never "the price". */
 function legBasis(leg: LegReport): string {
   const listed = `${leg.total.toLocaleString("en")} listed`;
+  if (leg.method === "comparable-median") {
+    const band = leg.band ? ` · band ${leg.band.p25.toFixed(2)}–${leg.band.p75.toFixed(2)} Div` : "";
+    const dropped = leg.outliersDropped > 0 ? ` · ${leg.outliersDropped} bait dropped` : "";
+    return `median of ${leg.samples} instant-buyout comparables${band} · ${listed}${dropped}${leg.relaxed ? " · relaxed to defining mods" : ""} · asks, not sales`;
+  }
   if (leg.percentile == null || leg.floorDiv == null) {
     return `legacy cheapest-asks value of ${leg.samples} · ${listed} · awaiting rescan`;
   }
@@ -151,6 +158,7 @@ export function MarginBreakdown({ r, ex, icons }: { r: RecipeView; ex: number | 
           <span className="text-neutral-500"> / attempt</span>
         </p>
       )}
+      {rep?.nearMiss && <NearMissLine nm={rep.nearMiss} gate={r.gate} ex={ex} />}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <LegBlock title={`Base — ${r.baseSpec.label}`} leg={rep?.base ?? null} note={r.baseSpec.note} ex={ex} />

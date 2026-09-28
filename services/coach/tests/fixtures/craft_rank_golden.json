@@ -1,0 +1,22 @@
+{
+  "_doc": "Golden ordering shared by src/scripts/testCraftRank.ts (craftRank.rankCandidates) and tests/test_engine_drift.py (craft_gate.rank_key). Change both engines together or this file fails one of them.",
+  "now": "2026-09-28 12:00:00",
+  "cases": [
+    { "key": "a_pick_medium", "status": "ok", "gateOk": true, "evDiv": 1.5, "marginPct": 50, "confidence": "medium", "scannedAt": "2026-09-28 11:50:00" },
+    { "key": "b_pick_high", "status": "ok", "gateOk": true, "evDiv": 4.0, "marginPct": 30, "confidence": "high", "scannedAt": "2026-09-28 11:40:00" },
+    { "key": "c_gated_positive", "status": "ok", "gateOk": false, "evDiv": 6.0, "marginPct": 200, "confidence": "low", "scannedAt": "2026-09-28 11:30:00" },
+    { "key": "d_near_high", "status": "ok", "gateOk": true, "evDiv": -0.5, "marginPct": -20, "confidence": "high", "scannedAt": "2026-09-28 11:20:00" },
+    { "key": "e_near_low", "status": "ok", "gateOk": true, "evDiv": -0.5, "marginPct": -20, "confidence": "low", "scannedAt": "2026-09-28 11:10:00" },
+    { "key": "f_near_worse", "status": "ok", "gateOk": false, "evDiv": -3.0, "marginPct": -60, "confidence": "medium", "scannedAt": "2026-09-28 11:00:00" },
+    { "key": "g_zero_ev", "status": "ok", "gateOk": true, "evDiv": 0, "marginPct": 0, "confidence": "high", "scannedAt": "2026-09-28 10:50:00" },
+    { "key": "h_legacy_no_near_miss", "status": "ok", "gateOk": false, "evDiv": -1.0, "marginPct": -20, "confidence": null, "scannedAt": "2026-09-28 10:45:00" },
+    { "key": "i_failed_recent", "status": "leg-failed", "gateOk": false, "evDiv": 0, "marginPct": 0, "confidence": null, "scannedAt": "2026-09-28 11:55:00" },
+    { "key": "j_missing_old", "status": "missing-materials", "gateOk": false, "evDiv": 0, "marginPct": 0, "confidence": null, "scannedAt": "2026-09-28 09:00:00" },
+    { "key": "k_failed_mid", "status": "leg-failed", "gateOk": false, "evDiv": 0, "marginPct": 0, "confidence": null, "scannedAt": "2026-09-28 10:30:00" }
+  ],
+  "expected": {
+    "picks": ["b_pick_high", "a_pick_medium"],
+    "nearMisses": ["c_gated_positive", "g_zero_ev", "d_near_high", "e_near_low", "h_legacy_no_near_miss", "f_near_worse"],
+    "unpriced": ["i_failed_recent", "k_failed_mid", "j_missing_old"]
+  }
+}

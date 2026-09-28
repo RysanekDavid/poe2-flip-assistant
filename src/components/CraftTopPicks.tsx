@@ -1,62 +1,104 @@
 "use client";
 
 import { Flame } from "lucide-react";
-import { evLabel } from "./craft/craftView";
+import { evLabel, priceLabel, type RecipeView } from "./craft/craftView";
 import { useCraftMargins } from "./craft/CraftMarginsContext";
+import { ConfidenceBadge } from "./craft/NearMissLine";
 import { ComputedLeague } from "./ui/ComputedLeague";
 import { RETURN_FLAG_MULTIPLE } from "../core/craftValuation";
 
+const SLOTS = 3;
+
+function RecipeIcon({ r }: { r: RecipeView }) {
+  const icon = r.heroIcon ?? r.report?.result?.icon ?? null;
+  if (!icon) return null;
+  // eslint-disable-next-line @next/next/no-img-element -- poecdn item art
+  return <img src={icon} alt="" className="h-6 w-6 object-contain" />;
+}
+
+function PickChip({ r, rank, ex }: { r: RecipeView; rank: number; ex: number | null }) {
+  const ev = r.report?.evDiv ?? 0;
+  return (
+    <span className="flex items-center gap-2 rounded-md bg-neutral-950/50 px-2.5 py-1.5 text-sm">
+      <span className="text-xs text-neutral-600">{rank}.</span>
+      <RecipeIcon r={r} />
+      <span className="text-neutral-300">{r.label}</span>
+      <span className="font-semibold tabular-nums text-emerald-400">{evLabel(ev, ex)}</span>
+      {r.report?.nearMiss && <ConfidenceBadge confidence={r.report.nearMiss.confidence} />}
+      {r.report?.returnFlagged && (
+        <span
+          className="text-xs text-amber-500"
+          title={`expected return is over ${RETURN_FLAG_MULTIPLE}× the attempt cost — normal for 1-ex bases, but open the result search and check the asks are real`}
+        >
+          ⚠ &gt;{RETURN_FLAG_MULTIPLE}× cost
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** "closest to profit": what the recipe is short by and the hit rate it would need. */
+function NearMissChip({ r, ex }: { r: RecipeView; ex: number | null }) {
+  const nm = r.report?.nearMiss;
+  if (!nm) return null;
+  const why = r.gate.ok ? "EV negative at current prices" : r.gate.reasons.join("\n");
+  return (
+    <span className="flex items-center gap-2 rounded-md border border-dashed border-neutral-800 px-2.5 py-1.5 text-sm" title={why}>
+      <RecipeIcon r={r} />
+      <span className="text-neutral-400">{r.label}</span>
+      {nm.gapDiv > 0 ? (
+        <span className="tabular-nums text-bad">gap {priceLabel(nm.gapDiv, ex)}</span>
+      ) : (
+        <span className="tabular-nums text-emerald-400/70">{evLabel(nm.evDiv, ex)} · gated</span>
+      )}
+      <span className="text-xs tabular-nums text-neutral-500">
+        needs hit ≥{(nm.breakEvenHitRate * 100).toFixed(0)}% (model {(nm.modelHitRate * 100).toFixed(0)}%)
+      </span>
+      <ConfidenceBadge confidence={nm.confidence} />
+    </span>
+  );
+}
+
 /**
- * "What to craft right now" — the top recipes across all domains ranked by modelled EV. Only
- * reports that pass the server's confidence gate (≥8 listed and ≥5 usable asks per leg, bait not
- * dominating, fresh, ≥20 result listings when the return is flagged) are eligible: a thin whale-ask
- * cluster must never top the list.
+ * "What to craft right now" — gate-passing, positive-EV recipes ranked by EV (craftRank picks).
+ * When fewer than three qualify the row is filled with the recipes closest to profit, each with
+ * its gap, break-even hit rate and confidence, so the row always says what WOULD work and why.
  */
 export function CraftTopPicks() {
   const { data, error } = useCraftMargins();
   if (error) return <p role="alert" className="text-sm text-bad">craft ranking unavailable: {error}</p>;
-  const eligible = (data?.recipes ?? []).filter((r) => r.report?.status === "ok" && r.gate.ok);
-  const ranked = eligible.sort((a, b) => (b.report?.evDiv ?? -Infinity) - (a.report?.evDiv ?? -Infinity)).slice(0, 3);
-  const scanned = (data?.recipes ?? []).filter((r) => r.report?.status === "ok").length;
-  if (!data || scanned === 0) return null;
+  if (!data || !data.recipes.some((r) => r.report)) return null;
+  const byKey = new Map(data.recipes.map((r) => [r.key, r]));
+  const views = (keys: string[]): RecipeView[] => keys.map((k) => byKey.get(k)).filter((r): r is RecipeView => r != null);
+  const picks = views(data.rank.picks).slice(0, SLOTS);
+  const near = views(data.rank.nearMisses)
+    .filter((r) => r.report?.nearMiss)
+    .slice(0, SLOTS - picks.length);
   const ex = data.exaltPerDivine;
-  const anyProfit = ranked.some((r) => (r.report?.evDiv ?? 0) > 0);
 
   return (
     <section className="flex flex-wrap items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900/50 px-4 py-3">
       <span className="flex items-center gap-1.5 text-sm font-semibold text-neutral-200">
-        <Flame className={`h-4 w-4 ${anyProfit ? "text-orange-400" : "text-neutral-600"}`} />
+        <Flame className={`h-4 w-4 ${picks.length > 0 ? "text-orange-400" : "text-neutral-600"}`} />
         craft right now
       </span>
       <ComputedLeague league={data.computedLeague} />
-      {ranked.map((r, i) => {
-        const ev = r.report!.evDiv;
-        const icon = r.heroIcon ?? r.report?.result?.icon ?? null;
-        return (
-          <span key={r.key} className="flex items-center gap-2 rounded-md bg-neutral-950/50 px-2.5 py-1.5 text-sm">
-            <span className="text-xs text-neutral-600">{i + 1}.</span>
-            {icon && (
-              // eslint-disable-next-line @next/next/no-img-element -- poecdn item art
-              <img src={icon} alt="" className="h-6 w-6 object-contain" />
-            )}
-            <span className="text-neutral-300">{r.label}</span>
-            <span className={`font-semibold tabular-nums ${ev >= 0 ? "text-emerald-400" : "text-bad"}`}>{evLabel(ev, ex)}</span>
-            {r.report?.returnFlagged && (
-              <span
-                className="text-xs text-amber-500"
-                title={`expected return is over ${RETURN_FLAG_MULTIPLE}× the attempt cost — normal for 1-ex bases, but open the result search and check the asks are real`}
-              >
-                ⚠ &gt;{RETURN_FLAG_MULTIPLE}× cost
-              </span>
-            )}
-          </span>
-        );
-      })}
-      {ranked.length === 0 && (
-        <span className="text-xs text-amber-500">no recipe has enough listings behind both legs to rank — see each card's confidence note</span>
+      {picks.map((r, i) => (
+        <PickChip key={r.key} r={r} rank={i + 1} ex={ex} />
+      ))}
+      {near.length > 0 && <span className="text-xs text-neutral-500">{picks.length > 0 ? "next closest:" : "closest to profit:"}</span>}
+      {near.map((r) => (
+        <NearMissChip key={r.key} r={r} ex={ex} />
+      ))}
+      {picks.length === 0 && near.length === 0 && (
+        <span className="text-xs text-amber-500">
+          {data.rank.nearMisses.length > 0
+            ? `${data.rank.nearMisses.length} priced recipe(s) predate comparable valuation — awaiting rescan`
+            : "no recipe priced both legs on the current scan"}
+          {" "}({data.rank.unpriced.length} unpriced — open a card for its error); one recipe rescans every {data.intervalMin}m
+        </span>
       )}
-      {ranked.length > 0 && !anyProfit && <span className="text-xs text-neutral-600">every ranked recipe is negative at current prices — flip, don't craft</span>}
-      <span className="text-xs text-neutral-600">modelled EV · curated hit rates · observed asks, not sales</span>
+      <span className="text-xs text-neutral-600">modelled EV · curated hit rates · instant-buyout asks, not sales</span>
     </section>
   );
 }
