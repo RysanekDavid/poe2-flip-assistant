@@ -62,7 +62,7 @@ export function insertBalanceItems(snapshotId: number, items: readonly ScannedIt
         stackSize: Math.max(1, Math.round(i.stackSize)),
         marketDiv: i.marketDiv,
         marketSource: i.marketSource,
-        askAmount: i.ask?.amount ?? null,
+        askAmount: i.ask?.amount ?? null, // per unit, as the note lists it — never a stack total
         askCurrency: i.ask?.currency ?? null,
       });
     }

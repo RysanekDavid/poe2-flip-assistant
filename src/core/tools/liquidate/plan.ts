@@ -167,6 +167,7 @@ export interface StoredStashItem {
 
 interface StashGroup {
   item: StashItem;
+  /** Σ unit ask × stack, in Div — the whole group at your own asks. */
   askTotal: number;
   askComplete: boolean;
 }
@@ -174,17 +175,19 @@ interface StashGroup {
 function addToGroup(g: StashGroup, r: StoredStashItem, rates: ExchangeRates): void {
   g.item.qty += r.stack_size;
   if (r.tab != null && !g.item.tabs.includes(r.tab)) g.item.tabs.push(r.tab);
-  const ask = r.ask_amount == null || r.ask_currency == null ? null : amountInDivine(r.ask_amount, r.ask_currency, rates);
-  // Assumes a listing's ask prices the whole listing (as accountScan values it), so it is spread
-  // over the stack: "listing ask ÷ stack". PoE2's per-unit vs per-stack note semantics are unverified.
-  if (ask == null || !(ask > 0)) g.askComplete = false;
-  else g.askTotal += ask;
+  // ask_amount is the note's amount and a stash note on a stack prices ONE unit (Maxroll
+  // bulk-selling guide; PoE2 forum thread 3688218 — `~price N/M cur` exists to price several
+  // units), so it is used as-is per unit and weighted by the stack it sits on.
+  const unitAsk = r.ask_amount == null || r.ask_currency == null ? null : amountInDivine(r.ask_amount, r.ask_currency, rates);
+  if (unitAsk == null || !(unitAsk > 0)) g.askComplete = false;
+  else g.askTotal += unitAsk * r.stack_size;
 }
 
 /**
  * The stored rows of one stash read → one import entry per item name (stacks and tabs merged),
- * raw orbs left out and counted. `askDiv` is listing ask ÷ stack, only when every listing of the
- * item carried a ladder-priced ask.
+ * raw orbs left out and counted. `askDiv` is your per-unit ask (stack-weighted mean when the same
+ * item sits in several listings at different asks), only when every listing of the item carried a
+ * ladder-priced ask.
  */
 export function groupStashItems(rows: readonly StoredStashItem[], rates: ExchangeRates): { items: StashItem[]; skippedOrbs: number } {
   const groups = new Map<string, StashGroup>();

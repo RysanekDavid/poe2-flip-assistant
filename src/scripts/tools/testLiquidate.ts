@@ -14,6 +14,7 @@ import { cxSellQuote } from "../../core/tools/liquidate/cxRoute";
 import { groupStashItems, planLiquidation, type PlanContext } from "../../core/tools/liquidate/plan";
 import { stashNote, tradeListingQuote } from "../../core/tools/liquidate/tradeRoute";
 import { BALANCE_ITEMS_KEEP_SNAPSHOTS, insertBalanceItems, latestStashItems } from "../../db/balanceItemQueries";
+import { getDb } from "../../db/database";
 import { liquidateRequestSchema } from "../../lib/tools/liquidateContract";
 import { assertToolPanel, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
 
@@ -222,8 +223,8 @@ function testBalanceItems(): void {
   const grouped = groupStashItems(latestStashItems(me, "L").items, RATES);
   assert.equal(grouped.skippedOrbs, 1, "raw orbs are never offered");
   assert.deepEqual(grouped.items, [
-    { name: "Item 2", qty: 3, rarity: null, tabs: ["sell"], askDiv: 2 / 3 },
-  ]);
+    { name: "Item 2", qty: 3, rarity: null, tabs: ["sell"], askDiv: 2 },
+  ], "the stored ask is per unit — imported as-is, never divided by the stack");
 }
 
 function fixtureListings(): Listing[] {
@@ -251,6 +252,37 @@ function testAccountScanItems(): void {
   assert.equal(scan.unpriced, 2);
 }
 
+function stackedListings(): Listing[] {
+  return parseFetchResponse(JSON.parse(readFileSync(resolve("src/scripts/fixtures/trade2-fetch-stacked.json"), "utf8")));
+}
+
+/** A stash note on a stack prices ONE unit: an own stacked listing is worth ask × stack. */
+function testStackedOwnListings(): void {
+  const valuer = { value: (name: string, stack: number) => (name === "Greater Rune of Alacrity" ? { div: 0.4 * stack, source: "ninja" as const } : null) };
+  const scan = scanListings(stackedListings(), 4, RATES, valuer);
+  const at = (id: number): ScannedItem => scan.items[id]!;
+  near(at(0).marketDiv!, (3 * 12) / 400, "12 omens at 3 ex each → 36 ex");
+  near(at(1).marketDiv!, (5 * 4) / 400, "4 omens at 5 ex each → 20 ex");
+  near(at(2).marketDiv!, (0.25 * 40) / 20, "a 10/40 chaos note arrives as 0.25 per unit → 10 chaos");
+  assert.deepEqual([at(3).marketDiv, at(3).marketSource, at(3).ask], [2, "ninja", { amount: 1, currency: "divine" }], "market wins; the ask is kept per unit");
+  assert.deepEqual(scan.items.map((i) => i.marketSource), ["ask", "ask", "ask", "ninja"]);
+  near(scan.gearAtAskDiv, 36 / 400 + 20 / 400 + 10 / 20, "gear at own asks = Σ unit ask × stack");
+  near(scan.otherDiv, scan.gearAtAskDiv + 2, "net worth counts the whole stacks");
+  near(scan.tabs.find((t) => t.tab === "bulk")!.valueDiv, 36 / 400 + 10 / 20 + 2, "per-tab value too");
+
+  const db = getDb(); // testBalanceItems already reset it; a second reset can't unlink an open file on Windows
+  const stacker = insertUser(db, "stacker");
+  insertBalanceItems(snapshotFor(db, stacker, "S", 1), scan.items);
+  const stored = latestStashItems(stacker, "S").items;
+  assert.deepEqual(stored.map((r) => [r.stack_size, r.ask_amount]), [[12, 3], [4, 5], [40, 0.25], [5, 1]], "ask_amount stored per unit");
+  const grouped = groupStashItems(stored, RATES).items;
+  const by = (name: string) => grouped.find((g) => g.name === name)!;
+  assert.equal(by("Omen of Light").qty, 16, "stacks of one item merge");
+  near(by("Omen of Light").askDiv!, (3 * 12 + 5 * 4) / 16 / 400, "per-unit ask, stack-weighted across listings (3.5 ex)");
+  near(by("Breach Splinter").askDiv!, 0.25 / 20, "a single stack's per-unit ask imports as-is");
+  near(by("Greater Rune of Alacrity").askDiv!, 1, "1 div per unit on a stack of 5 stays 1 div");
+}
+
 testCxQuote();
 testTradeQuote();
 testRatioCap();
@@ -259,5 +291,6 @@ testThinManual();
 testBundleTotals();
 testBalanceItems();
 testAccountScanItems();
+testStackedOwnListings();
 assertToolPanel("liquidate", "LiquidateTool");
-console.log("ALL PASS — cx quote (denomination, cap, ratio clamp, grid, fee, ETA), trade quote, plan (thin + manual) + bundle (totals, line split), balance_items retention + cascade, trade2 fixture items, panel wiring");
+console.log("ALL PASS — cx quote (denomination, cap, ratio clamp, grid, fee, ETA), trade quote, plan (thin + manual) + bundle (totals, line split), balance_items retention + cascade, trade2 fixture items, stacked own listings (ask × stack, per-unit import), panel wiring");
