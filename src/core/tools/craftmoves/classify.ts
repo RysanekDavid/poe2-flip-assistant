@@ -25,7 +25,7 @@ export interface Affix {
   note: string | null;
 }
 
-/** Affix limits. `p`/`s` null = the per-side split is not known (Time-Lost jewels: total only). */
+/** Affix limits. `p`/`s` null = the per-side split is not known (no current item has only a total). */
 export interface Capacity {
   p: number | null;
   s: number | null;
@@ -40,7 +40,8 @@ export type StateFlagCode =
   | "ambiguous-side"
   | "over-capacity"
   | "ignored-text"
-  | "unidentified";
+  | "unidentified"
+  | "unknown-capacity";
 
 export interface StateFlag {
   code: StateFlagCode;
@@ -72,15 +73,15 @@ export interface ItemState {
 
 /**
  * Rare gear = 3 prefixes + 3 suffixes; magic = 1 + 1 (game rules). A rare BASIC jewel = 2 + 2
- * (KB §6 caps it at 4; the 2/2 split per researcher 2026-09-29: poe2db item text, PoB #2300,
- * Game8, Maxroll). The Time-Lost split is unresolved, so it gets the total only.
+ * (KB §6 "Affix caps"). The rare Time-Lost cap is UNRESOLVED there (3 + 3 is claimed, not
+ * corroborated), so its capacity is null: open slots stay unknown rather than guessed.
  */
 function capacityOf(rarity: string, jewel: boolean, timeLost: boolean): Capacity | null {
   if (rarity === "Normal") return { p: 0, s: 0, total: 0 };
   if (rarity === "Magic") return { p: 1, s: 1, total: 2 };
   if (rarity !== "Rare") return null;
   if (!jewel) return { p: 3, s: 3, total: 6 };
-  return timeLost ? { p: null, s: null, total: 4 } : { p: 2, s: 2, total: 4 };
+  return timeLost ? null : { p: 2, s: 2, total: 4 };
 }
 
 /** Contempt's crafted "+1 Suffix Modifier allowed" (sits in a PREFIX slot) and its prefix twin. */
@@ -169,6 +170,9 @@ export function classifyItem(parsed: ParsedItem, meta: ItemMeta, cat: CraftCatal
   const groups = groupLines(parsed, ignored);
   if (ignored.length > 0) state.flags.push({ code: "ignored-text", message: `ignored non-mod text: ${ignored.join(" | ")}` });
   if (meta.unidentified) state.flags.push({ code: "unidentified", message: "unidentified — mods are hidden until identified" });
+  if (state.capacity == null && state.timeLost) {
+    state.flags.push({ code: "unknown-capacity", message: "rare Time-Lost jewel affix limit is unresolved (KB §6) — open slots are not counted" });
+  }
   if (base.ambiguous) state.flags.push({ code: "ambiguous-base", message: `"${base.baseType}" names bases with different tag sets — tier pools may be off` });
   const combo = base.itemClass && base.baseType ? comboFor(cat, base.itemClass, base.baseType) : null;
   if (!combo) {
