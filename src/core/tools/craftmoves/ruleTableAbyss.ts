@@ -24,7 +24,8 @@ interface SlotMapping {
   unverifiedBecause?: string;
 }
 
-const TIME_LOST_DESECRATION = "the KB confirms desecration on regular rare jewels only, not Time-Lost ones";
+const S6 = `${KB} §6`;
+const TIME_LOST_DESECRATION = `${S6} says a Preserved Cranium targets any rare jewel, but no source names Time-Lost jewels`;
 
 /** KB §5: Jawbone = weapons/quivers, Rib = armour, Collarbone = amulet/ring/belt, Cranium = jewels. */
 export function boneSlotOf(s: Pick<ItemState, "itemClass" | "timeLost">): SlotMapping | null {
@@ -38,7 +39,7 @@ export function boneSlotOf(s: Pick<ItemState, "itemClass" | "timeLost">): SlotMa
   return null;
 }
 
-// Cranium exists only as Preserved (research 2026-09-29) — no Gnawed or Ancient move for jewels
+// KB §6: Cranium exists only as Preserved — no Gnawed or Ancient move for jewels
 const BONE_MATS: Record<BoneTier, Partial<Record<BoneSlot, MaterialKey>>> = {
   gnawed: { Jawbone: "gnawedJawbone", Rib: "gnawedRib", Collarbone: "gnawedCollarbone" },
   preserved: { Jawbone: "preservedJawbone", Rib: "preservedRib", Collarbone: "preservedCollarbone", Cranium: "preservedCranium" },
@@ -59,11 +60,13 @@ const PRESERVED_ASSUMPTION = "priced with a Preserved bone — the KB does not s
 
 const boneLabel = (tier: BoneTier, slot: BoneSlot): string => `${tier[0]!.toUpperCase()}${tier.slice(1)} ${slot}`;
 
-const ONE_DESECRATED = `already carries a desecrated mod — max ONE per item (${S5}); only Putrefaction replaces everything`;
+const ONE_DESECRATED =
+  `already carries a desecrated mod — max ONE per item (${S5}); strip it with Omen of Light + Annulment, or Putrefaction replaces everything`;
 
 /** Shared bone gate: rare, a mapped slot, a free desecrated slot, and the tier's item-level limit. */
 function boneGate(s: ItemState, tier: BoneTier): { slot: SlotMapping } | { verdict: Verdict } {
-  // bones are rare-only; a class/tier with no bone (Gnawed/Ancient Cranium) is simply not a move
+  // bones are rare-only (KB §6: every bone reads "left click a Rare item"); a class/tier with no
+  // bone (Gnawed/Ancient Cranium) is simply not a move
   const slot = isRare(s) ? boneSlotOf(s) : null;
   if (!slot || !BONE_MATS[tier][slot.slot]) return { verdict: null };
   if (s.slots.desecrated > 0) return { verdict: { block: ONE_DESECRATED } };
@@ -94,7 +97,7 @@ const BONES: MoveRule[] = (["gnawed", "preserved", "ancient"] as const).map((tie
   effect: BONE_EFFECT,
   floor: tier === "ancient" ? 40 : undefined,
   notes: tier === "ancient" ? ["Ancient bones roll modifier level 40+"] : [],
-  source: S5,
+  source: `${S5}; ${S6}`,
   verified: true,
   check: boneCheck(tier),
 }));
@@ -172,6 +175,19 @@ const FULL_REPLACE: MoveRule[] = [
     source: S4,
     verified: true,
     check: (s) => (isRare(s) && s.slots.unrevealed > 0 ? { pass: true } : null),
+  },
+  {
+    id: "omen-light",
+    label: "Omen of Light + Orb of Annulment",
+    family: "omen",
+    materials: ["omenLight", "annul"],
+    requires: "rare with a desecrated mod",
+    effect: "the Annulment removes only a desecrated modifier — frees the one desecrated slot for a new bone",
+    notes: ["cannot target a crafted mod (e.g. Contempt's '+1 … allowed') — use a Sinistral/Dextral removal for that"],
+    // RePoE OmenOnAnnulRemoveAbyssMod: "your next Orb of Annulment will remove only Desecrated modifiers"
+    source: "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)",
+    verified: false,
+    check: (s) => (isRare(s) && s.slots.desecrated > 0 ? { pass: true } : null),
   },
 ];
 
