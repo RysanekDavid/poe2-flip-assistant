@@ -1,0 +1,56 @@
+import { cpSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import type Database from "better-sqlite3";
+import type { HttpFetcher } from "../sources/patchNotes/client";
+
+export const fixtureDir = join(process.cwd(), "src/sources/patchNotes/fixtures");
+
+export function readFixture(name: string): string {
+  return readFileSync(join(fixtureDir, name), "utf8");
+}
+
+export function syncOptions(db: Database.Database, projectRoot: string, responses: Response[]) {
+  return {
+    db,
+    projectRoot,
+    artifactRoot: join(projectRoot, "data"),
+    contact: "tests@example.invalid",
+    minimumEntries: 2,
+    fetcher: queueFetcher(responses),
+  } as const;
+}
+
+export function response(body: string, etag: string, status = 200, extra: Record<string, string> = {}): Response {
+  return new Response(body, {
+    status,
+    headers: { "content-type": "text/html; charset=utf-8", etag, ...extra },
+  });
+}
+
+export function notModified(): Response {
+  return new Response(null, { status: 304, headers: { etag: "unchanged" } });
+}
+
+export function queueFetcher(responses: Response[]): HttpFetcher {
+  return async () => {
+    const next = responses.shift();
+    if (!next) throw new Error("unexpected offline fetch");
+    return next;
+  };
+}
+
+// Sync verifies the RePoE catalog SHA against the coverage file, so tests need the real trio.
+export function createProjectFixture(): string {
+  const root = mkdtempSync(join(tmpdir(), "poe-patch-notes-"));
+  for (const relativePath of [
+    "src/data/poe2/patch-coverage.json",
+    "src/data/poe2/repoe/manifest.json",
+    "src/data/poe2/repoe/catalog-75a23d387f288921.json.gz",
+  ]) {
+    const target = join(root, relativePath);
+    mkdirSync(dirname(target), { recursive: true });
+    cpSync(join(process.cwd(), relativePath), target);
+  }
+  return root;
+}
