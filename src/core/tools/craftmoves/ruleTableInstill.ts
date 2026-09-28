@@ -1,3 +1,4 @@
+import type { MaterialKey } from "../../craftMaterials";
 import type { ItemState } from "./classify";
 import { KB, KB_CURRENCY_CORE, type MoveRule, type UnlistedMaterial, type Verdict } from "./ruleTypes";
 import { all, isMagic, isNormal, isRare, needMods } from "./rulePredicates";
@@ -93,29 +94,31 @@ const CATALYSTS: MoveRule[] = [
 ];
 
 /*
- * Liquid-emotion facts below come from the 2026-09-29 research round (poe2db item text = game text,
- * cross-checked against PoB #2300, Game8, Maxroll, Sidekick/EE2 fixtures; the granted mods are
- * RePoE CraftedJewel* entries). KB §6 still states the refuted "fixed damage prefix" Potent Contempt
- * and is being corrected on a parallel branch, so these rules ship unverified until it lands.
+ * Liquid emotions, per the corrected KB §6 (poe2db item text + RePoE CraftedJewel* mods). Each rule
+ * claims only what §6 states; what §6 lists as still UNVERIFIED is carried as a note instead.
  */
-const LIQUID_RESEARCH = `research 2026-09-29 (poe2db, PoB #2300, Game8, Maxroll); ${S6} correction pending`;
+const CONTEMPT_PAIR =
+  "a crafted '+1 Suffix Modifier allowed' (sits in a PREFIX slot) or '+1 Prefix Modifier allowed' (sits in a SUFFIX slot)";
 
-const CONTEMPT_EFFECT =
-  "removes a random mod and adds a crafted '+1 Suffix Modifier allowed' (sits in a PREFIX slot) or " +
-  "'+1 Prefix Modifier allowed' (sits in a SUFFIX slot) — the side is not controllable";
+const REMOVAL_SIDE_UNVERIFIED =
+  `which mod is removed, and whether the crafted mod then takes ITS side, is unverified (${S6} "Still UNVERIFIED" a)`;
+const OVER_CAP_UNVERIFIED =
+  `that an over-cap 3rd affix survives removing the "+1 … allowed" mod later is creator-demonstrated only (${S6} b)`;
+const ANCIENT_REMOVAL = `${S6} states the "removes a random modifier" wording for the Potent tier only`;
 
 /** Potent tiers: rare BASIC jewels. Ancient tiers: rare Time-Lost jewels only. Both write the crafted slot. */
 function liquidCheck(tier: "potent" | "ancient") {
   return (s: ItemState): Verdict => {
     if (!s.jewel || !isRare(s)) return null;
-    if (tier === "potent" && s.timeLost) return { block: "Potent liquids work on rare BASIC jewels, not Time-Lost ones" };
-    if (tier === "ancient" && !s.timeLost) return { block: "Ancient liquids work ONLY on rare Time-Lost jewels" };
-    if (s.slots.crafted > 0) return { block: ONE_CRAFTED };
+    if (tier === "potent" && s.timeLost) return { block: `non-Ancient liquids don't work on Time-Lost jewels (${S6})` };
+    if (tier === "ancient" && !s.timeLost) return { block: `Ancient liquids work ONLY on rare Time-Lost jewels (${S6})` };
+    // §6 (c): presumed from §7, untested — every documented path strips the old crafted mod first
+    if (s.slots.crafted > 0) return { block: `${ONE_CRAFTED}; strip it first (${S6} c)` };
     return { pass: true };
   };
 }
 
-function liquid(id: string, label: string, material: MoveRule["materials"][number], tier: "potent" | "ancient", effect: string, notes: string[] = []): MoveRule {
+function liquid(id: string, label: string, material: MaterialKey, tier: "potent" | "ancient", effect: string, notes: string[]): MoveRule {
   return {
     id,
     label,
@@ -123,27 +126,26 @@ function liquid(id: string, label: string, material: MoveRule["materials"][numbe
     materials: [material],
     requires: `rare ${tier === "potent" ? "BASIC" : "Time-Lost"} jewel, no crafted mod yet`,
     effect,
-    notes: [`the granted mod is crafted, and an item holds one crafted mod (${S7})`, ...notes],
-    source: LIQUID_RESEARCH,
-    verified: false,
+    notes,
+    source: S6,
+    verified: true,
     check: liquidCheck(tier),
   };
 }
 
-const FEROCITY_REMOVAL = "whether Ferocity also removes a mod is not in the research round";
-
 const LIQUIDS: MoveRule[] = [
-  liquid("liquid-potent-contempt", "Potent Liquid Contempt", "potentLiquidContempt", "potent", CONTEMPT_EFFECT),
-  liquid("liquid-ancient-contempt", "Ancient Potent Liquid Contempt", "ancientPotentLiquidContempt", "ancient", CONTEMPT_EFFECT, [
-    "with the extra slot a Time-Lost jewel reaches 5 mods",
-  ]),
+  liquid("liquid-potent-contempt", "Potent Liquid Contempt", "potentLiquidContempt", "potent",
+    `removes a random mod and adds ${CONTEMPT_PAIR} — the side is not controllable`,
+    [REMOVAL_SIDE_UNVERIFIED, OVER_CAP_UNVERIFIED]),
+  liquid("liquid-ancient-contempt", "Ancient Potent Liquid Contempt", "ancientPotentLiquidContempt", "ancient",
+    `adds ${CONTEMPT_PAIR} — the same pair as the Potent tier`,
+    [ANCIENT_REMOVAL, "the Time-Lost affix cap is unresolved, so the slot it opens cannot be counted"]),
   liquid("liquid-potent-ferocity", "Potent Liquid Ferocity", "potentLiquidFerocity", "potent",
-    "adds a crafted '(40–60)% increased Effect of Suffixes' or '… of Prefixes'", [FEROCITY_REMOVAL]),
+    "removes a random mod and adds a crafted '(40–60)% increased Effect of Suffixes' (PREFIX slot) or '… of Prefixes' (SUFFIX slot)",
+    [REMOVAL_SIDE_UNVERIFIED]),
   liquid("liquid-ancient-ferocity", "Ancient Potent Liquid Ferocity", "ancientPotentLiquidFerocity", "ancient",
-    "adds a crafted mod: notables in radius grant +(5–7)% Fire, Cold or Lightning resistance", [
-      FEROCITY_REMOVAL,
-      "Diamond (chaos resistance) values conflict between sources: 4–5% vs 5–7%",
-    ]),
+    "adds a crafted radius SUFFIX: Notable Passive Skills in Radius also grant +(5–7)% Fire / Cold / Lightning Resistance by colour",
+    [ANCIENT_REMOVAL, "Diamond grants +(4–5)% Chaos Resistance per the datamine (Game8 says 5–7%)"]),
 ];
 
 export const INSTILL_RULES: readonly MoveRule[] = [...ESSENCES, ...CATALYSTS, ...LIQUIDS];
