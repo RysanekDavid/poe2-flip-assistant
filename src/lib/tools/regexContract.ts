@@ -6,10 +6,11 @@
 import { z } from "zod";
 
 /*
- * Conservative until the owner measures the real stash-search limit in-game (50 vs 250). It is a
- * game constant, so the UI keeps a per-browser override rather than a per-user DB preference.
+ * 250 per the owner (2026-09-28) and the other PoE2 regex tools (poeregex.cz, poe.re); one forum
+ * report still says 50, so the UI keeps a per-browser override. It is a game constant, not a
+ * per-user DB preference.
  */
-export const REGEX_MAX_CHARS_DEFAULT = 50;
+export const REGEX_MAX_CHARS_DEFAULT = 250;
 export const REGEX_MODES = ["keep", "trash"] as const;
 export type RegexMode = (typeof REGEX_MODES)[number];
 export const NAME_KINDS = ["exchange", "unique", "base", "stat"] as const;
