@@ -1,0 +1,92 @@
+import { latestSnapshots, priceHistory, uniqueValueMap, itemValuesAgeHours } from "../../../db/marketQueries";
+import { timestampAgeMs } from "../../../lib/sqliteTime";
+import type { ResolvedPrice } from "../../../lib/tools/bossEvContract";
+import type { BossLootFile, PriceRef } from "./schema";
+
+/** One exchange item as the latest poe.ninja snapshot has it. */
+export interface NinjaQuote {
+  div: number;
+  name: string;
+  icon: string | null;
+  /** Age of THIS item's newest row, not the league's: an item ninja stopped listing keeps an old row. */
+  ageHours: number | null;
+}
+
+/** Everything pricing needs, read once per request so the math below stays pure. */
+export interface PriceInputs {
+  ninja: ReadonlyMap<string, NinjaQuote>;
+  /** poe2scout unique floor prices, keyed by lowercased name. */
+  scout: ReadonlyMap<string, number>;
+  scoutAgeHours: number | null;
+  nowMs: number;
+}
+
+export interface PriceLookup {
+  price(ref: PriceRef): ResolvedPrice | null;
+  /** Display name + icon for an exchange item id, or null when ninja does not list it. */
+  item(itemId: string): { name: string; icon: string | null } | null;
+}
+
+const HOUR_MS = 3_600_000;
+
+/** A curated reference → a Divine price with source and age, or null when nothing prices it. */
+export function resolvePrice(ref: PriceRef, inputs: PriceInputs): ResolvedPrice | null {
+  switch (ref.kind) {
+    case "ninja": {
+      const quote = inputs.ninja.get(ref.itemId);
+      return quote ? { div: quote.div, source: "ninja", ageHours: quote.ageHours } : null;
+    }
+    case "scout": {
+      const div = inputs.scout.get(ref.name.toLowerCase());
+      return div != null && div > 0 ? { div, source: "scout", ageHours: inputs.scoutAgeHours } : null;
+    }
+    case "manual":
+      return { div: ref.div, source: "manual", ageHours: (inputs.nowMs - Date.parse(`${ref.asOf}T00:00:00Z`)) / HOUR_MS };
+    case "unpriced":
+      return null;
+  }
+}
+
+export function priceLookup(inputs: PriceInputs): PriceLookup {
+  return {
+    price: (ref) => resolvePrice(ref, inputs),
+    item: (itemId) => {
+      const quote = inputs.ninja.get(itemId);
+      return quote ? { name: quote.name, icon: quote.icon } : null;
+    },
+  };
+}
+
+/** Every exchange item id the curated file prices (entry items, recipe parts, ninja loot). */
+export function referencedNinjaIds(file: BossLootFile): Set<string> {
+  const ids = new Set<string>();
+  for (const boss of file.bosses) {
+    for (const tier of boss.tiers) {
+      for (const line of tier.entry) {
+        ids.add(line.itemId);
+        for (const part of line.craftFrom ?? []) ids.add(part.itemId);
+      }
+      for (const loot of tier.loot) if (loot.priceRef.kind === "ninja") ids.add(loot.priceRef.itemId);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Read the league's market once. Only the referenced ids get a per-item age lookup (one indexed
+ * query each, ~40 items) — the league-wide latestFetchedAt would call a delisted item fresh.
+ */
+export function loadPriceInputs(league: string, ids: ReadonlySet<string>, nowMs: number = Date.now()): PriceInputs {
+  const ninja = new Map<string, NinjaQuote>();
+  for (const row of latestSnapshots(league)) {
+    if (!ids.has(row.itemId) || !(row.baseValue > 0)) continue;
+    const newest = priceHistory(league, row.itemId, 1)[0];
+    ninja.set(row.itemId, {
+      div: row.baseValue,
+      name: row.itemName,
+      icon: row.icon,
+      ageHours: newest ? timestampAgeMs(newest.fetchedAt, nowMs) / HOUR_MS : null,
+    });
+  }
+  return { ninja, scout: uniqueValueMap(league), scoutAgeHours: itemValuesAgeHours(league), nowMs };
+}

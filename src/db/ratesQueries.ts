@@ -80,15 +80,3 @@ export function ratesFetchedAt(league: string, source: RateSource): string | nul
     .get(league, source) as { mx: string | null };
   return row.mx ?? null;
 }
-
-/**
- * Age of a SQLite timestamp in ms. CURRENT_TIMESTAMP writes "YYYY-MM-DD HH:MM:SS" in UTC with
- * no zone marker, which Date would otherwise read as local time — an hours-wide freshness bug
- * in exactly the check that decides whether a rate is still usable.
- */
-export function timestampAgeMs(stamp: string, nowMs: number = Date.now()): number {
-  const normalized = /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(stamp) ? stamp : `${stamp.replace(" ", "T")}Z`;
-  const parsed = new Date(normalized).getTime();
-  if (Number.isNaN(parsed)) throw new Error(`unparseable timestamp: "${stamp}"`);
-  return nowMs - parsed;
-}
