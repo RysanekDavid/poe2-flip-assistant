@@ -149,7 +149,10 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
 - **Potent Liquid Melancholy** (non-Ancient, basic jewel): colour-keyed conditional SUFFIX —
   Ruby "Debilitate … Emerald and Sapphire socketed", Sapphire "Elemental Exposure … Ruby and
   Emerald", Emerald "Blind … Ruby and Sapphire". (poe2db Potent_Liquid_Melancholy accessed
-  2026-09-28 + RePoE `CraftedJewel*OnHitWhile*Socketed` mods.) All three Potent liquids also
+  2026-09-28 + RePoE `CraftedJewel*OnHitWhile*Socketed` mods.) RePoE also holds
+  `CraftedJewelMaximumChaosResistance` ("+1% to Maximum Chaos Resistance", suffix, currency-only)
+  with no colour on poe2db's Melancholy page — plausibly Diamond Potent Melancholy, but
+  UNATTRIBUTED (no source links it to any liquid). All three Potent liquids also
   instil amulets at The Withered Willow (catalog `directions` text).
 - Ancient Potent Liquid **Contempt** (rare Time-Lost jewels): the same "+1 Suffix Modifier
   allowed" (prefix slot) / "+1 Prefix Modifier allowed" (suffix slot) pair on all four colours —
