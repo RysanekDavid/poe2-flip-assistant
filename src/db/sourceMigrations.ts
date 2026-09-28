@@ -1,10 +1,55 @@
 import type Database from "better-sqlite3";
 import {
+  PATCH_FORUM_ID,
+  PATCH_INDEX_URL,
   PATCH_PARSER_NAME,
   PATCH_PARSER_VERSION,
+  PATCH_SOURCE_ID,
 } from "../sources/patchNotes/contracts";
 
 type Db = Database.Database;
+
+const OTHER_FORUM_INDEX_SNAPSHOTS = `
+  SELECT id FROM source_snapshot
+  WHERE source_id = ? AND snapshot_kind = 'index' AND external_id <> ?
+`;
+
+/*
+ * Each language forum carries its own copy of a patch under a different thread id. Rows indexed
+ * from a forum we no longer read (German 2222 until 2026-09) would stay body-sync targets
+ * forever — failing the English check every run — and Coach would count them as pending
+ * reviews. Only the derived rows go; raw snapshots and their artifacts stay for provenance.
+ */
+function retireOtherForumPatches(db: Db): void {
+  const rows = db.prepare(`
+    SELECT thread_id AS threadId FROM official_patch
+    WHERE index_snapshot_id IN (${OTHER_FORUM_INDEX_SNAPSHOTS})
+  `).all(PATCH_SOURCE_ID, PATCH_FORUM_ID) as Array<{ threadId: number }>;
+  const removeReview = db.prepare("DELETE FROM pending_patch_effect WHERE thread_id = ?");
+  const removeEvidence = db.prepare(
+    "DELETE FROM evidence_link WHERE entity_kind = 'official_patch' AND entity_id = ?",
+  );
+  const removePatch = db.prepare("DELETE FROM official_patch WHERE thread_id = ?");
+  for (const { threadId } of rows) {
+    removeReview.run(threadId);
+    removeEvidence.run(String(threadId));
+    removePatch.run(threadId);
+  }
+  if (rows.length > 0) {
+    console.warn(
+      `[patch-notes] retired ${rows.length} patch thread(s) indexed from a forum other than ${PATCH_FORUM_ID}: `
+      + rows.map((row) => row.threadId).join(", "),
+    );
+  }
+  // An index from another forum is no evidence that the current one was ever checked.
+  db.prepare(`
+    UPDATE source_sync_state SET index_etag = NULL, index_last_modified = NULL,
+      last_success_at = NULL, last_valid_index_snapshot_id = NULL,
+      valid_index_parser_version = NULL, valid_index_validation_policy = NULL,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE source_id = ? AND last_valid_index_snapshot_id IN (${OTHER_FORUM_INDEX_SNAPSHOTS})
+  `).run(PATCH_SOURCE_ID, PATCH_SOURCE_ID, PATCH_FORUM_ID);
+}
 
 export function migratePatchProvenance(db: Db): void {
   const foreignKeysEnabled = db.pragma("foreign_keys", { simple: true }) === 1;
@@ -22,6 +67,7 @@ export function migratePatchProvenance(db: Db): void {
     addMigrationColumns(db, "source_sync_state", [["valid_index_validation_policy", "TEXT"]]);
     if (legacySnapshotNeedsRebuild(db)) rebuildLegacySourceSnapshots(db);
     seedPatchSource(db);
+    retireOtherForumPatches(db);
     const violations = db.prepare("PRAGMA foreign_key_check").all();
     if (violations.length > 0) {
       throw new Error(`patch provenance migration produced ${violations.length} foreign-key violation(s)`);
@@ -111,7 +157,7 @@ function seedPatchSource(db: Db): void {
       check_cadence_min = excluded.check_cadence_min
   `).run(
     "ggg_poe2_patch_notes",
-    "https://www.pathofexile.com/forum/view-forum/2222",
+    PATCH_INDEX_URL,
     PATCH_PARSER_NAME,
     PATCH_PARSER_VERSION,
     "https://www.pathofexile.com/legal/terms-of-use-and-privacy-policy",

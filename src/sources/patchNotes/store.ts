@@ -20,6 +20,7 @@ import { fetchPatchHtml, type HttpFetcher } from "./client";
 import {
   catalogManifestSchema,
   PATCH_ARTIFACT_DIR,
+  PATCH_FORUM_ID,
   PATCH_INDEX_URL,
   PATCH_PARSER_NAME,
   PATCH_PARSER_VERSION,
@@ -107,10 +108,10 @@ async function runSync(
     return syncBodies(false, coverage.official_patch_thread_id, options);
   }
   const parsed = await persistAndParseIndex(index, coverage, options);
-  if (!parsed) {
+  if ("error" in parsed) {
     return {
       ok: false, indexChanged: true, checkedThreads: 0, changedThreads: 0,
-      failedThreads: [], errors: ["patch index validation failed"],
+      failedThreads: [], errors: [`patch index validation failed: ${parsed.error}`],
     };
   }
   recordValidIndexCheck(
@@ -124,7 +125,7 @@ async function persistAndParseIndex(
   response: HtmlFetchResult,
   coverage: PatchCoverage,
   options: Required<Pick<SyncOptions, "artifactRoot">> & SyncOptions,
-): Promise<{ snapshotId: number } | null> {
+): Promise<{ snapshotId: number } | { error: string }> {
   const artifact = await persistArtifact(response, options.artifactRoot);
   const minimumEntries = options.minimumEntries ?? config.patchNotes.minIndexEntries;
   const validationPolicy = patchIndexValidationPolicy(
@@ -138,13 +139,13 @@ async function persistAndParseIndex(
   } catch (error) {
     const message = errorMessage(error);
     insertSnapshot(
-      response, artifact, "index", "2222", false, message, validationPolicy, options.db,
+      response, artifact, "index", PATCH_FORUM_ID, false, message, validationPolicy, options.db,
     );
     recordSourceFailure(PATCH_SOURCE_ID, response.retrievedAt, message, options.db);
-    return null;
+    return { error: message };
   }
   const snapshotId = insertSnapshot(
-    response, artifact, "index", "2222", true, null, validationPolicy, options.db,
+    response, artifact, "index", PATCH_FORUM_ID, true, null, validationPolicy, options.db,
   );
   upsertIndexPatches(entries, snapshotId, coverage.official_patch_thread_id, options.db);
   return { snapshotId };

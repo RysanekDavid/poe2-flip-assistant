@@ -6,6 +6,7 @@ import {
   type PatchDocument,
   type PatchIndexEntry,
 } from "./contracts";
+import { assertEnglishForumPage, assertEnglishText } from "./language";
 
 const THREAD_PATH = /\/forum\/view-thread\/(\d+)/;
 
@@ -30,12 +31,16 @@ export function parsePatchIndex(html: string, minimumEntries: number): PatchInde
     );
     if (!publishedText) return;
     const title = cleanText($(element).text());
+    // The English forum also carries unversioned "Server Maintenance" notices: prose-only posts
+    // that would fail body validation every run and demand a Coach review of nothing.
+    const versionText = patchVersion(title);
+    if (!versionText) return;
     const publishedAt = parsePublishedAt(publishedText);
     const sourceUrl = new URL(`/forum/view-thread/${threadId}/filter-account-type/staff`, "https://www.pathofexile.com").href;
     entries.push(patchIndexEntrySchema.parse({
       threadId,
       title,
-      versionText: versionIdentity(title, threadId),
+      versionText,
       publishedAt,
       publishedText,
       sourceUrl,
@@ -45,6 +50,8 @@ export function parsePatchIndex(html: string, minimumEntries: number): PatchInde
   if (entries.length < minimumEntries) {
     throw new Error(`patch index selector returned ${entries.length}; expected at least ${minimumEntries}`);
   }
+  // Index titles are too short for a word-frequency verdict; the forum name is decisive.
+  assertEnglishForumPage($, "patch index");
   return entries;
 }
 
@@ -58,6 +65,8 @@ export function parsePatchThread(html: string, expectedThreadId: number): PatchD
   }
   const { content, title } = post;
   if (!title) throw new Error(`patch thread title selector returned no title (${post.variant} layout)`);
+  // News posts embed a <style> block in the body; its CSS is not patch text.
+  content.find("style, script").remove();
   const headings = content.find("h1, h2, h3, h4, h5, h6")
     .map((_index, element) => cleanText($(element).text()))
     .get()
@@ -70,6 +79,9 @@ export function parsePatchThread(html: string, expectedThreadId: number): PatchD
   if (!bodyText || (headings.length === 0 && listItems.length === 0)) {
     throw new Error("staff patch body contained no structured patch entries");
   }
+  // After the structural checks, so layout drift still reports the selectors it tried.
+  assertEnglishForumPage($, `patch thread ${expectedThreadId}`);
+  assertEnglishText(bodyText, `patch thread ${expectedThreadId}`);
   return patchDocumentSchema.parse({
     threadId: expectedThreadId,
     title,
@@ -137,7 +149,7 @@ function parsePublishedAt(value: string): string | null {
   return Number.isNaN(parsed) ? null : new Date(parsed).toISOString();
 }
 
-function versionIdentity(title: string, threadId: number): string {
+function patchVersion(title: string): string | null {
   const match = /\b([0-9]+(?:\.[0-9]+){2,}(?:[a-z])?)\b/i.exec(title);
-  return match?.[1] ?? `thread-${threadId}`;
+  return match?.[1] ?? null;
 }

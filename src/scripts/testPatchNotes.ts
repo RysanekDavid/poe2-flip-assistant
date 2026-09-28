@@ -21,6 +21,13 @@ import {
 } from "./testPatchRedirects";
 import { testPartialThreadFailure, testStaffBodyLayouts } from "./testPatchLayouts";
 import {
+  testAcceptLanguageHeader,
+  testLanguageGuard,
+  testNonEnglishThreadNotStored,
+  testOtherForumRowsRetired,
+  testUnversionedNoticesSkipped,
+} from "./testPatchLanguage";
+import {
   createProjectFixture,
   fixtureDir,
   notModified,
@@ -53,12 +60,17 @@ async function main(): Promise<void> {
   await testInitialBaselineInvalid();
   await testPreBaselineIndexFailsClosed();
   await testPartialThreadFailure();
+  testLanguageGuard();
+  testUnversionedNoticesSkipped();
+  await testAcceptLanguageHeader();
+  await testNonEnglishThreadNotStored();
+  await testOtherForumRowsRetired();
   console.log("patch-note tests passed");
 }
 
 async function testParsers(): Promise<void> {
   const entries = parsePatchIndex(indexHtml, 3);
-  assert.deepEqual(entries.map((entry) => entry.threadId), [3_991_000, 3_990_574, 3_980_000]);
+  assert.deepEqual(entries.map((entry) => entry.threadId), [3_991_000, 3_990_120, 3_980_000]);
   assert.equal(entries[0]?.versionText, "0.5.4e");
   assert.equal(entries[0]?.publishedAt, null);
   const localized = parsePatchIndex(indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "1. srpna 2026"), 3);
@@ -80,12 +92,12 @@ async function testParsers(): Promise<void> {
 }
 
 async function testClientBoundary(): Promise<void> {
-  assert.throws(() => validatePatchUrl("http://www.pathofexile.com/forum/view-forum/2222"), /unsafe/);
-  assert.throws(() => validatePatchUrl("https://evil.example/forum/view-forum/2222"), /unsafe/);
+  assert.throws(() => validatePatchUrl("http://www.pathofexile.com/forum/view-forum/2212"), /unsafe/);
+  assert.throws(() => validatePatchUrl("https://evil.example/forum/view-forum/2212"), /unsafe/);
   assert.throws(() => validatePatchUrl("https://www.pathofexile.com/account/view-profile"), /unexpected/);
   assert.throws(
     () => validateResponseMetadata(
-      "https://www.pathofexile.com/forum/view-forum/2222",
+      "https://www.pathofexile.com/forum/view-forum/2212",
       200,
       new Headers({ "content-type": "application/json" }),
       100,
@@ -95,7 +107,7 @@ async function testClientBoundary(): Promise<void> {
   const oversized = response("x".repeat(101), "etag", 200, { "content-length": "101" });
   await assert.rejects(
     fetchPatchHtml(
-      "https://www.pathofexile.com/forum/view-forum/2222",
+      "https://www.pathofexile.com/forum/view-forum/2212",
       "tests@example.invalid",
       { etag: null, lastModified: null },
       100,
@@ -105,7 +117,7 @@ async function testClientBoundary(): Promise<void> {
   );
   await assert.rejects(
     fetchPatchHtml(
-      "https://www.pathofexile.com/forum/view-forum/2222",
+      "https://www.pathofexile.com/forum/view-forum/2212",
       "",
       { etag: null, lastModified: null },
       100,
@@ -233,25 +245,25 @@ async function testBaselineLifecycle(): Promise<void> {
       response(threadHtml, "new-1"),
       response(threadHtml, "baseline-1"),
     ]));
-    assert.equal(officialPatch(3_990_574, db)?.disposition, null);
+    assert.equal(officialPatch(3_990_120, db)?.disposition, null);
     const amendedBody = threadHtml.replace("first exact", "baseline amended exact");
     const amended = await syncPatchNotes(syncOptions(db, root, [
       notModified(), notModified(), response(amendedBody, "baseline-2"),
     ]));
     assert.equal(amended.ok, true);
-    assert.equal(officialPatch(3_990_574, db)?.disposition, "pending");
+    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
     reviewOfficialPatch(
-      3_990_574, "no_gameplay_impact", "reviewer", "baseline amendment",
+      3_990_120, "no_gameplay_impact", "reviewer", "baseline amendment",
       null, new Date().toISOString(), db,
     );
-    const normalized = normalizedBody(3_990_574, db);
+    const normalized = normalizedBody(3_990_120, db);
     const invalid = await syncPatchNotes(syncOptions(db, root, [
       notModified(), notModified(), response(driftHtml, "baseline-3"),
     ]));
     assert.equal(invalid.ok, false);
-    assert.equal(officialPatch(3_990_574, db)?.bodyValid, false);
-    assert.equal(officialPatch(3_990_574, db)?.disposition, "pending");
-    assert.equal(normalizedBody(3_990_574, db), normalized);
+    assert.equal(officialPatch(3_990_120, db)?.bodyValid, false);
+    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
+    assert.equal(normalizedBody(3_990_120, db), normalized);
   } finally {
     db.close();
     rmSync(root, { recursive: true, force: true });
@@ -269,8 +281,8 @@ async function testInitialBaselineInvalid(): Promise<void> {
       response(driftHtml, "baseline-invalid"),
     ]));
     assert.equal(result.ok, false);
-    assert.equal(officialPatch(3_990_574, db)?.bodyValid, false);
-    assert.equal(officialPatch(3_990_574, db)?.disposition, "pending");
+    assert.equal(officialPatch(3_990_120, db)?.bodyValid, false);
+    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
   } finally {
     db.close();
     rmSync(root, { recursive: true, force: true });
@@ -285,7 +297,7 @@ async function testPreBaselineIndexFailsClosed(): Promise<void> {
     migratePatchProvenance(db);
     const preBaseline = indexHtml
       .replaceAll("3991000", "3979000")
-      .replaceAll("3990574", "3978000")
+      .replaceAll("3990120", "3978000")
       .replaceAll("3980000", "3977000");
     assert.equal(parsePatchIndex(preBaseline, 2).length >= 2, true);
     const result = await syncPatchNotes(syncOptions(db, root, [response(preBaseline, "old-index")]));
@@ -351,7 +363,7 @@ async function assertAmendmentLifecycle(db: Database.Database, root: string): Pr
     /no valid staff body/,
   );
   assert.throws(
-    () => reviewOfficialPatch(3_990_574, "no_gameplay_impact", "reviewer", "note", null, reviewedAt, db),
+    () => reviewOfficialPatch(3_990_120, "no_gameplay_impact", "reviewer", "note", null, reviewedAt, db),
     /not pending/,
   );
 }

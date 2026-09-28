@@ -25,33 +25,34 @@ const TRIED_BOTH_LAYOUTS = /selector returned no content \(tried: tr\.staff .+; 
 
 /** Both staff layouts GGG actually served (see fixture headers), plus the strictness edges. */
 export function testStaffBodyLayouts(): void {
-  const forum = parsePatchThread(forumPostHtml, 4_006_365);
+  const forum = parsePatchThread(forumPostHtml, 4_006_357);
   assert.equal(forum.title, "Patch Notes 0.5.5c");
   assert.deepEqual(forum.listItems, [
     "Fixed an example quest that could not be completed.",
     "Fixed an example client crash.",
   ]);
 
-  const news = parsePatchThread(newsPostHtml, 4_000_870);
+  const news = parsePatchThread(newsPostHtml, 4_000_864);
   assert.equal(news.title, "Content Update 0.5.5 – Example League");
   assert.deepEqual(news.headings, [
     "Content Update 0.5.5 – Example League", "Table of Contents", "The example event league", "Bug Fixes",
   ]);
   assert.equal(news.listItems.length, 4);
   assert.doesNotMatch(news.bodyText, /Posted by|StaffAccount/, "the byline row is not patch body");
+  assert.doesNotMatch(news.bodyText, /newsPost|margin/, "the embedded <style> is not patch body");
 
   const unmarked = newsPostHtml
     .replace("profile-link staff post_by_account", "profile-link post_by_account")
     .replace("roleLabel staffText", "roleLabel");
-  assert.throws(() => parsePatchThread(unmarked, 4_000_870), TRIED_BOTH_LAYOUTS);
-  assert.throws(() => parsePatchThread(driftHtml, 4_000_870), TRIED_BOTH_LAYOUTS);
+  assert.throws(() => parsePatchThread(unmarked, 4_000_864), TRIED_BOTH_LAYOUTS);
+  assert.throws(() => parsePatchThread(driftHtml, 4_000_864), TRIED_BOTH_LAYOUTS);
 
   const withLaterReply = newsPostHtml.replace(
     "</table>",
     `<tr class="staff"><td class="content-container"><div class="content">
       <ul><li>A later staff reply.</li></ul></div></td></tr></table>`,
   );
-  const first = parsePatchThread(withLaterReply, 4_000_870);
+  const first = parsePatchThread(withLaterReply, 4_000_864);
   assert.equal(first.title, news.title, "the first staff post in document order wins");
   assert.ok(!first.listItems.includes("A later staff reply."));
   console.log("PASS  staff body layouts: forum post, news post, unmarked, drift, first post");
@@ -77,7 +78,7 @@ export async function testPartialThreadFailure(): Promise<void> {
     assert.equal(result.changedThreads, 1, "the parseable thread was stored");
     assert.deepEqual(result.failedThreads.map((failure) => failure.threadId), [3_991_000]);
     assert.match(result.failedThreads[0]?.reason ?? "", TRIED_BOTH_LAYOUTS);
-    assert.equal(officialPatch(3_990_574, db)?.bodyValid, true);
+    assert.equal(officialPatch(3_990_120, db)?.bodyValid, true);
     assert.equal(officialPatch(3_991_000, db)?.bodyValid, false);
     assert.match(
       recorded[0]?.error ?? "",

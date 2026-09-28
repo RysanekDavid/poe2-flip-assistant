@@ -1,14 +1,18 @@
 import { z } from "zod";
 
 export const PATCH_SOURCE_ID = "ggg_poe2_patch_notes" as const;
-export const PATCH_INDEX_URL = "https://www.pathofexile.com/forum/view-forum/2222" as const;
+// GGG forum ids are per language, not per request: 2222 is the German "Patch-Notes" forum,
+// 2233 French, 2243 Spanish. 2212 "Early Access Patch Notes" is the English PoE2 source.
+export const PATCH_FORUM_ID = "2212" as const;
+export const PATCH_INDEX_URL = `https://www.pathofexile.com/forum/view-forum/${PATCH_FORUM_ID}` as const;
 export const PATCH_ARTIFACT_DIR = "source-snapshots/ggg-patch-notes" as const;
 export const PATCH_PARSER_NAME = "ggg-forum-patch-notes" as const;
 export const PATCH_PARSER_VERSION = "3" as const;
-export const PATCH_THREAD_VALIDATION_POLICY = "thread:structured-staff-body-v1" as const;
+export const PATCH_THREAD_VALIDATION_POLICY = "thread:structured-staff-body-english-v2" as const;
 
+// The forum is part of the policy so a stored index from another forum never passes as current.
 export function patchIndexValidationPolicy(minimumEntries: number, baselineThreadId: number): string {
-  return `index:min-entries=${minimumEntries};baseline-thread=${baselineThreadId}`;
+  return `index:forum=${PATCH_FORUM_ID};english-title;min-entries=${minimumEntries};baseline-thread=${baselineThreadId}`;
 }
 
 export const patchIndexEntrySchema = z.object({
