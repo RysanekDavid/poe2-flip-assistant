@@ -128,5 +128,43 @@ export const PresetSchema = z.object({
 export type Preset = z.infer<typeof PresetSchema>;
 
 export const PresetListSchema = z.object({ presets: z.array(PresetSchema) });
+export const PresetSavedSchema = z.object({ preset: PresetSchema });
+export const OkSchema = z.object({ ok: z.literal(true) });
 export const PresetSaveSchema = z.object({ name: z.string().trim().min(1).max(60), params: PresetParamsSchema });
 export const PresetDeleteSchema = z.object({ id: z.number().int().positive() });
+
+/** A regex route's error, keeping the parse position so the explain box can point at it. */
+export class RegexApiError extends Error {
+  constructor(
+    message: string,
+    readonly position: number | null,
+  ) {
+    super(message);
+    this.name = "RegexApiError";
+  }
+}
+
+/** Client call to a regex route: non-2xx becomes RegexApiError, 2xx must match `schema`. */
+export async function requestRegexApi<T>(
+  url: string,
+  init: { method: "GET" | "POST" | "DELETE"; body?: unknown },
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+): Promise<T> {
+  const res = await fetch(url, {
+    method: init.method,
+    headers: init.body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: init.body === undefined ? undefined : JSON.stringify(init.body),
+  });
+  const text = await res.text();
+  let json: unknown = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch (error: unknown) {
+    throw new RegexApiError(`${url} → HTTP ${res.status}, body is not JSON: ${String(error)}`, null);
+  }
+  if (!res.ok) {
+    const err = RegexErrorSchema.safeParse(json);
+    throw new RegexApiError(err.success ? err.data.error : `${url} → HTTP ${res.status}`, err.data?.position ?? null);
+  }
+  return schema.parse(json);
+}
