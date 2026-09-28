@@ -1,7 +1,9 @@
 import { MATS } from "./craftMaterials";
 import { GUIDES_3 } from "./craftGuideData3";
-import { CHEAP_BASE_FLOOR_EX } from "./craftValuation";
 import type { CraftRecipe } from "./craftRecipes";
+
+/** Ask floor (exalts) for the budget jewel base leg — the low end of the guide's 10–30 ex bases. */
+export const BUDGET_JEWEL_FLOOR_EX = 6;
 
 /**
  * Third batch of curated recipes: the Potent-liquid 5-mod BASIC jewels (docs/kb/creator-videos.md
@@ -17,6 +19,9 @@ import type { CraftRecipe } from "./craftRecipes";
 
 // Shared finished-item spec. Mins are the low end a buyer still pays for: roll ranges are RePoE
 // JewelSpellCriticalChance / JewelSpellDamage (5–15) and CraftedJewelSuffixEffect (40–60).
+// UNVERIFIED: whether trade2's pseudo_number_of_suffix_mods counts DESECRATED and CRAFTED suffixes
+// (the 3rd suffix here is desecrated). If it doesn't, the ≥3 filter finds nothing and the result
+// leg fails loudly (too few comparables → leg-failed), never prices a wrong item.
 const THREE_SUFFIXES = { text: "# Suffix Modifiers", min: 3, group: "pseudo", tier: 1 } as const;
 const SUFFIX_EFFECT = { text: "#% increased Effect of Suffixes", min: 40, group: "crafted", tier: 2 } as const;
 
@@ -32,7 +37,9 @@ export const RECIPES_3: CraftRecipe[] = [
     source: "Pavel CZ jewel craft [S20] budget path + 5-mod jewel guide [S4] (Contempt → Dextral cranium → Sinistral annul → exalt → Ferocity)",
     base: {
       label: "Rare Sapphire · 2 caster suffixes + 1 prefix",
-      minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~10–30 ex — the default 0.05 div floor would reject real asks
+      // honest price ~10–30 ex [S20]: under the default 0.05 Div floor at league rates, but asks
+      // below ~6 ex on a 2-caster-suffix Sapphire are bait/mispriced junk, not the guide's base
+      minAskEx: BUDGET_JEWEL_FLOOR_EX,
       type: "Sapphire",
       rarity: "rare",
       stats: [

@@ -16,6 +16,12 @@ const OVER_CAP =
   "That the 3rd (over-cap) suffix survives pulling the '+1 Suffix Modifier allowed' mod is creator-demonstrated [S4, S20], not primary-sourced — docs/kb/desecration-abyss.md keeps it as an explicit stop condition.";
 const FEROCITY_SIDE =
   "Ferocity's mod pool is poe2db + RePoE; that it can only take a prefix slot (and so costs a prefix) while the suffixes are over-cap is creator-observed [S4, S20].";
+// Ferocity's pool also holds "(40–60)% increased Effect of Prefixes" in a SUFFIX slot (poe2db +
+// RePoE CraftedJewelPrefixEffect) — if that variant lands it costs a caster suffix.
+const FEROCITY_SUFFIX_ROLL =
+  "Ferocity can also roll '(40–60)% increased Effect of Prefixes' in a SUFFIX slot — that outcome removes one of your caster suffixes.";
+const FEROCITY_STOP =
+  "Got 'Effect of Prefixes' (a caster suffix is gone) → STOP: no more Ferocity/Chaos, divine if worth it and sell as a 5-mod — the suffix can't be rebuilt without re-running Contempt.";
 const UNREVEALED_BLOCKER =
   "Fracturing with an UNREVEALED desecrated blocker is what the creator did [S20] (locked 2 of 5); KB §2 confirms a desecrated mod counts toward 4 and can't be fractured, not that an unrevealed one behaves the same.";
 
@@ -92,7 +98,8 @@ export const GUIDES_3: Record<string, CraftGuide> = {
             do: "Slam Potent Liquid Ferocity.",
             why: "Removes a random mod and adds crafted '(40–60)% increased Effect of Suffixes' in a prefix slot — 50/50 it keeps Spell Damage.",
             mats: [MATS.potentLiquidFerocity],
-            onFail: "It took Spell Damage → Chaos-spam the prefixes (suffixes can't be hit) until Spell Damage returns, then slam Ferocity again.",
+            warning: FEROCITY_SUFFIX_ROLL,
+            onFail: `It took Spell Damage → Chaos-spam the prefixes (suffixes can't be hit) until Spell Damage returns, then slam Ferocity again. ${FEROCITY_STOP}`,
             check: "3 suffixes + Spell Damage + 'increased Effect of Suffixes'.",
             unverified: FEROCITY_SIDE,
           },
@@ -199,6 +206,8 @@ export const GUIDES_3: Record<string, CraftGuide> = {
             do: "Slam Potent Liquid Ferocity; on a miss chaos back to Spell Damage and slam again.",
             why: "Adds '(40–60)% increased Effect of Suffixes' in a prefix slot — 50/50 it replaces the junk prefix, not Spell Damage.",
             mats: [MATS.potentLiquidFerocity, MATS.chaos],
+            warning: FEROCITY_SUFFIX_ROLL,
+            onFail: FEROCITY_STOP,
             check: "3 suffixes + Spell Damage + 'increased Effect of Suffixes'.",
             unverified: FEROCITY_SIDE,
           },

@@ -101,7 +101,8 @@ export const MATS = {
   // Potent Ferocity = "(40–60)% increased Effect of Suffixes/Prefixes" (poe2db + RePoE, KB §6).
   potentLiquidContempt: { id: "potent-liquid-contempt", label: "Potent Liquid Contempt", group: "delirium" },
   potentLiquidFerocity: { id: "potent-liquid-ferocity", label: "Potent Liquid Ferocity", group: "delirium" },
-  ancientPotentLiquidContempt: { id: "ancient-potent-liquid-contempt", label: "Ancient Potent Liquid Contempt", group: "delirium" },} as const satisfies Record<string, CraftMaterial>;
+  ancientPotentLiquidContempt: { id: "ancient-potent-liquid-contempt", label: "Ancient Potent Liquid Contempt", group: "delirium" },
+} as const satisfies Record<string, CraftMaterial>;
 
 export type MaterialKey = keyof typeof MATS;
 
