@@ -25,7 +25,7 @@ export interface Affix {
   note: string | null;
 }
 
-/** Affix limits. `p`/`s` null = the per-side split is not known (regular jewels: 4 total, KB §6). */
+/** Affix limits. `p`/`s` null = the per-side split is not known (Time-Lost jewels: total only). */
 export interface Capacity {
   p: number | null;
   s: number | null;
@@ -38,7 +38,6 @@ export type StateFlagCode =
   | "ambiguous-base"
   | "ambiguous-split"
   | "ambiguous-side"
-  | "extra-capacity"
   | "over-capacity"
   | "ignored-text"
   | "unidentified";
@@ -72,18 +71,39 @@ export interface ItemState {
 }
 
 /**
- * Rare = 3 prefixes + 3 suffixes; magic = 1 + 1 (game rules, not KB facts). Regular rare jewels
- * cap at 4 explicit mods (KB §6) with no per-side split in the KB, so jewels get a total only.
+ * Rare gear = 3 prefixes + 3 suffixes; magic = 1 + 1 (game rules). A rare BASIC jewel = 2 + 2
+ * (KB §6 caps it at 4; the 2/2 split per researcher 2026-09-29: poe2db item text, PoB #2300,
+ * Game8, Maxroll). The Time-Lost split is unresolved, so it gets the total only.
  */
-function capacityOf(rarity: string, jewel: boolean): Capacity | null {
+function capacityOf(rarity: string, jewel: boolean, timeLost: boolean): Capacity | null {
   if (rarity === "Normal") return { p: 0, s: 0, total: 0 };
   if (rarity === "Magic") return { p: 1, s: 1, total: 2 };
-  if (rarity === "Rare") return jewel ? { p: null, s: null, total: 4 } : { p: 3, s: 3, total: 6 };
-  return null;
+  if (rarity !== "Rare") return null;
+  if (!jewel) return { p: 3, s: 3, total: 6 };
+  return timeLost ? { p: null, s: null, total: 4 } : { p: 2, s: 2, total: 4 };
+}
+
+/** Contempt's crafted "+1 Suffix Modifier allowed" (sits in a PREFIX slot) and its prefix twin. */
+export const EXTRA_CAPACITY = /^\+?(\d+) (Prefix|Suffix) Modifiers? allowed$/i;
+
+/** Raise the limits by every cataloged "+N … Modifier allowed" mod the item carries. */
+function withExtraCapacity(cap: Capacity | null, affixes: readonly Affix[]): Capacity | null {
+  if (cap == null) return null;
+  const out = { ...cap };
+  for (const a of affixes) {
+    const m = a.modId != null && a.lines.length === 1 ? EXTRA_CAPACITY.exec(a.lines[0]!) : null;
+    if (!m) continue;
+    const n = Number(m[1]);
+    if (m[2]!.toLowerCase() === "prefix") out.p = out.p == null ? null : out.p + n;
+    else out.s = out.s == null ? null : out.s + n;
+    out.total += n;
+  }
+  return out;
 }
 
 function emptyState(parsed: ParsedItem, meta: ItemMeta, itemClass: string | null, baseType: string | null): ItemState {
   const jewel = itemClass === "Jewels";
+  const timeLost = jewel && /time-lost/i.test(baseType ?? parsed.baseType);
   return {
     rarity: parsed.rarity,
     itemClass,
@@ -94,11 +114,11 @@ function emptyState(parsed: ParsedItem, meta: ItemMeta, itemClass: string | null
     mirrored: parsed.mirrored,
     unidentified: meta.unidentified,
     jewel,
-    timeLost: jewel && /time-lost/i.test(baseType ?? parsed.baseType),
+    timeLost,
     affixes: [],
     prefixes: 0,
     suffixes: 0,
-    capacity: capacityOf(parsed.rarity, jewel),
+    capacity: capacityOf(parsed.rarity, jewel, timeLost),
     openPrefixes: null,
     openSuffixes: null,
     openTotal: null,
@@ -123,9 +143,10 @@ function finalize(state: ItemState): ItemState {
   if (sideless.length > 0) {
     state.flags.push({ code: "ambiguous-side", message: `${sideless.length} affix(es) could not be placed on a side — open slots unknown` });
   }
+  state.capacity = withExtraCapacity(state.capacity, state.affixes);
   const cap = state.capacity;
   const provable = cap != null && state.unmatched.length === 0 && sideless.length === 0 && !state.unidentified
-    && !state.flags.some((f) => f.code === "extra-capacity" || f.code === "ambiguous-split");
+    && !state.flags.some((f) => f.code === "ambiguous-split");
   if (!provable) return state;
   const used = state.affixes.length;
   const openP = cap.p == null ? null : cap.p - state.prefixes;

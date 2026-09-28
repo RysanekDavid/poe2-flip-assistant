@@ -18,7 +18,7 @@ export function needOpen(s: ItemState, side: "prefix" | "suffix" | "any", count 
   const open = side === "prefix" ? s.openPrefixes : side === "suffix" ? s.openSuffixes : s.openTotal;
   if (open == null) {
     const splitUnknown = side !== "any" && s.openTotal != null;
-    return { block: splitUnknown ? "the KB gives this item only a total affix limit (4 on jewels), not a per-side one" : OPEN_UNKNOWN };
+    return { block: splitUnknown ? "only the total affix limit is known for this item (Time-Lost jewels), not a per-side one" : OPEN_UNKNOWN };
   }
   if (open >= count) return null;
   const where = side === "any" ? "affix" : side;

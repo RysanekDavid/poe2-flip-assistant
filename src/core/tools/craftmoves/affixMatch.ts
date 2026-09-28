@@ -27,10 +27,11 @@ interface HeaderInfo {
 
 const AFFIX_MARKERS = new Set<string>(["explicit", "crafted", "fractured", "desecrated"]);
 // "Label: value" property lines and the instruction text jewels/charms carry are never affixes
-const PROPERTY_LINE = /^[A-Z][A-Za-z' ]{0,40}:\s/;
+// ("Quality (Attribute Modifiers): +20% (augmented)" is the catalysed Quality line)
+const PROPERTY_LINE = /^[A-Z][A-Za-z' ]{0,40}(?: \([^)]*\))?:\s/;
 const DESCRIPTION_LINE = /^(Place into an allocated|Right click to|Can only be|Travel to|Use this|This item can be)/i;
-const UNREVEALED = /\bunrevealed\b/i;
-const EXTRA_CAPACITY = /^\+?\d+ (Prefix|Suffix) Modifiers? allowed$/i;
+// basic copy: "... unrevealed ..."; advanced copy: `{ Prefix Modifier "" }` then a bare "Desecrated Prefix"
+const UNREVEALED = /\bunrevealed\b|^Desecrated (Prefix|Suffix)( Modifier)?$/i;
 
 /** "{ Prefix Modifier "Hale" (Tier: 8) — Life }" → side/name/kind. */
 export function parseHeader(line: string): HeaderInfo | null {
@@ -76,7 +77,7 @@ export function groupLines(parsed: ParsedItem, ignored: string[]): LineGroup[] {
 function domainFits(kind: AffixKind, h: TemplateHit): boolean {
   if (kind === "desecrated") return h.mod.domain === "desecrated";
   if (kind === "crafted") return h.mod.domain === "item";
-  return h.mod.domain === "item" && !h.mod.essenceOnly;
+  return h.mod.domain === "item" && !h.mod.craftedOnly;
 }
 
 function tierOf(combo: CatalogCombo, side: AffixSide | null, family: string, modId: string | null, desecrated: boolean) {
@@ -108,10 +109,6 @@ function matchOne(ctx: MatchContext, lines: Line[], at: number, header: HeaderIn
   const line = lines[at]!;
   const kind = header?.kind ?? line.kind;
   if (UNREVEALED.test(line.text)) return { affix: unrevealedAffix(line, header), used: 1 };
-  if (EXTRA_CAPACITY.test(line.text)) {
-    ctx.state.flags.push({ code: "extra-capacity", message: `"${line.text}" changes the affix limit — whether it takes a slot itself is not in the KB` });
-    return { affix: null, used: 1 };
-  }
   const texts = lines.map((l) => l.text);
   let hits = matchAt(ctx.pool, texts, at);
   if (header?.side) hits = hits.filter((h) => h.mod.side === header.side);
@@ -131,10 +128,12 @@ function matchOne(ctx: MatchContext, lines: Line[], at: number, header: HeaderIn
     });
   }
   const chosen = hits.find((h) => h.modId === res.modId);
+  // a mod only a crafted source writes (essence, liquid emotion) IS the crafted mod, tagged or not
+  const craftedOnly = chosen != null ? chosen.mod.craftedOnly : hits.every((h) => h.mod.craftedOnly);
   const desecrated = kind === "desecrated" || chosen?.mod.domain === "desecrated" || (res.modId == null && hits.every((h) => h.mod.domain === "desecrated"));
   const affix: Affix = {
     lines: texts.slice(at, at + res.lineCount),
-    kind: desecrated ? "desecrated" : kind,
+    kind: desecrated ? "desecrated" : craftedOnly ? "crafted" : kind,
     side: header?.side ?? res.side,
     family: res.family,
     modId: res.modId,
@@ -161,10 +160,6 @@ function uncataloguedAffix(lines: string[], kind: AffixKind, side: AffixSide | n
 /** One Ctrl+Alt+C header = exactly one affix, whatever its lines matched. */
 function matchHeaderGroup(ctx: MatchContext, lines: Line[], header: HeaderInfo): void {
   const texts = lines.map((l) => l.text);
-  if (texts.every((t) => EXTRA_CAPACITY.test(t))) {
-    matchOne(ctx, lines, 0, header); // records the extra-capacity flag
-    return;
-  }
   const { affix } = matchOne(ctx, lines, 0, header);
   if (affix) {
     ctx.state.affixes.push({ ...affix, lines: texts });
@@ -190,12 +185,10 @@ export function matchGroup(ctx: MatchContext, group: LineGroup): void {
     const line = lines[i]!;
     const { affix, used } = matchOne(ctx, lines, i, null);
     if (affix) ctx.state.affixes.push(affix);
-    else if (!EXTRA_CAPACITY.test(line.text)) {
-      // a crafted/fractured/desecrated tag still fills that slot even when the text is unknown —
-      // dropping it would let a bone through on an item that already carries a desecrated mod
-      if (line.kind === "explicit") ctx.state.unmatched.push(line.text);
-      else ctx.state.affixes.push(uncataloguedAffix([line.text], line.kind, null, `${line.kind} line not in the catalog`));
-    }
+    // a crafted/fractured/desecrated tag still fills that slot even when the text is unknown —
+    // dropping it would let a bone through on an item that already carries a desecrated mod
+    else if (line.kind === "explicit") ctx.state.unmatched.push(line.text);
+    else ctx.state.affixes.push(uncataloguedAffix([line.text], line.kind, null, `${line.kind} line not in the catalog`));
     i += used;
   }
 }
