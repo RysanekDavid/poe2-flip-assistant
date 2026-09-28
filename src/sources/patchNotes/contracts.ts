@@ -4,7 +4,7 @@ export const PATCH_SOURCE_ID = "ggg_poe2_patch_notes" as const;
 export const PATCH_INDEX_URL = "https://www.pathofexile.com/forum/view-forum/2222" as const;
 export const PATCH_ARTIFACT_DIR = "source-snapshots/ggg-patch-notes" as const;
 export const PATCH_PARSER_NAME = "ggg-forum-patch-notes" as const;
-export const PATCH_PARSER_VERSION = "2" as const;
+export const PATCH_PARSER_VERSION = "3" as const;
 export const PATCH_THREAD_VALIDATION_POLICY = "thread:structured-staff-body-v1" as const;
 
 export function patchIndexValidationPolicy(minimumEntries: number, baselineThreadId: number): string {
@@ -64,10 +64,30 @@ export interface HtmlFetchResult {
   retrievedAt: string;
 }
 
+export interface PatchThreadFailure {
+  threadId: number;
+  reason: string;
+}
+
 export interface PatchSyncResult {
   ok: boolean;
   indexChanged: boolean;
   checkedThreads: number;
   changedThreads: number;
+  /** Threads whose body could not be fetched or parsed; every other thread was still stored. */
+  failedThreads: PatchThreadFailure[];
   errors: string[];
+}
+
+/**
+ * Heartbeat/log text for an incomplete sync. Counts come first because the System panel caps
+ * error text, and "1 of 12 failed, 11 kept" is what tells the owner the rest was not lost.
+ */
+export function patchSyncProblem(result: PatchSyncResult): string | null {
+  if (result.ok) return null;
+  const detail = result.errors.join("; ") || "no error detail was reported";
+  const failed = result.failedThreads.length;
+  if (failed === 0) return `sync incomplete: ${detail}`;
+  const kept = result.checkedThreads - failed;
+  return `sync incomplete: ${failed} of ${result.checkedThreads} thread(s) failed, ${kept} kept: ${detail}`;
 }

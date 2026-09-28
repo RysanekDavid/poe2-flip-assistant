@@ -1,4 +1,5 @@
 import { config } from "../../config/env";
+import { patchSyncProblem } from "./contracts";
 import { syncPatchNotes } from "./store";
 import { withHeartbeat } from "../../core/heartbeat";
 
@@ -19,15 +20,15 @@ export function startPatchNotesWatcher(): (() => void) | null {
       return;
     }
     running = true;
-    // syncPatchNotes reports partial failure in its result instead of throwing; count that as red.
-    withHeartbeat("patch-notes", "", () => syncPatchNotes(), {
-      problem: (result) => (result.ok ? null : `sync incomplete: ${result.errors.join("; ")}`),
-    })
+    // syncPatchNotes keeps the threads that parsed and reports the rest in its result instead of
+    // throwing; the run still counts as red so a drifted thread cannot hide behind the good ones.
+    withHeartbeat("patch-notes", "", () => syncPatchNotes(), { problem: patchSyncProblem })
       .then((result) => {
-        if (result.ok) {
+        const problem = patchSyncProblem(result);
+        if (problem == null) {
           console.log(`[patch-notes] checked ${result.checkedThreads} thread(s), changed ${result.changedThreads}`);
         } else {
-          console.error(`[patch-notes] sync incomplete: ${result.errors.join("; ")}`);
+          console.error(`[patch-notes] ${problem}`);
         }
       })
       .catch((error: unknown) => {

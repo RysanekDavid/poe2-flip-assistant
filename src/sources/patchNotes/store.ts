@@ -32,6 +32,7 @@ import {
   type PatchDocument,
   type PatchIndexEntry,
   type PatchSyncResult,
+  type PatchThreadFailure,
 } from "./contracts";
 import { parsePatchIndex, parsePatchThread } from "./parser";
 
@@ -64,7 +65,10 @@ export async function syncPatchNotes(options: SyncOptions = {}): Promise<PatchSy
   } catch (error) {
     const message = errorMessage(error);
     recordSourceFailure(PATCH_SOURCE_ID, checkedAt, message, db);
-    return { ok: false, indexChanged: false, checkedThreads: 0, changedThreads: 0, errors: [message] };
+    return {
+      ok: false, indexChanged: false, checkedThreads: 0, changedThreads: 0,
+      failedThreads: [], errors: [message],
+    };
   }
 }
 
@@ -104,7 +108,10 @@ async function runSync(
   }
   const parsed = await persistAndParseIndex(index, coverage, options);
   if (!parsed) {
-    return { ok: false, indexChanged: true, checkedThreads: 0, changedThreads: 0, errors: ["patch index validation failed"] };
+    return {
+      ok: false, indexChanged: true, checkedThreads: 0, changedThreads: 0,
+      failedThreads: [], errors: ["patch index validation failed"],
+    };
   }
   recordValidIndexCheck(
     PATCH_SOURCE_ID, index.retrievedAt, index.etag, index.lastModified,
@@ -154,16 +161,18 @@ async function syncBodies(
   baselineThreadId: number,
   options: SyncOptions,
 ): Promise<PatchSyncResult> {
-  const errors: string[] = [];
+  const failedThreads: PatchThreadFailure[] = [];
   let changedThreads = 0;
   const targets = patchBodyTargets(baselineThreadId, options.db);
+  // Each thread commits on its own, so one layout drift keeps every other thread's body fresh.
   for (const target of targets) {
     try {
       if (await syncOneBody(target.threadId, target.sourceUrl, options)) changedThreads += 1;
     } catch (error) {
-      errors.push(`thread ${target.threadId}: ${errorMessage(error)}`);
+      failedThreads.push({ threadId: target.threadId, reason: errorMessage(error) });
     }
   }
+  const errors = failedThreads.map((failure) => `thread ${failure.threadId}: ${failure.reason}`);
   if (errors.length > 0) {
     recordSourceFailure(PATCH_SOURCE_ID, new Date().toISOString(), errors.join("; "), options.db);
   }
@@ -172,6 +181,7 @@ async function syncBodies(
     indexChanged,
     checkedThreads: targets.length,
     changedThreads,
+    failedThreads,
     errors,
   };
 }

@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import type { CheerioAPI } from "cheerio";
 import {
   patchDocumentSchema,
   patchIndexEntrySchema,
@@ -49,12 +50,14 @@ export function parsePatchIndex(html: string, minimumEntries: number): PatchInde
 
 export function parsePatchThread(html: string, expectedThreadId: number): PatchDocument {
   const $ = cheerio.load(html);
-  const content = $("tr.staff td.content-container div.content").first();
-  if (content.length !== 1) {
-    throw new Error("staff patch body selector returned no content");
+  const post = firstStaffPost($);
+  if (!post) {
+    throw new Error(
+      `staff patch body selector returned no content (tried: ${STAFF_BODY_SELECTORS.join("; ")})`,
+    );
   }
-  const title = cleanText($("h1").first().text());
-  if (!title) throw new Error("patch thread title selector returned no title");
+  const { content, title } = post;
+  if (!title) throw new Error(`patch thread title selector returned no title (${post.variant} layout)`);
   const headings = content.find("h1, h2, h3, h4, h5, h6")
     .map((_index, element) => cleanText($(element).text()))
     .get()
@@ -74,6 +77,52 @@ export function parsePatchThread(html: string, expectedThreadId: number): PatchD
     listItems,
     bodyText,
   });
+}
+
+type Selection = ReturnType<CheerioAPI>;
+
+interface StaffPost {
+  variant: "forum-post" | "news-post";
+  content: Selection;
+  title: string;
+}
+
+/*
+ * GGG renders patch notes in two layouts. Ordinary threads mark the post row itself as staff.
+ * Threads promoted to news announcements (major content updates such as 0.5.5, thread 4000870)
+ * put the body in an unmarked `tr.newsPost` row, carry the staff badge only on the following
+ * `tr.newsPostInfo` row, and have no page <h1> — the title is the body's first heading.
+ */
+const STAFF_BODY_SELECTORS = [
+  "tr.staff td.content-container div.content",
+  "tr.newsPost:not(.newsPostInfo) > td > div.content with a staff badge in the next tr.newsPostInfo",
+] as const;
+const STAFF_POST_ROWS = "tr.staff, tr.newsPost:not(.newsPostInfo)";
+const STAFF_BADGE = ".profile-link.staff, .staffText";
+
+// Document order across both layouts, so "first staff post" means the same thing in either.
+function firstStaffPost($: CheerioAPI): StaffPost | null {
+  for (const element of $(STAFF_POST_ROWS).toArray()) {
+    const row = $(element);
+    const post = row.hasClass("staff") ? forumStaffPost($, row) : newsStaffPost(row);
+    if (post) return post;
+  }
+  return null;
+}
+
+function forumStaffPost($: CheerioAPI, row: Selection): StaffPost | null {
+  const content = row.find("td.content-container div.content").first();
+  if (content.length !== 1) return null;
+  return { variant: "forum-post", content, title: cleanText($("h1").first().text()) };
+}
+
+function newsStaffPost(row: Selection): StaffPost | null {
+  const staffMarked = row.next("tr.newsPostInfo").find(STAFF_BADGE).length > 0;
+  if (!staffMarked) return null;
+  const content = row.children("td").children("div.content").first();
+  if (content.length !== 1) return null;
+  const title = cleanText(content.find("h1, h2").first().text());
+  return { variant: "news-post", content, title };
 }
 
 function cleanText(value: string): string {
