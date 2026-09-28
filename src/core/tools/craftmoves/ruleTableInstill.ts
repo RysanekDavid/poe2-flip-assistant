@@ -47,14 +47,22 @@ const ESSENCES: MoveRule[] = [
     label: "Perfect Essence",
     family: "essence",
     materials: [ANY_ESSENCE],
-    requires: "rare, no crafted mod yet",
+    requires: "rare item with at least one mod",
     effect: "removes a random mod, then writes the essence's guaranteed mod into the single crafted slot",
     notes: [...ESSENCE_NOTES, "Greater-then-Perfect essence stacking is dead in 0.5.x"],
     source: S7,
     verified: true,
-    check: (s) => (isRare(s) ? (s.slots.crafted > 0 ? { block: ONE_CRAFTED } : all([needMods(s, 1)])) : null),
+    check: perfectEssenceCheck,
   },
 ];
+
+/** KB §7: Perfect essences remove-then-replace, so an existing crafted mod is replaced, not a blocker. */
+function perfectEssenceCheck(s: ItemState): Verdict {
+  if (!isRare(s)) return null;
+  const notes = s.slots.crafted > 0 ? [`replaces the existing crafted mod — one crafted slot per item (${S7})`] : [];
+  const unverifiedBecause = s.jewel ? "the KB does not say which essences, if any, apply to jewels" : undefined;
+  return all([needMods(s, 1)], { pass: true, notes, unverifiedBecause });
+}
 
 const CATALYST_TAGS =
   "Xoph's=Fire, Tul's=Cold, Esh's=Lightning, Uul-Netol's=Phys, Chayula's=Chaos, Flesh=Life, Neural=Mana, Carapace=Defences, " +
@@ -84,61 +92,58 @@ const CATALYSTS: MoveRule[] = [
   },
 ];
 
-const JEWEL_COLOUR: Record<string, string> = { Sapphire: "(7–13)% chaos damage", Ruby: "(5–15)% global physical damage", Emerald: "(5–15)% elemental damage" };
+/*
+ * Liquid-emotion facts below come from the 2026-09-29 research round (poe2db item text = game text,
+ * cross-checked against PoB #2300, Game8, Maxroll, Sidekick/EE2 fixtures; the granted mods are
+ * RePoE CraftedJewel* entries). KB §6 still states the refuted "fixed damage prefix" Potent Contempt
+ * and is being corrected on a parallel branch, so these rules ship unverified until it lands.
+ */
+const LIQUID_RESEARCH = `research 2026-09-29 (poe2db, PoB #2300, Game8, Maxroll); ${S6} correction pending`;
 
-function potentContemptCheck(s: ItemState): Verdict {
-  if (!s.jewel || !isRare(s)) return null;
-  if (s.timeLost) return { block: `non-Ancient liquids don't work on Time-Lost jewels (${S6})` };
-  if (s.slots.crafted > 0) return { block: ONE_CRAFTED };
-  const colour = Object.keys(JEWEL_COLOUR).find((c) => (s.baseType ?? "").includes(c));
-  if (!colour) return { pass: true, unverifiedBecause: `the KB names the prefix only for Sapphire/Ruby/Emerald, not ${s.baseType ?? "this jewel"}` };
-  return { pass: true, notes: [`${colour} → crafted prefix ${JEWEL_COLOUR[colour]}`] };
+const CONTEMPT_EFFECT =
+  "removes a random mod and adds a crafted '+1 Suffix Modifier allowed' (sits in a PREFIX slot) or " +
+  "'+1 Prefix Modifier allowed' (sits in a SUFFIX slot) — the side is not controllable";
+
+/** Potent tiers: rare BASIC jewels. Ancient tiers: rare Time-Lost jewels only. Both write the crafted slot. */
+function liquidCheck(tier: "potent" | "ancient") {
+  return (s: ItemState): Verdict => {
+    if (!s.jewel || !isRare(s)) return null;
+    if (tier === "potent" && s.timeLost) return { block: "Potent liquids work on rare BASIC jewels, not Time-Lost ones" };
+    if (tier === "ancient" && !s.timeLost) return { block: "Ancient liquids work ONLY on rare Time-Lost jewels" };
+    if (s.slots.crafted > 0) return { block: ONE_CRAFTED };
+    return { pass: true };
+  };
 }
 
-function ancientLiquidCheck(s: ItemState): Verdict {
-  if (!s.jewel || !isRare(s)) return null;
-  if (!s.timeLost) return { block: `Ancient liquids work ONLY on rare Time-Lost jewels (${S6})` };
-  return { pass: true };
+function liquid(id: string, label: string, material: MoveRule["materials"][number], tier: "potent" | "ancient", effect: string, notes: string[] = []): MoveRule {
+  return {
+    id,
+    label,
+    family: "liquid",
+    materials: [material],
+    requires: `rare ${tier === "potent" ? "BASIC" : "Time-Lost"} jewel, no crafted mod yet`,
+    effect,
+    notes: [`the granted mod is crafted, and an item holds one crafted mod (${S7})`, ...notes],
+    source: LIQUID_RESEARCH,
+    verified: false,
+    check: liquidCheck(tier),
+  };
 }
+
+const FEROCITY_REMOVAL = "whether Ferocity also removes a mod is not in the research round";
 
 const LIQUIDS: MoveRule[] = [
-  {
-    id: "liquid-potent-contempt",
-    label: "Potent Liquid Contempt",
-    family: "liquid",
-    materials: ["potentLiquidContempt"],
-    requires: "rare BASIC (not Time-Lost) jewel, no crafted mod yet",
-    effect: "removes a random mod and grants a FIXED damage crafted prefix keyed to the jewel colour",
-    warnings: ["does NOT grant '+1 Modifier allowed' — that is the Ancient tier on Time-Lost jewels only"],
-    notes: [`the granted prefix is crafted, and an item holds one crafted mod (${S7})`],
-    source: `${S6}; ${S7}`,
-    verified: true,
-    check: potentContemptCheck,
-  },
-  {
-    id: "liquid-ancient-contempt",
-    label: "Ancient Potent Liquid Contempt",
-    family: "liquid",
-    materials: ["ancientPotentLiquidContempt"],
-    requires: "rare Time-Lost jewel",
-    effect: "removes a random mod and grants '+1 Prefix Modifier allowed' OR '+1 Suffix Modifier allowed' (side not controllable)",
-    notes: ["KB §6 is medium confidence; the only 5-mod jewel path"],
-    source: S6,
-    verified: false,
-    check: ancientLiquidCheck,
-  },
-  {
-    id: "liquid-ancient-ferocity",
-    label: "Ancient Potent Liquid Ferocity",
-    family: "liquid",
-    materials: ["ancientPotentLiquidFerocity"],
-    requires: "rare Time-Lost jewel",
-    effect: "removes a random mod and grants (40–60)% increased Effect of Suffixes OR of Prefixes",
-    notes: ["KB §6 is medium confidence"],
-    source: S6,
-    verified: false,
-    check: ancientLiquidCheck,
-  },
+  liquid("liquid-potent-contempt", "Potent Liquid Contempt", "potentLiquidContempt", "potent", CONTEMPT_EFFECT),
+  liquid("liquid-ancient-contempt", "Ancient Potent Liquid Contempt", "ancientPotentLiquidContempt", "ancient", CONTEMPT_EFFECT, [
+    "with the extra slot a Time-Lost jewel reaches 5 mods",
+  ]),
+  liquid("liquid-potent-ferocity", "Potent Liquid Ferocity", "potentLiquidFerocity", "potent",
+    "adds a crafted '(40–60)% increased Effect of Suffixes' or '… of Prefixes'", [FEROCITY_REMOVAL]),
+  liquid("liquid-ancient-ferocity", "Ancient Potent Liquid Ferocity", "ancientPotentLiquidFerocity", "ancient",
+    "adds a crafted mod: notables in radius grant +(5–7)% Fire, Cold or Lightning resistance", [
+      FEROCITY_REMOVAL,
+      "Diamond (chaos resistance) values conflict between sources: 4–5% vs 5–7%",
+    ]),
 ];
 
 export const INSTILL_RULES: readonly MoveRule[] = [...ESSENCES, ...CATALYSTS, ...LIQUIDS];
