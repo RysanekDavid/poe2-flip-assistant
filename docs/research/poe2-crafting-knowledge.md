@@ -122,21 +122,57 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
 - Tiers: Diluted → Potent/Concentrated → **Ancient** variants.
 - **Ancient emotions work ONLY on rare Time-Lost jewels** (cannot instill amulets/waystones);
   non-Ancient tiers don't work on Time-Lost jewels. Both directions = wasted currency.
-- Ancient Potent Liquid **Contempt** (jewels): removes a random mod + grants
-  "+1 Suffix Modifier allowed" OR "+1 Prefix Modifier allowed" (which side ~random —
-  determinism by jewel colour unresolved).
-- Ancient Potent Liquid **Ferocity** (jewels): removes a random mod + grants
-  "(40–60)% increased Effect of Suffixes" OR "…of Prefixes".
-- **Non-Ancient Potent Liquid Contempt** on a rare BASIC jewel: removes a random mod + grants a
-  **fixed damage crafted PREFIX keyed to jewel colour** — Sapphire→(7–13)% chaos dmg,
-  Ruby→(5–15)% global phys, Emerald→(5–15)% elemental. It does NOT grant "+1 Modifier allowed"
-  (that mod is Ancient-tier/Time-Lost only). (CONFIRMED 2026-07-15: sanctuaryrelic verbatim
-  in-game text + game8 + poe2dictionary; refutes the aoeah "+1 slot on basic jewel" claim.)
-- **Regular rare jewels cap at 4 explicit mods** (5 only via corruption) → a "budget 5-mod
-  basic jewel" craft is impossible; the 5-mod path is Time-Lost + Ancient Contempt only.
-  The `jewel_desecrated_liquid` recipe was deleted 2026-07-15 for exactly this.
+- **Potent Liquid Contempt** (non-Ancient) on a rare BASIC jewel (Ruby/Sapphire/Emerald/Diamond):
+  "Removes a random modifer and Augments a Rare Basic Jewel with a new guaranteed Crafted
+  modifier" (sic). The crafted mod is **"+1 Suffix Modifier allowed"** (occupies a PREFIX slot)
+  or **"+1 Prefix Modifier allowed"** (occupies a SUFFIX slot), on all four colours.
+  (CONFIRMED 2026-09-28, two sources: [poe2db Potent_Liquid_Contempt](https://poe2db.tw/us/Potent_Liquid_Contempt)
+  accessed 2026-09-28; our datamined RePoE catalog `src/data/poe2/repoe/catalog-*.json.gz` →
+  `base_items["Metadata/Items/Currency/EndgameDistilledEmotion3"].properties.description`, same
+  text, plus `mods.CraftedJewelAdditionalSuffixAllowed` = text "+1 Suffix Modifier allowed",
+  `generation_type: prefix`, and `mods.CraftedJewelAdditionalPrefixAllowed` = "+1 Prefix Modifier
+  allowed", `generation_type: suffix`; both group `MaxPrefixMaxSuffix`, domain `misc`, spawn
+  weight 0 = currency-granted only.) **REFUTES** the 2026-07-15 entry that said non-Ancient
+  Contempt grants a fixed colour-keyed damage prefix and that "+1 Modifier allowed" is
+  Ancient/Time-Lost only — the "(7–13)% chaos damage" it quoted is the ordinary natural Sapphire
+  prefix `JewelChaosDamage`, not a Contempt mod.
+- **Potent Liquid Ferocity** (non-Ancient) on a rare BASIC jewel: same removal wording; crafted
+  mod **"(40–60)% increased Effect of Suffixes"** (PREFIX slot) or **"(40–60)% increased Effect
+  of Prefixes"** (SUFFIX slot), all four colours. (CONFIRMED 2026-09-28: [poe2db
+  Potent_Liquid_Ferocity](https://poe2db.tw/us/Potent_Liquid_Ferocity) accessed 2026-09-28 + RePoE
+  `EndgameDistilledEmotion2` description and `mods.CraftedJewelSuffixEffect` (prefix) /
+  `CraftedJewelPrefixEffect` (suffix).)
+- **Potent Liquid Melancholy** (non-Ancient, basic jewel): colour-keyed conditional SUFFIX —
+  Ruby "Debilitate … Emerald and Sapphire socketed", Sapphire "Elemental Exposure … Ruby and
+  Emerald", Emerald "Blind … Ruby and Sapphire". (poe2db Potent_Liquid_Melancholy accessed
+  2026-09-28 + RePoE `CraftedJewel*OnHitWhile*Socketed` mods.) All three Potent liquids also
+  instil amulets at The Withered Willow (catalog `directions` text).
+- Ancient Potent Liquid **Contempt** (rare Time-Lost jewels): the same "+1 Suffix Modifier
+  allowed" (prefix slot) / "+1 Prefix Modifier allowed" (suffix slot) pair on all four colours —
+  the catalog has ONE mod per side, shared by both tiers. (poe2db Ancient_Potent_Liquid_Contempt
+  accessed 2026-09-28 + RePoE `EndgameDistilledEmotionTimeLost3`.)
+- Ancient Potent Liquid **Ferocity** (rare Time-Lost jewels): **NOT** "Effect of Suffixes" (the
+  earlier entry was wrong) — a colour-keyed radius SUFFIX "Notable Passive Skills in Radius also
+  grant +(5–7)% to Fire/Cold/Lightning Resistance" (Diamond: +(4–5)% Chaos). Ancient
+  **Melancholy** = "Upgrades Radius to Very Large" (prefix). (poe2db Ancient_Potent_Liquid_Ferocity
+  / _Melancholy accessed 2026-09-28 + RePoE `CraftedJewelRadius*Resistance` /
+  `CraftedJewelRadiusExtraLargeSize`.)
+- **5-mod basic jewel is possible**: basic jewels cap at 2 prefixes + 2 suffixes, but Contempt's
+  crafted mod raises one side's cap by 1 while sitting on the other. Creator crafts [S4, S20 in
+  docs/kb/creator-videos.md] then strip the crafted mod with Omen of Sinistral Annulment and
+  keep 3 suffixes + 2 prefixes (chaos then shows "no space for modifiers" on the suffix side).
+  The `jewel_desecrated_liquid` deletion (2026-07-15) rested on the refuted claim; the paths now
+  live as `jewel_liquid_5mod_budget` / `jewel_fractured_5mod`.
+- **Still UNVERIFIED** (no primary source, catalog can't settle it): (a) whether the removed mod
+  is chosen first and the crafted mod then takes ITS side (creators report the "+1 Prefix"
+  variant always costs a suffix — 50/50, or ~1-in-3 with a fractured suffix [S4]); (b) that the
+  over-cap 3rd suffix survives removing the "+1 Suffix" mod (creator-demonstrated only — same stop
+  condition as docs/kb/desecration-abyss.md "Time-Lost limitation"); (c) the crafted-mod limit:
+  both liquids write a [Crafted] mod and §7 allows ONE per item, so Ferocity presumably can't be
+  added while the Contempt mod is present — every documented path strips Contempt first; untested.
 - Desecration DOES work on regular rare jewels (Preserved Cranium targets any rare jewel).
-- Sources: dadsofexile, Fextralife, Game8, sanctuaryrelic, poe2dictionary — poe2db check pending.
+- Earlier sources: dadsofexile, Fextralife, Game8, sanctuaryrelic, poe2dictionary; superseded on
+  the Potent/Ancient mod pools by poe2db + RePoE (above).
 
 ## 7. Essences & crafted-mod slot (CONFIRMED)
 
