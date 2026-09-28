@@ -4,6 +4,7 @@ import { Flame } from "lucide-react";
 import { evLabel, priceLabel, type RecipeView } from "./craft/craftView";
 import { useCraftMargins } from "./craft/CraftMarginsContext";
 import { ConfidenceBadge } from "./craft/NearMissLine";
+import type { NearMiss } from "../core/craftRecipes";
 import { ComputedLeague } from "./ui/ComputedLeague";
 import { RETURN_FLAG_MULTIPLE } from "../core/craftValuation";
 
@@ -37,20 +38,24 @@ function PickChip({ r, rank, ex }: { r: RecipeView; rank: number; ex: number | n
   );
 }
 
+/** Why a near-miss is not a pick, in one chip: short of profit, exactly break-even, or positive
+ *  EV held back by the confidence gate. Only the last one may say "gated". */
+function NearMissStatus({ nm, gateOk, ex }: { nm: NearMiss; gateOk: boolean; ex: number | null }) {
+  if (nm.gapDiv > 0) return <span className="tabular-nums text-bad">gap {priceLabel(nm.gapDiv, ex)}</span>;
+  if (nm.evDiv <= 0) return <span className="tabular-nums text-neutral-400">break-even</span>;
+  return <span className="tabular-nums text-emerald-400/70">{evLabel(nm.evDiv, ex)}{gateOk ? "" : " · gated"}</span>;
+}
+
 /** "closest to profit": what the recipe is short by and the hit rate it would need. */
 function NearMissChip({ r, ex }: { r: RecipeView; ex: number | null }) {
   const nm = r.report?.nearMiss;
   if (!nm) return null;
-  const why = r.gate.ok ? "EV negative at current prices" : r.gate.reasons.join("\n");
+  const why = [...r.gate.reasons, ...(nm.evDiv <= 0 ? ["EV not positive at current prices"] : [])].join("\n");
   return (
     <span className="flex items-center gap-2 rounded-md border border-dashed border-neutral-800 px-2.5 py-1.5 text-sm" title={why}>
       <RecipeIcon r={r} />
       <span className="text-neutral-400">{r.label}</span>
-      {nm.gapDiv > 0 ? (
-        <span className="tabular-nums text-bad">gap {priceLabel(nm.gapDiv, ex)}</span>
-      ) : (
-        <span className="tabular-nums text-emerald-400/70">{evLabel(nm.evDiv, ex)} · gated</span>
-      )}
+      <NearMissStatus nm={nm} gateOk={r.gate.ok} ex={ex} />
       <span className="text-xs tabular-nums text-neutral-500">
         needs hit ≥{(nm.breakEvenHitRate * 100).toFixed(0)}% (model {(nm.modelHitRate * 100).toFixed(0)}%)
       </span>
