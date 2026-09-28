@@ -6,6 +6,8 @@
  * embed's title/description/field names+values/footer. Embed `url` does not count toward 6000.
  */
 import { z } from "zod";
+import { parseStoredCard, type SnipeCard } from "../../lib/snipeCard";
+import { fmtDivOrEx } from "../../lib/format";
 
 const EmbedFieldSchema = z.object({ name: z.string(), value: z.string(), inline: z.boolean().optional() });
 export type DiscordEmbedField = z.infer<typeof EmbedFieldSchema>;
@@ -15,6 +17,7 @@ export const EmbedSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   url: z.string().optional(),
+  thumbnail: z.object({ url: z.string() }).optional(), // item art; its URL does not count toward 6000
   color: z.number().int(),
   fields: z.array(EmbedFieldSchema),
   timestamp: z.string().optional(),
@@ -44,6 +47,7 @@ export interface NotifyAlert {
   threshold: number | null;
   whisper: string | null;
   link: string | null;
+  details: string | null; // stored SnipeCard JSON (SNIPE alerts)
   league: string | null;
   created_at: string;
 }
@@ -54,8 +58,6 @@ const BOT_NAME = "PoE2 Flip Assistant";
 
 const COLORS: Record<string, number> = {
   SNIPE: 0xfb923c,
-  CRAFT_BASE: 0xfb923c,
-  RESELL: 0xfb923c,
   CRAFT_MARGIN: 0xf59e0b,
   SPREAD: 0x22c55e,
   TREND: 0xfcd34d,
@@ -83,9 +85,23 @@ function safeLink(link: string | null): string | null {
   return link;
 }
 
-function alertFields(a: NotifyAlert): DiscordEmbedField[] {
-  const fields: DiscordEmbedField[] = [];
-  if (a.value != null) {
+/** Ask / value / item line for a SNIPE with a card — what the player needs to decide from a phone. */
+function cardFields(card: SnipeCard): DiscordEmbedField[] {
+  const ex = card.exaltPerDivine;
+  const item = [card.itemLevel != null ? `ilvl ${card.itemLevel}` : null, card.corrupted ? "corrupted" : null, card.desecrated ? "desecrated" : null]
+    .filter((x): x is string => x != null)
+    .join(" · ");
+  const fields: DiscordEmbedField[] = [
+    { name: "Ask", value: `${card.price.amount} ${card.price.currency} (${fmtDivOrEx(card.priceDiv, ex)})`, inline: true },
+    { name: "Value", value: `~${fmtDivOrEx(card.valueDiv, ex)} · median of ${card.valuation.samples}`, inline: true },
+  ];
+  if (item) fields.push({ name: "Item", value: truncate(item, 200), inline: true });
+  return fields;
+}
+
+function alertFields(a: NotifyAlert, card: SnipeCard | null): DiscordEmbedField[] {
+  const fields: DiscordEmbedField[] = card ? cardFields(card) : [];
+  if (a.value != null && !card) {
     const vs = a.threshold != null ? ` vs threshold ${fmt(a.threshold)}` : "";
     fields.push({ name: "Value", value: `${fmt(a.value)}${vs}`, inline: true });
   }
@@ -102,14 +118,18 @@ function alertFields(a: NotifyAlert): DiscordEmbedField[] {
 }
 
 export function alertEmbed(a: NotifyAlert): DiscordEmbed {
+  // A card that no longer parses is logged by parseStoredCard; the alert still goes out as text.
+  const { card } = parseStoredCard(a.details, a.id);
   const embed: DiscordEmbed = {
-    title: truncate(`${a.type} · ${a.item_name ?? a.item_id}`, 200),
+    title: truncate(`${a.type} · ${a.item_name ?? a.item_id}${card && card.baseType !== card.name ? ` (${card.baseType})` : ""}`, 200),
     description: truncate(a.message, 600),
     color: COLORS[a.type] ?? NEUTRAL,
-    fields: alertFields(a),
+    fields: alertFields(a, card),
   };
   const link = safeLink(a.link);
   if (link) embed.url = link;
+  const icon = safeLink(card?.icon ?? null);
+  if (icon) embed.thumbnail = { url: icon };
   const ts = isoTimestamp(a.created_at);
   if (ts) embed.timestamp = ts;
   return embed;

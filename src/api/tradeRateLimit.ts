@@ -11,7 +11,7 @@
  * until enough of them age out of that rule's window — never a whole period on spec (the first
  * version waited the full 6h period of the 600:21600 rule: a 6× longer lockout than GGG's own
  * penalty). On top of the windows, requests are PACED to the tightest sustained rate the rules
- * allow (600 searches / 6h ≈ one per 36s), so hunts can't burn the long window in the first hour
+ * allow (600 searches / 6h ≈ one per 36s), so no consumer can burn the long window in the first hour
  * and then sit dead for five.
  */
 export interface RateRule {

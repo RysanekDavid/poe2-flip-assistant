@@ -26,7 +26,7 @@ export function clearLeagueCache(): void {
  * The app's DEFAULT league: the runtime setting if present, else LEAGUE_NAME from env.
  *
  * This is what every credless/system context runs under — the poller's baseline league, the
- * shared trade2 pipelines (hunts, autosnipe, craft margins) and any request with no user behind
+ * shared trade2 pipelines (autosnipe, craft margins) and any request with no user behind
  * it. A logged-in user's VIEW can differ; that lives in core/leagueUsers (`leagueForUser`).
  *
  * Only the default (process) database is memoized — an explicit `database` is a test or

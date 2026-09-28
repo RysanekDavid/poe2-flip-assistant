@@ -1,4 +1,4 @@
-/* Snipe/hunt engine contract tests — pure, NO network, NO DB.
+/* Snipe engine contract tests — pure, NO network, NO DB.
  * Run: npm run test:snipe (also runs the DB half via runWithTestEnv snipe-db). */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -16,10 +16,10 @@ import Bottleneck from "bottleneck";
 import { metered, newMeter, scheduleMetered, type TradeMeter } from "../api/tradeMeter";
 import { fmtDivOrEx } from "../lib/format";
 import { pos } from "../config/env";
+import { retiredEnvWarnings } from "../config/retiredEnv";
 import { TradeRateLimitedError } from "../api/tradeErrors";
 import { tradeErrorResponse } from "../lib/tradeRouteError";
 import { snipeAlertMessage } from "../core/snipeAlert";
-import { parseHuntBody } from "../lib/huntSchema";
 import { buildTradeQuery } from "../lib/tradeLink";
 import type { StatOption } from "../api/tradeMeta";
 
@@ -219,17 +219,11 @@ t2 += 36_000;
 const lock = gov2.reserve("search");
 ok("…then the long window blocks until those requests age out (bounded by 6h)", lock > 36_000 && lock <= H6, String(lock));
 
-// --- 8. alert rendering + hunt validation ---
+// --- 8. alert rendering ---
 ok("sub-Div ask rendered in exalted", fmtDivOrEx(0.25, 200) === "50 ex" && fmtDivOrEx(1 / 200, 200) === "1 ex");
 ok("≥1 Div rendered in div; 0 → dash", fmtDivOrEx(2, 200) === "2 div" && fmtDivOrEx(0, 200) === "—");
 const msg = snipeAlertMessage({ marginPct: 42, askDiv: 0.5, valueDiv: 2, samples: 7, exPerDiv: 200, basis: "comps" });
 ok("alert text never says '0 vs'", msg.includes("100 ex vs ~2 div") && !/\b0 vs/.test(msg), msg);
-ok("hunt: valid body accepted", parseHuntBody({ label: "x", baseType: "Gold Ring", maxAmount: 2, maxCcy: "divine", stats: [{ id: "explicit.stat_1", min: 3 }] }).ok);
-ok("hunt: stats not an array → 400", !parseHuntBody({ label: "x", baseType: "Ring", stats: "life" }).ok);
-ok("hunt: non-numeric price → 400", !parseHuntBody({ label: "x", baseType: "Ring", maxAmount: "abc", maxCcy: "divine" }).ok);
-ok("hunt: unknown mode → 400", !parseHuntBody({ label: "x", baseType: "Ring", mode: "BUY_ALL" }).ok);
-ok("hunt: price without currency → 400", !parseHuntBody({ label: "x", baseType: "Ring", maxAmount: 3 }).ok);
-ok("hunt: no target at all → 400", !parseHuntBody({ label: "x" }).ok);
 
 // --- boot-time validation of gate thresholds ---
 process.env.TEST_POS_ZERO = "0";
@@ -249,6 +243,11 @@ const bootMsg = ((): string => {
   }
 })();
 ok("env: boot error names the key, the bad value and the valid range", bootMsg.includes("TEST_POS_BIG=150") && bootMsg.includes("(0, 100]"), bootMsg);
+const retired = retiredEnvWarnings({ HUNT_SCAN_SEC: "30", HUNT_MIN_REQUEST_MS: "5000", TRADE_MIN_REQUEST_MS: "6000", PATH: "x" });
+ok("env: every leftover HUNT_* key is named at boot", retired.length === 2, retired.join(" | "));
+ok("env: HUNT_MIN_REQUEST_MS points at its replacement", retired.some((w) => w.includes("HUNT_MIN_REQUEST_MS was renamed to TRADE_MIN_REQUEST_MS")));
+ok("env: other HUNT_* keys say the feature is gone", retired.some((w) => w.includes("HUNT_SCAN_SEC") && w.includes("Hunt feature was removed")));
+ok("env: no retired keys → no warnings", retiredEnvWarnings({ TRADE_MIN_REQUEST_MS: "6000" }).length === 0);
 
 // --- web routes answer a busy shared budget with 503 + Retry-After, not a hung request ---
 const busy = tradeErrorResponse(new TradeRateLimitedError("search", 31_200));
@@ -257,27 +256,27 @@ ok("other trade2 failures stay 502", tradeErrorResponse(new Error("trade2 400"))
 
 // --- 9. scan-local meter THROUGH a real Bottleneck queue (the production path) ---
 // Bottleneck starts a queued job from the previous job's completion chain, so async context read
-// INSIDE the job belongs to whoever ran before. These checks queue a metered scan behind hunts.
+// INSIDE the job belongs to whoever ran before. These checks queue a metered scan behind another consumer (e.g. a craft-margin leg).
 const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 async function runQueueScenario(
   request: (lim: Bottleneck, kind: "search" | "fetch") => Promise<void>,
   wrap: <T>(m: TradeMeter, fn: () => Promise<T>) => Promise<T>,
-): Promise<{ scan: TradeMeter; hunt: TradeMeter }> {
+): Promise<{ scan: TradeMeter; other: TradeMeter }> {
   const lim = new Bottleneck({ maxConcurrent: 1 });
-  const huntLap = async (n: number): Promise<void> => {
+  const otherLap = async (n: number): Promise<void> => {
     for (let i = 0; i < n; i++) await request(lim, "search");
   };
-  const unmeteredHunt = huntLap(4); // grabs the slot first — the scan queues behind it
-  const hunt = newMeter();
-  const meteredHunt = wrap(hunt, () => huntLap(3));
+  const unmeteredOther = otherLap(4); // grabs the slot first — the scan queues behind it
+  const other = newMeter();
+  const meteredOther = wrap(other, () => otherLap(3));
   const scan = newMeter();
   const scanRun = wrap(scan, async () => {
     for (let i = 0; i < 3; i++) await request(lim, "search");
     await Promise.all([request(lim, "fetch"), request(lim, "fetch")]);
   });
-  await Promise.all([unmeteredHunt, meteredHunt, scanRun]);
-  return { scan, hunt };
+  await Promise.all([unmeteredOther, meteredOther, scanRun]);
+  return { scan, other };
 }
 
 async function meterCheck(): Promise<void> {
@@ -287,8 +286,8 @@ async function meterCheck(): Promise<void> {
       count();
     });
   const good = await runQueueScenario(viaClientPath, metered);
-  ok("queued behind hunts: scan meter = exactly its own 3 searches + 2 fetches", good.scan.search === 3 && good.scan.fetch === 2, JSON.stringify(good.scan));
-  ok("no leakage the other way: metered hunt = exactly its own 3 searches", good.hunt.search === 3 && good.hunt.fetch === 0, JSON.stringify(good.hunt));
+  ok("queued behind another consumer: scan meter = exactly its own 3 searches + 2 fetches", good.scan.search === 3 && good.scan.fetch === 2, JSON.stringify(good.scan));
+  ok("no leakage the other way: metered other consumer = exactly its own 3 searches", good.other.search === 3 && good.other.fetch === 0, JSON.stringify(good.other));
 
   // control: the pre-fix pattern (read the store inside the job) — proves the scenario bites
   const als = new AsyncLocalStorage<TradeMeter>();
@@ -299,7 +298,7 @@ async function meterCheck(): Promise<void> {
       if (m) m[kind]++;
     });
   const bad = await runQueueScenario(naive, (m, fn) => als.run(m, fn));
-  ok("control: in-job context read mis-attributes under the same queue", !(bad.scan.search === 3 && bad.scan.fetch === 2 && bad.hunt.search === 3), `${JSON.stringify(bad.scan)} / ${JSON.stringify(bad.hunt)}`);
+  ok("control: in-job context read mis-attributes under the same queue", !(bad.scan.search === 3 && bad.scan.fetch === 2 && bad.other.search === 3), `${JSON.stringify(bad.scan)} / ${JSON.stringify(bad.other)}`);
 }
 
 void meterCheck().then(() => {

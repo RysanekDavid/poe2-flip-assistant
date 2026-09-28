@@ -23,10 +23,6 @@ import { RECIPES, type CraftRecipe, type LegReport, type RecipeMarginReport } fr
 import { priceLeg, priceMaterials, tryLeg, isFailure, type LegContext } from "./craftLegPricing";
 import { priceResultLeg } from "./craftResultValuation";
 
-// The hunt-preset route still imports legToQuery from here; it is being removed on a parallel
-// branch, so the re-export avoids a modify/delete conflict on that route. Drop it with the route.
-export { legToQuery } from "./craftLegPricing";
-
 /**
  * Craft-margin engine. Prices each recipe's base leg live (floor-and-percentile over up to
  * LEG_SAMPLE asks), its result leg from finished-item comparables (trimmed median, see
@@ -111,7 +107,7 @@ export async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: 
 
 /** Pure: keep the stored report instead of the new one? Only when the new scan failed for a
  *  transient reason AND what we already have is a good report — a 429 or a rate-governor timeout
- *  must not wipe a valid EV (and its rank / prefill / hunt-preset) until the next clean scan. */
+ *  must not wipe a valid EV (and its rank / prefill) until the next clean scan. */
 export function keepPreviousReport(previous: RecipeMarginReport | null, outcome: ScanOutcome): boolean {
   return outcome.transient && previous?.status === "ok";
 }

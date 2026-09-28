@@ -14,7 +14,6 @@ const TIME_COL: Record<string, string> = {
   price_snapshots: "fetched_at",
   price_book_obs: "seen_at",
   alerts: "created_at",
-  hunt_hits: "created_at",
   balance_snapshots: "created_at",
   trades: "traded_at",
   flips: "created_at",

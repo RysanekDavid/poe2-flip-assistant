@@ -33,7 +33,7 @@ const TOUR_STEPS = [
     element: '[data-tour="alerts"]',
     popover: {
       title: "Live alerts",
-      description: "Fires when a watched spread or price spike clears its threshold. Click the bell to also get browser notifications.",
+      description: "Fires when a snipe, craft margin, watched spread or price spike clears its threshold. For desktop popups and sound, open the Alerts tab → Desktop popups.",
     },
   },
   {

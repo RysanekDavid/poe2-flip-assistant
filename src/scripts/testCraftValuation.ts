@@ -1,5 +1,5 @@
 /* Craft valuation rework (temp DB via runWithTestEnv): floor-and-percentile leg pricing, the
- * confidence gate behind alerts + top picks, prefill refusal, hunt-preset cap/upsert, and the
+ * confidence gate behind alerts + top picks, prefill refusal, and the
  * P&L rule that an unsold hit is pending — not a loss. No network. */
 import "../config/env";
 import {
@@ -22,9 +22,9 @@ import { referenceValue } from "../core/priceBook";
 import { shouldAlert, keepPreviousReport, pickStalest } from "../core/craftMargin";
 import { listingDiv } from "../core/craftLegPricing";
 import { RECIPES } from "../core/craftRecipes";
-import { prefillCosts, presetCap } from "../core/craftPrefill";
+import { prefillCosts } from "../core/craftPrefill";
 import { parseStoredReport } from "../core/craftReports";
-import { upsertCraftBaseHunt, addCraftAttempt, closeCraftAttempt, craftPnlByRecipe } from "../db/craftQueries";
+import { addCraftAttempt, closeCraftAttempt, craftPnlByRecipe } from "../db/craftQueries";
 import { getDb } from "../db/database";
 import type { LegReport, RecipeMarginReport } from "../core/craftRecipes";
 
@@ -185,68 +185,6 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   ok("manual base price accepted without any report", manual.ok && near(manual.baseCostDiv, 3));
   const missingMats = prefillCosts(report(), {}, { totalDiv: 0.2, missing: ["omen-of-light"] });
   ok("unpriced material → refused, asks for matsCostDiv", !missingMats.ok && missingMats.needs.includes("matsCostDiv"));
-}
-
-// --- hunt preset: cap from the trusted base only, upsert per user × recipe × league ---
-{
-  const rates = { exaltPerDivine: 200, chaosPerDivine: 10 };
-  const refused = presetCap(report({ valuation: "legacy-cheapest" }), rates);
-  ok("hunt preset refuses a legacy junk-floor base", !refused.ok && /floor-validated/.test(refused.ok ? "" : refused.error));
-  const exCap = presetCap(report({ base: leg({ priceDiv: 0.5 }) }), rates);
-  ok("sub-div base → exalted cap at 120%", exCap.ok && exCap.cap.ccy === "exalted" && exCap.cap.amount === 120, JSON.stringify(exCap));
-
-  const db = getDb();
-  db.prepare("DELETE FROM hunts WHERE label LIKE 'base · test-%'").run();
-  const hunt = {
-    label: "base · test-recipe", mode: "CRAFT_BASE" as const, item_name: null, base_type: null, category: "weapon.bow",
-    ilvl_min: 75, rarity: null, stats_json: null, max_amount: 1, max_ccy: "divine", target_div: null,
-  };
-  const first = upsertCraftBaseHunt(1, "Test League", "test-recipe", hunt);
-  db.prepare("UPDATE hunts SET active = 0 WHERE id = ?").run(first.id);
-  const second = upsertCraftBaseHunt(1, "Test League", "test-recipe", { ...hunt, max_amount: 2.5, label: "base · test-renamed" });
-  const rows = db
-    .prepare("SELECT id, max_amount, active, label FROM hunts WHERE recipe_key = 'test-recipe' AND league = 'Test League'")
-    .all() as Array<{ id: number; max_amount: number; active: number; label: string }>;
-  ok(
-    "hunt preset upserts by recipe_key: one row after two clicks, survives a label rename",
-    rows.length === 1 && first.created && !second.created && first.id === second.id && rows[0]?.label === "base · test-renamed",
-    JSON.stringify(rows),
-  );
-  ok("upsert moves the cap and re-activates", rows[0]?.max_amount === 2.5 && rows[0]?.active === 1);
-  const other = upsertCraftBaseHunt(1, "Other League", "test-recipe", hunt);
-  ok("same recipe in another league is a separate hunt", other.created && other.id !== first.id);
-  // a pre-recipe_key preset row (label identity) is adopted once, not duplicated
-  const dupA = Number(
-    db
-      .prepare(
-        "INSERT INTO hunts (user_id, league, label, mode, max_amount, max_ccy) VALUES (1, 'Test League', 'base · test-dup', 'CRAFT_BASE', 1, 'divine')",
-      )
-      .run().lastInsertRowid,
-  );
-  const dupB = Number(
-    db
-      .prepare(
-        "INSERT INTO hunts (user_id, league, label, mode, max_amount, max_ccy) VALUES (1, 'Test League', 'base · test-dup', 'CRAFT_BASE', 1, 'divine')",
-      )
-      .run().lastInsertRowid,
-  );
-  const dupKept = upsertCraftBaseHunt(1, "Test League", "test-dup-key", { ...hunt, label: "base · test-dup" });
-  const dupRows = db.prepare("SELECT id, active FROM hunts WHERE label = 'base · test-dup' ORDER BY id").all() as Array<{ id: number; active: number }>;
-  ok(
-    "adoption keeps one legacy duplicate active and switches the others off",
-    dupKept.id === dupA && dupRows.find((r) => r.id === dupA)?.active === 1 && dupRows.find((r) => r.id === dupB)?.active === 0,
-    JSON.stringify(dupRows),
-  );
-  const legacyId = Number(
-    db
-      .prepare(
-        "INSERT INTO hunts (user_id, league, label, mode, max_amount, max_ccy) VALUES (1, 'Test League', 'base · test-legacy', 'CRAFT_BASE', 1, 'divine')",
-      )
-      .run().lastInsertRowid,
-  );
-  const adopted = upsertCraftBaseHunt(1, "Test League", "test-legacy-key", { ...hunt, label: "base · test-legacy" });
-  ok("legacy label-keyed preset row adopted and keyed", !adopted.created && adopted.id === legacyId);
-  db.prepare("DELETE FROM hunts WHERE label LIKE 'base · test-%'").run();
 }
 
 // --- round-robin: a recipe that keeps failing transiently must not starve the others ---

@@ -26,7 +26,7 @@ export function parseStoredReport(key: string, json: string): RecipeMarginReport
 }
 
 /**
- * A kept report (newer scans failing transiently) may drive ranking / alerts / prefill / hunt caps
+ * A kept report (newer scans failing transiently) may drive ranking / alerts / prefill
  * for at most 3 full round-robin cycles of the poller; after that its prices are too old to act on.
  */
 export function reportMaxAgeMs(): number {
@@ -48,7 +48,7 @@ export function storedReport(league: string, key: string): RecipeMarginReport | 
   return row ? parseStoredReport(key, row.report_json) : null;
 }
 
-/** The stored report only if it is fresh enough to ACT on (attempt prefill, hunt caps). */
+/** The stored report only if it is fresh enough to ACT on (attempt prefill). */
 export function actionableReport(league: string, key: string): RecipeMarginReport | null {
   const row = storedRow(league, key);
   if (!row) return null;

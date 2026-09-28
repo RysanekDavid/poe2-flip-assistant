@@ -9,7 +9,7 @@ import { evaluateSnipe } from "./snipeGate";
 
 export interface ItemValuation {
   baseType: string;
-  sig: string; // roll-aware price-book key (the same one hunts + autosnipe write)
+  sig: string; // roll-aware price-book key (the same one autosnipe writes)
   resolvedMods: number;
   askDiv: number;
   valueDiv: number | null; // trimmed-median book reference

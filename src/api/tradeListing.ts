@@ -13,6 +13,7 @@ export interface ListingMod {
   text: string; // display text with trade markup stripped: "+18% to Cold Resistance"
   marker: ModMarker; // which bucket the game tagged it with (drives catalog-group preference)
   statId: string | null; // trade stat id when the API gave one ("explicit.stat_3299347043")
+  desecrated: boolean; // a desecrated modifier — valued like an explicit, shown apart on the item card
 }
 
 export interface ListingPrice {
@@ -33,6 +34,7 @@ export interface Listing {
   rarity: string | null; // "Normal" | "Magic" | "Rare" | "Unique"
   itemLevel: number | null;
   corrupted: boolean;
+  desecrated: boolean; // the item carries desecrated modifiers
   mirrored: boolean;
   icon: string | null;
   stackSize: number;
@@ -75,6 +77,7 @@ const FetchEntrySchema = z
         frameTypeId: z.string().optional(),
         ilvl: z.number().optional(),
         corrupted: z.boolean().optional(),
+        desecrated: z.boolean().optional(),
         duplicated: z.boolean().optional(),
         mirrored: z.boolean().optional(),
         icon: z.string().optional(),
@@ -135,7 +138,7 @@ export function extractMods(item: FetchEntry["item"]): { lines: ListingMod[]; un
     if (!Array.isArray(arr)) continue;
     for (const entry of arr) {
       if (typeof entry === "string") {
-        lines.push({ text: cleanMod(entry), marker: bucket, statId: null });
+        lines.push({ text: cleanMod(entry), marker: bucket, statId: null, desecrated: key === "desecratedMods" });
         continue;
       }
       const obj = ItemModSchema.safeParse(entry);
@@ -143,7 +146,12 @@ export function extractMods(item: FetchEntry["item"]): { lines: ListingMod[]; un
         unreadable++;
         continue;
       }
-      lines.push({ text: cleanMod(obj.data.description), marker: markerOf(bucket, obj.data.flags), statId: statIdOf(obj.data.hash) });
+      lines.push({
+        text: cleanMod(obj.data.description),
+        marker: markerOf(bucket, obj.data.flags),
+        statId: statIdOf(obj.data.hash),
+        desecrated: key === "desecratedMods" || obj.data.flags?.desecrated === true,
+      });
     }
   }
   return { lines: lines.filter((l) => l.text !== ""), unreadable };
@@ -179,6 +187,7 @@ export function parseListing(raw: unknown): Listing | null {
     rarity: item?.rarity ?? item?.frameTypeId ?? null,
     itemLevel: item?.ilvl ?? null,
     corrupted: item?.corrupted === true,
+    desecrated: item?.desecrated === true,
     mirrored: item?.duplicated === true || item?.mirrored === true,
     icon: item?.icon ?? null,
     stackSize: item?.stackSize ?? 0,
