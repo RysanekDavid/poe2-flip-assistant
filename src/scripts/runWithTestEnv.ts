@@ -18,6 +18,10 @@ const targets = {
   rates: "src/scripts/testRates.ts",
   "snipe-db": "src/scripts/testSnipeDb.ts",
   system: "src/scripts/testSystem.ts",
+  "tools-regex": "src/scripts/tools/testRegexTool.ts",
+  "tools-craft-moves": "src/scripts/tools/testCraftMoves.ts",
+  "tools-boss-ev": "src/scripts/tools/testBossEv.ts",
+  "tools-liquidate": "src/scripts/tools/testLiquidate.ts",
   "user-league": "src/scripts/testUserLeague.ts",
 } as const;
 type Target = keyof typeof targets;
