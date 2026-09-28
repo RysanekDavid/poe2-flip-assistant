@@ -97,6 +97,19 @@ function testSnipeCardPersistence(): void {
   ok("pre-card SNIPE row → details null, no error", feed.find((a) => a.item_id === "card-legacy")?.details === null);
   const bad = feed.find((a) => a.item_id === "card-bad");
   ok("unparseable card surfaces details_error instead of vanishing", bad?.details === null && (bad.details_error ?? "").length > 0);
+  const logged: unknown[] = [];
+  const realError = console.error;
+  console.error = (...args: unknown[]): void => {
+    logged.push(args);
+  };
+  try {
+    getAlertFeed(1, "Alpha");
+    getAlertFeed(1, "Alpha");
+  } finally {
+    console.error = realError;
+  }
+  ok("a corrupt card is logged once per process, not on every poll", logged.length === 0, String(logged.length));
+  ok("…but still reported on every read", getAlertFeed(1, "Alpha").find((x) => x.item_id === "card-bad")?.details_error != null);
   const payload = AlertCenterSchema.safeParse({ alerts: feed, counts: [], ...browserPrefs(1) });
   ok("the /api/alerts payload (cards included) passes the client schema", payload.success, payload.success ? "" : payload.error.issues[0]?.message);
   let threw = false;

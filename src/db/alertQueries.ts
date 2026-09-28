@@ -96,6 +96,13 @@ const FEED_COLUMNS =
  * The alert center's feed for the viewed league: the newest `perType` alerts OF EACH TYPE. A flat
  * newest-100 list let one chatty type (TREND on a busy market) push every snipe out of the popover.
  */
+/**
+ * Alert ids whose stored card already failed to parse in this process. The feed is polled every
+ * 30 s per tab, so without this one corrupt row would log the same error forever; it is still
+ * returned as details_error on every read.
+ */
+const reportedCorruptCards = new Set<number>();
+
 export function getAlertFeed(userId: number, league: string, perType = 15): AlertFeedRow[] {
   const rows = getDb()
     .prepare(
@@ -107,7 +114,8 @@ export function getAlertFeed(userId: number, league: string, perType = 15): Aler
     )
     .all({ userId, league, perType }) as Array<StoredAlertRow & { foreign_league: string | null }>;
   return rows.map((r) => {
-    const { card, error } = parseStoredCard(r.details, r.id);
+    const { card, error } = parseStoredCard(r.details, r.id, { log: !reportedCorruptCards.has(r.id) });
+    if (error) reportedCorruptCards.add(r.id);
     return { ...r, details: card, details_error: error };
   });
 }

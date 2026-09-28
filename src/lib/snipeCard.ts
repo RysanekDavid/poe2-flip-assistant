@@ -75,20 +75,24 @@ export function cardIcon(icon: string | null): string | null {
  * Read a stored card. A row that fails the schema is reported, not thrown: one bad row must not
  * blank the whole alert feed, but it must not render as if nothing was wrong either.
  */
-export function parseStoredCard(raw: string | null, alertId: number): { card: SnipeCard | null; error: string | null } {
+export function parseStoredCard(
+  raw: string | null,
+  alertId: number,
+  opts: { log: boolean } = { log: true }, // callers that re-read the same row on a poll log it once
+): { card: SnipeCard | null; error: string | null } {
   if (raw == null) return { card: null, error: null };
   let json: unknown;
   try {
     json = JSON.parse(raw);
   } catch (e) {
     const error = `stored card is not JSON: ${e instanceof Error ? e.message : String(e)}`;
-    console.error(`[alerts] alert ${alertId}: ${error}`);
+    if (opts.log) console.error(`[alerts] alert ${alertId}: ${error}`);
     return { card: null, error };
   }
   const parsed = SnipeCardSchema.safeParse(json);
   if (parsed.success) return { card: parsed.data, error: null };
   const issue = parsed.error.issues[0];
   const error = `stored card has an unexpected shape at ${issue?.path.join(".") ?? "?"}: ${issue?.message ?? "invalid"}`;
-  console.error(`[alerts] alert ${alertId}: ${error}`);
+  if (opts.log) console.error(`[alerts] alert ${alertId}: ${error}`);
   return { card: null, error };
 }
