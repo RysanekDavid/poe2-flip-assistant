@@ -21,6 +21,7 @@ import {
   type StashResponse,
 } from "../../../lib/tools/liquidateContract";
 import { describeError } from "../../../lib/clientWarn";
+import { timestampAgeMs } from "../../../lib/sqliteTime";
 import { BundleCard } from "./BundleCard";
 import { EntryList, ItemEntry } from "./ItemEntry";
 import { PlanTable, type SourceLabels } from "./PlanTable";
@@ -131,11 +132,8 @@ function ageText(min: number): string {
   return `${Math.round(min / 1440)} d ago`;
 }
 
-/** Minutes since a DB timestamp; SQLite's CURRENT_TIMESTAMP is UTC without a zone marker. */
 function minutesSince(ts: string | null): number | null {
-  if (ts == null) return null;
-  const at = Date.parse(/[TZ]/.test(ts) ? ts : `${ts.replace(" ", "T")}Z`);
-  return Number.isNaN(at) ? null : (Date.now() - at) / 60_000;
+  return ts == null ? null : timestampAgeMs(ts) / 60_000;
 }
 
 const ageOrUnknown = (min: number | null): string => (min == null ? "age unknown" : ageText(min));

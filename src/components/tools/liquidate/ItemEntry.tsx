@@ -143,9 +143,9 @@ function EntryRow({ item, index, onUpdate, onRemove }: Omit<EntryListProps, "ite
         onChange={(e) => { setQty(e.target.value); const q = parseQty(e.target.value); if (q != null) onUpdate(index, { qty: q }); }}
         className={`w-20 rounded border bg-transparent px-1.5 py-0.5 text-right tabular-nums text-neutral-300 ${parseQty(qty) == null ? "border-bad/70" : "border-neutral-800"}`} />
       <input value={manual} aria-label={`your value for ${item.name}`} inputMode="decimal"
-        placeholder={item.askDiv != null ? `ask÷stack ${fmtSmart(item.askDiv)}` : "own Div"}
+        placeholder={item.askDiv != null ? `ask/unit ${fmtSmart(item.askDiv)}` : "own Div"}
         title={item.askDiv != null
-          ? `listing ask ÷ stack ≈ ${fmtSmart(item.askDiv)} Div — assumes your listing's price covers the whole stack (per-unit vs per-stack notes are unverified in PoE2). Type a value to use one.`
+          ? `your listing's ask ≈ ${fmtSmart(item.askDiv)} Div per unit (a stash note on a stack prices each unit). A hint only — type a value to use one.`
           : "optional own value, Div per unit"}
         onChange={(e) => { setManual(e.target.value); const v = parseDiv(e.target.value); if (v !== null) onUpdate(index, { manualDiv: v }); }}
         className={`w-24 rounded border bg-transparent px-1.5 py-0.5 text-right tabular-nums text-neutral-300 ${m === null ? "border-bad/70" : "border-neutral-800"}`} />

@@ -114,7 +114,7 @@ function DenomCell({ r, icons }: { r: PlanRow; icons: CurrencyIcons }) {
   const icon = icons[d.unit];
   const title = r.recommended === "cx"
     ? `ask per unit in the currency with the lowest gold fee · price grid ~${Math.round(r.cx?.gridStepPct ?? 0)}%`
-    : `stash note: ${r.trade?.note ?? ""}`;
+    : `stash note (per unit — on a stack it prices each unit): ${r.trade?.note ?? ""}`;
   return (
     <td className="px-2" title={title}>
       <span className="inline-flex items-center gap-1 tabular-nums text-neutral-200">

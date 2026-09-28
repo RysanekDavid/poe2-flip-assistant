@@ -5,6 +5,7 @@ import { leagueForUser } from "../../../../../core/leagueUsers";
 import { resolveRates } from "../../../../../core/rates";
 import { groupStashItems } from "../../../../../core/tools/liquidate/plan";
 import { latestStashItems, type StashSnapshotHead } from "../../../../../db/balanceItemQueries";
+import { timestampAgeMs } from "../../../../../lib/sqliteTime";
 import type { StashResponse } from "../../../../../lib/tools/liquidateContract";
 
 export const runtime = "nodejs";
@@ -12,11 +13,8 @@ export const dynamic = "force-dynamic";
 
 const READ_HINT = "use “read from trade” on the Wealth tab (the only step that spends a trade request)";
 
-/** SQLite CURRENT_TIMESTAMP is UTC without a zone marker. */
 function ageMinutes(fetchedAt: string, nowMs: number): number {
-  const at = Date.parse(`${fetchedAt.replace(" ", "T")}Z`);
-  if (Number.isNaN(at)) throw new Error(`balance snapshot has an unreadable fetched_at "${fetchedAt}"`);
-  return Math.max(0, Math.round((nowMs - at) / 60_000));
+  return Math.max(0, Math.round(timestampAgeMs(fetchedAt, nowMs) / 60_000));
 }
 
 function emptyReason(league: string, snapshot: StashSnapshotHead | null, rows: number, skippedOrbs: number): string {

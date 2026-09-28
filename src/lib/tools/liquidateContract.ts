@@ -155,9 +155,9 @@ export const stashItemSchema = z.object({
   rarity: z.string().nullable(),
   tabs: z.array(z.string()),
   /**
-   * Listing ask ÷ stack, in Div, when every listing of it was priced on the ladder. It assumes a
-   * listing's price covers the whole stack — whether a PoE2 note prices the unit or the stack is
-   * unverified, so the panel shows it as a hint, never as a value.
+   * Your own per-unit ask, in Div (a stash note on a stack prices one unit), stack-weighted across
+   * listings of the same item; null unless every listing of it was priced on the ladder. It is
+   * what you ask, not what the market pays, so the panel shows it as a hint, never as a value.
    */
   askDiv: z.number().nullable(),
 });

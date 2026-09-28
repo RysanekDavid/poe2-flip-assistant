@@ -17,7 +17,8 @@ import {
   type CxDigest,
 } from "../api/cxClient";
 import { insertSnapshots } from "../db/marketQueries";
-import { latestRates, timestampAgeMs, upsertCurrencyRates } from "../db/ratesQueries";
+import { latestRates, upsertCurrencyRates } from "../db/ratesQueries";
+import { timestampAgeMs } from "../lib/sqliteTime";
 import { resolveRates } from "../core/rates";
 import { bootstrapRatesForLeague, refreshCxRatesIfStale, type RateSources } from "../core/rateSync";
 import type { LeagueOption } from "../api/types";

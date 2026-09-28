@@ -1,6 +1,7 @@
 import { getDb } from "./database";
 import { config } from "../config/env";
 import type { PricedItem } from "../api/types";
+import { timestampAgeMs } from "../lib/sqliteTime";
 
 /**
  * Market-table persistence — extracted from queries.ts (already over the file-size cap) when
@@ -223,8 +224,7 @@ export function latestItemValuesUpdatedAt(league: string): string | null {
 /** Hours since this league's valuation cache was last refreshed, or null if empty. */
 export function itemValuesAgeHours(league: string): number | null {
   const mx = latestItemValuesUpdatedAt(league);
-  if (!mx) return null;
-  return (Date.now() - new Date(mx.replace(" ", "T") + "Z").getTime()) / 3600_000;
+  return mx == null ? null : timestampAgeMs(mx) / 3600_000;
 }
 
 // --- price book (observed listings for rare-item valuation / snipe detection) ---

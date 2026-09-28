@@ -62,7 +62,7 @@ export function BundleCard({ bundle }: { bundle: LiquidateBundle }) {
         {bundle.notes.map((n) => (
           <li key={n.name} className="flex items-center gap-2 text-xs">
             <span className="min-w-0 flex-1 truncate text-neutral-400" title={n.name}>{n.name}</span>
-            <code className="select-all rounded bg-neutral-900 px-1.5 py-0.5 text-neutral-200" title="stash-tab price note (per unit)">{n.note}</code>
+            <code className="select-all rounded bg-neutral-900 px-1.5 py-0.5 text-neutral-200" title="stash-tab price note — prices EACH unit: on a stack of 20, every one sells at this price">{n.note}</code>
             <CopyButton text={n.note} label={`note for ${n.name}`} />
           </li>
         ))}

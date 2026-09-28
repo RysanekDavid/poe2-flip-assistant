@@ -26,7 +26,10 @@ export function noteAmount(d: Denom): number {
   return Math.max(1, Math.round(d.amount));
 }
 
-/** `~price N divine` for one unit worth `unitDiv`. */
+/**
+ * `~price N divine` for one unit worth `unitDiv`. A stash note on a stack prices ONE unit (Maxroll
+ * bulk-selling guide; PoE2 forum thread 3688218), so the same note serves a stack of any size.
+ */
 export function stashNote(unitDiv: number, rates: ExchangeRates): { note: string; denom: Denom } {
   const raw = denominate(unitDiv, rates);
   const denom: Denom = { amount: noteAmount(raw), unit: raw.unit };
@@ -43,8 +46,8 @@ function competitionNote(c: ListingCompetition | null): string | null {
 
 /**
  * Listing prices for one unit worth `valueDiv`. `qty` is only validated: every figure and the note
- * are per unit, and whether a stash note on a stack prices the unit or the stack is unverified in
- * PoE2. `competition` is poe2scout's live-listing count for a unique; null when there is none.
+ * are per unit, which is how a stash note on a stack is read. `competition` is poe2scout's
+ * live-listing count for a unique; null when there is none.
  */
 export function tradeListingQuote(
   valueDiv: number,
