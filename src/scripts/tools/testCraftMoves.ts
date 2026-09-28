@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { toolIdSchema } from "../../components/tools/toolRegistry";
 import { parseItem } from "../../core/itemParser";
 import { buildStatIndex, resolveLine } from "../../core/statResolver";
-import { comboFor, loadCraftCatalog, type CraftCatalog } from "../../core/tools/craftmoves/catalog";
+import { loadCraftCatalog, type CraftCatalog } from "../../core/tools/craftmoves/catalog";
 import { classifyText, type ItemState } from "../../core/tools/craftmoves/classify";
 import { KB_GATE_EXAMPLES, tierGates } from "../../core/tools/craftmoves/gates";
 import { ALL_RULES, evaluateRules, KB, legalMoves } from "../../core/tools/craftmoves/rules";
@@ -16,6 +16,7 @@ import { assembleMoves } from "../../core/tools/craftmoves/moves";
 import { craftMovesResponseSchema, rulesStale } from "../../lib/tools/craftMovesContract";
 import { itemText, RING, ringDesecratedSuffix, ringLines, renderFamily } from "./craftMovesFixtures";
 import { assertToolPanel } from "./toolsTestKit";
+import { runJewelAndTagCases } from "./craftMovesJewelCases";
 import { SAMPLE_ITEM } from "../../components/tools/craftmoves/craftMovesClient";
 
 const KB_PATH = join(process.cwd(), "docs", "research", KB);
@@ -32,7 +33,7 @@ function testCatalogStamp(cat: CraftCatalog): void {
   }
   const domains = new Set(Object.values(cat.mods).map((m) => m.domain));
   assert.deepEqual([...domains].sort(), ["desecrated", "item"], "only item-domain and desecrated mods");
-  assert.ok(Object.values(cat.mods).some((m) => m.essenceOnly), "essence-only mods are kept");
+  assert.ok(Object.values(cat.mods).some((m) => m.craftedOnly), "essence-only mods are kept");
 }
 
 /** Every KB §3 gate row still reads the same in the KB AND matches every base combo in the catalog. */
@@ -137,13 +138,7 @@ function testLocksAndUnknowns(cat: CraftCatalog): void {
   assert.match(gnawed?.reason ?? "", /Item Level is too high/);
 }
 
-function testJewelAndAdvanced(cat: CraftCatalog): void {
-  const jewelFamily = Object.keys(comboFor(cat, "Jewels", "Ruby")?.prefix ?? {})[0];
-  assert.ok(jewelFamily, "Ruby jewels roll prefixes");
-  const jewelLines = renderFamily(cat, "Jewels", "Ruby", "prefix", jewelFamily);
-  const jewel = classify(cat, itemText({ itemClass: "Jewels", rarity: "Rare", base: "Ruby", ilvl: 80, lines: jewelLines }));
-  assert.deepEqual([jewel.capacity?.total, jewel.openPrefixes, jewel.openTotal], [4, null, 3], "jewels: total known, per side not");
-  assert.match(evaluateRules(jewel).blocked.find((b) => b.id === "omen-sinistral-exaltation")?.reason ?? "", /per-side/);
+function testAdvanced(cat: CraftCatalog): void {
   const adv = classify(cat, itemText({
     ...RING, rarity: "Rare", ilvl: 82,
     lines: ['{ Prefix Modifier "Imaginary" (Tier: 1) }', "Some text the catalog has never seen", '{ Suffix Modifier "of the Kiln" }', "+43(41-45)% to Fire Resistance"],
@@ -223,7 +218,8 @@ testSample(cat);
 testMagic(cat);
 testDesecrated(cat);
 testLocksAndUnknowns(cat);
-testJewelAndAdvanced(cat);
+testAdvanced(cat);
+runJewelAndTagCases(cat);
 testRuleProvenance();
 testPricing();
 testParserMarker();
@@ -234,6 +230,6 @@ for (const bad of ["hunt", "craftmoves", "", "CRAFT-MOVES"]) {
   assert.equal(toolIdSchema.safeParse(bad).success, false, `"${bad}" must not parse as a tool id`);
 }
 console.log(
-  `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB gate rows, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/jewel/advanced), ` +
+  `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB gate rows, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/advanced), jewels/liquids/catalysed/headers/markers, ` +
     `${ALL_RULES.length} rules with provenance, null-not-zero pricing, desecrated marker, contract, panel wiring`,
 );
