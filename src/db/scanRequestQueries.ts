@@ -5,7 +5,7 @@ import { getDb } from "./database";
  * own limiter — a SECOND limiter spending the same account+IP budget as the poller, blind to it.
  * Now the web only enqueues here; the poller drains the queue and runs scans on the one limiter.
  */
-export type ScanKind = "autosnipe" | "hunts";
+export type ScanKind = "autosnipe";
 
 /** Queue a scan (idempotent — a pending request for the same kind+user is simply refreshed). */
 export function requestScan(kind: ScanKind, userId = 0): void {

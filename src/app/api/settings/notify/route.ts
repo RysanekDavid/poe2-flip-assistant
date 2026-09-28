@@ -28,7 +28,7 @@ function settingsView(userId: number) {
   };
 }
 
-/** GET /api/settings/notify → webhook state (masked), per-type routing, digest switch, delivery health. */
+/** GET /api/settings/notify → webhook state (masked), per-type routing (ticker/sound/popup/Discord), digest switch, delivery health. */
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -42,8 +42,10 @@ const Body = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("pref"),
     type: NotifyTypeSchema,
-    discord: z.boolean().optional(),
     ticker: z.boolean().optional(),
+    sound: z.boolean().optional(),
+    popup: z.boolean().optional(),
+    discord: z.boolean().optional(),
   }),
   z.object({ action: z.literal("digest"), enabled: z.boolean() }),
 ]);
@@ -79,7 +81,7 @@ function apply(userId: number, b: Exclude<Body, { action: "test" }>): void {
     case "clearWebhook":
       return setWebhook(userId, null);
     case "pref":
-      return setPref(userId, b.type, { discord: b.discord, ticker: b.ticker });
+      return setPref(userId, b.type, { ticker: b.ticker, sound: b.sound, popup: b.popup, discord: b.discord });
     case "digest":
       return setDigestEnabled(userId, b.enabled);
   }

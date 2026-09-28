@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { TriangleAlert, Bell, BellRing } from "lucide-react";
 import { useAlertCenter } from "./alerts/AlertsContext";
-import { notificationsSupported, requestNotifyPermission } from "./alerts/browserNotify";
 import { AlertActions, LeagueTag, MuteToggle, typeTone } from "./alerts/AlertBits";
 import { tickerRecent, type AlertGroup } from "../lib/alertCenter";
 
@@ -20,34 +18,6 @@ function TypeChip({ group, onMute }: { group: AlertGroup; onMute: (muted: boolea
       </span>
       <MuteToggle type={group.type} muted={group.muted} onToggle={onMute} />
     </span>
-  );
-}
-
-function BrowserNotifyToggle() {
-  const [perm, setPerm] = useState<NotificationPermission | "unsupported">("default");
-  useEffect(() => {
-    setPerm(notificationsSupported() ? Notification.permission : "unsupported");
-  }, []);
-  if (perm === "unsupported") return null;
-  if (perm === "granted") {
-    return (
-      <span className="flex items-center gap-1 text-xs text-good" title="browser notifications on (muted types never pop)">
-        <BellRing className="h-3.5 w-3.5" /> on
-      </span>
-    );
-  }
-  return (
-    <button
-      onClick={() => {
-        requestNotifyPermission()
-          .then(setPerm)
-          .catch((e: unknown) => console.error("[alerts] notification permission request failed", e));
-      }}
-      className="flex items-center gap-1 rounded border border-neutral-700 px-2 py-0.5 text-xs hover:border-sky-500"
-      title="pop a browser notification on new alerts — for a fullscreen game, set up Discord in Settings instead"
-    >
-      <Bell className="h-3.5 w-3.5" /> enable
-    </button>
   );
 }
 
@@ -84,7 +54,6 @@ export function AlertTicker() {
               clear
             </button>
           )}
-          <BrowserNotifyToggle />
         </div>
       </div>
 

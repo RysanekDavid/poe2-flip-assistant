@@ -3,7 +3,7 @@ import { metered, newMeter, type TradeMeter } from "../api/tradeMeter";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
-import { saveSnipeFailure, saveSnipeReport } from "../db/huntQueries";
+import { saveSnipeFailure, saveSnipeReport } from "../db/snipeReportQueries";
 import { getDefaultLeague } from "./leagueState";
 import { listUsers } from "../db/userQueries";
 import { buildStatIndex, type StatIndex, type ResolvedStat } from "./statResolver";
@@ -14,6 +14,8 @@ import { bookReference, feedPriceBook, newBookCounters, describeRefusals, type B
 import { evaluateSnipe } from "./snipeGate";
 import { scanRates } from "./scanRates";
 import { snipeAlertMessage } from "./snipeAlert";
+import { buildSnipeCard } from "./snipeCard";
+import type { SnipeCard } from "../lib/snipeCard";
 import type { DivRates } from "./listingPrice";
 
 /**
@@ -25,8 +27,8 @@ import type { DivRates } from "./listingPrice";
  *      instant-buyout comparables, candidate excluded).
  *   4. Alert only what passes the shared snipe gate — once per listing, ever.
  *
- * Trade2 spend is capped per scan (scan-local search budget + archetype rotation) so hunts keep their
- * cadence. Read-only throughout: it alerts, the human buys.
+ * Trade2 spend is capped per scan (scan-local search budget + archetype rotation) so craft margins
+ * keep their cadence. Read-only throughout: it alerts, the human buys.
  */
 export interface SnipeFinding {
   profile: string;
@@ -43,6 +45,7 @@ export interface SnipeFinding {
   marginPct: number;
   samples: number; // comparables behind the value (confidence)
   searchUrl: string; // working trade link to the comparable search
+  card: SnipeCard; // what the alert renders: icon, mods, valuation basis, item trade link
 }
 
 /** Per-archetype diagnostics — explains what each archetype contributed (tune mins/categories). */
@@ -84,7 +87,7 @@ interface ScanCtx {
   cred: TradeCred;
   league: string;
   report: ScanReport;
-  meter: TradeMeter; // counts only this scan's requests — hunts on the shared limiter don't eat it
+  meter: TradeMeter; // counts only this scan's requests — other consumers on the shared limiter don't eat it
 }
 
 // an archetype costs 1 search; a valuation up to 2 (distinctive + pseudo-only fallback)
@@ -150,7 +153,8 @@ function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
       value: finding.marginPct,
       threshold: config.valuation.discountPct,
       whisper: finding.whisper,
-      link: finding.searchUrl,
+      link: finding.card.tradeUrl, // finds THIS listing; the comparable search rides in the card
+      details: finding.card,
       dedupe: "once",
     });
   }
@@ -158,7 +162,7 @@ function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
 
 /** Confirm + alert a candidate as a snipe, or return null. Spends up to two comparable searches. */
 async function valueAndAlert(c: Candidate, ctx: ScanCtx): Promise<SnipeFinding | null> {
-  const { value, plan, searchUrl } = await valueListingLive(c.listing, ctx.idx, ctx.rates, ctx.cred);
+  const { value, plan, searchUrl, broadened } = await valueListingLive(c.listing, ctx.idx, ctx.rates, ctx.cred);
   const verdict = evaluateSnipe({
     askDiv: c.div,
     refDiv: value.valueDiv,
@@ -184,6 +188,18 @@ async function valueAndAlert(c: Candidate, ctx: ScanCtx): Promise<SnipeFinding |
     marginPct: verdict.marginPct,
     samples: value.samples,
     searchUrl,
+    card: buildSnipeCard({
+      listing: c.listing,
+      league: ctx.league,
+      priceDiv: c.div,
+      valueDiv: verdict.valueDiv,
+      marginPct: verdict.marginPct,
+      exaltPerDivine: ctx.rates.exaltPerDivine,
+      value,
+      searchStats: plan.searchStats,
+      broadened,
+      comparablesUrl: searchUrl,
+    }),
   };
   alertEveryone(finding, ctx);
   return finding;

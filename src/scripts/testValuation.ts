@@ -89,6 +89,7 @@ const mk = (amount: number, currency: string, online = true): Listing => ({
   rarity: "Rare",
   itemLevel: 82,
   corrupted: false,
+  desecrated: false,
   mirrored: false,
   icon: null,
   stackSize: 0,

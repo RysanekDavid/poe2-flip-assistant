@@ -105,7 +105,7 @@ unset DEMO_PASSWORD
 ```
 The script refuses a password on the command line, refuses an echoed TTY, never prints the
 generated application API key, and does not require POESESSID. Shared market and Craft data work;
-user-specific Wealth, positions, alerts and hunts begin empty.
+user-specific Wealth, positions and alerts begin empty.
 After the owner login works, clear `OWNER_PASSWORD` from `.env.local`; it is needed only to seed an
 empty database.
 
@@ -259,7 +259,7 @@ the pipeline never sees them. Manual runs: Actions → Deploy → Run workflow. 
 ## Logs / health
 ```bash
 journalctl -u poe2flip-web -f
-journalctl -u poe2flip-poller -f      # watch "[poll]" / "[hunt]" / "[balance]" lines
+journalctl -u poe2flip-poller -f      # watch "[poll]" / "[autosnipe]" / "[balance]" lines
 journalctl -u poe2flip-coach -f
 journalctl -u poe2flip-coach --since "15 minutes ago" --no-pager | grep coach_timing
 systemctl status poe2flip-web poe2flip-poller poe2flip-coach caddy
@@ -269,11 +269,10 @@ curl -sS http://127.0.0.1:8000/health
 
 ## Notes
 - **Rate limits are partly per-IP** — all users share this box's trade2 budget. The limiter
-  (1 request at a time, 5s floor) keeps it safe; keep HUNT/AUTOSNIPE intervals conservative.
+  (1 request at a time, `TRADE_MIN_REQUEST_MS` floor, default 6s) keeps it safe; keep the
+  AUTOSNIPE interval conservative.
 - **Desktop notifications** (node-notifier) are a no-op on a headless server; users get alerts
-  in the web UI (AlertFeed + browser notifications). That's expected.
-- **liveHunt WebSocket** (HUNT_ENABLED) serves the **owner's** hunts only; members are covered by
-  the per-user REST scan. Per-user live sockets are a future enhancement.
+  in the web UI (Alerts tab, browser notifications, Discord). That's expected.
 - **Coach rate limit:** requests arrive from the authenticated Next.js proxy, so the Python limit
   is a global spend cap for the box, not a separate limit per browser user.
 - **Backups:** `deploy.sh` uses SQLite's consistent `.backup` operation for the product DB, which

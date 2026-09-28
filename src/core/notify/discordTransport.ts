@@ -10,7 +10,7 @@ import { redactWebhook } from "./webhookUrl";
  *  - rejected:     other 4xx — the webhook was deleted/revoked or the payload is invalid;
  *                  retrying cannot help, so the drainer fails the batch at once
  *  - failed:       5xx / network / timeout — transient, retried with backoff
- * `detail` is always token-free: it is logged and shown in Settings.
+ * `detail` is always token-free: it is logged and shown in the Alerts tab.
  */
 export type DeliveryResult =
   | { kind: "ok" }
