@@ -13,7 +13,7 @@ const UA =
 export interface StatOption {
   id: string; // e.g. "explicit.stat_3299347043"
   text: string; // e.g. "+# to maximum Life"
-  group: string; // explicit | implicit | pseudo | rune (| fractured | desecrated in flaggedStats)
+  group: string; // explicit | implicit | pseudo | rune (| fractured | desecrated | crafted in flaggedStats)
 }
 
 export interface BaseGroup {
@@ -38,7 +38,7 @@ interface TradeMeta {
   /** When this snapshot was fetched (ms epoch) — callers memoize on it and show its age. */
   at: number;
   stats: StatOption[];
-  // Fractured/desecrated twins of explicit mods. Kept OUT of `stats` so autocompletes, snipe and
+  // Fractured/desecrated/crafted twins of explicit mods. Kept OUT of `stats` so autocompletes, snipe and
   // hunt resolution keep their explicit-first catalog; only craft legs that must search the flag
   // itself (a fractured +3 amulet is a different product) index these.
   flaggedStats: StatOption[];
@@ -60,7 +60,7 @@ async function get<T>(path: string): Promise<T> {
 
 // Mod groups worth crafting toward. Skip enchant/sanctum/etc noise.
 const STAT_GROUPS = new Set(["explicit", "implicit", "pseudo", "rune"]);
-const FLAGGED_GROUPS = new Set(["fractured", "desecrated"]);
+const FLAGGED_GROUPS = new Set(["fractured", "desecrated", "crafted"]);
 
 const toOptions = (raw: StatsResp, groups: ReadonlySet<string>): StatOption[] =>
   raw.result.filter((g) => groups.has(g.id)).flatMap((g) => g.entries.map((e) => ({ id: e.id, text: e.text, group: g.id })));

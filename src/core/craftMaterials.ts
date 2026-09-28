@@ -96,10 +96,11 @@ export const MATS = {
   astridsCreativity: { id: "astrids-creativity", label: "Astrid's Creativity", group: "currency" },
 
   // --- delirium instills (ninja category "Delirium") ---
-  // Non-Ancient Potent Contempt works on rare BASIC jewels but grants a FIXED damage prefix
-  // (Sapphire→chaos, Ruby→phys, Emerald→ele) — NOT the "+1 Modifier allowed" mod. That one comes
-  // only from the Ancient tier, and Ancient liquids apply ONLY to rare Time-Lost jewels.
+  // Potent (non-Ancient) liquids apply ONLY to rare BASIC jewels, Ancient ones ONLY to rare
+  // Time-Lost jewels (RePoE descriptions). Potent Contempt = "+1 Suffix/Prefix Modifier allowed",
+  // Potent Ferocity = "(40–60)% increased Effect of Suffixes/Prefixes" (poe2db + RePoE, KB §6).
   potentLiquidContempt: { id: "potent-liquid-contempt", label: "Potent Liquid Contempt", group: "delirium" },
+  potentLiquidFerocity: { id: "potent-liquid-ferocity", label: "Potent Liquid Ferocity", group: "delirium" },
   ancientPotentLiquidContempt: { id: "ancient-potent-liquid-contempt", label: "Ancient Potent Liquid Contempt", group: "delirium" },
   ancientPotentLiquidFerocity: { id: "ancient-potent-liquid-ferocity", label: "Ancient Potent Liquid Ferocity", group: "delirium" },
 } as const satisfies Record<string, CraftMaterial>;
