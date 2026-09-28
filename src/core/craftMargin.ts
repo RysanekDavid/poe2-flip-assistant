@@ -19,7 +19,7 @@ import { getDefaultLeague } from "./leagueState";
 import { resolveRates } from "./rates";
 import { storedReport } from "./craftReports";
 import { BASE_PERCENTILE, computeMargin, computeNearMiss, RETURN_FLAG_MULTIPLE, rankGate } from "./craftValuation";
-import { RECIPES, type CraftRecipe, type RecipeMarginReport } from "./craftRecipes";
+import { RECIPES, type CraftRecipe, type LegReport, type RecipeMarginReport } from "./craftRecipes";
 import { priceLeg, priceMaterials, tryLeg, isFailure, type LegContext } from "./craftLegPricing";
 import { priceResultLeg } from "./craftResultValuation";
 
@@ -43,11 +43,30 @@ export interface ScanOutcome {
   transient: boolean;
 }
 
-/** Build a full report for one recipe: materials (free) → both legs (live) → EV + near-miss.
- *  Market and transport failures become a report, never an exception (only an engine bug throws).
- *  Each leg is priced independently, so a base that cleared the floor stays in the report (and
- *  can prefill attempt costs) even when the result leg failed. */
-async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: Map<string, MaterialPrice>): Promise<ScanOutcome> {
+/**
+ * EV + near-miss for two priced legs. An engine bug (a comparable leg without a band, a near-miss
+ * on a zero median) becomes a leg-failed report naming the error instead of an exception, so one
+ * bad recipe can't abort a manual sweep of all of them; it is not transient (a rescan won't fix
+ * a bug), so the visible failure replaces the stored report.
+ */
+export function assembleReport(shell: RecipeMarginReport, base: LegReport, result: LegReport): ScanOutcome {
+  try {
+    const { evDiv, marginPct, returnFlagged } = computeMargin(base.priceDiv, result.priceDiv, shell.materialsDiv, shell.hitRate);
+    if (!result.band) throw new Error("comparable result leg has no band");
+    const nearMiss = computeNearMiss(base.priceDiv, result.band, shell.materialsDiv, shell.hitRate, { base, result });
+    return { report: { ...shell, base, result, evDiv, marginPct, returnFlagged, nearMiss }, transient: false };
+  } catch (e) {
+    const error = `${shell.key}: engine error — ${e instanceof Error ? e.message : String(e)}`;
+    console.error(`[craft-margin] ${error}`);
+    return { report: { ...shell, status: "leg-failed", base, result, error }, transient: false };
+  }
+}
+
+/** Build a full report for one recipe: materials (free) → rates → both legs (live) → EV +
+ *  near-miss. Never throws: market, transport and engine failures all become a report. Each leg
+ *  is priced independently, so a base that cleared the floor stays in the report (and can
+ *  prefill attempt costs) even when the result leg failed. */
+export async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: Map<string, MaterialPrice>): Promise<ScanOutcome> {
   const { lines, missing } = priceMaterials(recipe, prices);
   const materialsDiv = lines.reduce((s, l) => s + (l.totalDiv ?? 0), 0);
   const shell: RecipeMarginReport = {
@@ -69,6 +88,11 @@ async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: Map<str
     const error = `no price for: ${missing.join(", ")} — add to a fetched ninja category or set manualPriceDiv`;
     return { report: { ...shell, status: "missing-materials", error }, transient: false };
   }
+  // Checked before either leg: without rates the result can't be valued, so pricing the base
+  // would spend 1 search + 4 fetches on a report that is thrown away (the previous one is kept).
+  if (!ctx.rates) {
+    return { report: { ...shell, status: "leg-failed", error: "no exchange rates — legs not priced this tick" }, transient: true };
+  }
   const base = await tryLeg(() => priceLeg(recipe.base, BASE_PERCENTILE, ctx));
   const result = await tryLeg(() => priceResultLeg(recipe.result, ctx));
   if (isFailure(base) || isFailure(result)) {
@@ -82,11 +106,7 @@ async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: Map<str
     };
     return { report, transient: failures.some((f) => f.transient) };
   }
-  const { evDiv, marginPct, returnFlagged } = computeMargin(base.priceDiv, result.priceDiv, materialsDiv, recipe.hitRate);
-  // priceResultLeg always sets a band; a missing one is an engine bug, not a market state
-  if (!result.band) throw new Error(`${recipe.key}: comparable result leg has no band`);
-  const nearMiss = computeNearMiss(base.priceDiv, result.band, materialsDiv, recipe.hitRate, { base, result });
-  return { report: { ...shell, base, result, evDiv, marginPct, returnFlagged, nearMiss }, transient: false };
+  return assembleReport(shell, base, result);
 }
 
 /** Pure: keep the stored report instead of the new one? Only when the new scan failed for a

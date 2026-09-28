@@ -3,18 +3,19 @@
 import "../config/env";
 import { priceMaterials, legToQuery, tryLeg, isFailure } from "../core/craftLegPricing";
 import { priceResultLeg, resultQuery, LegMarketError } from "../core/craftResultValuation";
-import { config } from "../config/env";
 import { computeMargin } from "../core/craftValuation";
 import { MATS, ALL_MATERIALS } from "../core/craftMaterials";
 import { RECIPES } from "../core/craftRecipes";
 import { buildStatIndex } from "../core/statResolver";
 import { buildTradeQuery } from "../lib/tradeLink";
 import { getDb } from "../db/database";
-import type { CraftRecipe, RecipeStatSpec } from "../core/craftRecipes";
+import type { CraftRecipe, LegReport, RecipeMarginReport, RecipeStatSpec } from "../core/craftRecipes";
+import { assembleReport, buildReport } from "../core/craftMargin";
 import type { MaterialPrice } from "../db/craftQueries";
 import type { StatOption } from "../api/tradeMeta";
 
 let fail = 0;
+const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
 const ok = (name: string, cond: boolean, extra = "") => {
   console.log(`${cond ? "PASS" : "FAIL"}  ${name}${extra ? ` — ${extra}` : ""}`);
   if (!cond) fail++;
@@ -112,7 +113,7 @@ const ok = (name: string, cond: boolean, extra = "") => {
   ok("…and surfaced as unresolved (gates the report), never silent", fallback.unresolved.length === 1 && /no fractured stat/.test(fallback.unresolved[0] ?? ""), fallback.unresolved.join(","));
 }
 
-// --- result queries: strict = every stat with relaxed mins; relaxed = tier-1 only; always
+// --- result queries: strict = every stat at the recipe's own mins; relaxed = tier-1 only; always
 //     instant-buyout, never mirrored, putrefaction results corrupted ---
 {
   const CATALOG: StatOption[] = [
@@ -122,9 +123,8 @@ const ok = (name: string, cond: boolean, extra = "") => {
   const idx = buildStatIndex(CATALOG);
   const boots = RECIPES.find((r) => r.key === "boots_putrefaction")!;
   const strict = resultQuery(boots.result, { idx }, false).query;
-  const relax = 1 - config.valuation.relaxPct / 100;
   ok("strict result search keeps tier-1 AND tier-2 stats", (strict.stats ?? []).map((f) => f.id).join(",") === "explicit.ms,pseudo.res");
-  ok("strict mins widened by the valuation relax %", strict.stats?.[0]?.min === Math.floor(30 * relax), String(strict.stats?.[0]?.min));
+  ok("strict mins are the recipe's sellable-tier floors, unrelaxed (30 / 60)", strict.stats?.[0]?.min === 30 && strict.stats?.[1]?.min === 60, JSON.stringify(strict.stats));
   ok("result search is instant-buyout and never mirrored", strict.instantBuyout === true && strict.mirrored === false);
   const relaxed = resultQuery(boots.result, { idx }, true).query;
   ok("relaxed result search drops tier-2 support stats", (relaxed.stats ?? []).map((f) => f.id).join(",") === "explicit.ms");
@@ -132,6 +132,29 @@ const ok = (name: string, cond: boolean, extra = "") => {
   ok("putrefaction recipes found", putrefaction.length === 3, putrefaction.map((r) => r.key).join(","));
   ok("every putrefaction result leg searches CORRUPTED comparables", putrefaction.every((r) => resultQuery(r.result, { idx }, false).query.corrupted === true));
   ok("base legs stay uncorrupted", putrefaction.every((r) => legToQuery(r.base, idx).query.corrupted === false));
+}
+
+// --- a tier floor is never widened into the tier below: a fractured +3 search stays ≥ 3 ---
+{
+  // one catalog entry per spec'd text in the spec'd group, so every recipe stat resolves exactly
+  const specs = RECIPES.flatMap((r) => [...r.base.stats, ...r.result.stats]);
+  const catalog = new Map(specs.map((st) => [`${st.group ?? "explicit"}|${st.text}`, st]));
+  const idx = buildStatIndex(
+    [...catalog.keys()].map((k) => {
+      const [group, text] = k.split("|") as [string, string];
+      return { id: `${group}.${text}`, text, group };
+    }),
+  );
+  const amulet = RECIPES.find((r) => r.key === "amulet_fracture_plus3")!;
+  for (const tier1Only of [false, true]) {
+    const plus3 = resultQuery(amulet.result, { idx }, tier1Only).query.stats?.[0];
+    ok(`fracture +3 ${tier1Only ? "relaxed" : "strict"} search: fractured stat, min stays 3`, plus3?.id.startsWith("fractured.") === true && plus3.min === 3, JSON.stringify(plus3));
+  }
+  const drifted = RECIPES.filter((r) => {
+    const sent = (resultQuery(r.result, { idx }, false).query.stats ?? []).map((f) => f.min ?? null);
+    return sent.join(",") !== r.result.stats.map((st) => st.min ?? null).join(",");
+  });
+  ok("every result leg sends exactly the recipe's mins", drifted.length === 0, drifted.map((r) => r.key).join(","));
 }
 
 // --- result-leg data: every result leg defines its archetype; tiers only on result legs ---
@@ -155,6 +178,38 @@ async function noRatesIsTransient(): Promise<void> {
     typed = e instanceof LegMarketError;
   }
   ok("…raised as LegMarketError", typed);
+  // the whole recipe: rates are checked BEFORE the base leg, so no search is spent (with an empty
+  // POESESSID a base search would fail with a POESESSID error instead)
+  const bare: CraftRecipe = { ...RECIPES[0]!, materials: [] };
+  const built = await buildReport(bare, ctx, new Map());
+  ok(
+    "rates outage: transient leg-failed report, base never priced",
+    built.transient && built.report.status === "leg-failed" && built.report.base === null && /no exchange rates/.test(built.report.error ?? ""),
+    built.report.error ?? "",
+  );
+}
+
+// --- engine bugs become a visible leg-failed report, never an exception that aborts a sweep ---
+{
+  const shell: RecipeMarginReport = {
+    key: "t", status: "ok", base: null, result: null, materials: [], materialsDiv: 1, hitRate: 0.3, evDiv: 0, marginPct: 0,
+    error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null,
+  };
+  const leg = (over: Partial<LegReport>): LegReport => ({
+    priceDiv: 10, samples: 10, total: 30, searchUrl: "u", outliersDropped: 0, unresolvedStats: [], icon: null, floorDiv: null,
+    percentile: null, sampled: 20, method: "comparable-median", band: { p25: 8, p50: 10, p75: 12 }, relaxed: false, unrated: 0, ...over,
+  });
+  const good = assembleReport(shell, leg({ priceDiv: 1, method: "floor-percentile", band: null }), leg({}));
+  ok("priced legs → ok report with EV and near-miss", good.report.status === "ok" && near(good.report.evDiv, 1) && good.report.nearMiss?.costDiv === 2);
+  const bandless = assembleReport(shell, leg({ priceDiv: 1 }), leg({ band: null }));
+  ok(
+    "result leg without a band → leg-failed naming the engine error, legs kept, not transient",
+    bandless.report.status === "leg-failed" && /engine error — comparable result leg has no band/.test(bandless.report.error ?? "") &&
+      bandless.report.base !== null && bandless.report.result !== null && !bandless.transient,
+    bandless.report.error ?? "",
+  );
+  const zeroMedian = assembleReport(shell, leg({ priceDiv: 1 }), leg({ band: { p25: 0, p50: 0, p75: 0 } }));
+  ok("near-miss on a zero median → leg-failed, not a throw", zeroMedian.report.status === "leg-failed" && /engine error/.test(zeroMedian.report.error ?? ""));
 }
 
 // --- recipe integrity: 14 recipes, valid hitRate, every material has a positive expected qty ---
