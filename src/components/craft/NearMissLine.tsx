@@ -34,7 +34,7 @@ const pct = (x: number): string => `${(x * 100).toFixed(0)}%`;
  * sell for. Blocking reasons say why it is not a top pick even when EV is positive.
  */
 export function NearMissLine({ nm, gate, ex }: { nm: NearMiss; gate: RankGate; ex: number | null }) {
-  const blocking = [...gate.reasons, ...(nm.evDiv <= 0 ? ["EV negative"] : [])];
+  const blocking = [...gate.reasons, ...(nm.evDiv <= 0 ? ["EV not positive"] : [])];
   return (
     <div className="rounded-md border border-neutral-800 bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">

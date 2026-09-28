@@ -5,8 +5,11 @@ from the database (recipe labels, the craft gate, FarmAdvisor's tables, freshnes
 is mirrored in Python; these tests fail when either side changes alone.
 """
 
+import json
 import re
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import get_args
 
 import pytest
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -14,6 +17,7 @@ from pydantic import BaseModel
 
 from src.config import APP_ROOT, Settings
 from src.tools import craft_gate, farm_tables, flips, get_tools, snipe
+from src.tools.engine_common import age_minutes
 
 _ENGINE_TOOLS = {"get_top_flips", "get_craft_margins", "get_snipe_report", "get_farm_advice"}
 
@@ -140,6 +144,11 @@ def _aliases(model: type[BaseModel]) -> set[str]:
             "src/core/craftRecipes.ts",
             "export const RecipeMarginReportSchema = z.object({",
         ),
+        (
+            craft_gate.NearMiss,
+            "src/core/craftRecipes.ts",
+            "export const NearMissSchema = z.object({",
+        ),
         (snipe.SnipeFinding, "src/core/autoSnipe.ts", "export interface SnipeFinding {"),
         (snipe.ScanReport, "src/core/autoSnipe.ts", "export interface ScanReport {"),
     ],
@@ -150,6 +159,42 @@ def test_stored_json_field_names_match_the_typescript_schemas(
     ts_keys = _ts_keys(_ts(path), opener)
 
     assert _aliases(model) <= ts_keys, _aliases(model) - ts_keys
+
+
+def _zod_enum(source: str, field: str) -> tuple[str, ...]:
+    match = re.search(rf"^  {field}: z\.enum\(\[([^\]]+)\]\)", source, re.MULTILINE)
+    assert match is not None, f"{field} enum not found"
+    return tuple(re.findall(r'"([^"]+)"', match.group(1)))
+
+
+def test_stored_enums_match_the_typescript_schemas() -> None:
+    source = _ts("src/core/craftRecipes.ts")
+    assert _zod_enum(source, "valuation") == get_args(craft_gate.Valuation)
+    assert _zod_enum(source, "confidence") == get_args(craft_gate.Confidence)
+    method = craft_gate.LegReport.model_fields["method"].annotation
+    assert _zod_enum(source, "method") == get_args(method)
+
+
+def test_rank_key_matches_typescript_golden() -> None:
+    """tests/fixtures/craft_rank_golden.json is also asserted by src/scripts/testCraftRank.ts."""
+    golden = json.loads((Path(__file__).parent / "fixtures" / "craft_rank_golden.json").read_text())
+    now = datetime.fromisoformat(golden["now"]).replace(tzinfo=UTC)
+    keyed = []
+    for case in golden["cases"]:
+        verdict = craft_gate.verdict_of(case["gateOk"], case["evDiv"], case["status"] == "ok")
+        age = age_minutes(case["scannedAt"], now)
+        rank = craft_gate.rank_key(
+            verdict, case["evDiv"], case["marginPct"], case["confidence"], age, case["key"]
+        )
+        keyed.append((rank, verdict, case["key"]))
+    ordered = sorted(keyed)
+    expected = golden["expected"]
+    tiers = {"pick": "picks", "near_miss": "nearMisses", "unpriced": "unpriced"}
+    for verdict, name in tiers.items():
+        assert [key for _, v, key in ordered if v == verdict] == expected[name], name
+    assert [key for *_, key in ordered] == (
+        expected["picks"] + expected["nearMisses"] + expected["unpriced"]
+    )
 
 
 @pytest.mark.parametrize("name", sorted(_ENGINE_TOOLS))
