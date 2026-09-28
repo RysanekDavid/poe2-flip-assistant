@@ -57,20 +57,16 @@ export const RECIPES: CraftRecipe[] = [
       stats: [
         { text: "Notable Passive Skills in Radius also grant #% increased Critical Spell Damage Bonus", tier: 1 },
         { text: "Notable Passive Skills in Radius also grant #% increased Critical Hit Chance for Spells", tier: 1 },
-        { text: "#% increased Effect of Suffixes", tier: 2 },
       ],
-      note: "Valued from instant-buyout comparables: rare Time-Lost Sapphire with BOTH caster grants (Crit Spell Damage + Crit Chance for Spells), plus the Ferocity 'increased Effect of Suffixes' mod when enough are listed (else the two grants alone). Jewel roll mins aren't searchable — presence only.",
+      // no "Effect of Suffixes" support stat: that is the POTENT (basic-jewel) Ferocity mod; Ancient
+      // Ferocity grants a radius resistance on Time-Lost jewels (poe2db + RePoE, KB §6, 2026-09-28)
+      note: "Valued from instant-buyout comparables: rare Time-Lost Sapphire with BOTH caster grants (Crit Spell Damage + Crit Chance for Spells). Jewel roll mins aren't searchable — presence only.",
     },
     materials: [
       {
         material: MATS.ancientPotentLiquidContempt,
         qtyPerAttempt: 1,
         note: "Ancient tier — the only one that works on (rare) Time-Lost jewels. Removes a random mod + grants '+1 Suffix Modifier allowed' OR the prefix version; prefix result = discard the base (loss lives in hitRate).",
-      },
-      {
-        material: MATS.ancientPotentLiquidFerocity,
-        qtyPerAttempt: 1,
-        note: "Removes a random mod + grants (40–60)% increased Effect of Suffixes — eats the junk prefix and buffs your suffixes in one slam.",
       },
       { material: MATS.omenDextralNecromancy, qtyPerAttempt: 1, note: "Forces the cranium's desecration onto a suffix." },
       { material: MATS.preservedCranium, qtyPerAttempt: 1 },

@@ -1,6 +1,7 @@
 import { getDb } from "./database";
 import { config } from "../config/env";
 import type { PricedItem } from "../api/types";
+import { timestampAgeMs } from "../lib/sqliteTime";
 
 /**
  * Market-table persistence — extracted from queries.ts (already over the file-size cap) when
@@ -212,13 +213,18 @@ export function uniqueValueMap(league: string): Map<string, number> {
   return m;
 }
 
-/** Hours since this league's valuation cache was last refreshed, or null if empty. */
-export function itemValuesAgeHours(league: string): number | null {
+/** Raw sqlite UTC stamp of this league's newest valuation-cache row, or null if empty. */
+export function latestItemValuesUpdatedAt(league: string): string | null {
   const row = getDb()
     .prepare("SELECT MAX(updated_at) AS mx FROM item_values WHERE league = ?")
     .get(league) as { mx: string | null };
-  if (!row.mx) return null;
-  return (Date.now() - new Date(row.mx.replace(" ", "T") + "Z").getTime()) / 3600_000;
+  return row.mx ?? null;
+}
+
+/** Hours since this league's valuation cache was last refreshed, or null if empty. */
+export function itemValuesAgeHours(league: string): number | null {
+  const mx = latestItemValuesUpdatedAt(league);
+  return mx == null ? null : timestampAgeMs(mx) / 3600_000;
 }
 
 // --- price book (observed listings for rare-item valuation / snipe detection) ---

@@ -12,7 +12,7 @@ import { balanceProblem, snapshotBalancesAll, type BalanceLoopDeps } from "../sc
 const RATES = { exaltPerDivine: 400, chaosPerDivine: 20 };
 
 function scan(): AccountCurrency {
-  return { divine: 3, exalted: 10, chaos: 5, otherDiv: 1, gearAtAskDiv: 0.5, unpriced: 0, listingsSeen: 100, total: 140, truncated: true, tabs: [] };
+  return { divine: 3, exalted: 10, chaos: 5, otherDiv: 1, gearAtAskDiv: 0.5, unpriced: 0, listingsSeen: 100, total: 140, truncated: true, tabs: [], items: [] };
 }
 
 function snapshot(league: string): BalanceSnapshot {

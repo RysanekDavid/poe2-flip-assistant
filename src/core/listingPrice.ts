@@ -30,7 +30,11 @@ function divPerUnit(currency: string, rates: DivRates): number | null {
   }
 }
 
-/** A listing ask in Divine. Non-positive amounts and off-ladder currencies are `unrated`. */
+/**
+ * A listing ask in Divine — PER UNIT, like the note it came from (see ListingPrice). A caller
+ * valuing a whole stacked listing multiplies by the stack itself. Non-positive amounts and
+ * off-ladder currencies are `unrated`.
+ */
 export function listingDiv(price: { amount: number; currency: string }, rates: DivRates): ListingDiv {
   if (!(price.amount > 0)) return { kind: "unrated", currency: price.currency, reason: `non-positive amount ${price.amount}` };
   const div = amountInDivine(price.amount, price.currency, rates);

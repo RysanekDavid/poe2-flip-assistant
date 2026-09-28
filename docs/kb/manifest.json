@@ -5,8 +5,8 @@
       "path": "docs/kb/currency-core.md",
       "patch": "0.5.4b",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-07-02",
-      "sha256": "d351779569610157627d2f48b36fae595cd4ebff15da8f34883d5de7286c2457"
+      "stamped_at": "2026-09-29",
+      "sha256": "8ce4dac48442fbdc663c64ef267e5253ba17ac991aa31f2ecbe7083618460b8f"
     },
     {
       "path": "docs/kb/breach.md",
@@ -26,8 +26,8 @@
       "path": "docs/kb/delirium.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-07-29",
-      "sha256": "3c2d14c93f430f3a6db8160b7a98f41526d19e5179a0118bf305c3068b8560c9"
+      "stamped_at": "2026-09-29",
+      "sha256": "5db3356443899bd3d009592eb15b59c9f23fe7003e3f26e8bc5d94e4c3d009d4"
     },
     {
       "path": "docs/kb/expedition-ritual.md",
@@ -75,15 +75,15 @@
       "path": "docs/kb/creator-videos.md",
       "patch": "0.5.x",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-07-29",
-      "sha256": "0cac816d7c6e8e6701100cafa0b1e66ade1d7d4a0ae218973a4d3fc9be6fee84"
+      "stamped_at": "2026-09-29",
+      "sha256": "a2b42197d11faeb87e496bd793726855d24ab94f6d07933d2a806e89ade7baa7"
     },
     {
       "path": "docs/research/poe2-crafting-knowledge.md",
       "patch": "0.5.x",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-08-02",
-      "sha256": "5a2378f674d5f34e9195b9048eca072be753a05f5fbe53d6bdfe1192413fc416"
+      "stamped_at": "2026-09-29",
+      "sha256": "b21a71afe3f9bdbf1980eba0effb721e3b5c4ffcb97337e0bacf1a2a6affe423"
     },
     {
       "path": "docs/research/poe2-bow-crafting-0.5.md",

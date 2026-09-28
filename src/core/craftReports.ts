@@ -1,5 +1,5 @@
 import { getCraftMargins, type CraftMarginRow } from "../db/craftQueries";
-import { timestampAgeMs } from "../db/ratesQueries";
+import { timestampAgeMs } from "../lib/sqliteTime";
 import { config } from "../config/env";
 import { RECIPES, RecipeMarginReportSchema, type RecipeMarginReport } from "./craftRecipes";
 import type { ReportFreshness } from "./craftValuation";

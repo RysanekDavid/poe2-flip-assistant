@@ -1,6 +1,9 @@
 import { deriveRates, type ExchangeRates } from "./priceEngine";
 import { latestSnapshots, latestFetchedAt } from "../db/marketQueries";
-import { latestRates, timestampAgeMs, type CurrencyRateRow, type RateSource } from "../db/ratesQueries";
+import { latestRates, type CurrencyRateRow, type RateSource } from "../db/ratesQueries";
+// Zone-less SQLite stamps read as local time would be an hours-wide freshness bug in exactly the
+// check that decides whether a rate is still usable; the shared parser pins them to UTC.
+import { timestampAgeMs } from "../lib/sqliteTime";
 
 /**
  * One place that answers "what is a Divine worth in this league right now", across three

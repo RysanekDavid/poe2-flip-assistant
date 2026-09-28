@@ -16,6 +16,14 @@ export interface ListingMod {
   desecrated: boolean; // a desecrated modifier — valued like an explicit, shown apart on the item card
 }
 
+/**
+ * A listing's asking price for ONE UNIT. A stash price note on a stack prices a single unit
+ * (Maxroll bulk-selling guide; PoE2 forum thread 3688218), and trade2's fetch carries
+ * `listing.price {type, amount, currency}` apart from `item.stackSize` with no stack total — so a
+ * whole listing is worth amount × stackSize. A `~price N/M cur` fraction note is expected to reach
+ * us as its decimal quotient (still per unit); `amount` is schema-checked as a number, so a
+ * fraction ever arriving as a string fails the fetch loudly instead of mis-pricing.
+ */
 export interface ListingPrice {
   amount: number;
   currency: string;
@@ -37,7 +45,7 @@ export interface Listing {
   desecrated: boolean; // the item carries desecrated modifiers
   mirrored: boolean;
   icon: string | null;
-  stackSize: number;
+  stackSize: number; // units in the listing; 0 = not stackable (one item). `price` is per unit.
   mods: string[]; // display texts of modLines (craft routes + UI)
   modLines: ListingMod[];
   unreadableMods: number; // mod entries in neither string nor ItemMod shape — a contract break

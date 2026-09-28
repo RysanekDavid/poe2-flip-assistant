@@ -84,8 +84,10 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   ok("per-leg floor still drops sub-exalt dumps", cheapBait.dropped === 2);
   const legFloors = RECIPES.filter((r) => r.base.minAskEx != null).map((r) => r.key).sort().join(",");
   ok(
-    "exactly the ~1-ex-base recipes carry a cheap base floor",
-    legFloors === "amulet_giga_spirit,armour_putrefaction,boots_putrefaction,boots_putrefaction_ev,gloves_projectile_plus2",
+    // the budget jewel base is ~10–30 ex — still under the 0.05 Div default at league exalt rates
+    "exactly the cheap-base recipes (~1–30 ex bases) carry a cheap base floor",
+    legFloors ===
+      "amulet_giga_spirit,armour_putrefaction,boots_putrefaction,boots_putrefaction_ev,gloves_projectile_plus2,jewel_liquid_5mod_budget",
     legFloors,
   );
   ok("no result leg lowers its floor", RECIPES.every((r) => r.result.minAskEx == null));

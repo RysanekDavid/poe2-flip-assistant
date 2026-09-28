@@ -2,12 +2,8 @@ import { deriveCxRates, fetchCxDigest, type CxDigest, type CxRates } from "../ap
 import { fetchScoutLeagues } from "../api/scoutClient";
 import { ingestCxDigest, LIVE_HISTORY_SOURCES } from "./cx/cxIngest";
 import type { LeagueOption } from "../api/types";
-import {
-  ratesFetchedAt,
-  timestampAgeMs,
-  upsertCurrencyRates,
-  type RateUpsert,
-} from "../db/ratesQueries";
+import { ratesFetchedAt, upsertCurrencyRates, type RateUpsert } from "../db/ratesQueries";
+import { timestampAgeMs } from "../lib/sqliteTime";
 
 /**
  * Network-side of the rates ladder: pulling GGG's currency-exchange digest into currency_rates.
