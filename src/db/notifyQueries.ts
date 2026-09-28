@@ -152,7 +152,7 @@ export function dueRows(userId: number, now: number, limit: number, db: Database
   const rows = db
     .prepare(
       `SELECT q.id AS queue_id, q.kind, q.attempts, q.payload_json, q.alert_id,
-              a.type, a.item_id, a.item_name, a.message, a.value, a.threshold, a.whisper, a.link, a.league, a.created_at
+              a.type, a.item_id, a.item_name, a.message, a.value, a.threshold, a.whisper, a.link, a.details, a.league, a.created_at
        FROM notify_queue q LEFT JOIN alerts a ON a.id = q.alert_id
        WHERE q.user_id = ? AND q.status = 'pending' AND q.next_attempt_at <= ?
        ORDER BY q.id LIMIT ?`,
@@ -303,7 +303,7 @@ export function digestData(
   const types = topTypes.map((t) => `'${t}'`).join(", ");
   const top = db
     .prepare(
-      `SELECT id, type, item_id, item_name, message, value, threshold, whisper, link, league, created_at FROM (
+      `SELECT id, type, item_id, item_name, message, value, threshold, whisper, link, details, league, created_at FROM (
          SELECT *, ROW_NUMBER() OVER (PARTITION BY type ORDER BY value DESC, id DESC) AS rn FROM alerts
          WHERE user_id = @userId AND created_at > @from AND created_at <= @to AND type IN (${types}) AND value IS NOT NULL
        ) WHERE rn <= 3 ORDER BY type, value DESC`,

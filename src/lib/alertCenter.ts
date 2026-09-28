@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { NOTIFY_TYPES } from "../core/notify/prefs";
+import { SnipeCardSchema } from "./snipeCard";
 
 /** /api/alerts payload. Parsed at the client boundary so a server shape change fails loudly. */
 export const AlertSchema = z.object({
@@ -12,6 +13,8 @@ export const AlertSchema = z.object({
   threshold: z.number().nullable(),
   whisper: z.string().nullable(),
   link: z.string().nullable(),
+  details: SnipeCardSchema.nullable(), // SNIPE item card
+  details_error: z.string().nullable(), // a stored card that no longer parses
   seen: z.number(),
   created_at: z.string(),
   foreign_league: z.string().nullable(), // set when the alert belongs to a league other than the one viewed

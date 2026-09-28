@@ -10,6 +10,7 @@ import { maskWebhook, redactWebhook, WebhookUrlSchema } from "../core/notify/web
 import { alertBatchMessage, messageChars, type NotifyAlert } from "../core/notify/discordMessage";
 import { defaultPrefs, NOTIFY_TYPES } from "../core/notify/prefs";
 import { ensureNotifySchema } from "../db/notifyMigrations";
+import { sampleSnipeCard } from "./snipeCardFixture";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -38,6 +39,7 @@ testEncryption();
 testPrefDefaults();
 testEnqueue();
 testMessageLimits();
+testCardEmbed();
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
 process.exit(fail === 0 ? 0 : 1);
@@ -152,7 +154,7 @@ function testMessageLimits(): void {
   const huge = (i: number): NotifyAlert => ({
     id: i, type: "SNIPE", item_id: `x${i}`, item_name: "N".repeat(400), message: "M".repeat(3000), value: 42.123, threshold: 35,
     whisper: `@seller Hi, I'd like to buy ${"W".repeat(1200)}`, link: `https://www.pathofexile.com/trade2/search/poe2/L/${"q".repeat(700)}`,
-    league: "Runes of Aldur", created_at: "2026-09-26 10:00:00",
+    details: null, league: "Runes of Aldur", created_at: "2026-09-26 10:00:00",
   });
   const msg = alertBatchMessage(Array.from({ length: 10 }, (_, i) => huge(i)));
   ok("10 alerts → one message with 10 embeds", msg.embeds.length === 10);
@@ -173,4 +175,21 @@ function testMessageLimits(): void {
     threw = true;
   }
   ok("empty batch refused loudly", threw);
+}
+
+function testCardEmbed(): void {
+  const card = sampleSnipeCard();
+  const a: NotifyAlert = {
+    id: 7, type: "SNIPE", item_id: "listing-7", item_name: "Doom Grip", message: "75% under — 90 ex vs ~1.8 div (7 comps)",
+    value: 75, threshold: 35, whisper: card.whisper, link: card.tradeUrl, details: JSON.stringify(card),
+    league: "Runes of Aldur", created_at: "2026-09-26 10:00:00",
+  };
+  const embed = alertBatchMessage([a]).embeds[0];
+  ok("SNIPE card → item art as the embed thumbnail", embed?.thumbnail?.url === card.icon);
+  ok("SNIPE card → title links to the item's own trade search", embed?.url === card.tradeUrl);
+  const names = embed?.fields.map((f) => f.name).join(",") ?? "";
+  ok("SNIPE card → Ask, Value, Item fields replace the bare value", names === "Ask,Value,Item,League,Whisper,Trade", names);
+  ok("title carries the base type", embed?.title === "SNIPE · Doom Grip (Vaal Gauntlets)", embed?.title);
+  const broken = alertBatchMessage([{ ...a, details: "{\"v\":2}" }]).embeds[0];
+  ok("unreadable card → plain text embed, no thumbnail", broken?.thumbnail === undefined && broken?.fields[0]?.name === "Value");
 }

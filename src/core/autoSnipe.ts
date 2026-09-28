@@ -14,6 +14,8 @@ import { bookReference, feedPriceBook, newBookCounters, describeRefusals, type B
 import { evaluateSnipe } from "./snipeGate";
 import { scanRates } from "./scanRates";
 import { snipeAlertMessage } from "./snipeAlert";
+import { buildSnipeCard } from "./snipeCard";
+import type { SnipeCard } from "../lib/snipeCard";
 import type { DivRates } from "./listingPrice";
 
 /**
@@ -43,6 +45,7 @@ export interface SnipeFinding {
   marginPct: number;
   samples: number; // comparables behind the value (confidence)
   searchUrl: string; // working trade link to the comparable search
+  card: SnipeCard; // what the alert renders: icon, mods, valuation basis, item trade link
 }
 
 /** Per-archetype diagnostics — explains what each archetype contributed (tune mins/categories). */
@@ -150,7 +153,8 @@ function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
       value: finding.marginPct,
       threshold: config.valuation.discountPct,
       whisper: finding.whisper,
-      link: finding.searchUrl,
+      link: finding.card.tradeUrl, // finds THIS listing; the comparable search rides in the card
+      details: finding.card,
       dedupe: "once",
     });
   }
@@ -158,7 +162,7 @@ function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
 
 /** Confirm + alert a candidate as a snipe, or return null. Spends up to two comparable searches. */
 async function valueAndAlert(c: Candidate, ctx: ScanCtx): Promise<SnipeFinding | null> {
-  const { value, plan, searchUrl } = await valueListingLive(c.listing, ctx.idx, ctx.rates, ctx.cred);
+  const { value, plan, searchUrl, broadened } = await valueListingLive(c.listing, ctx.idx, ctx.rates, ctx.cred);
   const verdict = evaluateSnipe({
     askDiv: c.div,
     refDiv: value.valueDiv,
@@ -184,6 +188,18 @@ async function valueAndAlert(c: Candidate, ctx: ScanCtx): Promise<SnipeFinding |
     marginPct: verdict.marginPct,
     samples: value.samples,
     searchUrl,
+    card: buildSnipeCard({
+      listing: c.listing,
+      league: ctx.league,
+      priceDiv: c.div,
+      valueDiv: verdict.valueDiv,
+      marginPct: verdict.marginPct,
+      exaltPerDivine: ctx.rates.exaltPerDivine,
+      value,
+      searchStats: plan.searchStats,
+      broadened,
+      comparablesUrl: searchUrl,
+    }),
   };
   alertEveryone(finding, ctx);
   return finding;

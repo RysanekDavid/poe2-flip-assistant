@@ -30,6 +30,7 @@ const mk = (div: number, online = true): Listing => ({
   rarity: "Rare",
   itemLevel: 82,
   corrupted: false,
+  desecrated: false,
   mirrored: false,
   icon: null,
   stackSize: 0,
@@ -74,8 +75,8 @@ const idxMs = buildStatIndex([
 ]);
 const gloves = SNIPE_PROFILES.find((p) => p.key === "gloves_melee_levels")!;
 const MS_AS: ListingMod[] = [
-  { text: "35% increased Movement Speed", marker: "explicit", statId: null },
-  { text: "12% increased Attack Speed", marker: "explicit", statId: null },
+  { text: "35% increased Movement Speed", marker: "explicit", statId: null, desecrated: false },
+  { text: "12% increased Attack Speed", marker: "explicit", statId: null, desecrated: false },
 ];
 const withMs = (div: number, online = true): Listing => ({
   ...mk(div, online),

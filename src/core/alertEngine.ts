@@ -1,6 +1,7 @@
 import notifier from "node-notifier";
 import { insertAlert, hasRecentAlert, hasAlertEver } from "../db/alertQueries";
 import { config } from "../config/env";
+import { SnipeCardSchema, type SnipeCard } from "../lib/snipeCard";
 
 export type AlertType =
   | "SPREAD"
@@ -39,6 +40,7 @@ export function fireAlert(
     threshold: number;
     whisper?: string | null; // in-game whisper to copy (snipe alerts)
     link?: string | null; // trade-site deep link
+    details?: SnipeCard | null; // item card (SNIPE) — validated again here, it is persisted as-is
     // "once": alert at most once EVER per itemId+type — for listing-level snipes, where the
     // cooldown just re-pinged the same unsold bait every hour (Sol Trail ×12).
     dedupe?: "cooldown" | "once";
@@ -59,6 +61,7 @@ export function fireAlert(
     threshold: a.threshold,
     whisper: a.whisper,
     link: a.link,
+    details: a.details == null ? null : JSON.stringify(SnipeCardSchema.parse(a.details)),
   });
 
   if (!config.desktopNotify) return;

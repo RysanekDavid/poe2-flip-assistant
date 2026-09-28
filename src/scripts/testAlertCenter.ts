@@ -5,7 +5,10 @@
 import { config } from "../config/env";
 import { getDb } from "../db/database";
 import { getAlertCounts, getAlertFeed, insertAlert, markVisibleSeen } from "../db/alertQueries";
-import { freshForNotify, groupAlerts, maxAlertId, tickerRecent, unmutedUnseen, type Alert } from "../lib/alertCenter";
+import { AlertCenterSchema, freshForNotify, groupAlerts, maxAlertId, tickerRecent, unmutedUnseen, type Alert } from "../lib/alertCenter";
+import { fireAlert } from "../core/alertEngine";
+import { browserPrefs } from "../db/notifyQueries";
+import { sampleSnipeCard } from "./snipeCardFixture";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -19,12 +22,13 @@ const ok = (name: string, cond: boolean, extra = ""): void => {
 };
 
 const mk = (id: number, type: string, seen = 0, at = `2026-09-26 10:${String(id).padStart(2, "0")}:00`): Alert => ({
-  id, type, item_id: `i${id}`, item_name: null, message: "m", value: 1, threshold: 1, whisper: null, link: null,
+  id, type, item_id: `i${id}`, item_name: null, message: "m", value: 1, threshold: 1, whisper: null, link: null, details: null, details_error: null,
   seen, created_at: at, foreign_league: null,
 });
 
 testGrouping();
 testFeedQueries();
+testSnipeCardPersistence();
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
 process.exit(fail === 0 ? 0 : 1);
@@ -75,4 +79,31 @@ function testFeedQueries(): void {
   markVisibleSeen(U, "Alpha", null);
   const beta = new Map(getAlertCounts(U, "Beta").map((c) => [c.type, c]));
   ok("mark ALL seen leaves alerts hidden from this view unseen", beta.get("SPREAD")?.unseen === 4 && beta.get("SNIPE")?.unseen === 0);
+}
+
+function testSnipeCardPersistence(): void {
+  const db = getDb();
+  db.exec("DELETE FROM alerts;");
+  const card = sampleSnipeCard();
+  fireAlert(1, "Alpha", {
+    type: "SNIPE", itemId: "card-1", itemName: card.name, message: "75% under", value: 75, threshold: 35,
+    whisper: card.whisper, link: card.tradeUrl, details: card, dedupe: "once",
+  });
+  insertAlert(1, "Alpha", { type: "SNIPE", itemId: "card-legacy", itemName: "Old", message: "m", value: 1, threshold: 0 });
+  db.prepare("INSERT INTO alerts (user_id, league, type, item_id, item_name, message, details) VALUES (1, 'Alpha', 'SNIPE', 'card-bad', 'Bad', 'm', '{}')").run();
+  const feed = getAlertFeed(1, "Alpha");
+  const got = feed.find((a) => a.item_id === "card-1");
+  ok("SNIPE card persisted with the alert and parsed back", got?.details?.tradeUrl === card.tradeUrl && got.details.mods.length === card.mods.length);
+  ok("pre-card SNIPE row → details null, no error", feed.find((a) => a.item_id === "card-legacy")?.details === null);
+  const bad = feed.find((a) => a.item_id === "card-bad");
+  ok("unparseable card surfaces details_error instead of vanishing", bad?.details === null && (bad.details_error ?? "").length > 0);
+  const payload = AlertCenterSchema.safeParse({ alerts: feed, counts: [], ...browserPrefs(1) });
+  ok("the /api/alerts payload (cards included) passes the client schema", payload.success, payload.success ? "" : payload.error.issues[0]?.message);
+  let threw = false;
+  try {
+    fireAlert(1, "Alpha", { type: "SNIPE", itemId: "card-2", itemName: "x", message: "m", value: 1, threshold: 0, details: { ...card, icon: "http://insecure/x.png" } });
+  } catch {
+    threw = true;
+  }
+  ok("an invalid card is refused at write time, loudly", threw && !getAlertFeed(1, "Alpha").some((a) => a.item_id === "card-2"));
 }
