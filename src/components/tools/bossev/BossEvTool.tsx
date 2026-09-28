@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { RefreshCw, TriangleAlert } from "lucide-react";
 import { assertOk, describeError, warnOnFailure } from "../../../lib/clientWarn";
 import { bossEvResponseSchema, type BossEvResponse, type BossView, type TierResult } from "../../../lib/tools/bossEvContract";
+import { timestampAgeMs } from "../../../lib/sqliteTime";
 import { useVisiblePoll } from "../../../lib/useVisiblePoll";
 import { BossDetail } from "./BossDetail";
 import { BossTable } from "./BossTable";
@@ -31,13 +32,8 @@ function useBossEv() {
   return { data, error, reload: load };
 }
 
-/** SQLite "YYYY-MM-DD HH:MM:SS" is UTC without a zone marker; ISO stamps pass through. */
 function hoursSince(stamp: string | null): number | null {
-  if (stamp == null) return null;
-  const iso = /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(stamp) ? stamp : `${stamp.replace(" ", "T")}Z`;
-  const ms = Date.parse(iso);
-  if (Number.isNaN(ms)) throw new Error(`unparseable timestamp from ${ROUTE}: "${stamp}"`);
-  return (Date.now() - ms) / 3_600_000;
+  return stamp == null ? null : timestampAgeMs(stamp) / 3_600_000;
 }
 
 /** "data as of" strip: league, market ages, rate source, and which patch the tables describe. */

@@ -1,5 +1,5 @@
 import { latestSnapshots, priceHistory, uniqueValueMap, itemValuesAgeHours } from "../../../db/marketQueries";
-import { timestampAgeMs } from "../../../db/ratesQueries";
+import { timestampAgeMs } from "../../../lib/sqliteTime";
 import type { ResolvedPrice } from "../../../lib/tools/bossEvContract";
 import type { BossLootFile, PriceRef } from "./schema";
 

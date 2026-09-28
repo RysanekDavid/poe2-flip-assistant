@@ -1,6 +1,7 @@
 import { getDb } from "./database";
 import { config } from "../config/env";
 import type { PricedItem } from "../api/types";
+import { timestampAgeMs } from "../lib/sqliteTime";
 
 /**
  * Market-table persistence — extracted from queries.ts (already over the file-size cap) when
@@ -218,7 +219,7 @@ export function itemValuesAgeHours(league: string): number | null {
     .prepare("SELECT MAX(updated_at) AS mx FROM item_values WHERE league = ?")
     .get(league) as { mx: string | null };
   if (!row.mx) return null;
-  return (Date.now() - new Date(row.mx.replace(" ", "T") + "Z").getTime()) / 3600_000;
+  return timestampAgeMs(row.mx) / 3600_000;
 }
 
 // --- price book (observed listings for rare-item valuation / snipe detection) ---
