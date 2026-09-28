@@ -41,6 +41,7 @@
     "test:patch": "tsx src/scripts/testPatchNotes.ts",
     "kb:check": "tsx src/scripts/kbCheck.ts",
     "db:migrate": "tsx src/db/migrate.ts",
+    "seed:alerts-demo": "tsx src/scripts/seedAlertsDemo.ts",
     "lint": "tsx src/scripts/lintPolicy.ts",
     "typecheck": "tsc --noEmit",
     "test:auth": "tsx src/scripts/runWithTestEnv.ts auth",

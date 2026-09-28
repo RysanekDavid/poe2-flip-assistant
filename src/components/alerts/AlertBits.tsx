@@ -68,7 +68,7 @@ export function MuteToggle({ type, muted, onToggle }: { type: string; muted: boo
   return (
     <button
       onClick={() => onToggle(!muted)}
-      title={muted ? `unmute ${type} — show it in the ticker and badge again` : `mute ${type} — hide it from the ticker and badge (Discord routing is set in Settings)`}
+      title={muted ? `unmute ${type} — show it in the ticker and badge again` : `mute ${type} — hide it from the ticker and badge (sound, popup and Discord are set in the Alerts tab)`}
       aria-label={muted ? `unmute ${type}` : `mute ${type}`}
       className="rounded p-0.5 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
     >

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowRightLeft } from "lucide-react";
 import { fmtSmart } from "../lib/format";
 import { assertOk, warnOnFailure } from "../lib/clientWarn";
+import { CURRENCY_ART } from "../lib/currencyArt";
 
 type CcyKey = "div" | "ex" | "chaos";
 const CCY_LABEL: Record<CcyKey, string> = { div: "Div", ex: "Ex", chaos: "Chaos" };
@@ -102,11 +103,7 @@ function sourceNote(source: RatesSource | null, mins: number | null): string {
 }
 
 // PoE2 currency art (poecdn) — the rate chips read like the in-game exchange.
-const CCY_ICON = {
-  div: "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png",
-  ex: "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
-  chaos: "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
-} as const;
+const CCY_ICON = CURRENCY_ART;
 
 function Ccy({ icon, alt }: { icon: string; alt: string }) {
   // eslint-disable-next-line @next/next/no-img-element -- poecdn currency art, fixed tiny size
