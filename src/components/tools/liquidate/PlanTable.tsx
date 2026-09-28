@@ -127,7 +127,9 @@ function DenomCell({ r, icons }: { r: PlanRow; icons: CurrencyIcons }) {
 }
 
 function WarnCell({ r }: { r: PlanRow }) {
-  const all = [...r.warnings, ...(r.cx?.warnings ?? []), ...(r.trade?.competitionNote ? [r.trade.competitionNote] : [])];
+  // A thin exchange row still carries its cx quote, but its warnings (grid, ETA) are about a route you are not taking.
+  const cxWarnings = r.recommended === "cx" ? (r.cx?.warnings ?? []) : [];
+  const all = [...r.warnings, ...cxWarnings, ...(r.trade?.competitionNote ? [r.trade.competitionNote] : [])];
   if (all.length === 0) return <td className="px-2" />;
   return (
     <td className="px-2 text-amber-400" title={all.join("\n")}>

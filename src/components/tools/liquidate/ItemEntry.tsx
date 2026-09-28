@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import {
+  LIQUIDATE_MAX_NAME,
   LIQUIDATE_MAX_QTY,
   suggestResponseSchema,
   type DraftItem,
@@ -91,14 +92,17 @@ export function ItemEntry({ onAdd }: { onAdd: (item: DraftItem) => void }) {
   const [qty, setQty] = useState("1");
   const [manual, setManual] = useState("");
   const [focused, setFocused] = useState(false);
+  // The list closes on the name just picked and reopens as soon as the user edits it — focus stays put.
+  const [picked, setPicked] = useState<string | null>(null);
   const suggestions = useSuggestions(name);
   const q = parseQty(qty);
   const m = parseDiv(manual);
-  const valid = name.trim().length > 0 && name.trim().length <= 120 && q != null && m !== null;
+  const valid = name.trim().length > 0 && name.trim().length <= LIQUIDATE_MAX_NAME && q != null && m !== null;
   const add = (): void => {
     if (!valid || q == null || m === null) return;
     onAdd({ name: name.trim(), qty: q, manualDiv: m, askDiv: null });
     setName("");
+    setPicked(null);
     setQty("1");
     setManual("");
   };
@@ -106,8 +110,8 @@ export function ItemEntry({ onAdd }: { onAdd: (item: DraftItem) => void }) {
     <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); add(); }}>
       <div className="relative min-w-[14rem] flex-1">
         <input value={name} onChange={(e) => setName(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          placeholder="item to sell — e.g. Kulemak's Invitation" maxLength={120} className={`${INPUT} w-full`} aria-label="item name" />
-        {focused && <SuggestionList items={suggestions.items} onPick={(n) => { setName(n); setFocused(false); }} />}
+          placeholder="item to sell — e.g. Kulemak's Invitation" maxLength={LIQUIDATE_MAX_NAME} className={`${INPUT} w-full`} aria-label="item name" />
+        {focused && name !== picked && <SuggestionList items={suggestions.items} onPick={(n) => { setName(n); setPicked(n); }} />}
       </div>
       <input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="numeric" aria-label="quantity" title="how many you sell"
         className={`${INPUT} w-20 tabular-nums ${q == null ? "border-bad/70" : ""}`} />
@@ -139,8 +143,10 @@ function EntryRow({ item, index, onUpdate, onRemove }: Omit<EntryListProps, "ite
         onChange={(e) => { setQty(e.target.value); const q = parseQty(e.target.value); if (q != null) onUpdate(index, { qty: q }); }}
         className={`w-20 rounded border bg-transparent px-1.5 py-0.5 text-right tabular-nums text-neutral-300 ${parseQty(qty) == null ? "border-bad/70" : "border-neutral-800"}`} />
       <input value={manual} aria-label={`your value for ${item.name}`} inputMode="decimal"
-        placeholder={item.askDiv != null ? `ask ${fmtSmart(item.askDiv)}` : "own Div"}
-        title={item.askDiv != null ? `your current listing asks ~${fmtSmart(item.askDiv)} Div per unit — type it to use it as your value` : "optional own value, Div per unit"}
+        placeholder={item.askDiv != null ? `ask÷stack ${fmtSmart(item.askDiv)}` : "own Div"}
+        title={item.askDiv != null
+          ? `listing ask ÷ stack ≈ ${fmtSmart(item.askDiv)} Div — assumes your listing's price covers the whole stack (per-unit vs per-stack notes are unverified in PoE2). Type a value to use one.`
+          : "optional own value, Div per unit"}
         onChange={(e) => { setManual(e.target.value); const v = parseDiv(e.target.value); if (v !== null) onUpdate(index, { manualDiv: v }); }}
         className={`w-24 rounded border bg-transparent px-1.5 py-0.5 text-right tabular-nums text-neutral-300 ${m === null ? "border-bad/70" : "border-neutral-800"}`} />
       <button type="button" onClick={() => onRemove(index)} title="remove" aria-label={`remove ${item.name}`} className="text-neutral-600 hover:text-bad">

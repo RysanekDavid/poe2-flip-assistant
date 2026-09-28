@@ -7,9 +7,11 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import {
   LIQUIDATE_MAX_ITEMS,
+  LIQUIDATE_MAX_NAME,
+  LIQUIDATE_MAX_QTY,
   draftSchema,
   liquidateResponseSchema,
   stashResponseSchema,
@@ -99,9 +101,13 @@ function usePlan(items: DraftItem[]): PlanState {
 
 type StashState = { kind: "loading" } | { kind: "error"; error: string } | { kind: "ready"; data: StashResponse };
 
-function useStash(): StashState {
+/**
+ * The last stash read, refetched whenever the window regains focus: the read itself happens on the
+ * Wealth tab or the scheduled balance loop, and a stale "N items, X min ago" would import the old one.
+ */
+function useStash(): [StashState, () => void] {
   const [state, setState] = useState<StashState>({ kind: "loading" });
-  useEffect(() => {
+  const load = useCallback(() => {
     fetch("/api/tools/liquidate/stash")
       .then(readJson)
       .then((d) => setState({ kind: "ready", data: stashResponseSchema.parse(d) }))
@@ -110,7 +116,12 @@ function useStash(): StashState {
         setState({ kind: "error", error: describeError(e) });
       });
   }, []);
-  return state;
+  useEffect(() => {
+    load();
+    window.addEventListener("focus", load);
+    return () => window.removeEventListener("focus", load);
+  }, [load]);
+  return [state, load];
 }
 
 function ageText(min: number): string {
@@ -158,7 +169,7 @@ function ProvenanceChips({ p }: { p: LiquidateProvenance }) {
   );
 }
 
-function ImportBar({ stash, onImport }: { stash: StashState; onImport: (d: StashResponse) => void }) {
+function StashStatus({ stash, onImport }: { stash: StashState; onImport: (d: StashResponse) => void }) {
   if (stash.kind === "loading") return <span className="text-xs text-neutral-600">checking your last stash read…</span>;
   if (stash.kind === "error") return <span className="text-xs text-bad">stash import unavailable: {stash.error}</span>;
   const d = stash.data;
@@ -172,12 +183,28 @@ function ImportBar({ stash, onImport }: { stash: StashState; onImport: (d: Stash
   );
 }
 
+function ImportBar({ stash, onImport, onRefresh }: { stash: StashState; onImport: (d: StashResponse) => void; onRefresh: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <StashStatus stash={stash} onImport={onImport} />
+      <button type="button" onClick={onRefresh} title="check for a newer stash read" aria-label="refresh stash read"
+        className="rounded p-1 text-neutral-500 hover:text-sky-300">
+        <RefreshCw className="h-3.5 w-3.5" />
+      </button>
+    </span>
+  );
+}
+
 /** Stash items not already on the list are appended; the list keeps its 200-item cap, loudly. */
 function mergeImport(current: DraftItem[], d: StashResponse): { next: DraftItem[]; message: string } {
   const have = new Set(current.map((i) => i.name.toLowerCase()));
   const fresh = d.items
     .filter((i) => !have.has(i.name.toLowerCase()))
-    .map((i): DraftItem => ({ name: i.name.slice(0, 120), qty: Math.min(Math.max(1, i.qty), 100_000), askDiv: i.askDiv }));
+    .map((i): DraftItem => ({
+      name: i.name.slice(0, LIQUIDATE_MAX_NAME),
+      qty: Math.min(Math.max(1, i.qty), LIQUIDATE_MAX_QTY),
+      askDiv: i.askDiv,
+    }));
   const room = Math.max(0, LIQUIDATE_MAX_ITEMS - current.length);
   const added = fresh.slice(0, room);
   const parts = [`imported ${added.length} items`];
@@ -206,7 +233,7 @@ function PlanSection({ plan }: { plan: PlanState }) {
 export function LiquidateTool() {
   const [items, setItems] = useDraft();
   const plan = usePlan(items);
-  const stash = useStash();
+  const [stash, reloadStash] = useStash();
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const add = (item: DraftItem): void => {
     if (items.length >= LIQUIDATE_MAX_ITEMS) return setImportMsg(`the list is capped at ${LIQUIDATE_MAX_ITEMS} items`);
@@ -227,7 +254,7 @@ export function LiquidateTool() {
       </header>
       <ItemEntry onAdd={add} />
       <div className="flex flex-wrap items-center gap-3">
-        <ImportBar stash={stash} onImport={doImport} />
+        <ImportBar stash={stash} onImport={doImport} onRefresh={reloadStash} />
         {importMsg && <span className="text-xs text-neutral-400">{importMsg}</span>}
         {items.length > 0 && (
           <button type="button" onClick={() => { setItems([]); setImportMsg(null); }} className="ml-auto text-xs text-neutral-500 hover:text-bad">clear list</button>
