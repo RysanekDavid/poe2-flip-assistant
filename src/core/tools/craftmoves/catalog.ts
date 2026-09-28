@@ -4,7 +4,7 @@ import { gunzipSync } from "node:zlib";
 import { z } from "zod";
 
 /**
- * The slim craft catalog: every item-domain prefix/suffix mod, desecrated mod and essence-only mod
+ * The slim craft catalog: every item-domain prefix/suffix mod, desecrated mod and crafted-only mod
  * a craftable item class can carry, with its RePoE level, tier family and value ranges.
  *
  * Built offline by `npm run build:craft-catalog` from the committed RePoE snapshot (gzipped: ~3.4 MB of
@@ -32,7 +32,8 @@ const CatalogModSchema = z.object({
   domain: z.enum(["item", "desecrated"]),
   /** RePoE required_level — the "modifier level" currency floors and ilvl gates compare against. */
   level: z.number().int().nonnegative(),
-  essenceOnly: z.boolean(),
+  /** Only a crafted source writes it (essence, liquid emotion): it takes the item's one crafted slot. */
+  craftedOnly: z.boolean(),
   stats: z.array(StatSchema),
 });
 export type CatalogMod = z.infer<typeof CatalogModSchema>;

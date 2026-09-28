@@ -146,7 +146,7 @@ function toCatalogMod(m: RepoeMod, family: string, side: "prefix" | "suffix", do
     side,
     domain,
     level: m.required_level,
-    essenceOnly: m.is_essence_only || (domain === "item" && /Essence/.test(familyOf(m) + m.groups.join())),
+    craftedOnly: m.is_essence_only || (domain === "item" && /Essence/.test(familyOf(m) + m.groups.join())),
     stats: m.stats,
   };
 }
@@ -214,16 +214,21 @@ function buildClasses(repoe: Repoe, classNames: Map<string, string>, baseNames: 
   return classes;
 }
 
-/** Essence-only item mods carry no spawn weight, so no class pool lists them; keep them globally. */
-function addEssenceMods(repoe: Repoe, sink: ModSink): number {
+/**
+ * Crafted-only mods carry no spawn weight, so no class pool lists them; keep them globally:
+ * essence mods (item domain) and the liquid-emotion jewel mods (misc domain, CraftedJewel*), e.g.
+ * Contempt's "+1 Suffix Modifier allowed", which sits in a PREFIX slot.
+ */
+function addCraftedOnlyMods(repoe: Repoe, sink: ModSink): number {
   let added = 0;
   for (const [modId, src] of Object.entries(repoe.mods)) {
-    if (src.domain !== "item" || !isSide(src.generation_type) || sink.mods[modId]) continue;
-    const essence = src.is_essence_only || /Essence/.test(modId);
-    if (!essence || src.spawn_weights.some((w) => w.weight > 0)) continue;
+    if (!POOL_DOMAINS.has(src.domain) || !isSide(src.generation_type) || sink.mods[modId]) continue;
+    const essence = src.domain === "item" && (src.is_essence_only || /Essence/.test(modId));
+    const liquid = src.domain === "misc" && /^CraftedJewel/.test(modId);
+    if (!(essence || liquid) || src.spawn_weights.some((w) => w.weight > 0)) continue;
     const mod = toCatalogMod(src, familyOf(src), src.generation_type, "item");
     if (!mod) continue;
-    sink.mods[modId] = { ...mod, essenceOnly: true };
+    sink.mods[modId] = { ...mod, craftedOnly: true };
     added++;
   }
   return added;
@@ -254,7 +259,7 @@ function main(): void {
   const { bases, byId } = collectBases(repoe, classNames);
   const sink: ModSink = { mods: {} };
   const classes = buildClasses(repoe, classNames, byId, sink);
-  const essences = addEssenceMods(repoe, sink);
+  const craftedOnly = addCraftedOnlyMods(repoe, sink);
   const catalog = CraftCatalogSchema.parse({
     schemaVersion: CRAFT_CATALOG_SCHEMA_VERSION,
     sourceSha256: manifest.artifact_sha256,
@@ -273,7 +278,7 @@ function main(): void {
   const ambiguous = Object.values(bases).filter((b) => b.ambiguous).length;
   console.log(
     `[craft-catalog] wrote ${CRAFT_CATALOG_PATH} — ${(gz.length / 1024).toFixed(0)} KB gzip (${(json.length / 1024 / 1024).toFixed(2)} MB raw), ` +
-      `${Object.keys(catalog.mods).length} mods (${essences} essence-only), ${Object.keys(catalog.classes).length} classes, ` +
+      `${Object.keys(catalog.mods).length} mods (${craftedOnly} crafted-only), ${Object.keys(catalog.classes).length} classes, ` +
       `${Object.keys(bases).length} bases (${ambiguous} ambiguous), data ${gameDataPatch} / RePoE ${manifest.repoe_version}`,
   );
 }

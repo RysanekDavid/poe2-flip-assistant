@@ -106,13 +106,13 @@ function addFamilies(ids: Set<string>, pool: CatalogCombo["prefix"]): void {
   for (const tiers of Object.values(pool)) for (const id of Object.keys(tiers)) ids.add(id);
 }
 
-/** Pool for one base combo: its prefix/suffix/desecrated tiers, plus (optionally) every essence-only mod. */
-export function buildPool(cat: CraftCatalog, combo: CatalogCombo, withEssences: boolean): MatchPool {
+/** Pool for one base combo: its prefix/suffix/desecrated tiers, plus (optionally) every crafted-only mod. */
+export function buildPool(cat: CraftCatalog, combo: CatalogCombo, withCraftedOnly: boolean): MatchPool {
   const ids = new Set<string>();
   addFamilies(ids, combo.prefix);
   addFamilies(ids, combo.suffix);
   addFamilies(ids, combo.desecrated);
-  if (withEssences) for (const [id, m] of Object.entries(cat.mods)) if (m.essenceOnly) ids.add(id);
+  if (withCraftedOnly) for (const [id, m] of Object.entries(cat.mods)) if (m.craftedOnly) ids.add(id);
   const byShape = new Map<string, string[]>();
   for (const id of ids) {
     const first = cat.mods[id]?.text.split("\n")[0];

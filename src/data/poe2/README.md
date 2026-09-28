@@ -33,7 +33,7 @@ jewellery, or armour.
 `craft/craft-catalog.json.gz` is the slim catalog the Tools → Craft moves panel reads. The web
 process must never load the ~60 MB RePoE payload, so this file carries only what the tool needs:
 every item-domain prefix/suffix mod (jewel pools are RePoE domain `misc`), every desecrated mod and
-every essence-only mod a craftable class can carry — text template, affix name, tier family, side,
+every crafted-only mod (essence mods, and the liquid-emotion `CraftedJewel*` jewel mods) a craftable class can carry — text template, affix name, tier family, side,
 modifier level, value ranges — plus the per-class/per-tag-combo tier pools and base identities.
 It is generated from the committed snapshot by:
 
