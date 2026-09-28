@@ -14,12 +14,17 @@ export const TONE_CLASS: Record<Tone, string> = {
   muted: "text-neutral-500",
 };
 
-/** Net against a partly unpriced entry is only an upper bound, so it is never shown as a gain. */
-export function netCell(tier: TierResult, exPerDiv: number): { text: string; className: string; title: string } {
+/**
+ * Net against a partly unpriced entry is only an upper bound, so it is never shown as a gain. A
+ * positive net is green only when the headline is: net rests on the same rates, so it inherits the
+ * headline's confidence cap instead of greening a single-source estimate on its own.
+ */
+export function netCell(tier: TierResult, exPerDiv: number, headTone: Tone): { text: string; className: string; title: string } {
   if (!tier.entryComplete) {
     return { text: `≤ ${fmtDiv(tier.netDiv, exPerDiv, true)}`, className: "text-neutral-500", title: "upper bound — part of the entry has no price" };
   }
-  return { text: fmtDiv(tier.netDiv, exPerDiv, true), className: tier.netDiv >= 0 ? "text-good" : "text-neutral-400", title: "priced EV − entry" };
+  const green = tier.netDiv >= 0 && headTone === "good";
+  return { text: fmtDiv(tier.netDiv, exPerDiv, true), className: green ? "text-good" : "text-neutral-400", title: "priced EV − entry" };
 }
 
 export function evPerDivText(tier: TierResult): string {
@@ -100,7 +105,7 @@ interface RowProps {
 
 function BossRow({ boss, tier, active, onSelect, exPerDiv }: RowProps) {
   const head = breakEvenHeadline(tier, exPerDiv);
-  const net = netCell(tier, exPerDiv);
+  const net = netCell(tier, exPerDiv, head.tone);
   return (
     <tr
       onClick={() => onSelect(boss.id)}

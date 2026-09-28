@@ -58,7 +58,7 @@ function TierChips({ boss, tier, onTier }: { boss: BossView; tier: TierResult; o
 
 function Headline({ tier, exPerDiv }: { tier: TierResult; exPerDiv: number }) {
   const head = breakEvenHeadline(tier, exPerDiv);
-  const net = netCell(tier, exPerDiv);
+  const net = netCell(tier, exPerDiv, head.tone);
   const jackpot = tier.jackpot;
   const jackpotTitle =
     jackpot.items.length === 0
