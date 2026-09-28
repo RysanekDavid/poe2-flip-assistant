@@ -4,8 +4,11 @@
  * Import this FIRST in any standalone entrypoint.
  */
 import dotenv from "dotenv";
+import { retiredEnvWarnings } from "./retiredEnv";
 
 if (process.env.APP_DISABLE_DOTENV !== "1") dotenv.config({ path: ".env.local" });
+
+for (const warning of retiredEnvWarnings(process.env)) console.warn(warning);
 
 function num(key: string, fallback: number): number {
   const v = process.env[key];

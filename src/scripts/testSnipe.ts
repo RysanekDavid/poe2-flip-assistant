@@ -16,6 +16,7 @@ import Bottleneck from "bottleneck";
 import { metered, newMeter, scheduleMetered, type TradeMeter } from "../api/tradeMeter";
 import { fmtDivOrEx } from "../lib/format";
 import { pos } from "../config/env";
+import { retiredEnvWarnings } from "../config/retiredEnv";
 import { TradeRateLimitedError } from "../api/tradeErrors";
 import { tradeErrorResponse } from "../lib/tradeRouteError";
 import { snipeAlertMessage } from "../core/snipeAlert";
@@ -242,6 +243,11 @@ const bootMsg = ((): string => {
   }
 })();
 ok("env: boot error names the key, the bad value and the valid range", bootMsg.includes("TEST_POS_BIG=150") && bootMsg.includes("(0, 100]"), bootMsg);
+const retired = retiredEnvWarnings({ HUNT_SCAN_SEC: "30", HUNT_MIN_REQUEST_MS: "5000", TRADE_MIN_REQUEST_MS: "6000", PATH: "x" });
+ok("env: every leftover HUNT_* key is named at boot", retired.length === 2, retired.join(" | "));
+ok("env: HUNT_MIN_REQUEST_MS points at its replacement", retired.some((w) => w.includes("HUNT_MIN_REQUEST_MS was renamed to TRADE_MIN_REQUEST_MS")));
+ok("env: other HUNT_* keys say the feature is gone", retired.some((w) => w.includes("HUNT_SCAN_SEC") && w.includes("Hunt feature was removed")));
+ok("env: no retired keys → no warnings", retiredEnvWarnings({ TRADE_MIN_REQUEST_MS: "6000" }).length === 0);
 
 // --- web routes answer a busy shared budget with 503 + Retry-After, not a hung request ---
 const busy = tradeErrorResponse(new TradeRateLimitedError("search", 31_200));
