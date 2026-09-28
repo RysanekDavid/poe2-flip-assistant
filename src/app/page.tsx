@@ -10,6 +10,8 @@ import iconCoach from "../assets/Coach.png";
 // placeholder until the owner supplies src/assets/Tools.png
 import iconTools from "../assets/swap_orbs.png";
 import iconSettings from "../assets/settings.png";
+// placeholder until the owner supplies a dedicated Alerts image — the unused gold lantern logo
+import iconAlerts from "../assets/logo/logo_gold_bg.png";
 import { TopBar } from "../components/TopBar";
 import { BalancePanel } from "../components/BalancePanel";
 import { DiscoverTable } from "../components/DiscoverTable";
@@ -20,13 +22,12 @@ import { CraftPnlPanel } from "../components/CraftPnlPanel";
 import { MaterialsPanel } from "../components/MaterialsPanel";
 import { CraftMarginsProvider } from "../components/craft/CraftMarginsContext";
 import { DemandBoard } from "../components/DemandBoard";
-import { HuntPanel } from "../components/HuntPanel";
 import { AutoSnipeBar } from "../components/AutoSnipeBar";
 import { SnipeTargets } from "../components/SnipeTargets";
 import { FlipDetailCard } from "../components/FlipDetailCard";
 import { AlertTicker } from "../components/AlertTicker";
 import { AlertsProvider } from "../components/alerts/AlertsContext";
-import { NotificationsSettings } from "../components/NotificationsSettings";
+import { AlertsTab, AlertsTabBadge } from "../components/alerts/AlertsTab";
 import { FarmAdvisor } from "../components/FarmAdvisor";
 import { PositionsPanel } from "../components/PositionsPanel";
 import { FlipLog } from "../components/FlipLog";
@@ -47,7 +48,8 @@ const TABS = [
   { id: "craft", label: "Craft", hint: "recipes · sessions · P&L", icon: iconCraft },
   { id: "wealth", label: "Wealth", hint: "net worth · realized profit", icon: iconWealth },
   { id: "tools", label: "Tools", hint: "regex · craft moves · boss EV · liquidate", icon: iconTools },
-  { id: "settings", label: "Settings", hint: "trade2 connection (POESESSID) · Discord notifications", icon: iconSettings },
+  { id: "alerts", label: "Alerts", hint: "snipe cards · alert feed · sound, popup & Discord routing", icon: iconAlerts },
+  { id: "settings", label: "Settings", hint: "account · trade2 connection (POESESSID) · system health", icon: iconSettings },
 ] as const;
 type TabId = (typeof TABS)[number]["id"] | "coach";
 
@@ -105,6 +107,7 @@ export default function DashboardPage() {
                   priority={t.id === "exchange"}
                 />
                 {t.label}
+                {t.id === "alerts" && <AlertsTabBadge />}
               </button>
             );
           })}
@@ -160,7 +163,6 @@ export default function DashboardPage() {
           <DemandBoard />
           <AutoSnipeBar />
           <SnipeTargets />
-          <HuntPanel />
         </>
       )}
 
@@ -185,13 +187,14 @@ export default function DashboardPage() {
 
       {tab === "tools" && <ToolsTab />}
 
+      {tab === "alerts" && <AlertsTab />}
+
       {/* Keep the chat mounted while switching tabs so the active conversation is not lost. */}
       <CoachPanel active={tab === "coach"} />
 
       {tab === "settings" && (
         <>
           <SettingsPanel />
-          <NotificationsSettings />
           {/* owner-only; renders nothing for members */}
           <SystemHealthPanel />
         </>

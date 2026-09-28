@@ -4,8 +4,11 @@
  * Import this FIRST in any standalone entrypoint.
  */
 import dotenv from "dotenv";
+import { retiredEnvWarnings } from "./retiredEnv";
 
 if (process.env.APP_DISABLE_DOTENV !== "1") dotenv.config({ path: ".env.local" });
+
+for (const warning of retiredEnvWarnings(process.env)) console.warn(warning);
 
 function num(key: string, fallback: number): number {
   const v = process.env[key];
@@ -44,7 +47,7 @@ export const config = {
     threadSecret: process.env.COACH_THREAD_SECRET ?? process.env.AUTH_SECRET ?? "",
     proxySecret: process.env.COACH_PROXY_SECRET ?? "",
   },
-  // --- live trade2 hunt (read-only price-check / snipe finder) ---
+  // --- trade2 credentials (read-only price checks: autosnipe, craft margins, balance) ---
   poesessid: process.env.POESESSID ?? "", // session cookie for your own account; empty disables live search
   poeContact: process.env.POE_CONTACT ?? "", // your email — GGG asks third-party tools to identify themselves
   dataSourceContact: process.env.DATA_SOURCE_CONTACT ?? process.env.POE_CONTACT ?? "",
@@ -57,19 +60,10 @@ export const config = {
     .filter((s) => s !== "")
     .map(Number)
     .filter((n) => Number.isInteger(n)),
-  hunt: {
-    // Background poll-diff scan: ON by default — a hunt that only fires when you press a button
-    // isn't a hunt. Per-user creds; users without a stored POESESSID are simply skipped.
-    enabled: (process.env.HUNT_ENABLED ?? "true").toLowerCase() === "true",
-    // Lap cadence. The binding limit is GGG's 600 searches per 6h per IP (≈1 per 36s), shared by
-    // hunts, autosnipe and craft margins; the trade2 governor paces every search to it and the
-    // poller skips a tick while the previous lap is still draining. Budget reality: ONE hunt at a
-    // 60s cadence plus autosnipe already saturates it, and each extra active hunt adds ~40s per
-    // lap — so N hunts means each is re-checked roughly every N×40s, not every scanSec.
-    scanSec: pos("HUNT_SCAN_SEC", 60),
-    perScan: num("HUNT_PER_SCAN", 10), // listings fetched per hunt per scan (≤10 = one fetch call)
-    minRequestMs: num("HUNT_MIN_REQUEST_MS", 6000), // floor between trade2 requests (rate-limit guard)
-    freshMinutes: num("HUNT_FRESH_MIN", 120), // a listing older than this is stale bait, not a hit
+  trade: {
+    // Per-process floor between trade2 requests. The account+IP budget itself (600 searches per
+    // 6h) is enforced by the shared governor; this only keeps one process from bursting.
+    minRequestMs: num("TRADE_MIN_REQUEST_MS", 6000),
   },
   // auto net-worth read from your public tabs via trade account search (0 = off, manual only)
   balanceIntervalMin: num("BALANCE_INTERVAL_MIN", 0),
@@ -82,7 +76,7 @@ export const config = {
     maxResponseBytes: num("PATCH_NOTES_MAX_BYTES", 2_000_000),
   },
   retentionDays: num("RETENTION_DAYS", 30), // price_snapshots older than this are pruned each poll
-  // The ONE gate every SNIPE alert passes (hunt price-book verdict AND autosnipe). Before it
+  // The ONE gate every SNIPE alert passes. Before it
   // existed, 84/109 production SNIPE alerts were "0 vs ~N Div" bait: 0/1-ex asks, zero-mod
   // signatures, week-old listings and tiny reference samples all fired.
   snipeGate: {
@@ -130,7 +124,7 @@ export const config = {
     minCandidateDiv: num("AUTOSNIPE_MIN_CANDIDATE_DIV", 2),
     minCandidateScore: num("AUTOSNIPE_MIN_SCORE", 1), // skip listings whose mods don't resolve to anything valuable
     // Search-budget share. GGG allows 600 searches per 6h per IP (≈100/h) across EVERY consumer;
-    // 6 searches per 10-min scan = 36/h for autosnipe, leaving ~60/h for hunts + craft margins.
+    // 6 searches per 10-min scan = 36/h for autosnipe, leaving the rest for craft margins + interactive lookups.
     archetypesPerScan: pos("AUTOSNIPE_ARCHETYPES_PER_SCAN", 2),
     maxSearchesPerScan: pos("AUTOSNIPE_MAX_SEARCHES", 6),
   },
@@ -140,7 +134,9 @@ export const config = {
   // the shared trade2 limiter, one recipe per tick (the stalest), so the rate budget is safe.
   craftMargin: {
     enabled: (process.env.CRAFT_MARGIN_ENABLED ?? "true").toLowerCase() === "true",
-    intervalMin: num("CRAFT_MARGIN_INTERVAL_MIN", 10), // cadence; paced further by the trade2 limiter
+    // 6 min: ≤3 searches + 8 fetches per tick ≈ 30 searches/h beside autosnipe's ~36, inside
+    // trade2's 600 searches / 6 h; a full cycle over 14 recipes ≈ 84 min
+    intervalMin: num("CRAFT_MARGIN_INTERVAL_MIN", 6), // cadence; paced further by the trade2 limiter
     alertMarginPct: num("CRAFT_MARGIN_ALERT_PCT", 40), // fire when EV margin ≥ this %
     alertMinEvDiv: num("CRAFT_MARGIN_ALERT_MIN_EV_DIV", 1), // …and EV ≥ this many Divine (skip trivial edges)
   },

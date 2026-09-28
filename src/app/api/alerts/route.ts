@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAlertCounts, getAlertFeed, markVisibleSeen } from "../../../db/alertQueries";
-import { tickerMutedTypes } from "../../../db/notifyQueries";
+import { browserPrefs } from "../../../db/notifyQueries";
 import { getCurrentUser } from "../../../auth/session";
 import { leagueForUser } from "../../../core/leagueUsers";
 
@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/alerts → the alert center for the league this user views: the newest alerts of each
- * type, exact per-type counts, and the types this user muted in the ticker. One endpoint so the
- * whole page shares a single poll.
+ * type, exact per-type counts, and this user's browser routing (ticker mutes, chime and popup
+ * types). One endpoint so the whole page shares a single poll.
  */
 export async function GET() {
   const user = await getCurrentUser();
@@ -20,7 +20,7 @@ export async function GET() {
   return NextResponse.json({
     alerts: getAlertFeed(user.id, league),
     counts: getAlertCounts(user.id, league),
-    tickerMuted: tickerMutedTypes(user.id),
+    ...browserPrefs(user.id),
   });
 }
 

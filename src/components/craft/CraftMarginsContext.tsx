@@ -12,6 +12,7 @@ export interface MarginsResp {
   exaltPerDivine: number | null;
   icons: Record<string, string>;
   recipes: RecipeView[];
+  rank: { picks: string[]; nearMisses: string[]; unpriced: string[] }; // recipe keys, best first (craftRank)
   error?: string;
 }
 

@@ -1,14 +1,18 @@
 import { z } from "zod";
 
 export const PATCH_SOURCE_ID = "ggg_poe2_patch_notes" as const;
-export const PATCH_INDEX_URL = "https://www.pathofexile.com/forum/view-forum/2222" as const;
+// GGG forum ids are per language, not per request: 2222 is the German "Patch-Notes" forum,
+// 2233 French, 2243 Spanish. 2212 "Early Access Patch Notes" is the English PoE2 source.
+export const PATCH_FORUM_ID = "2212" as const;
+export const PATCH_INDEX_URL = `https://www.pathofexile.com/forum/view-forum/${PATCH_FORUM_ID}` as const;
 export const PATCH_ARTIFACT_DIR = "source-snapshots/ggg-patch-notes" as const;
 export const PATCH_PARSER_NAME = "ggg-forum-patch-notes" as const;
-export const PATCH_PARSER_VERSION = "2" as const;
-export const PATCH_THREAD_VALIDATION_POLICY = "thread:structured-staff-body-v1" as const;
+export const PATCH_PARSER_VERSION = "3" as const;
+export const PATCH_THREAD_VALIDATION_POLICY = "thread:structured-staff-body-english-v2" as const;
 
+// The forum is part of the policy so a stored index from another forum never passes as current.
 export function patchIndexValidationPolicy(minimumEntries: number, baselineThreadId: number): string {
-  return `index:min-entries=${minimumEntries};baseline-thread=${baselineThreadId}`;
+  return `index:forum=${PATCH_FORUM_ID};english-title;min-entries=${minimumEntries};baseline-thread=${baselineThreadId}`;
 }
 
 export const patchIndexEntrySchema = z.object({
@@ -64,10 +68,44 @@ export interface HtmlFetchResult {
   retrievedAt: string;
 }
 
+export interface PatchIndexPage {
+  entries: PatchIndexEntry[];
+  /** Thread ids of recognised realm notices that are not patches (see parser NOTICE_TITLES). */
+  skippedNotices: number[];
+}
+
+export interface PatchThreadFailure {
+  threadId: number;
+  reason: string;
+}
+
 export interface PatchSyncResult {
   ok: boolean;
   indexChanged: boolean;
   checkedThreads: number;
   changedThreads: number;
+  /** Threads whose body could not be fetched or parsed; every other thread was still stored. */
+  failedThreads: PatchThreadFailure[];
+  /** Index threads not tracked as patches; empty when the index was unchanged (304). */
+  skippedNotices: number[];
   errors: string[];
+}
+
+export function patchSyncSummary(result: PatchSyncResult): string {
+  const skipped = result.skippedNotices.length;
+  return `checked ${result.checkedThreads} thread(s), changed ${result.changedThreads}`
+    + (skipped > 0 ? `, skipped ${skipped} realm notice(s): ${result.skippedNotices.join(", ")}` : "");
+}
+
+/**
+ * Heartbeat/log text for an incomplete sync. Counts come first because the System panel caps
+ * error text, and "1 of 12 failed, 11 kept" is what tells the owner the rest was not lost.
+ */
+export function patchSyncProblem(result: PatchSyncResult): string | null {
+  if (result.ok) return null;
+  const detail = result.errors.join("; ") || "no error detail was reported";
+  const failed = result.failedThreads.length;
+  if (failed === 0) return `sync incomplete: ${detail}`;
+  const kept = result.checkedThreads - failed;
+  return `sync incomplete: ${failed} of ${result.checkedThreads} thread(s) failed, ${kept} kept: ${detail}`;
 }

@@ -54,8 +54,12 @@ export const RECIPES: CraftRecipe[] = [
       label: "Rare Sapphire · crit spell dmg grant",
       type: "Time-Lost Sapphire",
       rarity: "rare",
-      stats: [{ text: "Notable Passive Skills in Radius also grant #% increased Critical Spell Damage Bonus" }],
-      note: "Valued as a rare Sapphire granting Critical Spell Damage Bonus (jewel roll mins aren't searchable; double-caster-suffix pieces were <5 listed — too thin to price). Finished 5-mod jewels sell above this floor; run the guide's market check by hand via the trade link.",
+      stats: [
+        { text: "Notable Passive Skills in Radius also grant #% increased Critical Spell Damage Bonus", tier: 1 },
+        { text: "Notable Passive Skills in Radius also grant #% increased Critical Hit Chance for Spells", tier: 1 },
+        { text: "#% increased Effect of Suffixes", tier: 2 },
+      ],
+      note: "Valued from instant-buyout comparables: rare Time-Lost Sapphire with BOTH caster grants (Crit Spell Damage + Crit Chance for Spells), plus the Ferocity 'increased Effect of Suffixes' mod when enough are listed (else the two grants alone). Jewel roll mins aren't searchable — presence only.",
     },
     materials: [
       {
@@ -100,8 +104,12 @@ export const RECIPES: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 75,
       pdpsMin: 400,
-      stats: [],
-      note: "Valued by physical DPS floor (400 = the guide's sellable line for crit-swap bows). Attack-speed tier and crit push real sales above this.",
+      stats: [
+        // weapon attack speed is the LOCAL stat; the plain text is the global (jewel/glove) mod
+        { text: "#% increased Attack Speed (Local)", min: 12, tier: 1 },
+        { text: "+#% to Critical Hit Chance", tier: 2 },
+      ],
+      note: "Valued from instant-buyout comparables: 400+ pdps rare bow with the Amanamu-tier 12%+ attack speed, plus a crit line when enough are listed (else pdps + attack speed alone).",
     },
     materials: [
       { material: MATS.greaterEssenceSeeking, qtyPerAttempt: 1, note: "Guaranteed crit mod (crit-swap enabler)." },
@@ -138,10 +146,11 @@ export const RECIPES: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 75,
       stats: [
-        { text: "Adds # to # Cold Damage to Attacks", min: 15 },
-        { text: "#% increased Rarity of Items found", min: 20 },
+        { text: "Adds # to # Cold Damage to Attacks", min: 15, tier: 1 },
+        { text: "#% increased Rarity of Items found", min: 20, tier: 1 },
+        { text: "+#% total Elemental Resistance", min: 30, group: "pseudo", tier: 2 },
       ],
-      note: "Valued as flat-cold + rarity rare ring — the weighted-sum comparable from the guide. Double-flat + res pieces sell well above.",
+      note: "Valued from instant-buyout comparables: flat-cold + rarity rare ring with 30%+ total elemental res when enough are listed (else flat cold + rarity alone). Double-flat pieces sell above the band.",
     },
     materials: [
       { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Open-suffix bases: fish rarity/res before essencing." },
@@ -179,10 +188,10 @@ export const RECIPES: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 75,
       stats: [
-        { text: "# to Level of all Spell Skills", min: 3 },
-        { text: "# to maximum Life", min: 40 },
+        { text: "# to Level of all Spell Skills", min: 3, group: "fractured", tier: 1 },
+        { text: "# to maximum Life", min: 40, tier: 2 },
       ],
-      note: "trade2 query can't filter 'fractured' — proxied as +3 + life, an UNDERestimate: a real fractured +3 is a permanent craft base and sells well above this comparable (+3+rarity pieces were <5 listed, too thin to price).",
+      note: "Valued from instant-buyout comparables with a FRACTURED +3 Spell Skills (trade2 searches the fractured stat itself), plus 40+ life when enough are listed (else the fractured +3 alone).",
     },
     materials: [
       { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Only on open-prefix bases — and Augmentation needs a MAGIC item (KB §1); unverified on this rare base." },
@@ -218,7 +227,8 @@ export const RECIPES: CraftRecipe[] = [
       corrupted: "any",
       stats: [
         { text: "Non-Channelling Spells deal #% increased Damage per 100 maximum Mana" },
-        { text: "Non-Channelling Spells have #% increased Critical Hit Chance per 100 maximum Mana" },
+        // live trade2 wording (craft:check-stats): "Skills have … Spell Critical Hit Chance", not "Spells have … Critical Hit Chance"
+        { text: "Non-Channelling Skills have #% increased Spell Critical Hit Chance per 100 maximum Mana" },
       ],
       note: "Valued at the visible double-line floor (thin market). Reddit-reported: clean double-mana no-life-cost pieces ~600 div; players also report 300+ div spent dry — the tail is NOT in this number.",
     },
@@ -253,13 +263,17 @@ export const RECIPES: CraftRecipe[] = [
       note: "Cheapest rare ilvl82+ boots on an ES/ES-hybrid base (desecrated prefixes follow the base's defence type). Non-corrupted, non-desecrated — trade can't filter desecration, eyeball each base. Existing mods irrelevant (putrefies to 6).",
     },
     result: {
-      label: "Rare boots · 35% MS + ES",
+      label: "Corrupted rare boots · 30% MS + ES + res",
       category: "armour.boots",
       rarity: "rare",
       ilvlMin: 82,
-      esMin: 60,
-      stats: [{ text: "#% increased Movement Speed", min: 35 }],
-      note: "Valued at the 35% MS + ES floor. 30% MS misses still sell 1–2 div with good suffixes (not priced here).",
+      esMin: 40,
+      corrupted: true, // the putrefaction omen corrupts — uncorrupted listings are a different product
+      stats: [
+        { text: "#% increased Movement Speed", min: 30, tier: 1 },
+        { text: "+#% total Elemental Resistance", min: 60, group: "pseudo", tier: 2 },
+      ],
+      note: "Valued from instant-buyout CORRUPTED comparables: 30%+ MS on an ES base (40+ ES), with 60%+ total elemental res when enough are listed (else MS + ES alone).",
     },
     materials: PUTREFACTION_MATS,
     hitRate: 0.3,
@@ -282,13 +296,17 @@ export const RECIPES: CraftRecipe[] = [
       note: "Cheapest rare ilvl82+ boots on an EVASION/EV-hybrid base. Non-corrupted, non-desecrated — trade can't filter desecration, eyeball each base. Existing mods irrelevant (putrefies to 6).",
     },
     result: {
-      label: "Rare boots · 35% MS + evasion",
+      label: "Corrupted rare boots · 30% MS + evasion + res",
       category: "armour.boots",
       rarity: "rare",
       ilvlMin: 82,
       evMin: 300,
-      stats: [{ text: "#% increased Movement Speed", min: 35 }],
-      note: "Valued at the 35% MS + evasion floor — attack builds (Deadeye/Amazon) are the buyers. 30% MS misses still sell 1–2 div.",
+      corrupted: true, // the putrefaction omen corrupts — uncorrupted listings are a different product
+      stats: [
+        { text: "#% increased Movement Speed", min: 30, tier: 1 },
+        { text: "+#% total Elemental Resistance", min: 60, group: "pseudo", tier: 2 },
+      ],
+      note: "Valued from instant-buyout CORRUPTED comparables: 30%+ MS on a 300+ evasion base, with 60%+ total elemental res when enough are listed — attack builds (Deadeye/Amazon) are the buyers.",
     },
     materials: PUTREFACTION_MATS,
     hitRate: 0.3,

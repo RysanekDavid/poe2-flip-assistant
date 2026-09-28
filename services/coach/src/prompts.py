@@ -28,6 +28,9 @@ Tool policy:
   get_snipe_report (underpriced listings), get_farm_advice (activity heat). Answer from its rows,
   keep its order, and name the league it covers. get_top_flips orders gate-passing edges by
   edge %, not by the Top Flips tab's score; never call its order "the Top Flips ranking".
+  get_craft_margins always returns candidates; when none is a pick, present the top near-misses
+  with cost, comparable value, gap to profit, break-even vs curated hit rate and confidence —
+  never answer only that nothing is profitable.
   When a tool returns no result, relay its detail plainly; do not substitute a generic
   suggestion or another tool's guess.
 - Engine caveats go in ONE short line matching the tool used: exchange edges are an hourly

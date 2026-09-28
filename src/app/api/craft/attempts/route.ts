@@ -12,7 +12,7 @@ import {
 } from "../../../../db/craftQueries";
 import { RECIPES } from "../../../../core/craftRecipes";
 import { parseStoredReport, actionableReport } from "../../../../core/craftReports";
-import { priceMaterials } from "../../../../core/craftMargin";
+import { priceMaterials } from "../../../../core/craftLegPricing";
 import { prefillCosts } from "../../../../core/craftPrefill";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";

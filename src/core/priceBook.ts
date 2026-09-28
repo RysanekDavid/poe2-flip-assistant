@@ -2,8 +2,7 @@
  * Price Book: value a rare item from observed market listings instead of a per-item live
  * search (which the trade2 rate limit can't sustain at scale). Every listing we see is
  * recorded under ONE signature scheme — `rollSignature` (base + resolved stat refs + roll
- * buckets) — by BOTH hunts and autosnipe, so the two engines feed and read the same space.
- * (They used to write two incompatible key spaces into one table.)
+ * buckets): autosnipe feeds it, the paste-to-price check reads the same space.
  */
 
 /**
@@ -47,6 +46,7 @@ export interface ReferenceValue {
   samples: number; // comparables the value stands on (after trimming)
   dropped: number; // cheap outliers removed
   minDiv: number | null; // cheapest surviving comparable
+  keptAsc: number[]; // the surviving comparables, ascending — for a p25..p75 band around the median
 }
 
 const medianOf = (sortedAsc: number[]): number => {
@@ -67,6 +67,6 @@ export function referenceValue(prices: number[]): ReferenceValue {
     xs.shift();
     dropped++;
   }
-  if (xs.length === 0) return { valueDiv: null, samples: 0, dropped, minDiv: null };
-  return { valueDiv: medianOf(xs), samples: xs.length, dropped, minDiv: xs[0]! };
+  if (xs.length === 0) return { valueDiv: null, samples: 0, dropped, minDiv: null, keptAsc: [] };
+  return { valueDiv: medianOf(xs), samples: xs.length, dropped, minDiv: xs[0]!, keptAsc: xs };
 }

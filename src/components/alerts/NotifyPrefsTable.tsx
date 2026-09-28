@@ -1,14 +1,14 @@
 "use client";
 
-import type { PrefRow } from "../../core/notify/prefs";
+import type { ReactNode } from "react";
+import { Bell, MessageSquare, MonitorUp, Volume2 } from "lucide-react";
+import type { Channel, ChannelPrefs, PrefRow } from "../../core/notify/prefs";
 import { typeTone } from "./AlertBits";
 
 const TYPE_HINT: Record<PrefRow["type"], string> = {
-  SNIPE: "underpriced listing (autosnipe or your snipe hunts) — time-sensitive",
+  SNIPE: "underpriced listing found by the autosnipe scanner — time-sensitive",
   CRAFT_MARGIN: "a craft recipe's expected value clears its margin",
   SPREAD: "a watched exchange flip clears your threshold",
-  CRAFT_BASE: "new listings for your craft-base hunts",
-  RESELL: "new listings for your resell hunts",
   LEAGUE: "a new league started / the default league switched",
   TREND: "a watched item's trend state changed",
   SPIKE: "a watched item is spiking",
@@ -29,41 +29,57 @@ function Toggle({ on, label, onChange }: { on: boolean; label: string; onChange:
   );
 }
 
-/** Per-type routing: which alert types go to Discord and which show in the ticker/badge. */
+interface Column {
+  channel: Channel;
+  icon: ReactNode;
+  title: string;
+  label: (type: string) => string;
+}
+
+const COLUMNS: readonly Column[] = [
+  { channel: "ticker", icon: <Bell className="h-4 w-4" />, title: "Ticker — show in the feed badge and the Exchange ticker", label: (t) => `${t} in the ticker` },
+  { channel: "sound", icon: <Volume2 className="h-4 w-4" />, title: "Sound — chime when one arrives (this browser)", label: (t) => `${t} plays a sound` },
+  { channel: "popup", icon: <MonitorUp className="h-4 w-4" />, title: "Desktop popup — browser notification, needs permission", label: (t) => `${t} raises a desktop popup` },
+  { channel: "discord", icon: <MessageSquare className="h-4 w-4" />, title: "Discord — send to your webhook (reaches a fullscreen game)", label: (t) => `${t} to Discord` },
+];
+
+/**
+ * Per-type routing matrix: which alert types show in the ticker, chime, pop a desktop
+ * notification and go to Discord. A channel that cannot deliver right now (no webhook, popups
+ * blocked) is dimmed but stays editable, so the choice is ready once it can.
+ */
 export function NotifyPrefsTable({
   prefs,
-  webhookSet,
+  dimmed,
   onChange,
 }: {
   prefs: PrefRow[];
-  webhookSet: boolean;
-  onChange: (type: PrefRow["type"], change: { discord?: boolean; ticker?: boolean }) => void;
+  dimmed: Partial<Record<Channel, string>>; // channel → why it cannot deliver right now
+  onChange: (type: PrefRow["type"], change: Partial<ChannelPrefs>) => void;
 }) {
   return (
-    <table className="w-full max-w-2xl text-sm">
+    <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-xs uppercase tracking-wider text-neutral-500">
-          <th className="py-1 font-medium">Alert type</th>
-          <th className="py-1 text-center font-medium" title={webhookSet ? "send to your Discord webhook" : "save a webhook first"}>
-            Discord
-          </th>
-          <th className="py-1 text-center font-medium" title="show in the Exchange ticker and the bell badge">
-            Ticker
-          </th>
+          <th className="py-1 font-medium">Type</th>
+          {COLUMNS.map((c) => (
+            <th key={c.channel} className={`py-1 font-medium ${dimmed[c.channel] ? "opacity-40" : ""}`} title={dimmed[c.channel] ?? c.title}>
+              <span className="flex justify-center">{c.icon}</span>
+            </th>
+          ))}
         </tr>
       </thead>
       <tbody>
         {prefs.map((p) => (
           <tr key={p.type} className="border-t border-neutral-800/70">
             <td className="py-1.5" title={TYPE_HINT[p.type]}>
-              <span className={`font-semibold ${typeTone(p.type)}`}>{p.type}</span>
+              <span className={`text-xs font-semibold ${typeTone(p.type)}`}>{p.type}</span>
             </td>
-            <td className={`py-1.5 text-center ${webhookSet ? "" : "opacity-40"}`}>
-              <Toggle on={p.discord} label={`${p.type} to Discord`} onChange={(on) => onChange(p.type, { discord: on })} />
-            </td>
-            <td className="py-1.5 text-center">
-              <Toggle on={p.ticker} label={`${p.type} in the ticker`} onChange={(on) => onChange(p.type, { ticker: on })} />
-            </td>
+            {COLUMNS.map((c) => (
+              <td key={c.channel} className={`py-1.5 text-center ${dimmed[c.channel] ? "opacity-40" : ""}`}>
+                <Toggle on={p[c.channel]} label={c.label(p.type)} onChange={(on) => onChange(p.type, { [c.channel]: on })} />
+              </td>
+            ))}
           </tr>
         ))}
       </tbody>

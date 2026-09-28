@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 import { getDb } from "./database";
 import { encryptSecret, decryptSecret } from "../auth/secretbox";
-import { resolvePrefs, type NotifyType, type PrefRow, defaultPrefs } from "../core/notify/prefs";
+import { resolvePrefs, typesWith, type ChannelPrefs, type NotifyType, type PrefRow, type StoredPref, defaultPrefs } from "../core/notify/prefs";
 import type { NotifyAlert } from "../core/notify/discordMessage";
 
 /**
@@ -46,35 +46,59 @@ export function readWebhook(userId: number, db: Database.Database = getDb()): St
 // ---------- preferences ----------
 
 export function getPrefs(userId: number, db: Database.Database = getDb()): PrefRow[] {
-  const stored = db.prepare("SELECT type, discord, ticker FROM notify_prefs WHERE user_id = ?").all(userId) as Array<{
-    type: string;
-    discord: number;
-    ticker: number;
-  }>;
+  const stored = db
+    .prepare("SELECT type, ticker, sound, popup, discord FROM notify_prefs WHERE user_id = ?")
+    .all(userId) as StoredPref[];
   return resolvePrefs(stored);
 }
 
-/** Change one channel of one type; the untouched channel keeps its stored value or default. */
+/**
+ * Change some channels of one type; untouched channels keep their stored value or default. All
+ * four are written, so a row never mixes explicit choices with NULL "whatever the default is".
+ */
 export function setPref(
   userId: number,
   type: NotifyType,
-  change: { discord?: boolean; ticker?: boolean },
+  change: Partial<ChannelPrefs>,
   db: Database.Database = getDb(),
 ): void {
   const base = getPrefs(userId, db).find((p) => p.type === type) ?? { ...defaultPrefs(type), type };
-  const discord = change.discord ?? base.discord;
-  const ticker = change.ticker ?? base.ticker;
+  const next: ChannelPrefs = {
+    ticker: change.ticker ?? base.ticker,
+    sound: change.sound ?? base.sound,
+    popup: change.popup ?? base.popup,
+    discord: change.discord ?? base.discord,
+  };
   db.prepare(
-    `INSERT INTO notify_prefs (user_id, type, discord, ticker) VALUES (?, ?, ?, ?)
-     ON CONFLICT(user_id, type) DO UPDATE SET discord = excluded.discord, ticker = excluded.ticker`,
-  ).run(userId, type, discord ? 1 : 0, ticker ? 1 : 0);
+    `INSERT INTO notify_prefs (user_id, type, ticker, sound, popup, discord) VALUES (@userId, @type, @ticker, @sound, @popup, @discord)
+     ON CONFLICT(user_id, type) DO UPDATE SET
+       ticker = excluded.ticker, sound = excluded.sound, popup = excluded.popup, discord = excluded.discord`,
+  ).run({
+    userId,
+    type,
+    ticker: next.ticker ? 1 : 0,
+    sound: next.sound ? 1 : 0,
+    popup: next.popup ? 1 : 0,
+    discord: next.discord ? 1 : 0,
+  });
 }
 
 /** Types this user muted in the ticker/popover badge. */
 export function tickerMutedTypes(userId: number, db: Database.Database = getDb()): NotifyType[] {
-  return getPrefs(userId, db)
-    .filter((p) => !p.ticker)
-    .map((p) => p.type);
+  return typesWith(getPrefs(userId, db), "ticker", false);
+}
+
+/** What the browser needs from the routing table: muted ticker types, chime types, popup types. */
+export function browserPrefs(
+  userId: number,
+  db: Database.Database = getDb(),
+): { tickerMuted: NotifyType[]; soundTypes: NotifyType[]; popupTypes: NotifyType[] } {
+  const prefs = getPrefs(userId, db);
+  return {
+    tickerMuted: typesWith(prefs, "ticker", false),
+    soundTypes: typesWith(prefs, "sound", true),
+    popupTypes: typesWith(prefs, "popup", true),
+  };
 }
 
 export function getDigestEnabled(userId: number, db: Database.Database = getDb()): boolean {
@@ -128,7 +152,7 @@ export function dueRows(userId: number, now: number, limit: number, db: Database
   const rows = db
     .prepare(
       `SELECT q.id AS queue_id, q.kind, q.attempts, q.payload_json, q.alert_id,
-              a.type, a.item_id, a.item_name, a.message, a.value, a.threshold, a.whisper, a.link, a.league, a.created_at
+              a.type, a.item_id, a.item_name, a.message, a.value, a.threshold, a.whisper, a.link, a.details, a.league, a.created_at
        FROM notify_queue q LEFT JOIN alerts a ON a.id = q.alert_id
        WHERE q.user_id = ? AND q.status = 'pending' AND q.next_attempt_at <= ?
        ORDER BY q.id LIMIT ?`,
@@ -279,7 +303,7 @@ export function digestData(
   const types = topTypes.map((t) => `'${t}'`).join(", ");
   const top = db
     .prepare(
-      `SELECT id, type, item_id, item_name, message, value, threshold, whisper, link, league, created_at FROM (
+      `SELECT id, type, item_id, item_name, message, value, threshold, whisper, link, details, league, created_at FROM (
          SELECT *, ROW_NUMBER() OVER (PARTITION BY type ORDER BY value DESC, id DESC) AS rn FROM alerts
          WHERE user_id = @userId AND created_at > @from AND created_at <= @to AND type IN (${types}) AND value IS NOT NULL
        ) WHERE rn <= 3 ORDER BY type, value DESC`,

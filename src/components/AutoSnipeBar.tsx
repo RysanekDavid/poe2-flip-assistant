@@ -5,7 +5,7 @@ import { Radar, Loader2, Play, Target, Copy, Check, ExternalLink } from "lucide-
 import { fmtDivOrEx } from "../lib/format";
 
 // A scan is paced by the shared trade2 budget: ~6 searches × 36s + ~8 fetches × 21.6s ≈ 3–6 min,
-// plus hunt laps interleaving on the same queue. 15 min is the point where "slow" means "broken".
+// plus craft-margin legs interleaving on the same queue. 15 min is the point where "slow" means "broken".
 const SCAN_WAIT_TIMEOUT_MS = 15 * 60_000;
 
 interface Status {

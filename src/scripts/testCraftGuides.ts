@@ -104,6 +104,18 @@ const recipe = (key: string): CraftRecipe => {
   ok("catalysing ring budgets Abyssal Echoes for its reveal", ids("ring_catalysing_exalt").includes(MATS.omenAbyssalEchoes.id));
 }
 
+// --- KB §4: Omen of Putrefaction CORRUPTS — its results must be valued against corrupted items ---
+{
+  const putrefaction = RECIPES.filter((r) => r.materials.some((m) => m.material.id === MATS.omenPutrefaction.id));
+  const clean = putrefaction.filter((r) => r.result.corrupted !== true).map((r) => r.key);
+  ok("putrefaction result legs are corrupted comparables", putrefaction.length > 0 && clean.length === 0, clean.join(","));
+  // KB §2: a fracture recipe sells a fractured mod — its result must search the fractured stat
+  const fractureResults = ["amulet_fracture_plus3", "gloves_projectile_plus2", "ring_fractured_t1res"].filter(
+    (k) => !recipe(k).result.stats.some((s) => s.group === "fractured" && s.tier !== 2),
+  );
+  ok("fracture recipes value a FRACTURED defining mod", fractureResults.length === 0, fractureResults.join(","));
+}
+
 // --- data integrity survives the edits ---
 {
   ok("14 curated recipes", RECIPES.length === 14, String(RECIPES.length));

@@ -14,7 +14,7 @@ const threadHtml = readFileSync(
 export async function testRedirectIdentityBoundary(): Promise<void> {
   await rejectUnsafeRedirect();
   await assert.rejects(redirectFetch([redirect(null)]), /missing Location/);
-  await assert.rejects(redirectFetch([redirect("/forum/view-forum/2222")]), /loop/);
+  await assert.rejects(redirectFetch([redirect("/forum/view-forum/2212")]), /loop/);
   await assert.rejects(
     redirectFetch([redirect("/forum/view-thread/3991000/filter-account-type/staff")]),
     /resource identity/,
@@ -22,10 +22,10 @@ export async function testRedirectIdentityBoundary(): Promise<void> {
   await rejectCrossThreadRedirect();
   await assert.rejects(
     redirectFetch([
-      redirect("https://pathofexile.com/forum/view-forum/2222"),
-      redirect("https://pathofexile.com/forum/view-forum/2222/"),
-      redirect("https://www.pathofexile.com/forum/view-forum/2222/"),
-      redirect("https://pathofexile.com/forum/view-forum/2222"),
+      redirect("https://pathofexile.com/forum/view-forum/2212"),
+      redirect("https://pathofexile.com/forum/view-forum/2212/"),
+      redirect("https://www.pathofexile.com/forum/view-forum/2212/"),
+      redirect("https://pathofexile.com/forum/view-forum/2212"),
     ]),
     /limit exceeded/,
   );
@@ -33,7 +33,7 @@ export async function testRedirectIdentityBoundary(): Promise<void> {
 
 export async function testAllowedRedirectHeaders(): Promise<void> {
   const responses = [
-    redirect("https://pathofexile.com/forum/view-forum/2222/"),
+    redirect("https://pathofexile.com/forum/view-forum/2212/"),
     htmlResponse(threadHtml),
   ];
   const seen: Array<{ etag: string | null; contact: string | null }> = [];
@@ -45,7 +45,7 @@ export async function testAllowedRedirectHeaders(): Promise<void> {
     return next;
   };
   const result = await fetchPatchHtml(
-    "https://www.pathofexile.com/forum/view-forum/2222",
+    "https://www.pathofexile.com/forum/view-forum/2212",
     "tests@example.invalid",
     { etag: "conditional-etag", lastModified: null },
     10_000,
@@ -60,7 +60,7 @@ async function rejectUnsafeRedirect(): Promise<void> {
   const invoked: string[] = [];
   const fetcher: HttpFetcher = async (input) => {
     invoked.push(String(input));
-    return redirect("https://evil.example/forum/view-forum/2222");
+    return redirect("https://evil.example/forum/view-forum/2212");
   };
   await assert.rejects(redirectFetchWith(fetcher), /unsafe/);
   assert.equal(invoked.length, 1, "an unsafe redirect target must never be fetched");
@@ -91,7 +91,7 @@ function redirectFetch(responses: Response[]): Promise<unknown> {
 
 function redirectFetchWith(fetcher: HttpFetcher): Promise<unknown> {
   return fetchPatchHtml(
-    "https://www.pathofexile.com/forum/view-forum/2222",
+    "https://www.pathofexile.com/forum/view-forum/2212",
     "tests@example.invalid",
     { etag: "etag", lastModified: "date" },
     1_000,

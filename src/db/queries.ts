@@ -3,11 +3,11 @@ import { getDb } from "./database";
 /**
  * Per-user application persistence (trades, flips, positions, holdings, balances). Market tables
  * moved to marketQueries.ts when they became league-scoped; the watchlist moved to
- * watchlistQueries.ts, alerts to alertQueries.ts and hunts to huntQueries.ts.
+ * watchlistQueries.ts and alerts to alertQueries.ts.
  *
  * These tables CARRY the league a row was created under, and the CALLER passes it: provenance
  * has to name the economy the producing pipeline actually ran in, which for a user action is
- * their view but for the shared trade2 pipelines (hunts, autosnipe, balances) is the app
+ * their view but for the shared trade2 pipelines (autosnipe, balances) is the app
  * default. Resolving it in here would have quietly relabelled every one of those.
  *
  * It is written at INSERT time rather than backfilled later, because after a switch there is no

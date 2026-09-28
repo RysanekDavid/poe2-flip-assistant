@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { NOTIFY_TYPES } from "../core/notify/prefs";
+import { SnipeCardSchema } from "./snipeCard";
 
 /** /api/alerts payload. Parsed at the client boundary so a server shape change fails loudly. */
 export const AlertSchema = z.object({
@@ -12,6 +13,8 @@ export const AlertSchema = z.object({
   threshold: z.number().nullable(),
   whisper: z.string().nullable(),
   link: z.string().nullable(),
+  details: SnipeCardSchema.nullable(), // SNIPE item card
+  details_error: z.string().nullable(), // a stored card that no longer parses
   seen: z.number(),
   created_at: z.string(),
   foreign_league: z.string().nullable(), // set when the alert belongs to a league other than the one viewed
@@ -25,6 +28,8 @@ export const AlertCenterSchema = z.object({
   alerts: z.array(AlertSchema),
   counts: z.array(AlertTypeCountSchema),
   tickerMuted: z.array(z.string()),
+  soundTypes: z.array(z.string()), // types that chime on arrival
+  popupTypes: z.array(z.string()), // types that raise a desktop (browser) popup
 });
 export type AlertCenterData = z.infer<typeof AlertCenterSchema>;
 
@@ -88,10 +93,10 @@ export function tickerRecent(alerts: readonly Alert[], muted: readonly string[],
   return alerts.filter((a) => !mutedSet.has(a.type)).sort(byNewest).slice(0, n);
 }
 
-/** Alerts newer than the last one a browser notification was raised for, muted types excluded. */
-export function freshForNotify(alerts: readonly Alert[], lastNotifiedId: number, muted: readonly string[]): Alert[] {
-  const mutedSet = new Set(muted);
-  return alerts.filter((a) => a.id > lastNotifiedId && !mutedSet.has(a.type)).sort((a, b) => b.id - a.id);
+/** Alerts newer than the last one the browser reacted to whose type has `channel` on, newest first. */
+export function freshForNotify(alerts: readonly Alert[], lastNotifiedId: number, types: readonly string[]): Alert[] {
+  const on = new Set(types);
+  return alerts.filter((a) => a.id > lastNotifiedId && on.has(a.type)).sort((a, b) => b.id - a.id);
 }
 
 /** Highest id in the feed — the browser-notify baseline, muted or not, so unmuting never replays history. */

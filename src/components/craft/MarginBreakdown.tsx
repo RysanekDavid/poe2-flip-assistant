@@ -1,17 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Crosshair, NotebookPen } from "lucide-react";
+import { ExternalLink, NotebookPen } from "lucide-react";
 import { PNL_CHANGED_EVENT } from "../CraftPnlPanel";
 import type { LegReport } from "../../core/craftRecipes";
 import { CraftSessionInline } from "./CraftSessionWizard";
 import { MaterialsTable } from "./MaterialsTable";
+import { NearMissLine } from "./NearMissLine";
 import { evLabel, priceLabel, type RecipeView } from "./craftView";
 import { RETURN_FLAG_MULTIPLE } from "../../core/craftValuation";
 
-/** How a leg's number was derived — a percentile of floor-passing asks, never "the price". */
+/** How a leg's number was derived — a percentile of floor-passing asks or a comparable median,
+ *  never "the price". */
 function legBasis(leg: LegReport): string {
   const listed = `${leg.total.toLocaleString("en")} listed`;
+  if (leg.method === "comparable-median") {
+    const band = leg.band ? ` · band ${leg.band.p25.toFixed(2)}–${leg.band.p75.toFixed(2)} Div` : "";
+    const dropped = leg.outliersDropped > 0 ? ` · ${leg.outliersDropped} bait dropped` : "";
+    // only the cheapest CRAFT_RESULT_TOP_N asks are fetched: in a deep market this median sits at
+    // its cheap end, so the label says "cheapest" and gives the listed total beside it
+    return `median of ${leg.samples} of the ${leg.sampled ?? leg.samples} cheapest instant-buyout comparables (of ${listed})${band}${dropped}${leg.relaxed ? " · relaxed to defining mods" : ""} · asks, not sales`;
+  }
   if (leg.percentile == null || leg.floorDiv == null) {
     return `legacy cheapest-asks value of ${leg.samples} · ${listed} · awaiting rescan`;
   }
@@ -68,21 +77,11 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return data;
 }
 
-/** "hunt this base" + "log attempt" — both refuse loudly when the base price isn't trustworthy. */
+/** "log attempt" — refuses loudly when the base price isn't trustworthy. */
 function CardActions({ recipeKey }: { recipeKey: string }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const fail = (e: unknown) => setMsg({ ok: false, text: e instanceof Error ? e.message : String(e) });
 
-  const huntBase = (): void => {
-    postJson<{ cap: { amount: number; ccy: string }; created: boolean }>("/api/craft/hunt-preset", { recipeKey })
-      .then((d) =>
-        setMsg({
-          ok: true,
-          text: `hunt ${d.created ? "created" : "updated"} — cap ${d.cap.amount} ${d.cap.ccy}, scanning every 30s (Hunt panel)`,
-        }),
-      )
-      .catch(fail);
-  };
   const logAttempt = (): void => {
     postJson<{ id: number }>("/api/craft/attempts", { recipeKey, prefill: true })
       .then(() => {
@@ -94,12 +93,6 @@ function CardActions({ recipeKey }: { recipeKey: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
-      <button
-        onClick={huntBase}
-        className="inline-flex items-center gap-1 rounded border border-neutral-700 px-2 py-1 text-neutral-300 hover:bg-neutral-800"
-      >
-        <Crosshair className="h-3.5 w-3.5" /> hunt this base
-      </button>
       <button
         onClick={logAttempt}
         title="log a real craft attempt at the floor-validated base price + today's material prices"
@@ -151,6 +144,7 @@ export function MarginBreakdown({ r, ex, icons }: { r: RecipeView; ex: number | 
           <span className="text-neutral-500"> / attempt</span>
         </p>
       )}
+      {rep?.nearMiss && rep.result && <NearMissLine nm={rep.nearMiss} result={rep.result} gate={r.gate} ex={ex} />}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <LegBlock title={`Base — ${r.baseSpec.label}`} leg={rep?.base ?? null} note={r.baseSpec.note} ex={ex} />

@@ -9,6 +9,7 @@ import { ensureCxTables } from "./cxMigrations";
 import { CX_EDGE_DETAIL_COLUMNS } from "./cxEdgeDetail";
 import { applicationSchemaSql } from "./schemaFiles";
 import { ensureNotifySchema } from "./notifyMigrations";
+import { dropRetiredHunts } from "./retiredMigrations";
 
 let db: Database.Database | null = null;
 
@@ -34,6 +35,9 @@ export function getDb(): Database.Database {
     ["item_name", "TEXT"],
     ["whisper", "TEXT"], // in-game whisper to copy (snipe alerts)
     ["link", "TEXT"], // trade-site deep link
+    // Structured card (zod-validated SnipeCard JSON) so a SNIPE still renders after the scan
+    // report that found it has rotated away. NULL for other types and pre-card rows.
+    ["details", "TEXT"],
   ]);
   ensureColumns(conn, "price_snapshots", [
     ["change_7d", "REAL"],
@@ -47,19 +51,6 @@ export function getDb(): Database.Database {
     ["manual_sell_ccy", "TEXT"],
     ["manual_set_at", "DATETIME"],
   ]);
-  ensureColumns(conn, "hunt_hits", [
-    ["listing_id", "TEXT"],
-    ["seller_online", "INTEGER"],
-    ["listed_at", "TEXT"],
-  ]);
-  // Craft-base hunts filter by trade2 category + item level when no single base type applies.
-  ensureColumns(conn, "hunts", [
-    ["category", "TEXT"],
-    ["ilvl_min", "INTEGER"],
-    ["last_error", "TEXT"], // per-hunt failure reason, so a broken hunt is visible instead of silently idle
-    ["recipe_key", "TEXT"], // craft-base preset identity: one hunt per user × recipe × league
-  ]);
-  relaxHuntHitPriceDiv(conn);
   // A transient trade2 failure is recorded beside the last good craft report instead of replacing it.
   ensureColumns(conn, "craft_margin_reports", [
     ["last_error", "TEXT"],
@@ -90,7 +81,7 @@ export function getDb(): Database.Database {
 
   // Multi-tenancy: every private table gains user_id (existing rows backfill to owner id=1).
   // Shared market data (price_snapshots) stays global. balance_tabs inherits via its snapshot.
-  for (const t of ["alerts", "trades", "flips", "hunts", "hunt_hits", "balance_snapshots", "positions"]) {
+  for (const t of ["alerts", "trades", "flips", "balance_snapshots", "positions"]) {
     ensureColumns(conn, t, [["user_id", "INTEGER NOT NULL DEFAULT 1"]]);
   }
   rebuildWatchlistMultiTenant(conn);
@@ -105,14 +96,18 @@ export function getDb(): Database.Database {
   seedLeagueRegistry(conn);
   purgeLegacyPriceBook(conn);
   ensureNotifySchema(conn); // after users.discord_webhook_enc exists — its trigger reads the column
+  // Browser chime + desktop popup per type; NULL (rows from before) means "use the type's default".
+  ensureColumns(conn, "notify_prefs", [
+    ["sound", "INTEGER"],
+    ["popup", "INTEGER"],
+  ]);
+  dropRetiredHunts(conn); // after ensureNotifySchema: it also clears the retired types' notify_prefs
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.
   conn.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_watchlist_user_item ON watchlist(user_id, item_id);
-    CREATE INDEX IF NOT EXISTS idx_hunts_user ON hunts(user_id);
     CREATE INDEX IF NOT EXISTS idx_positions_user ON positions(user_id, opened_at DESC);
     CREATE INDEX IF NOT EXISTS idx_balance_user_time ON balance_snapshots(user_id, fetched_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_hunt_hits_user_time ON hunt_hits(user_id, found_at DESC);
     CREATE INDEX IF NOT EXISTS idx_flips_user_time ON flips(user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id, seen, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_alerts_user_item ON alerts(user_id, item_id, type);
@@ -188,29 +183,6 @@ function rebuildHoldingsMultiTenant(conn: Database.Database): void {
       SELECT 1, currency, amount, updated_at FROM holdings_old;
     DROP TABLE holdings_old;
   `);
-}
-
-/**
- * hunt_hits.price_div shipped NOT NULL, which forced asks in currencies outside the rates ladder
- * to be stored as a fake 0 Div. Rebuild it nullable, keeping every column (ALTER-added ones are
- * part of the stored CREATE text, so rewriting that text preserves them).
- */
-export function relaxHuntHitPriceDiv(conn: Database.Database): void {
-  const row = conn.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='hunt_hits'").get() as
-    | { sql: string }
-    | undefined;
-  const notNull = /price_div\s+REAL\s+NOT\s+NULL/i;
-  if (!row || !notNull.test(row.sql)) return; // fresh schema or already relaxed
-  const createNew = row.sql
-    .replace(/CREATE TABLE\s+(?:IF NOT EXISTS\s+)?"?hunt_hits"?/i, "CREATE TABLE hunt_hits_new")
-    .replace(notNull, "price_div REAL");
-  const cols = (conn.prepare("PRAGMA table_info(hunt_hits)").all() as Array<{ name: string }>).map((c) => c.name).join(", ");
-  conn.transaction(() => {
-    conn.exec(createNew);
-    conn.exec(`INSERT INTO hunt_hits_new (${cols}) SELECT ${cols} FROM hunt_hits`);
-    conn.exec("DROP TABLE hunt_hits");
-    conn.exec("ALTER TABLE hunt_hits_new RENAME TO hunt_hits");
-  })();
 }
 
 const PRICE_BOOK_CUTOVER_KEY = "price_book_cutover_rollsig_v1";

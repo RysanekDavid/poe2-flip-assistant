@@ -5,13 +5,13 @@ import type { TradeEndpoint } from "./tradeRateLimit";
 /**
  * Scan-local trade2 request meter. A scan runs its work inside `metered()`, and every trade2 call
  * made from that async context (and only that one) is counted. The first budget version read a
- * process-global counter, so hunt/craft/balance requests queued on the shared limiter ate the
- * autosnipe budget — with two active hunts it valued nothing, ever.
+ * process-global counter, so craft/balance requests (and the since-removed hunt scans) queued on
+ * the shared limiter ate the autosnipe budget — at times it valued nothing, ever.
  *
  * The meter must be read SYNCHRONOUSLY at the call site, before the request enters the limiter
  * queue: Bottleneck starts a queued job from the completion chain of whichever job ran before it,
  * so inside the job the AsyncLocalStorage store belongs to that other consumer. Reading it there
- * charged a hunt's searches to the scan (starving it) and the scan's to nobody (budget unenforced).
+ * charged another consumer's searches to the scan (starving it) and the scan's to nobody (budget unenforced).
  */
 export interface TradeMeter {
   search: number;

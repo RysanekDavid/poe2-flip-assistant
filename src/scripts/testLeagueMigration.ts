@@ -49,7 +49,6 @@ const LEGACY_SCHEMA = `
   -- runs, so the fixture does too — the migration is entitled to assume they exist.
   CREATE TABLE watchlist (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item_id TEXT);
   CREATE TABLE positions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item_id TEXT);
-  CREATE TABLE hunts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, label TEXT);
   CREATE TABLE alerts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, type TEXT);
   CREATE TABLE balance_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER);
   CREATE TABLE flips (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item_id TEXT);
