@@ -27,3 +27,24 @@ therefore cross-checks Alloy and non-natural Essence outcomes against the curren
 `services/coach/src/items/alloy.py` and `essence.py`. Catalog loading fails if either reviewed ID
 set changes, preventing a new patch from silently applying a Staff outcome to a quarterstaff,
 jewellery, or armour.
+
+## Derived artifact: craft catalog
+
+`craft/craft-catalog.json.gz` is the slim catalog the Tools → Craft moves panel reads. The web
+process must never load the ~60 MB RePoE payload, so this file carries only what the tool needs:
+every item-domain prefix/suffix mod (jewel pools are RePoE domain `misc`), every desecrated mod and
+every crafted-only mod (essence mods, and the liquid-emotion `CraftedJewel*` jewel mods) a craftable class can carry — text template, affix name, tier family, side,
+modifier level, value ranges — plus the per-class/per-tag-combo tier pools and base identities.
+It is generated from the committed snapshot by:
+
+```bash
+npm run build:craft-catalog
+```
+
+The build refuses to run when the artifact does not match `repoe/manifest.json` or when
+`patch-coverage.json` describes a different snapshot, and stamps the result with the source
+`artifact_sha256`, RePoE version and game-data patch. `test:tools:craft-moves` fails while that
+stamp differs from the manifest, so **re-run the build after every `npm run sync:poe2-data`** and
+commit both. The JSON (~3.4 MB, mostly tier pools repeated across base-type combos) is gzipped
+(~160 KB); Node's gzip writes mtime 0, so an unchanged snapshot rebuilds to identical bytes. Like
+the snapshot it comes from, it holds no spawn weights the tool could turn into probabilities.

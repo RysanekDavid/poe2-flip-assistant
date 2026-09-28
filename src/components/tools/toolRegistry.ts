@@ -19,7 +19,7 @@ export interface ToolMeta {
 
 export const TOOLS: readonly ToolMeta[] = [
   { id: "regex", label: "Price regex", hint: "stash-search regex for items at or above a price", module: "regex/RegexTool" },
-  { id: "craft-moves", label: "Craft moves", hint: "expected value of the next craft step", module: "craftmoves/CraftMovesTool" },
+  { id: "craft-moves", label: "Craft moves", hint: "legal next steps · live costs · value", module: "craftmoves/CraftMovesTool" },
   { id: "boss-ev", label: "Boss EV", hint: "entry cost vs drop-table value per boss", module: "bossev/BossEvTool" },
   { id: "liquidate", label: "Liquidate", hint: "what in your stash to sell first", module: "liquidate/LiquidateTool" },
 ];
