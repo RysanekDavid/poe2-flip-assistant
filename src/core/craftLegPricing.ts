@@ -34,16 +34,16 @@ function pickStat(s: RecipeStatSpec, matches: readonly StatOption[]): { pick: St
 /** Resolve a leg's target mod texts to trade ids and assemble the search query. Texts the catalog
  *  can't resolve are returned in `unresolved` (never silently swallowed) so the caller can widen
  *  the search caveat AND suppress alerts — a renamed stat must not become an any-rare search.
- *  `opts.tier1Only` drops support (tier-2) stats for the relaxed result search; `opts.relaxPct`
- *  widens every stat min downward so near-identical rolls still count as comparables. */
+ *  `opts.tier1Only` drops support (tier-2) stats for the relaxed result search. Mins are sent
+ *  unchanged: a recipe's min is the sellable-tier floor (a +3 is not a +2), so widening it the way
+ *  pasted-item valuation widens a roll would price a lower tier. */
 export function legToQuery(
   leg: RecipeLegSpec,
   idx: StatIndex,
-  opts: { tier1Only?: boolean; relaxPct?: number } = {},
+  opts: { tier1Only?: boolean } = {},
 ): { query: TradeQuery; unresolved: string[] } {
   const filters: StatFilter[] = [];
   const unresolved: string[] = [];
-  const relax = 1 - (opts.relaxPct ?? 0) / 100;
   for (const s of leg.stats) {
     if (opts.tier1Only && s.tier === 2) continue;
     const matches = idx.byText.get(norm(s.text));
@@ -53,7 +53,7 @@ export function legToQuery(
     }
     const { pick, exact } = pickStat(s, matches);
     if (!exact) unresolved.push(`${s.text} [no ${s.group} stat — searched as ${pick.group}]`);
-    filters.push({ id: pick.id, min: s.min != null ? Math.floor(s.min * relax) : undefined });
+    filters.push({ id: pick.id, min: s.min });
   }
   const query: TradeQuery = {
     name: leg.name,

@@ -13,7 +13,7 @@ import type { ExchangeRates } from "./priceEngine";
  */
 
 /** Listings sampled per BASE leg: 1 search + ceil(40/10) = 4 fetches. The result leg costs 1–2
- *  searches + ≤ 3 fetches (craftResultValuation), so a recipe — and a poller tick, which prices
+ *  searches + ≤ 4 fetches (craftResultValuation), so a recipe — and a poller tick, which prices
  *  one recipe — stays at ≤ 3 searches + 8 fetches through the shared trade2 limiter. */
 export const LEG_SAMPLE = 40;
 

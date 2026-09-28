@@ -1,6 +1,5 @@
 import { searchListingsLinked } from "../api/tradeClient";
 import type { Listing } from "../api/tradeListing";
-import { config } from "../config/env";
 import { valueFromComparables, type Valuation } from "./comparableValuation";
 import { legToQuery, LegFloorError, type LegContext } from "./craftLegPricing";
 import { CRAFT_RESULT_MIN_COMPARABLES, CRAFT_RESULT_TOP_N, MIN_LEG_SAMPLES, bandOf } from "./craftValuation";
@@ -10,8 +9,9 @@ import type { TradeQuery } from "../lib/tradeLink";
 /**
  * Result-leg valuation from finished-item comparables — the rare-valuation method
  * (comparableValuation) applied to a recipe's result archetype: instant-buyout, never mirrored,
- * same corrupted state, stat mins widened by the valuation relax %, trimmed median of what is
- * left. The old p30 of a loose one-mod search priced the junk end of the finished-item market.
+ * same corrupted state, stat mins exactly as the recipe states them (the sellable tier floor),
+ * trimmed median of the CRAFT_RESULT_TOP_N cheapest such asks. That is a median of the cheap end
+ * of the archetype's market, not of every listing — labelled so wherever it is shown. The old p30 of a loose one-mod search priced the junk end of the finished-item market.
  */
 
 /** No exchange rates → comparables in exalt/chaos can't be put on one scale. Transient: the
@@ -28,7 +28,7 @@ interface ComparableSet {
 
 /** The strict (all stats) or relaxed (tier-1 only) archetype search for a result leg. */
 export function resultQuery(leg: RecipeLegSpec, ctx: Pick<LegContext, "idx">, tier1Only: boolean): { query: TradeQuery; unresolved: string[] } {
-  const { query, unresolved } = legToQuery(leg, ctx.idx, { tier1Only, relaxPct: config.valuation.relaxPct });
+  const { query, unresolved } = legToQuery(leg, ctx.idx, { tier1Only });
   return { query: { ...query, instantBuyout: true, mirrored: false }, unresolved };
 }
 
@@ -68,7 +68,7 @@ function toLegReport(set: ComparableSet, value: Valuation, medianDiv: number): L
 }
 
 /**
- * Price a recipe's result leg: 1–2 searches + ≤ 3 fetches. Throws LegMarketError (transient)
+ * Price a recipe's result leg: 1–2 searches + ≤ 4 fetches. Throws LegMarketError (transient)
  * without spending a search when no rates are known, and LegFloorError (a market verdict) when
  * fewer than MIN_LEG_SAMPLES rated comparables survive trimming.
  */
