@@ -112,8 +112,9 @@ function liquidCheck(tier: "potent" | "ancient") {
     if (!s.jewel || !isRare(s)) return null;
     if (tier === "potent" && s.timeLost) return { block: `non-Ancient liquids don't work on Time-Lost jewels (${S6})` };
     if (tier === "ancient" && !s.timeLost) return { block: `Ancient liquids work ONLY on rare Time-Lost jewels (${S6})` };
-    // §6 (c): presumed from §7, untested — every documented path strips the old crafted mod first
-    if (s.slots.crafted > 0) return { block: `${ONE_CRAFTED}; strip it first (${S6} c)` };
+    if (s.slots.crafted > 0) return { block: `${ONE_CRAFTED}; presumed (${S6} c, untested) — strip it first` };
+    // Time-Lost mods the catalog cannot read could be an existing crafted mod: do not stack a second one
+    if (tier === "ancient" && s.unmatched.length > 0) return { block: "an unreadable line may be the crafted mod — cannot prove the crafted slot is free" };
     return { pass: true };
   };
 }

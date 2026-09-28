@@ -39,6 +39,16 @@ export function cleanItemLine(line: string): string {
     .trim();
 }
 
+/*
+ * Time-Lost (radius) jewels print every mod as "Notable|Small Passive Skills in Radius also grant
+ * <mod>", while RePoE stores only <mod> — and which wrapper a mod gets is not derivable from its
+ * stat ids. So matching compares the inner form; the displayed line keeps the wrapper.
+ */
+const RADIUS_WRAPPER = /^(?:Notable|Small) Passive Skills in Radius also grant /i;
+
+/** The form a pasted line is matched in: the radius-jewel wrapper removed. */
+export const matchForm = (line: string): string => line.replace(RADIUS_WRAPPER, "");
+
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 function compileLine(line: string): TemplateLine {
@@ -127,10 +137,11 @@ export function buildPool(cat: CraftCatalog, combo: CatalogCombo, withCraftedOnl
 
 /** Every template (any tier/family in the pool) that matches the lines starting at `at`. */
 export function matchAt(pool: MatchPool, lines: readonly string[], at: number): TemplateHit[] {
-  const ids = pool.byShape.get(shapeOf(lines[at]!)) ?? [];
+  const forms = lines.map(matchForm);
+  const ids = pool.byShape.get(shapeOf(forms[at]!)) ?? [];
   const hits: TemplateHit[] = [];
   for (const id of ids) {
-    const hit = tryMatch(compile(pool.cat, id), lines, at);
+    const hit = tryMatch(compile(pool.cat, id), forms, at);
     if (hit) hits.push(hit);
   }
   return hits;
