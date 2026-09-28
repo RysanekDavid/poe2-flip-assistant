@@ -9,7 +9,6 @@ import {
   computeMargin,
   ABS_FLOOR_DIV,
   CHEAP_BASE_FLOOR_EX,
-  CHEAP_BASE_FLOOR_FALLBACK_DIV,
   GATE_FLAGGED_MIN_RESULT_TOTAL,
   legFloorDiv,
   MIN_LEG_SAMPLES,
@@ -81,8 +80,7 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   // would reject it, the exalt-denominated floor (0.7 ex) still admits it
   const inflated = legFloorDiv({ minAskEx: CHEAP_BASE_FLOOR_EX }, { exaltPerDivine: 600, chaosPerDivine: 20 });
   ok("exalt floor tracks inflation: 1 ex at 600 ex/div still clears it", 1 / 600 >= inflated && inflated < 0.002, String(inflated));
-  ok("no rates → Div fallback floor", legFloorDiv({ minAskEx: CHEAP_BASE_FLOOR_EX }, null) === CHEAP_BASE_FLOOR_FALLBACK_DIV);
-  ok("legs without minAskEx keep the default floor", legFloorDiv({}, null) === ABS_FLOOR_DIV);
+  ok("legs without minAskEx keep the default floor", legFloorDiv({}, { exaltPerDivine: 300, chaosPerDivine: 10 }) === ABS_FLOOR_DIV);
   ok("per-leg floor still drops sub-exalt dumps", cheapBait.dropped === 2);
   const legFloors = RECIPES.filter((r) => r.base.minAskEx != null).map((r) => r.key).sort().join(",");
   ok(
@@ -95,13 +93,14 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   ok("NaN/≤0 prices discarded, not counted as bait", nan.kept === 3 && nan.dropped === 0, `${nan.kept}/${nan.dropped}`);
 }
 
-// --- conversions survive a rate outage ---
+// --- conversions: ladder currencies via the rates, small currencies via the ninja map ---
 {
   const ccy = new Map([["exalted", 0.004], ["alch", 0.0008]]);
-  ok("no rates: exalt priced via ninja currency map", near(listingDiv(100, "exalted", null, ccy), 0.4));
-  ok("rates: exalt priced via the rate ladder", near(listingDiv(230, "exalted", { exaltPerDivine: 230, chaosPerDivine: 10 }, ccy), 1));
-  ok("small currency via ninja map", near(listingDiv(10, "alch", null, ccy), 0.008));
-  ok("unknown currency → NaN (dropped, never 0)", Number.isNaN(listingDiv(1, "mirror-shard", null, ccy)));
+  const rates = { exaltPerDivine: 230, chaosPerDivine: 10 };
+  ok("exalt priced via the rate ladder, not the ninja map", near(listingDiv(230, "exalted", rates, ccy), 1));
+  ok("chaos priced via the rate ladder", near(listingDiv(5, "chaos", rates, ccy), 0.5));
+  ok("small currency via ninja map", near(listingDiv(10, "alch", rates, ccy), 0.008));
+  ok("unknown currency → NaN (dropped, never 0)", Number.isNaN(listingDiv(1, "mirror-shard", rates, ccy)));
 }
 
 // --- confidence gate: alerts + top picks ---
@@ -121,7 +120,7 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   ok("cheap-base craft: EV 1.697 is NOT altered by the high-return flag", near(armour.evDiv, 1.697), String(armour.evDiv));
   ok(`cheap-base craft: return > ${RETURN_FLAG_MULTIPLE}× cost is flagged`, armour.returnFlagged);
   const armourReport = report({
-    base: leg({ priceDiv: 0.003, floorDiv: CHEAP_BASE_FLOOR_FALLBACK_DIV, percentile: 0.25 }),
+    base: leg({ priceDiv: 0.003, floorDiv: CHEAP_BASE_FLOOR_EX / 350, percentile: 0.25 }),
     result: leg({ priceDiv: 6 }),
     materialsDiv: 0.1,
     evDiv: armour.evDiv,

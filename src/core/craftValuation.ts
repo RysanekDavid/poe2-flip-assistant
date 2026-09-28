@@ -33,8 +33,6 @@ export const ABS_FLOOR_DIV = 0.05;
  *  what those bases are priced in — a Div-denominated floor drifts with ex/div inflation and
  *  would push 1-ex bases back to leg-failed late league. Still above sub-exalt alch/aug dumps. */
 export const CHEAP_BASE_FLOOR_EX = 0.7;
-/** Div fallback for an exalt floor when no rate source answers (≈0.7 ex at ~350 ex/div). */
-export const CHEAP_BASE_FLOOR_FALLBACK_DIV = 0.002;
 /** On every leg, asks under this share of the cluster median are bait relative to the item's own market. */
 export const REL_FLOOR = 0.05;
 /** Fewer floor-passing asks than this and the leg is rejected (never priced at a guess). */
@@ -90,9 +88,8 @@ export function floorValue(divs: readonly number[], pctl: number, absFloorDiv: n
 }
 
 /** The absolute ask floor (Div) for one leg at scan-time rates. */
-export function legFloorDiv(leg: Pick<RecipeLegSpec, "minAskEx">, rates: ExchangeRates | null): number {
-  if (leg.minAskEx == null) return ABS_FLOOR_DIV;
-  return rates && rates.exaltPerDivine > 0 ? leg.minAskEx / rates.exaltPerDivine : CHEAP_BASE_FLOOR_FALLBACK_DIV;
+export function legFloorDiv(leg: Pick<RecipeLegSpec, "minAskEx">, rates: ExchangeRates): number {
+  return leg.minAskEx == null ? ABS_FLOOR_DIV : leg.minAskEx / rates.exaltPerDivine;
 }
 
 /** EV per attempt = hitRate × result − base − materials, plus a high-return FLAG. The EV itself

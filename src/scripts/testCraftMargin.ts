@@ -1,8 +1,8 @@
 /* Synthetic + DB-backed test of the craft-margin engine: EV math, the missing-material failure
  * path, leg-query assembly, and a material-id sanity check against the live DB / a Delirium fixture. */
 import "../config/env";
-import { priceMaterials, legToQuery, tryLeg, isFailure } from "../core/craftLegPricing";
-import { priceResultLeg, resultQuery, LegMarketError } from "../core/craftResultValuation";
+import { priceMaterials, legToQuery } from "../core/craftLegPricing";
+import { resultQuery } from "../core/craftResultValuation";
 import { computeMargin } from "../core/craftValuation";
 import { MATS, ALL_MATERIALS } from "../core/craftMaterials";
 import { RECIPES } from "../core/craftRecipes";
@@ -166,20 +166,11 @@ const ok = (name: string, cond: boolean, extra = "") => {
   ok("no base leg carries a result tier", RECIPES.every((r) => r.base.stats.every((st) => st.tier == null)));
 }
 
-// --- no exchange rates: the result leg fails TRANSIENTLY before spending a trade2 search ---
+// --- no exchange rates: the tick fails TRANSIENTLY before spending a trade2 search ---
 async function noRatesIsTransient(): Promise<void> {
   const ctx = { idx: buildStatIndex([]), rates: null, cred: { poesessid: "" }, currencyDiv: new Map<string, number>() };
-  const outcome = await tryLeg(() => priceResultLeg(RECIPES[0]!.result, ctx));
-  ok("no rates → transient leg failure (the previous good report is kept)", isFailure(outcome) && outcome.transient, JSON.stringify(outcome));
-  let typed = false;
-  try {
-    await priceResultLeg(RECIPES[0]!.result, ctx);
-  } catch (e) {
-    typed = e instanceof LegMarketError;
-  }
-  ok("…raised as LegMarketError", typed);
-  // the whole recipe: rates are checked BEFORE the base leg, so no search is spent (with an empty
-  // POESESSID a base search would fail with a POESESSID error instead)
+  // rates are checked BEFORE the base leg, so no search is spent (with an empty POESESSID a base
+  // search would fail with a POESESSID error instead)
   const bare: CraftRecipe = { ...RECIPES[0]!, materials: [] };
   const built = await buildReport(bare, ctx, new Map());
   ok(

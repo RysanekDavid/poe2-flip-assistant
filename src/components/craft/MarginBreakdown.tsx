@@ -19,7 +19,7 @@ function legBasis(leg: LegReport): string {
     const dropped = leg.outliersDropped > 0 ? ` · ${leg.outliersDropped} bait dropped` : "";
     // only the cheapest CRAFT_RESULT_TOP_N asks are fetched: in a deep market this median sits at
     // its cheap end, so the label says "cheapest" and gives the listed total beside it
-    return `median of the ${leg.samples} cheapest instant-buyout comparables (of ${listed})${band}${dropped}${leg.relaxed ? " · relaxed to defining mods" : ""} · asks, not sales`;
+    return `median of ${leg.samples} of the ${leg.sampled ?? leg.samples} cheapest instant-buyout comparables (of ${listed})${band}${dropped}${leg.relaxed ? " · relaxed to defining mods" : ""} · asks, not sales`;
   }
   if (leg.percentile == null || leg.floorDiv == null) {
     return `legacy cheapest-asks value of ${leg.samples} · ${listed} · awaiting rescan`;

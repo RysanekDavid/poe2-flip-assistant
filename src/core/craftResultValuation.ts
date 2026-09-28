@@ -14,10 +14,6 @@ import type { TradeQuery } from "../lib/tradeLink";
  * of the archetype's market, not of every listing — labelled so wherever it is shown. The old p30 of a loose one-mod search priced the junk end of the finished-item market.
  */
 
-/** No exchange rates → comparables in exalt/chaos can't be put on one scale. Transient: the
- *  rate ladder recovers, so the previous good report is kept (keepPreviousReport). */
-export class LegMarketError extends Error {}
-
 interface ComparableSet {
   total: number;
   listings: Listing[];
@@ -68,12 +64,10 @@ function toLegReport(set: ComparableSet, value: Valuation, medianDiv: number): L
 }
 
 /**
- * Price a recipe's result leg: 1–2 searches + ≤ 4 fetches. Throws LegMarketError (transient)
- * without spending a search when no rates are known, and LegFloorError (a market verdict) when
- * fewer than MIN_LEG_SAMPLES rated comparables survive trimming.
+ * Price a recipe's result leg: 1–2 searches + ≤ 4 fetches. Throws LegFloorError (a market
+ * verdict) when fewer than MIN_LEG_SAMPLES rated comparables survive trimming.
  */
 export async function priceResultLeg(leg: RecipeLegSpec, ctx: LegContext): Promise<LegReport> {
-  if (!ctx.rates) throw new LegMarketError(`${leg.label}: no exchange rates — result comparables can't be valued`);
   const set = await comparableSet(leg, ctx);
   const value = valueFromComparables(set.listings, set.total, ctx.rates);
   if (value.valueDiv == null || value.samples < MIN_LEG_SAMPLES) {

@@ -42,7 +42,7 @@ export function NearMissLine({ nm, result, gate, ex }: { nm: NearMiss; result: L
           cost <span className="tabular-nums text-neutral-200">{priceLabel(nm.costDiv, ex)}</span>
         </span>
         <span
-          title={`median of the ${result.samples} cheapest instant-buyout comparables (of ${result.total} listed); band = p25–p75 of those asks — in a deep market this is its cheap end`}
+          title={`median of ${result.samples} of the ${result.sampled ?? result.samples} cheapest instant-buyout comparables (of ${result.total} listed; bait outliers dropped); band = p25–p75 of those asks — in a deep market this is its cheap end`}
         >
           hit sells <span className="tabular-nums text-neutral-200">{priceLabel(nm.resultMedianDiv, ex)}</span>{" "}
           <span className="tabular-nums text-neutral-500">

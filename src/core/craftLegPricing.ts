@@ -74,28 +74,28 @@ export function legToQuery(
 }
 
 /**
- * Listing price → Divine. Rates come from the league rate ladder (cx → ninja → scout), so a
- * poe2scout outage no longer aborts a craft scan. Small currencies (alch, aug, regal… — exactly
- * what junk base listings are priced in) fall back to the ninja exchange value of that item, as
- * do exalt/chaos when no rate source answers. NaN when nothing knows the currency (dropped).
+ * Listing price → Divine. Divine/exalt/chaos come from the league rate ladder (cx → ninja →
+ * scout); small currencies (alch, aug, regal… — exactly what junk base listings are priced in)
+ * use the ninja exchange value of that item. NaN when nothing knows the currency (dropped).
  */
 export function listingDiv(
   amount: number,
   currency: string,
-  rates: ExchangeRates | null,
+  rates: ExchangeRates,
   currencyDiv: ReadonlyMap<string, number>,
 ): number {
   if (currency === "divine") return amount;
-  if (rates && (currency === "exalted" || currency === "exalt")) return amount / rates.exaltPerDivine;
-  if (rates && currency === "chaos") return amount / rates.chaosPerDivine;
-  const unit = currencyDiv.get(currency === "exalt" ? "exalted" : currency);
+  if (currency === "exalted" || currency === "exalt") return amount / rates.exaltPerDivine;
+  if (currency === "chaos") return amount / rates.chaosPerDivine;
+  const unit = currencyDiv.get(currency);
   return unit != null ? amount * unit : NaN;
 }
 
-/** Shared per-scan context for pricing legs. */
+/** Per-scan context for pricing legs. Rates are required: buildReport skips the tick (transient)
+ *  before any leg is priced when no rate source answers. */
 export interface LegContext {
   idx: StatIndex;
-  rates: ExchangeRates | null;
+  rates: ExchangeRates;
   cred: TradeCred;
   currencyDiv: ReadonlyMap<string, number>;
 }

@@ -20,6 +20,7 @@ import { resolveRates } from "./rates";
 import { storedReport } from "./craftReports";
 import { BASE_PERCENTILE, computeMargin, computeNearMiss, RETURN_FLAG_MULTIPLE, rankGate } from "./craftValuation";
 import { RECIPES, type CraftRecipe, type LegReport, type RecipeMarginReport } from "./craftRecipes";
+import type { ExchangeRates } from "./priceEngine";
 import { priceLeg, priceMaterials, tryLeg, isFailure, type LegContext } from "./craftLegPricing";
 import { priceResultLeg } from "./craftResultValuation";
 
@@ -62,7 +63,7 @@ export function assembleReport(shell: RecipeMarginReport, base: LegReport, resul
  *  near-miss. Never throws: market, transport and engine failures all become a report. Each leg
  *  is priced independently, so a base that cleared the floor stays in the report (and can
  *  prefill attempt costs) even when the result leg failed. */
-export async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: Map<string, MaterialPrice>): Promise<ScanOutcome> {
+export async function buildReport(recipe: CraftRecipe, scan: ScanContext, prices: Map<string, MaterialPrice>): Promise<ScanOutcome> {
   const { lines, missing } = priceMaterials(recipe, prices);
   const materialsDiv = lines.reduce((s, l) => s + (l.totalDiv ?? 0), 0);
   const shell: RecipeMarginReport = {
@@ -86,9 +87,10 @@ export async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: 
   }
   // Checked before either leg: without rates the result can't be valued, so pricing the base
   // would spend 1 search + 4 fetches on a report that is thrown away (the previous one is kept).
-  if (!ctx.rates) {
+  if (!scan.rates) {
     return { report: { ...shell, status: "leg-failed", error: "no exchange rates — legs not priced this tick" }, transient: true };
   }
+  const ctx: LegContext = { ...scan, rates: scan.rates };
   const base = await tryLeg(() => priceLeg(recipe.base, BASE_PERCENTILE, ctx));
   const result = await tryLeg(() => priceResultLeg(recipe.result, ctx));
   if (isFailure(base) || isFailure(result)) {
@@ -106,8 +108,10 @@ export async function buildReport(recipe: CraftRecipe, ctx: LegContext, prices: 
 }
 
 /** Pure: keep the stored report instead of the new one? Only when the new scan failed for a
- *  transient reason AND what we already have is a good report — a 429 or a rate-governor timeout
- *  must not wipe a valid EV (and its rank / prefill) until the next clean scan. */
+ *  transient reason AND what we already have is a good report — a 429, a rate-governor timeout
+ *  or a rates outage must not wipe a valid EV (and its rank / prefill) until the next clean scan.
+ *  With nothing good stored (e.g. a never-scanned recipe) the transient failure IS stored: a
+ *  rates outage then leaves a leg-failed report with base null, replaced by the next clean scan. */
 export function keepPreviousReport(previous: RecipeMarginReport | null, outcome: ScanOutcome): boolean {
   return outcome.transient && previous?.status === "ok";
 }
@@ -138,7 +142,7 @@ function maybeAlert(recipe: CraftRecipe, report: RecipeMarginReport): void {
       itemId: recipe.key,
       itemName: recipe.label,
       message:
-        `EV ~${report.evDiv.toFixed(1)} div/attempt · ${report.marginPct.toFixed(0)}% margin (hit ${(report.hitRate * 100).toFixed(0)}%, median of the ${report.result.samples} cheapest of ${report.result.total} listed)` +
+        `EV ~${report.evDiv.toFixed(1)} div/attempt · ${report.marginPct.toFixed(0)}% margin (hit ${(report.hitRate * 100).toFixed(0)}%, median of ${report.result.samples} of the ${report.result.sampled ?? report.result.samples} cheapest of ${report.result.total} listed)` +
         bandText(report) +
         (report.returnFlagged ? ` · ⚠ return >${RETURN_FLAG_MULTIPLE}× cost — check the result asks` : ""),
       value: report.marginPct,
@@ -206,13 +210,16 @@ function stalestRecipe(league: string): CraftRecipe | null {
   return RECIPES.find((r) => r.key === key) ?? null;
 }
 
-/** Shared per-scan context. Rates may be null (no source answered) — listingDiv then falls back to
- *  the ninja currency map, and unrateable listings drop out instead of aborting the scan. */
-async function scanContext(league: string, cred: TradeCred): Promise<LegContext> {
+/** A LegContext before the rates check: rates may be null (no source answered). */
+export type ScanContext = Omit<LegContext, "rates"> & { rates: ExchangeRates | null };
+
+/** Shared per-scan context. Null rates don't abort here — buildReport skips each recipe's tick as
+ *  a transient failure (previous good report kept) before spending any trade2 call. */
+async function scanContext(league: string, cred: TradeCred): Promise<ScanContext> {
   // flagged (fractured/desecrated) stats too: a fractured +3 amulet is a different product
   const { stats, flaggedStats } = await fetchTradeMeta();
   const rates = resolveRates(league)?.rates ?? null;
-  if (!rates) console.warn(`[craft-margin] no exchange rates for ${league} — pricing listings via the ninja currency map only`);
+  if (!rates) console.warn(`[craft-margin] no exchange rates for ${league} — tick skipped as transient, previous reports kept`);
   return { idx: buildStatIndex([...stats, ...flaggedStats]), rates, cred, currencyDiv: getCurrencyDivMap(league) };
 }
 
