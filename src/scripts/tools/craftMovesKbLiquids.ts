@@ -3,7 +3,8 @@
  * these facts fails here, so the rules are re-read instead of silently drifting. */
 import assert from "node:assert/strict";
 import type { CraftCatalog } from "../../core/tools/craftmoves/catalog";
-import { ALL_RULES, KB } from "../../core/tools/craftmoves/rules";
+import { classifyText } from "../../core/tools/craftmoves/classify";
+import { ALL_RULES, evaluateRules, KB } from "../../core/tools/craftmoves/rules";
 
 /** Verbatim §6 fragments (whitespace-normalised) behind each verified liquid/jewel rule. */
 export const KB6_FACTS: ReadonlyArray<{ rule: string; text: string }> = [
@@ -35,6 +36,29 @@ const KB6_MODS: Record<string, { side: "prefix" | "suffix"; text: RegExp; range?
   CraftedJewelRadiusChaosResistance: { side: "suffix", text: /Chaos Resistance/, range: [4, 5] },
 };
 
+/**
+ * The game prints Time-Lost mods inside §6's wrapper ("Notable Passive Skills in Radius also grant
+ * …"); RePoE does not. A pasted Ancient Ferocity line in that form must read as the crafted mod.
+ */
+function testAncientFerocityLine(section6: string, cat: CraftCatalog): void {
+  const wrapper = /"(Notable Passive Skills in Radius also grant) \+\(5–7\)%/.exec(section6)?.[1];
+  assert.ok(wrapper, "KB §6 quotes the radius wrapper");
+  const text = [
+    "Item Class: Jewels", "Rarity: Rare", "Doom Shard", "Time-Lost Ruby", "--------", "Item Level: 80", "--------",
+    "Upgrades Radius to Medium", `${wrapper} +6% to Fire Resistance`,
+  ].join("\n");
+  const s = classifyText(text, cat)?.state;
+  assert.ok(s, "Time-Lost fixture parses");
+  assert.deepEqual(s.unmatched, [], "the wrapped line and the radius prefix both read");
+  const ferocity = s.affixes.find((a) => a.modId === "CraftedJewelRadiusFireResistance");
+  assert.ok(ferocity && ferocity.kind === "crafted" && ferocity.side === "suffix", JSON.stringify(s.affixes));
+  assert.equal(s.slots.crafted, 1, "the Ancient Ferocity mod fills the crafted slot");
+  const ev = evaluateRules(s);
+  for (const id of ["liquid-ancient-contempt", "liquid-ancient-ferocity"]) {
+    assert.ok(!ev.moves.some((m) => m.id === id), `${id} not offered over an existing crafted mod`);
+  }
+}
+
 const LIQUID_RULES = ["liquid-potent-contempt", "liquid-ancient-contempt", "liquid-potent-ferocity", "liquid-ancient-ferocity"];
 
 export function testKbLiquids(kbText: string, cat: CraftCatalog): void {
@@ -48,6 +72,7 @@ export function testKbLiquids(kbText: string, cat: CraftCatalog): void {
     assert.match(mod.text, want.text);
     if (want.range) assert.deepEqual([mod.stats[0]!.min, mod.stats[0]!.max], want.range, `${id} range vs §6`);
   }
+  testAncientFerocityLine(section6, cat);
   for (const id of LIQUID_RULES) {
     const rule = ALL_RULES.find((r) => r.id === id);
     assert.ok(rule && rule.verified && rule.source.includes(`${KB} §6`), `${id} is verified against ${KB} §6`);

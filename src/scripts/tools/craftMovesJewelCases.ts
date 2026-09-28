@@ -66,6 +66,21 @@ function testTimeLost(cat: CraftCatalog): void {
   }
   assert.ok(moves.some((m) => m.id === "liquid-ancient-contempt"), "Ancient Contempt on Time-Lost");
   assert.match(evaluateRules(s).blocked.find((b) => b.id === "liquid-potent-contempt")?.reason ?? "", /non-Ancient liquids don.t work on Time-Lost/);
+  // an unreadable Time-Lost line might be an existing crafted mod: no Ancient liquid on top of it
+  const unreadable = jewel(cat, "Time-Lost Ruby", [...jewelLines(cat, "Time-Lost Ruby", "prefix", 1), "Some future radius mod"]);
+  assert.match(evaluateRules(unreadable).blocked.find((b) => b.id === "liquid-ancient-contempt")?.reason ?? "", /unreadable line may be the crafted mod/);
+}
+
+/** KB §6 (b): 2P + 3S after stripping Contempt's "+1 Suffix allowed" is the end state, not a misread. */
+function testOverCapJewel(cat: CraftCatalog): void {
+  const full = jewel(cat, "Ruby", [...jewelLines(cat, "Ruby", "prefix", 2), ...jewelLines(cat, "Ruby", "suffix", 3)]);
+  assert.deepEqual([full.openPrefixes, full.openSuffixes, full.openTotal], [0, 0, 0], JSON.stringify(full.flags));
+  assert.ok(full.flags.some((f) => f.code === "over-cap-jewel") && !full.flags.some((f) => f.code === "over-capacity"));
+  const partial = jewel(cat, "Ruby", [...jewelLines(cat, "Ruby", "prefix", 1), ...jewelLines(cat, "Ruby", "suffix", 3)]);
+  assert.deepEqual([partial.openPrefixes, partial.openSuffixes, partial.openTotal], [null, 0, null], "the other side stays unknown");
+  assert.match(evaluateRules(partial).blocked.find((b) => b.id === "omen-sinistral-exaltation")?.reason ?? "", /KB §6 b/);
+  const ring = classify(cat, itemText({ ...RING, rarity: "Rare", ilvl: 82, lines: ringLines(cat, [], ["FireResistance", "ColdResistance", "Strength", "Dexterity"]) }));
+  assert.ok(ring.flags.some((f) => f.code === "over-capacity"), "gear one over is still a misread");
 }
 
 function testCatalysedRing(cat: CraftCatalog): void {
@@ -100,6 +115,7 @@ export function runJewelAndTagCases(cat: CraftCatalog): void {
   testBasicJewel(cat);
   testContemptSlot(cat);
   testTimeLost(cat);
+  testOverCapJewel(cat);
   testCatalysedRing(cat);
   testDesecratedHeaders(cat);
   testParserMarkers();
