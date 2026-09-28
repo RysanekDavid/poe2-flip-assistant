@@ -17,8 +17,9 @@ export const isRare = (s: ItemState): boolean => s.rarity === "Rare";
 export function needOpen(s: ItemState, side: "prefix" | "suffix" | "any", count = 1): Block {
   const open = side === "prefix" ? s.openPrefixes : side === "suffix" ? s.openSuffixes : s.openTotal;
   if (open == null) {
-    const capUnknown = s.capacity == null && s.rarity === "Rare";
-    return { block: capUnknown ? "the affix limit of this item is unresolved (rare Time-Lost jewels, KB §6) — open slots unknown" : OPEN_UNKNOWN };
+    if (s.capacity == null && s.rarity === "Rare") return { block: "the affix limit of this item is unresolved (rare Time-Lost jewels, KB §6) — open slots unknown" };
+    if (s.flags.some((f) => f.code === "over-cap-jewel")) return { block: "over-cap jewel: whether the other side can still take a mod is unverified (KB §6 b)" };
+    return { block: OPEN_UNKNOWN };
   }
   if (open >= count) return null;
   const where = side === "any" ? "affix" : side;

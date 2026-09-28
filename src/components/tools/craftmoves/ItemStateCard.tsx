@@ -17,10 +17,9 @@ const KIND_TONE: Record<AffixView["kind"], string> = {
 };
 
 /** Filled / open / unknown slot pips for one side. `open` null = cannot prove how many are open. */
-function Pips({ label, used, cap, open }: { label: string; used: number; cap: number | null; open: number | null }) {
-  const total = cap ?? used;
-  const pips = Array.from({ length: Math.max(total, used) }, (_, i) => (i < used ? "used" : open == null ? "unknown" : "open"));
-  const title = open == null ? `${used} ${label} read — open slots unknown` : `${used}/${total} ${label}, ${open} open`;
+function Pips({ label, used, cap, open }: { label: string; used: number; cap: number; open: number | null }) {
+  const pips = Array.from({ length: Math.max(cap, used) }, (_, i) => (i < used ? "used" : open == null ? "unknown" : "open"));
+  const title = open == null ? `${used} ${label} read — open slots unknown` : `${used}/${cap} ${label}, ${open} open`;
   return (
     <span className="inline-flex items-center gap-1" title={title}>
       <span className="w-4 text-[10px] uppercase text-neutral-500">{label[0]}</span>
@@ -32,7 +31,6 @@ function Pips({ label, used, cap, open }: { label: string; used: number; cap: nu
           }`}
         />
       ))}
-      {cap == null && <span className="text-[10px] text-neutral-500">?</span>}
     </span>
   );
 }
@@ -86,9 +84,8 @@ export function ItemStateCard({ s }: { s: ItemStateView }) {
         </span>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        {cap && cap.p != null && <Pips label="prefix" used={s.prefixes} cap={cap.p} open={s.openPrefixes} />}
-        {cap && cap.s != null && <Pips label="suffix" used={s.suffixes} cap={cap.s} open={s.openSuffixes} />}
-        {cap && cap.p == null && <Pips label="affixes" used={s.affixes.length} cap={cap.total} open={s.openTotal} />}
+        {cap && <Pips label="prefix" used={s.prefixes} cap={cap.p} open={s.openPrefixes} />}
+        {cap && <Pips label="suffix" used={s.suffixes} cap={cap.s} open={s.openSuffixes} />}
         <Tags s={s} />
       </div>
       <ul className="mt-2 space-y-0.5 text-sm">

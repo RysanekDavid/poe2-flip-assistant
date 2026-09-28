@@ -46,7 +46,7 @@ export const itemStateSchema = z.object({
   affixes: z.array(affixSchema),
   prefixes: z.number().int(),
   suffixes: z.number().int(),
-  capacity: z.object({ p: z.number().nullable(), s: z.number().nullable(), total: z.number() }).nullable(),
+  capacity: z.object({ p: z.number(), s: z.number(), total: z.number() }).nullable(),
   openPrefixes: z.number().nullable(),
   openSuffixes: z.number().nullable(),
   openTotal: z.number().nullable(),

@@ -25,10 +25,10 @@ export interface Affix {
   note: string | null;
 }
 
-/** Affix limits. `p`/`s` null = the per-side split is not known (no current item has only a total). */
+/** Affix limits per side; `total` = p + s. An item whose limits are unknown has no Capacity at all. */
 export interface Capacity {
-  p: number | null;
-  s: number | null;
+  p: number;
+  s: number;
   total: number;
 }
 
@@ -39,6 +39,7 @@ export type StateFlagCode =
   | "ambiguous-split"
   | "ambiguous-side"
   | "over-capacity"
+  | "over-cap-jewel"
   | "ignored-text"
   | "unidentified"
   | "unknown-capacity";
@@ -87,19 +88,21 @@ function capacityOf(rarity: string, jewel: boolean, timeLost: boolean): Capacity
 /** Contempt's crafted "+1 Suffix Modifier allowed" (sits in a PREFIX slot) and its prefix twin. */
 export const EXTRA_CAPACITY = /^\+?(\d+) (Prefix|Suffix) Modifiers? allowed$/i;
 
-/** Raise the limits by every cataloged "+N … Modifier allowed" mod the item carries. */
-function withExtraCapacity(cap: Capacity | null, affixes: readonly Affix[]): Capacity | null {
-  if (cap == null) return null;
-  const out = { ...cap };
+/** Extra slots granted by every cataloged "+N … Modifier allowed" mod the item carries. */
+function extraCapacity(affixes: readonly Affix[]): { p: number; s: number } {
+  const extra = { p: 0, s: 0 };
   for (const a of affixes) {
     const m = a.modId != null && a.lines.length === 1 ? EXTRA_CAPACITY.exec(a.lines[0]!) : null;
     if (!m) continue;
-    const n = Number(m[1]);
-    if (m[2]!.toLowerCase() === "prefix") out.p = out.p == null ? null : out.p + n;
-    else out.s = out.s == null ? null : out.s + n;
-    out.total += n;
+    if (m[2]!.toLowerCase() === "prefix") extra.p += Number(m[1]);
+    else extra.s += Number(m[1]);
   }
-  return out;
+  return extra;
+}
+
+function withExtraCapacity(cap: Capacity | null, extra: { p: number; s: number }): Capacity | null {
+  if (cap == null) return null;
+  return { p: cap.p + extra.p, s: cap.s + extra.s, total: cap.total + extra.p + extra.s };
 }
 
 function emptyState(parsed: ParsedItem, meta: ItemMeta, itemClass: string | null, baseType: string | null): ItemState {
@@ -144,22 +147,38 @@ function finalize(state: ItemState): ItemState {
   if (sideless.length > 0) {
     state.flags.push({ code: "ambiguous-side", message: `${sideless.length} affix(es) could not be placed on a side — open slots unknown` });
   }
-  state.capacity = withExtraCapacity(state.capacity, state.affixes);
+  const extra = extraCapacity(state.affixes);
+  state.capacity = withExtraCapacity(state.capacity, extra);
   const cap = state.capacity;
   const provable = cap != null && state.unmatched.length === 0 && sideless.length === 0 && !state.unidentified
     && !state.flags.some((f) => f.code === "ambiguous-split");
   if (!provable) return state;
-  const used = state.affixes.length;
-  const openP = cap.p == null ? null : cap.p - state.prefixes;
-  const openS = cap.s == null ? null : cap.s - state.suffixes;
-  if (used > cap.total || (openP ?? 0) < 0 || (openS ?? 0) < 0) {
-    state.flags.push({ code: "over-capacity", message: `${used} affixes exceed the ${state.rarity.toLowerCase()} limit — some line was misread` });
-    return state;
+  const openP = cap.p - state.prefixes;
+  const openS = cap.s - state.suffixes;
+  if (openP >= 0 && openS >= 0) {
+    state.openPrefixes = openP;
+    state.openSuffixes = openS;
+    state.openTotal = openP + openS;
+  } else if (state.jewel && !state.timeLost && extra.p + extra.s === 0 && Math.min(openP, openS) === -1 && Math.max(openP, openS) >= 0) {
+    setStrippedContempt(state, openP, openS);
+  } else {
+    state.flags.push({ code: "over-capacity", message: `${state.affixes.length} affixes exceed the ${state.rarity.toLowerCase()} limit — some line was misread` });
   }
-  state.openPrefixes = openP;
-  state.openSuffixes = openS;
-  state.openTotal = cap.total - used;
   return state;
+}
+
+/**
+ * KB §6 (b): creators strip Contempt's "+1 … allowed" mod and keep the over-cap 3rd affix, so a basic
+ * jewel one over on one side is that end state, not a misread. The over side is full (0 open); the
+ * other side is only known when it is full too — whether it can still grow is unverified.
+ */
+function setStrippedContempt(state: ItemState, openP: number, openS: number): void {
+  state.flags.push({ code: "over-cap-jewel", message: "over-cap jewel: stripped Contempt slot (KB §6 b, creator-demonstrated)" });
+  const otherOpen = openP < 0 ? openS : openP;
+  const known = otherOpen === 0 ? 0 : null;
+  state.openPrefixes = openP < 0 ? 0 : known;
+  state.openSuffixes = openS < 0 ? 0 : known;
+  state.openTotal = known;
 }
 
 /** Classify an already-parsed item. `meta` carries the header lines parseItem drops. */
