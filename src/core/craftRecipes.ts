@@ -148,7 +148,7 @@ export type LegReport = z.infer<typeof LegReportSchema>;
  *  priced, so a list with no pick still says which craft is closest and what it would need. */
 export const NearMissSchema = z.object({
   costDiv: z.number(), // base + materials per attempt
-  resultMedianDiv: z.number(), // trimmed median of the result comparables
+  resultMedianDiv: z.number(), // trimmed median of the ≤20 CHEAPEST instant-buyout result comparables
   resultBandDiv: z.object({ lo: z.number(), hi: z.number() }), // p25..p75 of the kept comparables
   evDiv: z.number(), // hitRate × median − cost
   evLowDiv: z.number(), // hitRate × p25 − cost: the pessimistic sale

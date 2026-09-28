@@ -1,6 +1,6 @@
 "use client";
 
-import type { NearMiss } from "../../core/craftRecipes";
+import type { LegReport, NearMiss } from "../../core/craftRecipes";
 import type { RankGate } from "../../core/craftValuation";
 import { evLabel, priceLabel } from "./craftView";
 
@@ -12,8 +12,8 @@ const CONFIDENCE_CLASS: Record<NearMiss["confidence"], string> = {
 };
 
 const CONFIDENCE_TIP: Record<NearMiss["confidence"], string> = {
-  high: "≥8 comparables of ≥20 listed, tight p25–p75 band, strict archetype search, clean base leg",
-  medium: "≥5 comparables of ≥8 listed",
+  high: "median of ≥8 of the cheapest instant-buyout asks with ≥20 listed, tight p25–p75 band, strict archetype search, clean base leg — in a market this deep the median sits at its cheap end",
+  medium: "median of ≥5 of the cheapest instant-buyout asks with ≥8 listed",
   low: "thin or wide comparable market — treat the result value as a rough guess",
 };
 
@@ -33,7 +33,7 @@ const pct = (x: number): string => `${(x * 100).toFixed(0)}%`;
  * p25–p75 band), the hit rate that breaks even vs the curated one, and what a hit would need to
  * sell for. Blocking reasons say why it is not a top pick even when EV is positive.
  */
-export function NearMissLine({ nm, gate, ex }: { nm: NearMiss; gate: RankGate; ex: number | null }) {
+export function NearMissLine({ nm, result, gate, ex }: { nm: NearMiss; result: LegReport; gate: RankGate; ex: number | null }) {
   const blocking = [...gate.reasons, ...(nm.evDiv <= 0 ? ["EV not positive"] : [])];
   return (
     <div className="rounded-md border border-neutral-800 bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">
@@ -41,7 +41,9 @@ export function NearMissLine({ nm, gate, ex }: { nm: NearMiss; gate: RankGate; e
         <span>
           cost <span className="tabular-nums text-neutral-200">{priceLabel(nm.costDiv, ex)}</span>
         </span>
-        <span title="trimmed median of instant-buyout comparables; band = p25–p75 of the kept asks">
+        <span
+          title={`median of the ${result.samples} cheapest instant-buyout comparables (of ${result.total} listed); band = p25–p75 of those asks — in a deep market this is its cheap end`}
+        >
           hit sells <span className="tabular-nums text-neutral-200">{priceLabel(nm.resultMedianDiv, ex)}</span>{" "}
           <span className="tabular-nums text-neutral-500">
             ({priceLabel(nm.resultBandDiv.lo, ex)}–{priceLabel(nm.resultBandDiv.hi, ex)})

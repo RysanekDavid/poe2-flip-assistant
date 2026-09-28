@@ -17,7 +17,9 @@ function legBasis(leg: LegReport): string {
   if (leg.method === "comparable-median") {
     const band = leg.band ? ` · band ${leg.band.p25.toFixed(2)}–${leg.band.p75.toFixed(2)} Div` : "";
     const dropped = leg.outliersDropped > 0 ? ` · ${leg.outliersDropped} bait dropped` : "";
-    return `median of ${leg.samples} instant-buyout comparables${band} · ${listed}${dropped}${leg.relaxed ? " · relaxed to defining mods" : ""} · asks, not sales`;
+    // only the cheapest CRAFT_RESULT_TOP_N asks are fetched: in a deep market this median sits at
+    // its cheap end, so the label says "cheapest" and gives the listed total beside it
+    return `median of the ${leg.samples} cheapest instant-buyout comparables (of ${listed})${band}${dropped}${leg.relaxed ? " · relaxed to defining mods" : ""} · asks, not sales`;
   }
   if (leg.percentile == null || leg.floorDiv == null) {
     return `legacy cheapest-asks value of ${leg.samples} · ${listed} · awaiting rescan`;
@@ -158,7 +160,7 @@ export function MarginBreakdown({ r, ex, icons }: { r: RecipeView; ex: number | 
           <span className="text-neutral-500"> / attempt</span>
         </p>
       )}
-      {rep?.nearMiss && <NearMissLine nm={rep.nearMiss} gate={r.gate} ex={ex} />}
+      {rep?.nearMiss && rep.result && <NearMissLine nm={rep.nearMiss} result={rep.result} gate={r.gate} ex={ex} />}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <LegBlock title={`Base — ${r.baseSpec.label}`} leg={rep?.base ?? null} note={r.baseSpec.note} ex={ex} />

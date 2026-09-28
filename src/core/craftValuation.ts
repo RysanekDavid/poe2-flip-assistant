@@ -17,7 +17,9 @@ import type { ExchangeRates } from "./priceEngine";
  *  one recipe — stays at ≤ 3 searches + 8 fetches through the shared trade2 limiter. */
 export const LEG_SAMPLE = 40;
 
-/** Result comparables fetched per search (2 fetches): enough for a trimmed median + p25..p75 band. */
+/** Result comparables fetched per search (2 fetches): enough for a trimmed median + p25..p75 band.
+ *  These are the CHEAPEST N asks, so in a market deeper than N the median is a low percentile of
+ *  all asks — every label says "median of the N cheapest … (of TOTAL listed)". */
 export const CRAFT_RESULT_TOP_N = 20;
 /** Fewer listings than this behind the strict result search → retry on tier-1 stats only. */
 export const CRAFT_RESULT_MIN_COMPARABLES = 5;
@@ -163,7 +165,9 @@ export function bandOf(keptAsc: readonly number[]): Band {
 
 export type Confidence = NearMiss["confidence"];
 
-/** Confidence thresholds: "high" needs a deep, tight, strict result market AND a clean base. */
+/** Confidence thresholds: "high" needs a deep, tight, strict result market AND a clean base.
+ *  "Deep" (≥ CONF_HIGH_TOTAL listed) is exactly when the median of the cheapest CRAFT_RESULT_TOP_N
+ *  sits at the market's cheap end — high confidence in a conservative sale price, not the typical one. */
 export const CONF_HIGH_SAMPLES = 8;
 export const CONF_HIGH_TOTAL = 20;
 export const CONF_HIGH_MAX_SPREAD = 0.6; // (p75 − p25) / p50

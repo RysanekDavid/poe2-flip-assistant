@@ -44,11 +44,12 @@ logger = logging.getLogger("uvicorn.error")
 DomainFilter = Literal["any", "jewel", "weapon", "jewellery", "armour"]
 _EV_FORMULA = (
     "EV/attempt = curated hit rate × result value − base ask (p25) − materials; result value = "
-    "trimmed median of instant-buyout comparables matching the finished-item archetype"
+    "trimmed median of the (up to 20) cheapest instant-buyout comparables matching the "
+    "finished-item archetype, of the total listed"
 )
 _CAVEAT = (
-    "Asks are observed trade listings, not sales; hit rates are curated estimates, not "
-    "measured probabilities."
+    "Asks are observed trade listings, not sales; in a deep market the result median is its "
+    "cheap end; hit rates are curated estimates, not measured probabilities."
 )
 # Unpriced rows carry the engine's error so the answer can say why; long multi-leg errors are cut
 # here (marked with an ellipsis) so one row cannot push the ranked ones out of the byte cap.

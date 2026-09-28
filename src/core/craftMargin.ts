@@ -142,7 +142,7 @@ function maybeAlert(recipe: CraftRecipe, report: RecipeMarginReport): void {
       itemId: recipe.key,
       itemName: recipe.label,
       message:
-        `EV ~${report.evDiv.toFixed(1)} div/attempt · ${report.marginPct.toFixed(0)}% margin (hit ${(report.hitRate * 100).toFixed(0)}%, ${report.result.samples} comps)` +
+        `EV ~${report.evDiv.toFixed(1)} div/attempt · ${report.marginPct.toFixed(0)}% margin (hit ${(report.hitRate * 100).toFixed(0)}%, median of the ${report.result.samples} cheapest of ${report.result.total} listed)` +
         bandText(report) +
         (report.returnFlagged ? ` · ⚠ return >${RETURN_FLAG_MULTIPLE}× cost — check the result asks` : ""),
       value: report.marginPct,
