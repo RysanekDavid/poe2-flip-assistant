@@ -59,7 +59,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 p-6">
+    <main className="flex flex-1 items-center justify-center bg-neutral-950 p-6">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl border border-neutral-800 bg-neutral-900/60 p-6">
         <div>
           <h1 className="text-xl font-bold">PoE2 Flip Assistant</h1>

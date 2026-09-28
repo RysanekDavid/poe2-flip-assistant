@@ -17,7 +17,7 @@
     "test:middleware": "tsx src/scripts/testMiddleware.ts",
     "test:demo-user": "tsx src/scripts/testAddUser.ts",
     "test:demo": "tsx src/scripts/testDemoReadiness.ts",
-    "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts && tsx src/scripts/testDeployShell.ts && tsx src/scripts/testDeploySmoke.ts",
+    "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts && tsx src/scripts/testDeployShell.ts && tsx src/scripts/testDeploySmoke.ts && tsx src/scripts/testLegalNotice.ts",
     "test:league": "tsx src/scripts/testLeague.ts && tsx src/scripts/testLeagueMigration.ts",
     "test:user-league": "tsx src/scripts/runWithTestEnv.ts user-league",
     "test:market-league": "tsx src/scripts/runWithTestEnv.ts market",

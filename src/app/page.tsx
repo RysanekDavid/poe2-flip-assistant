@@ -66,7 +66,7 @@ export default function DashboardPage() {
   return (
     // one alert poll for the TopBar badge, its popover and the Exchange ticker
     <AlertsProvider>
-    <main className="mx-auto max-w-screen-2xl space-y-4 p-6">
+    <main className="mx-auto w-full max-w-screen-2xl flex-1 space-y-4 p-6">
       <Onboarding />
       {/* stale-league warning — every price below is wrong if this fires */}
       <LeagueBanner />
