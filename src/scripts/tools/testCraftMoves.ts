@@ -17,6 +17,7 @@ import { craftMovesResponseSchema, rulesStale } from "../../lib/tools/craftMoves
 import { itemText, RING, ringDesecratedSuffix, ringLines, renderFamily } from "./craftMovesFixtures";
 import { assertToolPanel } from "./toolsTestKit";
 import { runJewelAndTagCases } from "./craftMovesJewelCases";
+import { KB6_FACTS, testKbLiquids } from "./craftMovesKbLiquids";
 import { SAMPLE_ITEM } from "../../components/tools/craftmoves/craftMovesClient";
 
 const KB_PATH = join(process.cwd(), "docs", "research", KB);
@@ -212,6 +213,7 @@ function testContract(cat: CraftCatalog): void {
 const cat = loadCraftCatalog();
 testCatalogStamp(cat);
 testKbGates(cat);
+testKbLiquids(kbText, cat);
 testFullRare(cat);
 testTwoAndTwo(cat);
 testSample(cat);
@@ -230,6 +232,6 @@ for (const bad of ["hunt", "craftmoves", "", "CRAFT-MOVES"]) {
   assert.equal(toolIdSchema.safeParse(bad).success, false, `"${bad}" must not parse as a tool id`);
 }
 console.log(
-  `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB gate rows, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/advanced), jewels/liquids/catalysed/headers/markers, ` +
+  `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB §3 gate rows, ${KB6_FACTS.length} KB §6 facts, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/advanced), jewels/liquids/catalysed/headers/markers, ` +
     `${ALL_RULES.length} rules with provenance, null-not-zero pricing, desecrated marker, contract, panel wiring`,
 );

@@ -37,7 +37,8 @@ function testBasicJewel(cat: CraftCatalog): void {
   }
   const contempt = legalMoves(s).find((m) => m.id === "liquid-potent-contempt")!;
   assert.match(contempt.effect, /\+1 Suffix Modifier allowed' \(sits in a PREFIX slot\)/);
-  assert.ok(!contempt.verified && contempt.warnings.length === 0, "no fixed-damage-prefix warning; unverified until KB §6 lands");
+  assert.ok(contempt.verified && contempt.warnings.length === 0, "verified against KB §6; no fixed-damage-prefix warning");
+  assert.ok(contempt.notes.some((n) => /unverified/.test(n)), "§6's open question on the removed mod is carried as a note");
   assert.match(evaluateRules(s).blocked.find((b) => b.id === "liquid-ancient-contempt")?.reason ?? "", /Time-Lost/);
 }
 
@@ -57,13 +58,14 @@ function testContemptSlot(cat: CraftCatalog): void {
 
 function testTimeLost(cat: CraftCatalog): void {
   const s = jewel(cat, "Time-Lost Ruby", jewelLines(cat, "Time-Lost Ruby", "prefix", 1));
-  assert.deepEqual([s.timeLost, s.capacity?.p, s.openTotal], [true, null, 3], "Time-Lost stays total-only");
+  assert.deepEqual([s.timeLost, s.capacity, s.openTotal], [true, null, null], "Time-Lost cap is unresolved (KB §6): nothing counted");
+  assert.match(evaluateRules(s).blocked.find((b) => b.id === "exalt")?.reason ?? "", /unresolved/, "no exalt on an unknown cap");
   const moves = legalMoves(s);
   for (const id of ["bone-preserved", "omen-putrefaction"]) {
     assert.equal(moves.find((m) => m.id === id)?.verified, false, `${id} unverified on Time-Lost jewels`);
   }
   assert.ok(moves.some((m) => m.id === "liquid-ancient-contempt"), "Ancient Contempt on Time-Lost");
-  assert.match(evaluateRules(s).blocked.find((b) => b.id === "liquid-potent-contempt")?.reason ?? "", /BASIC/);
+  assert.match(evaluateRules(s).blocked.find((b) => b.id === "liquid-potent-contempt")?.reason ?? "", /non-Ancient liquids don.t work on Time-Lost/);
 }
 
 function testCatalysedRing(cat: CraftCatalog): void {
@@ -79,6 +81,9 @@ function testDesecratedHeaders(cat: CraftCatalog): void {
   const unrevealed = classify(cat, itemText({ ...RING, rarity: "Rare", ilvl: 82, lines: [...ringLines(cat, ["IncreasedLife"], []), '{ Prefix Modifier "" }', "Desecrated Prefix"] }));
   assert.deepEqual([unrevealed.slots.desecrated, unrevealed.slots.unrevealed, unrevealed.prefixes], [1, 1, 2], "advanced unrevealed desecrated prefix");
   assert.ok(moveIds(unrevealed).includes("omen-abyssal-echoes"));
+  const light = legalMoves(unrevealed).find((m) => m.id === "omen-light");
+  assert.ok(light && !light.verified, "Omen of Light frees the desecrated slot (not in the verified KB)");
+  assert.match(evaluateRules(unrevealed).blocked.find((b) => b.id === "bone-preserved")?.reason ?? "", /Omen of Light/);
   const combo = comboFor(cat, RING.itemClass, RING.base)!;
   const modId = Object.values(combo.desecrated).flatMap((t) => Object.keys(t)).find((m) => cat.mods[m]!.side === "suffix" && !cat.mods[m]!.text.includes("\n"))!;
   const line = cat.mods[modId]!.text.replace(/\((-?\d+)-(-?\d+)\)/g, "$1");
