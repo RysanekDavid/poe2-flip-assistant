@@ -48,7 +48,7 @@ export const lootLineViewSchema = z.object({
   rate: rateSchema,
   confidence: confidenceSchema,
   source: sourceSchema,
-  /** Contribution at the point/guaranteed rate; null for range, unknown rate or no price. */
+  /** Per-kill contribution, a range rate at its low end; null for unknown rate or no price. */
   evDiv: z.number().nullable(),
   evLowDiv: z.number().nullable(),
   evHighDiv: z.number().nullable(),
@@ -70,7 +70,8 @@ export type BreakEven = z.infer<typeof breakEvenSchema>;
 export const jackpotSchema = z.object({
   /** Items priced at or above the entry cost. */
   items: z.array(z.string()),
-  /** P(at least one per kill), range lines at their low end — the conservative reading. */
+  /** P(at least one per kill), range lines at their low end — the conservative reading. Treats
+   *  drops as independent rolls, which overstates it when they share an exclusive pool. */
   p: z.number(),
   /** Same with range lines at their high end. */
   pHigh: z.number(),
@@ -89,10 +90,13 @@ export const tierResultSchema = z.object({
   entryLines: z.array(entryLineViewSchema),
   loot: z.array(lootLineViewSchema),
   guaranteedDiv: z.number(),
+  /** Conservative EV: range rates at their low end (so evDiv === evLowDiv). */
   evDiv: z.number(),
   evLowDiv: z.number(),
   evHighDiv: z.number(),
+  /** evDiv − entryDiv; an upper bound when !entryComplete. */
   netDiv: z.number(),
+  /** evDiv / entryDiv; an upper bound when !entryComplete. */
   evPerDivSpent: z.number().nullable(),
   jackpot: jackpotSchema,
   breakEven: z.array(breakEvenSchema),

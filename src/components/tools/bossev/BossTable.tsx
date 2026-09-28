@@ -1,68 +1,36 @@
+
 "use client";
 
 import { Skull } from "lucide-react";
-import type { Rate } from "../../../core/tools/bossEv/schema";
+import { breakEvenHeadline, fmtDiv, type Tone } from "../../../core/tools/bossEv/headline";
 import type { BossView, TierResult } from "../../../lib/tools/bossEvContract";
 import { SCROLL_BOX, THEAD_STICKY } from "../../../lib/tableStyle";
-import { fmtDiv, fmtRate, oneIn } from "./LootRow";
 
-export interface Headline {
-  text: string;
-  tone: string;
-  title: string;
-}
+export const TONE_CLASS: Record<Tone, string> = {
+  good: "text-good",
+  warn: "text-warn",
+  bad: "text-bad",
+  neutral: "text-neutral-300",
+  muted: "text-neutral-500",
+};
 
-function rateBounds(rate: Rate): { lo: number; hi: number } | null {
-  if (rate.kind === "point") return { lo: rate.p, hi: rate.p };
-  if (rate.kind === "range") return { lo: rate.lo, hi: rate.hi };
-  return null;
-}
-
-/** Green when even the low estimate clears the break-even, red when the high one misses it. */
-function verdictTone(rate: Rate, pStarNet: number): string {
-  const bounds = rateBounds(rate);
-  if (!bounds) return "text-neutral-200";
-  if (bounds.lo >= pStarNet) return "text-good";
-  if (bounds.hi < pStarNet) return "text-bad";
-  return "text-warn";
-}
-
-/** The number to look at first: how often the chase must drop for a kill to repay its entry. */
-export function breakEvenHeadline(tier: TierResult, exPerDiv: number): Headline {
+/** Net against a partly unpriced entry is only an upper bound, so it is never shown as a gain. */
+export function netCell(tier: TierResult, exPerDiv: number): { text: string; className: string; title: string } {
   if (!tier.entryComplete) {
-    return { text: "entry partly unpriced", tone: "text-neutral-500", title: "at least one entry item has no market price" };
+    return { text: `≤ ${fmtDiv(tier.netDiv, exPerDiv, true)}`, className: "text-neutral-500", title: "upper bound — part of the entry has no price" };
   }
-  const chase = tier.breakEven[0];
-  const sure = `guaranteed loot ${fmtDiv(tier.guaranteedDiv, exPerDiv)} vs entry ${fmtDiv(tier.entryDiv, exPerDiv)}`;
-  if (!chase) {
-    return tier.guaranteedDiv >= tier.entryDiv
-      ? { text: "guaranteed loot covers entry", tone: "text-good", title: sure }
-      : { text: "no priced chase drop", tone: "text-neutral-500", title: sure };
-  }
-  if (chase.pStarNet === 0) {
-    return { text: "guaranteed loot covers entry", tone: "text-good", title: `${sure}; ${chase.name} is pure upside` };
-  }
-  if (chase.pStarNet > 1) {
-    return {
-      text: "no single drop repays the entry",
-      tone: "text-neutral-500",
-      title: `${sure}; the priciest drop, ${chase.name} (${fmtDiv(chase.priceDiv, exPerDiv)}), is worth less than what it must cover`,
-    };
-  }
-  const estimate = chase.rate.kind === "unknown" ? "no published rate" : `estimate ${fmtRate(chase.rate)} (${chase.confidence})`;
-  // Several mid-value drops can repay the entry even when the single chase item's rate cannot.
-  const coveredByEv = tier.evLowDiv >= tier.entryDiv;
-  return {
-    text: `pays if ${chase.name} drops more than ${oneIn(chase.pStarNet)}`,
-    tone: coveredByEv ? "text-good" : verdictTone(chase.rate, chase.pStarNet),
-    title: [
-      ...(coveredByEv ? [`priced EV (low ${fmtDiv(tier.evLowDiv, exPerDiv)}) already covers the entry on average`] : []),
-      `${chase.name} ≈ ${fmtDiv(chase.priceDiv, exPerDiv)}`,
-      `alone it must drop ${oneIn(chase.pStar)}; after guaranteed loot ${oneIn(chase.pStarNet)}`,
-      sure,
-      estimate,
-    ].join("\n"),
-  };
+  return { text: fmtDiv(tier.netDiv, exPerDiv, true), className: tier.netDiv >= 0 ? "text-good" : "text-neutral-400", title: "priced EV − entry" };
+}
+
+export function evPerDivText(tier: TierResult): string {
+  if (tier.evPerDivSpent == null) return "—";
+  return `${tier.entryComplete ? "" : "≤ "}${tier.evPerDivSpent.toFixed(2)}×`;
+}
+
+/** Conservative EV first; the optimistic end of range-rated drops only as a visible "up to". */
+export function evText(tier: TierResult, exPerDiv: number): string {
+  const point = fmtDiv(tier.evDiv, exPerDiv);
+  return tier.evHighDiv - tier.evDiv > 1e-9 ? `${point} (up to ${fmtDiv(tier.evHighDiv, exPerDiv)})` : point;
 }
 
 function Badges({ tier }: { tier: TierResult }) {
@@ -88,12 +56,6 @@ export function BossArt({ icon, size }: { icon: string | null; size: "sm" | "lg"
   return <img src={icon} alt="" className={`${box} shrink-0 object-contain`} loading="lazy" />;
 }
 
-function evText(tier: TierResult, exPerDiv: number): string {
-  const point = fmtDiv(tier.evDiv, exPerDiv);
-  if (Math.abs(tier.evHighDiv - tier.evLowDiv) < 1e-9 && Math.abs(tier.evLowDiv - tier.evDiv) < 1e-9) return point;
-  return `${point} (${fmtDiv(tier.evLowDiv, exPerDiv)}–${fmtDiv(tier.evHighDiv, exPerDiv)})`;
-}
-
 interface Props {
   bosses: readonly BossView[];
   tierOf: (boss: BossView) => TierResult;
@@ -112,7 +74,7 @@ export function BossTable({ bosses, tierOf, selectedId, onSelect, exPerDiv }: Pr
             <th className="px-2 py-2 font-medium">Boss</th>
             <th className="px-2 py-2 font-medium" title="cheapest of buy vs craft, per attempt">Entry</th>
             <th className="px-2 py-2 font-medium" title="drop rate at which the chase item repays the entry">Break-even</th>
-            <th className="px-2 py-2 font-medium" title="priced drops with a stated rate; (range) adds range-rated drops at their low–high rate">Priced EV</th>
+            <th className="px-2 py-2 font-medium" title="priced drops with a stated rate, range rates at their low end; (up to) is the high end">Priced EV</th>
             <th className="px-2 py-2 font-medium" title="priced EV − entry">Net</th>
             <th className="px-2 py-2 font-medium" title="priced EV per Div of entry">EV/Div</th>
             <th className="px-2 py-2 font-medium" />
@@ -138,6 +100,7 @@ interface RowProps {
 
 function BossRow({ boss, tier, active, onSelect, exPerDiv }: RowProps) {
   const head = breakEvenHeadline(tier, exPerDiv);
+  const net = netCell(tier, exPerDiv);
   return (
     <tr
       onClick={() => onSelect(boss.id)}
@@ -160,12 +123,14 @@ function BossRow({ boss, tier, active, onSelect, exPerDiv }: RowProps) {
         {tier.entryComplete ? "" : "≥ "}
         {fmtDiv(tier.entryDiv, exPerDiv)}
       </td>
-      <td className={`px-2 py-1.5 ${head.tone}`} title={head.title}>
+      <td className={`px-2 py-1.5 ${TONE_CLASS[head.tone]}`} title={head.title}>
         {head.text}
       </td>
       <td className="px-2 py-1.5 tabular-nums text-neutral-300">{evText(tier, exPerDiv)}</td>
-      <td className={`px-2 py-1.5 tabular-nums ${tier.netDiv >= 0 ? "text-good" : "text-neutral-400"}`}>{fmtDiv(tier.netDiv, exPerDiv, true)}</td>
-      <td className="px-2 py-1.5 tabular-nums text-neutral-300">{tier.evPerDivSpent == null ? "—" : `${tier.evPerDivSpent.toFixed(2)}×`}</td>
+      <td className={`px-2 py-1.5 tabular-nums ${net.className}`} title={net.title}>
+        {net.text}
+      </td>
+      <td className={`px-2 py-1.5 tabular-nums ${tier.entryComplete ? "text-neutral-300" : "text-neutral-500"}`}>{evPerDivText(tier)}</td>
       <td className="px-2 py-1.5">
         <Badges tier={tier} />
       </td>

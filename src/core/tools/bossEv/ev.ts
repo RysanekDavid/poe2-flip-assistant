@@ -13,18 +13,20 @@ import type { BossLootFile, EntryLine, LootLine, Rate, Tier } from "./schema";
  * Boss expected value, pure. The honest headline is the BREAK-EVEN drop rate, not EV: a pinnacle's
  * EV is dominated by one or two chase drops whose rates are community guesses, so the tool asks
  * "how often must the chase drop for this to pay?" and lets the player judge that against the
- * (sourced, confidence-labelled) estimate. EV is summed only over priced lines with a stated rate.
+ * (sourced, confidence-labelled) estimate. EV is summed only over priced lines with a stated rate,
+ * and a range-rated line counts at its LOW end everywhere a single number is shown (EV, net,
+ * EV per Div, headline) — the high end only ever appears as the other half of a visible range.
  */
 
-/** Probability bounds per kill; null when the rate is unknown. */
-function rateBounds(rate: Rate): { point: number | null; lo: number | null; hi: number | null } {
+/** Probability bounds per kill; `point` is the conservative single value (a range's low end). */
+export function rateBounds(rate: Rate): { point: number | null; lo: number | null; hi: number | null } {
   switch (rate.kind) {
     case "guaranteed":
       return { point: 1, lo: 1, hi: 1 };
     case "point":
       return { point: rate.p, lo: rate.p, hi: rate.p };
     case "range":
-      return { point: null, lo: rate.lo, hi: rate.hi };
+      return { point: rate.lo, lo: rate.lo, hi: rate.hi };
     case "unknown":
       return { point: null, lo: null, hi: null };
   }
@@ -139,7 +141,10 @@ const div = (n: number): string => (Math.abs(n) >= 10 ? n.toFixed(0) : n.toFixed
 
 /** One-paragraph "what a typical run looks like", so a positive EV is not read as a steady income. */
 export function varianceNote(result: Omit<TierResult, "varianceNote">): string {
-  if (!result.entryComplete) return "Part of the entry cost has no market price, so break-even and net are lower bounds.";
+  if (!result.entryComplete) {
+    // entryDiv only sums the priced lines, so it is a floor: every ratio against it overstates.
+    return "Part of the entry cost has no market price: the entry shown is a lower bound, so break-even is understated and net and EV per Div are upper bounds.";
+  }
   const parts: string[] = [];
   const rareEv = sum(
     result.loot.map((l) => {
@@ -155,7 +160,11 @@ export function varianceNote(result: Omit<TierResult, "varianceNote">): string {
   }
   const kills = result.jackpot.killsToFirst;
   if (kills != null && result.jackpot.p < 1) {
-    parts.push(kills < 1.5 ? "Most kills include a drop worth the entry." : `A drop worth the entry lands about once per ${Math.round(kills)} kills.`);
+    parts.push(
+      kills < 1.5
+        ? "Most kills include a drop worth the entry (assumes independent rolls)."
+        : `A drop worth the entry lands about once per ${Math.round(kills)} kills (assumes independent rolls; an exclusive drop pool makes this optimistic).`,
+    );
   }
   if (result.unknownRate.length > 0) parts.push(`${result.unknownRate.length} drop(s) have no known rate and are left out of EV.`);
   return parts.join(" ");

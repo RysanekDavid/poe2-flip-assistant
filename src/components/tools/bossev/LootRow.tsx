@@ -1,41 +1,9 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import type { Confidence, Rate } from "../../../core/tools/bossEv/schema";
+import { fmtDiv, fmtRate } from "../../../core/tools/bossEv/headline";
+import type { Confidence } from "../../../core/tools/bossEv/schema";
 import type { LootLineView, ResolvedPrice } from "../../../lib/tools/bossEvContract";
-import { fmtDivOrEx } from "../../../lib/format";
-
-/* Formatting shared by the Boss EV panel. Lives in the leaf component so the table and the detail
- * view import it without a cycle through BossEvTool. */
-
-/** "1 in 40" for a per-kill probability; "every kill" at ≥1. */
-export function oneIn(p: number): string {
-  if (p >= 1) return "every kill";
-  if (!(p > 0)) return "never";
-  const n = 1 / p;
-  return `1 in ${n >= 10 ? Math.round(n).toLocaleString("en-US") : n.toFixed(1)}`;
-}
-
-export function fmtRate(rate: Rate): string {
-  switch (rate.kind) {
-    case "guaranteed":
-      return "guaranteed";
-    case "point":
-      return oneIn(rate.p);
-    case "range":
-      return `${oneIn(rate.hi)} – ${oneIn(rate.lo)}`;
-    case "unknown":
-      return "rate unknown";
-  }
-}
-
-/** Amount in div (≥1) or ex (below), with an explicit sign for net values. */
-export function fmtDiv(div: number, exPerDiv: number, signed = false): string {
-  if (div === 0) return "0";
-  const body = fmtDivOrEx(Math.abs(div), exPerDiv);
-  if (!signed) return div < 0 ? `−${body}` : body;
-  return `${div < 0 ? "−" : "+"}${body}`;
-}
 
 export function fmtAge(hours: number | null): string {
   if (hours == null) return "age unknown";
@@ -79,9 +47,11 @@ const CONFIDENCE_STYLE: Record<Confidence, string> = {
   unverified: "border-bad/40 text-bad",
 };
 
+// A label is the weaker of "does the boss drop it" and, when a rate is given, "how is that rate
+// sourced". With the rate unknown it vouches only for the drop's presence, never for how often.
 const CONFIDENCE_HINT: Record<Confidence, string> = {
-  confirmed: "two or more independent sources agree",
-  "single-source": "one source only",
+  confirmed: "two or more independent sources agree the boss drops it (and on the rate, when one is shown)",
+  "single-source": "one source for the drop or its rate",
   unverified: "contradicted, self-flagged as a guess, or a small sample",
 };
 
@@ -94,10 +64,10 @@ export function ConfidenceChip({ confidence }: { confidence: Confidence }) {
 }
 
 function evCell(line: LootLineView, exPerDiv: number): { text: string; title: string } {
-  if (line.evDiv != null) return { text: fmtDiv(line.evDiv, exPerDiv), title: "price × rate, per kill" };
-  if (line.evLowDiv != null && line.evHighDiv != null) {
-    return { text: `${fmtDiv(line.evLowDiv, exPerDiv)} – ${fmtDiv(line.evHighDiv, exPerDiv)}`, title: "range rate: counted only in the EV range" };
+  if (line.rate.kind === "range" && line.evDiv != null && line.evHighDiv != null) {
+    return { text: `${fmtDiv(line.evDiv, exPerDiv)} – ${fmtDiv(line.evHighDiv, exPerDiv)}`, title: "range rate: the low end counts toward EV, the high end is shown as \"up to\"" };
   }
+  if (line.evDiv != null) return { text: fmtDiv(line.evDiv, exPerDiv), title: "price × rate, per kill" };
   return { text: "—", title: line.price == null ? "no price — excluded from EV" : "no known rate — excluded from EV" };
 }
 

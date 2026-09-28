@@ -2,8 +2,9 @@
 
 import { ExternalLink, Info } from "lucide-react";
 import type { BossView, EntryLineView, TierResult } from "../../../lib/tools/bossEvContract";
-import { BossArt, breakEvenHeadline } from "./BossTable";
-import { LootRow, PriceCell, fmtDiv, oneIn } from "./LootRow";
+import { breakEvenHeadline, fmtDiv, oneIn } from "../../../core/tools/bossEv/headline";
+import { BossArt, TONE_CLASS, evPerDivText, evText, netCell } from "./BossTable";
+import { LootRow, PriceCell } from "./LootRow";
 
 function RouteCost({ label, div, chosen, title, exPerDiv }: { label: string; div: number | null; chosen: boolean; title: string; exPerDiv: number }) {
   return (
@@ -57,23 +58,25 @@ function TierChips({ boss, tier, onTier }: { boss: BossView; tier: TierResult; o
 
 function Headline({ tier, exPerDiv }: { tier: TierResult; exPerDiv: number }) {
   const head = breakEvenHeadline(tier, exPerDiv);
+  const net = netCell(tier, exPerDiv);
   const jackpot = tier.jackpot;
   const jackpotTitle =
     jackpot.items.length === 0
       ? "no priced drop is worth the entry"
       : `drops worth ≥ entry: ${jackpot.items.join(", ")}\nchance per kill ${(jackpot.p * 100).toFixed(1)}–${(jackpot.pHigh * 100).toFixed(1)}%` +
+        "\nassumes independent rolls — drops sharing one exclusive pool make this optimistic" +
         (jackpot.unknownRateCount > 0 ? `\n${jackpot.unknownRateCount} of them have no known rate (not counted)` : "");
   return (
     <div className="grid gap-1">
-      <p className={`text-base font-semibold ${head.tone}`} title={head.title}>
+      <p className={`text-base font-semibold ${TONE_CLASS[head.tone]}`} title={head.title}>
         {head.text}
       </p>
       <p className="flex flex-wrap gap-x-3 text-xs text-neutral-500">
-        <span title="priced drops with a stated rate">EV {fmtDiv(tier.evDiv, exPerDiv)}</span>
-        <span title="range-rated drops at their low / high rate">
-          range {fmtDiv(tier.evLowDiv, exPerDiv)}–{fmtDiv(tier.evHighDiv, exPerDiv)}
+        <span title="priced drops with a stated rate, range rates at their low end; (up to) is the high end">EV {evText(tier, exPerDiv)}</span>
+        <span className={net.className} title={net.title}>
+          net {net.text}
         </span>
-        <span>net {fmtDiv(tier.netDiv, exPerDiv, true)}</span>
+        <span>EV/Div {evPerDivText(tier)}</span>
         <span title={jackpotTitle}>
           jackpot {jackpot.killsToFirst == null ? "—" : oneIn(jackpot.p)}
         </span>

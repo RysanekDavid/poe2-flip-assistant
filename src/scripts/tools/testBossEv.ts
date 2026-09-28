@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { TOOL_IDS, TOOLS } from "../../components/tools/toolRegistry";
 import { bossEv, evaluateBosses, jackpotOf } from "../../core/tools/bossEv/ev";
+import { breakEvenHeadline, capTone, fmtDiv, oneIn } from "../../core/tools/bossEv/headline";
 import { loadPriceInputs, priceLookup, referencedNinjaIds, resolvePrice, type PriceInputs } from "../../core/tools/bossEv/pricing";
 import { comparePatch, parseBossLoot, patchWarning, type Tier } from "../../core/tools/bossEv/schema";
 import { insertSnapshots } from "../../db/marketQueries";
@@ -127,11 +128,12 @@ function testSyntheticTier(): void {
   assert.equal(r.entryComplete, true);
   // EV: G 1 + P 10×0.1 + M 2×0.25 = 2.5; ranges add 40×0.01 / 40×0.05.
   close(r.guaranteedDiv, 1, "guaranteed value");
-  close(r.evDiv, 2.5, "point + guaranteed EV");
-  close(r.evLowDiv, 2.9, "EV low adds range lo");
+  close(r.evDiv, 2.9, "EV counts the range at its LOW end (conservative)");
+  close(r.evLowDiv, r.evDiv, "the single EV number is the low end");
   close(r.evHighDiv, 4.5, "EV high adds range hi");
-  close(r.netDiv, -1.5, "net = EV − entry");
-  close(r.evPerDivSpent ?? NaN, 0.625, "EV per Div spent");
+  close(r.netDiv, -1.1, "net = conservative EV − entry");
+  close(r.evPerDivSpent ?? NaN, 0.725, "EV per Div spent, conservative");
+  assert.equal(r.loot.find((l) => l.name === "R")?.evDiv, 40 * 0.01, "a range line's EV is its low end");
   assert.deepEqual(r.unpriced, ["X", "Pool"], "unpriced lines are listed, not dropped");
   assert.deepEqual(r.unknownRate, ["U"]);
   const x = r.loot.find((l) => l.name === "X");
@@ -180,7 +182,7 @@ function testEntryEdgeCases(): void {
   assert.equal(incomplete.entryLines[0]?.costDiv, null);
   assert.equal(incomplete.entryLines[0]?.name, "a", "unpriced entry falls back to its id");
   close(incomplete.entryDiv, 2, "entry sums only priced lines");
-  assert.match(incomplete.varianceNote, /lower bounds/);
+  assert.match(incomplete.varianceNote, /entry shown is a lower bound.*net and EV per Div are upper bounds/, "net overstates, never understates");
 }
 
 function testPricing(): void {
@@ -223,6 +225,50 @@ function testPatchWarning(): void {
   assert.throws(() => patchWarning("0.5.5", "latest", before), /unparseable patch/);
 }
 
+type LootSpec = Tier["loot"][number];
+const loot = (name: string, itemId: string, rate: LootSpec["rate"], confidence: LootSpec["confidence"]): LootSpec => ({
+  name, priceRef: { kind: "ninja", itemId }, rate, confidence, source: SRC,
+});
+/** Entry 4 (as TIER), guaranteed G worth 1 unless replaced. */
+const headlineOf = (lines: LootSpec[], prices: Partial<Record<string, number>> = {}, entry: Tier["entry"] = TIER.entry) =>
+  breakEvenHeadline(bossEv({ ...TIER, entry, loot: lines }, priceLookup(syntheticInputs(prices))), 400);
+
+function testHeadlines(): void {
+  const G = loot("G", "g", { kind: "guaranteed" }, "confirmed");
+  // Chase priced 100 at an unverified 1%: p*net = (4 − 1) / 100 = 3% > 1% → red, capped to amber.
+  const failing = headlineOf([G, loot("U", "u", { kind: "point", p: 0.01 }, "unverified")]);
+  assert.equal(failing.text, "pays if U drops more than 1 in 33 · est. 1 in 100, unverified", "confidence is in the visible text");
+  assert.equal(failing.tone, "warn", "an unverified rate never paints the verdict red");
+  assert.equal(headlineOf([G, loot("U", "u", { kind: "point", p: 0.01 }, "confirmed")]).tone, "bad", "a confirmed failing rate is red");
+  assert.equal(headlineOf([G, loot("U", "u", { kind: "unknown" }, "confirmed")]).tone, "neutral", "no rate, no verdict");
+
+  // EV covers the entry through a mid drop although the chase's own rate fails its break-even.
+  const lines = [G, loot("P", "p", { kind: "point", p: 0.35 }, "single-source"), loot("U", "u", { kind: "point", p: 0.001 }, "confirmed")];
+  const viaEv = headlineOf(lines);
+  assert.equal(viaEv.text, "priced EV covers entry (1.15×) · single-source", "says EV covers it, not that the chase pays");
+  assert.equal(viaEv.tone, "warn", "EV resting on a single-source rate stays amber");
+  const allConfirmed = lines.map((l) => ({ ...l, confidence: "confirmed" as const }));
+  assert.equal(headlineOf(allConfirmed).tone, "good", "only confirmed deciding rates earn green");
+
+  // Chase priced exactly the uncovered entry (4 − 1 = 3): pStarNet === 1 → no single drop repays it.
+  const exact = headlineOf([G, loot("X", "x", { kind: "point", p: 0.1 }, "confirmed")], { x: 3 });
+  assert.equal(exact.text, "no single drop repays the entry");
+  assert.equal(exact.tone, "muted");
+
+  const sure = headlineOf([G, loot("P", "p", { kind: "point", p: 0.1 }, "confirmed")], {}, [{ itemId: "a", qty: 0.5 }]);
+  assert.deepEqual([sure.text, sure.tone], ["guaranteed loot covers entry · confirmed", "good"]);
+  const sureSingle = headlineOf([{ ...G, confidence: "single-source" }], {}, [{ itemId: "a", qty: 0.5 }]);
+  assert.deepEqual([sureSingle.text, sureSingle.tone], ["guaranteed loot covers entry · single-source", "warn"]);
+
+  const incomplete = headlineOf([G], {}, [{ itemId: "missing", qty: 1 }, { itemId: "a", qty: 1 }]);
+  assert.deepEqual([incomplete.text, incomplete.tone], ["entry partly unpriced", "muted"], "never a verdict on a partial entry");
+
+  assert.equal(fmtDiv(0, 400), "0 div");
+  assert.equal(fmtDiv(-0.5, 400, true), "−200 ex");
+  assert.equal(oneIn(1), "every kill");
+  assert.equal(capTone("good", []), "warn", "nothing deciding is nothing confirmed");
+}
+
 function testCuratedEvaluates(): void {
   const file = parseBossLoot(readCurated());
   const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, nowMs: NOW };
@@ -249,6 +295,7 @@ testEntryEdgeCases();
 testPricing();
 testDbPricing();
 testPatchWarning();
+testHeadlines();
 testCuratedEvaluates();
 assertToolPanel("boss-ev", "BossEvTool");
 assert.deepEqual(TOOLS.map((t) => t.id), [...TOOL_IDS], "sub-nav order must match TOOL_IDS, each id once");
@@ -256,5 +303,5 @@ assert.equal(new Set(TOOLS.map((t) => t.module)).size, TOOLS.length, "each tool 
 assert.equal(new Set(TOOLS.map((t) => t.label)).size, TOOLS.length, "sub-nav labels must be distinct");
 console.log(
   "ALL PASS — boss-loot strict schema + dated sources, synthetic EV (guaranteed/point/range/unknown/unpriced/manual), " +
-    "break-even, jackpot, craft-vs-buy entry, per-item price age, patch warning, contract, panel wiring",
+    "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, contract, panel wiring",
 );
