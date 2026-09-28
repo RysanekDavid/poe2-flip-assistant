@@ -79,10 +79,16 @@ function coveredHeadline(tier: TierResult, sure: string, exPerDiv: number): Head
   if (tier.evDiv >= tier.entryDiv) {
     const deciding = tier.loot.filter((l) => (l.evDiv ?? 0) > 0).map((l) => l.confidence);
     const ratio = tier.evPerDivSpent ?? 0;
+    const chase = tier.breakEven[0];
+    const chaseLine = chase && chase.pStarNet < 1 ? [`${chase.name} alone repays it if it drops more than ${oneIn(chase.pStarNet)}`] : [];
     return {
       text: `priced EV covers entry (${ratio.toFixed(2)}×) · ${weakest(deciding)}`,
       tone: capTone("good", deciding),
-      title: `priced EV ${fmtDiv(tier.evDiv, exPerDiv)} (range rates at their low end) vs entry ${fmtDiv(tier.entryDiv, exPerDiv)}\nan average over many kills, not any single drop`,
+      title: [
+        `priced EV ${fmtDiv(tier.evDiv, exPerDiv)} (range rates at their low end) vs entry ${fmtDiv(tier.entryDiv, exPerDiv)}`,
+        "an average over many kills, not any single drop",
+        ...chaseLine,
+      ].join("\n"),
     };
   }
   return null;
