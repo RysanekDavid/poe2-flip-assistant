@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PATCH_VERSION_RE } from "../../../sources/patchNotes/contracts";
 
 /*
  * Curated pinnacle-boss data (src/data/poe2/bosses/boss-loot.json). Every schema is .strict() so a
@@ -92,7 +93,7 @@ export type Boss = z.infer<typeof bossSchema>;
 export const bossLootFileSchema = z
   .object({
     schemaVersion: z.literal(1),
-    patch: z.string().regex(/^\d+\.\d+\.\d+[a-z]?$/),
+    patch: z.string().regex(PATCH_VERSION_RE, "expected a patch version like 0.5.5"),
     dataAsOf: isoDay,
     bosses: z.array(bossSchema).min(1),
   })
@@ -123,35 +124,57 @@ export function parseBossLoot(raw: unknown): BossLootFile {
 /** PoE2 1.0 launch, announced for 2026-12-11. A date alone proves nothing changed, so it only nudges. */
 export const POE2_1_0_LAUNCH_MS = Date.parse("2026-12-11T00:00:00Z");
 
-/** "0.5.4d" → [0, 5, 4, "d"]; throws on anything else so a malformed coverage file fails loudly. */
-function parsePatch(patch: string): [number, number, number, string] {
-  const m = /^(\d+)\.(\d+)\.(\d+)([a-z]?)$/.exec(patch);
-  if (!m) throw new Error(`unparseable patch version "${patch}"`);
-  return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] ?? ""];
+/** "0.5.4d" → { parts: [0, 5, 4], letter: "d" }; throws on anything outside PATCH_VERSION_RE. */
+function parsePatch(patch: string): { parts: number[]; letter: string } {
+  if (!PATCH_VERSION_RE.test(patch)) throw new Error(`unparseable patch version "${patch}"`);
+  const letter = /[a-z]$/.test(patch) ? patch.slice(-1) : "";
+  return { parts: patch.slice(0, patch.length - letter.length).split(".").map(Number), letter };
 }
 
-/** <0 when a is older than b. A hotfix letter sorts after the bare patch: 0.5.4 < 0.5.4d < 0.5.5. */
-export function comparePatch(a: string, b: string): number {
-  const [pa, pb] = [parsePatch(a), parsePatch(b)];
-  for (let i = 0; i < 3; i += 1) {
-    const d = (pa[i] as number) - (pb[i] as number);
+/** Numeric parts only; a missing trailing part counts as 0, so 0.5.4 equals 0.5.4.0. */
+function compareNumeric(a: readonly number[], b: readonly number[]): number {
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    const d = (a[i] ?? 0) - (b[i] ?? 0);
     if (d !== 0) return d;
   }
-  return pa[3] === pb[3] ? 0 : pa[3] < pb[3] ? -1 : 1;
+  return 0;
 }
+
+/** <0 when a is older than b. A hotfix letter sorts after the bare patch: 0.5.4 < 0.5.4d < 0.5.4.1 < 0.5.5. */
+export function comparePatch(a: string, b: string): number {
+  const [pa, pb] = [parsePatch(a), parsePatch(b)];
+  const numeric = compareNumeric(pa.parts, pb.parts);
+  if (numeric !== 0) return numeric;
+  return pa.letter === pb.letter ? 0 : pa.letter < pb.letter ? -1 : 1;
+}
+
+/**
+ * `obsolete` is evidence (the game data moved past the tables' patch) and earns an alert banner;
+ * `recheck` is a nudge (a hotfix letter or the 1.0 date) and must not look like one.
+ */
+export type PatchWarning = { level: "obsolete" | "recheck"; text: string };
 
 /**
  * Why the curated tables may be out of date, or null. The coverage patch is the game-data
  * snapshot the app is verified against (patch-coverage.json): only when THAT has moved past the
  * file's patch is there evidence the tables are stale. A file curated ahead of the snapshot is
- * normal (tables get re-checked on patch day, the RePoE sync lags).
+ * normal (tables get re-checked on patch day, the RePoE sync lags). A hotfix rarely touches
+ * pinnacle loot, so a letter-only delta is a nudge, not an alarm.
  */
-export function patchWarning(filePatch: string, coveragePatch: string, nowMs: number): string | null {
-  if (comparePatch(filePatch, coveragePatch) < 0) {
-    return `Game data is on ${coveragePatch}, newer than these ${filePatch} boss tables — access chains and loot may be obsolete until re-curated.`;
+export function patchWarning(filePatch: string, coveragePatch: string, nowMs: number): PatchWarning | null {
+  const [file, coverage] = [parsePatch(filePatch), parsePatch(coveragePatch)];
+  const numeric = compareNumeric(file.parts, coverage.parts);
+  if (numeric < 0) {
+    return {
+      level: "obsolete",
+      text: `Game data is on ${coveragePatch}, newer than these ${filePatch} boss tables — access chains and loot may be obsolete until re-curated.`,
+    };
+  }
+  if (numeric === 0 && file.letter < coverage.letter) {
+    return { level: "recheck", text: `Game data moved to hotfix ${coveragePatch} since these ${filePatch} boss tables — worth a re-check.` };
   }
   if (nowMs >= POE2_1_0_LAUNCH_MS) {
-    return `PoE2 1.0 launched 2026-12-11 — re-check these ${filePatch} boss tables.`;
+    return { level: "recheck", text: `PoE2 1.0 launched 2026-12-11 — re-check these ${filePatch} boss tables.` };
   }
   return null;
 }

@@ -128,7 +128,7 @@ export const bossEvResponseSchema = z.object({
   computedLeague: z.string(),
   dataAsOf: z.string(),
   patch: z.string(),
-  patchWarning: z.string().nullable(),
+  patchWarning: z.object({ level: z.enum(["obsolete", "recheck"]), text: z.string() }).nullable(),
   rates: bossEvRatesSchema.nullable(),
   pricesFetchedAt: z.string().nullable(),
   scoutAgeHours: z.number().nullable(),

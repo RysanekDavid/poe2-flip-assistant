@@ -32,9 +32,16 @@ export const patchDocumentSchema = z.object({
   bodyText: z.string().trim().min(1),
 });
 
+/**
+ * One grammar for every hand-edited PoE2 patch version (patch-coverage.json, boss-loot.json): three
+ * or more numeric parts plus an optional lowercase hotfix letter — 0.5.4, 0.5.4d, 0.5.4.1. It is
+ * the shape the forum-title parser extracts, so a coverage bump copied from a patch thread fits.
+ */
+export const PATCH_VERSION_RE = /^\d+(?:\.\d+){2,}[a-z]?$/;
+
 export const patchCoverageSchema = z.object({
   schema_version: z.literal(1),
-  game_data_patch: z.string().min(1),
+  game_data_patch: z.string().regex(PATCH_VERSION_RE, "expected a patch version like 0.5.4d"),
   official_patch_thread_id: z.number().int().positive(),
   official_patch_published_at: z.string().datetime(),
   catalog_sha256: z.string().regex(/^[a-f0-9]{64}$/),

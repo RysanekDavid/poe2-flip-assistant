@@ -13,6 +13,7 @@ import { comparePatch, parseBossLoot, patchWarning, type Tier } from "../../core
 import { insertSnapshots } from "../../db/marketQueries";
 import { getDb } from "../../db/database";
 import { bossEvResponseSchema } from "../../lib/tools/bossEvContract";
+import { patchCoverageSchema } from "../../sources/patchNotes/contracts";
 import { assertToolPanel, freshToolsDb } from "./toolsTestKit";
 
 const NOW = Date.parse("2026-09-28T12:00:00Z");
@@ -26,6 +27,9 @@ function readCurated(): unknown {
 function testCuratedFile(): void {
   const file = parseBossLoot(readCurated());
   assert.equal(file.schemaVersion, 1);
+  // The route calls this on every GET with the two checked-in files; it must not throw on them.
+  const coverage = patchCoverageSchema.parse(realCoverage());
+  assert.doesNotThrow(() => patchWarning(file.patch, coverage.game_data_patch, NOW), "real boss-loot + patch-coverage");
   assert.ok(file.bosses.length >= 5, "at least five sourced bosses");
   const today = new Date(NOW).toISOString().slice(0, 10);
   for (const boss of file.bosses) {
@@ -216,15 +220,27 @@ function testPatchWarning(): void {
   const after = Date.parse("2026-12-11T00:00:00Z");
   assert.ok(comparePatch("0.5.4", "0.5.4d") < 0 && comparePatch("0.5.4d", "0.5.5") < 0 && comparePatch("0.5.10", "0.5.9") > 0);
   assert.equal(comparePatch("0.5.5b", "0.5.5b"), 0);
-  assert.equal(patchWarning("0.5.5", "0.5.4d", before), null, "tables curated AHEAD of the game-data snapshot are fine");
-  assert.equal(patchWarning("0.5.5", "0.5.5", before), null);
-  assert.match(patchWarning("0.5.5", "0.5.5b", before) ?? "", /newer than these 0\.5\.5 boss tables/, "a newer hotfix is newer");
-  assert.match(patchWarning("0.5.5", "0.6.0", before) ?? "", /obsolete/);
-  const soft = patchWarning("0.5.5", "0.5.5", after) ?? "";
-  assert.match(soft, /1\.0 launched.*re-check/, "after the date: a soft nudge only");
-  assert.doesNotMatch(soft, /obsolete/, "the date alone never claims the tables are obsolete");
-  assert.match(patchWarning("0.5.5", "1.0.0", after) ?? "", /obsolete/, "coverage past the file is what makes them obsolete");
+  assert.ok(comparePatch("0.5.4d", "0.5.4.1") < 0 && comparePatch("0.5.4.1", "0.5.5") < 0, "four-part versions from patch titles");
+  assert.equal(comparePatch("0.5.4", "0.5.4.0"), 0);
+  const level = (file: string, coverage: string, now = before) => patchWarning(file, coverage, now)?.level ?? null;
+  assert.equal(level("0.5.5", "0.5.4d"), null, "tables curated AHEAD of the game-data snapshot are fine");
+  assert.equal(level("0.5.5", "0.5.5"), null);
+  assert.equal(level("0.5.5b", "0.5.5"), null);
+  const hotfix = patchWarning("0.5.5", "0.5.5b", before);
+  assert.equal(hotfix?.level, "recheck", "a hotfix-only delta is a nudge, not the obsolete banner");
+  assert.match(hotfix?.text ?? "", /hotfix 0\.5\.5b.*re-check/);
+  assert.equal(level("0.5.5", "0.5.5.1"), "obsolete", "a numeric sub-patch is a real change");
+  assert.equal(level("0.5.5", "0.6.0"), "obsolete");
+  const soft = patchWarning("0.5.5", "0.5.5", after);
+  assert.equal(soft?.level, "recheck", "after the 1.0 date: a soft nudge only");
+  assert.match(soft?.text ?? "", /1\.0 launched.*re-check/);
+  assert.equal(level("0.5.5", "1.0.0", after), "obsolete", "coverage past the file is what makes them obsolete");
   assert.throws(() => patchWarning("0.5.5", "latest", before), /unparseable patch/);
+  assert.throws(() => patchCoverageSchema.parse({ ...realCoverage(), game_data_patch: "0.5.4 hotfix" }), /patch version/);
+}
+
+function realCoverage(): Record<string, unknown> {
+  return JSON.parse(readFileSync(join(process.cwd(), "src/data/poe2/patch-coverage.json"), "utf8")) as Record<string, unknown>;
 }
 
 type LootSpec = Tier["loot"][number];

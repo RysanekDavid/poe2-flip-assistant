@@ -100,12 +100,13 @@ export function BossEvTool() {
       {data && (
         <>
           <DataStrip data={data} />
-          {data.patchWarning && (
+          {data.patchWarning?.level === "obsolete" && (
             <p role="alert" className="flex items-center gap-2 rounded border border-warn/40 bg-warn/10 px-3 py-1.5 text-xs text-warn">
               <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
-              {data.patchWarning}
+              {data.patchWarning.text}
             </p>
           )}
+          {data.patchWarning?.level === "recheck" && <p className="text-xs text-neutral-500">{data.patchWarning.text}</p>}
           <BossTable bosses={data.bosses} tierOf={tierOf} selectedId={selected?.id ?? null} onSelect={select} exPerDiv={exPerDiv} />
           {selected && <BossDetail boss={selected} tier={tierOf(selected)} onTier={(id) => setTier(selected.id, id)} exPerDiv={exPerDiv} />}
         </>
