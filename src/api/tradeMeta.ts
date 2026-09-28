@@ -35,6 +35,8 @@ interface ItemsResp {
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 interface TradeMeta {
+  /** When this snapshot was fetched (ms epoch) — callers memoize on it and show its age. */
+  at: number;
   stats: StatOption[];
   // Fractured/desecrated twins of explicit mods. Kept OUT of `stats` so autocompletes, snipe and
   // hunt resolution keep their explicit-first catalog; only craft legs that must search the flag
@@ -44,7 +46,7 @@ interface TradeMeta {
   uniques: UniqueOption[];
 }
 
-let cache: ({ at: number } & TradeMeta) | null = null;
+let cache: TradeMeta | null = null;
 
 async function get<T>(path: string): Promise<T> {
   try {
