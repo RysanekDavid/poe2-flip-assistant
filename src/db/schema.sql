@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,       -- scrypt$<salt>$<hash>
-  api_key TEXT UNIQUE NOT NULL,      -- bearer token for the local agent (balance/hunt push)
+  api_key TEXT UNIQUE NOT NULL,      -- bearer token for the local agent (balance push)
   role TEXT NOT NULL DEFAULT 'member', -- 'owner' | 'member'
   league TEXT,                       -- league this user VIEWS; NULL = follow the app default
   league_set_at TEXT,                -- ISO stamp of the last switch — drives the poller's dwell debounce
@@ -146,59 +146,6 @@ CREATE TABLE IF NOT EXISTS holdings (
   PRIMARY KEY (user_id, currency)
 );
 
--- Hunts (saved live-search criteria; read-only — we never auto-buy) — PER-USER.
-CREATE TABLE IF NOT EXISTS hunts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL DEFAULT 1,
-  league TEXT,
-  label TEXT NOT NULL,
-  mode TEXT NOT NULL,            -- 'SNIPE' | 'CRAFT_BASE' | 'RESELL'
-  item_name TEXT,               -- unique name (SNIPE) or null
-  base_type TEXT,               -- base type, e.g. 'Sapphire Ring'
-  category TEXT,                -- trade2 category, e.g. 'weapon.bow' (when no single base type applies)
-  ilvl_min INTEGER,             -- minimum item level (craft bases care)
-  rarity TEXT,                  -- 'normal' | 'magic' | 'rare' | 'unique' | null (any)
-  stats_json TEXT,              -- JSON StatFilter[] (id+min) for craft/resell targeting
-  max_amount REAL,              -- price trigger ceiling (only listings at/below)
-  max_ccy TEXT,                 -- 'divine' | 'exalted' | 'chaos'
-  target_div REAL,              -- your expected resale value in Divine (for margin calc)
-  active INTEGER DEFAULT 1,
-  last_scan_at DATETIME,
-  last_hit_at DATETIME,
-  last_error TEXT,              -- why the last scan of this hunt failed (NULL after a clean scan)
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Hunt hits (live listings found at/below the trigger; you decide + buy manually) — PER-USER.
-CREATE TABLE IF NOT EXISTS hunt_hits (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL DEFAULT 1,
-  hunt_id INTEGER NOT NULL,
-  item_name TEXT NOT NULL,
-  base_type TEXT,
-  price_amount REAL NOT NULL,
-  price_ccy TEXT NOT NULL,
-  price_div REAL,                -- normalized to Divine; NULL = ask currency outside the rates ladder
-  margin_pct REAL,               -- (target_div - price_div)/price_div, if target set
-  account TEXT,
-  whisper TEXT,
-  listing_id TEXT,               -- unique trade listing hash (dedupe across re-lists)
-  seller_online INTEGER,         -- 1 if seller was in-game when listed
-  listed_at TEXT,                -- trade `indexed` timestamp
-  sig TEXT NOT NULL,             -- dedup signature (hunt+account+amount)
-  seen INTEGER DEFAULT 0,
-  found_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Live-hunt runtime status (written by the poller process, read by the UI over the DB)
-CREATE TABLE IF NOT EXISTS hunt_runtime (
-  id INTEGER PRIMARY KEY CHECK (id = 1),
-  connections INTEGER DEFAULT 0,    -- open WebSocket live-searches
-  last_event_at DATETIME,           -- last listing pushed
-  last_error TEXT,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Last auto-snipe scan report (poller writes it, the UI reads it across processes)
 CREATE TABLE IF NOT EXISTS autosnipe_report (
   id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -278,11 +225,11 @@ CREATE TABLE IF NOT EXISTS trade_rate_policy (
   blocked_until_ms INTEGER NOT NULL DEFAULT 0
 );
 
--- Manual trade2 scan requests (autosnipe, a user's hunts). Same idea as craft_refresh_request:
+-- Manual trade2 scan requests (autosnipe). Same idea as craft_refresh_request:
 -- the web process only queues, the poller consumes and runs the scan on ITS limiter, so one
 -- process owns the account+IP trade2 budget. user_id 0 = not user-scoped (autosnipe).
 CREATE TABLE IF NOT EXISTS scan_request (
-  kind TEXT NOT NULL,           -- 'autosnipe' | 'hunts'
+  kind TEXT NOT NULL,           -- 'autosnipe'
   user_id INTEGER NOT NULL DEFAULT 0,
   requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (kind, user_id)
@@ -487,7 +434,6 @@ CREATE TABLE IF NOT EXISTS league_registry (
 -- Indexes that reference user_id are created in database.ts AFTER the multi-tenant migration,
 -- because on an existing DB the column doesn't exist yet when this file is exec'd.
 CREATE INDEX IF NOT EXISTS idx_balance_tabs_snap ON balance_tabs(snapshot_id);
-CREATE INDEX IF NOT EXISTS idx_hunt_hits_sig ON hunt_hits(sig, found_at DESC);
 -- idx_snapshots_item_time is created in leagueMigrations.ts, NOT here: this file is exec'd
 -- before the migration adds price_snapshots.league, so a legacy database that is missing the
 -- index (dropped for a rebuild, or predating it) would fail on "no such column: league" and

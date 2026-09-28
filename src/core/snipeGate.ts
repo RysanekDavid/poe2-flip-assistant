@@ -1,10 +1,9 @@
 import { config } from "../config/env";
 
 /**
- * The single decision point for "is this listing a SNIPE worth alerting". Both the hunt
- * price-book verdict and the autosnipe per-item valuation call it, so a bait listing can't slip
- * through whichever engine happens to have the weaker checks (that's how 84/109 historical
- * SNIPE alerts ended up being "0 vs ~N Div" bait).
+ * The single decision point for "is this listing a SNIPE worth alerting". Every snipe source
+ * goes through it, so a bait listing can't slip through whichever engine happens to have the
+ * weaker checks (that's how 84/109 historical SNIPE alerts ended up being "0 vs ~N Div" bait).
  */
 export type SnipeRejectReason =
   | "ask-not-positive"
@@ -25,7 +24,7 @@ export interface SnipeGateInput {
   samples: number; // comparables behind refDiv
   resolvedMods: number; // mods on the candidate that resolved to trade stat ids
   indexed: string | null; // trade2 `indexed` timestamp of the listing
-  discountPct: number; // the calling engine's required discount (hunt book vs live valuation)
+  discountPct: number; // the calling engine's required discount
   nowMs?: number;
 }
 

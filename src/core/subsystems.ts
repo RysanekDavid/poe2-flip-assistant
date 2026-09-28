@@ -8,7 +8,6 @@ export const SUBSYSTEM_NAMES = [
   "cx-rates",
   "cx-history",
   "prune",
-  "hunts",
   "autosnipe",
   "craft-margin",
   "craft-sweep",
@@ -33,34 +32,15 @@ export interface SubsystemSpec {
 /** The slice of config the registry reads — injectable so tests can flip loops on and off. */
 export type SubsystemConfig = Pick<
   typeof config,
-  "pollIntervalMin" | "hunt" | "autoSnipe" | "craftMargin" | "balanceIntervalMin" | "patchNotes"
+  "pollIntervalMin" | "autoSnipe" | "craftMargin" | "balanceIntervalMin" | "patchNotes"
 >;
 
 /** Mirrors the league watcher's fixed 6h check; kept here so the registry has no poller import. */
 const LEAGUE_WATCH_SEC = 6 * 60 * 60;
 const SCAN_DRAIN_SEC = 20;
 
-/**
- * One hunt costs ~40s of the shared trade2 search pace (see config.hunt), and the heartbeat is
- * written once per LAP, so a lap over N active hunts takes ~N×40s however small scanSec is.
- */
-export const HUNT_LAP_SEC_PER_HUNT = 40;
-
-/** Expected seconds between hunt heartbeats: the configured tick, or the lap time if longer. */
-export function huntExpectedSec(scanSec: number, activeHunts: number): number {
-  return Math.max(scanSec, Math.max(0, activeHunts) * HUNT_LAP_SEC_PER_HUNT);
-}
-
-/** Live facts the cadences depend on, read when the payload is built. */
-export interface SubsystemLoad {
-  activeHunts: number;
-}
-
 /** Cadences come from the same config the poller schedules with, so they cannot drift apart. */
-export function subsystemSpecs(
-  cfg: SubsystemConfig = config,
-  load: SubsystemLoad = { activeHunts: 0 },
-): Record<SubsystemName, SubsystemSpec> {
+export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemName, SubsystemSpec> {
   const cycle = cfg.pollIntervalMin * 60;
   const balance = cfg.balanceIntervalMin > 0 ? cfg.balanceIntervalMin * 60 : null;
   return {
@@ -68,7 +48,6 @@ export function subsystemSpecs(
     "cx-rates": { label: "Exchange rates", hint: "GGG currency-exchange digest → Div/Ex/Chaos rates (only fetched when stored rates are stale).", perLeague: false, expectedSec: cycle, enabled: true },
     "cx-history": { label: "Exchange history", hint: "Backfill missing hours of GGG exchange history for Top Flips.", perLeague: false, expectedSec: cycle, enabled: true },
     prune: { label: "Retention prune", hint: "Age out old snapshots, observations, craft EV history and exchange hours.", perLeague: false, expectedSec: cycle, enabled: true },
-    hunts: { label: "Hunt scans", hint: "Per-user saved trade2 searches (poll-diff). A lap takes ~40s per active hunt.", perLeague: false, expectedSec: huntExpectedSec(cfg.hunt.scanSec, load.activeHunts), enabled: cfg.hunt.enabled },
     autosnipe: { label: "Auto-snipe", hint: "Autonomous rare-snipe scan under the owner's POESESSID.", perLeague: false, expectedSec: cfg.autoSnipe.intervalMin * 60, enabled: cfg.autoSnipe.enabled },
     "craft-margin": { label: "Craft margin tick", hint: "Refresh the stalest craft recipe's EV from trade2.", perLeague: false, expectedSec: cfg.craftMargin.intervalMin * 60, enabled: cfg.craftMargin.enabled },
     "craft-sweep": { label: "Craft refresh-all", hint: "Owner-requested sweep of every recipe (on demand).", perLeague: false, expectedSec: null, enabled: cfg.craftMargin.enabled },
@@ -76,7 +55,7 @@ export function subsystemSpecs(
     "unique-values": { label: "Unique prices", hint: "Daily poe2scout unique-price cache used to value showcase gear.", perLeague: false, expectedSec: balance, enabled: balance != null },
     "patch-notes": { label: "Patch notes", hint: "Official PoE2 patch-notes watcher feeding Coach patch reviews.", perLeague: false, expectedSec: cfg.patchNotes.intervalMin * 60, enabled: cfg.patchNotes.enabled },
     "league-watch": { label: "League watcher", hint: "poe.ninja proposes, poe2scout confirms a new challenge league.", perLeague: false, expectedSec: LEAGUE_WATCH_SEC, enabled: true },
-    "scan-drain": { label: "Manual scan queue", hint: "Runs hunt/auto-snipe scans the web queued, on the poller's trade2 limiter.", perLeague: false, expectedSec: SCAN_DRAIN_SEC, enabled: true },
+    "scan-drain": { label: "Manual scan queue", hint: "Runs auto-snipe scans the web queued, on the poller's trade2 limiter.", perLeague: false, expectedSec: SCAN_DRAIN_SEC, enabled: true },
   };
 }
 

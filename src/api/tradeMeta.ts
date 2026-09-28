@@ -13,7 +13,7 @@ const UA =
 export interface StatOption {
   id: string; // e.g. "explicit.stat_3299347043"
   text: string; // e.g. "+# to maximum Life"
-  group: string; // explicit | implicit | pseudo | rune
+  group: string; // explicit | implicit | pseudo | rune (| fractured | desecrated in flaggedStats)
 }
 
 export interface BaseGroup {
@@ -34,7 +34,17 @@ interface ItemsResp {
 }
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-let cache: { at: number; stats: StatOption[]; bases: BaseGroup[]; uniques: UniqueOption[] } | null = null;
+interface TradeMeta {
+  stats: StatOption[];
+  // Fractured/desecrated twins of explicit mods. Kept OUT of `stats` so autocompletes, snipe and
+  // hunt resolution keep their explicit-first catalog; only craft legs that must search the flag
+  // itself (a fractured +3 amulet is a different product) index these.
+  flaggedStats: StatOption[];
+  bases: BaseGroup[];
+  uniques: UniqueOption[];
+}
+
+let cache: ({ at: number } & TradeMeta) | null = null;
 
 async function get<T>(path: string): Promise<T> {
   try {
@@ -48,15 +58,18 @@ async function get<T>(path: string): Promise<T> {
 
 // Mod groups worth crafting toward. Skip enchant/sanctum/etc noise.
 const STAT_GROUPS = new Set(["explicit", "implicit", "pseudo", "rune"]);
+const FLAGGED_GROUPS = new Set(["fractured", "desecrated"]);
 
-export async function fetchTradeMeta(): Promise<{ stats: StatOption[]; bases: BaseGroup[]; uniques: UniqueOption[] }> {
+const toOptions = (raw: StatsResp, groups: ReadonlySet<string>): StatOption[] =>
+  raw.result.filter((g) => groups.has(g.id)).flatMap((g) => g.entries.map((e) => ({ id: e.id, text: e.text, group: g.id })));
+
+export async function fetchTradeMeta(): Promise<TradeMeta> {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache;
 
   const [statsRaw, itemsRaw] = await Promise.all([get<StatsResp>("/stats"), get<ItemsResp>("/items")]);
 
-  const stats: StatOption[] = statsRaw.result
-    .filter((g) => STAT_GROUPS.has(g.id))
-    .flatMap((g) => g.entries.map((e) => ({ id: e.id, text: e.text, group: g.id })));
+  const stats = toOptions(statsRaw, STAT_GROUPS);
+  const flaggedStats = toOptions(statsRaw, FLAGGED_GROUPS);
 
   // base types: entries carrying a `type` but NOT a unique `name` are craftable bases
   const bases: BaseGroup[] = itemsRaw.result
@@ -73,6 +86,6 @@ export async function fetchTradeMeta(): Promise<{ stats: StatOption[]; bases: Ba
     .map((e) => ({ name: e.name!, type: e.type ?? "" }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  cache = { at: Date.now(), stats, bases, uniques };
+  cache = { at: Date.now(), stats, flaggedStats, bases, uniques };
   return cache;
 }

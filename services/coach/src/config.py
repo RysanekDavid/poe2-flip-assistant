@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     # Same variable and default as the web app's craft poller cadence (src/config/env.ts); the
     # craft-report staleness gate is a multiple of it, so both processes must agree.
     craft_margin_interval_min: int = Field(
-        default=10, gt=0, validation_alias="CRAFT_MARGIN_INTERVAL_MIN"
+        default=6, gt=0, validation_alias="CRAFT_MARGIN_INTERVAL_MIN"
     )
     # The web app's autosnipe cadence (AUTOSNIPE_INTERVAL_MIN); the snipe report goes stale at a
     # multiple of it.

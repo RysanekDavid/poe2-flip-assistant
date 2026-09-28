@@ -1,10 +1,10 @@
 """Craft-report schema, metadata and confidence gate, mirrored from the web app's TypeScript.
 
 The recipe list lives in src/core/craftRecipeData*.ts, the report schema in craftRecipes.ts
-(`RecipeMarginReportSchema`), and the gate in craftValuation.ts (`rankGate`) plus craftReports.ts
-(`reportMaxAgeMs`). Stored report JSON carries neither a recipe's label/domain nor its gate
-verdict, so both are mirrored here; tests/test_engine_drift.py fails when the TypeScript side
-changes without this file.
+(`RecipeMarginReportSchema`, `NearMissSchema`), the gate in craftValuation.ts (`rankGate`) plus
+craftReports.ts (`reportMaxAgeMs`), and the three-tier ordering in craftRank.ts. Stored report
+JSON carries neither a recipe's label/domain nor its gate verdict, so both are mirrored here;
+tests/test_engine_drift.py fails when the TypeScript side changes without this file.
 """
 
 from dataclasses import dataclass
@@ -14,6 +14,9 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 CraftDomain = Literal["jewel", "weapon", "jewellery", "armour"]
+Valuation = Literal["legacy-cheapest", "floor-percentile", "comparable-result"]
+Confidence = Literal["high", "medium", "low"]
+Verdict = Literal["pick", "near_miss", "unpriced"]
 
 
 @dataclass(frozen=True)
@@ -44,13 +47,19 @@ RECIPES: dict[str, RecipeMeta] = {
 # craftValuation.ts gate constants.
 GATE_MIN_TOTAL = 8
 GATE_MIN_SAMPLES = 5
-GATE_FLAGGED_MIN_RESULT_TOTAL = 20
+GATE_FLAGGED_MIN_RESULT_TOTAL = 12
 RETURN_FLAG_MULTIPLE = 10
 
 
 class _Stored(BaseModel):
     # strict: like zod, a numeric field stored as a string is a corrupt row, not a number.
     model_config = ConfigDict(alias_generator=to_camel, extra="ignore", strict=True)
+
+
+class _Band(_Stored):
+    p25: float
+    p50: float
+    p75: float
 
 
 class LegReport(_Stored):
@@ -62,6 +71,30 @@ class LegReport(_Stored):
     search_url: str
     outliers_dropped: float
     unresolved_stats: list[str]
+    method: Literal["floor-percentile", "comparable-median"] = "floor-percentile"
+    band: _Band | None = None
+    relaxed: bool = False
+
+
+class _BandDiv(_Stored):
+    lo: float
+    hi: float
+
+
+class NearMiss(_Stored):
+    """craftRecipes.ts NearMissSchema: how far a priced recipe is from profit."""
+
+    cost_div: float
+    result_median_div: float
+    result_band_div: _BandDiv
+    ev_div: float
+    ev_low_div: float
+    break_even_hit_rate: float
+    model_hit_rate: float
+    hit_rate_gap: float
+    result_needed_div: float
+    gap_div: float
+    confidence: Confidence
 
 
 class MarginReport(_Stored):
@@ -78,8 +111,9 @@ class MarginReport(_Stored):
     ev_div: float
     margin_pct: float
     error: str | None
-    valuation: Literal["legacy-cheapest", "floor-percentile"] = "legacy-cheapest"
+    valuation: Valuation = "legacy-cheapest"
     return_flagged: bool = False
+    near_miss: NearMiss | None = None
 
 
 def report_max_age_minutes(interval_min: int) -> int:
@@ -90,7 +124,9 @@ def report_max_age_minutes(interval_min: int) -> int:
 def gate_reasons(report: MarginReport, base: LegReport, result: LegReport) -> list[str]:
     """rankGate() minus the status and staleness checks, which the caller applies as filters."""
     reasons: list[str] = []
-    if report.valuation != "floor-percentile":
+    # Only comparable-result reports value the result against finished-item comparables; a
+    # floor-percentile report priced it at p30 of a loose one-mod search, so it waits for a rescan.
+    if report.valuation != "comparable-result":
         reasons.append("legacy valuation — awaiting rescan")
     if report.return_flagged and result.total < GATE_FLAGGED_MIN_RESULT_TOTAL:
         reasons.append(
@@ -107,3 +143,34 @@ def gate_reasons(report: MarginReport, base: LegReport, result: LegReport) -> li
         if leg.unresolved_stats:
             reasons.append(f"{name}: search widened (unresolved stats)")
     return reasons
+
+
+_TIER: dict[Verdict, int] = {"pick": 0, "near_miss": 1, "unpriced": 2}
+_CONFIDENCE_ORDER: dict[Confidence, int] = {"high": 0, "medium": 1, "low": 2}
+
+
+def verdict_of(gate_ok: bool, ev_div: float, priced: bool) -> Verdict:
+    """craftRank.ts verdictOf: priced means both legs priced in an "ok" report."""
+    if not priced:
+        return "unpriced"
+    return "pick" if gate_ok and ev_div > 0 else "near_miss"
+
+
+def rank_key(
+    verdict: Verdict,
+    ev_div: float,
+    margin_pct: float,
+    confidence: Confidence | None,
+    scanned_age_min: int,
+    key: str,
+) -> tuple[int, float, int, str]:
+    """craftRank.ts rankCandidates as one sort key, on the unrounded report values.
+
+    Picks by EV desc; near-misses by margin % desc then confidence (missing = low); unpriced by
+    most recent scan first. The recipe key breaks every tie, as in TypeScript.
+    """
+    if verdict == "pick":
+        return (_TIER[verdict], -ev_div, 0, key)
+    if verdict == "near_miss":
+        return (_TIER[verdict], -margin_pct, _CONFIDENCE_ORDER[confidence or "low"], key)
+    return (_TIER[verdict], float(scanned_age_min), 0, key)

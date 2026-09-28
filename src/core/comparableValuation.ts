@@ -30,6 +30,7 @@ export interface Valuation {
   dropped: number; // cheap outliers (bait) trimmed away
   unrated: number; // comparables priced in currencies outside the rates ladder (not counted)
   total: number; // total live listings the search reported
+  keptAsc: number[]; // surviving comparables, ascending (craft result legs derive their band from it)
 }
 
 /** Keep only the stats worth searching on: pseudo totals + distinctive explicits (see buildPlan). */
@@ -118,6 +119,7 @@ export interface ListingValuation {
   value: Valuation;
   plan: ValuationPlan;
   searchUrl: string; // working trade link to the comparable search
+  broadened: boolean; // the distinctive search was too thin, so the pseudo-only fallback priced it
 }
 
 /**
@@ -135,6 +137,7 @@ export async function valueListingLive(
   const item = listingToItem(l);
   let plan = buildPlan(item, idx);
   let res = await searchListingsLinked(plan.query, config.valuation.topN, cred);
+  let broadened = false;
 
   if (res.total < config.valuation.minComparables) {
     const broad = buildPlan(item, idx, { pseudosOnly: true });
@@ -143,12 +146,13 @@ export async function valueListingLive(
       if (r2.total >= res.total) {
         plan = { ...broad, resolvedCount: plan.resolvedCount };
         res = r2;
+        broadened = true;
       }
     }
   }
 
   const value = valueFromComparables(res.listings, res.total, rates, l.listingId);
-  return { value, plan, searchUrl: res.searchUrl };
+  return { value, plan, searchUrl: res.searchUrl, broadened };
 }
 
 /** Value the item from buyable comparables: trimmed median, candidate (`excludeListingId`) excluded. */
@@ -169,6 +173,7 @@ export function valueFromComparables(
     dropped: ref.dropped,
     unrated: comps.filter((l) => l.price != null).length - rated.length,
     total,
+    keptAsc: ref.keptAsc,
   };
 }
 

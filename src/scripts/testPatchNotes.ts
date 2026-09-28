@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { readFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import Database from "better-sqlite3";
 import {
   conditionalRequestForParser,
@@ -15,27 +14,46 @@ import {
   fetchPatchHtml,
   validatePatchUrl,
   validateResponseMetadata,
-  type HttpFetcher,
 } from "../sources/patchNotes/client";
 import {
   testAllowedRedirectHeaders,
   testRedirectIdentityBoundary,
 } from "./testPatchRedirects";
+import { testPartialThreadFailure, testStaffBodyLayouts } from "./testPatchLayouts";
+import {
+  testAcceptLanguageHeader,
+  testLanguageGuard,
+  testNonEnglishThreadNotStored,
+  testOtherForumRowsRetired,
+  testIndexNoticesAndVersions,
+  testLinkHeavyEnglishHotfix,
+  testSkippedNoticesReported,
+} from "./testPatchLanguage";
+import {
+  createProjectFixture,
+  openPatchDb,
+  fixtureDir,
+  notModified,
+  queueFetcher,
+  response,
+  syncOptions,
+} from "./testPatchHelpers";
 import { parsePatchIndex, parsePatchThread } from "../sources/patchNotes/parser";
 import { syncPatchNotes } from "../sources/patchNotes/store";
 import {
+  PATCH_INDEX_URL,
   PATCH_PARSER_NAME,
   PATCH_PARSER_VERSION,
   PATCH_THREAD_VALIDATION_POLICY,
 } from "../sources/patchNotes/contracts";
 
-const fixtureDir = join(process.cwd(), "src/sources/patchNotes/fixtures");
 const indexHtml = readFileSync(join(fixtureDir, "index.html"), "utf8");
 const threadHtml = readFileSync(join(fixtureDir, "thread.html"), "utf8");
 const driftHtml = readFileSync(join(fixtureDir, "drift.html"), "utf8");
 
 async function main(): Promise<void> {
   await testParsers();
+  testStaffBodyLayouts();
   await testClientBoundary();
   await testRedirectIdentityBoundary();
   await testAllowedRedirectHeaders();
@@ -45,20 +63,28 @@ async function main(): Promise<void> {
   await testBaselineLifecycle();
   await testInitialBaselineInvalid();
   await testPreBaselineIndexFailsClosed();
+  await testPartialThreadFailure();
+  testLanguageGuard();
+  testIndexNoticesAndVersions();
+  testLinkHeavyEnglishHotfix();
+  await testSkippedNoticesReported();
+  await testAcceptLanguageHeader();
+  await testNonEnglishThreadNotStored();
+  await testOtherForumRowsRetired();
   console.log("patch-note tests passed");
 }
 
 async function testParsers(): Promise<void> {
-  const entries = parsePatchIndex(indexHtml, 3);
-  assert.deepEqual(entries.map((entry) => entry.threadId), [3_991_000, 3_990_574, 3_980_000]);
+  const { entries } = parsePatchIndex(indexHtml, 3);
+  assert.deepEqual(entries.map((entry) => entry.threadId), [3_991_000, 3_990_120, 3_980_000]);
   assert.equal(entries[0]?.versionText, "0.5.4e");
   assert.equal(entries[0]?.publishedAt, null);
-  const localized = parsePatchIndex(indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "1. srpna 2026"), 3);
+  const localized = parsePatchIndex(indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "1. srpna 2026"), 3).entries;
   assert.equal(localized[0]?.publishedAt, null);
   const zoned = parsePatchIndex(
     indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "2026-08-01T10:15:00Z"),
     3,
-  );
+  ).entries;
   assert.equal(zoned[0]?.publishedAt, "2026-08-01T10:15:00.000Z");
   const body = parsePatchThread(threadHtml, 3_991_000);
   assert.deepEqual(body.headings, ["Gameplay Changes", "Bug Fixes"]);
@@ -72,12 +98,12 @@ async function testParsers(): Promise<void> {
 }
 
 async function testClientBoundary(): Promise<void> {
-  assert.throws(() => validatePatchUrl("http://www.pathofexile.com/forum/view-forum/2222"), /unsafe/);
-  assert.throws(() => validatePatchUrl("https://evil.example/forum/view-forum/2222"), /unsafe/);
+  assert.throws(() => validatePatchUrl("http://www.pathofexile.com/forum/view-forum/2212"), /unsafe/);
+  assert.throws(() => validatePatchUrl("https://evil.example/forum/view-forum/2212"), /unsafe/);
   assert.throws(() => validatePatchUrl("https://www.pathofexile.com/account/view-profile"), /unexpected/);
   assert.throws(
     () => validateResponseMetadata(
-      "https://www.pathofexile.com/forum/view-forum/2222",
+      "https://www.pathofexile.com/forum/view-forum/2212",
       200,
       new Headers({ "content-type": "application/json" }),
       100,
@@ -87,7 +113,7 @@ async function testClientBoundary(): Promise<void> {
   const oversized = response("x".repeat(101), "etag", 200, { "content-length": "101" });
   await assert.rejects(
     fetchPatchHtml(
-      "https://www.pathofexile.com/forum/view-forum/2222",
+      "https://www.pathofexile.com/forum/view-forum/2212",
       "tests@example.invalid",
       { etag: null, lastModified: null },
       100,
@@ -97,7 +123,7 @@ async function testClientBoundary(): Promise<void> {
   );
   await assert.rejects(
     fetchPatchHtml(
-      "https://www.pathofexile.com/forum/view-forum/2222",
+      "https://www.pathofexile.com/forum/view-forum/2212",
       "",
       { etag: null, lastModified: null },
       100,
@@ -108,10 +134,8 @@ async function testClientBoundary(): Promise<void> {
 }
 
 function testParserVersionStorage(): void {
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
-    migratePatchProvenance(db);
     const first = insertSourceSnapshot(snapshotInput("1", false, "thread:legacy"), db);
     const second = insertSourceSnapshot(snapshotInput(PATCH_PARSER_VERSION, true), db);
     assert.notEqual(first, second, "the same bytes must be reparsed under a new parser version");
@@ -162,6 +186,9 @@ function testLegacyMigration(): void {
     assert.equal(evidence?.id, 7);
     assert.equal(patch?.id, 7);
     assert.equal(db.prepare("PRAGMA foreign_key_check").all().length, 0);
+    const registry = db.prepare("SELECT base_url AS baseUrl FROM source_registry")
+      .get() as { baseUrl: string } | undefined;
+    assert.equal(registry?.baseUrl, PATCH_INDEX_URL, "a legacy 2222 base_url follows the forum switch");
     const reparsed = insertSourceSnapshot(snapshotInput(PATCH_PARSER_VERSION, true), db);
     assert.notEqual(reparsed, 7);
   } finally {
@@ -215,35 +242,32 @@ async function testWatcherStorageAndReview(): Promise<void> {
 
 async function testBaselineLifecycle(): Promise<void> {
   const root = createProjectFixture();
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    const schema = readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8");
-    db.exec(schema);
-    migratePatchProvenance(db);
     await syncPatchNotes(syncOptions(db, root, [
       response(indexHtml, "index-1"),
       response(threadHtml, "new-1"),
       response(threadHtml, "baseline-1"),
     ]));
-    assert.equal(officialPatch(3_990_574, db)?.disposition, null);
+    assert.equal(officialPatch(3_990_120, db)?.disposition, null);
     const amendedBody = threadHtml.replace("first exact", "baseline amended exact");
     const amended = await syncPatchNotes(syncOptions(db, root, [
       notModified(), notModified(), response(amendedBody, "baseline-2"),
     ]));
     assert.equal(amended.ok, true);
-    assert.equal(officialPatch(3_990_574, db)?.disposition, "pending");
+    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
     reviewOfficialPatch(
-      3_990_574, "no_gameplay_impact", "reviewer", "baseline amendment",
+      3_990_120, "no_gameplay_impact", "reviewer", "baseline amendment",
       null, new Date().toISOString(), db,
     );
-    const normalized = normalizedBody(3_990_574, db);
+    const normalized = normalizedBody(3_990_120, db);
     const invalid = await syncPatchNotes(syncOptions(db, root, [
       notModified(), notModified(), response(driftHtml, "baseline-3"),
     ]));
     assert.equal(invalid.ok, false);
-    assert.equal(officialPatch(3_990_574, db)?.bodyValid, false);
-    assert.equal(officialPatch(3_990_574, db)?.disposition, "pending");
-    assert.equal(normalizedBody(3_990_574, db), normalized);
+    assert.equal(officialPatch(3_990_120, db)?.bodyValid, false);
+    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
+    assert.equal(normalizedBody(3_990_120, db), normalized);
   } finally {
     db.close();
     rmSync(root, { recursive: true, force: true });
@@ -252,17 +276,15 @@ async function testBaselineLifecycle(): Promise<void> {
 
 async function testInitialBaselineInvalid(): Promise<void> {
   const root = createProjectFixture();
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
-    migratePatchProvenance(db);
     const result = await syncPatchNotes(syncOptions(db, root, [
       response(indexHtml, "index-1"), response(threadHtml, "new-1"),
       response(driftHtml, "baseline-invalid"),
     ]));
     assert.equal(result.ok, false);
-    assert.equal(officialPatch(3_990_574, db)?.bodyValid, false);
-    assert.equal(officialPatch(3_990_574, db)?.disposition, "pending");
+    assert.equal(officialPatch(3_990_120, db)?.bodyValid, false);
+    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
   } finally {
     db.close();
     rmSync(root, { recursive: true, force: true });
@@ -271,15 +293,13 @@ async function testInitialBaselineInvalid(): Promise<void> {
 
 async function testPreBaselineIndexFailsClosed(): Promise<void> {
   const root = createProjectFixture();
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
-    migratePatchProvenance(db);
     const preBaseline = indexHtml
       .replaceAll("3991000", "3979000")
-      .replaceAll("3990574", "3978000")
+      .replaceAll("3990120", "3978000")
       .replaceAll("3980000", "3977000");
-    assert.equal(parsePatchIndex(preBaseline, 2).length >= 2, true);
+    assert.equal(parsePatchIndex(preBaseline, 2).entries.length >= 2, true);
     const result = await syncPatchNotes(syncOptions(db, root, [response(preBaseline, "old-index")]));
     assert.equal(result.ok, false);
     const state = db.prepare(`
@@ -343,7 +363,7 @@ async function assertAmendmentLifecycle(db: Database.Database, root: string): Pr
     /no valid staff body/,
   );
   assert.throws(
-    () => reviewOfficialPatch(3_990_574, "no_gameplay_impact", "reviewer", "note", null, reviewedAt, db),
+    () => reviewOfficialPatch(3_990_120, "no_gameplay_impact", "reviewer", "note", null, reviewedAt, db),
     /not pending/,
   );
 }
@@ -377,50 +397,6 @@ function snapshotInput(
     validationPolicy,
     retrievedAt: "2026-08-01T00:00:00.000Z",
   };
-}
-
-function syncOptions(db: Database.Database, projectRoot: string, responses: Response[]) {
-  return {
-    db,
-    projectRoot,
-    artifactRoot: join(projectRoot, "data"),
-    contact: "tests@example.invalid",
-    minimumEntries: 2,
-    fetcher: queueFetcher(responses),
-  } as const;
-}
-
-function response(body: string, etag: string, status = 200, extra: Record<string, string> = {}): Response {
-  return new Response(body, {
-    status,
-    headers: { "content-type": "text/html; charset=utf-8", etag, ...extra },
-  });
-}
-
-function notModified(): Response {
-  return new Response(null, { status: 304, headers: { etag: "unchanged" } });
-}
-
-function queueFetcher(responses: Response[]): HttpFetcher {
-  return async () => {
-    const next = responses.shift();
-    if (!next) throw new Error("unexpected offline fetch");
-    return next;
-  };
-}
-
-function createProjectFixture(): string {
-  const root = mkdtempSync(join(tmpdir(), "poe-patch-notes-"));
-  for (const relativePath of [
-    "src/data/poe2/patch-coverage.json",
-    "src/data/poe2/repoe/manifest.json",
-    "src/data/poe2/repoe/catalog-75a23d387f288921.json.gz",
-  ]) {
-    const target = join(root, relativePath);
-    mkdirSync(dirname(target), { recursive: true });
-    cpSync(join(process.cwd(), relativePath), target);
-  }
-  return root;
 }
 
 main().catch((error: unknown) => {
