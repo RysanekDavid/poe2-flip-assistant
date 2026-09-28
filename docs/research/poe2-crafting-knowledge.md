@@ -132,7 +132,11 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   text, plus `mods.CraftedJewelAdditionalSuffixAllowed` = text "+1 Suffix Modifier allowed",
   `generation_type: prefix`, and `mods.CraftedJewelAdditionalPrefixAllowed` = "+1 Prefix Modifier
   allowed", `generation_type: suffix`; both group `MaxPrefixMaxSuffix`, domain `misc`, spawn
-  weight 0 = currency-granted only.) **REFUTES** the 2026-07-15 entry that said non-Ancient
+  weight 0 = currency-granted only.) Slot placement: poe2db's "Prefix: +1 Suffix Modifier
+  allowed" / "Suffix: +1 Prefix Modifier allowed" labels + RePoE `generation_type`. That it then
+  opens the OTHER side rests on one primary source (RePoE stat ids
+  `local_maximum_suffixes_allowed_+` / `…prefixes…`) plus creator in-game demos [S4, S20] —
+  single-primary-source interpretation. **REFUTES** the 2026-07-15 entry that said non-Ancient
   Contempt grants a fixed colour-keyed damage prefix and that "+1 Modifier allowed" is
   Ancient/Time-Lost only — the "(7–13)% chaos damage" it quoted is the ordinary natural Sapphire
   prefix `JewelChaosDamage`, not a Contempt mod.
@@ -153,10 +157,14 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   accessed 2026-09-28 + RePoE `EndgameDistilledEmotionTimeLost3`.)
 - Ancient Potent Liquid **Ferocity** (rare Time-Lost jewels): **NOT** "Effect of Suffixes" (the
   earlier entry was wrong) — a colour-keyed radius SUFFIX "Notable Passive Skills in Radius also
-  grant +(5–7)% to Fire/Cold/Lightning Resistance" (Diamond: +(4–5)% Chaos). Ancient
+  grant +(5–7)% to Fire/Cold/Lightning Resistance" (Diamond: +(4–5)% Chaos per poe2db and RePoE
+  `CraftedJewelRadiusChaosResistance`; Game8 says (5–7)% — CONFLICT, trust the datamine). Ancient
   **Melancholy** = "Upgrades Radius to Very Large" (prefix). (poe2db Ancient_Potent_Liquid_Ferocity
   / _Melancholy accessed 2026-09-28 + RePoE `CraftedJewelRadius*Resistance` /
   `CraftedJewelRadiusExtraLargeSize`.)
+- **Affix caps**: rare basic jewel = 2 prefixes + 2 suffixes, magic = 1 + 1 [verified-secondary:
+  Maxroll 0.5.2 jewel guide, mmoexp; researcher pass accessed 2026-09-29]. Rare Time-Lost cap is
+  UNRESOLVED (timesaver claims 3 + 3, uncorroborated).
 - **5-mod basic jewel is possible**: basic jewels cap at 2 prefixes + 2 suffixes, but Contempt's
   crafted mod raises one side's cap by 1 while sitting on the other. Creator crafts [S4, S20 in
   docs/kb/creator-videos.md] then strip the crafted mod with Omen of Sinistral Annulment and
@@ -171,6 +179,9 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   both liquids write a [Crafted] mod and §7 allows ONE per item, so Ferocity presumably can't be
   added while the Contempt mod is present — every documented path strips Contempt first; untested.
 - Desecration DOES work on regular rare jewels (Preserved Cranium targets any rare jewel).
+  Cranium exists ONLY as the Preserved tier ("Desecrates a Rare Jewel" — RePoE
+  `AbyssalBenchTicketJewel`; no Gnawed/Ancient Cranium in the catalog), and every bone's
+  directions read "left click a Rare item" → bones are rare-only.
 - Earlier sources: dadsofexile, Fextralife, Game8, sanctuaryrelic, poe2dictionary; superseded on
   the Potent/Ancient mod pools by poe2db + RePoE (above).
 

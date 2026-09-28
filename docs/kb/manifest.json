@@ -27,7 +27,7 @@
       "patch": "0.5.4",
       "league": "Runes of Aldur",
       "stamped_at": "2026-09-29",
-      "sha256": "7634652a9c0ea49e159facdb2621f45166f33abadec18bb442c67691f2c8378e"
+      "sha256": "5db3356443899bd3d009592eb15b59c9f23fe7003e3f26e8bc5d94e4c3d009d4"
     },
     {
       "path": "docs/kb/expedition-ritual.md",
@@ -83,7 +83,7 @@
       "patch": "0.5.x",
       "league": "Runes of Aldur",
       "stamped_at": "2026-09-29",
-      "sha256": "141df3fd90885c39e79295a9180c54c5a52d4f8d737d9c2a517d29f22a15462e"
+      "sha256": "51d13d3bfaa32f3fc88f1822597ef6747259e72b6a17ec928f79be9384962157"
     },
     {
       "path": "docs/research/poe2-bow-crafting-0.5.md",
