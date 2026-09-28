@@ -1,6 +1,6 @@
 import type { Listing, ListingMod } from "../api/tradeListing";
 import { tradeSearchUrl, type TradeQuery } from "../lib/tradeLink";
-import { SnipeCardSchema, type CardMod, type CardModKind, type SnipeCard } from "../lib/snipeCard";
+import { cardIcon, SnipeCardSchema, type CardMod, type CardModKind, type SnipeCard } from "../lib/snipeCard";
 import type { ResolvedStat } from "./statResolver";
 import type { Valuation } from "./comparableValuation";
 
@@ -35,11 +35,13 @@ export function cardMods(lines: readonly ListingMod[]): CardMod[] {
  */
 export function listingTradeQuery(l: Listing): TradeQuery {
   const unique = (l.rarity ?? "").toLowerCase() === "unique";
+  // parseListing writes "?" when trade2 omitted the seller; filtering on it would match nobody
+  const account = l.account && l.account !== "?" ? l.account : undefined;
   return {
     ...(unique && l.itemName ? { name: l.itemName } : {}),
     type: l.baseType || undefined,
     online: false,
-    account: l.account,
+    ...(account ? { account } : {}),
     ...(l.itemLevel ? { ilvlMin: l.itemLevel } : {}),
   };
 }
@@ -68,7 +70,7 @@ export function buildSnipeCard(c: CardInput): SnipeCard {
   return SnipeCardSchema.parse({
     v: 1,
     league: c.league,
-    icon: l.icon?.startsWith("https://") ? l.icon : null,
+    icon: cardIcon(l.icon),
     name: l.itemName,
     baseType: l.baseType,
     rarity: l.rarity,

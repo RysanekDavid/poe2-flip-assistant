@@ -66,6 +66,15 @@ ok("NULL details → no card, no error", parseStoredCard(null, 2).card === null 
 const broken = parseStoredCard('{"v":2}', 3);
 ok("unreadable card → reported, not thrown", broken.card === null && /unexpected shape/.test(broken.error ?? ""), broken.error ?? "");
 ok("non-https icon rejected", !SnipeCardSchema.safeParse({ ...sampleSnipeCard(), icon: "http://x/y.png" }).success);
+ok("icon off poecdn rejected", !SnipeCardSchema.safeParse({ ...sampleSnipeCard(), icon: "https://evil.example/x.png" }).success);
+ok("icon host lookalike rejected", !SnipeCardSchema.safeParse({ ...sampleSnipeCard(), icon: "https://poecdn.com.evil.example/x.png" }).success);
+ok("tradeUrl off pathofexile.com/trade2 rejected", !SnipeCardSchema.safeParse({ ...sampleSnipeCard(), tradeUrl: "https://evil.example/trade2/search" }).success);
+ok("tradeUrl on the old trade (PoE1) path rejected", !SnipeCardSchema.safeParse({ ...sampleSnipeCard(), tradeUrl: "https://www.pathofexile.com/trade/search/Standard" }).success);
+const badComps = { ...sampleSnipeCard().valuation, comparablesUrl: "https://example.com/x" };
+ok("comparablesUrl off trade2 rejected", !SnipeCardSchema.safeParse({ ...sampleSnipeCard(), valuation: badComps }).success);
+ok("the real fixture icon host passes", gl.icon == null || SnipeCardSchema.shape.icon.safeParse(gl.icon).success, gl.icon ?? "");
+ok("unknown seller (\"?\") → no account filter", listingTradeQuery({ ...gl, account: "?" }).account === undefined);
+ok("known seller → account filter", listingTradeQuery(gl).account === gl.account);
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
 process.exit(fail === 0 ? 0 : 1);

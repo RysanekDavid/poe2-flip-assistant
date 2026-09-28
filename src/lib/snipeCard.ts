@@ -6,11 +6,21 @@ import { z } from "zod";
  * 42% under" gives the player nothing to recognise or search. Pure module: the server writes it,
  * the Alerts tab renders it, both through this schema.
  */
-const HttpsUrl = z
-  .string()
-  .url()
-  .max(2000)
-  .refine((u) => u.startsWith("https://"), "must be an https URL");
+/**
+ * URL fields pinned to their only legitimate hosts: the card renders them as an <img> and as
+ * links the player clicks, so a listing-controlled value must not point anywhere else. Item art
+ * matches the Caddy CSP img-src (web.poecdn.com / *.poecdn.com).
+ */
+const POECDN = /^https:\/\/([a-z0-9-]+\.)*poecdn\.com\//;
+const TRADE2 = /^https:\/\/www\.pathofexile\.com\/trade2\//;
+const pinnedUrl = (host: RegExp, what: string) =>
+  z
+    .string()
+    .url()
+    .max(2000)
+    .refine((u) => host.test(u), `must be a ${what} URL`);
+const IconUrl = pinnedUrl(POECDN, "poecdn.com item-art");
+const TradeUrl = pinnedUrl(TRADE2, "pathofexile.com/trade2");
 
 export const CARD_MOD_KINDS = ["implicit", "enchant", "rune", "explicit", "crafted", "fractured", "desecrated"] as const;
 export type CardModKind = (typeof CARD_MOD_KINDS)[number];
@@ -27,14 +37,14 @@ export const CardValuationSchema = z.object({
   minDiv: z.number().nullable(), // cheapest surviving comparable
   broadened: z.boolean(), // the distinctive-mod search was too thin → pseudo-totals-only search
   searchedMods: z.array(z.string().max(200)).max(12), // the rolls the comparable search filtered on
-  comparablesUrl: HttpsUrl, // trade2 page of that comparable search
+  comparablesUrl: TradeUrl, // trade2 page of that comparable search
 });
 export type CardValuation = z.infer<typeof CardValuationSchema>;
 
 export const SnipeCardSchema = z.object({
   v: z.literal(1),
   league: z.string(),
-  icon: HttpsUrl.nullable(),
+  icon: IconUrl.nullable(),
   name: z.string().max(200),
   baseType: z.string().max(200),
   rarity: z.string().max(20).nullable(), // trade2 "Normal" | "Magic" | "Rare" | "Unique"
@@ -52,9 +62,14 @@ export const SnipeCardSchema = z.object({
   sellerOnline: z.boolean(),
   instantBuyout: z.boolean(),
   whisper: z.string().max(2000).nullable(),
-  tradeUrl: HttpsUrl, // official trade2 search that finds this listing
+  tradeUrl: TradeUrl, // official trade2 search that finds this listing
 });
 export type SnipeCard = z.infer<typeof SnipeCardSchema>;
+
+/** Item art we may store: a poecdn URL, else null (the card shows "no art"). */
+export function cardIcon(icon: string | null): string | null {
+  return icon != null && POECDN.test(icon) ? icon : null;
+}
 
 /**
  * Read a stored card. A row that fails the schema is reported, not thrown: one bad row must not
