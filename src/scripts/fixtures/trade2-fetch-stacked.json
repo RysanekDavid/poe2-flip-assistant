@@ -1,0 +1,97 @@
+{
+  "_provenance": "SYNTHETIC own-account read of STACKED listings (values and account invented). Shape mirrors trade2-fetch-shape.json: `listing.price {type, amount, currency}` and `item.stackSize` are separate and there is no stack total — a stash note on a stack prices ONE unit (Maxroll bulk-selling guide; PoE2 forum thread 3688218). fx-stack-frac models a `~price 10/40 chaos` fraction note as the decimal per-unit amount 0.25 — that decimal representation is an assumption, not a capture.",
+  "result": [
+    {
+      "id": "fx-stack-ex",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-28T18:00:00Z",
+        "stash": { "name": "bulk", "x": 0, "y": 0 },
+        "account": { "name": "StashOwner#0001", "online": null, "lastCharacterName": "Owner" },
+        "price": { "type": "~price", "amount": 3, "currency": "exalted" }
+      },
+      "item": {
+        "realm": "poe2",
+        "icon": "https://web.poecdn.com/gen/image/synthetic.png",
+        "league": "Forbidden Rites",
+        "id": "fx-stack-ex-item",
+        "name": "",
+        "typeLine": "Omen of Light",
+        "baseType": "Omen of Light",
+        "rarity": "Currency",
+        "frameTypeId": "Currency",
+        "stackSize": 12,
+        "maxStackSize": 20
+      }
+    },
+    {
+      "id": "fx-stack-ex2",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-28T18:00:00Z",
+        "stash": { "name": "bulk2", "x": 0, "y": 0 },
+        "account": { "name": "StashOwner#0001", "online": null, "lastCharacterName": "Owner" },
+        "price": { "type": "~b/o", "amount": 5, "currency": "exalted" }
+      },
+      "item": {
+        "realm": "poe2",
+        "icon": "https://web.poecdn.com/gen/image/synthetic.png",
+        "league": "Forbidden Rites",
+        "id": "fx-stack-ex2-item",
+        "name": "",
+        "typeLine": "Omen of Light",
+        "baseType": "Omen of Light",
+        "rarity": "Currency",
+        "frameTypeId": "Currency",
+        "stackSize": 4,
+        "maxStackSize": 20
+      }
+    },
+    {
+      "id": "fx-stack-frac",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-28T18:00:00Z",
+        "stash": { "name": "bulk", "x": 1, "y": 0 },
+        "account": { "name": "StashOwner#0001", "online": null, "lastCharacterName": "Owner" },
+        "price": { "type": "~price", "amount": 0.25, "currency": "chaos" }
+      },
+      "item": {
+        "realm": "poe2",
+        "icon": "https://web.poecdn.com/gen/image/synthetic.png",
+        "league": "Forbidden Rites",
+        "id": "fx-stack-frac-item",
+        "name": "",
+        "typeLine": "Breach Splinter",
+        "baseType": "Breach Splinter",
+        "rarity": "Currency",
+        "frameTypeId": "Currency",
+        "stackSize": 40,
+        "maxStackSize": 300
+      }
+    },
+    {
+      "id": "fx-stack-market",
+      "listing": {
+        "method": "psapi",
+        "indexed": "2026-09-28T18:00:00Z",
+        "stash": { "name": "bulk", "x": 2, "y": 0 },
+        "account": { "name": "StashOwner#0001", "online": null, "lastCharacterName": "Owner" },
+        "price": { "type": "~b/o", "amount": 1, "currency": "divine" }
+      },
+      "item": {
+        "realm": "poe2",
+        "icon": "https://web.poecdn.com/gen/image/synthetic.png",
+        "league": "Forbidden Rites",
+        "id": "fx-stack-market-item",
+        "name": "",
+        "typeLine": "Greater Rune of Alacrity",
+        "baseType": "Greater Rune of Alacrity",
+        "rarity": "Currency",
+        "frameTypeId": "Currency",
+        "stackSize": 5,
+        "maxStackSize": 10
+      }
+    }
+  ]
+}

@@ -74,7 +74,7 @@ export function legToQuery(
 }
 
 /**
- * Listing price → Divine. Divine/exalt/chaos come from the league rate ladder (cx → ninja →
+ * Listing price → Divine, per unit (a note prices one unit; legs are single items). Divine/exalt/chaos come from the league rate ladder (cx → ninja →
  * scout); small currencies (alch, aug, regal… — exactly what junk base listings are priced in)
  * use the ninja exchange value of that item. NaN when nothing knows the currency (dropped).
  */

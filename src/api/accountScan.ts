@@ -36,7 +36,7 @@ export interface ScannedItem {
   stackSize: number; // ≥ 1: a non-stackable listing reports 0, which is one item
   marketDiv: number | null; // the whole listing (unit × stack); null when unpriced
   marketSource: ScannedValueSource | null;
-  ask: ListingPrice | null; // the listing's own price, kept even when the market valued it
+  ask: ListingPrice | null; // the listing's own price PER UNIT (see askDiv), kept even when the market valued it
 }
 
 export interface AccountCurrency {
@@ -82,6 +82,17 @@ async function readOwnListings(account: string, cred?: TradeCred): Promise<{ tot
   return { total: search.total ?? listings.length, listings };
 }
 
+/**
+ * Div value of the seller's own ask for the WHOLE listing. A stash price note on a stack prices ONE
+ * unit (Maxroll bulk-selling guide; PoE2 forum thread 3688218 — the `~price N/M cur` fraction form
+ * exists precisely to price several units at once), and trade2's fetch carries `listing.price` and
+ * `item.stackSize` separately with no stack total. So the listing is worth ask × stack.
+ */
+function askDiv(l: Listing, rates: Rates): number | null {
+  const unit = ratedDiv(l.price, rates);
+  return unit == null ? null : unit * Math.max(1, l.stackSize);
+}
+
 /** Raw orbs go to the currency totals (counted by stack, not market-valued); returns their Div. */
 function addOrbs(l: Listing, acc: AccountCurrency, t: TabAcc, rates: Rates): number {
   if (l.itemName === "Divine Orb") { acc.divine += l.stackSize; t.divine += l.stackSize; return l.stackSize; }
@@ -112,7 +123,7 @@ function addListing(l: Listing, acc: AccountCurrency, t: TabAcc, valuer: Valuer,
     item.marketDiv = mv.div; item.marketSource = mv.source;
     return;
   }
-  const d = ratedDiv(l.price, rates);
+  const d = askDiv(l, rates);
   if (d != null) {
     acc.otherDiv += d; t.otherDiv += d; acc.gearAtAskDiv += d;
     item.marketDiv = d; item.marketSource = "ask";

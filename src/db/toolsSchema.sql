@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS regex_presets (
 
 -- Per-item rows behind a balance snapshot, so Liquidate can rank what to sell. market_source and
 -- the ask pair keep every number attributable (market value vs the seller's own asking price).
+-- market_div is the whole listing; ask_amount/ask_currency is the note as listed, i.e. PER UNIT
+-- (a stash note on a stack prices one unit), so the listing's ask is ask_amount × stack_size.
 CREATE TABLE IF NOT EXISTS balance_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   snapshot_id INTEGER NOT NULL REFERENCES balance_snapshots(id) ON DELETE CASCADE,
