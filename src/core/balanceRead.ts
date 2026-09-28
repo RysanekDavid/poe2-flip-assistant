@@ -1,6 +1,7 @@
 import { readCurrencyFromTrade, type AccountCurrency } from "../api/accountScan";
 import { insertBalance, insertTabs, type BalanceSnapshot } from "../db/queries";
 import { annotateBalanceScan } from "../db/balanceQueries";
+import { insertBalanceItems } from "../db/balanceItemQueries";
 import type { TradeCred } from "../api/tradeClient";
 import type { ExchangeRates } from "./priceEngine";
 
@@ -28,6 +29,7 @@ export async function recordTradeBalance(
     note: `${c.listingsSeen}/${c.total} listed · gear ~${c.otherDiv.toFixed(1)} Div · ${c.tabs.length} tabs${c.unpriced ? ` · ${c.unpriced} unpriced` : ""}`,
   });
   insertTabs(snap.id, c.tabs);
+  insertBalanceItems(snap.id, c.items);
   annotateBalanceScan(snap.id, { listedSeen: c.listingsSeen, listedTotal: c.total, gearAtAskDiv: c.gearAtAskDiv });
   return {
     snapshot: { ...snap, listed_seen: c.listingsSeen, listed_total: c.total, gear_at_ask_div: c.gearAtAskDiv },
