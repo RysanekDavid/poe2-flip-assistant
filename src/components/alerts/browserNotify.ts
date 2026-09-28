@@ -4,32 +4,63 @@ import { freshForNotify, maxAlertId, type Alert } from "../../lib/alertCenter";
 
 const LS_KEY = "lastAlertNotifiedId";
 
-/** Short two-tone chime via Web Audio (no asset). Autoplay policy blocks it before a user gesture. */
+/** Fired on window when the browser keeps the chime's audio suspended (no user gesture yet). */
+export const SOUND_BLOCKED_EVENT = "alerts-sound-blocked";
+
+function closeLater(ctx: AudioContext, ms: number): void {
+  window.setTimeout(() => {
+    ctx.close().catch((e: unknown) => console.warn("[alerts] closing the chime audio context failed", e));
+  }, ms);
+}
+
+function scheduleTones(ctx: AudioContext): void {
+  const now = ctx.currentTime;
+  [880, 1320].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    const t = now + i * 0.12;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.2);
+  });
+  closeLater(ctx, 600);
+}
+
+function soundBlocked(ctx: AudioContext, why: unknown): void {
+  // A suspended context plays nothing and says nothing — name it, and let the Alerts tab show the fix.
+  console.warn("[alerts] chime blocked: the browser keeps audio suspended until the page is clicked", why);
+  window.dispatchEvent(new Event(SOUND_BLOCKED_EVENT));
+  closeLater(ctx, 0);
+}
+
+/**
+ * Short two-tone chime via Web Audio (no asset). Autoplay policy starts a context "suspended"
+ * until the page has had a user gesture; resume() is tried first, and a context that stays
+ * suspended is reported (SOUND_BLOCKED_EVENT) instead of silently playing into nothing.
+ */
 export function playChime(): void {
   const Ctx = window.AudioContext;
   if (!Ctx) return;
+  let ctx: AudioContext;
   try {
-    const ctx = new Ctx();
-    const now = ctx.currentTime;
-    [880, 1320].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      const t = now + i * 0.12;
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + 0.2);
-    });
-    window.setTimeout(() => {
-      ctx.close().catch((e: unknown) => console.warn("[alerts] closing the chime audio context failed", e));
-    }, 600);
+    ctx = new Ctx();
   } catch (e) {
-    console.warn("[alerts] chime blocked (no user gesture yet?)", e);
+    console.warn("[alerts] chime unavailable: AudioContext could not be created", e);
+    return;
   }
+  if (ctx.state !== "suspended") {
+    scheduleTones(ctx);
+    return;
+  }
+  ctx
+    .resume()
+    .then(() => (ctx.state === "running" ? scheduleTones(ctx) : soundBlocked(ctx, `state ${ctx.state}`)))
+    .catch((e: unknown) => soundBlocked(ctx, e));
 }
 
 export function notificationsSupported(): boolean {

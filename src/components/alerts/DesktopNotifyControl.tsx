@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BellRing, MonitorUp, Volume2 } from "lucide-react";
-import { notifyPermission, playChime, requestNotifyPermission } from "./browserNotify";
+import { notifyPermission, playChime, requestNotifyPermission, SOUND_BLOCKED_EVENT } from "./browserNotify";
 
 export type NotifyPermission = NotificationPermission | "unsupported";
 
@@ -24,6 +24,25 @@ export function useNotifyPermission(): [NotifyPermission, () => void] {
       .catch((e: unknown) => console.error("[alerts] notification permission request failed", e));
   }, []);
   return [perm, request];
+}
+
+/**
+ * True after a chime was blocked by the autoplay policy, until the next click on the page — any
+ * click is the user gesture that lets the following chime play.
+ */
+function useSoundBlocked(): boolean {
+  const [blocked, setBlocked] = useState(false);
+  useEffect(() => {
+    const onBlocked = (): void => setBlocked(true);
+    const onGesture = (): void => setBlocked(false);
+    window.addEventListener(SOUND_BLOCKED_EVENT, onBlocked);
+    document.addEventListener("pointerdown", onGesture);
+    return () => {
+      window.removeEventListener(SOUND_BLOCKED_EVENT, onBlocked);
+      document.removeEventListener("pointerdown", onGesture);
+    };
+  }, []);
+  return blocked;
 }
 
 const DENIED_HELP =
@@ -52,6 +71,7 @@ function PermissionState({ perm, request }: { perm: NotifyPermission; request: (
  * chime (browsers refuse sound until the page has been interacted with).
  */
 export function DesktopNotifyControl({ perm, request }: { perm: NotifyPermission; request: () => void }) {
+  const soundBlocked = useSoundBlocked();
   const test = (): void => {
     playChime();
     if (perm === "granted") {
@@ -68,6 +88,11 @@ export function DesktopNotifyControl({ perm, request }: { perm: NotifyPermission
         </span>
       </header>
       {perm === "denied" && <p className="mb-2 text-xs leading-relaxed text-neutral-400">{DENIED_HELP}</p>}
+      {soundBlocked && (
+        <p className="mb-2 text-xs text-warn" title="browsers mute a page's audio until it has been clicked once">
+          a chime was muted by the browser — click anywhere on the page to enable sound
+        </p>
+      )}
       <button
         onClick={test}
         className="inline-flex items-center gap-1.5 rounded-md border border-neutral-700 px-2.5 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
