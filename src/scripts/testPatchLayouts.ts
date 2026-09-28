@@ -12,6 +12,7 @@ import { syncPatchNotes } from "../sources/patchNotes/store";
 import {
   createProjectFixture,
   notModified,
+  openPatchDb,
   readFixture,
   response,
   syncOptions,
@@ -45,6 +46,14 @@ export function testStaffBodyLayouts(): void {
     .replace("profile-link staff post_by_account", "profile-link post_by_account")
     .replace("roleLabel staffText", "roleLabel");
   assert.throws(() => parsePatchThread(unmarked, 4_000_864), TRIED_BOTH_LAYOUTS);
+  const unmarkedWithForumCell = unmarked.replace(
+    '<td colspan="2"><div class="content">',
+    '<td class="content-container"><div class="content">',
+  );
+  assert.throws(
+    () => parsePatchThread(unmarkedWithForumCell, 4_000_864), TRIED_BOTH_LAYOUTS,
+    "a forum-style cell never stands in for the missing staff marker",
+  );
   assert.throws(() => parsePatchThread(driftHtml, 4_000_864), TRIED_BOTH_LAYOUTS);
 
   const withLaterReply = newsPostHtml.replace(
@@ -61,10 +70,8 @@ export function testStaffBodyLayouts(): void {
 /** One drifted thread must not cost the others their stored body, nor turn the panel green. */
 export async function testPartialThreadFailure(): Promise<void> {
   const root = createProjectFixture();
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
-    migratePatchProvenance(db);
     const recorded: HeartbeatOutcome[] = [];
     const result = await withHeartbeat(
       "patch-notes", "",

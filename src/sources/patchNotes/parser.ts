@@ -5,54 +5,72 @@ import {
   patchIndexEntrySchema,
   type PatchDocument,
   type PatchIndexEntry,
+  type PatchIndexPage,
 } from "./contracts";
 import { assertEnglishForumPage, assertEnglishText } from "./language";
 
 const THREAD_PATH = /\/forum\/view-thread\/(\d+)/;
+/*
+ * The English forum also lists realm notices ("Server Maintenance"): prose-only posts that would
+ * fail body validation every run and demand a Coach review of nothing. Only titles matching a
+ * known notice AND carrying no patch version are skipped; any other unversioned title is still
+ * tracked, because a real patch can be titled without x.y.z ("Early Access Launch Patch Notes").
+ */
+const NOTICE_TITLES: readonly RegExp[] = [/^Server Maintenance\b/i];
+// Major version is one digit and later parts at most two, so dates like 2026.09.28 never match.
+const PATCH_VERSION = /\b([0-9](?:\.[0-9]{1,2}){2,}[a-z]?)\b/i;
 
-export function parsePatchIndex(html: string, minimumEntries: number): PatchIndexEntry[] {
+export function parsePatchIndex(html: string, minimumEntries: number): PatchIndexPage {
   if (!Number.isInteger(minimumEntries) || minimumEntries < 1) {
     throw new Error("minimum patch entry count must be a positive integer");
   }
   const $ = cheerio.load(html);
   const entries: PatchIndexEntry[] = [];
+  const skippedNotices: number[] = [];
   const seen = new Set<number>();
   $("td.thread div.title a[href*='/forum/view-thread/']").each((_index, element) => {
-    const href = $(element).attr("href") ?? "";
-    const match = THREAD_PATH.exec(href);
-    if (!match?.[1]) return;
-    const threadId = Number(match[1]);
-    if (!Number.isSafeInteger(threadId) || seen.has(threadId)) return;
-    const threadCell = $(element).closest("td.thread");
-    const row = threadCell.closest("tr");
-    const publishedText = cleanText(
-      threadCell.find("span.post_date").first().text()
-      || row.find("span.post_date").first().text(),
-    );
-    if (!publishedText) return;
-    const title = cleanText($(element).text());
-    // The English forum also carries unversioned "Server Maintenance" notices: prose-only posts
-    // that would fail body validation every run and demand a Coach review of nothing.
-    const versionText = patchVersion(title);
-    if (!versionText) return;
-    const publishedAt = parsePublishedAt(publishedText);
-    const sourceUrl = new URL(`/forum/view-thread/${threadId}/filter-account-type/staff`, "https://www.pathofexile.com").href;
-    entries.push(patchIndexEntrySchema.parse({
-      threadId,
-      title,
-      versionText,
-      publishedAt,
-      publishedText,
-      sourceUrl,
-    }));
-    seen.add(threadId);
+    const row = indexRow($, $(element));
+    if (!row || seen.has(row.threadId)) return;
+    seen.add(row.threadId);
+    if ("notice" in row) skippedNotices.push(row.threadId);
+    else entries.push(row.entry);
   });
   if (entries.length < minimumEntries) {
     throw new Error(`patch index selector returned ${entries.length}; expected at least ${minimumEntries}`);
   }
   // Index titles are too short for a word-frequency verdict; the forum name is decisive.
   assertEnglishForumPage($, "patch index");
-  return entries;
+  return { entries, skippedNotices };
+}
+
+type IndexRow = { threadId: number; entry: PatchIndexEntry } | { threadId: number; notice: true };
+
+function indexRow($: CheerioAPI, link: Selection): IndexRow | null {
+  const match = THREAD_PATH.exec(link.attr("href") ?? "");
+  if (!match?.[1]) return null;
+  const threadId = Number(match[1]);
+  if (!Number.isSafeInteger(threadId)) return null;
+  const threadCell = link.closest("td.thread");
+  const publishedText = cleanText(
+    threadCell.find("span.post_date").first().text()
+    || threadCell.closest("tr").find("span.post_date").first().text(),
+  );
+  if (!publishedText) return null;
+  const title = cleanText(link.text());
+  const version = patchVersion(title);
+  if (!version && NOTICE_TITLES.some((pattern) => pattern.test(title))) return { threadId, notice: true };
+  const sourceUrl = new URL(`/forum/view-thread/${threadId}/filter-account-type/staff`, "https://www.pathofexile.com").href;
+  return {
+    threadId,
+    entry: patchIndexEntrySchema.parse({
+      threadId,
+      title,
+      versionText: version ?? `thread-${threadId}`,
+      publishedAt: parsePublishedAt(publishedText),
+      publishedText,
+      sourceUrl,
+    }),
+  };
 }
 
 export function parsePatchThread(html: string, expectedThreadId: number): PatchDocument {
@@ -101,7 +119,7 @@ interface StaffPost {
 
 /*
  * GGG renders patch notes in two layouts. Ordinary threads mark the post row itself as staff.
- * Threads promoted to news announcements (major content updates such as 0.5.5, thread 4000870)
+ * Threads promoted to news announcements (major content updates such as 0.5.5, thread 4000864)
  * put the body in an unmarked `tr.newsPost` row, carry the staff badge only on the following
  * `tr.newsPostInfo` row, and have no page <h1> — the title is the body's first heading.
  */
@@ -116,13 +134,15 @@ const STAFF_BADGE = ".profile-link.staff, .staffText";
 function firstStaffPost($: CheerioAPI): StaffPost | null {
   for (const element of $(STAFF_POST_ROWS).toArray()) {
     const row = $(element);
-    const post = row.hasClass("staff") ? forumStaffPost($, row) : newsStaffPost(row);
+    const post = forumStaffPost($, row) ?? newsStaffPost(row);
     if (post) return post;
   }
   return null;
 }
 
+// Each layout checks its own staff marker, so neither relies on which row selector matched.
 function forumStaffPost($: CheerioAPI, row: Selection): StaffPost | null {
+  if (!row.hasClass("staff")) return null;
   const content = row.find("td.content-container div.content").first();
   if (content.length !== 1) return null;
   return { variant: "forum-post", content, title: cleanText($("h1").first().text()) };
@@ -150,6 +170,5 @@ function parsePublishedAt(value: string): string | null {
 }
 
 function patchVersion(title: string): string | null {
-  const match = /\b([0-9]+(?:\.[0-9]+){2,}(?:[a-z])?)\b/i.exec(title);
-  return match?.[1] ?? null;
+  return PATCH_VERSION.exec(title)?.[1] ?? null;
 }

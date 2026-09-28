@@ -1,13 +1,21 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type Database from "better-sqlite3";
+import Database from "better-sqlite3";
+import { migratePatchProvenance } from "../db/sourceMigrations";
 import type { HttpFetcher } from "../sources/patchNotes/client";
 
 export const fixtureDir = join(process.cwd(), "src/sources/patchNotes/fixtures");
 
 export function readFixture(name: string): string {
   return readFileSync(join(fixtureDir, name), "utf8");
+}
+
+export function openPatchDb(): Database.Database {
+  const db = new Database(":memory:");
+  db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
+  migratePatchProvenance(db);
+  return db;
 }
 
 export function syncOptions(db: Database.Database, projectRoot: string, responses: Response[]) {

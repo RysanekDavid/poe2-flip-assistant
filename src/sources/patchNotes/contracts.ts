@@ -68,6 +68,12 @@ export interface HtmlFetchResult {
   retrievedAt: string;
 }
 
+export interface PatchIndexPage {
+  entries: PatchIndexEntry[];
+  /** Thread ids of recognised realm notices that are not patches (see parser NOTICE_TITLES). */
+  skippedNotices: number[];
+}
+
 export interface PatchThreadFailure {
   threadId: number;
   reason: string;
@@ -80,7 +86,15 @@ export interface PatchSyncResult {
   changedThreads: number;
   /** Threads whose body could not be fetched or parsed; every other thread was still stored. */
   failedThreads: PatchThreadFailure[];
+  /** Index threads not tracked as patches; empty when the index was unchanged (304). */
+  skippedNotices: number[];
   errors: string[];
+}
+
+export function patchSyncSummary(result: PatchSyncResult): string {
+  const skipped = result.skippedNotices.length;
+  return `checked ${result.checkedThreads} thread(s), changed ${result.changedThreads}`
+    + (skipped > 0 ? `, skipped ${skipped} realm notice(s): ${result.skippedNotices.join(", ")}` : "");
 }
 
 /**

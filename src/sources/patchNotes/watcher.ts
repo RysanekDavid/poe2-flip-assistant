@@ -1,5 +1,5 @@
 import { config } from "../../config/env";
-import { patchSyncProblem } from "./contracts";
+import { patchSyncProblem, patchSyncSummary } from "./contracts";
 import { syncPatchNotes } from "./store";
 import { withHeartbeat } from "../../core/heartbeat";
 
@@ -26,9 +26,9 @@ export function startPatchNotesWatcher(): (() => void) | null {
       .then((result) => {
         const problem = patchSyncProblem(result);
         if (problem == null) {
-          console.log(`[patch-notes] checked ${result.checkedThreads} thread(s), changed ${result.changedThreads}`);
+          console.log(`[patch-notes] ${patchSyncSummary(result)}`);
         } else {
-          console.error(`[patch-notes] ${problem}`);
+          console.error(`[patch-notes] ${problem} (${patchSyncSummary(result)})`);
         }
       })
       .catch((error: unknown) => {

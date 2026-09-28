@@ -32,6 +32,7 @@ import {
   type PatchCoverage,
   type PatchDocument,
   type PatchIndexEntry,
+  type PatchIndexPage,
   type PatchSyncResult,
   type PatchThreadFailure,
 } from "./contracts";
@@ -68,7 +69,7 @@ export async function syncPatchNotes(options: SyncOptions = {}): Promise<PatchSy
     recordSourceFailure(PATCH_SOURCE_ID, checkedAt, message, db);
     return {
       ok: false, indexChanged: false, checkedThreads: 0, changedThreads: 0,
-      failedThreads: [], errors: [message],
+      failedThreads: [], skippedNotices: [], errors: [message],
     };
   }
 }
@@ -105,37 +106,37 @@ async function runSync(
       PATCH_SOURCE_ID, index.retrievedAt, index.etag, index.lastModified,
       null, PATCH_PARSER_VERSION, validationPolicy, options.db,
     );
-    return syncBodies(false, coverage.official_patch_thread_id, options);
+    return syncBodies(false, [], coverage.official_patch_thread_id, options);
   }
   const parsed = await persistAndParseIndex(index, coverage, options);
   if ("error" in parsed) {
     return {
       ok: false, indexChanged: true, checkedThreads: 0, changedThreads: 0,
-      failedThreads: [], errors: [`patch index validation failed: ${parsed.error}`],
+      failedThreads: [], skippedNotices: [], errors: [`patch index validation failed: ${parsed.error}`],
     };
   }
   recordValidIndexCheck(
     PATCH_SOURCE_ID, index.retrievedAt, index.etag, index.lastModified,
     parsed.snapshotId, PATCH_PARSER_VERSION, validationPolicy, options.db,
   );
-  return syncBodies(true, coverage.official_patch_thread_id, options);
+  return syncBodies(true, parsed.skippedNotices, coverage.official_patch_thread_id, options);
 }
 
 async function persistAndParseIndex(
   response: HtmlFetchResult,
   coverage: PatchCoverage,
   options: Required<Pick<SyncOptions, "artifactRoot">> & SyncOptions,
-): Promise<{ snapshotId: number } | { error: string }> {
+): Promise<{ snapshotId: number; skippedNotices: number[] } | { error: string }> {
   const artifact = await persistArtifact(response, options.artifactRoot);
   const minimumEntries = options.minimumEntries ?? config.patchNotes.minIndexEntries;
   const validationPolicy = patchIndexValidationPolicy(
     minimumEntries,
     coverage.official_patch_thread_id,
   );
-  let entries: PatchIndexEntry[];
+  let page: PatchIndexPage;
   try {
-    entries = parsePatchIndex(requiredHtml(response), minimumEntries);
-    validateIndexCoverage(entries, coverage.official_patch_thread_id);
+    page = parsePatchIndex(requiredHtml(response), minimumEntries);
+    validateIndexCoverage(page.entries, coverage.official_patch_thread_id);
   } catch (error) {
     const message = errorMessage(error);
     insertSnapshot(
@@ -147,8 +148,8 @@ async function persistAndParseIndex(
   const snapshotId = insertSnapshot(
     response, artifact, "index", PATCH_FORUM_ID, true, null, validationPolicy, options.db,
   );
-  upsertIndexPatches(entries, snapshotId, coverage.official_patch_thread_id, options.db);
-  return { snapshotId };
+  upsertIndexPatches(page.entries, snapshotId, coverage.official_patch_thread_id, options.db);
+  return { snapshotId, skippedNotices: page.skippedNotices };
 }
 
 function validateIndexCoverage(entries: PatchIndexEntry[], baselineThreadId: number): void {
@@ -159,6 +160,7 @@ function validateIndexCoverage(entries: PatchIndexEntry[], baselineThreadId: num
 
 async function syncBodies(
   indexChanged: boolean,
+  skippedNotices: number[],
   baselineThreadId: number,
   options: SyncOptions,
 ): Promise<PatchSyncResult> {
@@ -183,6 +185,7 @@ async function syncBodies(
     checkedThreads: targets.length,
     changedThreads,
     failedThreads,
+    skippedNotices,
     errors,
   };
 }

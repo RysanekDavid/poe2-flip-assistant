@@ -11,11 +11,17 @@ import type { CheerioAPI } from "cheerio";
 // Case-sensitive on purpose: the French forum is "Patch notes", the German one "Patch-Notes".
 const ENGLISH_FORUM_NAME = /\bPatch Notes\b/;
 
-// Only words that are frequent in one language and rare in the others; shared short words
-// ("a", "in", "an", "no", "was", "die") are left out so English notes about dying stay English.
+/*
+ * English counts every common patch-note word, including the short ones one-line hotfixes are
+ * made of ("Fixed a crash"). "a" and "an" are also Spanish/German words; that only makes the
+ * check more lenient, and the real German copies still score far past the threshold (verified
+ * against the German 0.5.4d hotfix: 4 foreign vs 0 English). The foreign list stays strictly
+ * non-English: no "die" (English notes about dying) and no "com" (every pathofexile.com link).
+ */
 const ENGLISH_WORDS = new Set([
   "the", "and", "to", "of", "is", "are", "now", "with", "for", "that", "this", "when",
   "from", "have", "has", "be", "will", "it", "you", "your", "can", "longer", "which",
+  "a", "an", "where", "fixed", "could", "would", "been", "into", "some", "players",
 ]);
 const FOREIGN_WORDS = new Set([
   // German
@@ -24,7 +30,7 @@ const FOREIGN_WORDS = new Set([
   // French
   "le", "la", "les", "et", "est", "une", "du", "pour", "avec", "maintenant", "lorsque", "vous",
   // Spanish / Portuguese
-  "el", "los", "las", "y", "con", "para", "ahora", "cuando", "del", "una", "não", "com",
+  "el", "los", "las", "y", "con", "para", "ahora", "cuando", "del", "una", "não",
 ]);
 const MIN_FOREIGN_HITS = 3;
 

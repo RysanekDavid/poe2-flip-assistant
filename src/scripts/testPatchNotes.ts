@@ -25,10 +25,13 @@ import {
   testLanguageGuard,
   testNonEnglishThreadNotStored,
   testOtherForumRowsRetired,
-  testUnversionedNoticesSkipped,
+  testIndexNoticesAndVersions,
+  testLinkHeavyEnglishHotfix,
+  testSkippedNoticesReported,
 } from "./testPatchLanguage";
 import {
   createProjectFixture,
+  openPatchDb,
   fixtureDir,
   notModified,
   queueFetcher,
@@ -38,6 +41,7 @@ import {
 import { parsePatchIndex, parsePatchThread } from "../sources/patchNotes/parser";
 import { syncPatchNotes } from "../sources/patchNotes/store";
 import {
+  PATCH_INDEX_URL,
   PATCH_PARSER_NAME,
   PATCH_PARSER_VERSION,
   PATCH_THREAD_VALIDATION_POLICY,
@@ -61,7 +65,9 @@ async function main(): Promise<void> {
   await testPreBaselineIndexFailsClosed();
   await testPartialThreadFailure();
   testLanguageGuard();
-  testUnversionedNoticesSkipped();
+  testIndexNoticesAndVersions();
+  testLinkHeavyEnglishHotfix();
+  await testSkippedNoticesReported();
   await testAcceptLanguageHeader();
   await testNonEnglishThreadNotStored();
   await testOtherForumRowsRetired();
@@ -69,16 +75,16 @@ async function main(): Promise<void> {
 }
 
 async function testParsers(): Promise<void> {
-  const entries = parsePatchIndex(indexHtml, 3);
+  const { entries } = parsePatchIndex(indexHtml, 3);
   assert.deepEqual(entries.map((entry) => entry.threadId), [3_991_000, 3_990_120, 3_980_000]);
   assert.equal(entries[0]?.versionText, "0.5.4e");
   assert.equal(entries[0]?.publishedAt, null);
-  const localized = parsePatchIndex(indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "1. srpna 2026"), 3);
+  const localized = parsePatchIndex(indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "1. srpna 2026"), 3).entries;
   assert.equal(localized[0]?.publishedAt, null);
   const zoned = parsePatchIndex(
     indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "2026-08-01T10:15:00Z"),
     3,
-  );
+  ).entries;
   assert.equal(zoned[0]?.publishedAt, "2026-08-01T10:15:00.000Z");
   const body = parsePatchThread(threadHtml, 3_991_000);
   assert.deepEqual(body.headings, ["Gameplay Changes", "Bug Fixes"]);
@@ -128,10 +134,8 @@ async function testClientBoundary(): Promise<void> {
 }
 
 function testParserVersionStorage(): void {
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
-    migratePatchProvenance(db);
     const first = insertSourceSnapshot(snapshotInput("1", false, "thread:legacy"), db);
     const second = insertSourceSnapshot(snapshotInput(PATCH_PARSER_VERSION, true), db);
     assert.notEqual(first, second, "the same bytes must be reparsed under a new parser version");
@@ -182,6 +186,9 @@ function testLegacyMigration(): void {
     assert.equal(evidence?.id, 7);
     assert.equal(patch?.id, 7);
     assert.equal(db.prepare("PRAGMA foreign_key_check").all().length, 0);
+    const registry = db.prepare("SELECT base_url AS baseUrl FROM source_registry")
+      .get() as { baseUrl: string } | undefined;
+    assert.equal(registry?.baseUrl, PATCH_INDEX_URL, "a legacy 2222 base_url follows the forum switch");
     const reparsed = insertSourceSnapshot(snapshotInput(PATCH_PARSER_VERSION, true), db);
     assert.notEqual(reparsed, 7);
   } finally {
@@ -235,11 +242,8 @@ async function testWatcherStorageAndReview(): Promise<void> {
 
 async function testBaselineLifecycle(): Promise<void> {
   const root = createProjectFixture();
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    const schema = readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8");
-    db.exec(schema);
-    migratePatchProvenance(db);
     await syncPatchNotes(syncOptions(db, root, [
       response(indexHtml, "index-1"),
       response(threadHtml, "new-1"),
@@ -272,10 +276,8 @@ async function testBaselineLifecycle(): Promise<void> {
 
 async function testInitialBaselineInvalid(): Promise<void> {
   const root = createProjectFixture();
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
-    migratePatchProvenance(db);
     const result = await syncPatchNotes(syncOptions(db, root, [
       response(indexHtml, "index-1"), response(threadHtml, "new-1"),
       response(driftHtml, "baseline-invalid"),
@@ -291,15 +293,13 @@ async function testInitialBaselineInvalid(): Promise<void> {
 
 async function testPreBaselineIndexFailsClosed(): Promise<void> {
   const root = createProjectFixture();
-  const db = new Database(":memory:");
+  const db = openPatchDb();
   try {
-    db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
-    migratePatchProvenance(db);
     const preBaseline = indexHtml
       .replaceAll("3991000", "3979000")
       .replaceAll("3990120", "3978000")
       .replaceAll("3980000", "3977000");
-    assert.equal(parsePatchIndex(preBaseline, 2).length >= 2, true);
+    assert.equal(parsePatchIndex(preBaseline, 2).entries.length >= 2, true);
     const result = await syncPatchNotes(syncOptions(db, root, [response(preBaseline, "old-index")]));
     assert.equal(result.ok, false);
     const state = db.prepare(`

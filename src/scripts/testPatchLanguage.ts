@@ -10,10 +10,12 @@ import {
   PATCH_PARSER_NAME,
   PATCH_PARSER_VERSION,
   patchSyncProblem,
+  patchSyncSummary,
 } from "../sources/patchNotes/contracts";
+import { languageSignal } from "../sources/patchNotes/language";
 import { parsePatchIndex, parsePatchThread } from "../sources/patchNotes/parser";
 import { syncPatchNotes } from "../sources/patchNotes/store";
-import { createProjectFixture, readFixture, response, syncOptions } from "./testPatchHelpers";
+import { createProjectFixture, openPatchDb, readFixture, response, syncOptions } from "./testPatchHelpers";
 
 const indexHtml = readFixture("index.html");
 const threadHtml = readFixture("thread.html");
@@ -40,18 +42,72 @@ export function testLanguageGuard(): void {
   console.log("PASS  language guard: German/French forum title, German body, English index");
 }
 
-/** The English forum lists prose-only "Server Maintenance" notices next to the patches. */
-export function testUnversionedNoticesSkipped(): void {
-  const withNotice = indexHtml.replace(
-    "</table>",
-    `<tr><td class="thread"><div class="title"><a href="/forum/view-thread/3999707">Server Maintenance</a></div>
-      <span class="post_date">Aug 27, 2026, 3:10:13 AM</span></td></tr></table>`,
+/**
+ * Only known realm notices without a version are skipped (and reported); every other title is
+ * tracked, versionless ones under the thread-<id> identity, dates never mistaken for versions.
+ */
+export function testIndexNoticesAndVersions(): void {
+  const page = parsePatchIndex(withIndexRows([
+    [3_999_707, "Server Maintenance"],
+    [3_999_800, "Early Access Launch Patch Notes"],
+    [3_999_900, "Patch Notes for 2026.09.28"],
+    [3_999_950, "0.5.4e Maintenance"],
+  ]), 3);
+  assert.deepEqual(page.skippedNotices, [3_999_707]);
+  const versions = new Map(page.entries.map((entry) => [entry.threadId, entry.versionText]));
+  assert.equal(versions.get(3_999_800), "thread-3999800", "a versionless real patch is still tracked");
+  assert.equal(versions.get(3_999_900), "thread-3999900", "a date is not a patch version");
+  assert.equal(versions.get(3_999_950), "0.5.4e", "a versioned notice is a patch post");
+  for (const date of ["2026.09.28", "28.09.2026", "9.28.2026"]) {
+    const dated = parsePatchIndex(withIndexRows([[3_999_990, `Hotfix ${date}`]]), 3);
+    assert.equal(dated.entries.at(-1)?.versionText, "thread-3999990", date);
+  }
+  for (const version of ["0.5.5", "0.5.5d", "1.0.0", "3.25.1b"]) {
+    const versioned = parsePatchIndex(withIndexRows([[3_999_990, `${version} Patch Notes`]]), 3);
+    assert.equal(versioned.entries.at(-1)?.versionText, version);
+  }
+  console.log("PASS  index: realm notices skipped and counted, versionless patches kept, dates rejected");
+}
+
+/** Skipped notices reach the sync result and its log line; they never become sync targets. */
+export async function testSkippedNoticesReported(): Promise<void> {
+  const root = createProjectFixture();
+  const db = openPatchDb();
+  try {
+    const result = await syncPatchNotes(syncOptions(db, root, [
+      response(withIndexRows([[3_999_707, "Server Maintenance"]]), "index-1"),
+      response(threadHtml, "new-1"), response(threadHtml, "base-1"),
+    ]));
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.skippedNotices, [3_999_707]);
+    assert.equal(result.checkedThreads, 2, "the notice was not fetched");
+    assert.equal(officialPatch(3_999_707, db), null);
+    assert.equal(patchSyncSummary(result), "checked 2 thread(s), changed 2, skipped 1 realm notice(s): 3999707");
+    console.log("PASS  skipped realm notices are reported in the sync result and log");
+  } finally {
+    db.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+/** One-line English hotfixes are mostly links; "com" must not count against them. */
+export function testLinkHeavyEnglishHotfix(): void {
+  const links = threadHtml.replace(
+    /<ul>[\s\S]*<\/ol>/,
+    `<ul><li>Fixed a crash, see https://www.pathofexile.com/forum https://www.pathofexile.com/trade
+      https://www.pathofexile.com/ladders</li></ul>`,
   );
-  const entries = parsePatchIndex(withNotice, 3);
-  assert.deepEqual(entries.map((entry) => entry.threadId), [3_991_000, 3_990_120, 3_980_000]);
-  const versioned = withNotice.replace(">Server Maintenance<", ">0.5.4e Maintenance<");
-  assert.equal(parsePatchIndex(versioned, 3).at(-1)?.versionText, "0.5.4e");
-  console.log("PASS  unversioned forum notices are not tracked as patches");
+  const parsed = parsePatchThread(links, 3_991_000);
+  assert.equal(parsed.listItems.length, 1);
+  assert.equal(languageSignal(parsed.bodyText).foreign, 0);
+  console.log("PASS  link-heavy one-line English hotfix is English");
+}
+
+function withIndexRows(rows: Array<[number, string]>): string {
+  const extra = rows.map(([threadId, title]) => `<tr><td class="thread"><div class="title">
+    <a href="/forum/view-thread/${threadId}">${title}</a></div>
+    <span class="post_date">Aug 27, 2026, 3:10:13 AM</span></td></tr>`).join("");
+  return indexHtml.replace("</table>", `${extra}</table>`);
 }
 
 export async function testAcceptLanguageHeader(): Promise<void> {
@@ -95,7 +151,12 @@ export async function testOtherForumRowsRetired(): Promise<void> {
     ]));
     const snapshotsBefore = countRows(db, "source_snapshot");
     seedGermanForumPatch(db);
-    migratePatchProvenance(db);
+    const logged = captureWarnings(() => migratePatchProvenance(db));
+    assert.match(logged.join(" "), /retired 1 patch thread\(s\) indexed from a forum other than 2212/);
+    assert.ok(logged.some((line) => line.includes(
+      'thread 4006365 version=0.5.5c title="Patch-Notes 0.5.5c" review=no_gameplay_impact '
+      + 'by owner at 2026-09-20T00:00:00.000Z: "reviewed German copy"',
+    )), "the owner's review is logged so it can be re-applied");
     assert.equal(officialPatch(4_006_365, db), null, "German-forum row retired");
     assert.equal(countRows(db, "pending_patch_effect", "thread_id = 4006365"), 0);
     assert.equal(countRows(db, "evidence_link", "entity_id = '4006365'"), 0);
@@ -146,11 +207,16 @@ function seedGermanForumPatch(db: Database.Database): void {
     valid_index_validation_policy = 'index:min-entries=2;baseline-thread=3990574'`).run(indexId);
 }
 
-function openPatchDb(): Database.Database {
-  const db = new Database(":memory:");
-  db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
-  migratePatchProvenance(db);
-  return db;
+function captureWarnings(run: () => void): string[] {
+  const lines: string[] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => void lines.push(args.map(String).join(" "));
+  try {
+    run();
+  } finally {
+    console.warn = original;
+  }
+  return lines;
 }
 
 function countRows(db: Database.Database, table: string, where = "1 = 1"): number {
