@@ -29,6 +29,7 @@ const SECTION_SEP = /^-{3,}$/; // the "--------" divider
 const MARKERS: Record<string, ModMarker> = {
   implicit: "implicit",
   rune: "rune",
+  "added rune": "rune",
   enchant: "enchant",
   crafted: "crafted",
   fractured: "fractured",
@@ -37,7 +38,7 @@ const MARKERS: Record<string, ModMarker> = {
 
 /** Pull the trailing "(implicit)" / "(rune)" / … tag off a mod line, defaulting to explicit. */
 function stripMarker(line: string): { text: string; marker: ModMarker } {
-  const m = line.match(/\s*\((implicit|rune|enchant|crafted|fractured|desecrated)\)\s*$/i);
+  const m = line.match(/\s*\((implicit|added rune|rune|enchant|crafted|fractured|desecrated)\)\s*$/i);
   if (!m) return { text: line.trim(), marker: "explicit" };
   const marker = MARKERS[m[1]!.toLowerCase()] ?? "explicit";
   return { text: line.slice(0, m.index).trim(), marker };
@@ -55,7 +56,8 @@ export function placeholder(line: string): string {
 
 // Lines that are properties/requirements, never mods. Resolver would reject them anyway,
 // but skipping cheap obvious ones keeps noise (and false placeholder matches) down.
-const NON_MOD = /^(Item Class|Rarity|Quality|Armour|Evasion Rating|Energy Shield|Requires|Level|Str|Dex|Int|Sockets|Item Level|Stack Size|Radius|Limited to|Requirements|Physical Damage|Elemental Damage|Critical|Attacks per Second|Reload Time):/i;
+// "Quality (Attribute Modifiers): +20% (augmented)" is the catalysed form of the Quality line.
+const NON_MOD = /^(Item Class|Rarity|Quality(?: \([^)]*\))?|Armour|Evasion Rating|Energy Shield|Requires|Level|Str|Dex|Int|Sockets|Item Level|Stack Size|Radius|Limited to|Requirements|Physical Damage|Elemental Damage|Critical|Attacks per Second|Reload Time):/i;
 
 /** Parse pasted PoE2 item text. Returns null if it doesn't look like an item at all. */
 export function parseItem(text: string): ParsedItem | null {
