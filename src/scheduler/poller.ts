@@ -14,12 +14,13 @@ import { startLeagueWatcher } from "./leagueWatcher";
 import { getPolledLeagues } from "../core/leagueUsers";
 import { balanceProblem, snapshotBalancesAll } from "./balanceLoop";
 import { startScoutValues } from "./scoutValuesLoop";
+import { startUniqueTradeValues } from "./uniqueTradeLoop";
 import { startNotifyDrainer } from "../core/notify/drainer";
 import { getUserById } from "../db/userQueries";
 import { runSnipeOutcomeChecks, snipeOutcomesProblem } from "../core/snipeOutcomes/run";
 import { SNIPE_OUTCOMES_INTERVAL_MIN } from "../core/subsystems";
 
-const OWNER_ID = 1; // seeded owner; the autosnipe + craft-margin scans run under the owner's cred
+const OWNER_ID = 1; // seeded owner; the autosnipe, craft-margin and unique-trade scans run under the owner's cred
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
@@ -43,6 +44,8 @@ function start(): void {
   startCraftMargin(ownerCred);
   startBalanceLoop();
   startScoutValues(); // poe2scout unique + lineage-gem prices for every polled league
+  // trade2 prices for the boss uniques scout leaves at 0 or unlisted: shared scan, owner's cookie
+  startUniqueTradeValues(() => ({ id: OWNER_ID, cred: credForUser({ id: OWNER_ID, role: "owner" }) }));
   startNotifyDrainer(); // Discord deliveries queued by the alerts trigger (core/notify)
 }
 

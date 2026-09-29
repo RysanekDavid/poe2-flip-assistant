@@ -15,6 +15,7 @@ export const SUBSYSTEM_NAMES = [
   "balance",
   "unique-values",
   "lineage-values",
+  "unique-trade-values",
   "patch-notes",
   "patch-summary",
   "league-watch",
@@ -37,7 +38,7 @@ export interface SubsystemSpec {
 /** The slice of config the registry reads — injectable so tests can flip loops on and off. */
 export type SubsystemConfig = Pick<
   typeof config,
-  "pollIntervalMin" | "autoSnipe" | "craftMargin" | "balanceIntervalMin" | "patchNotes" | "snipeOutcomes" | "leagueStart"
+  "pollIntervalMin" | "autoSnipe" | "craftMargin" | "balanceIntervalMin" | "patchNotes" | "snipeOutcomes" | "leagueStart" | "uniqueTradeValues"
 >;
 
 /** Mirrors the league watcher's fixed 6h check; kept here so the registry has no poller import. */
@@ -48,6 +49,8 @@ export const SNIPE_OUTCOMES_INTERVAL_MIN = 30;
 const SNIPE_OUTCOMES_SEC = SNIPE_OUTCOMES_INTERVAL_MIN * 60;
 /** poe2scout value-cache tick; the poller schedules with this same constant (each refresh has its own 6h guard). */
 export const SCOUT_VALUES_INTERVAL_SEC = 60 * 60;
+/** trade2 unique-price tick; the poller schedules with this same constant (the hourly cap spreads over it). */
+export const UNIQUE_TRADE_TICK_MIN = 10;
 
 /** Cadences come from the same config the poller schedules with, so they cannot drift apart. */
 export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemName, SubsystemSpec> {
@@ -67,6 +70,7 @@ export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemN
     balance: { label: "Balance auto-read", hint: "Per-user net-worth snapshot from public stash listings.", perLeague: false, expectedSec: balance, enabled: balance != null },
     "unique-values": { label: "Unique prices", hint: "poe2scout unique-price cache (item_values), refreshed at most every 6h per polled league — values showcase gear and Farm boss uniques.", perLeague: true, expectedSec: SCOUT_VALUES_INTERVAL_SEC, enabled: true },
     "lineage-values": { label: "Lineage gem prices", hint: "poe2scout lineage-support-gem prices (item_values), refreshed at most every 6h per polled league on their own age — Farm boss lineage drops.", perLeague: true, expectedSec: SCOUT_VALUES_INTERVAL_SEC, enabled: true },
+    "unique-trade-values": { label: "Unique trade prices", hint: `trade2 fallback prices for the curated Farm boss uniques poe2scout has no price for: default league only, under the owner's POESESSID, ≤${cfg.uniqueTradeValues.maxSearchesPerHour} searches/h (one search + one 10-listing fetch per unique), each unique re-searched at most every ${cfg.uniqueTradeValues.refreshHours}h. Red = skipped (no owner cookie, no contact, no rates) or every search failed.`, perLeague: false, expectedSec: UNIQUE_TRADE_TICK_MIN * 60, enabled: cfg.uniqueTradeValues.enabled },
     "patch-notes": { label: "Patch notes", hint: "Official PoE2 patch-notes watcher feeding Coach patch reviews.", perLeague: false, expectedSec: cfg.patchNotes.intervalMin * 60, enabled: cfg.patchNotes.enabled },
     "patch-summary": { label: "Patch summaries", hint: "Queued patch threads summarized by Coach (AI), then announced once as a PATCH alert. Red = Coach unreachable or rejecting; jobs back off and retry.", perLeague: false, expectedSec: cfg.patchNotes.intervalMin * 60, enabled: cfg.patchNotes.enabled },
     "league-watch": { label: "League watcher", hint: "poe.ninja proposes, poe2scout confirms a new challenge league.", perLeague: false, expectedSec: LEAGUE_WATCH_SEC, enabled: true },

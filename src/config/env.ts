@@ -193,6 +193,17 @@ export const config = {
     maxSearchesPerRun: pos("SNIPE_OUTCOMES_MAX_SEARCHES", 3, 10),
   },
 
+  // trade2 fallback prices for the curated boss uniques poe2scout has no price for (Farm boss EV).
+  // Shared market scan under the owner's cookie, default league only (trade2 searches search it).
+  uniqueTradeValues: {
+    enabled: flag("UNIQUE_TRADE_VALUES_ENABLED", true),
+    // Search-budget share of trade2's ~100/h (600 per 6 h per IP): autosnipe ~36 + craft ~30 +
+    // snipe outcomes ≤6 + reprice ≤4 + this 6 ≈ 82/h, leaving room for interactive lookups.
+    maxSearchesPerHour: pos("UNIQUE_TRADE_MAX_SEARCHES_PER_HOUR", 6, 12),
+    // each unique is re-searched at most this often; ~50 candidates at 6/h are covered in ~8-9 h
+    refreshHours: pos("UNIQUE_TRADE_REFRESH_HOURS", 24, 24 * 7),
+  },
+
   // League-start price curves from GGG's public exchange digests of past leagues.
   leagueStart: {
     days: pos("LEAGUE_START_DAYS", 14, 60), // curve length; the panel shows while a league is younger than this

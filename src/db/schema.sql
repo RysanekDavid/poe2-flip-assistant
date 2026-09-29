@@ -52,6 +52,27 @@ CREATE TABLE IF NOT EXISTS item_values (
   PRIMARY KEY (league, name_key)
 );
 
+-- trade2 fallback prices for curated boss uniques poe2scout has no price for — SHARED, per league.
+-- Its own table, not item_values: item_values is keyed by name alone and keeps scout's "listed at
+-- 0" rows for exactly these names, so a trade2 row there would overwrite that fact and make the
+-- next scout refresh hit the primary key. value_div is the bait-trimmed median of the cheapest
+-- instant-buyout listings, PER ITEM in Divine; NULL when too few usable listings (never 0).
+-- value_div / listed / samples / observed_at describe the last SUCCESSFUL search (all NULL before
+-- one); a failed search only moves checked_at + error, so a transient failure keeps the last price
+-- with its true age. checked_at (every attempt) also feeds the job's rolling-hour search cap.
+CREATE TABLE IF NOT EXISTS unique_trade_values (
+  league TEXT NOT NULL,
+  name_key TEXT NOT NULL,      -- scoutKey of the curated unique name
+  value_div REAL,
+  listed INTEGER,              -- live listings trade2 reported for that search
+  samples INTEGER,             -- listings value_div stands on after bait trimming
+  observed_at TEXT,            -- ISO time of that search
+  checked_at TEXT NOT NULL,    -- ISO time of the last attempt, successful or not
+  error TEXT,                  -- why the last attempt failed, NULL when it succeeded
+  PRIMARY KEY (league, name_key)
+);
+CREATE INDEX IF NOT EXISTS idx_unique_trade_values_checked ON unique_trade_values(checked_at);
+
 -- Price-book observations — SHARED. One row per observed listing (base + mod-signature → ask
 -- price in Div). The valuation/snipe engine aggregates these into a market value distribution
 -- per signature. Built passively from searches we already run; a proprietary dataset.
