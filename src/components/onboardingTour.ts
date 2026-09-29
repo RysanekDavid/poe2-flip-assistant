@@ -71,9 +71,13 @@ export function stepTour(tour: Driver, delta: 1 | -1, go: (tab: TabId) => void):
   const step = TOUR_STEPS[index];
   if (!step) return tour.destroy();
   if (step.tab) go(step.tab);
+  // The user may close the tour while the tab renders; a closed tour must stay closed.
   waitForElement(step.element).then(
-    () => tour.moveTo(index),
+    () => {
+      if (tour.isActive()) tour.moveTo(index);
+    },
     (error: unknown) => {
+      if (!tour.isActive()) return;
       console.error("[onboarding]", error);
       tour.destroy();
     },
