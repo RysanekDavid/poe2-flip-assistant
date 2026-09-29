@@ -31,6 +31,7 @@
     "test:tools:boss-ev": "tsx src/scripts/runWithTestEnv.ts tools-boss-ev",
     "test:tools:liquidate": "tsx src/scripts/runWithTestEnv.ts tools-liquidate",
     "test:db": "tsx src/scripts/runWithTestEnv.ts db",
+    "test:features-schema": "tsx src/scripts/runWithTestEnv.ts features-schema",
     "test:system": "tsx src/scripts/runWithTestEnv.ts system",
     "test:notify": "tsx src/scripts/runWithTestEnv.ts notify && tsx src/scripts/runWithTestEnv.ts notify-drain && tsx src/scripts/runWithTestEnv.ts alert-center",
     "test:notify-drain": "tsx src/scripts/runWithTestEnv.ts notify-drain",
