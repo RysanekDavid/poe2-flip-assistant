@@ -183,7 +183,7 @@ async function noRatesIsTransient(): Promise<void> {
 {
   const shell: RecipeMarginReport = {
     key: "t", status: "ok", base: null, result: null, materials: [], materialsDiv: 1, hitRate: 0.3, evDiv: 0, marginPct: 0,
-    error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null,
+    error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null, hitRateBasis: "unknown", hitRateN: 0,
   };
   const leg = (over: Partial<LegReport>): LegReport => ({
     priceDiv: 10, samples: 10, total: 30, searchUrl: "u", outliersDropped: 0, unresolvedStats: [], icon: null, floorDiv: null,

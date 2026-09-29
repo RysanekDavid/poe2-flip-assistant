@@ -11,6 +11,7 @@ export const SOURCE_KINDS = ["video", "guide", "kb", "in_game"] as const;
 /** primary = the creator's own demonstration; secondary = a write-up of it; anecdote = unlocated. */
 export const SOURCE_TIERS = ["primary", "secondary", "anecdote"] as const;
 export const RECIPE_STATUSES = ["draft", "reviewed", "stale"] as const;
+export const DATE_PRECISIONS = ["exact", "listing"] as const;
 /** `measured` is never curated: it only comes from logged attempts (calibration.ts). */
 export const HIT_RATE_BASES = ["measured", "creator_claim", "unknown"] as const;
 
@@ -37,12 +38,17 @@ export const recipeSourceSchema = z
     creator: z.string().min(1).nullable(),
     /** Publication date; null when it could not be confirmed (never guessed). */
     date: isoDay.nullable(),
+    /** exact = read from the source itself; listing = from a search-index listing, may be a day off. */
+    datePrecision: z.enum(DATE_PRECISIONS).nullable(),
     tier: z.enum(SOURCE_TIERS),
     /** Repo path of our own copy or summary (transcript, KB section) — evidence a reviewer can open. */
     ref: z.string().min(1).nullable(),
   })
   .strict()
   .superRefine((s, ctx) => {
+    if ((s.date === null) !== (s.datePrecision === null)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["datePrecision"], message: "a date needs a precision, and only a date may have one" });
+    }
     if (s.tier !== "anecdote" && s.url === null && s.ref === null) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["tier"], message: `a ${s.tier} source needs a url or a repo ref` });
     }
@@ -85,7 +91,7 @@ export type RecipeProvenance = z.infer<typeof recipeProvenanceSchema>;
 
 export const LEGALITY_VERDICTS = ["ok", "violation", "unknown"] as const;
 export type LegalityVerdict = (typeof LEGALITY_VERDICTS)[number];
-export const LEGALITY_CHECKS = ["catalog", "floor", "ilvl", "pairing"] as const;
+export const LEGALITY_CHECKS = ["catalog", "floor", "rarity", "ilvl", "pairing"] as const;
 
 export const legalityCheckSchema = z
   .object({
@@ -149,11 +155,13 @@ export type StaleReason =
 export interface HitRateView {
   /** The curated estimate from the recipe data. */
   model: number;
-  /** hits ÷ closed attempts across every user's log; null before the first closed attempt. */
+  /** Pooled hits ÷ closed across users (capped per user); null while there is no pooled sample. */
   measured: number | null;
-  /** Closed (hit or brick) attempts behind `measured`. */
+  /** Closed (hit or brick) attempts in the pooled sample. */
   n: number;
-  /** What the EV uses: `measured` once n reaches the calibration minimum, else `model`. */
+  /** Distinct users with eligible attempts; fewer than 2 means nothing is pooled yet. */
+  users: number;
+  /** What the EV uses: (hits + k·model) / (n + k), shrinking the log toward the curated rate. */
   effective: number;
   basis: HitRateBasis;
   /** The creator's own sample size when the basis is a creator claim. */

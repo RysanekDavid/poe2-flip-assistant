@@ -29,7 +29,7 @@
         "preserved-cranium": "bc2cdb7baf3f7c3f"
       },
       "repoeChanged": [],
-      "verdict": "ok",
+      "verdict": "unknown",
       "steps": [
         {
           "idx": 0,
@@ -56,7 +56,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Dextral Necromancy pairing matches rule omen-dextral-necromancy",
+              "detail": "Omen of Dextral Necromancy pairing matches verified rule omen-dextral-necromancy",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -74,14 +74,14 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         },
         {
           "idx": 3,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -91,8 +91,8 @@
             },
             {
               "kind": "pairing",
-              "verdict": "ok",
-              "detail": "Omen of Sinistral Annulment pairing matches rule omen-sinistral-annulment — that rule is itself unverified",
+              "verdict": "unknown",
+              "detail": "Omen of Sinistral Annulment pairing matches only the unverified rule omen-sinistral-annulment",
               "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
             }
           ]
@@ -146,7 +146,7 @@
         "preserved-jawbone": "d6dc5065e20fc30e"
       },
       "repoeChanged": [],
-      "verdict": "ok",
+      "verdict": "unknown",
       "steps": [
         {
           "idx": 0,
@@ -173,13 +173,13 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Dextral Necromancy pairing matches rule omen-dextral-necromancy",
+              "detail": "Omen of Dextral Necromancy pairing matches verified rule omen-dextral-necromancy",
               "source": "poe2-crafting-knowledge.md §4"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of the Liege pairing matches rule omen-liege",
+              "detail": "Omen of the Liege pairing matches verified rule omen-liege",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -197,14 +197,14 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         },
         {
           "idx": 3,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -215,13 +215,19 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Greater Exalted rolls modifier level 35+; base ilvl 75+ meets it",
+              "detail": "Greater Exalted cannot roll tiers below modifier level 35; base ilvl 75+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "unknown",
+              "detail": "Greater Exalted needs a rare item; the item's rarity after earlier steps is not simulated",
               "source": "poe2-crafting-knowledge.md §1"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "detail": "Omen of Greater Exaltation pairing matches verified rule omen-greater-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -267,7 +273,7 @@
         "tuls-catalyst": "9495f9194e902322"
       },
       "repoeChanged": [],
-      "verdict": "ok",
+      "verdict": "unknown",
       "steps": [
         {
           "idx": 0,
@@ -282,7 +288,13 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Perfect Augmentation rolls modifier level 70+; base ilvl 75+ meets it",
+              "detail": "Perfect Augmentation cannot roll tiers below modifier level 70; base ilvl 75+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "ok",
+              "detail": "Perfect Augmentation needs a magic item; the base is bought magic",
               "source": "poe2-crafting-knowledge.md §1"
             }
           ]
@@ -313,7 +325,7 @@
         },
         {
           "idx": 3,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -324,19 +336,25 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Greater Exalted rolls modifier level 35+; base ilvl 75+ meets it",
+              "detail": "Greater Exalted cannot roll tiers below modifier level 35; base ilvl 75+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "unknown",
+              "detail": "Greater Exalted needs a rare item; the item's rarity after earlier steps is not simulated",
               "source": "poe2-crafting-knowledge.md §1"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Catalysing Exaltation pairing matches rule omen-catalysing-exaltation",
+              "detail": "Omen of Catalysing Exaltation pairing matches verified rule omen-catalysing-exaltation",
               "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "detail": "Omen of Greater Exaltation pairing matches verified rule omen-greater-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -354,7 +372,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Sinistral Necromancy pairing matches rule omen-sinistral-necromancy",
+              "detail": "Omen of Sinistral Necromancy pairing matches verified rule omen-sinistral-necromancy",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -372,7 +390,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -414,7 +432,7 @@
         "preserved-collarbone": "ba212d890ee28451"
       },
       "repoeChanged": [],
-      "verdict": "ok",
+      "verdict": "unknown",
       "steps": [
         {
           "idx": 0,
@@ -429,7 +447,13 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Perfect Augmentation rolls modifier level 70+; base ilvl 75+ meets it",
+              "detail": "Perfect Augmentation cannot roll tiers below modifier level 70; base ilvl 75+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "ok",
+              "detail": "Perfect Augmentation needs a magic item; the base is bought magic",
               "source": "poe2-crafting-knowledge.md §1"
             }
           ]
@@ -459,7 +483,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Sinistral Necromancy pairing matches rule omen-sinistral-necromancy",
+              "detail": "Omen of Sinistral Necromancy pairing matches verified rule omen-sinistral-necromancy",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -478,7 +502,7 @@
         },
         {
           "idx": 5,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -489,19 +513,25 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Perfect Exalted rolls modifier level 50+; base ilvl 75+ meets it",
+              "detail": "Perfect Exalted cannot roll tiers below modifier level 50; base ilvl 75+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "unknown",
+              "detail": "Perfect Exalted needs a rare item; the item's rarity after earlier steps is not simulated",
               "source": "poe2-crafting-knowledge.md §1"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Catalysing Exaltation pairing matches rule omen-catalysing-exaltation",
+              "detail": "Omen of Catalysing Exaltation pairing matches verified rule omen-catalysing-exaltation",
               "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "detail": "Omen of Greater Exaltation pairing matches verified rule omen-greater-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -593,7 +623,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Putrefaction pairing matches rule omen-putrefaction",
+              "detail": "Omen of Putrefaction pairing matches verified rule omen-putrefaction",
               "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5; poe2-crafting-knowledge.md §9"
             }
           ]
@@ -611,7 +641,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -662,7 +692,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Putrefaction pairing matches rule omen-putrefaction",
+              "detail": "Omen of Putrefaction pairing matches verified rule omen-putrefaction",
               "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5; poe2-crafting-knowledge.md §9"
             }
           ]
@@ -680,7 +710,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -731,7 +761,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Putrefaction pairing matches rule omen-putrefaction",
+              "detail": "Omen of Putrefaction pairing matches verified rule omen-putrefaction",
               "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5; poe2-crafting-knowledge.md §9"
             }
           ]
@@ -749,7 +779,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -806,7 +836,7 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Ancient Rib rolls modifier level 40+; base ilvl 82+ meets it",
+              "detail": "Ancient Rib cannot roll tiers below modifier level 40; base ilvl 82+ clears it",
               "source": "poe2-crafting-knowledge.md §5"
             }
           ]
@@ -836,7 +866,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -950,7 +980,7 @@
         },
         {
           "idx": 4,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -961,13 +991,19 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Perfect Exalted rolls modifier level 50+; base ilvl 80+ meets it",
+              "detail": "Perfect Exalted cannot roll tiers below modifier level 50; base ilvl 80+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "unknown",
+              "detail": "Perfect Exalted needs a rare item; the item's rarity after earlier steps is not simulated",
               "source": "poe2-crafting-knowledge.md §1"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "detail": "Omen of Greater Exaltation pairing matches verified rule omen-greater-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1028,7 +1064,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1059,7 +1095,7 @@
         },
         {
           "idx": 2,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -1070,19 +1106,25 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Perfect Exalted rolls modifier level 50+; base ilvl 75+ meets it",
+              "detail": "Perfect Exalted cannot roll tiers below modifier level 50; base ilvl 75+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "unknown",
+              "detail": "Perfect Exalted needs a rare item; the item's rarity after earlier steps is not simulated",
               "source": "poe2-crafting-knowledge.md §1"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Catalysing Exaltation pairing matches rule omen-catalysing-exaltation",
+              "detail": "Omen of Catalysing Exaltation pairing matches verified rule omen-catalysing-exaltation",
               "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "detail": "Omen of Greater Exaltation pairing matches verified rule omen-greater-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1133,7 +1175,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1186,7 +1228,13 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Perfect Augmentation rolls modifier level 70+; base ilvl 75+ meets it",
+              "detail": "Perfect Augmentation cannot roll tiers below modifier level 70; base ilvl 75+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "ok",
+              "detail": "Perfect Augmentation needs a magic item; the base is bought magic",
               "source": "poe2-crafting-knowledge.md §1"
             }
           ]
@@ -1204,7 +1252,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Sinistral Necromancy pairing matches rule omen-sinistral-necromancy",
+              "detail": "Omen of Sinistral Necromancy pairing matches verified rule omen-sinistral-necromancy",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1222,7 +1270,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "detail": "Omen of Greater Exaltation pairing matches verified rule omen-greater-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1291,7 +1339,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Dextral Exaltation pairing matches rule omen-dextral-exaltation",
+              "detail": "Omen of Dextral Exaltation pairing matches verified rule omen-dextral-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             },
             {
@@ -1304,7 +1352,7 @@
         },
         {
           "idx": 2,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -1315,13 +1363,19 @@
             {
               "kind": "floor",
               "verdict": "ok",
-              "detail": "Perfect Exalted rolls modifier level 50+; base ilvl 82+ meets it",
+              "detail": "Perfect Exalted cannot roll tiers below modifier level 50; base ilvl 82+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "unknown",
+              "detail": "Perfect Exalted needs a rare item; the item's rarity after earlier steps is not simulated",
               "source": "poe2-crafting-knowledge.md §1"
             },
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Catalysing Exaltation pairing matches rule omen-catalysing-exaltation",
+              "detail": "Omen of Catalysing Exaltation pairing matches verified rule omen-catalysing-exaltation",
               "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
             }
           ]
@@ -1339,14 +1393,14 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Whittling pairing matches rule omen-whittling",
+              "detail": "Omen of Whittling pairing matches verified rule omen-whittling",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         },
         {
           "idx": 5,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -1357,13 +1411,13 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             },
             {
               "kind": "pairing",
-              "verdict": "ok",
-              "detail": "Omen of Light pairing matches rule omen-light — that rule is itself unverified",
+              "verdict": "unknown",
+              "detail": "Omen of Light pairing matches only the unverified rule omen-light",
               "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
             }
           ]
@@ -1388,7 +1442,7 @@
         },
         {
           "idx": 7,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -1399,13 +1453,13 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             },
             {
               "kind": "pairing",
-              "verdict": "ok",
-              "detail": "Omen of Light pairing matches rule omen-light — that rule is itself unverified",
+              "verdict": "unknown",
+              "detail": "Omen of Light pairing matches only the unverified rule omen-light",
               "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
             }
           ]
@@ -1437,7 +1491,7 @@
         "preserved-cranium": "bc2cdb7baf3f7c3f"
       },
       "repoeChanged": [],
-      "verdict": "ok",
+      "verdict": "unknown",
       "steps": [
         {
           "idx": 0,
@@ -1464,7 +1518,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Dextral Necromancy pairing matches rule omen-dextral-necromancy",
+              "detail": "Omen of Dextral Necromancy pairing matches verified rule omen-dextral-necromancy",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1482,14 +1536,14 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         },
         {
           "idx": 3,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -1499,8 +1553,8 @@
             },
             {
               "kind": "pairing",
-              "verdict": "ok",
-              "detail": "Omen of Sinistral Annulment pairing matches rule omen-sinistral-annulment — that rule is itself unverified",
+              "verdict": "unknown",
+              "detail": "Omen of Sinistral Annulment pairing matches only the unverified rule omen-sinistral-annulment",
               "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
             }
           ]
@@ -1574,7 +1628,7 @@
         "preserved-cranium": "bc2cdb7baf3f7c3f"
       },
       "repoeChanged": [],
-      "verdict": "ok",
+      "verdict": "unknown",
       "steps": [
         {
           "idx": 0,
@@ -1589,7 +1643,7 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Sinistral Necromancy pairing matches rule omen-sinistral-necromancy",
+              "detail": "Omen of Sinistral Necromancy pairing matches verified rule omen-sinistral-necromancy",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1655,14 +1709,14 @@
             {
               "kind": "pairing",
               "verdict": "ok",
-              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         },
         {
           "idx": 6,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -1672,15 +1726,15 @@
             },
             {
               "kind": "pairing",
-              "verdict": "ok",
-              "detail": "Omen of Light pairing matches rule omen-light — that rule is itself unverified",
+              "verdict": "unknown",
+              "detail": "Omen of Light pairing matches only the unverified rule omen-light",
               "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
             }
           ]
         },
         {
           "idx": 7,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -1690,8 +1744,8 @@
             },
             {
               "kind": "pairing",
-              "verdict": "ok",
-              "detail": "Omen of Sinistral Annulment pairing matches rule omen-sinistral-annulment — that rule is itself unverified",
+              "verdict": "unknown",
+              "detail": "Omen of Sinistral Annulment pairing matches only the unverified rule omen-sinistral-annulment",
               "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
             }
           ]

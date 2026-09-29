@@ -1,8 +1,9 @@
 "use client";
 
 import type { HitRateView, LegalityCheck, LegalityVerdict, ProvenanceView, StaleReason, StepLegality } from "../../core/craftProvenance/schema";
-import { CALIBRATION_MIN_N } from "../../core/craftProvenance/calibration";
+import { CALIBRATION_K, MIN_CALIBRATION_USERS } from "../../core/craftProvenance/calibration";
 import { Tooltip } from "../ui/Tooltip";
+import type { RecipeView } from "./craftView";
 
 // Same chip anatomy as ClaimBadge: neutral when settled, amber only when the player should check.
 const CHIP = "inline-flex cursor-help items-center rounded border px-1.5 text-xs font-normal";
@@ -11,10 +12,20 @@ const UNSETTLED = `${CHIP} border-amber-400/40 text-amber-300`;
 
 export const pct = (x: number): string => `${(x * 100).toFixed(0)}%`;
 
-/** "hit 35% · creator claim" / "28% measured (n=23)" / "hit 30% · estimate". */
+/**
+ * The hit rate the card shows: the one the stored scan priced with (rate, basis and n recorded at
+ * scan time), so the chip, the EV line and the near-miss line never disagree. Before a first scan
+ * it is the live calibrated view.
+ */
+export function recipeHitRate(r: Pick<RecipeView, "report" | "provenance">): HitRateView {
+  const live = r.provenance.hitRate;
+  const rep = r.report;
+  return rep ? { ...live, effective: rep.hitRate, basis: rep.hitRateBasis, n: rep.hitRateN } : live;
+}
+
+/** "hit 35% · creator claim" / "hit 28% · measured n=23" / "hit 30% · estimate". */
 export function hitRateLabel(h: HitRateView): string {
-  if (h.basis === "measured") return `${pct(h.effective)} measured (n=${h.n})`;
-  return `hit ${pct(h.effective)} · ${h.basis === "creator_claim" ? "creator claim" : "estimate"}`;
+  return h.basis === "measured" ? `hit ${pct(h.effective)} · measured n=${h.n}` : `hit ${pct(h.effective)} · ${basisWord(h)}`;
 }
 
 /** Short word for "vs …" comparisons (break-even line, P&L). */
@@ -22,16 +33,26 @@ export function basisWord(h: HitRateView): string {
   return h.basis === "measured" ? "measured" : h.basis === "creator_claim" ? "creator claim" : "estimate";
 }
 
+function LogLine({ h }: { h: HitRateView }) {
+  if (h.measured !== null) {
+    return (
+      <span className="block text-neutral-400">
+        Logged: {pct(h.measured)} over {h.n} attempts from {h.users} players, blended as (hits + {CALIBRATION_K}·{pct(h.model)}) ÷ (n + {CALIBRATION_K}).
+      </span>
+    );
+  }
+  if (h.users > 0) {
+    return <span className="block text-neutral-400">Logged attempts come from {h.users} player; pooling needs {MIN_CALIBRATION_USERS}.</span>;
+  }
+  return null;
+}
+
 function HitRateTip({ h }: { h: HitRateView }) {
   const claim = h.claimN !== null ? ` (creator's sample: ${h.claimN})` : "";
   return (
     <span className="block space-y-1">
-      <span className="block">{h.basis === "measured" ? `Measured from ${h.n} logged attempts — replaces the curated ${pct(h.model)}.` : `${h.note}${claim}`}</span>
-      {h.basis !== "measured" && h.measured !== null && (
-        <span className="block text-neutral-400">
-          Logged so far: {pct(h.measured)} over {h.n} attempts — replaces the estimate at {CALIBRATION_MIN_N}.
-        </span>
-      )}
+      <span className="block">{h.basis === "measured" ? `Measured: ${h.n} logged attempts now weigh at least as much as the curated ${pct(h.model)}.` : `${h.note}${claim}`}</span>
+      <LogLine h={h} />
     </span>
   );
 }

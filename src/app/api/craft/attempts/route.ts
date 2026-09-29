@@ -7,7 +7,6 @@ import {
   deleteCraftAttempt,
   listCraftAttempts,
   craftPnlByRecipe,
-  craftAttemptStats,
   getCraftMargins,
   getMaterialPrices,
 } from "../../../../db/craftQueries";
@@ -19,6 +18,7 @@ import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 import { provenanceFor } from "../../../../core/craftProvenanceData";
 import { effectiveHitRate } from "../../../../core/craftProvenance/calibration";
+import { calibrationStats } from "../../../../core/craftProvenance/samples";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,7 +70,7 @@ function recipeIcons(league: string): Record<string, string> {
 
 /** Curated vs measured hit rate per recipe; the measured sample pools every user's closed attempts. */
 function hitRates(): Record<string, { model: number; measured: number | null; n: number; effective: number }> {
-  const stats = craftAttemptStats();
+  const stats = calibrationStats(RECIPES);
   return Object.fromEntries(
     RECIPES.map((r) => {
       const { model, measured, n, effective } = effectiveHitRate(r, provenanceFor(r.key), stats.get(r.key));

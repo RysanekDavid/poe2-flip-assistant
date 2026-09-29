@@ -7,7 +7,7 @@ import { Sparkline } from "../ui/Sparkline";
 import { evLabel, type RecipeView } from "./craftView";
 import { GateNote } from "./GateNote";
 import { MarginBreakdown } from "./MarginBreakdown";
-import { HitRateChip, StatusChip } from "./ProvenanceChips";
+import { HitRateChip, recipeHitRate, StatusChip } from "./ProvenanceChips";
 
 export interface DomainMeta {
   title: string;
@@ -72,7 +72,7 @@ export function RecipeRow({ r, ex, open, onToggle, onOpen, icons, meta, interval
           <div className="truncate font-medium text-neutral-100">{r.label}</div>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-neutral-400">
             <span>{meta.title}</span>
-            <HitRateChip h={r.provenance.hitRate} />
+            <HitRateChip h={recipeHitRate(r)} />
             <StatusChip p={r.provenance} />
             {scanLabel(r) && <span className="text-amber-300">· {scanLabel(r)}</span>}
             {rep?.status === "ok" && <GateNote r={r} intervalMin={intervalMin} />}

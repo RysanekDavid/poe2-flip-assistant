@@ -11,7 +11,6 @@ import {
   getCraftMargins,
   getMaterialPrices,
   getCurrencyDivMap,
-  craftAttemptStats,
   type MaterialPrice,
   type CraftMarginRow,
 } from "../db/craftQueries";
@@ -26,6 +25,7 @@ import { priceLeg, priceMaterials, tryLeg, isFailure, type LegContext } from "./
 import { priceResultLeg } from "./craftResultValuation";
 import { provenanceFor } from "./craftProvenanceData";
 import { effectiveHitRate, type AttemptStats } from "./craftProvenance/calibration";
+import { calibrationStats } from "./craftProvenance/samples";
 
 /**
  * Craft-margin engine. Prices each recipe's base leg live (floor-and-percentile over up to
@@ -70,6 +70,8 @@ export function assembleReport(shell: RecipeMarginReport, base: LegReport, resul
 export async function buildReport(recipe: CraftRecipe, scan: ScanContext, prices: Map<string, MaterialPrice>): Promise<ScanOutcome> {
   const { lines, missing } = priceMaterials(recipe, prices);
   const materialsDiv = lines.reduce((s, l) => s + (l.totalDiv ?? 0), 0);
+  // logged attempts pull the curated rate toward what players hit (calibration.ts shrinkage)
+  const hit = effectiveHitRate(recipe, provenanceFor(recipe.key), scan.attemptStats.get(recipe.key));
   const shell: RecipeMarginReport = {
     key: recipe.key,
     status: "ok",
@@ -77,8 +79,9 @@ export async function buildReport(recipe: CraftRecipe, scan: ScanContext, prices
     result: null,
     materials: lines,
     materialsDiv,
-    // logged attempts replace the curated rate once there are enough of them (calibration.ts)
-    hitRate: effectiveHitRate(recipe, provenanceFor(recipe.key), scan.attemptStats.get(recipe.key)).effective,
+    hitRate: hit.effective,
+    hitRateBasis: hit.basis,
+    hitRateN: hit.n,
     evDiv: 0,
     marginPct: 0,
     error: null,
@@ -225,7 +228,7 @@ async function scanContext(league: string, cred: TradeCred): Promise<ScanContext
   const { stats, flaggedStats } = await fetchTradeMeta();
   const rates = resolveRates(league)?.rates ?? null;
   if (!rates) console.warn(`[craft-margin] no exchange rates for ${league} — tick skipped as transient, previous reports kept`);
-  return { idx: buildStatIndex([...stats, ...flaggedStats]), rates, cred, currencyDiv: getCurrencyDivMap(league), attemptStats: craftAttemptStats() };
+  return { idx: buildStatIndex([...stats, ...flaggedStats]), rates, cred, currencyDiv: getCurrencyDivMap(league), attemptStats: calibrationStats(RECIPES) };
 }
 
 /** Refresh the single stalest recipe (the poller's per-tick unit of work, ≤ 3 searches + 8 fetches). */

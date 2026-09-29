@@ -19,8 +19,9 @@ It never buys, sells, whispers, clicks, or controls the game.
 - **Craft:** sixteen curated recipes with observed comparables, modelled EV, interactive steps,
   and manual attempt/P&L tracking. Each recipe shows its sources (creator, date, link), the patch
   it was verified on, a stale badge when newer patch notes or a RePoE refresh touch an item it
-  uses, per-step legality (floors, ilvl gates, omen pairing), and a hit rate that switches from
-  the curated estimate to the measured one after 20 logged attempts.
+  uses, per-step legality (floors, rarity, ilvl gates, omen pairing), and a hit rate that shrinks
+  logged attempts toward the curated estimate ((hits + 20·model) ÷ (n + 20), pooled from 2+
+  players with no player over half the sample).
 - **Wealth:** opt-in read-only valuation of a user's public stash tabs.
 - **Coach:** authenticated LangGraph sidecar with market, knowledge, game-data, and optional
   recent-web tools. Every answer exposes tool/source evidence and a human-verification boundary.

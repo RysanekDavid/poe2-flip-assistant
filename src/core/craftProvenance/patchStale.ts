@@ -77,14 +77,21 @@ export function loadPatchDocs(since: string): PatchDoc[] {
 }
 
 export const PATCH_STALE_TTL_MS = 15 * 60_000;
-let cache: { atMs: number; value: Map<string, StaleReason[]> } | null = null;
+let cache: { key: string; atMs: number; value: Map<string, StaleReason[]> } | null = null;
 
-/** Memoized for 15 min: a patch thread lands a few times a month, the Craft tab polls every minute. */
+const subjectsKey = (subjects: readonly StaleSubject[]): string =>
+  subjects.map((s) => `${s.key}@${s.patchVerified}:${s.names.join("|")}`).join(";");
+
+/**
+ * Memoized for 15 min per subject set: a patch thread lands a few times a month, the Craft tab
+ * polls every minute. A different subject set (a bumped patchVerified, an edited recipe) recomputes.
+ */
 export function recipePatchStaleness(subjects: readonly StaleSubject[], nowMs = Date.now()): Map<string, StaleReason[]> {
-  if (cache && nowMs - cache.atMs < PATCH_STALE_TTL_MS) return cache.value;
+  const key = subjectsKey(subjects);
+  if (cache && cache.key === key && nowMs - cache.atMs < PATCH_STALE_TTL_MS) return cache.value;
   const oldest = subjects.reduce<string | null>((min, s) => (min === null || comparePatch(s.patchVerified, min) < 0 ? s.patchVerified : min), null);
   const value = oldest === null ? new Map<string, StaleReason[]>() : patchStaleness(subjects, loadPatchDocs(oldest));
-  cache = { atMs: nowMs, value };
+  cache = { key, atMs: nowMs, value };
   return value;
 }
 

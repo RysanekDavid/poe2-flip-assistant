@@ -4,22 +4,25 @@ import { recipeProvenanceSchema, type RecipeProvenance, type RecipeSource } from
  * Structured provenance for every curated recipe, migrated from the free-text `source` strings the
  * craftRecipeData*.ts files used to carry. Kept apart because those files sit near the 500-line cap.
  *
- * Creators are the YouTube channel names confirmed via oEmbed (2026-09-29). Dates come from the
- * search index (medium confidence, may be a day off across time zones) and are null where no
- * listing showed one. URLs come from docs/kb/sources/transcripts/index.json, except S21, whose
+ * Creators are the YouTube channel names confirmed via oEmbed on 2026-09-29; the responses are
+ * committed in docs/kb/sources/oembed.json. oEmbed carries no upload date: video dates come from
+ * search-index listings (datePrecision "listing", may be a day off) and are null where no listing
+ * showed one. URLs come from docs/kb/sources/transcripts/index.json, except S21, whose
  * transcript was pasted without a URL and was matched by its exact title through oEmbed. The old
  * strings credited Fubgun with the S8 wand and S9 bow/quarterstaff videos; oEmbed says XTheFarmerX.
  *
  * patchVerified 0.5.5b: every guide was corrected against the KB and the RePoE catalog on
  * 2026-09-26..29, when the committed game data was 0.5.5b. "reviewed" additionally needs a located
- * source and no step flagged `unverified`; everything else stays "draft".
+ * source and no step flagged `unverified` (and no step prose admitting it, test:craft-provenance);
+ * everything else stays "draft".
  */
 
 const TRANSCRIPTS = "docs/kb/sources/transcripts";
 const KB_DOC = "docs/research/poe2-crafting-knowledge.md";
 
 function video(title: string, url: string, creator: string, date: string | null, transcript: string): RecipeSource {
-  return { kind: "video", title, url, creator, date, tier: "primary", ref: `${TRANSCRIPTS}/${transcript}` };
+  const datePrecision = date === null ? null : "listing";
+  return { kind: "video", title, url, creator, date, datePrecision, tier: "primary", ref: `${TRANSCRIPTS}/${transcript}` };
 }
 
 const S4 = video("How to Craft The Best Jewels in The Game (5 mods)", "https://www.youtube.com/watch?v=NK-Oat_OtgQ", "Fubgun", "2026-06-13", "04-how-to-craft-the-best-jewels-in-the-game-5-mods-path-of-exil.txt");
@@ -38,19 +41,22 @@ const OWN_TEST: RecipeSource = {
   url: null,
   creator: null,
   date: "2026-07-13",
+  datePrecision: "exact",
   tier: "primary",
   ref: `${KB_DOC} §9`,
 };
 
 function anecdote(kind: RecipeSource["kind"], title: string, creator: string | null): RecipeSource {
-  return { kind, title, url: null, creator, date: null, tier: "anecdote", ref: null };
+  return { kind, title, url: null, creator, date: null, datePrecision: null, tier: "anecdote", ref: null };
 }
 
 const NO_ODDS = "Curated estimate: the source demonstrates the craft but states no hit odds.";
 
-const PUTREFACTION: RecipeProvenance = {
+// The boots guides also rely on the open KB §5 reveal question (family blocking) → draft;
+// the body-armour guide makes no such claim and stays reviewed.
+const PUTREFACTION_BOOTS: RecipeProvenance = {
   patchVerified: "0.5.5b",
-  status: "reviewed",
+  status: "draft",
   sources: [S10, OWN_TEST],
   hitRateBasis: { basis: "unknown", n: null, note: "Curated ~1-in-3 sellable estimate for the six-mod slot machine; the video shows outcomes, not a rate." },
   extraEntityRefs: [],
@@ -84,7 +90,8 @@ const DATA: Record<string, RecipeProvenance> = {
   },
   amulet_fracture_plus3: {
     patchVerified: "0.5.5b",
-    status: "reviewed",
+    // base leg corrected to MAGIC on 2026-09-29; the finish still leans on an unconfirmed catalyst claim
+    status: "draft",
     sources: [S11],
     hitRateBasis: { basis: "creator_claim", n: null, note: "S11: ~1-in-3 to lock the +3 with a desecrated blocker at exactly 4 mods; KB §2 confirms the mechanic." },
     extraEntityRefs: [],
@@ -95,15 +102,15 @@ const DATA: Record<string, RecipeProvenance> = {
     status: "draft",
     sources: [
       anecdote("video", "Blood Mage showcase video (double-mana \"wrath pit\" Rathpith), video not located", null),
-      { kind: "kb", title: "Rathpith Globe cultivated mod pool", url: "https://www.poe2wiki.net/wiki/Rathpith_Globe", creator: null, date: null, tier: "secondary", ref: "docs/kb/breach.md" },
+      { kind: "kb", title: "Rathpith Globe cultivated mod pool", url: "https://www.poe2wiki.net/wiki/Rathpith_Globe", creator: null, date: null, datePrecision: null, tier: "secondary", ref: "docs/kb/breach.md" },
     ],
     hitRateBasis: { basis: "unknown", n: null, note: "Curated long-shot estimate; players report 300+ div spent without the double-mana hit." },
     extraEntityRefs: ["unique-rathpith-globe"],
     kbRuleRefs: ["§1"],
   },
-  boots_putrefaction: PUTREFACTION,
-  boots_putrefaction_ev: PUTREFACTION,
-  armour_putrefaction: PUTREFACTION,
+  boots_putrefaction: PUTREFACTION_BOOTS,
+  boots_putrefaction_ev: PUTREFACTION_BOOTS,
+  armour_putrefaction: { ...PUTREFACTION_BOOTS, status: "reviewed" },
   gloves_projectile_plus2: {
     patchVerified: "0.5.5b",
     status: "draft",

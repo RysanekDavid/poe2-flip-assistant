@@ -288,18 +288,34 @@ export function craftPnlByRecipe(userId: number): RecipePnl[] {
     .all(userId) as RecipePnl[];
 }
 
+export interface CraftAttemptSampleRow {
+  recipeKey: string;
+  userId: number;
+  outcome: "hit" | "brick";
+  costDiv: number;
+  createdAt: string;
+}
+
 /**
- * Closed attempts (hit or brick) per recipe across EVERY user — the calibration sample behind the
- * measured hit rate. Unlike craftPnlByRecipe this ignores sale prices: a kept, unsold hit is still a hit.
+ * Every closed attempt (hit or brick) of EVERY user — the raw calibration sample; the pooling rules
+ * (per-user cap, cost and patch cutoffs) live in craftProvenance/calibration.ts. Unlike
+ * craftPnlByRecipe this ignores sale prices: a kept, unsold hit is still a hit.
  */
-export function craftAttemptStats(): Map<string, { closed: number; hits: number }> {
-  const rows = getDb()
+export function craftAttemptSampleRows(): CraftAttemptSampleRow[] {
+  return getDb()
     .prepare(
-      `SELECT recipe_key, COUNT(*) AS closed, SUM(CASE WHEN outcome = 'hit' THEN 1 ELSE 0 END) AS hits
-       FROM craft_attempts WHERE outcome IN ('hit', 'brick') GROUP BY recipe_key`,
+      `SELECT recipe_key AS recipeKey, user_id AS userId, outcome, base_cost_div + mats_cost_div AS costDiv, created_at AS createdAt
+       FROM craft_attempts WHERE outcome IN ('hit', 'brick')`,
     )
-    .all() as Array<{ recipe_key: string; closed: number; hits: number }>;
-  return new Map(rows.map((r) => [r.recipe_key, { closed: r.closed, hits: r.hits }]));
+    .all() as CraftAttemptSampleRow[];
+}
+
+/** When a patch thread with this version went live (published, else first seen); null if unknown. */
+export function officialPatchSeenAt(version: string): string | null {
+  const row = getDb()
+    .prepare("SELECT COALESCE(published_at, first_seen_at) AS at FROM official_patch WHERE lower(version_text) = ? ORDER BY source_order LIMIT 1")
+    .get(version.toLowerCase()) as { at: string } | undefined;
+  return row?.at ?? null;
 }
 
 /** Official patch threads with a valid body — the candidates a recipe can go stale on. */

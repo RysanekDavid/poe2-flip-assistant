@@ -206,7 +206,7 @@ export const GUIDES: Record<string, CraftGuide> = {
   amulet_fracture_plus3: {
     goal: "FRACTURED +3 skills amulet = permanent craft base, ~40–60 div on hit.",
     shopping:
-      "Rare amulet ITEM LEVEL 75+ that already rolled the +levels mod. Stellar/gold base sells best; open prefix worth ~1 div extra. Low ilvl guts the pool for Perfect currency (Perfect Aug floor = mod level 70, Perfect Exalt = 50).",
+      "MAGIC amulet ITEM LEVEL 75+ that already rolled the +levels mod (the essence step needs it magic). Stellar/gold base sells best; open prefix worth ~1 div extra. Low ilvl guts the pool for Perfect currency (Perfect Aug floor = mod level 70, Perfect Exalt = 50).",
     marketCheck: "Check fractured +3 asks NOW. Under ~30 div → fracture EV collapses (1-in-3 hit must cover orb + base ×3).",
     phases: [
       {
@@ -215,12 +215,12 @@ export const GUIDES: Record<string, CraftGuide> = {
           {
             do: "Open prefix? Perfect Orb of Augmentation.",
             mats: [MATS.perfectAug],
-            // KB §1: the Augmentation family works on MAGIC items with an open affix only — open issue,
-            // the source procedure applies it to a rare base; not rewritten without a verified route.
-            warning: "Augmentation only works on a MAGIC item with an open affix (KB §1) — a rare +3 amulet refuses it. Unverified step: skip it on a rare base.",
+            // S11 applies it to the MAGIC base before the essence makes it rare (see the base-leg
+            // comment in craftRecipeData.ts); KB §1: Augmentation needs a magic item with an open affix.
+            warning: "Only while the amulet is still MAGIC with an open prefix — after the essence it is rare and Augmentation refuses it (KB §1).",
           },
           {
-            do: "Essence of Opulence → T1 rarity.",
+            do: "Greater Essence of Opulence → T1 rarity (upgrades the magic amulet to rare).",
             mats: [MATS.greaterEssenceOpulence],
           },
           {
@@ -253,8 +253,9 @@ export const GUIDES: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Fire/Lightning catalysts + Catalysing & Greater Exaltation omens + Perfect Exalted Orb.",
-            why: "Perfect Exalted Orb has a modifier-level floor of 50 (Greater Exalt = 35; floors are soft — a family's top tier below the floor stays eligible). The guide runs fire/lightning catalysts; the claimed cold-res tier leak is unverified — check poe2db before deviating.",
+            why: "Perfect Exalted Orb has a modifier-level floor of 50 (Greater Exalt = 35; floors are soft — a family's top tier below the floor stays eligible). The guide runs fire/lightning catalysts.",
             mats: [MATS.omenCatalysingExaltation, MATS.omenGreaterExaltation, MATS.perfectExalted],
+            unverified: "The creator's reason for avoiding Cold catalysts (an extra low res tier under Perfect Exalt) is not confirmed — check poe2db before deviating from fire/lightning.",
           },
           {
             do: "Catalyse before listing (amulets don't display quality otherwise).",
@@ -347,7 +348,8 @@ export const GUIDES: Record<string, CraftGuide> = {
           },
           {
             do: "Do NOT settle for low MS early — hold out; take 30% only late in the reveals.",
-            warning: "Settling early on 25% MS is the classic value leak. (Whether a taken mod blocks its family from later reveals is unconfirmed — test on a cheap base.)",
+            warning: "Settling early on 25% MS is the classic value leak.",
+            unverified: "Whether taking a mod blocks its family from later reveals is an open KB §5 question.",
             onFail: "No MS ≥30 in the reveals → junk, sell for scraps, next base.",
           },
           {
@@ -411,7 +413,8 @@ export const GUIDES: Record<string, CraftGuide> = {
           },
           {
             do: "Do NOT settle for low MS early — hold out; take 30% only late in the reveals.",
-            warning: "Settling early on 25% MS is the classic value leak. (Whether a taken mod blocks its family from later reveals is unconfirmed — test on a cheap base.)",
+            warning: "Settling early on 25% MS is the classic value leak.",
+            unverified: "Whether taking a mod blocks its family from later reveals is an open KB §5 question.",
             onFail: "No MS ≥30 in the reveals → junk, sell for scraps, next base.",
           },
           {

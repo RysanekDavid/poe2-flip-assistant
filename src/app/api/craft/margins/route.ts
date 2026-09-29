@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
-import { craftAttemptStats, getCraftMargins, getMarginHistory, requestCraftRefresh, getMaterialPrices } from "../../../../db/craftQueries";
+import { getCraftMargins, getMarginHistory, requestCraftRefresh, getMaterialPrices } from "../../../../db/craftQueries";
 import { ALL_MATERIALS } from "../../../../core/craftMaterials";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
@@ -11,6 +11,7 @@ import { rankGate } from "../../../../core/craftValuation";
 import { rankCandidates } from "../../../../core/craftRank";
 import { config } from "../../../../config/env";
 import { provenanceViews } from "../../../../core/craftProvenance/view";
+import { calibrationStats } from "../../../../core/craftProvenance/samples";
 import type { ProvenanceView } from "../../../../core/craftProvenance/schema";
 
 export const runtime = "nodejs";
@@ -64,7 +65,7 @@ export async function GET(): Promise<Response> {
   // league they were computed for rather than silently reattributed to theirs.
   const league = getDefaultLeague();
   const stored = new Map(getCraftMargins(league).map((r) => [r.recipe_key, r]));
-  const { views, audit } = provenanceViews(RECIPES, craftAttemptStats());
+  const { views, audit } = provenanceViews(RECIPES, calibrationStats(RECIPES));
   const recipes = RECIPES.map((r) => {
     const row = stored.get(r.key);
     const report = row ? parseStoredReport(r.key, row.report_json) : null;

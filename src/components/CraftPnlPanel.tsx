@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { NotebookPen, Trash2 } from "lucide-react";
 import { priceLabel, evLabel, MatIcon } from "./craft/craftView";
-import { CALIBRATION_MIN_N } from "../core/craftProvenance/calibration";
+import { CALIBRATION_K } from "../core/craftProvenance/calibration";
 
 /** Other components dispatch this after logging an attempt so the panel refreshes instantly. */
 export const PNL_CHANGED_EVENT = "craft-pnl-changed";
@@ -88,18 +88,16 @@ function CloseControls({ onClose }: { onClose: (outcome: "hit" | "brick", soldDi
 
 const pctOf = (x: number): string => `${(x * 100).toFixed(0)}%`;
 
-/** Curated model vs the all-users measured rate, and which one the EV currently uses. */
+/** Curated model vs the pooled all-players rate, and the blend the EV uses. */
 function HitRateCompare({ rates }: { rates: Resp["hitRates"][string] }) {
-  const usesMeasured = rates.measured !== null && rates.n >= CALIBRATION_MIN_N;
-  const measured = rates.measured === null ? "no closed attempts yet" : `measured ${pctOf(rates.measured)} n=${rates.n}`;
+  const measured = rates.measured === null ? "not pooled yet" : `pooled ${pctOf(rates.measured)} n=${rates.n}`;
   return (
     <span
       className="text-neutral-500"
-      title={`Measured pools every user's closed attempts; it replaces the model in the EV at n ≥ ${CALIBRATION_MIN_N}. The EV uses ${usesMeasured ? "measured" : "model"}.`}
+      title={`Pooled = closed attempts of 2+ players since the verified patch, no player over half, zero-cost attempts skipped. The EV uses (hits + ${CALIBRATION_K}·model) ÷ (n + ${CALIBRATION_K}).`}
     >
       {" "}
-      (model {pctOf(rates.model)} · {measured}
-      {usesMeasured ? " — in use" : ""})
+      (model {pctOf(rates.model)} · {measured} · EV uses {pctOf(rates.effective)})
     </span>
   );
 }

@@ -166,13 +166,19 @@ export const RECIPES: CraftRecipe[] = [
     key: "amulet_fracture_plus3",
     domain: "jewellery",
     label: "Amulet · fracture the +3",
+    // The base is MAGIC, not rare (fixed 2026-09-29). S11 transcript (docs/kb/sources/transcripts/
+    // 11-…amulet-craft-guide-fu.txt, intermediate section): "the start for this is going to be pretty
+    // much the same. You are going to use a perfect AUG if you have an open prefix … We're going to
+    // greater opulence guarantee the rarity". Greater Essence of Opulence "Upgrades a Magic item to a
+    // Rare item" (entity catalog) and Augmentation needs a magic item (KB §1), so both steps only work
+    // on a magic base; the mod count then matches the 1-in-3: +3, aug roll, rarity, desecrated blocker.
     base: {
-      label: "Rare amulet · +3 spell skills",
+      label: "Magic amulet · +3 spell skills",
       type: "Stellar Amulet",
-      rarity: "rare",
+      rarity: "magic",
       ilvlMin: 75,
       stats: [{ text: "# to Level of all Spell Skills", min: 3 }],
-      note: "Base already rolled the +3 (that's what you're fracturing). Stellar/gold bases sell best; open prefix worth ~1 div premium.",
+      note: "Magic base that already rolled the +3 (that's what you're fracturing). Stellar/gold bases sell best; an open prefix is worth ~1 div premium.",
     },
     result: {
       label: "Fractured +3 amulet",
@@ -186,7 +192,7 @@ export const RECIPES: CraftRecipe[] = [
       note: "Valued from instant-buyout comparables with a FRACTURED +3 Spell Skills (trade2 searches the fractured stat itself), plus 40+ life when enough are listed (else the fractured +3 alone).",
     },
     materials: [
-      { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Only on open-prefix bases — and Augmentation needs a MAGIC item (KB §1); unverified on this rare base." },
+      { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Only on open-prefix bases (the magic base's second affix, KB §1). Skip it when the prefix is taken." },
       { material: MATS.greaterEssenceOpulence, qtyPerAttempt: 1, note: "Guaranteed T1 rarity." },
       // KB §2 (poe2-crafting-knowledge.md): fracture needs ≥4 mods; desecrated counts, can't be fractured
       { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 1, note: "Prefix desecration — the blocker: counts toward the 4-mod minimum but can't be fractured." },

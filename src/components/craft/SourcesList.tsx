@@ -13,6 +13,16 @@ const TIER_TIP: Record<SourceTier, string> = {
 
 const KB_PATH = "docs/research/poe2-crafting-knowledge.md";
 
+function SourceDate({ s }: { s: RecipeSource }) {
+  if (s.date === null) return <span className="text-neutral-500">date unknown</span>;
+  if (s.datePrecision === "exact") return <span className="text-neutral-500">{s.date}</span>;
+  return (
+    <Tooltip tip="From a search-index listing, not the source itself — may be a day off.">
+      <span className="cursor-help text-neutral-500">≈ {s.date}</span>
+    </Tooltip>
+  );
+}
+
 function SourceRow({ s }: { s: RecipeSource }) {
   const who = s.creator ?? (s.kind === "in_game" ? "own test" : "unknown creator");
   return (
@@ -28,7 +38,7 @@ function SourceRow({ s }: { s: RecipeSource }) {
       ) : (
         <span className="text-neutral-400">{s.title}</span>
       )}
-      <span className="text-neutral-500">{s.date ?? "date unknown"}</span>
+      <SourceDate s={s} />
     </li>
   );
 }

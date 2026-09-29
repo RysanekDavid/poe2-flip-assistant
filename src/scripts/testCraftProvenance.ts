@@ -6,15 +6,15 @@ import "../config/env";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getDb } from "../db/database";
-import { craftAttemptStats } from "../db/craftQueries";
 import { PATCH_SOURCE_ID } from "../sources/patchNotes/contracts";
 import { MATS, type CraftMaterial } from "../core/craftMaterials";
 import { RECIPES, type CraftRecipe, type GuideStep, type LegReport, type RecipeMarginReport } from "../core/craftRecipes";
 import { PROVENANCE_KEYS, provenanceFor } from "../core/craftProvenanceData";
 import { buildAuditFile, buildRecipeAudit, currentAuditDeps, loadRecipeAudit, type AuditDeps } from "../core/craftProvenance/audit";
-import { checkStep } from "../core/craftProvenance/legality";
-import { effectiveHitRate } from "../core/craftProvenance/calibration";
-import { patchStaleness, recipePatchStaleness, resetPatchStaleCache } from "../core/craftProvenance/patchStale";
+import { checkStep, type StepBase } from "../core/craftProvenance/legality";
+import { effectiveHitRate, poolAttempts, type AttemptRow } from "../core/craftProvenance/calibration";
+import { calibrationStats } from "../core/craftProvenance/samples";
+import { patchStaleness, PATCH_STALE_TTL_MS, recipePatchStaleness, resetPatchStaleCache } from "../core/craftProvenance/patchStale";
 import { provenanceViews } from "../core/craftProvenance/view";
 import { assembleReport } from "../core/craftMargin";
 import type { EntityRow } from "../core/entities/schema";
@@ -30,6 +30,18 @@ const recipe = (key: string): CraftRecipe => {
   if (!r) throw new Error(`recipe ${key} missing`);
   return r;
 };
+
+// A step (or note) that SAYS it is unconfirmed must use the `unverified` field, not prose: the
+// reviewed gate reads both, so wording cannot slip a doubt past it.
+const DOUBT = /\b(unverified|unconfirmed|untested|not (?:yet )?(?:verified|confirmed))\b/i;
+
+function doubts(r: CraftRecipe): string[] {
+  const steps = r.guide.phases.flatMap((p) => p.steps);
+  const flagged = steps.filter((s) => s.unverified).map((s) => `unverified: ${s.unverified}`);
+  const prose = steps.flatMap((s) => [s.do, s.why, s.check, s.warning, s.onFail]).filter((t): t is string => !!t && DOUBT.test(t));
+  const notes = [...r.materials.map((m) => m.note), r.base.note, r.result.note].filter((t): t is string => !!t && DOUBT.test(t));
+  return [...flagged, ...prose, ...notes];
+}
 
 // --- D-1: every recipe carries structured provenance, and every cited file/section exists ---
 function testProvenanceData(): void {
@@ -53,12 +65,22 @@ function testProvenanceData(): void {
   const badKb = RECIPES.flatMap((r) => provenanceFor(r.key).kbRuleRefs.filter((s) => !kb.includes(`\n## ${s.slice(1)}. `)).map((s) => `${r.key} ${s}`));
   ok("every kbRuleRef is a KB section heading", badKb.length === 0, badKb.join(","));
 
-  // a reviewed recipe must not carry a step the guide itself flags as unverified
-  const reviewedUnverified = RECIPES.filter((r) => provenanceFor(r.key).status === "reviewed" && r.guide.phases.some((p) => p.steps.some((s) => s.unverified)));
-  ok("no reviewed recipe has an unverified step", reviewedUnverified.length === 0, reviewedUnverified.map((r) => r.key).join(","));
+  const reviewedDoubts = RECIPES.filter((r) => provenanceFor(r.key).status === "reviewed" && doubts(r).length > 0);
+  ok("no reviewed recipe has an unverified step or admits one in prose", reviewedDoubts.length === 0, reviewedDoubts.map((r) => `${r.key}: ${doubts(r)[0]}`).join(" | "));
   const estimateWithN = RECIPES.filter((r) => provenanceFor(r.key).hitRateBasis.basis === "unknown" && provenanceFor(r.key).hitRateBasis.n !== null);
   ok("an estimate never claims a creator sample", estimateWithN.length === 0, estimateWithN.map((r) => r.key).join(","));
   ok("the S9 bow is credited to XTheFarmerX (oEmbed), not Fubgun", provenanceFor("bow_amanamu").sources[0]?.creator === "XTheFarmerX");
+}
+
+/** Every linked video's creator is the committed oEmbed author_name for that URL. */
+function testOembedAttribution(): void {
+  const oembed = JSON.parse(readFileSync(join(process.cwd(), "docs/kb/sources/oembed.json"), "utf8")) as { videos: Array<{ url: string; author_name: string }> };
+  const author = new Map(oembed.videos.map((v) => [v.url, v.author_name]));
+  const videos = RECIPES.flatMap((r) => provenanceFor(r.key).sources.filter((s) => s.kind === "video" && s.url !== null));
+  const wrong = videos.filter((s) => author.get(s.url ?? "") !== s.creator).map((s) => `${s.url}: ${s.creator}`);
+  ok("every linked video's creator matches docs/kb/sources/oembed.json", videos.length > 0 && wrong.length === 0, wrong.join(" | "));
+  const listingOnly = videos.every((s) => s.date === null || s.datePrecision === "listing");
+  ok("video dates are marked as search-listing precision", listingOnly);
 }
 
 // --- D-2 audit artifact: stamped with the manifest's snapshot, current, and free of violations ---
@@ -78,37 +100,48 @@ function testAuditArtifact(): AuditDeps {
 
 // --- D-3 legality fixtures ---
 const step = (mats: CraftMaterial[]): GuideStep => ({ do: "fixture", mats });
+const base = (ilvlMin: number | undefined, rarity: StepBase["rarity"] = "rare", asBought = true): StepBase => ({ ilvlMin, rarity, asBought });
+const has = (checks: ReturnType<typeof checkStep>, kind: string, verdict: string): boolean => checks.some((c) => c.kind === kind && c.verdict === verdict);
 
-function testLegality(deps: AuditDeps): void {
-  const run = (mats: CraftMaterial[], ilvl: number | undefined) => checkStep(step(mats), ilvl, deps.byExchangeId, deps.gameDataPatch);
-  const perfectAugLow = run([MATS.perfectAug], 65);
-  ok("Perfect Augmentation on an ilvl 65 base → floor violation", perfectAugLow.some((c) => c.kind === "floor" && c.verdict === "violation"), JSON.stringify(perfectAugLow));
-  ok("Perfect Augmentation on an ilvl 75 base → floor ok", run([MATS.perfectAug], 75).every((c) => c.verdict === "ok"));
-  ok("Perfect Exalted with the base ilvl unpinned → unknown", run([MATS.perfectExalted], undefined).some((c) => c.kind === "floor" && c.verdict === "unknown"));
-  ok("Gnawed Rib on an ilvl 82 base → ilvl violation", run([MATS.gnawedRib], 82).some((c) => c.kind === "ilvl" && c.verdict === "violation"));
+function testFloorsAndRarity(deps: AuditDeps): void {
+  const run = (mats: CraftMaterial[], b: StepBase) => checkStep(step(mats), b, deps.byExchangeId, deps.gameDataPatch);
+  ok("Perfect Augmentation on an ilvl 65 base → floor violation (KB §9 refusal)", has(run([MATS.perfectAug], base(65, "magic")), "floor", "violation"));
+  ok("Perfect Augmentation on an ilvl 75 magic base → all ok", run([MATS.perfectAug], base(75, "magic")).every((c) => c.verdict === "ok"));
+  const exaltLow = run([MATS.perfectExalted], base(45));
+  ok("Perfect Exalted below its floor → soft-floor unknown, not a refusal", has(exaltLow, "floor", "unknown") && !has(exaltLow, "floor", "violation"), JSON.stringify(exaltLow));
+  ok("Ancient bone below mod level 40 → soft-floor unknown", has(run([MATS.ancientRib], base(30)), "floor", "unknown"));
+  ok("Perfect Exalted with the base ilvl unpinned → unknown", has(run([MATS.perfectExalted], base(undefined)), "floor", "unknown"));
+  ok("Gnawed Rib on an ilvl 82 base → ilvl violation", has(run([MATS.gnawedRib], base(82)), "ilvl", "violation"));
 
-  const dextralAnnul = run([MATS.omenDextralAnnulment, MATS.annul], 75);
-  ok("Dextral Annulment + Annulment → pairing ok", dextralAnnul.some((c) => c.kind === "pairing" && c.verdict === "ok") && !dextralAnnul.some((c) => c.verdict !== "ok"), JSON.stringify(dextralAnnul));
-  ok("Greater Exaltation rides a Perfect Exalt (any exalt tier)", run([MATS.omenGreaterExaltation, MATS.perfectExalted], 80).every((c) => c.verdict === "ok"));
-  const crystal = run([MATS.omenDextralCrystallisation, MATS.perfectEssenceEnhancement], 80);
-  ok("Dextral Crystallisation (no rule) → pairing unknown", crystal.some((c) => c.kind === "pairing" && c.verdict === "unknown"));
-  ok("Whittling without a Chaos Orb → pairing unknown", run([MATS.omenWhittling, MATS.annul], 80).some((c) => c.kind === "pairing" && c.verdict === "unknown"));
-  const ghost = run([{ id: "not-a-real-orb", label: "Orb of Nothing", group: "currency" }], 80);
-  ok("a material missing from the game data → catalog violation", ghost.some((c) => c.kind === "catalog" && c.verdict === "violation"));
-  ok("a step without materials has no checks", checkStep({ do: "look" }, 80, deps.byExchangeId, deps.gameDataPatch).length === 0);
+  ok("Perfect Augmentation on a RARE base as bought → rarity violation", has(run([MATS.perfectAug], base(80, "rare")), "rarity", "violation"));
+  ok("Perfect Augmentation on a magic base as bought → rarity ok", has(run([MATS.perfectAug], base(80, "magic")), "rarity", "ok"));
+  ok("magic-only currency on a later step → rarity unknown (no simulation)", has(run([MATS.perfectAug], base(80, "rare", false)), "rarity", "unknown"));
+  ok("unpinned base rarity → rarity unknown", has(run([MATS.greaterAug], { ilvlMin: 80, rarity: undefined, asBought: true }), "rarity", "unknown"));
+}
+
+function testPairing(deps: AuditDeps): void {
+  const run = (mats: CraftMaterial[]) => checkStep(step(mats), base(80, "rare", false), deps.byExchangeId, deps.gameDataPatch);
+  const dextralAnnul = run([MATS.omenDextralAnnulment, MATS.annul]);
+  ok("Dextral Annulment + Annulment (only an unverified rule) → pairing unknown", has(dextralAnnul, "pairing", "unknown") && !has(dextralAnnul, "pairing", "ok"), JSON.stringify(dextralAnnul));
+  ok("Dextral Erasure + Chaos (verified rule) → pairing ok", has(run([MATS.omenDextralErasure, MATS.chaos]), "pairing", "ok"));
+  ok("Greater Exaltation rides a Perfect Exalt (any exalt tier)", has(run([MATS.omenGreaterExaltation, MATS.perfectExalted]), "pairing", "ok"));
+  ok("Dextral Crystallisation (no rule) → pairing unknown", has(run([MATS.omenDextralCrystallisation, MATS.perfectEssenceEnhancement]), "pairing", "unknown"));
+  ok("Whittling without a Chaos Orb → pairing unknown", has(run([MATS.omenWhittling, MATS.annul]), "pairing", "unknown"));
+  ok("a material missing from the game data → catalog violation", has(run([{ id: "not-a-real-orb", label: "Orb of Nothing", group: "currency" }]), "catalog", "violation"));
+  ok("a step without materials has no checks", checkStep({ do: "look" }, base(80), deps.byExchangeId, deps.gameDataPatch).length === 0);
 }
 
 // --- RePoE change: a changed entity text makes the recipe stale until it is re-verified ---
 function testRepoeChange(deps: AuditDeps): void {
   const r = recipe("ring_fractured_t1res");
   const prov = provenanceFor(r.key);
-  const base = buildRecipeAudit(r, prov, deps, null, false);
-  ok("a first audit has no RePoE change", base.repoeChanged.length === 0);
+  const first = buildRecipeAudit(r, prov, deps, null, false);
+  ok("a first audit has no RePoE change", first.repoeChanged.length === 0);
   const whittling = deps.byId("omen-of-whittling");
   if (!whittling) throw new Error("fixture: Omen of Whittling missing from the entity catalog");
   const changedText: EntityRow = { ...whittling, summary: "Removes the HIGHEST level modifier" };
   const changedDeps: AuditDeps = { ...deps, byId: (id) => (id === whittling.id ? changedText : deps.byId(id)) };
-  const after = buildRecipeAudit(r, prov, changedDeps, base, false);
+  const after = buildRecipeAudit(r, prov, changedDeps, first, false);
   ok("changed Omen of Whittling text → repoeChanged lists it", after.repoeChanged.join() === "omen-of-whittling", after.repoeChanged.join());
   const carried = buildRecipeAudit(r, prov, changedDeps, after, false);
   ok("the change persists across re-runs until re-verified", carried.repoeChanged.join() === "omen-of-whittling");
@@ -162,41 +195,77 @@ function testPatchStaleDb(): void {
   ok("ring_fractured_t1res (uses Whittling) reads stale after the 0.5.6b notes", ring?.status === "stale" && ring.stale.some((s) => s.kind === "patch" && s.version === "0.5.6b"), JSON.stringify(ring?.stale));
   const bow = views.get("bow_amanamu");
   ok("an Exalted Orb mention alone does not stale a recipe", bow?.status === "reviewed" && bow.stale.length === 0, JSON.stringify(bow?.stale));
+
+  const liege = [{ key: "bow_amanamu", patchVerified: "0.5.5b", names: ["Omen of the Liege"] }];
+  const now = Date.now();
+  ok("a new subject set is computed, not served from another set's cache", !recipePatchStaleness(liege, now).has("bow_amanamu"));
   seedPatch(9003, "0.5.7", ["Omen of the Liege is removed."]);
-  const cached = recipePatchStaleness([{ key: "bow_amanamu", patchVerified: "0.5.5b", names: ["Omen of the Liege"] }]);
-  ok("staleness is memoized (15 min) — a new thread shows after the TTL", !cached.has("bow_amanamu"));
+  ok("the same subject set is memoized inside the TTL", !recipePatchStaleness(liege, now + 1000).has("bow_amanamu"));
+  ok("after the TTL the new thread shows", recipePatchStaleness(liege, now + PATCH_STALE_TTL_MS).has("bow_amanamu"));
+  const bumped = [{ key: "bow_amanamu", patchVerified: "0.5.7", names: ["Omen of the Liege"] }];
+  ok("a bumped patchVerified recomputes at once", !recipePatchStaleness(bumped, now + PATCH_STALE_TTL_MS + 1).has("bow_amanamu"));
   resetPatchStaleCache();
 }
 
-// --- D-4 calibration ---
-function testCalibration(): void {
+// --- D-4 calibration: shrinkage, pooling guards ---
+const row = (userId: number, outcome: "hit" | "brick", costDiv = 1, createdAt = "2026-09-20 10:00:00"): AttemptRow => ({ userId, outcome, costDiv, createdAt });
+
+function testShrinkage(): void {
   const r = { hitRate: 0.3 };
   const prov = provenanceFor("jewel_liquid_5mod_budget");
-  const below = effectiveHitRate(r, prov, { closed: 19, hits: 10 });
-  ok("n=19 → curated rate stays in charge", below.effective === 0.3 && below.basis === "creator_claim" && below.measured !== null && below.n === 19);
-  const at = effectiveHitRate(r, prov, { closed: 20, hits: 5 });
-  ok("n=20 → measured rate takes over", at.effective === 0.25 && at.basis === "measured" && at.model === 0.3);
-  ok("no attempts → model, measured null", effectiveHitRate(r, prov, undefined).measured === null);
+  ok("no attempts → model, measured null", effectiveHitRate(r, prov, undefined).effective === 0.3 && effectiveHitRate(r, prov, undefined).measured === null);
+  const at = effectiveHitRate(r, prov, { closed: 20, hits: 5, users: 3 });
+  ok("n=20, 25% measured → (5 + 20·0.3)/40 = 27.5%, basis measured", Math.abs(at.effective - 0.275) < 1e-9 && at.basis === "measured", String(at.effective));
+  ok("n=19 keeps the curated basis", effectiveHitRate(r, prov, { closed: 19, hits: 5, users: 3 }).basis === "creator_claim");
+  const byHits = [0, 5, 10, 15, 20].map((h) => effectiveHitRate(r, prov, { closed: 20, hits: h, users: 2 }).effective);
+  ok("shrinkage is monotone in hits", byHits.every((v, i) => i === 0 || v > (byHits[i - 1] ?? Infinity)), byHits.join(","));
+  const gaps = [10, 40, 160, 640].map((n) => Math.abs(effectiveHitRate(r, prov, { closed: n, hits: n * 0.6, users: 2 }).effective - 0.6));
+  ok("more attempts move the rate monotonically toward the measured one", gaps.every((g, i) => i === 0 || g < (gaps[i - 1] ?? -1)), gaps.join(","));
   let threw = false;
   try {
-    effectiveHitRate(r, prov, { closed: 2, hits: 3 });
+    effectiveHitRate(r, prov, { closed: 2, hits: 3, users: 2 });
   } catch {
     threw = true;
   }
   ok("more hits than closed attempts throws", threw);
+}
 
+function testPoolingGuards(): void {
+  const r = { hitRate: 0.3 };
+  const prov = provenanceFor("bow_amanamu");
+  const solo = poolAttempts(Array.from({ length: 20 }, () => row(7, "hit")), null);
+  ok("one user's 20 fake hits pool nothing (needs 2+ users)", solo.closed === 0 && effectiveHitRate(r, prov, solo).effective === 0.3, JSON.stringify(solo));
+  const flood = poolAttempts([...Array.from({ length: 20 }, () => row(7, "hit")), row(8, "brick"), row(8, "brick")], null);
+  ok("a flooding user is capped at half the pooled sample", flood.closed === 4 && flood.hits === 2, JSON.stringify(flood));
+  const capped = effectiveHitRate(r, prov, flood).effective;
+  ok("20 fake hits move the shared rate no further than the cap allows", Math.abs(capped - (2 + 20 * 0.3) / 24) < 1e-9, String(capped));
+  ok("zero-cost attempts do not count", poolAttempts([row(1, "hit", 0), row(2, "hit", 0)], null).users === 0);
+  const cutoff = Date.parse("2026-09-11T03:39:22Z");
+  ok("attempts before the verified patch are dropped", poolAttempts([row(1, "hit", 1, "2026-09-01 00:00:00"), row(2, "hit"), row(3, "brick")], cutoff).closed === 2);
+}
+
+function testCalibrationDb(): void {
   resetDb();
-  const insert = getDb().prepare("INSERT INTO craft_attempts (user_id, recipe_key, outcome) VALUES (?, ?, ?)");
-  for (const [user, outcome] of [[1, "hit"], [2, "hit"], [2, "brick"], [1, "open"]] as const) insert.run(user, "bow_amanamu", outcome);
-  const stats = craftAttemptStats().get("bow_amanamu");
-  ok("attempt stats pool every user and skip open attempts", stats?.closed === 3 && stats.hits === 2, JSON.stringify(stats));
+  const insert = getDb().prepare("INSERT INTO craft_attempts (user_id, recipe_key, outcome, base_cost_div, mats_cost_div, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+  const rows: Array<[number, string, number, string]> = [
+    [1, "hit", 1, "2026-09-20 10:00:00"],
+    [2, "hit", 1, "2026-09-20 10:00:00"],
+    [2, "brick", 1, "2026-09-20 10:00:00"],
+    [5, "brick", 1, "2026-09-20 10:00:00"],
+    [1, "open", 1, "2026-09-20 10:00:00"],
+    [3, "hit", 0, "2026-09-20 10:00:00"], // zero cost
+    [4, "hit", 1, "2026-08-01 10:00:00"], // before 0.5.5b went live (patch-coverage.json)
+  ];
+  for (const [user, outcome, cost, at] of rows) insert.run(user, "bow_amanamu", outcome, cost, 0, at);
+  const stats = calibrationStats(RECIPES).get("bow_amanamu");
+  ok("DB pooling: 3 users, open/zero-cost/pre-patch attempts skipped", stats?.closed === 4 && stats.hits === 2 && stats.users === 3, JSON.stringify(stats));
 }
 
 // --- a measured 0% (bricks only) prices EV = −cost instead of crashing the near-miss ---
 function testZeroHitRate(): void {
   const shell: RecipeMarginReport = {
     key: "t", status: "ok", base: null, result: null, materials: [], materialsDiv: 1, hitRate: 0, evDiv: 0, marginPct: 0,
-    error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null,
+    error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null, hitRateBasis: "measured", hitRateN: 40,
   };
   const leg = (priceDiv: number): LegReport => ({
     priceDiv, samples: 10, total: 30, searchUrl: "u", outliersDropped: 0, unresolvedStats: [], icon: null, floorDiv: null,
@@ -204,15 +273,20 @@ function testZeroHitRate(): void {
   });
   const out = assembleReport(shell, leg(1), leg(10));
   ok("hit rate 0 → ok report, EV = −cost, no near-miss", out.report.status === "ok" && out.report.evDiv === -2 && out.report.nearMiss === null, JSON.stringify(out.report));
+  ok("the report keeps the basis it was priced with", out.report.hitRateBasis === "measured" && out.report.hitRateN === 40);
 }
 
 testProvenanceData();
+testOembedAttribution();
 const deps = testAuditArtifact();
-testLegality(deps);
+testFloorsAndRarity(deps);
+testPairing(deps);
 testRepoeChange(deps);
 testPatchStalePure();
 testPatchStaleDb();
-testCalibration();
+testShrinkage();
+testPoolingGuards();
+testCalibrationDb();
 testZeroHitRate();
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);

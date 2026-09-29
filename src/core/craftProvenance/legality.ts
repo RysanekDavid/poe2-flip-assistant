@@ -1,16 +1,18 @@
 import { MATS, type CraftMaterial, type MaterialKey } from "../craftMaterials";
 import type { CraftRecipe, GuideStep } from "../craftRecipes";
 import type { EntityRow } from "../entities/schema";
-import { VERIFIED_FLOORS } from "../tools/craftmoves/gates";
+import type { Rarity } from "../../lib/tradeLink";
+import { VERIFIED_FLOORS, type CurrencyFloor } from "../tools/craftmoves/gates";
 import { ALL_RULES } from "../tools/craftmoves/rules";
 import { KB, type MoveRule } from "../tools/craftmoves/ruleTypes";
 import type { LegalityCheck, LegalityVerdict, StepLegality } from "./schema";
 
 /**
  * Deterministic per-step legality for a curated recipe: every material exists in the game data,
- * floored currencies and tier-capped bones suit the base's item level, and each omen rides a
- * pairing a verified rule encodes. No item-state simulation: a step is judged against the base leg
- * as bought, so a check that needs the item's state at that step answers "unknown", never "ok".
+ * floored currencies and tier-capped bones suit the base's item level and rarity, and each omen
+ * rides a pairing a verified rule encodes. No item-state simulation: rarity is judged only on the
+ * first material step (the base as bought); anything that needs the item's state later answers
+ * "unknown", never "ok". Item level never changes, so ilvl checks hold for every step.
  */
 
 /** KB §1 floors keyed by the material they apply to; a floor with no material fails at load. */
@@ -27,6 +29,8 @@ interface Floor {
   label: string;
   floor: number;
   source: string;
+  /** The item rarity the currency applies to (KB §1); null for bones, whose rule is not in VERIFIED_FLOORS. */
+  rarity: CurrencyFloor["rarity"] | null;
 }
 
 function buildFloors(): ReadonlyMap<string, Floor> {
@@ -34,16 +38,30 @@ function buildFloors(): ReadonlyMap<string, Floor> {
   for (const f of VERIFIED_FLOORS) {
     const key = FLOOR_MATERIAL[f.id];
     if (!key) throw new Error(`legality: verified floor "${f.id}" has no material mapping`);
-    floors.set(MATS[key].id, { label: f.label, floor: f.floor, source: f.source });
+    floors.set(MATS[key].id, { label: f.label, floor: f.floor, source: f.source, rarity: f.rarity });
   }
   // KB §5: "Ancient = min mod level 40" — the same soft floor, on the bone tier.
   for (const key of ["ancientJawbone", "ancientRib", "ancientCollarbone"] as const) {
-    floors.set(MATS[key].id, { label: MATS[key].label, floor: 40, source: `${KB} §5` });
+    floors.set(MATS[key].id, { label: MATS[key].label, floor: 40, source: `${KB} §5`, rarity: null });
   }
   return floors;
 }
 
 const FLOORS = buildFloors();
+
+/**
+ * Currencies the game is on record REFUSING below their floor — KB §9: "Perfect Orb of Augmentation
+ * refused on a low-ilvl ring". Every other floor is only the §1 soft floor (fewer tiers, not a refusal).
+ */
+const REFUSED_BELOW_FLOOR = new Set<string>([MATS.perfectAug.id]);
+
+/** What the base looks like at a step: as bought on the first material step, unknown after it. */
+export interface StepBase {
+  ilvlMin: number | undefined;
+  rarity: Rarity | undefined;
+  /** True for the first step that spends materials — nothing has changed the base yet. */
+  asBought: boolean;
+}
 
 /** KB §5/§9: Gnawed bones answer "Item Level is too high" above 64. */
 const GNAWED_MAX_ILVL = 64;
@@ -95,13 +113,15 @@ function catalogCheck(mats: readonly CraftMaterial[], lookup: EntityLookup, game
   return { kind: "catalog", verdict: "ok", detail: `every material exists in the ${gamePatch} game data`, source: "entity catalog" };
 }
 
-function floorCheck(floor: Floor, ilvlMin: number | undefined): LegalityCheck {
-  const what = `${floor.label} rolls modifier level ${floor.floor}+`;
-  if (ilvlMin === undefined) return { kind: "floor", verdict: "unknown", detail: `${what}; the base's item level is not pinned`, source: floor.source };
-  if (ilvlMin < floor.floor) {
-    return { kind: "floor", verdict: "violation", detail: `${what} but the base may be ilvl ${ilvlMin} — refused below its floor (KB §9)`, source: `${floor.source}; ${KB} §9` };
+function floorCheck(floor: Floor, id: string, ilvlMin: number | undefined): LegalityCheck {
+  const soft = `${floor.label} cannot roll tiers below modifier level ${floor.floor}`;
+  if (ilvlMin === undefined) return { kind: "floor", verdict: "unknown", detail: `${soft}; the base's item level is not pinned`, source: floor.source };
+  if (ilvlMin >= floor.floor) return { kind: "floor", verdict: "ok", detail: `${soft}; base ilvl ${ilvlMin}+ clears it`, source: floor.source };
+  if (REFUSED_BELOW_FLOOR.has(id)) {
+    return { kind: "floor", verdict: "violation", detail: `${floor.label} was refused in game on a base below ilvl ${floor.floor}; this base may be ilvl ${ilvlMin}`, source: `${floor.source}; ${KB} §9` };
   }
-  return { kind: "floor", verdict: "ok", detail: `${what}; base ilvl ${ilvlMin}+ meets it`, source: floor.source };
+  // KB §1 soft floor: families whose every reachable tier sits below it keep their top reachable tier
+  return { kind: "floor", verdict: "unknown", detail: `${soft}; on an ilvl ${ilvlMin} base only each family's top reachable tier stays eligible`, source: floor.source };
 }
 
 function gnawedCheck(m: CraftMaterial, ilvlMin: number | undefined): LegalityCheck {
@@ -113,12 +133,24 @@ function gnawedCheck(m: CraftMaterial, ilvlMin: number | undefined): LegalityChe
   return { kind: "ilvl", verdict: "ok", detail: `${m.label} on a base under ilvl ${GNAWED_MAX_ILVL + 1}`, source };
 }
 
-function levelChecks(mats: readonly CraftMaterial[], ilvlMin: number | undefined): LegalityCheck[] {
+/** KB §1 rarity: judged only on the first material step, where the base is still as bought. */
+function rarityCheck(floor: Floor & { rarity: CurrencyFloor["rarity"] }, base: StepBase): LegalityCheck {
+  const needs = `${floor.label} needs a ${floor.rarity.toLowerCase()} item`;
+  if (!base.asBought) return { kind: "rarity", verdict: "unknown", detail: `${needs}; the item's rarity after earlier steps is not simulated`, source: floor.source };
+  if (base.rarity === undefined) return { kind: "rarity", verdict: "unknown", detail: `${needs}; the base's rarity is not pinned`, source: floor.source };
+  if (base.rarity !== floor.rarity.toLowerCase()) {
+    return { kind: "rarity", verdict: "violation", detail: `${needs}, but the base is bought ${base.rarity}`, source: floor.source };
+  }
+  return { kind: "rarity", verdict: "ok", detail: `${needs}; the base is bought ${base.rarity}`, source: floor.source };
+}
+
+function levelChecks(mats: readonly CraftMaterial[], base: StepBase): LegalityCheck[] {
   const out: LegalityCheck[] = [];
   for (const m of mats) {
     const floor = FLOORS.get(m.id);
-    if (floor) out.push(floorCheck(floor, ilvlMin));
-    if (GNAWED.has(m.id)) out.push(gnawedCheck(m, ilvlMin));
+    if (floor) out.push(floorCheck(floor, m.id, base.ilvlMin));
+    if (floor?.rarity) out.push(rarityCheck({ ...floor, rarity: floor.rarity }, base));
+    if (GNAWED.has(m.id)) out.push(gnawedCheck(m, base.ilvlMin));
   }
   return out;
 }
@@ -132,12 +164,15 @@ function omenCheck(omen: CraftMaterial, present: ReadonlySet<string>, hasBone: b
   if (candidates.length === 0) {
     return { kind: "pairing", verdict: "unknown", detail: `no verified rule covers ${omen.label}`, source: `${KB} §4` };
   }
-  const hit = candidates.find((r) => satisfies(r, present, hasBone) && r.verified) ?? candidates.find((r) => satisfies(r, present, hasBone));
-  if (!hit) {
-    return { kind: "pairing", verdict: "unknown", detail: `${omen.label} is not paired here as any rule expects (${candidates.map((r) => r.id).join(", ")})`, source: `${KB} §4` };
+  const matching = candidates.filter((r) => satisfies(r, present, hasBone));
+  const verified = matching.find((r) => r.verified);
+  if (verified) return { kind: "pairing", verdict: "ok", detail: `${omen.label} pairing matches verified rule ${verified.id}`, source: verified.source };
+  const unverified = matching[0];
+  if (unverified) {
+    // an unverified rule is a lead, not evidence: the pairing is plausible but not checked
+    return { kind: "pairing", verdict: "unknown", detail: `${omen.label} pairing matches only the unverified rule ${unverified.id}`, source: unverified.source };
   }
-  const trust = hit.verified ? "" : " — that rule is itself unverified";
-  return { kind: "pairing", verdict: "ok", detail: `${omen.label} pairing matches rule ${hit.id}${trust}`, source: hit.source };
+  return { kind: "pairing", verdict: "unknown", detail: `${omen.label} is not paired here as any rule expects (${candidates.map((r) => r.id).join(", ")})`, source: `${KB} §4` };
 }
 
 function pairingChecks(mats: readonly CraftMaterial[], rules: readonly PairingRule[]): LegalityCheck[] {
@@ -147,10 +182,10 @@ function pairingChecks(mats: readonly CraftMaterial[], rules: readonly PairingRu
 }
 
 /** Checks for one step's materials against the base it is applied to. */
-export function checkStep(step: GuideStep, ilvlMin: number | undefined, lookup: EntityLookup, gamePatch: string, rules = PAIRING_RULES): LegalityCheck[] {
+export function checkStep(step: GuideStep, base: StepBase, lookup: EntityLookup, gamePatch: string, rules = PAIRING_RULES): LegalityCheck[] {
   const mats = step.mats ?? [];
   if (mats.length === 0) return [];
-  return [catalogCheck(mats, lookup, gamePatch), ...levelChecks(mats, ilvlMin), ...pairingChecks(mats, rules)];
+  return [catalogCheck(mats, lookup, gamePatch), ...levelChecks(mats, base), ...pairingChecks(mats, rules)];
 }
 
 /** Legality of every guide step that spends materials, keyed by its flat index in the session. */
@@ -158,7 +193,8 @@ export function recipeLegality(recipe: CraftRecipe, lookup: EntityLookup, gamePa
   const steps = recipe.guide.phases.flatMap((p) => p.steps);
   const out: StepLegality[] = [];
   steps.forEach((step, idx) => {
-    const checks = checkStep(step, recipe.base.ilvlMin, lookup, gamePatch);
+    const base: StepBase = { ilvlMin: recipe.base.ilvlMin, rarity: recipe.base.rarity, asBought: out.length === 0 };
+    const checks = checkStep(step, base, lookup, gamePatch);
     if (checks.length > 0) out.push({ idx, verdict: worst(checks.map((c) => c.verdict)), checks });
   });
   return out;
