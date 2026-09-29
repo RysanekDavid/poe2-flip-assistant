@@ -21,6 +21,7 @@ It never buys, sells, whispers, clicks, or controls the game.
 - **Wealth:** opt-in read-only valuation of a user's public stash tabs.
 - **Coach:** authenticated LangGraph sidecar with market, knowledge, game-data, and optional
   recent-web tools. Every answer exposes tool/source evidence and a human-verification boundary.
+  Item names in answers are hoverable chips with game art, in-game text and any live price.
 
 ## Architecture
 
@@ -77,6 +78,7 @@ Refresh committed deterministic game data only as an intentional feature update:
 ```bash
 npm run sync:poe2-data
 npm run verify:poe2-data
+npm run sync:entities   # entity catalog: item art + game text behind the Coach's item chips
 ```
 
 ### Active league

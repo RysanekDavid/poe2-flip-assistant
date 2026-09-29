@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
+from src.entities.turn import ToolOutput
 from src.schemas import EvidenceSource, TurnUsage
 
 _CITATION = re.compile(r"\[([MLKWD][0-9a-f]{12})\]")
@@ -40,6 +41,15 @@ def turn_trace(
         for source in _parse_sources(message.content):
             sources[source.id] = source
     return tools, list(sources.values())
+
+
+def turn_tool_outputs(messages: Sequence[BaseMessage]) -> list[ToolOutput]:
+    """This turn's tool results as plain text, for deterministic entity annotation."""
+    return [
+        ToolOutput(name=message.name or "", text=_text_content(message.content))
+        for message in _latest_turn(messages)
+        if isinstance(message, ToolMessage)
+    ]
 
 
 def citations_are_valid(answer: str, sources: Sequence[EvidenceSource]) -> bool:

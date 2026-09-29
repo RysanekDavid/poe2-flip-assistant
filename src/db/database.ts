@@ -124,6 +124,11 @@ function ensureAdditiveColumns(conn: Database.Database): void {
     ["gear_at_ask_div", "REAL"],
   ]);
   ensureColumns(conn, "balance_tabs", [["unpriced", "INTEGER NOT NULL DEFAULT 0"]]);
+  // Entity chips of a Coach answer (catalog rows + live price at answer time), replayed with history.
+  ensureColumns(conn, "coach_turns", [
+    ["entities_json", "TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(entities_json) AND json_type(entities_json) = 'array')"],
+    ["unlinked_json", "TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(unlinked_json) AND json_type(unlinked_json) = 'array')"],
+  ]);
   // Per-user trade2 credentials: encrypted POESESSID + identifying contact + account name.
   ensureColumns(conn, "users", [
     ["poesessid_enc", "TEXT"], // AES-GCM token from secretbox; never stored plaintext
