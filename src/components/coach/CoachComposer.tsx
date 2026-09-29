@@ -66,7 +66,7 @@ export function CoachComposer({
             maxLength={8_000}
             rows={2}
             placeholder={compose?.placeholder ?? DEFAULT_PLACEHOLDER}
-            className="min-h-12 flex-1 resize-y bg-transparent px-2 py-2 text-sm leading-6 text-neutral-100 outline-none placeholder:text-neutral-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-12 flex-1 resize-y bg-transparent px-2 py-2 text-sm leading-6 text-neutral-100 outline-none placeholder:text-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
           />
           <button
             type="submit"
@@ -93,7 +93,7 @@ function ComposerNotice({ notice }: { notice: string }) {
 /** The ONE verify-in-game notice for Coach; answers and messages carry no repeated disclaimer. */
 function ComposerFooter() {
   return (
-    <div className="mt-2 flex items-center justify-between px-1 text-[10px] text-neutral-600">
+    <div className="mt-2 flex items-center justify-between px-1 text-xs text-neutral-500">
       <span>Enter to send · Shift+Enter for a new line</span>
       <span>Read-only guidance · verify prices and item state in-game before acting</span>
     </div>
