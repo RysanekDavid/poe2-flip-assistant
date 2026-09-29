@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CATEGORIES } from "../../../api/types";
 import {
   BuildResponseSchema,
@@ -10,10 +10,13 @@ import {
   type PresetParams,
   type PricePresetParams,
 } from "../../../lib/tools/regexContract";
-import { Panel } from "../../ui/Panel";
-import { PresetBar } from "./PresetBar";
+import artDivine from "../../../assets/items/divine-orb.png";
+import { DrawerSection, ExplainDrawer, ExplainToggle, SettingsMenu, useExplainDrawer } from "./BandTools";
+import { describePrice } from "./describe";
+import { FilterCard } from "./FilterCards";
+import { PresetMenu } from "./PresetMenu";
 import { RegexExplain } from "./RegexExplain";
-import { DataAgeStrip, RegexOutput } from "./RegexOutput";
+import { CoveredTable, DataAgeStrip, UncoveredList } from "./RegexOutput";
 import { RegexParamsForm } from "./RegexParamsForm";
 import { ResultBar } from "./ResultBar";
 
@@ -67,33 +70,49 @@ interface PricePanelProps {
 
 /** Price tab: highlight stash items worth at least a price (server-built from live ninja/scout prices). */
 export function PriceRegexPanel({ params, onChange, maxChars, onMaxChars }: PricePanelProps) {
-  const [explainText, setExplainText] = useState("");
   const { result, error, loading } = useBuild(params, maxChars);
+  const strings = result?.reason === null ? result.chunks : [];
+  const drawer = useExplainDrawer(strings[0]?.text);
+  const sentence = useMemo(() => describePrice(params, CATEGORIES.length), [params]);
   const loadPreset = (p: PresetParams) => {
     if (p.tab !== "price") throw new Error(`preset for ${p.tab} offered on the price tab`);
     onChange(p);
   };
-  const reason = result && result.reason !== null ? `Nothing to search for: ${result.reason}.` : null;
+  const tools = (
+    <>
+      <PresetMenu tab="price" params={params} onLoad={loadPreset} />
+      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} toggleRef={drawer.toggleRef} />
+      <SettingsMenu maxChars={maxChars} onMaxChars={onMaxChars} />
+    </>
+  );
   return (
     <div className="flex flex-col gap-4">
       <ResultBar
-        strings={result?.reason === null ? result.chunks : []}
+        strings={strings}
         warnings={result?.warnings ?? []}
-        reason={reason}
+        reason={result && result.reason !== null ? `Nothing to search for: ${result.reason}.` : null}
         error={error}
         maxChars={maxChars}
         busy={loading}
-        onExplain={setExplainText}
-        actions={result ? <DataAgeStrip dataAsOf={result.dataAsOf} league={result.league} namespaceSize={result.namespaceSize} /> : undefined}
+        sentence={sentence}
+        tools={tools}
+        onClear={() => onChange(DEFAULT_PRICE_PARAMS)}
       />
-      <Panel title="What to keep">
-        <div className="flex flex-col gap-3">
-          <RegexParamsForm params={params} onChange={onChange} maxChars={maxChars} onMaxChars={onMaxChars} />
-          <PresetBar tab="price" params={params} onLoad={loadPreset} />
-        </div>
-      </Panel>
-      {result && <RegexOutput result={result} />}
-      <RegexExplain text={explainText} onText={setExplainText} />
+      <FilterCard title="What to keep" art={artDivine} tip="Prices are Divine per unit from poe.ninja (exchange items) and poe2scout (uniques).">
+        <RegexParamsForm params={params} onChange={onChange} />
+        {result && <DataAgeStrip dataAsOf={result.dataAsOf} league={result.league} namespaceSize={result.namespaceSize} />}
+      </FilterCard>
+      {result?.reason === null && <UncoveredList rows={result.uncovered} mode={result.mode} />}
+      <ExplainDrawer ref={drawer.ref} id={drawer.id} open={drawer.open} onClose={drawer.close}>
+        {result?.reason === null && (
+          <DrawerSection title="Items the strings cover">
+            <CoveredTable rows={result.covered} />
+          </DrawerSection>
+        )}
+        <DrawerSection title="Check a string against prices">
+          <RegexExplain text={drawer.text} onText={drawer.setText} />
+        </DrawerSection>
+      </ExplainDrawer>
     </div>
   );
 }

@@ -16,7 +16,6 @@ interface SegmentedProps<T extends string> {
   onChange: (value: T) => void;
   /** Accessible name of the group (e.g. the mod text). */
   label: string;
-  compact?: boolean;
 }
 
 const DEFAULT_ACTIVE = "border-amber-400/60 bg-amber-400/15 text-amber-100";
@@ -25,7 +24,7 @@ const DEFAULT_ACTIVE = "border-amber-400/60 bg-amber-400/15 text-amber-100";
  * Radio group rendered as joined buttons. Keyboard: Tab enters on the selected option, arrow
  * keys (and Home/End) move AND select, as the WAI-ARIA radio pattern expects.
  */
-export function Segmented<T extends string>({ options, value, onChange, label, compact = false }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ options, value, onChange, label }: SegmentedProps<T>) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
   const selectedIndex = Math.max(0, options.findIndex((o) => o.value === value));
   const move = (to: number) => {
@@ -58,7 +57,7 @@ export function Segmented<T extends string>({ options, value, onChange, label, c
             tabIndex={on ? 0 : -1}
             title={o.title}
             onClick={() => onChange(o.value)}
-            className={`border-l border-neutral-700 font-medium first:border-l-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-amber-300 ${compact ? "h-7 px-2 text-xs" : "h-8 px-3 text-sm"} ${
+            className={`border-l border-neutral-700 font-medium first:border-l-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-amber-300 h-8 px-3 text-sm ${
               on ? (o.activeClass ?? DEFAULT_ACTIVE) : "bg-neutral-900/60 text-neutral-400 hover:text-neutral-100"
             }`}
           >

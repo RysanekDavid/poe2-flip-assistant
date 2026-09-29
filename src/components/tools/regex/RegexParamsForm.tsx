@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { CATEGORIES } from "../../../api/types";
 import { categoryColor } from "../../../lib/tableStyle";
 import type { PricePresetParams } from "../../../lib/tools/regexContract";
-import { MaxCharsInput } from "./controls";
 
 const CATEGORY_IDS = CATEGORIES.map((c) => c.type);
 
@@ -112,19 +111,13 @@ function Threshold({ params, onChange }: { params: PricePresetParams; onChange: 
   );
 }
 
-export function RegexParamsForm({ params, onChange, maxChars, onMaxChars }: {
-  params: PricePresetParams;
-  onChange: (p: PricePresetParams) => void;
-  maxChars: number;
-  onMaxChars: (n: number) => void;
-}) {
+export function RegexParamsForm({ params, onChange }: { params: PricePresetParams; onChange: (p: PricePresetParams) => void }) {
   return (
     <div className="flex flex-col gap-3">
       <CategoryChips params={params} onChange={onChange} />
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <ModeToggle params={params} onChange={onChange} />
         <Threshold params={params} onChange={onChange} />
-        <MaxCharsInput value={maxChars} onChange={onMaxChars} />
       </div>
     </div>
   );
