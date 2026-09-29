@@ -1,14 +1,13 @@
 import { z } from "zod";
 import {
   patchSummarySchema,
+  SUMMARY_STATUSES,
   type ReviewHint,
   type SummaryKind,
+  type SummaryStatus,
 } from "../sources/patchNotes/summaryContract";
 
 /** /api/patches contracts. Pure — the Patches tab parses every response with these. */
-
-export const SUMMARY_STATUSES = ["pending", "done", "failed"] as const;
-export type SummaryStatus = (typeof SUMMARY_STATUSES)[number];
 
 export const patchSummaryStateSchema = z.object({
   status: z.enum(SUMMARY_STATUSES),

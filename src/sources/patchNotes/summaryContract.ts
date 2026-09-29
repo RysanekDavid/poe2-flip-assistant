@@ -5,8 +5,9 @@ import { z } from "zod";
  * imports: the Patches tab parses the same summary shape in the browser.
  */
 
-/** Characters of patch text the Coach sends to the model; it truncates past this and says so. */
-export const PATCH_SUMMARY_INPUT_LIMIT = 150_000;
+/** Visible job states; the queue's internal 'waiting' (no body yet) is never exposed. */
+export const SUMMARY_STATUSES = ["pending", "done", "failed"] as const;
+export type SummaryStatus = (typeof SUMMARY_STATUSES)[number];
 
 /** Request caps, identical to PatchSummaryRequest — the poller clips to them before sending. */
 export const PATCH_SUMMARY_REQUEST_CAPS = {

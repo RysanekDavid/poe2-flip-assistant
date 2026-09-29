@@ -66,9 +66,14 @@ function HeaderRight({ patch, canResummarize, onChanged }: Omit<PatchCardProps, 
       {badge && <Chip text={badge.label} tip={badge.hint} accent={patch.summary?.status === "done"} />}
       {canResummarize && patch.review && <Chip text={reviewLabel(patch.review)} tip="Owner review state (patch:review) — the AI hint below never changes it." />}
       {canResummarize && patch.bodyValid && (
-        <Button size="sm" variant="ghost" onClick={resummarize.run} disabled={resummarize.busy} title={resummarize.error ?? "Queue a fresh AI summary (no new alert)"} aria-label="Re-summarize this patch">
+        <Button size="sm" variant="ghost" onClick={resummarize.run} disabled={resummarize.busy} title="Queue a fresh AI summary (no new alert)" aria-label="Re-summarize this patch">
           <RotateCcw className="h-3.5 w-3.5" aria-hidden />
         </Button>
+      )}
+      {resummarize.error && (
+        <span role="alert" className="text-xs text-amber-300">
+          re-summarize failed: {resummarize.error}
+        </span>
       )}
       <a href={patch.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:text-sky-200">
         forum <ExternalLink className="h-3 w-3" aria-hidden />
