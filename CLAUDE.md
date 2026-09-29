@@ -1,10 +1,13 @@
 # PoE2 Flip Assistant — obsolete historical bootstrap spec
 
-> **STOP:** the material below is an early bootstrap transcript and is not an implementation
-> contract. It contains obsolete units, architecture, endpoints, and security assumptions. Follow
-> `AGENTS.md`, the root `README.md`, `deploy/README.md`, and current code/tests instead. In
-> particular: `primaryValue` is Divine per item and must not be inverted; authentication is
-> mandatory; POESESSID is per-user encrypted data; no automated trade action is supported.
+> **STOP — read [`AGENTS.md`](AGENTS.md) first.** It is the current contract for agents: stack,
+> commands (including every CI test), architecture map, conventions, deploy notes and the KB claim
+> policy. The material below is an early bootstrap transcript kept only as history. It is not an
+> implementation contract and contains obsolete units, architecture, endpoints and security
+> assumptions. After `AGENTS.md`, follow the root `README.md`, `deploy/README.md`,
+> `docs/kb/README.md` and the current code/tests. In particular: `primaryValue` is Divine per item
+> and must not be inverted; authentication is mandatory; POESESSID is per-user encrypted data; no
+> automated trade action is supported.
 
 ## Co to dělá
 
