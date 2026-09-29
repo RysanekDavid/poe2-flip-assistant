@@ -3,7 +3,7 @@ import { CURRENCY_ART } from "../../lib/currencyArt";
 import artMarket from "../../assets/Web_market.png";
 import artWealth from "../../assets/Wealth.png";
 import artWaystone from "../../assets/items/waystone.png";
-import artTablet from "../../assets/items/precursor-tablet.png";
+import artTablet from "../../assets/items/regex-tablet.webp";
 import artRelic from "../../assets/items/coffer-relic.png";
 import artJewel from "../../assets/items/emerald-jewel.png";
 import artGold from "../../assets/items/gold.png";

@@ -16,8 +16,11 @@ import {
   type WaystoneSelection,
 } from "../../../lib/tools/regexPoolContract";
 import { InfoTip } from "../../ui/Tooltip";
+import { ItemArt } from "../../ui/ItemArt";
+import type { TABLET_BASE_ART } from "../../farm/strategies/tabletArt";
+import { tabletArtSrc } from "../../farm/strategies/tabletArtImages";
 import artWaystone from "../../../assets/items/waystone.png";
-import artTablet from "../../../assets/items/precursor-tablet.png";
+import artTablet from "../../../assets/items/regex-tablet.webp";
 import artRelic from "../../../assets/items/coffer-relic.png";
 import artJewel from "../../../assets/items/emerald-jewel.png";
 import { ChipToggle, Field, RarityChips, VerifyMarker } from "./controls";
@@ -27,6 +30,17 @@ import { Segmented, type SegmentOption } from "./Segmented";
 import { setProp, tierOf } from "./selectionOps";
 
 const POOL_ART: Record<PoolTab, StaticImageData> = { waystone: artWaystone, tablet: artTablet, relic: artRelic, jewel: artJewel };
+// Each type chip shows its base tablet's art; the Record type keeps every pool band covered.
+const BAND_BASE: Record<(typeof TABLET_TYPES)[number], keyof typeof TABLET_BASE_ART> = {
+  breach: "Breach Tablet",
+  expedition: "Expedition Tablet",
+  delirium: "Delirium Tablet",
+  ritual: "Ritual Tablet",
+  generic: "Irradiated Tablet",
+  map_boss: "Overseer Tablet",
+  abyss: "Abyss Tablet",
+  incursion: "Temple Tablet",
+};
 const ITEM_TITLE: Record<PoolTab, string> = { waystone: "Waystone", tablet: "Tablet", relic: "Relic", jewel: "Jewel" };
 
 const MATCH_OPTIONS: readonly SegmentOption<MatchMode>[] = [
@@ -100,6 +114,7 @@ function TabletTypes({ pool, selection, onChange }: { pool: RegexPool; selection
       <div className="flex flex-wrap gap-1.5">
         {TABLET_TYPES.map((t) => (
           <ChipToggle key={t} size="md" on={selection.types.includes(t)} onClick={() => toggle(t)} title={`${label(t)} Tablet`}>
+            <ItemArt src={tabletArtSrc({ type: BAND_BASE[t], unique: null })} size={5} />
             {label(t)}
           </ChipToggle>
         ))}

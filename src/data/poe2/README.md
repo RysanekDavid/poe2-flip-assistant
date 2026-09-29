@@ -139,6 +139,9 @@ node, mod or source.
 
 The loader throws on any defect (id ≠ filename, unknown yield, a master node poe2db puts elsewhere);
 `npm run test:strategies` pins the evidence floor, and `npm run strategies:check` (network, not CI)
-resolves every stat id, tablet base and unique tablet against the live trade2 data catalog. Files
+resolves every stat id, tablet base and unique tablet against the live trade2 data catalog, printing
+every trade2 text filed under each id (pass extra `explicit.stat_<n>` ids after `--` to print those too);
+a stat id is pinned only when one of its texts is the tablet text. Each mod carries its `side`
+(prefix, suffix or unique), which the test checks against the 0.5.5b tablet pool. Files
 stay `status: "draft"` until the owner reviews them; move `verified_against` only after re-checking
 the whole file against the new patch. The files are deliberately not in the Coach's RAG corpus.
