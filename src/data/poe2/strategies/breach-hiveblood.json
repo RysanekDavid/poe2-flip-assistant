@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "id": "breach-hiveblood",
+  "title": "Breach: Wombgifts and Hiveblood",
+  "summary": "Juiced Breach maps for Wombgifts and Hiveblood: Breach tablets roll Wombgift level-ups and Hiveblood quantity, Moment of Risk scales Wombgift levels with every map modifier, and Breeding Program picks the Wombgift type.",
+  "mechanics": [
+    "breach"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "build_needs": "Clears Unstable Breaches with extra rare waves in juiced T15+ maps.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "lavish-wombgift",
+        "name": "Lavish Wombgift"
+      },
+      "role": "primary",
+      "why": "Grows into a Currency item on the Genesis Tree; Breeding Program can favour it.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Wombgifts",
+          "https://poe2db.tw/us/Breeding_Program"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "ornate-wombgift",
+        "name": "Ornate Wombgift"
+      },
+      "role": "secondary",
+      "why": "Grows into an Amulet on the Genesis Tree.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Wombgifts"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "signet-wombgift",
+        "name": "Signet Wombgift"
+      },
+      "role": "secondary",
+      "why": "Grows into a Ring on the Genesis Tree.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Wombgifts"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "revelatory-wombgift",
+        "name": "Revelatory Wombgift"
+      },
+      "role": "lottery",
+      "why": "Grows into a Breachstone on the Genesis Tree.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Wombgifts"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "doryani",
+    "nodes": [
+      {
+        "name": "Evolutionary Pressure",
+        "tier": 1,
+        "effect": "1% increased Rarity of Items Dropped by Monsters, 2% increased Effectiveness of Monsters and 3% increased chance of Monster Modifiers on Rare Monsters, each per Explicit Modifier on the Map",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Improved Calibration",
+        "tier": 2,
+        "effect": "Waystones have 25% more effect of Prefix Modifiers or 25% more effect of Suffix Modifiers when opening Maps",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": null,
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://poe2db.tw/us/Moment_of_Risk"
+      ],
+      "note": "Owner's notes pick Doryani for Breach. Our reading: Evolutionary Pressure and Moment of Risk both scale per Explicit Modifier on the Map, and Improved Calibration strengthens waystone mods. Not measured."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Moment of Risk",
+      "tree": "Breach",
+      "effect": "Wombgifts have 5% chance to drop one Level higher per Explicit Modifier on the Map; Unstable Breaches spawn 2 additional Rare Monsters when Stabilised",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Moment_of_Risk",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Moment_of_Risk"
+        ]
+      }
+    },
+    {
+      "name": "Breeding Program",
+      "tree": "Breach",
+      "effect": "100% increased chance to find selected Wombgifts (Lavish, Ornate, Banded or Signet)",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Breeding_Program",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Breeding_Program"
+        ]
+      }
+    },
+    {
+      "name": "Hiveblood Quantity",
+      "tree": "Breach",
+      "effect": "5% increased Quantity of Hiveblood found (a small node the tree repeats)",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Hiveblood_Quantity",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Hiveblood_Quantity"
+        ]
+      }
+    },
+    {
+      "name": "Wombgift Quantity",
+      "tree": "Breach",
+      "effect": "5% increased Quantity of Wombgifts found (a small node the tree repeats)",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Wombgift_Quantity",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Wombgift_Quantity"
+        ]
+      }
+    },
+    {
+      "name": "Shape the Chains",
+      "tree": "Breach",
+      "effect": "Choose: 30% increased Effectiveness of Rare Breach Monsters with 20% reduced Pack Size, or 20% increased Effectiveness of Breach Monsters with 15% increased Pack Size",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Shape_the_Chains",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Shape_the_Chains"
+        ]
+      }
+    },
+    {
+      "name": "Swelling Hives",
+      "tree": "Breach",
+      "effect": "Breach Hives have 1 additional waves of Hiveborn Monsters (requires revealing a Breach Stronghold)",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Swelling_Hives",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Swelling_Hives"
+        ]
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Breach Tablet",
+      "unique": null,
+      "count": null,
+      "mods": [
+        {
+          "text": "Wombgifts have (10–30)% chance to drop one Level higher in Map",
+          "trade_stat_id": "explicit.stat_2889272422",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Breach_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Owner's priority mod."
+          }
+        },
+        {
+          "text": "(30–60)% increased Quantity of Hiveblood found in Map",
+          "trade_stat_id": "explicit.stat_2778285247",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Breach_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Unstable Breaches in Map spawn (1–2) additional Rare Monsters when Stabilised",
+          "trade_stat_id": "explicit.stat_3762913035",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Breach_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats",
+              "https://www.pathofexile.com/forum/view-thread/4000864"
+            ],
+            "note": "0.5.5 cut this from 1–3 to 1–2 and now spawns the rares in waves of 5."
+          }
+        },
+        {
+          "text": "Monsters have (10–15)% increased Effectiveness",
+          "trade_stat_id": "explicit.stat_2065500219",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Breach_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "(8–12)% increased Rarity of Items found in Map",
+          "trade_stat_id": "explicit.stat_2306002879",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Breach_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "monster_rarity",
+      "monster_effectiveness",
+      "item_rarity"
+    ],
+    "notes": "Owner's order. Moment of Risk adds 5% Wombgift level-up chance per explicit Map modifier, so more waystone mods help too.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Waystones",
+        "https://poe2db.tw/us/Moment_of_Risk"
+      ],
+      "note": "Owner's run notes plus the Moment of Risk text; the effect on Breach rewards is not measured."
+    }
+  },
+  "steps": [
+    "Allocate Moment of Risk and Breeding Program (pick the Wombgift type you sell), then the Hiveblood and Wombgift quantity nodes.",
+    "Set Doryani: Evolutionary Pressure and Improved Calibration.",
+    "Roll waystones for monster rarity, effectiveness and item rarity; more explicit mods feed Moment of Risk.",
+    "Slot a Breach Tablet: Wombgift level-up first, then Hiveblood quantity, then extra Unstable Breach rares.",
+    "Grow Wombgifts on the Genesis Tree with the Hiveblood you collect."
+  ],
+  "risks": [
+    "Hiveblood is spent at the Genesis Tree (cap 100,000) and has no market price, so it is not in the basket.",
+    "0.5.5 spawns stabilised Unstable Breach rares in waves of 5.",
+    "Wombgifts are priced as seeds; what they grow into is random."
+  ],
+  "measured": null
+}

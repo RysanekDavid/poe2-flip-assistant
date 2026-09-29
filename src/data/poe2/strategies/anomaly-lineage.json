@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "id": "anomaly-lineage",
+  "title": "Anomaly maps: Jade Isles lineage supports",
+  "summary": "Reveal the Jade Isles anomaly and farm its boss for Karui lineage supports; Memories of the Karui adds a 15% extra-lineage chance. Owner's routine: two unique Irradiated tablets plus an Overseer on the first run, three Overseers after.",
+  "mechanics": [
+    "anomaly",
+    "map_boss"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "high",
+    "build_needs": "Kills a Deadly anomaly boss reliably; Overseer tablets and unique tablets cost currency each run.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "rakiatas-flow",
+        "name": "Rakiata's Flow"
+      },
+      "role": "primary",
+      "why": "Drops from Manoki, the Chosen (The Jade Isles).",
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://poe2db.tw/us/Lineage_Supports"
+        ],
+        "note": "poe2db's community-wiki drop list: 'Anomaly boss Manoki, the Chosen in The Jade Isles'."
+      }
+    },
+    {
+      "ref": {
+        "id": "tawhoas-tending",
+        "name": "Tawhoa's Tending"
+      },
+      "role": "primary",
+      "why": "Drops from Manoki, the Chosen (The Jade Isles).",
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://poe2db.tw/us/Lineage_Supports"
+        ],
+        "note": "poe2db's community-wiki drop list: 'Anomaly boss Manoki, the Chosen in The Jade Isles'."
+      }
+    },
+    {
+      "ref": {
+        "id": "kaoms-madness",
+        "name": "Kaom's Madness"
+      },
+      "role": "primary",
+      "why": "Drops from Manoki, the Chosen (The Jade Isles).",
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://poe2db.tw/us/Lineage_Supports"
+        ],
+        "note": "poe2db's community-wiki drop list: 'Anomaly boss Manoki, the Chosen in The Jade Isles'."
+      }
+    },
+    {
+      "ref": {
+        "id": "tasalios-rhythm",
+        "name": "Tasalio's Rhythm"
+      },
+      "role": "primary",
+      "why": "Drops from Manoki, the Chosen (The Jade Isles).",
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://poe2db.tw/us/Lineage_Supports"
+        ],
+        "note": "poe2db's community-wiki drop list: 'Anomaly boss Manoki, the Chosen in The Jade Isles'."
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "jado",
+    "nodes": [
+      {
+        "name": "Unforeseen Threats",
+        "tier": 2,
+        "effect": "5% chance on completing Maps for a nearby Anomaly Map to be revealed",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Partial Translations",
+        "tier": 3,
+        "effect": "Randomly gain between 0 and 40% increased effect of Explicit Modifiers on Tablets",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Untold Histories",
+        "tier": 4,
+        "effect": "35% increased chance to find Lineage Supports; Pinnacle Bosses take 35% less Damage; Pinnacle Bosses have an 50% increased chance to drop Lineage Supports",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": null,
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://poe2db.tw/us/Anomaly_Map"
+      ],
+      "note": "Owner's notes: Jado for Anomaly maps. Unforeseen Threats is the only master node that reveals Anomaly Maps (poe2db); the other picks are our synthesis."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Memories of the Karui",
+      "tree": "Atlas",
+      "effect": "15% chance for the Jade Isles Boss to drop an extra Anomaly Map Lineage Support (level 75+ areas)",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Memories_of_the_Karui",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Memories_of_the_Karui"
+        ]
+      }
+    },
+    {
+      "name": "Fit for a King",
+      "tree": "Atlas",
+      "effect": "20% increased Rarity of Items dropped by Map Bosses",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Fit_for_a_King",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Fit_for_a_King"
+        ],
+        "note": "Whether the Anomaly boss counts as a Map Boss for this node is not stated by poe2db."
+      }
+    },
+    {
+      "name": "Hard-Won Treasures",
+      "tree": "Atlas",
+      "effect": "15% increased Quantity of Items dropped by Map Bosses",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Hard-Won_Treasures",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Hard-Won_Treasures"
+        ],
+        "note": "Whether the Anomaly boss counts as a Map Boss for this node is not stated by poe2db."
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Irradiated Tablet",
+      "unique": "Visions of Paradise",
+      "count": null,
+      "mods": [
+        {
+          "text": "If Map was not previously Irradiated, completing Map adds Irradiation instead",
+          "trade_stat_id": "explicit.stat_2371108370",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Visions_of_Paradise",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "First run only (owner's notes); the item text is poe2db's, the benefit on this map is untested here."
+          }
+        }
+      ]
+    },
+    {
+      "type": "Irradiated Tablet",
+      "unique": "Mastered Domain",
+      "count": null,
+      "mods": [
+        {
+          "text": "Map also counts as a Water Map",
+          "trade_stat_id": "explicit.stat_3271982291",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Mastered_Domain",
+              "https://www.pathofexile.com/api/trade2/data/stats",
+              "https://poe2db.tw/us/The_Jade_Isles"
+            ],
+            "note": "First run only (owner's notes). poe2db already lists The Jade Isles as Water/Ocean, so the biome line may add nothing."
+          }
+        }
+      ]
+    },
+    {
+      "type": "Overseer Tablet",
+      "unique": null,
+      "count": 3,
+      "mods": [
+        {
+          "text": "(35–60)% increased Rarity of Items dropped by Map Bosses",
+          "trade_stat_id": "explicit.stat_4255069232",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Owner's priority over quantity."
+          }
+        },
+        {
+          "text": "(13–20)% increased Quantity of Items dropped by Map Bosses",
+          "trade_stat_id": "explicit.stat_3119172063",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "item_rarity",
+      "monster_effectiveness"
+    ],
+    "notes": "Owner's notes: item rarity and monster effectiveness.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Owner's run notes; poe2db confirms these waystone totals exist, not their effect on the anomaly boss."
+    }
+  },
+  "steps": [
+    "Set Jado: Unforeseen Threats, Partial Translations, Untold Histories; allocate Memories of the Karui.",
+    "Reveal The Jade Isles (Eye of the Storm): activate a Karui Beacon in a nearby map to lift the Maelstrom.",
+    "First run: Visions of Paradise + Mastered Domain + one Overseer Tablet (Map Boss rarity first, then quantity).",
+    "Later runs: three Overseer Tablets with Map Boss rarity and quantity.",
+    "Kill Manoki, the Chosen; sell the lineage supports (unpriced ones show a dash, not 0)."
+  ],
+  "risks": [
+    "Anomaly bosses are Deadly (poe2db Anomaly Map).",
+    "poe2db does not say whether Map Boss tablet mods apply to the anomaly boss; the owner's runs rely on it — verify on your own kills.",
+    "The drop list is a community-wiki section, not datamined; which lineage drops is random among the four."
+  ],
+  "measured": null
+}

@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "id": "expedition-grand",
+  "title": "Expedition: logbooks and Grand Expeditions",
+  "summary": "0.5.5 made Expedition a core mechanic: run Expedition tablets for logbooks and rare runic monsters, then open Grand Expeditions, which The Quest Continues pushes to up to 3 modifiers.",
+  "mechanics": [
+    "expedition"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "build_needs": "Kills rare runic monsters and ice-encased bosses unearthed together by one explosive chain.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "expedition-logbook",
+        "name": "Expedition Logbook"
+      },
+      "role": "primary",
+      "why": "Runic Monsters drop logbooks; 'of Knowledge', Sown Seeds and Logbook Chance raise it.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Expedition_Tablet",
+          "https://poe2db.tw/us/Sown_Seeds",
+          "https://poe2db.tw/us/Logbook_Chance"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "verisium",
+        "name": "Verisium"
+      },
+      "role": "secondary",
+      "why": "Monsters from Verisium Remnants drop Verisium; the 'of Verisium' tablet mod raises it.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Expedition_Tablet"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "liquid-verisium",
+        "name": "Liquid Verisium"
+      },
+      "role": "secondary",
+      "why": "Listed among Expedition items; starts a Runic Remnant encounter.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Expedition"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "hilda",
+    "nodes": [
+      {
+        "name": "Scarred Lands",
+        "tier": 1,
+        "effect": "20% increased number of Rare Expedition Monsters; 15% increased number of Runic Monster Markers",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Ancient Inscriptions",
+        "tier": 3,
+        "effect": "8% increased effect of Explicit Modifiers on Tablets for each type of Tablet affecting Map area",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": "Jado T2 Eastern Knowledge: Verisium Remnants have 10% chance to be rolled an additional time, keeping the rarest outcome.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas"
+      ],
+      "note": "Scarred Lands is Hilda's Expedition node (poe2db); pairing it with Ancient Inscriptions is our synthesis. Not measured."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "The Quest Continues",
+      "tree": "Expedition",
+      "effect": "Grand Expeditions may have up to 3 Modifiers; Grand Expeditions have +1 Area Level",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/The_Quest_Continues",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/The_Quest_Continues"
+        ]
+      }
+    },
+    {
+      "name": "Sown Seeds",
+      "tree": "Expedition",
+      "effect": "Runic Monsters have 50% increased chance to drop Logbooks per Runic Modifier",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Sown_Seeds",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Sown_Seeds"
+        ]
+      }
+    },
+    {
+      "name": "Logbook Chance",
+      "tree": "Expedition",
+      "effect": "5% increased Quantity of Expedition Logbooks dropped by Runic Monsters (a small node the tree repeats)",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Logbook_Chance",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Logbook_Chance"
+        ]
+      }
+    },
+    {
+      "name": "Gaining Traction",
+      "tree": "Expedition",
+      "effect": "Verisium Remnants have 50% increased Monster Rarity per Remnant Completed in Area",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Gaining_Traction",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Gaining_Traction"
+        ]
+      }
+    },
+    {
+      "name": "Expanding Territory",
+      "tree": "Expedition",
+      "effect": "Choose: 10% chance for an additional Verisium Remnant Encounter, or 25% increased chance of Expedition Encounters",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Expanding_Territory",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Expanding_Territory"
+        ]
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Expedition Tablet",
+      "unique": null,
+      "count": null,
+      "mods": [
+        {
+          "text": "(15–25)% increased Quantity of Expedition Logbooks dropped by Runic Monsters in Map",
+          "trade_stat_id": "explicit.stat_1083387327",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Expedition_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "The first (1–2) unearthed Runic Monsters will be Rare Monsters in Map",
+          "trade_stat_id": "explicit.stat_3963944561",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Expedition_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "trade2 words this stat for a single monster; the search matches the mod at any roll."
+          }
+        },
+        {
+          "text": "(15–25)% increased Expedition Monster Rarity in Map",
+          "trade_stat_id": "explicit.stat_2905096233",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Expedition_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Expeditions contain (1–2) Additional Bosses encased in ice in Map",
+          "trade_stat_id": "explicit.stat_1183698646",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Expedition_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "trade2 words this stat for a single boss; the search matches the mod at any roll."
+          }
+        },
+        {
+          "text": "Expeditions have +(30–40)% Surpassing chance to contain an additional Verisium Remnant",
+          "trade_stat_id": "explicit.stat_3653794255",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Expedition_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "item_rarity",
+      "monster_rarity"
+    ],
+    "notes": "Rarity totals for unearthed chests and rares; no measured order.",
+    "claim": {
+      "v": "uv",
+      "src": [
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Editorial; no source ties waystone totals to Expedition rewards."
+    }
+  },
+  "steps": [
+    "Allocate The Quest Continues and Sown Seeds, then Logbook Chance and Gaining Traction.",
+    "Set Hilda: Scarred Lands and Ancient Inscriptions.",
+    "Slot Expedition Tablets (0.5.5: 1 adds an Expedition; 2 add a Verisium Remnant and 35% density; 3 another Expedition; 4 another Remnant and density).",
+    "Chain explosives through Remnants before the rares; run logbooks as Grand Expeditions."
+  ],
+  "risks": [
+    "Expedition Tablets cannot be obtained in the Runes of Aldur league (0.5.5 patch notes) — Forbidden Rites and Standard only.",
+    "Remnant modifiers also make the unearthed monsters harder."
+  ],
+  "measured": null
+}

@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "id": "ritual-omens",
+  "title": "Ritual: omen favours",
+  "summary": "Run Ritual tablets that tilt favours toward Omens and make deferring cheaper, then buy the omens with tribute. Since 0.5.5 a second Ritual Tablet adds an extra altar.",
+  "mechanics": [
+    "ritual"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "league_start",
+    "build_needs": "Kills revived Ritual waves; no boss requirement.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "omen-of-whittling",
+        "name": "Omen of Whittling"
+      },
+      "role": "primary",
+      "why": "Listed among Ritual items (favours); 'of Omens' raises the chance a favour is an Omen.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Ritual",
+          "https://poe2db.tw/us/Ritual_Tablet"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "omen-of-greater-exaltation",
+        "name": "Omen of Greater Exaltation"
+      },
+      "role": "secondary",
+      "why": "Listed among Ritual items.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Ritual"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "omen-of-dextral-exaltation",
+        "name": "Omen of Dextral Exaltation"
+      },
+      "role": "secondary",
+      "why": "Listed among Ritual items.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Ritual"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "omen-of-sinistral-exaltation",
+        "name": "Omen of Sinistral Exaltation"
+      },
+      "role": "secondary",
+      "why": "Listed among Ritual items.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Ritual"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "omen-of-dextral-annulment",
+        "name": "Omen of Dextral Annulment"
+      },
+      "role": "lottery",
+      "why": "Listed among Ritual items.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Ritual"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "hilda",
+    "nodes": [
+      {
+        "name": "Ancient Inscriptions",
+        "tier": 3,
+        "effect": "8% increased effect of Explicit Modifiers on Tablets for each type of Tablet affecting Map area",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": "Jado T3 Partial Translations: randomly gain 0–40% increased effect of Explicit Modifiers on Tablets.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas"
+      ],
+      "note": "No master node targets Ritual; stronger tablet mods are the only lever. Our pick, not measured."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Mysterious Rites",
+      "tree": "Ritual",
+      "effect": "Rituals have a 8% chance to be the Queen's Ritual, which has more Favours, 10 additional Omens in the first set of Favours and an additional Idol",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Mysterious_Rites",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Mysterious_Rites"
+        ]
+      }
+    },
+    {
+      "name": "Patient Devotion",
+      "tree": "Ritual",
+      "effect": "Deferring Favours at Ritual Altars costs 50% reduced Tribute; Deferred Favours reappear 50% sooner",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Patient_Devotion",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Patient_Devotion"
+        ]
+      }
+    },
+    {
+      "name": "Tempting Offers",
+      "tree": "Ritual",
+      "effect": "Ritual Altars allow rerolling Favours 1 additional times",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Tempting_Offers",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Tempting_Offers"
+        ]
+      }
+    },
+    {
+      "name": "Increased Tribute",
+      "tree": "Ritual",
+      "effect": "Monsters Sacrificed at Ritual Altars grant 5% increased Tribute (a small node the tree repeats)",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Increased_Tribute",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Increased_Tribute"
+        ]
+      }
+    },
+    {
+      "name": "Magnanimous Offerings",
+      "tree": "Ritual",
+      "effect": "Rerolling Favours at Ritual Altars has 20% chance to be a Free Reroll",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Magnanimous_Offerings",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Magnanimous_Offerings"
+        ]
+      }
+    },
+    {
+      "name": "Royal Lenience",
+      "tree": "Ritual",
+      "effect": "Tribute already offered to the King may be used to Defer items; deferring this way costs 500% more Offered Tribute",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Royal_Lenience",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Royal_Lenience",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "New in 0.5.5."
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Ritual Tablet",
+      "unique": null,
+      "count": 2,
+      "mods": [
+        {
+          "text": "Ritual Favours in Map have (35–70)% increased chance to be Omens",
+          "trade_stat_id": "explicit.stat_4219853180",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Deferring Favours at Ritual Altars in Map costs (20–30)% reduced Tribute",
+          "trade_stat_id": "explicit.stat_1345835998",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "trade2 words this stat as 'increased'; the tablet rolls it as reduced."
+          }
+        },
+        {
+          "text": "Monsters Sacrificed at Ritual Altars in Map grant (18–30)% increased Tribute",
+          "trade_stat_id": "explicit.stat_159726667",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Ritual Altars in Map allow rerolling Favours (1–3) additional times",
+          "trade_stat_id": null,
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet"
+            ],
+            "note": "No search button: trade2's closest stat reads 'an additional time' (120737942); that it is this mod is unconfirmed."
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "pack_size",
+      "monster_rarity"
+    ],
+    "notes": "More monsters to sacrifice should mean more tribute; no source measures it.",
+    "claim": {
+      "v": "uv",
+      "src": [
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Editorial; no source ties waystone totals to tribute."
+    }
+  },
+  "steps": [
+    "Allocate Mysterious Rites and Patient Devotion, then Tempting Offers and the Increased Tribute nodes.",
+    "Slot two Ritual Tablets (0.5.5: more than one adds an extra altar if possible), led by 'of Omens'.",
+    "Reroll for Omens; defer the ones you cannot afford yet and buy them when they return."
+  ],
+  "risks": [
+    "Royal Lenience defers with tribute already offered to the King at 500% more cost — it trades away Audience progress.",
+    "Which Omens a favour list offers is random; the basket prices examples only."
+  ],
+  "measured": null
+}

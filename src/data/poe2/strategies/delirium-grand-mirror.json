@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "id": "delirium-grand-mirror",
+  "title": "Delirium: Grand Mirror fog and Simulacrum",
+  "summary": "Follow Grand Mirror fog (10 maps since 0.5.5), run Delirium tablets for Fracturing Mirrors and unique bosses, and turn Simulacrum Splinters into Simulacrums.",
+  "mechanics": [
+    "delirium"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "build_needs": "Survives rising Deliriousness across a fog cluster and clears Simulacrum waves.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "simulacrum-splinter",
+        "name": "Simulacrum Splinter"
+      },
+      "role": "primary",
+      "why": "'Is this about me... or you?': Simulacrum Splinters can drop from Delirium Monsters in level 75+ maps.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Is_this_about_me..._or_you_",
+          "https://poe2db.tw/us/Delirium"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "simulacrum",
+        "name": "Simulacrum"
+      },
+      "role": "secondary",
+      "why": "Adds the Simulacrum to a Map; sell it or run it.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Delirium"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "concentrated-liquid-fear",
+        "name": "Concentrated Liquid Fear"
+      },
+      "role": "secondary",
+      "why": "Listed among Delirium items; 'I know your childhood fears...' raises Liquid Emotion drops.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Delirium",
+          "https://poe2db.tw/us/I_know_your_childhood_fears..."
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "liquid-paranoia",
+        "name": "Liquid Paranoia"
+      },
+      "role": "lottery",
+      "why": "Listed among Delirium items.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Delirium"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "hilda",
+    "nodes": [
+      {
+        "name": "Breeding Season",
+        "tier": 1,
+        "effect": "15% increased Rare Monsters; Rare Monsters have 25% increased chance of Monster Modifiers",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Ancient Inscriptions",
+        "tier": 3,
+        "effect": "8% increased effect of Explicit Modifiers on Tablets for each type of Tablet affecting Map area",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": null,
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://poe2db.tw/us/These_demons_are_all_your_own..."
+      ],
+      "note": "No master node targets Delirium. Our picks: more rares (which 'These demons are all your own...' turns into Delirium Demons in fog) and stronger tablets. Not measured."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Recurring Nightmares",
+      "tree": "Delirium",
+      "effect": "Choose how Grand Mirror fog spreads: maps within the fog have +30% additional Deliriousness, or the fog spreads to +4 additional Maps (requires defeating the Delirium pinnacle boss)",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Recurring_Nightmares",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Recurring_Nightmares",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "0.5.5 changed the first option to +30% Deliriousness."
+      }
+    },
+    {
+      "name": "Is this about me... or you?",
+      "tree": "Delirium",
+      "effect": "Simulacrum Splinters can drop from Delirium Monsters in level 75+ Map Areas; Megalomaniac Jewels found have a 10% chance to allocate 3 notable passive skills",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Is_this_about_me..._or_you_",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Is_this_about_me..._or_you_"
+        ]
+      }
+    },
+    {
+      "name": "The mirrors... the mirrors!",
+      "tree": "Delirium",
+      "effect": "50% increased Fracturing Mirrors manifested within Delirium Fog",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/The_mirrors..._the_mirrors",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/The_mirrors..._the_mirrors"
+        ]
+      }
+    },
+    {
+      "name": "I know your childhood fears...",
+      "tree": "Delirium",
+      "effect": "25% increased Liquid Emotions dropped by Monsters; Liquid Emotions found have a 20% chance to be Ancient Liquid Emotions",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/I_know_your_childhood_fears...",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/I_know_your_childhood_fears...",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "0.5.5 fixed a bug that made the Ancient chance 50% instead of 20%."
+      }
+    },
+    {
+      "name": "Grand Mirror Chance",
+      "tree": "Delirium",
+      "effect": "5% increased chance for a Grand Mirror to appear on a nearby Map when Map Bosses are slain within Fog",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Grand_Mirror_Chance",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Grand_Mirror_Chance"
+        ]
+      }
+    },
+    {
+      "name": "These demons are all your own...",
+      "tree": "Delirium",
+      "effect": "Rare Monsters always Manifest Delirium Demons when within Fog",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/These_demons_are_all_your_own...",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/These_demons_are_all_your_own..."
+        ]
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Delirium Tablet",
+      "unique": null,
+      "count": null,
+      "mods": [
+        {
+          "text": "Delirium Fog in Map spawns (15–30)% increased Fracturing Mirrors",
+          "trade_stat_id": "explicit.stat_551040294",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Delirium_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Delirium Encounters in Map are (15–30)% more likely to spawn Unique Bosses",
+          "trade_stat_id": "explicit.stat_3962960008",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Delirium_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "(15–30)% increased Stack size of Simulacrum Splinters found in Map",
+          "trade_stat_id": "explicit.stat_3836551197",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Delirium_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "pack_size",
+      "monster_rarity"
+    ],
+    "notes": "More monsters in the fog means more Delirium kills; there is no measured order.",
+    "claim": {
+      "v": "uv",
+      "src": [
+        "https://poe2db.tw/us/Waystones",
+        "https://www.pathofexile.com/forum/view-thread/4000864"
+      ],
+      "note": "Editorial. 0.5.5 stopped Delirium pack counts scaling above 100% Deliriousness; no source ties waystone totals to Delirium rewards."
+    }
+  },
+  "steps": [
+    "Allocate Recurring Nightmares, 'Is this about me... or you?' and the Fracturing Mirror / Liquid Emotion notables.",
+    "Use a Grand Mirror: its fog spreads to 10 maps (0.5.5).",
+    "Run the fogged maps with a Delirium Tablet (Fracturing Mirrors, unique bosses, splinter stacks).",
+    "Sell Simulacrum Splinters in stacks, or run the Simulacrum."
+  ],
+  "risks": [
+    "0.5.5: Delirium packs no longer scale above 100% Deliriousness — pushing deliriousness past that adds danger, not packs.",
+    "Liquid Emotion prices differ a lot by type; the basket lists two examples only."
+  ],
+  "measured": null
+}
