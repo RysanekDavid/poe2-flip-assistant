@@ -18,6 +18,7 @@ import { patchStaleness, PATCH_STALE_TTL_MS, recipePatchStaleness, resetPatchSta
 import { provenanceViews } from "../core/craftProvenance/view";
 import { assembleReport } from "../core/craftMargin";
 import type { EntityRow } from "../core/entities/schema";
+import { TARGET_RARITIES, targetRarities } from "./tools/craftMovesTargets";
 
 let fail = 0;
 const ok = (name: string, cond: boolean, extra = ""): void => {
@@ -120,6 +121,17 @@ function testFloorsAndRarity(deps: AuditDeps): void {
   ok("Perfect Augmentation on a magic base as bought → rarity ok", has(run([MATS.perfectAug], base(80, "magic")), "rarity", "ok"));
   ok("magic-only currency on a later step → rarity unknown (no simulation)", has(run([MATS.perfectAug], base(80, "rare", false)), "rarity", "unknown"));
   ok("unpinned base rarity → rarity unknown", has(run([MATS.greaterAug], { ilvlMin: 80, rarity: undefined, asBought: true }), "rarity", "unknown"));
+  testFloorRaritiesVsItemText(deps);
+}
+
+/** VERIFIED_FLOORS rarities (legality's rarity check) accept exactly what each orb's item text targets. */
+function testFloorRaritiesVsItemText(deps: AuditDeps): void {
+  const floored = [MATS.greaterTransmute, MATS.perfectTransmute, MATS.greaterAug, MATS.perfectAug, MATS.greaterExalted, MATS.perfectExalted];
+  for (const m of floored) {
+    const want = targetRarities(deps.byExchangeId(m.id)?.directions ?? null);
+    const got = TARGET_RARITIES.filter((r) => has(checkStep(step([m]), base(80, r), deps.byExchangeId, deps.gameDataPatch), "rarity", "ok"));
+    ok(`${m.label}: legality rarity matches the item text`, JSON.stringify(got) === JSON.stringify(want), `legality ${got.join("/")} vs item text ${want.join("/")}`);
+  }
 }
 
 function testPairing(deps: AuditDeps): void {

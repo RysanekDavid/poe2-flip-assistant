@@ -3,8 +3,8 @@ import type { FamilyGateView, ItemStateView, PricedMoveView, RankedMoveView } fr
 /*
  * "Next best move": the top three legal moves as deterministic cards — NO probabilities (PoE2 mod
  * weights are not public), only an order a crafter would agree with:
- *   tier 1 — fills an open slot on the side you are aiming at (Sinistral/Dextral Exaltation, an
- *            essence into an open slot);
+ *   tier 1 — fills an open slot on the side you are aiming at (Sinistral/Dextral Exaltation, a
+ *            Lesser/regular/Greater essence taking a magic item to rare);
  *   tier 2 — adds one random mod (Exalt, Regal, Augmentation, Transmutation, Alchemy, Greater
  *            Exaltation);
  *   tier 3 — frees a slot (Annulment, Erasure-steered or plain Chaos, Perfect Essence).
@@ -23,13 +23,15 @@ const SIDE_ADDS: Record<string, Side | "any"> = {
   "omen-dextral-exaltation": "suffix",
   "omen-sinistral-greater-exaltation": "prefix",
   "omen-dextral-greater-exaltation": "suffix",
-  "essence-normal": "any",
+  essence: "any",
   "essence-greater": "any",
 };
 
 /** exalt-greater / chaos-perfect → exalt / chaos: currency tiers are one decision (and one card).
- *  Essences are NOT tiers of each other — Greater adds, Perfect replaces — so they keep their id. */
-const variantKey = (id: string): string => id.replace(/^(exalt|regal|aug|transmute|chaos)-(greater|perfect)$/, "$1");
+ *  Lesser/regular and Greater essences both upgrade a magic item, so they collapse too; a Perfect
+ *  Essence replaces a mod on a rare instead (currency-core §4), so it keeps its own id. */
+const variantKey = (id: string): string =>
+  id.replace(/^(exalt|regal|aug|transmute|chaos)-(greater|perfect)$/, "$1").replace(/^essence-greater$/, "essence");
 
 // matched against variantKey(id), so every currency tier classifies exactly like its base orb
 const RANDOM_ADD = /^(exalt|regal|aug|transmute|alchemy|omen-greater-exaltation)$/;

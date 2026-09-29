@@ -12,7 +12,7 @@ import { rankMoves, tierOf } from "../../core/tools/craftmoves/rank";
 import { legalMoves } from "../../core/tools/craftmoves/rules";
 import { craftMovesResponseSchema } from "../../lib/tools/craftMovesContract";
 import { decodeItem, encodeItem, SHARE_MAX_BYTES, shareQuery } from "../../lib/tools/shareItem";
-import { itemText, RING, ringLines } from "./craftMovesFixtures";
+import { itemText, RING, ringLines, renderFamily } from "./craftMovesFixtures";
 
 function classify(cat: CraftCatalog, text: string): ItemState {
   const r = classifyText(text, cat);
@@ -65,15 +65,38 @@ function testCheapestAndVariants(cat: CraftCatalog): void {
   assert.ok(ids.includes("exalt-greater"), "the cheapest Exalt tier represents them");
 }
 
-/** Currency tiers classify like their base orb; essences are distinct moves, never merged. */
+const stub = (id: string, totalDiv: number | null = null) => ({ id, label: id, family: "currency" as const, materials: [], requires: "", effect: "", warnings: [], notes: [], floor: null, source: "", verified: true, totalDiv, totalEx: null });
+
+/** Currency tiers classify like their base orb; magic-tier essences are one card, Perfect is another. */
 function testTierClassification(): void {
-  const stub = (id: string) => ({ id, label: id, family: "currency" as const, materials: [], requires: "", effect: "", warnings: [], notes: [], floor: null, source: "", verified: true, totalDiv: null, totalEx: null });
   const tiers = (ids: string[]) => ids.map((id) => tierOf(stub(id), null));
   assert.deepEqual(tiers(["chaos", "chaos-greater", "chaos-perfect"]), [3, 3, 3], "every Chaos tier frees a slot");
   assert.deepEqual(tiers(["exalt", "exalt-greater", "regal-perfect", "aug-greater", "transmute-perfect", "alchemy", "omen-greater-exaltation"]), [2, 2, 2, 2, 2, 2, 2]);
-  assert.deepEqual(tiers(["essence-greater", "essence-perfect"]), [1, 3], "Greater Essence adds, Perfect Essence replaces");
+  assert.deepEqual(tiers(["essence", "essence-greater", "essence-perfect"]), [1, 1, 3], "Lesser/regular/Greater essences add, Perfect Essence replaces");
   assert.deepEqual(tiers(["omen-sinistral-greater-exaltation", "omen-dextral-greater-exaltation"]), [1, 1], "side-steered double adds are aimed adds");
   assert.deepEqual(tiers(["divine", "fracture", "omen-whittling", "bone-preserved"]), [null, null, null, null], "never a card");
+}
+
+/** Lesser/regular and Greater essences do the same thing to a magic item: one card, the cheaper one. */
+function testEssenceCollapse(cat: CraftCatalog): void {
+  const s = classify(cat, itemText({ ...RING, rarity: "Magic", ilvl: 82, lines: renderFamily(cat, RING.itemClass, RING.base, "suffix", "FireResistance") }));
+  const cards = rankMoves([stub("essence-greater", 0.2), stub("essence", 0.1), stub("essence-perfect", 0.05)], s, []);
+  assert.deepEqual(cards.map((c) => [c.move.id, c.tier]), [["essence", 1], ["essence-perfect", 3]], "magic-tier essences collapse onto the cheapest; Perfect stays its own card");
+}
+
+/**
+ * KB §1/§7 targets: a magic item's cards are an essence (tier 1, upgrades it with a guaranteed mod),
+ * Augmentation (tier 2) and Annulment (tier 3). Alchemy stays off a magic item's cards because it
+ * discards the mods (red warning); on a normal item it is the card, and no essence is.
+ */
+function testMagicAndNormalCards(cat: CraftCatalog): void {
+  const magic = classify(cat, itemText({ ...RING, rarity: "Magic", ilvl: 82, lines: renderFamily(cat, RING.itemClass, RING.base, "suffix", "FireResistance") }));
+  const cards = ranked(cat, magic);
+  assert.deepEqual(cards.map((c) => [c.move.id, c.tier]), [["essence", 1], ["aug", 2], ["annul", 3]], `magic ring cards: ${cards.map((c) => c.move.id).join(",")}`);
+  assert.match(cards[0]?.why ?? "", /writes the essence's mod/);
+  const normal = classify(cat, itemText({ ...RING, rarity: "Normal", ilvl: 82, lines: [] }));
+  const normalCards = ranked(cat, normal);
+  assert.deepEqual(normalCards.map((c) => c.move.id), ["alchemy"], `normal ring cards: ${normalCards.map((c) => c.move.id).join(",")}`);
 }
 
 function testLockedAndContract(cat: CraftCatalog): void {
@@ -119,6 +142,8 @@ export function runRankCases(cat: CraftCatalog): void {
   testFullRare(cat);
   testCheapestAndVariants(cat);
   testTierClassification();
+  testEssenceCollapse(cat);
+  testMagicAndNormalCards(cat);
   testLockedAndContract(cat);
   testOutcomeText(cat);
   testShareLink();

@@ -2,13 +2,15 @@
 
 Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc currency/crafting items. Confidence levels: **confirmed** (multi-source corroboration), **single-source** (one source, usually poe2wiki), **unverified** (contradicted or undocumented).
 
+**Corrections 2026-09-29 (partial, tablet model):** how tablets are used in the Omen of Light and Essence of the Abyss rows (Abyss) and the Precursor Tablets row (Tablets) was corrected against the [0.3.1 patch notes](https://www.pathofexile.com/forum/view-thread/3862213) and docs/kb/atlas-juicing.md §3–§4: tablets go into the Map Device per map, and towers no longer hold them. The drop sources themselves were not re-checked.
+
 ---
 
 ## Abyss
 
 | Item | How to farm | Confidence | Sources |
 |---|---|---|---|
-| Omen of Light | Rare Abyss monster carrying **Amanamu's Void**, **Kurgal's Final Gasp**, or **Ulaman's Legion** Lichborn mod. Amanamu's Void variant drops ONLY if killed **outside** the void smoke cloud (opposite of Omen of the Liege). Boost odds via Abyss Precursor Tablets on Atlas towers. No drops below area level 65 (as of 0.5.0). | confirmed | poe2wiki, timesaver.gg, mobalytics, 2× reddit |
+| Omen of Light | Rare Abyss monster carrying **Amanamu's Void**, **Kurgal's Final Gasp**, or **Ulaman's Legion** Lichborn mod. Amanamu's Void variant drops ONLY if killed **outside** the void smoke cloud (opposite of Omen of the Liege). Boost odds with Abyss Precursor Tablets used in the Map Device on the map you run (per map since 0.3.1, not via towers; see atlas-juicing.md §4). No drops below area level 65 (as of 0.5.0). | confirmed | poe2wiki, timesaver.gg, mobalytics, 2× reddit |
 | Omen of Abyssal Echoes | Same 3-faction Abyss rare pool as Omen of Light | confirmed | poe2wiki, reddit |
 | Omen of Sinistral Necromancy | Same 3-faction Abyss rare pool | confirmed | poe2wiki |
 | Omen of Dextral Necromancy | Same 3-faction Abyss rare pool | confirmed | poe2wiki |
@@ -18,7 +20,7 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 | Omen of the Blackblooded | Kurgal's Final Gasp mod, exclusive drop | confirmed | poe2wiki |
 | Abyssal Bones (Gnawed/Preserved/Ancient Jawbone, Rib, Collarbone, Cranium, Vertebrae) | Seal an Abyssal Pit (kill all erupting monsters) → Abyssal Trove chest; also direct drops in the Abyssal Depths sub-zone (0.3.0+); Vessel of Kulemac superboss guarantees one Ancient-tier bone | confirmed | maxroll, poe2wiki, 3× game8, live poe.ninja URLs |
 | Amanamu's / Kurgal's / Ulaman's / Tecrod's Gaze (Abyssal Eye jewels) | Abyssal Liches in the "Dark Domain"/"Lightless Void" branch zones off high-tier map Abyss chasms (Abyssal Depths). *Tecrod's Gaze older reports of also dropping from Abyssal Troves/Stygian Spires are single-source/pre-0.5 — unconfirmed for current patch.* | confirmed | poewiki, poe2wiki, maxroll, live poe.ninja URLs |
-| Essence of the Abyss | Essence-imprisoned monster that happens to spawn near/inside an Abyss pit or chasm; density via Abyss Tablets on Atlas towers | confirmed | poe2wiki, fextralife, poe2fun |
+| Essence of the Abyss | Essence-imprisoned monster that happens to spawn near/inside an Abyss pit or chasm; density via Abyss Tablets used in the Map Device on that map (per map since 0.3.1, not via towers) | confirmed | poe2wiki, fextralife, poe2fun |
 
 ---
 
@@ -122,7 +124,7 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 
 | Item | How to farm | Confidence | Sources |
 |---|---|---|---|
-| Precursor Tablets (mechanic-specific, e.g. Breach/Ritual/Abyss Tablet) | Self-referential: the mechanic-specific tablet drops only from doing that mechanic (e.g. Breach Tablets only from Breach/Hiveborn monsters). Generic (non-mechanic) tablets drop from any monster while mapping. Slot into a completed Precursor Tower to juice nearby maps with that mechanic. | confirmed | timesaver, odealo, poe2wiki |
+| Precursor Tablets (mechanic-specific, e.g. Breach/Ritual/Abyss Tablet) | Self-referential: the mechanic-specific tablet drops only from doing that mechanic (e.g. Breach Tablets only from Breach/Hiveborn monsters). Generic (non-mechanic) tablets drop from any monster while mapping. Completing a Precursor Tower map also drops an extra tablet. Use: put it in the Map Device to add that mechanic to the one map you open — up to 3 tablets per map (the slots open with the waystone's modifier count), 10 uses each, one spent per map. Towers no longer hold tablets or juice nearby maps; they reveal the Atlas. [verified-primary — [0.3.1 patch notes](https://www.pathofexile.com/forum/view-thread/3862213), accessed 2026-09-29: "You no longer need Towers to use Precursor Tablets, instead, Tablets can now be placed into the Map Device to add their bonuses directly to your Map." / "Towers can still be used to gain visibility on the Atlas, and they will also drop an extra Precursor Tablet as a reward for completing them." / "You can use up to 3 Tablets with each Map" / "Non-Unique Tablets now have 10 uses"; see atlas-juicing.md §3–§4] | confirmed | timesaver, odealo, poe2wiki; GGG 0.3.1 notes (usage) |
 
 ---
 
@@ -144,3 +146,8 @@ Items whose poe.ninja economy category (or apparent category) does **not** match
 ---
 
 > Built 2026-07-15 by poe2-drop-sources workflow (Brave reddit+wiki mining, 72 mappings). Patch 0.5.x.
+
+## Adversarial verification (post-research)
+
+- **REFUTED** (2026-09-29) — Precursor Tablets are slotted into a completed Precursor Tower (Atlas towers) to juice nearby maps; Abyss tablets on towers boost Omen of Light and Essence of the Abyss odds
+  → Retired in 0.3.1: "You no longer need Towers to use Precursor Tablets, instead, Tablets can now be placed into the Map Device to add their bonuses directly to your Map." / "Towers can still be used to gain visibility on the Atlas, and they will also drop an extra Precursor Tablet as a reward for completing them." Up to 3 tablets per map, 10 uses each. The tower wording came from pre-0.3.1 guides (timesaver, odealo). Body rows Omen of Light, Essence of the Abyss and Precursor Tablets corrected; the resolved model is docs/kb/atlas-juicing.md §4. (https://www.pathofexile.com/forum/view-thread/3862213)

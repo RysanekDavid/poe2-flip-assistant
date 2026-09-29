@@ -12,6 +12,7 @@ export const OPEN_UNKNOWN = "open slots unknown — an explicit line could not b
 export const isNormal = (s: ItemState): boolean => s.rarity === "Normal";
 export const isMagic = (s: ItemState): boolean => s.rarity === "Magic";
 export const isRare = (s: ItemState): boolean => s.rarity === "Rare";
+export const isMagicOrRare = (s: ItemState): boolean => isMagic(s) || isRare(s);
 
 /** Provably at least `count` open slots on `side` ("any" = either side). */
 export function needOpen(s: ItemState, side: "prefix" | "suffix" | "any", count = 1): Block {

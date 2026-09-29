@@ -1,10 +1,14 @@
 import type { ItemState } from "./classify";
 import { KB, KB_CURRENCY_CORE, type MoveRule, type Verdict } from "./ruleTypes";
-import { all, isRare, needMods, needOpen, whittlingTarget } from "./rulePredicates";
+import { all, isMagicOrRare, isRare, needMods, needOpen, whittlingTarget } from "./rulePredicates";
 
-/** Omens riding an Exalted / Chaos / Annulment click (KB §1, §4, §8). */
+/** Omens riding an Exalted / Chaos / Annulment click (KB §1, §4, §8). The Annulment omens follow the orb onto magic items. */
 
 const S4 = `${KB} §4`;
+
+// Both halves are now in the KB (§4 side mapping, §1 Annulment target). Verifying the pairing would
+// change recipe-audit verdicts, so it is left for its own review instead of riding the target fix.
+const ANNUL_OMEN_NOTE = `the side mapping (${S4}) and Annulment's magic-or-rare target (${KB} §1) are KB-verified; the omen + Annulment pairing itself is not yet reviewed`;
 
 const WHITTLING_WARNING =
   "WALLET-KILLER: removes the mod with the lowest MODIFIER LEVEL (hidden in-game), not the lowest displayed tier — check the hover preview before clicking";
@@ -178,24 +182,24 @@ const REMOVAL: MoveRule[] = [
     label: "Omen of Sinistral Annulment + Orb of Annulment",
     family: "omen",
     materials: ["omenSinistralAnnulment", "annul"],
-    requires: "rare with a prefix",
+    requires: "magic or rare with a prefix",
     effect: "the Annulment removes a PREFIX",
-    notes: [`the side mapping is KB-confirmed (§4); Annulment's own behaviour is only in ${KB_CURRENCY_CORE} §5`],
-    source: `${S4}; ${KB_CURRENCY_CORE} §5`,
+    notes: [ANNUL_OMEN_NOTE],
+    source: `${S4}; ${KB} §1; ${KB_CURRENCY_CORE} §1, §5`,
     verified: false,
-    check: (s) => (isRare(s) ? all([needMods(s, 1, "prefix")]) : null),
+    check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1, "prefix")]) : null),
   },
   {
     id: "omen-dextral-annulment",
     label: "Omen of Dextral Annulment + Orb of Annulment",
     family: "omen",
     materials: ["omenDextralAnnulment", "annul"],
-    requires: "rare with a suffix",
+    requires: "magic or rare with a suffix",
     effect: "the Annulment removes a SUFFIX",
-    notes: [`the side mapping is KB-confirmed (§4); Annulment's own behaviour is only in ${KB_CURRENCY_CORE} §5`],
-    source: `${S4}; ${KB_CURRENCY_CORE} §5`,
+    notes: [ANNUL_OMEN_NOTE],
+    source: `${S4}; ${KB} §1; ${KB_CURRENCY_CORE} §1, §5`,
     verified: false,
-    check: (s) => (isRare(s) ? all([needMods(s, 1, "suffix")]) : null),
+    check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1, "suffix")]) : null),
   },
 ];
 
