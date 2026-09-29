@@ -36,6 +36,7 @@ function TabLink({ meta, active, onClick }: { meta: TabMeta; active: boolean; on
     <Link
       href={tabRouteHref({ tab: meta.id, tool: defaultToolOf(meta.id) })}
       scroll={false}
+      prefetch={false}
       onClick={(e) => onClick(e, meta.id)}
       title={meta.hint}
       aria-current={active ? "page" : undefined}
@@ -63,6 +64,7 @@ export function TabNav() {
       <Link
         href={tabRouteHref({ tab: "coach", tool: null })}
         scroll={false}
+        prefetch={false}
         onClick={(e) => onClick(e, "coach")}
         title={coach.hint}
         aria-current={tab === "coach" ? "page" : undefined}

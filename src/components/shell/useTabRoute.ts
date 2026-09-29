@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseTabRoute, tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
 
 export interface TabRouteApi extends TabRoute {
+  /** URL params that did not parse (e.g. "tab=bogus"); AppShell alone warns and rewrites them. */
+  rejected: readonly string[];
   /** Navigate to a tab (and optionally one of its tools). Pushes history so Back returns here. */
   go: (tab: TabId, tool?: string) => void;
 }
@@ -21,15 +23,6 @@ export function useTabRoute(): TabRouteApi {
   const rawTool = params.get("tool");
   const parsed = useMemo(() => parseTabRoute(rawTab, rawTool), [rawTab, rawTool]);
 
-  // A mistyped or outdated link must not silently show another page: warn, then replace (not
-  // push) with the canonical URL so Back skips the broken entry.
-  const rejected = parsed.rejected.join(", ");
-  useEffect(() => {
-    if (rejected === "") return;
-    console.warn(`[tabs] ignoring unknown ${rejected} — showing ${parsed.tab}${parsed.tool ? `/${parsed.tool}` : ""}`);
-    router.replace(`${pathname}${tabRouteHref(parsed)}`, { scroll: false });
-  }, [rejected, parsed, pathname, router]);
-
   const go = useCallback(
     (tab: TabId, tool?: string) => {
       const next = parseTabRoute(tab, tool ?? null);
@@ -43,5 +36,5 @@ export function useTabRoute(): TabRouteApi {
     [pathname, router],
   );
 
-  return { tab: parsed.tab, tool: parsed.tool, go };
+  return { tab: parsed.tab, tool: parsed.tool, rejected: parsed.rejected, go };
 }

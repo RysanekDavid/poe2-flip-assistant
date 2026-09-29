@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { TopBar } from "../TopBar";
 import { Onboarding } from "../Onboarding";
 import { LeagueBanner } from "../LeagueBanner";
@@ -11,7 +12,7 @@ import { AlertsTab } from "../alerts/AlertsTab";
 import { CoachPanel } from "../coach/CoachPanel";
 import { TabNav } from "./TabNav";
 import { useTabRoute } from "./useTabRoute";
-import type { TabId } from "./tabRegistry";
+import { tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
 import { ExchangeTab } from "./tabs/ExchangeTab";
 import { MarketTab } from "./tabs/MarketTab";
 import { FarmTab } from "./tabs/FarmTab";
@@ -22,8 +23,8 @@ import { SettingsTab } from "./tabs/SettingsTab";
 
 /**
  * Publishes the sticky header's height as --shell-h so sticky table heads and scroll targets sit
- * just under it instead of hiding their first row behind it (the header height changes with the
- * league banner and wrapping at narrow widths).
+ * just under it instead of hiding their first row behind it (the header height changes when its
+ * rows wrap at narrow widths).
  */
 function useShellHeightVar(ref: RefObject<HTMLElement | null>): void {
   useEffect(() => {
@@ -36,6 +37,22 @@ function useShellHeightVar(ref: RefObject<HTMLElement | null>): void {
     observer.observe(el);
     return () => observer.disconnect();
   }, [ref]);
+}
+
+/**
+ * A mistyped or outdated link must not silently show another page: warn, then replace (not push)
+ * with the canonical URL so Back skips the broken entry. Lives here only — one shell, one rewrite.
+ */
+function useCanonicalRoute(route: TabRoute, rejected: readonly string[]): void {
+  const router = useRouter();
+  const pathname = usePathname();
+  const problem = rejected.join(", ");
+  const href = tabRouteHref(route);
+  useEffect(() => {
+    if (problem === "") return;
+    console.warn(`[tabs] ignoring unknown ${problem} — showing ${href}`);
+    router.replace(`${pathname}${href}`, { scroll: false });
+  }, [problem, href, pathname, router]);
 }
 
 /** Coach is kept mounted (below) so an open conversation survives tab switches. */
@@ -61,7 +78,8 @@ function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
 }
 
 export function AppShell() {
-  const { tab } = useTabRoute();
+  const { tab, tool, rejected } = useTabRoute();
+  useCanonicalRoute({ tab, tool }, rejected);
   const headerRef = useRef<HTMLElement>(null);
   useShellHeightVar(headerRef);
 
