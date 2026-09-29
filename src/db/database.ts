@@ -26,11 +26,64 @@ export function getDb(): Database.Database {
   conn.pragma("journal_mode = WAL");
   conn.pragma("foreign_keys = ON");
 
+  runMigrations(conn);
+
+  db = conn;
+  seedOwner(conn);
+  return db;
+}
+
+/**
+ * Every schema step, in its load-bearing order: DDL files, additive columns, then the multi-tenant
+ * rebuilds, league scoping and the notify schema (the comments below say why each sits where it does).
+ */
+function runMigrations(conn: Database.Database): void {
   conn.exec(applicationSchemaSql());
   ensureCxTables(conn);
   ensureColumns(conn, "cx_edge_outcomes", CX_EDGE_DETAIL_COLUMNS);
   migratePatchProvenance(conn);
 
+  ensureAdditiveColumns(conn);
+  ensureCredColumns(conn); // POESESSID health (auth/credStatus)
+  ensureWealthColumns(conn); // balance_items listing identity (sold-since, reprice)
+
+  // Multi-tenancy: every private table gains user_id (existing rows backfill to owner id=1).
+  // Shared market data (price_snapshots) stays global. balance_tabs inherits via its snapshot.
+  for (const t of ["alerts", "trades", "flips", "balance_snapshots", "positions"]) {
+    ensureColumns(conn, t, [["user_id", "INTEGER NOT NULL DEFAULT 1"]]);
+  }
+  rebuildWatchlistMultiTenant(conn);
+  rebuildHoldingsMultiTenant(conn);
+
+  // League scoping: market data is per-league so a switch retains both markets instead of
+  // purging. Runs AFTER the multi-tenant rebuilds, which recreate `watchlist` from scratch and
+  // would drop a league column added before them. The per-user tables' league column is added
+  // inside the migration rather than via ensureColumns: its backfill must happen in the same
+  // step, exactly once (see TAGGED_TABLES).
+  migrateLeagueScope(conn);
+  seedLeagueRegistry(conn);
+  purgeLegacyPriceBook(conn);
+  ensureNotifySchema(conn); // after users.discord_webhook_enc exists — its trigger reads the column
+  // Browser chime + desktop popup per type; NULL (rows from before) means "use the type's default".
+  ensureColumns(conn, "notify_prefs", [
+    ["sound", "INTEGER"],
+    ["popup", "INTEGER"],
+  ]);
+  dropRetiredHunts(conn); // after ensureNotifySchema: it also clears the retired types' notify_prefs
+
+  // user_id-dependent indexes — created here, post-migration, so the column always exists.
+  conn.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_watchlist_user_item ON watchlist(user_id, item_id);
+    CREATE INDEX IF NOT EXISTS idx_positions_user ON positions(user_id, opened_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_balance_user_time ON balance_snapshots(user_id, fetched_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_flips_user_time ON flips(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id, seen, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_alerts_user_item ON alerts(user_id, item_id, type);
+  `);
+}
+
+/** Columns added to tables after they first shipped (ensureColumns is idempotent). */
+function ensureAdditiveColumns(conn: Database.Database): void {
   // Additive migrations — CREATE TABLE IF NOT EXISTS won't add columns to an existing DB,
   // so backfill any columns added after a table first shipped.
   ensureColumns(conn, "alerts", [
@@ -80,46 +133,6 @@ export function getDb(): Database.Database {
     ["session_version", "INTEGER NOT NULL DEFAULT 0"],
     ["discord_webhook_enc", "TEXT"], // AES-GCM token from secretbox (the webhook URL embeds a secret)
   ]);
-  ensureCredColumns(conn); // POESESSID health (auth/credStatus)
-  ensureWealthColumns(conn); // balance_items listing identity (sold-since, reprice)
-
-  // Multi-tenancy: every private table gains user_id (existing rows backfill to owner id=1).
-  // Shared market data (price_snapshots) stays global. balance_tabs inherits via its snapshot.
-  for (const t of ["alerts", "trades", "flips", "balance_snapshots", "positions"]) {
-    ensureColumns(conn, t, [["user_id", "INTEGER NOT NULL DEFAULT 1"]]);
-  }
-  rebuildWatchlistMultiTenant(conn);
-  rebuildHoldingsMultiTenant(conn);
-
-  // League scoping: market data is per-league so a switch retains both markets instead of
-  // purging. Runs AFTER the multi-tenant rebuilds, which recreate `watchlist` from scratch and
-  // would drop a league column added before them. The per-user tables' league column is added
-  // inside the migration rather than via ensureColumns: its backfill must happen in the same
-  // step, exactly once (see TAGGED_TABLES).
-  migrateLeagueScope(conn);
-  seedLeagueRegistry(conn);
-  purgeLegacyPriceBook(conn);
-  ensureNotifySchema(conn); // after users.discord_webhook_enc exists — its trigger reads the column
-  // Browser chime + desktop popup per type; NULL (rows from before) means "use the type's default".
-  ensureColumns(conn, "notify_prefs", [
-    ["sound", "INTEGER"],
-    ["popup", "INTEGER"],
-  ]);
-  dropRetiredHunts(conn); // after ensureNotifySchema: it also clears the retired types' notify_prefs
-
-  // user_id-dependent indexes — created here, post-migration, so the column always exists.
-  conn.exec(`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_watchlist_user_item ON watchlist(user_id, item_id);
-    CREATE INDEX IF NOT EXISTS idx_positions_user ON positions(user_id, opened_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_balance_user_time ON balance_snapshots(user_id, fetched_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_flips_user_time ON flips(user_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id, seen, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_alerts_user_item ON alerts(user_id, item_id, type);
-  `);
-
-  db = conn;
-  seedOwner(conn);
-  return db;
 }
 
 /** Seed the owner (id=1) on first run so pre-multitenant data has an account to belong to. */
