@@ -1,13 +1,17 @@
 "use client";
 
+import { useState } from "react";
+import { compareDivPerHour } from "../../core/farm/farmSpeed";
 import { fmtDiv } from "../../core/tools/bossEv/headline";
 import { compact } from "../../lib/format";
-import type { BossRow } from "../../lib/farmContract";
-import { DataTable, type Column } from "../ui/DataTable";
+import { MAX_MINUTES_PER_RUN, type BossRow } from "../../lib/farmContract";
+import { DataTable, type Column, type SortDir } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
 import { PriceChip } from "../ui/PriceChip";
-import { ConfidenceChip, fmtOneIn, fmtPct, TONE_CLASS, UnpricedChip } from "./farmView";
+import { deleteSpeed, putSpeed, useSpeedSave } from "./farmSpeedApi";
+import { ConfidenceChip, fmtDivHour, fmtOneIn, fmtPct, TONE_CLASS, UnpricedChip } from "./farmView";
+import { SpeedInput } from "./SpeedInput";
 
 /** A computed Divine sum where 0 means "nothing priced lands here", not a free item. */
 function SumCell({ div, exPerDiv, none }: { div: number; exPerDiv: number | null; none: string }) {
@@ -70,6 +74,57 @@ function LoseCell({ r }: { r: BossRow }) {
   );
 }
 
+/** The viewer's net per hour; its bound follows the net's (a per-kill lower bound is a per-hour one). */
+function DivHourCell({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null }) {
+  if (r.yourMinutes == null) {
+    return (
+      <span className="text-neutral-500" title="enter your minutes per kill to see your Div/hour">
+        —
+      </span>
+    );
+  }
+  if (r.divPerHourBound === "unknown" || r.divPerHour == null) {
+    return (
+      <span className="text-neutral-400" title="net per kill unknown (entry partly unpriced and some drops unrated) — no honest Div/hour">
+        ?
+      </span>
+    );
+  }
+  const bound = r.divPerHourBound ?? "exact";
+  const unsure = bound === "lower" && r.divPerHour < 0;
+  const tone = unsure ? "text-neutral-300" : r.divPerHour < 0 ? "text-bad" : "text-accent";
+  const why = unsure ? "lower bound — unrated drops may cover it, not a sure loss" : bound === "upper" ? "upper bound — part of the entry is unpriced" : bound === "lower" ? "lower bound — some drops are left out" : "";
+  return (
+    <span className={`font-semibold tabular-nums ${tone}`} title={`net per kill × 60 ÷ ${r.yourMinutes} min${why ? ` — ${why}` : ""}`}>
+      {BOUND_PREFIX[bound]}
+      {fmtDivHour(r.divPerHour, exPerDiv, true)}
+    </span>
+  );
+}
+
+type SaveMinutes = (bossId: string, minutes: number | null) => void;
+
+function speedColumns(exPerDiv: number | null, save: SaveMinutes): Column<BossRow>[] {
+  return [
+    {
+      key: "pace",
+      header: "Your pace",
+      tip: "your minutes per kill — the whole cycle, from using the entry to loot picked up. Enter or click away saves, empty clears. Private to you.",
+      cell: (r) => (
+        <SpeedInput key={String(r.yourMinutes)} value={r.yourMinutes} onCommit={(m) => save(r.id, m)} label={`Your minutes per ${r.name} kill`} unit="min" max={MAX_MINUTES_PER_RUN} />
+      ),
+    },
+    {
+      key: "divh",
+      header: "Your Div/h",
+      align: "right",
+      sortable: true,
+      tip: "net per kill × 60 ÷ your minutes per kill. ≥ / ≤ carry the net's bound, ? = net unknown. Empty until you enter your pace.",
+      cell: (r) => <DivHourCell r={r} exPerDiv={exPerDiv} />,
+    },
+  ];
+}
+
 function columns(exPerDiv: number | null): Column<BossRow>[] {
   return [
     {
@@ -107,18 +162,44 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   exPerDiv: number | null;
+  /** After a pace is saved or cleared: reload, so Div/hour comes from the server. */
+  onSpeedSaved: () => void;
 }
 
-/** Pinnacle bosses by net per kill; a row opens its loot table below. */
-export function BossTable({ bosses, selectedId, onSelect, exPerDiv }: Props) {
+const BOARD = "board";
+
+/** Board order (the server's net ranking) until "Your Div/h" is clicked: desc → asc → board again. */
+function useDivHourSort() {
+  const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: BOARD, dir: "desc" });
+  const onSort = (key: string): void => {
+    if (key !== "divh") throw new Error(`Farm bosses: unknown sort column ${key}`);
+    setSort((s) => (s.key !== "divh" ? { key, dir: "desc" } : s.dir === "desc" ? { key, dir: "asc" } : { key: BOARD, dir: "desc" }));
+  };
+  const order = (rows: BossRow[]): BossRow[] => (sort.key === "divh" ? [...rows].sort((a, b) => compareDivPerHour(a, b, sort.dir)) : rows);
+  return { sort: { ...sort, onSort }, order };
+}
+
+/** Pinnacle bosses by net per kill (or by the viewer's Div/hour); a row opens its loot table below. */
+export function BossTable({ bosses, selectedId, onSelect, exPerDiv, onSpeedSaved }: Props) {
+  const { sort, order } = useDivHourSort();
+  // inputs stay enabled while a save is in flight: disabling them would steal focus from the next field
+  const { error, run } = useSpeedSave(onSpeedSaved);
+  const save: SaveMinutes = (bossId, minutes) =>
+    run(() => (minutes == null ? deleteSpeed({ kind: "boss", key: bossId }) : putSpeed({ kind: "boss", key: bossId, minutesPerRun: minutes })));
+  const base = columns(exPerDiv);
+  const afterNet = base.findIndex((c) => c.key === "net") + 1;
   return (
-    <DataTable
-      columns={columns(exPerDiv)}
-      rows={bosses}
-      rowKey={(r) => r.id}
-      onRowClick={(r) => onSelect(r.id)}
-      selectedKey={selectedId ?? undefined}
-      emptyState={<EmptyState icon={null} sentence="No boss data — the curated loot tables did not load." />}
-    />
+    <div className="grid gap-1.5">
+      {error && <p role="alert" className="text-sm text-bad">Pace not saved — {error}</p>}
+      <DataTable
+        columns={[...base.slice(0, afterNet), ...speedColumns(exPerDiv, save), ...base.slice(afterNet)]}
+        rows={order(bosses)}
+        rowKey={(r) => r.id}
+        onRowClick={(r) => onSelect(r.id)}
+        selectedKey={selectedId ?? undefined}
+        sort={sort}
+        emptyState={<EmptyState icon={null} sentence="No boss data — the curated loot tables did not load." />}
+      />
+    </div>
   );
 }
