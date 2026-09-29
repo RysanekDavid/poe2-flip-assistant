@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useAlertCenter } from "./alerts/AlertsContext";
 import { AlertActions, LeagueTag, MuteToggle, typeTone } from "./alerts/AlertBits";
 import type { AlertGroup } from "../lib/alertCenter";
+import { alertTypeLabel } from "../lib/alertLabels";
 
 function GroupHeader({ group, open, onToggle }: { group: AlertGroup; open: boolean; onToggle: () => void }) {
   const { markSeen, setMuted } = useAlertCenter();
@@ -12,15 +13,15 @@ function GroupHeader({ group, open, onToggle }: { group: AlertGroup; open: boole
     <div className="flex items-center gap-2 border-b border-neutral-800 pb-1">
       <button onClick={onToggle} className="flex flex-1 items-center gap-1.5 text-left text-sm" aria-expanded={open}>
         {open ? <ChevronDown className="h-3.5 w-3.5 text-neutral-500" /> : <ChevronRight className="h-3.5 w-3.5 text-neutral-500" />}
-        <span className={`font-semibold ${typeTone(group.type)}`}>{group.type}</span>
+        <span className={`font-semibold ${typeTone(group.type)}`}>{alertTypeLabel(group.type)}</span>
         <span className="text-xs tabular-nums text-neutral-500" title={`${group.unseen} unseen of ${group.total}`}>
           {group.unseen > 0 && <span className="text-amber-300">{group.unseen} new · </span>}
           {group.total}
         </span>
-        {group.muted && <span className="text-[10px] uppercase tracking-wider text-neutral-600">muted</span>}
+        {group.muted && <span className="text-xs uppercase tracking-wider text-neutral-500">muted</span>}
       </button>
       {group.unseen > 0 && (
-        <button onClick={() => void markSeen({ type: group.type })} className="text-[11px] text-neutral-400 hover:text-neutral-100" title={`mark every ${group.type} alert seen`}>
+        <button onClick={() => void markSeen({ type: group.type })} className="text-xs text-neutral-400 hover:text-neutral-100" title={`mark every ${alertTypeLabel(group.type)} alert seen`}>
           mark seen
         </button>
       )}
@@ -53,7 +54,7 @@ function GroupSection({ group }: { group: AlertGroup }) {
             </li>
           ))}
           {group.total > group.alerts.length && (
-            <li className="px-2 text-[11px] text-neutral-600">+{group.total - group.alerts.length} older not shown</li>
+            <li className="px-2 text-xs text-neutral-500">+{group.total - group.alerts.length} older not shown</li>
           )}
         </ul>
       )}

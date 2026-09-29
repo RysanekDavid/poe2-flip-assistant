@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { AlertCenterSchema, groupAlerts, unmutedUnseen, type AlertCenterData, type AlertGroup } from "../../lib/alertCenter";
+import { AlertCenterSchema, actionableUnseen, groupAlerts, unmutedUnseen, type AlertCenterData, type AlertGroup } from "../../lib/alertCenter";
 import { raiseBrowserNotifications } from "./browserNotify";
 
 const POLL_MS = 30_000;
@@ -11,7 +11,8 @@ interface AlertCenterState {
   data: AlertCenterData | null;
   error: string | null;
   groups: AlertGroup[];
-  unseen: number; // unseen alerts of unmuted types — the badge
+  unseen: number; // unseen alerts of unmuted types — the feed/ticker count
+  actionable: number; // unseen, unmuted SNIPE/CRAFT_MARGIN/SPREAD — the bell badge
   markSeen: (target: { type: string } | { all: true }) => Promise<void>;
   setMuted: (type: string, muted: boolean) => Promise<void>;
 }
@@ -98,7 +99,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AlertCenterState>(() => {
     const groups = data ? groupAlerts(data.alerts, data.counts, data.tickerMuted) : [];
-    return { data, error, groups, unseen: unmutedUnseen(groups), markSeen, setMuted };
+    return { data, error, groups, unseen: unmutedUnseen(groups), actionable: actionableUnseen(groups), markSeen, setMuted };
   }, [data, error, markSeen, setMuted]);
 
   return <AlertsCtx.Provider value={value}>{children}</AlertsCtx.Provider>;
