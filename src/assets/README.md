@@ -14,13 +14,11 @@ copy it exactly).
 
 | File | Used for | Source |
 |------|----------|--------|
-| `items/waystone.png` | Farm tab, Regex › Waystone | `https://cdn.poe2db.tw/image/Art/2DItems/Maps/EndgameMaps/EndgameMap15.webp` (webp → png) |
-| `items/scroll-of-wisdom.png` | Regex tab | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lJZGVudGlmaWNhdGlvbiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/884f7bc58b/CurrencyIdentification.png` |
-| `items/expedition-logbook.png` | Patches tab | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRXhwZWRpdGlvbjIvRXhwZWRpdGlvbkxvZ2Jvb2s1Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/841a5e9622/ExpeditionLogbook5.png` (URL from `api/trade2/data/static`, downloaded 2026-09-29) |
+| `items/waystone.png` | Farm tab, Regex › Waystone | Waystone (Tier 15): P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9FbmRnYW1lTWFwcy9FbmRnYW1lTWFwMTUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/36fdc2dffa/EndgameMap15.png` (URL from `api/trade2/data/static` entry `waystone-15`) |
 | `items/precursor-tablet.png` | Regex › Tablet | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvUHJlY3Vyc29yVGFibGV0cy9QcmVjdXJzb3JUYWJsZXRNYXN0ZXJlZERvbWFpbiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/b9d8f1bd46/PrecursorTabletMasteredDomain.png` |
-| `items/relic.png` | Regex › Relic | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvUmVsaWNzL1JlbGljVW5pcXVlMngxIiwidyI6MiwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/036203ffa6/RelicUnique2x1.png` (transparent margin trimmed) |
+| `items/coffer-relic.png` | Regex › Relic | Coffer Relic: `https://cdn.poe2db.tw/image/Art/2DItems/Relics/RelicBase2x2.webp` (from poe2db.tw/us/Coffer_Relic; webp → png, margin trimmed) |
 | `items/emerald-jewel.png` | Regex › Jewel | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvSmV3ZWxzL1NwZWNpYWxFbWVyYWxkSmV3ZWwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/9acdb9443b/SpecialEmeraldJewel.png` |
-| `items/omen-of-bartering.png` | Regex › Vendor | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lblNlbGxWZW5kb3JSYW5kb21pc2UiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/12ef99da8b/OmenSellVendorRandomise.png` |
+| `items/gold.png` | Regex › Vendor | Gold: `https://cdn.poe2db.tw/image/Art/2DItems/Currency/Ruthless/CoinPileTier2.webp` (from poe2db.tw/us/Gold; webp → png, margin trimmed) |
 | `items/divine-orb.png` | Regex › Price | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png` |
 | `leagues/runes-of-aldur.png` | League picker | banner emblem cut from `https://web.poecdn.com/public/news/2026-05-11/RunesLogin.png` |
 | `leagues/forbidden-rites.png` | League picker | banner emblem cut from `https://web.poecdn.com/public/news/2026-08-31/ForbiddenRitesLoginScreen.png` |
@@ -34,3 +32,5 @@ emblem cut the same way, a line in `leagueEmblem.ts` and a line in `components/L
 ## Owner-supplied art
 
 The remaining top-level PNGs (tab icons, `logo/`, `Section Icons/`) were supplied by the owner.
+The Regex and Patches tabs use lucide glyphs (`Search`, `ScrollText`) until owner art exists;
+swapping one is a one-line `art(...)` change in `src/components/shell/tabIcons.ts`.
