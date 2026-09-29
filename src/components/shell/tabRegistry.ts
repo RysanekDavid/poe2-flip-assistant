@@ -44,10 +44,11 @@ export const TABS: readonly TabMeta[] = [
   {
     id: "craft",
     label: "Craft",
-    hint: "profitable recipes · next move for an item",
+    hint: "profitable recipes · next move for an item · mod pool with prices",
     tools: [
       { id: "recipes", label: "Recipes" },
       { id: "moves", label: "Paste item" },
+      { id: "modpool", label: "Mod pool" },
     ],
   },
   {

@@ -1,13 +1,20 @@
 import type { z } from "zod";
 import { apiErrorSchema } from "../../../lib/tools/craftMovesContract";
 
-/** POST + zod parse. A shape mismatch throws (loud); an HTTP error comes back typed for the UI. */
+/** fetch + zod parse. A shape mismatch throws (loud); an HTTP error comes back typed for the UI. */
 export type PostResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; error: string; retryAfterSec: number | null };
 
-export async function postJson<T>(url: string, body: unknown, schema: z.ZodType<T>): Promise<PostResult<T>> {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+export type JsonRequest = { method: "GET" } | { method: "POST"; body: unknown };
+
+export async function requestJson<T>(url: string, init: JsonRequest, schema: z.ZodType<T>): Promise<PostResult<T>> {
+  const res = await fetch(
+    url,
+    init.method === "GET"
+      ? { method: "GET", cache: "no-store" }
+      : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(init.body) },
+  );
   const json: unknown = await res.json().catch((e: unknown) => ({ error: `unreadable response (${res.status}): ${String(e)}` }));
   if (!res.ok) {
     const err = apiErrorSchema.safeParse(json);
@@ -21,6 +28,9 @@ export async function postJson<T>(url: string, body: unknown, schema: z.ZodType<
   }
   return { ok: true, data: schema.parse(json) };
 }
+
+export const postJson = <T>(url: string, body: unknown, schema: z.ZodType<T>): Promise<PostResult<T>> =>
+  requestJson(url, { method: "POST", body }, schema);
 
 /** A plain Ctrl+C rare on a real 0.5 base: two prefixes + two suffixes, so the exalt moves show. */
 export const SAMPLE_ITEM = `Item Class: Rings
