@@ -19,10 +19,17 @@ export type StoredWebhook = { state: "none" } | { state: "set"; url: string } | 
  * the webhook at send time, so they go to the new URL. Clearing drops undelivered rows (they have
  * nowhere to go) and forgets the digest baseline, so a webhook re-added weeks later starts a
  * fresh day instead of summarising the gap.
+ *
+ * The live board message was posted through one webhook and can only be edited through it, so
+ * any change of URL forgets its id (and its timestamp — the board is re-posted on the next pass).
  */
 export function setWebhook(userId: number, url: string | null, db: Database.Database = getDb()): void {
+  const before = readWebhook(userId, db);
   db.transaction(() => {
     db.prepare("UPDATE users SET discord_webhook_enc = ? WHERE id = ?").run(url ? encryptSecret(url) : null, userId);
+    if (!(before.state === "set" && before.url === url)) {
+      db.prepare("UPDATE notify_settings SET board_message_id = NULL, board_updated_at = NULL WHERE user_id = ?").run(userId);
+    }
     if (url != null) return;
     db.prepare("DELETE FROM notify_queue WHERE user_id = ? AND status = 'pending'").run(userId);
     db.prepare("UPDATE notify_settings SET last_digest_at = NULL WHERE user_id = ?").run(userId);
@@ -115,17 +122,20 @@ export function setDigestEnabled(userId: number, enabled: boolean, db: Database.
 
 // ---------- queue ----------
 
+/** 'board' rows carry no payload: the board is rendered at send time so a retry shows current numbers. */
+export type QueueKind = "alert" | "digest" | "board";
+
 export interface QueueRow {
   queue_id: number;
-  kind: "alert" | "digest";
+  kind: QueueKind;
   attempts: number;
   payload_json: string | null;
-  alert: NotifyAlert | null; // null for digests
+  alert: NotifyAlert | null; // null for digests and boards
 }
 
 interface RawQueueRow extends Omit<NotifyAlert, "id"> {
   queue_id: number;
-  kind: "alert" | "digest";
+  kind: QueueKind;
   attempts: number;
   payload_json: string | null;
   alert_id: number | null;
@@ -310,4 +320,82 @@ export function digestData(
     )
     .all(range) as NotifyAlert[];
   return { counts, top };
+}
+
+// ---------- live board ----------
+
+export interface BoardSettings {
+  enabled: boolean;
+  messageId: string | null; // the Discord message the board edits; null = the next update posts a new one
+  updatedAt: number | null; // epoch ms of the last successful post/edit
+}
+
+export function getBoardSettings(userId: number, db: Database.Database = getDb()): BoardSettings {
+  const row = db
+    .prepare("SELECT board, board_message_id, board_updated_at FROM notify_settings WHERE user_id = ?")
+    .get(userId) as { board: number; board_message_id: string | null; board_updated_at: number | null } | undefined;
+  if (!row) return { enabled: false, messageId: null, updatedAt: null }; // opt-in: off until switched on
+  return { enabled: row.board === 1, messageId: row.board_message_id, updatedAt: row.board_updated_at };
+}
+
+/**
+ * Switch the live board. Switching off forgets the message and drops a queued update, so switching
+ * back on posts a fresh board at the bottom of the channel instead of editing one scrolled away.
+ */
+export function setBoardEnabled(userId: number, enabled: boolean, db: Database.Database = getDb()): void {
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO notify_settings (user_id, board) VALUES (?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET board = excluded.board`,
+    ).run(userId, enabled ? 1 : 0);
+    if (enabled) return;
+    db.prepare("UPDATE notify_settings SET board_message_id = NULL, board_updated_at = NULL WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM notify_queue WHERE user_id = ? AND kind = 'board' AND status = 'pending'").run(userId);
+  })();
+}
+
+/** Queue one board update unless one is already waiting. True when a row was added. */
+export function enqueueBoard(userId: number, db: Database.Database = getDb()): boolean {
+  const added = db
+    .prepare(
+      `INSERT INTO notify_queue (user_id, kind)
+       SELECT ?, 'board' WHERE NOT EXISTS (
+         SELECT 1 FROM notify_queue WHERE user_id = ? AND kind = 'board' AND status = 'pending')`,
+    )
+    .run(userId, userId);
+  return added.changes > 0;
+}
+
+/**
+ * Users whose board is due: switched on, webhook set, last update older than the interval, and no
+ * board row pending or attempted within the interval — so a webhook that keeps failing costs one
+ * attempt cycle per interval, not one per drain tick.
+ */
+export function dueBoardUserIds(now: number, intervalMs: number, db: Database.Database = getDb()): number[] {
+  const rows = db
+    .prepare(
+      `SELECT u.id AS user_id FROM users u JOIN notify_settings s ON s.user_id = u.id
+       WHERE u.discord_webhook_enc IS NOT NULL AND s.board = 1
+         AND (s.board_updated_at IS NULL OR s.board_updated_at <= @cutoff)
+         AND NOT EXISTS (
+           SELECT 1 FROM notify_queue q WHERE q.user_id = u.id AND q.kind = 'board'
+             AND (q.status = 'pending' OR q.last_attempt_at > @cutoff))
+       ORDER BY u.id`,
+    )
+    .all({ cutoff: now - intervalMs }) as Array<{ user_id: number }>;
+  return rows.map((r) => r.user_id);
+}
+
+/**
+ * A board post/edit Discord accepted: remember which message to edit next time. Only while the
+ * board is still on — the send awaited Discord, and a switch-off in that gap must not be undone
+ * by resurrecting the id.
+ */
+export function recordBoardDelivery(userId: number, messageId: string | null, at: number, db: Database.Database = getDb()): void {
+  db.prepare("UPDATE notify_settings SET board_message_id = ?, board_updated_at = ? WHERE user_id = ? AND board = 1").run(messageId, at, userId);
+}
+
+/** The board message cannot be edited (deleted in Discord, or the PATCH was refused): the next update posts a new one. */
+export function clearBoardMessageId(userId: number, db: Database.Database = getDb()): void {
+  db.prepare("UPDATE notify_settings SET board_message_id = NULL WHERE user_id = ?").run(userId);
 }
