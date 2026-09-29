@@ -1,17 +1,15 @@
-import { fetchDemand } from "../../api/scoutClient";
 import type { PricedItem } from "../../api/types";
-import { config } from "../../config/env";
 import { recentStashReads, type StashRead } from "../../db/balanceItemQueries";
 import { listingComps } from "../../db/listingCompsQueries";
 import { repriceState } from "../../db/repriceRunQueries";
-import { itemValuesAgeHours, latestFetchedAt, latestSnapshots, uniqueValueMap } from "../../db/marketQueries";
+import { itemValuesAgeHours, latestFetchedAt, latestSnapshots } from "../../db/marketQueries";
 import { timestampAgeMs } from "../../lib/sqliteTime";
 import type { ListingComp, RepriceStatus, SellResponse, SoldSince } from "../../lib/wealthContract";
 import { loadCxMarketView } from "../cx/cxItemMarkets";
-import { getDefaultLeague } from "../leagueState";
 import type { ExchangeRates } from "../priceEngine";
 import type { ResolvedRates } from "../rates";
-import { groupStashItems, planLiquidation, type ScoutListing } from "./plan";
+import { groupStashItems, planLiquidation } from "./plan";
+import { buildPlanContext, loadCompetition } from "./planContext";
 import { pickRepriceCandidates } from "./repriceScan";
 import { buildSellRows, readListings, sellTotals } from "./sellRows";
 import { soldSince } from "./soldSince";
@@ -21,29 +19,6 @@ import { soldSince } from "./soldSince";
  * no trade2 request is ever made here — reprice comps come from the poller's queued checks.
  */
 const READ_HINT = "press Read stash (the one step that spends trade requests)";
-const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
-
-/**
- * poe2scout live-listing counts for the entries that are not exchange items. poe2scout is only
- * read for the app default league; any other league gets no competition, said out loud.
- */
-async function loadCompetition(league: string, keys: readonly string[]): Promise<{ map: Map<string, ScoutListing>; warning: string | null }> {
-  const map = new Map<string, ScoutListing>();
-  if (keys.length === 0) return { map, warning: null };
-  if (league !== getDefaultLeague()) return { map, warning: `listing competition is only read for ${getDefaultLeague()}` };
-  try {
-    const wanted = new Set(keys);
-    for (const d of (await fetchDemand()).items) {
-      const key = d.name.toLowerCase();
-      if (!wanted.has(key) || map.has(key)) continue;
-      map.set(key, { competition: { listed: d.quantity, sellThrough: d.sellThrough, samples: d.samples }, icon: d.icon });
-    }
-    return { map, warning: null };
-  } catch (e: unknown) {
-    console.warn(`[wealth/sell] poe2scout competition failed: ${errText(e)}`);
-    return { map, warning: `listing competition unavailable (poe2scout: ${errText(e)})` };
-  }
-}
 
 function emptyReason(read: StashRead | undefined, skippedOrbs: number): string {
   if (read == null) return `no stash read yet — ${READ_HINT}`;
@@ -91,14 +66,13 @@ export async function loadSell(userId: number, league: string, resolved: Resolve
   const prices = latestSnapshots(league);
   const ninjaByName = byLowerName(prices);
   const cxView = loadCxMarketView(league, prices);
-  const competition = await loadCompetition(league, items.map((i) => i.name.toLowerCase()).filter((k) => !ninjaByName.has(k)));
+  const competition = await loadCompetition(league, items.map((i) => i.name.toLowerCase()).filter((k) => !ninjaByName.has(k)), "wealth/sell");
   const liveIds = new Set((latest?.items ?? []).map((i) => i.listing_id).filter((id): id is string => id != null));
   const comps = compMaps(userId, league, liveIds);
-  const plan = planLiquidation(items, {
-    rates: resolved.rates, ninjaByName, cxByItemId: cxView?.byItemId ?? new Map(), uniqueDiv: uniqueValueMap(league),
-    compDiv: comps.fairByName, competition: competition.map,
-    params: { goldPerExalt: config.cx.goldPerExalt, flowSharePct: config.cx.flowSharePct, maxGridStepPct: config.cx.maxGridStepPct },
-  });
+  const plan = planLiquidation(
+    items,
+    buildPlanContext({ league, rates: resolved.rates, ninjaByName, cxView, compDiv: comps.fairByName, competition: competition.map }),
+  );
   const rows = buildSellRows(items, plan, { ninjaByName, compsByListing: comps.byListing, rates: resolved.rates });
   const warnings = [
     ...(cxView == null && items.length > 0 ? [`no fresh exchange history for ${league} — exchange rows use poe.ninja mids`] : []),

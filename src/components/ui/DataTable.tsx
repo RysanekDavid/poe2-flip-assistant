@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, ReactNode } from "react";
+import type { HTMLAttributes, KeyboardEvent, ReactNode } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { InfoTip } from "./Tooltip";
 
@@ -37,6 +37,12 @@ interface DataTableProps<T> {
   selectedKey?: string;
   /** Controlled sort: the table only reports clicks; the caller orders `rows`. */
   sort?: TableSort;
+  /**
+   * Cells hold their own form controls (e.g. an inline number input). A row must then stay a plain
+   * row — a role="button" row hides its inputs from assistive tech — marked with aria-selected; a
+   * cell must render its own button for keyboard users. Mouse clicks on the row still call onRowClick.
+   */
+  interactiveCells?: boolean;
   emptyState: ReactNode;
 }
 
@@ -79,17 +85,30 @@ function HeaderCell<T>({ col, sort }: { col: Column<T>; sort?: TableSort }) {
   );
 }
 
+type RowA11y = Pick<HTMLAttributes<HTMLTableRowElement>, "tabIndex" | "role" | "aria-pressed" | "aria-selected" | "onKeyDown">;
+
+/** A clickable row is a keyboard button unless its cells carry their own controls (see interactiveCells). */
+function rowA11y(clickable: boolean, interactiveCells: boolean, selected: boolean, onKey: () => void): RowA11y {
+  if (!clickable) return {};
+  if (interactiveCells) return { "aria-selected": selected };
+  return {
+    tabIndex: 0,
+    role: "button",
+    "aria-pressed": selected,
+    onKeyDown: (e: KeyboardEvent<HTMLTableRowElement>) => {
+      if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+      e.preventDefault();
+      onKey();
+    },
+  };
+}
+
 /**
  * The standard table: sticky header under the app shell (no inner scroll box, which hid the first
  * row), h-9 rows, ⓘ header tooltips. A clickable row is a real keyboard target (Enter/Space).
  */
-export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, sort, emptyState }: DataTableProps<T>) {
+export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, sort, interactiveCells = false, emptyState }: DataTableProps<T>) {
   if (rows.length === 0) return <>{emptyState}</>;
-  const onKey = (e: KeyboardEvent<HTMLTableRowElement>, row: T) => {
-    if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
-    e.preventDefault();
-    onRowClick?.(row);
-  };
   return (
     <table className="w-full border-separate border-spacing-0 text-sm">
       <thead>
@@ -104,9 +123,7 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, s
           return (
             <tr
               key={key}
-              tabIndex={onRowClick ? 0 : undefined}
-              role={onRowClick ? "button" : undefined}
-              aria-pressed={onRowClick ? selected : undefined}
+              {...rowA11y(onRowClick != null, interactiveCells, selected, () => onRowClick?.(row))}
               onClick={
                 onRowClick
                   ? (e) => {
@@ -114,7 +131,6 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, s
                     }
                   : undefined
               }
-              onKeyDown={onRowClick ? (e) => onKey(e, row) : undefined}
               className={`h-9 ${onRowClick ? "cursor-pointer hover:bg-neutral-800/50" : ""} ${selected ? "bg-amber-400/10" : ""}`}
             >
               {columns.map((c) => (
