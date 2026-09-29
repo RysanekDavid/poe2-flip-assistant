@@ -6,7 +6,7 @@ import { axiosTransport, type DeliveryResult, type DiscordTransport } from "./di
  * real Discord verdict — a deleted webhook answers 404 right there instead of minutes later.
  */
 export function sendTestPing(url: string, transport: DiscordTransport = axiosTransport()): Promise<DeliveryResult> {
-  return transport(
+  return transport.post(
     url,
     embedMessage("Test notification from PoE2 Flip Assistant", [
       {
