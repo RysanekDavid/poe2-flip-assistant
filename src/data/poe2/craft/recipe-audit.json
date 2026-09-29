@@ -961,7 +961,7 @@
             {
               "kind": "pairing",
               "verdict": "unknown",
-              "detail": "no verified rule covers Omen of Sinistral Crystallisation",
+              "detail": "no rule covers Omen of Sinistral Crystallisation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1088,7 +1088,7 @@
             {
               "kind": "pairing",
               "verdict": "unknown",
-              "detail": "no verified rule covers Omen of Dextral Crystallisation",
+              "detail": "no rule covers Omen of Dextral Crystallisation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1345,7 +1345,7 @@
             {
               "kind": "pairing",
               "verdict": "unknown",
-              "detail": "no verified rule covers Omen of Dextral Crystallisation",
+              "detail": "no rule covers Omen of Dextral Crystallisation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]

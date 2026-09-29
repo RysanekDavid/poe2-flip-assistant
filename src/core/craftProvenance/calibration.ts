@@ -58,7 +58,8 @@ export function poolAttempts(rows: readonly AttemptRow[], cutoffMs: number | nul
   const rest = total - top.closed;
   const maxTop = (rest * MAX_USER_SHARE) / (1 - MAX_USER_SHARE);
   const topClosed = Math.min(top.closed, maxTop);
-  const topHits = top.closed > 0 ? (top.hits * topClosed) / top.closed : 0;
+  // a user is only listed once they have a closed attempt, so top.closed ≥ 1
+  const topHits = (top.hits * topClosed) / top.closed;
   const restHits = users.reduce((n, u) => n + u.hits, 0) - top.hits;
   return { closed: rest + topClosed, hits: restHits + topHits, users: users.length };
 }

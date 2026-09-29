@@ -15,12 +15,13 @@ export const pct = (x: number): string => `${(x * 100).toFixed(0)}%`;
 /**
  * The hit rate the card shows: the one the stored scan priced with (rate, basis and n recorded at
  * scan time), so the chip, the EV line and the near-miss line never disagree. Before a first scan
- * it is the live calibrated view.
+ * it is the live calibrated view. The current log is shown separately (HitRateChip `live`).
  */
 export function recipeHitRate(r: Pick<RecipeView, "report" | "provenance">): HitRateView {
   const live = r.provenance.hitRate;
   const rep = r.report;
-  return rep ? { ...live, effective: rep.hitRate, basis: rep.hitRateBasis, n: rep.hitRateN } : live;
+  // scan-time numbers only: the live pooled sample (measured, users) may have moved since the scan
+  return rep ? { ...live, effective: rep.hitRate, basis: rep.hitRateBasis, n: rep.hitRateN, measured: null, users: 0 } : live;
 }
 
 /** "hit 35% · creator claim" / "hit 28% · measured n=23" / "hit 30% · estimate". */
@@ -33,11 +34,12 @@ export function basisWord(h: HitRateView): string {
   return h.basis === "measured" ? "measured" : h.basis === "creator_claim" ? "creator claim" : "estimate";
 }
 
+/** The pooled log as it stands NOW (live view), which may be newer than the scan the chip shows. */
 function LogLine({ h }: { h: HitRateView }) {
   if (h.measured !== null) {
     return (
       <span className="block text-neutral-400">
-        Logged: {pct(h.measured)} over {h.n} attempts from {h.users} players, blended as (hits + {CALIBRATION_K}·{pct(h.model)}) ÷ (n + {CALIBRATION_K}).
+        Logged now: {pct(h.measured)} over {h.n} attempts from {h.users} players, blended as (hits + {CALIBRATION_K}·{pct(h.model)}) ÷ (n + {CALIBRATION_K}).
       </span>
     );
   }
@@ -47,19 +49,20 @@ function LogLine({ h }: { h: HitRateView }) {
   return null;
 }
 
-function HitRateTip({ h }: { h: HitRateView }) {
+function HitRateTip({ h, live }: { h: HitRateView; live: HitRateView }) {
   const claim = h.claimN !== null ? ` (creator's sample: ${h.claimN})` : "";
   return (
     <span className="block space-y-1">
       <span className="block">{h.basis === "measured" ? `Measured: ${h.n} logged attempts now weigh at least as much as the curated ${pct(h.model)}.` : `${h.note}${claim}`}</span>
-      <LogLine h={h} />
+      <LogLine h={live} />
     </span>
   );
 }
 
-export function HitRateChip({ h }: { h: HitRateView }) {
+/** `h` = the rate the card prices with (scan-time); `live` = today's calibrated view for the log line. */
+export function HitRateChip({ h, live }: { h: HitRateView; live: HitRateView }) {
   return (
-    <Tooltip tip={<HitRateTip h={h} />}>
+    <Tooltip tip={<HitRateTip h={h} live={live} />}>
       <span className={SETTLED}>{hitRateLabel(h)}</span>
     </Tooltip>
   );

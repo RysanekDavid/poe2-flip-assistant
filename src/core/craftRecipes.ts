@@ -103,7 +103,7 @@ export interface CraftRecipe {
   base: RecipeLegSpec;
   result: RecipeLegSpec;
   materials: RecipeMaterialLine[];
-  hitRate: number; // 0..1 curated probability of a sellable result; calibration.ts swaps in logged attempts once n ≥ 20
+  hitRate: number; // 0..1 curated probability of a sellable result; calibration.ts shrinks logged attempts toward it ((hits + 20·hitRate) ÷ (n + 20))
   guide: CraftGuide;
 }
 

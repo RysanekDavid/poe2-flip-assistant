@@ -162,7 +162,7 @@ function satisfies(rule: PairingRule, present: ReadonlySet<string>, hasBone: boo
 function omenCheck(omen: CraftMaterial, present: ReadonlySet<string>, hasBone: boolean, rules: readonly PairingRule[]): LegalityCheck {
   const candidates = rules.filter((r) => r.needs.has(omen.id));
   if (candidates.length === 0) {
-    return { kind: "pairing", verdict: "unknown", detail: `no verified rule covers ${omen.label}`, source: `${KB} §4` };
+    return { kind: "pairing", verdict: "unknown", detail: `no rule covers ${omen.label}`, source: `${KB} §4` };
   }
   const matching = candidates.filter((r) => satisfies(r, present, hasBone));
   const verified = matching.find((r) => r.verified);

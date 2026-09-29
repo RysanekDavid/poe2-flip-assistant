@@ -23,11 +23,19 @@ function toMs(at: string): number {
   return ms;
 }
 
+const warnedNoCutoff = new Set<string>();
+
 export function patchVerifiedCutoffMs(version: string): number | null {
   const coverage = patchCoverageSchema.parse(JSON.parse(readFileSync(COVERAGE_PATH, "utf8")));
   if (coverage.game_data_patch === version) return toMs(coverage.official_patch_published_at);
   const seen = officialPatchSeenAt(version);
-  return seen === null ? null : toMs(seen);
+  if (seen !== null) return toMs(seen);
+  // once per version: the poller and the Craft tab ask every minute
+  if (!warnedNoCutoff.has(version)) {
+    warnedNoCutoff.add(version);
+    console.warn(`[craft-calibration] no go-live date for patch ${version} — attempts logged before it are NOT excluded`);
+  }
+  return null;
 }
 
 /** Pooled calibration stats per recipe key (recipes without eligible attempts are absent). */

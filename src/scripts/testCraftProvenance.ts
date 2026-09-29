@@ -33,14 +33,17 @@ const recipe = (key: string): CraftRecipe => {
 
 // A step (or note) that SAYS it is unconfirmed must use the `unverified` field, not prose: the
 // reviewed gate reads both, so wording cannot slip a doubt past it.
-const DOUBT = /\b(unverified|unconfirmed|untested|not (?:yet )?(?:verified|confirmed))\b/i;
+const DOUBT = /\b(unverified|unconfirmed|untested|not (?:yet )?(?:been )?(?:verified|confirmed)|isn't verified|open question|uncertain|unclear)\b/i;
 
 function doubts(r: CraftRecipe): string[] {
-  const steps = r.guide.phases.flatMap((p) => p.steps);
+  const g = r.guide;
+  const steps = g.phases.flatMap((p) => p.steps);
   const flagged = steps.filter((s) => s.unverified).map((s) => `unverified: ${s.unverified}`);
-  const prose = steps.flatMap((s) => [s.do, s.why, s.check, s.warning, s.onFail]).filter((t): t is string => !!t && DOUBT.test(t));
-  const notes = [...r.materials.map((m) => m.note), r.base.note, r.result.note].filter((t): t is string => !!t && DOUBT.test(t));
-  return [...flagged, ...prose, ...notes];
+  const guideText = [g.goal, g.shopping, g.marketCheck, g.brick, ...g.phases.map((p) => p.title)];
+  const stepText = steps.flatMap((s) => [s.do, s.why, s.check, s.warning, s.onFail]);
+  const notes = [...r.materials.map((m) => m.note), r.base.note, r.result.note];
+  const prose = [...guideText, ...stepText, ...notes].filter((t): t is string => !!t && DOUBT.test(t));
+  return [...flagged, ...prose];
 }
 
 // --- D-1: every recipe carries structured provenance, and every cited file/section exists ---

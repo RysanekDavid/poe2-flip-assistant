@@ -72,7 +72,7 @@ export function RecipeRow({ r, ex, open, onToggle, onOpen, icons, meta, interval
           <div className="truncate font-medium text-neutral-100">{r.label}</div>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-neutral-400">
             <span>{meta.title}</span>
-            <HitRateChip h={recipeHitRate(r)} />
+            <HitRateChip h={recipeHitRate(r)} live={r.provenance.hitRate} />
             <StatusChip p={r.provenance} />
             {scanLabel(r) && <span className="text-amber-300">· {scanLabel(r)}</span>}
             {rep?.status === "ok" && <GateNote r={r} intervalMin={intervalMin} />}
