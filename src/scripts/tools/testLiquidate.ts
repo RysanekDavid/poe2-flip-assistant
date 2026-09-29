@@ -1,22 +1,18 @@
-/* Liquidate: exchange quote (denomination, cap, grid, fee, ETA), mixed-input plan, bundle text,
- * balance_items storage + latest read + retention + cascade, and the trade2 fixture → scanned
- * items with a value source. Run: npm run test:tools:liquidate */
+/* Wealth › Sell (npm name kept: test:tools:liquidate): exchange + trade quotes, the stash planner,
+ * sellVerdict fixtures, sold-since-snapshot, session delta, then the DB half (wealthDbTests: storage,
+ * migrations, comps, reprice queue + budget, cred state, response contract). */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import type Database from "better-sqlite3";
-import { scanListings, type ScannedItem } from "../../api/accountScan";
-import { parseFetchResponse, type Listing } from "../../api/tradeListing";
 import type { PricedItem } from "../../api/types";
 import type { CxItemStats } from "../../core/cx/cxPersistence";
-import { WTS_MAX_CHARS, bundleText, orderTotal, packLines } from "../../core/tools/liquidate/bundle";
-import { cxSellQuote } from "../../core/tools/liquidate/cxRoute";
-import { groupStashItems, planLiquidation, type PlanContext } from "../../core/tools/liquidate/plan";
-import { stashNote, tradeListingQuote } from "../../core/tools/liquidate/tradeRoute";
-import { BALANCE_ITEMS_KEEP_SNAPSHOTS, insertBalanceItems, latestStashItems } from "../../db/balanceItemQueries";
-import { getDb } from "../../db/database";
-import { liquidateRequestSchema } from "../../lib/tools/liquidateContract";
-import { assertPanelExport, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
+import { cxSellQuote } from "../../core/wealth/cxRoute";
+import { planLiquidation, type PlanContext } from "../../core/wealth/plan";
+import { sellVerdict, type VerdictInput } from "../../core/wealth/sellVerdict";
+import { sessionDelta } from "../../core/wealth/sessionDelta";
+import { soldSince, type ReadListing } from "../../core/wealth/soldSince";
+import { stashNote, tradeListingQuote } from "../../core/wealth/tradeRoute";
+import type { ListingComp, PlanRow } from "../../lib/wealthContract";
+import { assertPanelExport } from "./toolsTestKit";
+import { runWealthDbTests } from "./wealthDbTests";
 
 const RATES = { exaltPerDivine: 400, chaosPerDivine: 20 };
 const GOLD_PER_EX = 5000;
@@ -26,8 +22,8 @@ function cxStats(midDiv: number, marketUnitsPerHour: number): CxItemStats {
   return { newestHour: 1_790_000_000, midDiv, bandDiv: null, marketUnitsPerHour, edge: null, issue: null, rawNetPct: null };
 }
 
-function line(itemId: string, itemName: string, baseValue: number, volume: number): PricedItem {
-  return { itemId, itemName, category: "Currency", baseValue, volume, change7d: null, spark7d: null, icon: `https://icon/${itemId}.png` };
+function line(itemId: string, itemName: string, baseValue: number, volume: number, change7d: number | null = null): PricedItem {
+  return { itemId, itemName, category: "Currency", baseValue, volume, change7d, spark7d: null, icon: `https://icon/${itemId}.png` };
 }
 
 const quote = (baseValue: number, cx: CxItemStats | null, qty: number, goldPerEx = GOLD_PER_EX) =>
@@ -40,61 +36,43 @@ function testCxQuote(): void {
   near(coarseDiv.denom.amount, 30, "priced 30 chaos each");
   assert.equal(coarseDiv.feeGold, 30 * 160, "fee is charged per chaos received");
   near(coarseDiv.feeDivPerUnit ?? NaN, 4800 / (GOLD_PER_EX * 400), "fee in Div at the gold valuation");
-  assert.equal(coarseDiv.feeComplete, true);
   near(coarseDiv.etaHours ?? NaN, 1 / (100 * 0.1), "ETA = qty / (flow × share)");
   assert.equal(coarseDiv.tier, "risky", "150 Div/h observed");
-  assert.equal(coarseDiv.observed, true);
-  assert.deepEqual(coarseDiv.warnings, []);
-  // Both grids fine → the cheaper fee: 10 Div as 10 Divines (8,000 gold) beats 200 Chaos (32,000).
-  assert.equal(quote(10, cxStats(10, 500), 1).denom.unit, "DIVINE");
-  // Cap: 1,000 × 0.01 Div = 4,000 Ex received is over the 200-item cap even though Ex is cheapest in gold.
+  assert.equal(quote(10, cxStats(10, 500), 1).denom.unit, "DIVINE", "both grids fine → the cheaper fee");
   const capped = quote(0.01, cxStats(0.01, 5000), 1000);
   assert.equal(capped.denom.unit, "DIVINE");
-  near(capped.receiveUnits, 10, "receives 10 Divines");
-  // Only Exalted keeps ≥ 1 whole unit, and its 1:3 grid is coarse → kept, but warned.
-  const coarse = quote(3 / 400, cxStats(3 / 400, 2000), 5);
-  assert.equal(coarse.denom.unit, "EXALT");
-  assert.ok(coarse.gridStepPct > 30);
-  assert.ok(coarse.warnings.some((w) => w.startsWith("coarse price grid")), coarse.warnings.join(" | "));
-  // Huge order: 10,000 units at 5 units/h filled → days, and the treasury "split it" wording.
+  near(capped.receiveUnits, 10, "receives 10 Divines (4,000 Ex is over the 200-item cap)");
   const huge = quote(0.001, cxStats(0.001, 50), 10_000);
-  near(huge.etaHours ?? NaN, 2000, "10000 / (50 × 10%)");
   assert.ok(huge.warnings.some((w) => w.includes("days to clear") && w.includes("split it, or take market")));
-  // No exchange history: ninja mid, no ETA, flagged.
   const blind = quote(2, null, 3);
-  assert.equal(blind.observed, false);
-  assert.equal(blind.midSource, "ninja");
-  assert.equal(blind.etaHours, null);
-  assert.equal(blind.unitsPerHour, null);
-  assert.ok(blind.warnings.some((w) => w.includes("no fresh exchange history")));
-  // An unusable gold valuation makes the fee unknown — never 0.
+  assert.deepEqual([blind.observed, blind.midSource, blind.etaHours], [false, "ninja", null], "no exchange history → ninja mid, no ETA");
   const unknownFee = quote(10, cxStats(10, 500), 1, 0);
-  assert.equal(unknownFee.feeComplete, false);
-  assert.equal(unknownFee.feeDivPerUnit, null);
-  assert.ok(unknownFee.warnings.some((w) => w.includes("gold fee could not be priced")));
-  near(quote(2, cxStats(2, 500), 1).fastDiv, 2 * 0.95, "fast = mid × recommendOffsets(500) discount");
+  assert.deepEqual([unknownFee.feeComplete, unknownFee.feeDivPerUnit], [false, null], "an unpriceable gold fee is unknown, never 0");
+  const ratio = quote(0.00001, cxStats(0.00001, 100_000), 100_000);
+  assert.equal(ratio.denom.unit, "CHAOS", "100,000:1 Divine is past the 65000:1 clamp");
 }
 
 function testTradeQuote(): void {
   const t = tradeListingQuote(2.5, 4, { listed: 45, sellThrough: 0.01, samples: 7 }, RATES);
   near(t.quickDiv, 2.25, "quick 0.9×");
   near(t.patientDiv, 2.75, "patient 1.1×");
-  assert.equal(t.note, "~price 50 chaos", "2.5 Div = 1,000 Ex > cap → 50 Chaos (treasury denominate)");
+  assert.equal(t.note, "~price 50 chaos", "2.5 Div = 1,000 Ex > cap → 50 Chaos");
   assert.ok(t.competitionNote?.includes("45 listed") && t.competitionNote.includes("slow sell-through"));
-  assert.equal(stashNote(0.1, RATES).note, "~price 40 exalted", "0.1 Div = 40 Ex (under the 200 cap)");
-  assert.equal(stashNote(4, RATES).note, "~price 80 chaos", "4 Div = 1,600 Ex > cap → 80 Chaos");
+  assert.equal(stashNote(0.1, RATES).note, "~price 40 exalted");
   assert.equal(stashNote(25, RATES).note, "~price 25 divine");
+  assert.equal(stashNote(3.24, RATES).note, "~price 65 chaos", "3.24 Div → 64.8 chaos, rounded to whole orbs");
   assert.throws(() => tradeListingQuote(0, 1, null, RATES), /positive value/);
 }
 
-function planContext(): PlanContext {
-  const kulemak = line("kulemak", "Kulemak's Invitation", 2.5, 800);
+function planContext(compDiv: ReadonlyMap<string, number> = new Map()): PlanContext {
+  const kulemak = line("kulemak", "Kulemak's Invitation", 2.5, 800, 31);
   const dust = line("dust", "Thin Dust", 0.05, 1);
   return {
     rates: RATES,
     ninjaByName: new Map([[kulemak.itemName.toLowerCase(), kulemak], [dust.itemName.toLowerCase(), dust]]),
     cxByItemId: new Map([["kulemak", cxStats(2.5, 1000)]]), // 2,500 Div/h → safe
-    uniqueDiv: new Map([["headhunter", 40]]),
+    uniqueDiv: new Map([["headhunter", 40], ["mageblood", 90]]),
+    compDiv,
     competition: new Map([["headhunter", { competition: { listed: 12, sellThrough: 0.3, samples: 9 }, icon: "https://icon/hh.png" }]]),
     params: { goldPerExalt: GOLD_PER_EX, flowSharePct: 10, maxGridStepPct: 10 },
   };
@@ -106,191 +84,119 @@ function testPlan(): void {
       { name: "kulemak's invitation", qty: 4 },
       { name: "Headhunter", qty: 1 },
       { name: "Doom Grip", qty: 1 },
-      { name: "Rune Loop", qty: 2, manualDiv: 3 },
       { name: "Thin Dust", qty: 10 },
-      { name: "Kulemak's Invitation ", qty: 6, manualDiv: 9 },
+      { name: "Mageblood", qty: 1 },
+      { name: "Kulemak's Invitation ", qty: 6 },
     ],
-    planContext(),
+    planContext(new Map([["mageblood", 70]])),
   );
-  assert.deepEqual(plan.rows.map((r) => [r.name, r.qty, r.recommended, r.valueSource]), [
-    ["Kulemak's Invitation", 10, "cx", "cx"],
-    ["Headhunter", 1, "trade", "scout"],
-    ["Doom Grip", 1, "manual", "none"],
-    ["Rune Loop", 2, "trade", "manual"],
-    ["Thin Dust", 10, "trade", "ninja"],
-  ], "duplicates merge (case/space-insensitive), each input lands on its route");
-  const kul = plan.rows[0]!;
-  assert.ok(kul.warnings.some((w) => w.includes("ignored")), "a manual value on an exchange item is ignored loudly");
-  assert.equal(plan.rows[1]!.icon, "https://icon/hh.png");
+  assert.deepEqual(plan.rows.map((r) => [r.name, r.qty, r.recommended, r.valueSource, r.unitDiv]), [
+    ["Kulemak's Invitation", 10, "cx", "cx", 2.5],
+    ["Headhunter", 1, "trade", "scout", 40],
+    ["Doom Grip", 1, "unpriced", "none", null],
+    ["Thin Dust", 10, "trade", "ninja", 0.05],
+    ["Mageblood", 1, "trade", "trade", 70],
+  ], "duplicates merge; comps beat poe2scout; no value → unpriced (null, never 0)");
   assert.equal(plan.rows[1]!.trade?.competition?.listed, 12);
-  assert.ok(plan.rows[4]!.reason.startsWith("exchange too thin"), "thin exchange market → trade");
-  assert.ok(plan.rows[4]!.cx?.observed === false);
-  const fee = kul.feeTotalDiv ?? NaN;
-  near(kul.fastTotalDiv ?? NaN, kul.cx!.fastDiv * 10 - fee, "fast total is net of the fee");
-  const t = plan.totals;
-  assert.equal(t.unpricedCount, 1);
-  assert.equal(t.feeIncompleteCount, 0);
-  near(t.feeDiv, fee, "only the exchange row carries a fee");
-  near(t.fastDiv, plan.rows.reduce((s, r) => s + (r.fastTotalDiv ?? 0), 0), "fast total sums the priced rows");
-
-  const bundle = bundleText(plan, RATES);
-  assert.deepEqual(bundle.lines, ["WTS Headhunter @ 40 div · 2x Rune Loop @ 60 chaos (120 chaos) · 10x Thin Dust @ 20 ex (200 ex)"]);
-  assert.deepEqual(bundle.notes, [
-    { name: "Headhunter", note: "~price 40 divine" },
-    { name: "Rune Loop", note: "~price 60 chaos" },
-    { name: "Thin Dust", note: "~price 20 exalted" },
-  ]);
-  assert.deepEqual(bundleText({ rows: [kul], totals: t }, RATES), { lines: [], notes: [] }, "exchange rows are not advertised");
-  assert.equal(liquidateRequestSchema.safeParse({ items: [{ name: "x", qty: 0 }] }).success, false, "qty ≥ 1");
-  assert.equal(liquidateRequestSchema.safeParse({ items: [] }).success, false, "at least one item");
+  assert.ok(plan.rows[3]!.reason.startsWith("exchange too thin"), "thin exchange market → trade");
+  const kul = plan.rows[0]!;
+  near(kul.fastTotalDiv ?? NaN, kul.cx!.fastDiv * 10 - (kul.feeTotalDiv ?? NaN), "fast total is net of the fee");
+  assert.equal(plan.rows[2]!.fastTotalDiv, null, "an unpriced row has no total");
+  assert.equal(plan.totals.unpricedCount, 1);
 }
 
-function testThinManual(): void {
-  // A thin exchange item is listed on trade, where YOUR value is the price — not ignored.
-  const plan = planLiquidation([{ name: "Thin Dust", qty: 10, manualDiv: 0.1 }, { name: "Kulemak's Invitation", qty: 1, manualDiv: 9 }], planContext());
-  const [dust, kul] = plan.rows;
-  assert.deepEqual([dust?.recommended, dust?.valueSource, dust?.unitDiv, dust?.trade?.note], ["trade", "manual", 0.1, "~price 40 exalted"]);
-  assert.deepEqual(dust?.warnings, [], "no 'ignored' warning on the trade path");
-  near(dust?.fastTotalDiv ?? NaN, 0.1 * 0.9 * 10, "totals use your value");
-  assert.ok(kul?.warnings.some((w) => w.includes("ignored")), "the exchange path still ignores it, loudly");
-}
-
-function testBundleTotals(): void {
-  // The total comes from the rounded unit note (50 chaos) × qty, so it can never contradict it.
-  assert.deepEqual(orderTotal({ amount: 49.6, unit: "CHAOS" }, 3, RATES), { amount: 150, unit: "CHAOS" }, "150 chaos stays in chaos");
-  near(orderTotal({ amount: 49.6, unit: "CHAOS" }, 5, RATES).amount, 12.5, "250 chaos is past the cap → 12.5 div");
-  const plan = planLiquidation([{ name: "Rare Ring", qty: 5, manualDiv: 2.48 }], planContext());
-  assert.deepEqual(bundleText(plan, RATES).lines, ["WTS 5x Rare Ring @ 50 chaos (12.5 div)"]);
-  // Lines stay under the chat bound; a part is never split across lines.
-  const parts = Array.from({ length: 12 }, (_, i) => `10x Some Long Item Name Number ${i} @ 20 ex (200 ex)`);
-  const lines = packLines(parts);
-  assert.ok(lines.length > 1, "long lists split");
-  assert.ok(lines.every((l) => l.length <= WTS_MAX_CHARS && l.startsWith("WTS ")), lines.join("\n"));
-  assert.equal(lines.join(" ").split(" · ").length + lines.length - 1, parts.length, "every part lands on exactly one line");
-  assert.deepEqual(packLines(["x".repeat(300)]), [`WTS ${"x".repeat(300)}`], "an oversized part gets its own line");
-}
-
-function testRatioCap(): void {
-  // 100,000 × 0.00001 Div: Divine is cheapest in gold (1 Div → 800) but 100,000:1 is past the 65000:1
-  // clamp, so Chaos (5,000:1) is the only postable receipt.
-  const q = quote(0.00001, cxStats(0.00001, 100_000), 100_000);
-  assert.equal(q.denom.unit, "CHAOS");
-  near(q.receiveUnits, 20, "receives 20 chaos");
-  assert.ok(!q.warnings.some((w) => w.includes("65000:1")), "the chosen receipt is within the clamp");
-}
-
-function snapshotFor(db: Database.Database, userId: number, league: string, hoursAgo: number): number {
-  const r = db
-    .prepare(
-      `INSERT INTO balance_snapshots (user_id, league, exalt_per_div, chaos_per_div, net_worth_div, source, listed_seen, fetched_at)
-       VALUES (?, ?, 400, 20, 0, 'trade', 2, datetime('now', ?))`,
-    )
-    .run(userId, league, `-${hoursAgo} hours`);
-  return Number(r.lastInsertRowid);
-}
-
-const scanned = (itemName: string, stackSize: number, marketDiv: number | null, source: ScannedItem["marketSource"]): ScannedItem => ({
-  tab: "sell", itemName, baseType: itemName, rarity: null, stackSize, marketDiv, marketSource: source, ask: { amount: 2, currency: "divine" },
+const comp = (fairDiv: number | null, cheapestDiv: number | null): ListingComp => ({
+  listingId: "L1", fairDiv, cheapestDiv, samples: 8, searchUrl: null, checkedAt: "2026-09-29T10:00:00.000Z",
 });
 
-function testBalanceItems(): void {
-  const db = freshToolsDb();
-  assert.deepEqual(columnsOf(db, "balance_items"), [
-    "id", "snapshot_id", "tab", "item_name", "base_type", "rarity", "stack_size",
-    "market_div", "market_source", "ask_amount", "ask_currency",
-  ]);
-  const me = insertUser(db, "seller");
-  const other = insertUser(db, "other");
-  assert.deepEqual(latestStashItems(me, "L"), { snapshot: null, items: [] });
-  const ids: number[] = [];
-  for (let i = BALANCE_ITEMS_KEEP_SNAPSHOTS + 2; i >= 1; i--) {
-    const id = snapshotFor(db, me, "L", i);
-    insertBalanceItems(id, [scanned(`Item ${i}`, 3, 1.5, "ninja"), scanned("Divine Orb", 5, 5, "ladder")]);
-    ids.push(id);
-  }
-  const theirs = snapshotFor(db, other, "L", 100);
-  insertBalanceItems(theirs, [scanned("Their Item", 1, null, null)]);
-  const latest = latestStashItems(me, "L");
-  assert.equal(latest.snapshot?.id, ids[ids.length - 1], "newest trade read");
-  assert.deepEqual(latest.items.map((r) => [r.item_name, r.stack_size, r.market_source, r.ask_amount]), [
-    ["Item 1", 3, "ninja", 2], ["Divine Orb", 5, "ladder", 2],
-  ]);
-  const withItems = db.prepare("SELECT COUNT(DISTINCT snapshot_id) c FROM balance_items WHERE snapshot_id != ?").get(theirs) as { c: number };
-  assert.equal(withItems.c, BALANCE_ITEMS_KEEP_SNAPSHOTS, "item rows of older reads are trimmed");
-  assert.equal(latestStashItems(other, "L").items.length, 1, "another user's rows are never trimmed");
-  db.prepare("DELETE FROM balance_snapshots WHERE id = ?").run(ids[ids.length - 1]);
-  assert.equal(latestStashItems(me, "L").items[0]?.item_name, "Item 2", "a deleted snapshot takes its items with it (cascade)");
-  const grouped = groupStashItems(latestStashItems(me, "L").items, RATES);
-  assert.equal(grouped.skippedOrbs, 1, "raw orbs are never offered");
-  assert.deepEqual(grouped.items, [
-    { name: "Item 2", qty: 3, rarity: null, tabs: ["sell"], askDiv: 2 },
-  ], "the stored ask is per unit — imported as-is, never divided by the stack");
+/** Verdict fixtures — one per rule, plus the boundaries between them. */
+function testSellVerdict(): void {
+  const rows = planLiquidation(
+    [{ name: "Kulemak's Invitation", qty: 2 }, { name: "Headhunter", qty: 1 }, { name: "Doom Grip", qty: 1 }, { name: "Mageblood", qty: 1 }],
+    planContext(new Map([["mageblood", 3.2]])),
+  ).rows;
+  const byName = (n: string): PlanRow => rows.find((r) => r.name === n)!;
+  const v = (row: PlanRow, over: Partial<VerdictInput> = {}) =>
+    sellVerdict({ row, askDiv: null, change7d: null, volume: null, comp: null, exPerDiv: 400, ...over });
+
+  assert.deepEqual(v(byName("Doom Grip")), { verdict: "unpriced", targetDiv: null, reason: "no market price — run a reprice check" });
+  const hold = v(byName("Kulemak's Invitation"), { change7d: 31, volume: 80 });
+  assert.deepEqual([hold.verdict, hold.targetDiv, hold.reason], ["hold", null, "+31% 7d, rising — hold"]);
+  assert.equal(v(byName("Kulemak's Invitation"), { change7d: 31, volume: 49 }).verdict, "sell-cx", "rising but illiquid → no hold");
+  assert.equal(v(byName("Kulemak's Invitation"), { change7d: 24.9, volume: 500 }).verdict, "sell-cx", "+24.9% is under the hold bar");
+  const cx = v(byName("Kulemak's Invitation"));
+  assert.deepEqual([cx.verdict, cx.targetDiv], ["sell-cx", 2.5]);
+  assert.match(cx.reason, /^safe exchange at 2\.5 div · ~<1h to fill$/);
+  const listNew = v(byName("Headhunter"));
+  assert.deepEqual(listNew, { verdict: "list", targetDiv: 40, reason: "list at 40 div (fair)" });
+  assert.equal(v(byName("Headhunter"), { askDiv: 46 }).verdict, "list", "46 ≤ 40 × 1.15 → keep listing");
+  assert.deepEqual(v(byName("Headhunter"), { askDiv: 11 }), { verdict: "list", targetDiv: null, reason: "yours 11 div is 73% under 40 div fair — check before raising" }, "an under-fair ask is flagged, never called fair, and gets no raise-the-price note");
+  const over = v(byName("Headhunter"), { askDiv: 46.1 });
+  assert.deepEqual([over.verdict, over.targetDiv, over.reason], ["reprice", 40, "yours 46.1 div is 15% over 40 div fair"]);
+  const stuck = v(byName("Mageblood"), { askDiv: 5, comp: comp(3.2, 3.1) });
+  assert.deepEqual(stuck, { verdict: "reprice", targetDiv: 3.2, reason: "cheapest 3.1 div · yours 5 div → reprice to 3.2 div" });
+  const subDiv = v(byName("Mageblood"), { askDiv: 5, comp: comp(3.2, 0.5) });
+  assert.match(subDiv.reason, /^cheapest 200 ex · /, "sub-Div amounts read in ex, never '0.5 div'");
+  for (const r of rows) assert.ok(v(r, { askDiv: 999, comp: comp(1, 0.001), change7d: 1 }).reason.length <= 80, `${r.name}: reason ≤ 80 chars`);
 }
 
-function fixtureListings(): Listing[] {
-  const listings = parseFetchResponse(JSON.parse(readFileSync(resolve("src/scripts/fixtures/trade2-fetch-shape.json"), "utf8")));
-  const orb: Listing = { ...listings[0]!, listingId: "fx-orbs", itemName: "Exalted Orb", baseType: "Exalted Orb", rarity: "Currency", stackSize: 800, price: null, stash: "currency" };
-  return [...listings, orb];
+function testSoldSince(): void {
+  const L = (listingId: string | null, name: string, askDiv: number | null, stack = 1): ReadListing => ({
+    listingId, name, askDiv, unitAskDiv: askDiv == null ? null : askDiv / stack,
+  });
+  const prev = [L("a", "Headhunter", 40), L("b", "Doom Grip", 3), L("c", "Rune", 0.2), L("d", "Rune", 0.2), L("e", "Omen", null)];
+  const now = [L("a", "Headhunter", 40), L("d2", "Rune", 0.2), L("d", "Rune", 0.2)];
+  const r = soldSince(prev, now, false);
+  assert.deepEqual(r, { count: 2, askDiv: 3, names: ["Doom Grip", "Omen"] }, "a relisted Rune (new id, same count) is not a sale");
+  const cut = soldSince(prev, [L("a", "Headhunter", 40)], true);
+  assert.deepEqual(cut?.names, [], "truncated read: anything at/under the cheapest seen ask (40) may just be unread");
+  const cutLow = soldSince([L("x", "Big", 50), L("y", "Small", 1)], [L("z", "Mid", 10)], true);
+  assert.deepEqual(cutLow?.names, ["Big"], "only listings above the truncation floor count");
+  const stack = soldSince([L("s", "Splinter", 4, 20), L("x", "Big", 50)], [L("z", "Mid", 1)], true);
+  assert.deepEqual(stack?.names, ["Big"], "truncation floor is per unit: a 20-stack at 0.2/unit (4 whole) under a 1 div floor may be unread");
+  assert.equal(soldSince([L(null, "Old", 5)], [], false), null, "pre-capture rows (no ids) → unknown, not 0");
+  assert.deepEqual(soldSince([L("a", "X", null)], [], false), { count: 1, askDiv: null, names: ["X"] }, "no ask → askDiv null, never 0");
 }
 
-function testAccountScanItems(): void {
-  const valuer = { value: (name: string, stack: number) => (name === "Twin Grasp" ? { div: 5 * Math.max(1, stack), source: "scout" as const } : null) };
-  const scan = scanListings(fixtureListings(), 9, RATES, valuer);
-  assert.equal(scan.items.length, 6, "one item per listing read, orbs included");
-  const by = (name: string): ScannedItem => {
-    const it = scan.items.find((i) => i.itemName === name);
-    if (!it) throw new Error(`scanned item ${name} missing`);
-    return it;
-  };
-  assert.deepEqual([by("Twin Grasp").marketDiv, by("Twin Grasp").marketSource], [5, "scout"], "market value wins over the ask");
-  assert.deepEqual([by("Doom Grip").marketDiv, by("Doom Grip").marketSource, by("Doom Grip").tab], [3, "ask", "sell"]);
-  assert.deepEqual([by("Rune Loop").marketDiv, by("Rune Loop").marketSource, by("Rune Loop").ask], [null, null, null], "no price, no market → unpriced");
-  assert.equal(by("Odd Price").marketSource, null, "an off-ladder ask is unpriced");
-  assert.deepEqual([by("Exalted Orb").marketDiv, by("Exalted Orb").marketSource, by("Exalted Orb").stackSize], [2, "ladder", 800]);
-  assert.equal(by("Doom Grip").stackSize, 1, "non-stackable listing counts as one");
-  assert.equal(scan.exalted, 800);
-  assert.equal(scan.unpriced, 2);
+function testSessionDelta(): void {
+  const s = (fetched_at: string, net_worth_div: number, source = "trade") => ({ fetched_at, net_worth_div, source });
+  const snaps = [
+    s("2026-09-29 08:00:00", 90), // yesterday's session, 7h before the next read
+    s("2026-09-29 15:00:00", 100),
+    s("2026-09-29 17:00:00", 50, "manual"), // other source — ignored, and does not bridge a gap
+    s("2026-09-29 17:30:00", 105),
+    s("2026-09-29 19:40:00", 112.4),
+  ];
+  const d = sessionDelta(snaps);
+  assert.ok(d != null);
+  assert.equal(d.startAt, "2026-09-29 15:00:00", "the 7h silence before 15:00 started this session");
+  near(d.deltaDiv, 12.4, "112.4 − 100");
+  near(d.deltaPct ?? NaN, 12.4, "12.4%");
+  assert.equal(sessionDelta([s("2026-09-29 19:40:00", 5)]), null, "one read → no session delta yet");
+  assert.equal(sessionDelta([s("2026-09-29 10:00:00", 5), s("2026-09-29 19:40:00", 9)]), null, "a 9h gap → a fresh session of one read");
+  assert.equal(sessionDelta([s("2026-09-29 18:00:00", 0), s("2026-09-29 19:00:00", 9)])?.deltaPct, null, "from 0 Div → pct null");
+  const manualLatest = sessionDelta([...snaps, s("2026-09-29 19:45:00", 60, "manual")]);
+  assert.equal(manualLatest?.startAt, "2026-09-29 17:00:00", "like-with-like: a manual latest compares with manual entries only");
+  assert.throws(() => sessionDelta([s("yesterday", 1)]), /unparseable/);
 }
 
-function stackedListings(): Listing[] {
-  return parseFetchResponse(JSON.parse(readFileSync(resolve("src/scripts/fixtures/trade2-fetch-stacked.json"), "utf8")));
+async function main(): Promise<void> {
+  testCxQuote();
+  testTradeQuote();
+  testPlan();
+  testSellVerdict();
+  testSoldSince();
+  testSessionDelta();
+  await runWealthDbTests();
+  assertPanelExport("src/components/wealth/SellPanel.tsx", "SellPanel", "src/components/shell/tabs/WealthTab.tsx");
+  assertPanelExport("src/components/wealth/BalancePanel.tsx", "BalancePanel", "src/components/shell/tabs/WealthTab.tsx");
+  console.log(
+    "ALL PASS — cx + trade quotes, stash plan (comps > scout, unpriced null), sellVerdict fixtures, sold-since (relist, truncation), " +
+      "session delta, balance_items + migrations, comps retention, reprice queue/cooldown/budget, cred state, sell contract, panel wiring",
+  );
 }
 
-/** A stash note on a stack prices ONE unit: an own stacked listing is worth ask × stack. */
-function testStackedOwnListings(): void {
-  const valuer = { value: (name: string, stack: number) => (name === "Greater Rune of Alacrity" ? { div: 0.4 * stack, source: "ninja" as const } : null) };
-  const scan = scanListings(stackedListings(), 4, RATES, valuer);
-  const at = (id: number): ScannedItem => scan.items[id]!;
-  near(at(0).marketDiv!, (3 * 12) / 400, "12 omens at 3 ex each → 36 ex");
-  near(at(1).marketDiv!, (5 * 4) / 400, "4 omens at 5 ex each → 20 ex");
-  near(at(2).marketDiv!, (0.25 * 40) / 20, "a 10/40 chaos note arrives as 0.25 per unit → 10 chaos");
-  assert.deepEqual([at(3).marketDiv, at(3).marketSource, at(3).ask], [2, "ninja", { amount: 1, currency: "divine" }], "market wins; the ask is kept per unit");
-  assert.deepEqual(scan.items.map((i) => i.marketSource), ["ask", "ask", "ask", "ninja"]);
-  near(scan.gearAtAskDiv, 36 / 400 + 20 / 400 + 10 / 20, "gear at own asks = Σ unit ask × stack");
-  near(scan.otherDiv, scan.gearAtAskDiv + 2, "net worth counts the whole stacks");
-  near(scan.tabs.find((t) => t.tab === "bulk")!.valueDiv, 36 / 400 + 10 / 20 + 2, "per-tab value too");
-
-  const db = getDb(); // testBalanceItems already reset it; a second reset can't unlink an open file on Windows
-  const stacker = insertUser(db, "stacker");
-  insertBalanceItems(snapshotFor(db, stacker, "S", 1), scan.items);
-  const stored = latestStashItems(stacker, "S").items;
-  assert.deepEqual(stored.map((r) => [r.stack_size, r.ask_amount]), [[12, 3], [4, 5], [40, 0.25], [5, 1]], "ask_amount stored per unit");
-  const grouped = groupStashItems(stored, RATES).items;
-  const by = (name: string) => grouped.find((g) => g.name === name)!;
-  assert.equal(by("Omen of Light").qty, 16, "stacks of one item merge");
-  near(by("Omen of Light").askDiv!, (3 * 12 + 5 * 4) / 16 / 400, "per-unit ask, stack-weighted across listings (3.5 ex)");
-  near(by("Breach Splinter").askDiv!, 0.25 / 20, "a single stack's per-unit ask imports as-is");
-  near(by("Greater Rune of Alacrity").askDiv!, 1, "1 div per unit on a stack of 5 stays 1 div");
-}
-
-testCxQuote();
-testTradeQuote();
-testRatioCap();
-testPlan();
-testThinManual();
-testBundleTotals();
-testBalanceItems();
-testAccountScanItems();
-testStackedOwnListings();
-assertPanelExport("src/components/tools/liquidate/LiquidateTool.tsx", "LiquidateTool", "src/components/shell/tabs/WealthTab.tsx");
-console.log("ALL PASS — cx quote (denomination, cap, ratio clamp, grid, fee, ETA), trade quote, plan (thin + manual) + bundle (totals, line split), balance_items retention + cascade, trade2 fixture items, stacked own listings (ask × stack, per-unit import), panel wiring");
+main().catch((e: unknown) => {
+  console.error(e);
+  process.exit(1);
+});

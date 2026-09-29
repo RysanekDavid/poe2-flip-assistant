@@ -11,6 +11,7 @@ import { AlertsProvider } from "../alerts/AlertsContext";
 import { AlertsTab } from "../alerts/AlertsTab";
 import { CoachPanel } from "../coach/CoachPanel";
 import { TabNav } from "./TabNav";
+import { CredBanner } from "./CredBanner";
 import { useTabRoute } from "./useTabRoute";
 import { tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
 import { ExchangeTab } from "./tabs/ExchangeTab";
@@ -90,6 +91,7 @@ export function AppShell() {
         <Onboarding />
         {/* stale-league warning — every price below is wrong if this fires */}
         <LeagueBanner />
+        <CredBanner />
         <header ref={headerRef} className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-line bg-neutral-950/85 backdrop-blur">
           <div className="flex items-center justify-between px-6 py-2">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

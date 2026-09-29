@@ -3,11 +3,29 @@
 import { useEffect, useState } from "react";
 import { KeyRound, Loader2, Check, ShieldCheck, ShieldAlert, ExternalLink, Lock } from "lucide-react";
 import { LogoutEverywhere } from "./LogoutEverywhere";
+import { poeSettingsResponseSchema, type PoeSettingsResponse as PoeStatus } from "../lib/poeSettingsContract";
 
-interface PoeStatus {
-  connected: boolean;
-  contact: string;
-  account: string;
+const hhmm = (iso: string | null): string =>
+  iso == null ? "" : ` at ${new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+
+/** Green only while the cookie works: a stored cookie trade2 rejected (403) is not "connected". */
+function ConnectionBadge({ status }: { status: PoeStatus }) {
+  if (status.connected && status.credStatus.state === "expired") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-950/40 px-2.5 py-1 text-xs text-amber-400" title={status.credStatus.error ?? undefined}>
+        <ShieldAlert className="h-4 w-4" /> connected — cookie rejected (403){hhmm(status.credStatus.checkedAt)}
+      </span>
+    );
+  }
+  return status.connected ? (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-950/40 px-2.5 py-1 text-xs text-emerald-400">
+      <ShieldCheck className="h-4 w-4" /> connected
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-950/40 px-2.5 py-1 text-xs text-amber-400">
+      <ShieldAlert className="h-4 w-4" /> not connected
+    </span>
+  );
 }
 
 /**
@@ -27,12 +45,13 @@ export function SettingsPanel() {
   const load = () =>
     fetch("/api/settings/poe")
       .then((r) => r.json())
-      .then((d: PoeStatus) => {
+      .then((body: unknown) => {
+        const d = poeSettingsResponseSchema.parse(body);
         setStatus(d);
         setContact(d.contact ?? "");
         setAccount(d.account ?? "");
       })
-      .catch(() => setError("failed to load settings"));
+      .catch((e: unknown) => setError(`failed to load settings: ${e instanceof Error ? e.message : String(e)}`));
 
   useEffect(() => {
     load();
@@ -55,7 +74,7 @@ export function SettingsPanel() {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? "save failed");
-      setStatus(d);
+      setStatus(poeSettingsResponseSchema.parse(d));
       setPoesessid("");
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
@@ -71,16 +90,7 @@ export function SettingsPanel() {
       <header className="mb-3 flex flex-wrap items-center gap-2.5">
         <KeyRound className="h-5 w-5 text-sky-400" />
         <h2 className="text-lg font-semibold">Trade Connection</h2>
-        {status &&
-          (status.connected ? (
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-950/40 px-2.5 py-1 text-xs text-emerald-400">
-              <ShieldCheck className="h-4 w-4" /> connected
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-950/40 px-2.5 py-1 text-xs text-amber-400">
-              <ShieldAlert className="h-4 w-4" /> not connected
-            </span>
-          ))}
+        {status && <ConnectionBadge status={status} />}
       </header>
 
       <p className="mb-4 max-w-2xl text-sm text-neutral-500">
