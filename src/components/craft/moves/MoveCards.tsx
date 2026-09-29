@@ -6,7 +6,8 @@ import type { CraftMovesResponse, RankedMoveView } from "../../../lib/tools/craf
 import { Button } from "../../ui/Button";
 import { PriceChip } from "../../ui/PriceChip";
 import { evLabel, MatIcon, priceLabel } from "../craftView";
-import { fetchLiveValue, useCountdown, type LiveState } from "./SellAsIsCard";
+import { useCountdown } from "../../ui/useCountdown";
+import { fetchLiveValue, type LiveState } from "./SellAsIsCard";
 
 const TIER_LABEL: Record<RankedMoveView["tier"], string> = {
   1: "aimed add",

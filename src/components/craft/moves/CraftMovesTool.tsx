@@ -7,8 +7,8 @@ import {
   rulesStale,
   type CraftMovesResponse,
 } from "../../../lib/tools/craftMovesContract";
-import { Button } from "../../ui/Button";
 import { Panel } from "../../ui/Panel";
+import { PasteBox, usePasteAutoRead } from "../../ui/PasteBox";
 import { postJson, SAMPLE_ITEM } from "./craftMovesClient";
 import { GatesTable } from "./GatesTable";
 import { ItemStateCard } from "./ItemStateCard";
@@ -18,9 +18,6 @@ import { SellAsIsCard } from "./SellAsIsCard";
 import { ShareLink } from "./ShareLink";
 
 type View = { kind: "idle" } | { kind: "loading" } | { kind: "error"; error: string } | { kind: "done"; text: string; seq: number; r: CraftMovesResponse };
-
-/** A paste settles for this long before it is read — typing into the box must not fire per key. */
-const AUTO_READ_MS = 400;
 
 /** Rules + data stamp. Amber once the rules pass their re-verify date or the data leaves 0.5.x. */
 function PatchLine({ r }: { r: CraftMovesResponse }) {
@@ -54,43 +51,6 @@ function useCraftRead() {
     }
   }, []);
   return { view, read, lastRead };
-}
-
-/** Reads the box by itself once a pasted item settles; the button stays for re-reads. */
-function useAutoRead(text: string, read: (t: string) => Promise<void>, lastRead: { current: string | null }): void {
-  useEffect(() => {
-    const trimmed = text.trim();
-    if (!/^Rarity:/m.test(trimmed) || trimmed === lastRead.current?.trim()) return;
-    const t = window.setTimeout(() => void read(text), AUTO_READ_MS);
-    return () => window.clearTimeout(t);
-  }, [text, read, lastRead]);
-}
-
-function PasteBox({ text, setText, busy, onRead, compact }: { text: string; setText: (t: string) => void; busy: boolean; onRead: () => void; compact: boolean }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) onRead();
-        }}
-        maxLength={CRAFT_MOVES_MAX_TEXT}
-        spellCheck={false}
-        aria-label="Item text (Ctrl+C in game)"
-        placeholder="Hover an item in game, press Ctrl+C (Ctrl+Alt+C adds exact affix headers) and paste here — it reads itself."
-        className={`${compact ? "h-24" : "h-40"} w-full resize-y rounded-md border border-line bg-neutral-950 p-2 font-mono text-xs text-neutral-100 placeholder:text-neutral-500`}
-      />
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="primary" size="sm" onClick={onRead} disabled={busy || text.trim() === ""} title="Ctrl+Enter">
-          {busy ? "reading…" : "Read item"}
-        </Button>
-        <Button size="sm" onClick={() => setText(SAMPLE_ITEM)}>
-          Try sample item
-        </Button>
-      </div>
-    </div>
-  );
 }
 
 function Results({ view }: { view: Extract<View, { kind: "done" }> }) {
@@ -127,13 +87,21 @@ function Results({ view }: { view: Extract<View, { kind: "done" }> }) {
 export function CraftMovesTool({ initialText = null }: { initialText?: string | null }) {
   const [text, setText] = useState(initialText ?? "");
   const { view, read, lastRead } = useCraftRead();
-  useAutoRead(text, read, lastRead);
+  usePasteAutoRead(text, read, lastRead);
   useEffect(() => {
     if (initialText != null) setText(initialText);
   }, [initialText]);
   return (
     <section className="flex flex-col gap-3">
-      <PasteBox text={text} setText={setText} busy={view.kind === "loading"} onRead={() => void read(text)} compact={view.kind === "done"} />
+      <PasteBox
+        text={text}
+        setText={setText}
+        busy={view.kind === "loading"}
+        onRead={() => void read(text)}
+        compact={view.kind === "done"}
+        maxLength={CRAFT_MOVES_MAX_TEXT}
+        sample={SAMPLE_ITEM}
+      />
       {view.kind === "error" && <p role="alert" className="text-sm text-bad">{view.error}</p>}
       {view.kind === "done" && <Results key={view.seq} view={view} />}
     </section>
