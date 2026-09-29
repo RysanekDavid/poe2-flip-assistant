@@ -3,6 +3,8 @@ import { config } from "../config/env";
 import { fireAlert } from "../core/alertEngine";
 import { loadCxMarketView, type CxMarketView } from "../core/cx/cxItemMarkets";
 import { cxHistoryProblem, pruneCxMarketHistory, syncCxHistory } from "../core/cx/cxIngest";
+import { leagueStartProblem, syncLeagueStart } from "../core/cx/leagueStart/backfill";
+import { fireLeagueStartAlerts } from "../core/cx/leagueStart/dailyAlert";
 import { trackCxOutcomes } from "../core/cx/cxOutcomes";
 import { scoreItem } from "../core/flipModel";
 import { getPolledLeagues, leagueForUser, sameLeague } from "../core/leagueUsers";
@@ -55,6 +57,7 @@ export async function runCycle(): Promise<void> {
   // Fill gaps in the stored exchange history AFTER the sweeps, so a cold backfill (bounded,
   // 2s between requests) never delays fresh ninja prices. Fail-quiet like the refresh above.
   await syncHistoryTracked(leagues);
+  await leagueStartTracked(leagues);
   for (const league of leagues) trackOutcomes(league);
 
   // Retention is global, not per league — run it once the sweeps have added this tick's rows.
@@ -96,6 +99,22 @@ async function refreshRatesTracked(leagues: readonly string[]): Promise<void> {
 /** The backfill reports its own attempts and failure back-offs; cxHistoryProblem judges them. */
 async function syncHistoryTracked(leagues: readonly string[]): Promise<void> {
   await withHeartbeat("cx-history", "", () => syncCxHistory(leagues), { problem: cxHistoryProblem });
+}
+
+/**
+ * League-start curves: date league starts and fold their first days from the digest archive, then
+ * send the day's sell-now alert. Off with LEAGUE_START_BACKFILL_ENABLED=false. A throw (DB error,
+ * a bug) is heartbeat-recorded and logged, never fatal to the cycle.
+ */
+async function leagueStartTracked(leagues: readonly string[]): Promise<void> {
+  if (!config.leagueStart.backfillEnabled) return;
+  try {
+    await withHeartbeat("cx-start-backfill", "", () => syncLeagueStart(), { problem: leagueStartProblem });
+    const alerted = fireLeagueStartAlerts(leagues);
+    if (alerted.length > 0) console.log(`[league-start] day alert sent for ${alerted.join(", ")}`);
+  } catch (err: unknown) {
+    console.error("[league-start] failed:", errText(err));
+  }
 }
 
 /** Settle and publish exchange edges for the outcome log. A failure is logged, never fatal. */
