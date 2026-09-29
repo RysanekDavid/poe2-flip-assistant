@@ -20,7 +20,6 @@ export const RECIPES_2: CraftRecipe[] = [
     key: "armour_putrefaction",
     domain: "armour",
     label: "Body Armour · putrefaction ES",
-    source: "XTheFarmerX putrefaction craft [S10] — body-armour variant (scraps+sockets FIRST → omen+rib)",
     base: {
       label: "Cheap rare body armour (not desecrated)",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
@@ -52,7 +51,6 @@ export const RECIPES_2: CraftRecipe[] = [
     key: "gloves_projectile_plus2",
     domain: "armour",
     label: "Gloves · +2 Projectile Skills",
-    source: "Fubgun/XTheFarmerX +2 projectile gloves [S5] (chaos-spam → ribcage blocker → fracture at 4 mods → Hysteria)",
     base: {
       label: "Rare glove base (high ilvl)",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
@@ -97,7 +95,6 @@ export const RECIPES_2: CraftRecipe[] = [
     key: "wand_alloy_crystallisation",
     domain: "weapon",
     label: "Wand · alloy crystallisation (budget)",
-    source: "Fubgun budget caster wand [S8] (Seeking → Astrid's slot → Transcendent Alloy → perfect-exalt)",
     base: {
       label: "Cheap wand · existing/open crit",
       category: "weapon.wand",
@@ -146,7 +143,6 @@ export const RECIPES_2: CraftRecipe[] = [
     key: "amulet_giga_spirit",
     domain: "jewellery",
     label: "Amulet · giga Spirit",
-    source: "XTheFarmerX expert/giga Spirit amulet [S11] (desecration Spirit hunt → Enhancement convert → catalysed res)",
     base: {
       label: "Magic Gold/Solar amulet",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
@@ -191,7 +187,6 @@ export const RECIPES_2: CraftRecipe[] = [
     key: "quarterstaff_desecrate_crit",
     domain: "weapon",
     label: "Quarterstaff · desecrate-first crit",
-    source: "Fubgun quarterstaff craft [S9] (Abrasion → desecrate FIRST, no omen → exalt only if good)",
     base: {
       label: "Rare quarterstaff · top flat-roll",
       category: "weapon.warstaff",
@@ -228,7 +223,6 @@ export const RECIPES_2: CraftRecipe[] = [
     key: "amulet_desecrated_beginner",
     domain: "jewellery",
     label: "Amulet · beginner desecrated",
-    source: "XTheFarmerX beginner amulet [S11] (Perfect Aug → Opulence T1 rarity → Sinistral desecration jackpot)",
     base: {
       label: "Cheap magic amulet (open prefix)",
       category: "accessory.amulet",
@@ -268,7 +262,6 @@ export const RECIPES_2: CraftRecipe[] = [
     key: "ring_fractured_t1res",
     domain: "jewellery",
     label: "Ring · fractured flat + T1 res (high-end)",
-    source: "Attack ring craft PERFECTED [S21] (fractured base → chaos 2nd flat → breach-quality shuttle → whittle to double T1 res)",
     base: {
       label: "ilvl82 Gold Ring · fractured T1 flat",
       type: "Gold Ring",

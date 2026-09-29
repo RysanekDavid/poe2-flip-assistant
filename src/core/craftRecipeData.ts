@@ -41,7 +41,6 @@ export const RECIPES: CraftRecipe[] = [
     heroIcon:
       "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvSmV3ZWxzL1NwZWNpYWxFbWVyYWxkSmV3ZWwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/9acdb9443b/SpecialEmeraldJewel.png",
     label: "Time-Lost jewel · +1 suffix push",
-    source: "crafting chat (Contempt → +1 suffix → cranium → annul → chaos prefixes)",
     base: {
       label: "Sapphire · caster suffix",
       type: "Time-Lost Sapphire",
@@ -86,7 +85,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "bow_amanamu",
     domain: "weapon",
     label: "Bow · phys crit + Amanamu AS",
-    source: "Fubgun bow craft (Seeking → Liege jawbone → echoes unveil → greater exalt)",
     base: {
       label: "%phys bow base (Obliterator/Warmonger)",
       category: "weapon.bow",
@@ -127,7 +125,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "ring_catalysing_exalt",
     domain: "jewellery",
     label: "Ring · Tul's catalysed exalt",
-    source: "XTheFarmerX ring craft (Tul's 20% → catalysing + greater exaltation → collarbone)",
     base: {
       label: "Magic ring · T1 flat fire/lightning",
       category: "accessory.ring",
@@ -169,7 +166,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "amulet_fracture_plus3",
     domain: "jewellery",
     label: "Amulet · fracture the +3",
-    source: "XTheFarmerX amulet craft (opulence → collarbone block → Fracturing Orb 1-in-3)",
     base: {
       label: "Rare amulet · +3 spell skills",
       type: "Stellar Amulet",
@@ -209,7 +205,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "focus_rathpith_gamble",
     domain: "weapon",
     label: "Rathpith Globe · cultivation gamble",
-    source: "Blood Mage showcase video (double-mana “wrath pit”) + KB economy-meta research",
     base: {
       label: "Rathpith Globe (corrupted)",
       name: "Rathpith Globe",
@@ -247,7 +242,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "boots_putrefaction",
     domain: "armour",
     label: "Boots · putrefaction ES (caster)",
-    source: "XTheFarmerX putrefaction craft (scraps+sockets FIRST → omen+rib → reveal discipline)",
     base: {
       label: "Cheap rare ES boots (not desecrated)",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
@@ -280,7 +274,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "boots_putrefaction_ev",
     domain: "armour",
     label: "Boots · putrefaction EV (attack)",
-    source: "XTheFarmerX putrefaction craft — evasion variant for the attack meta",
     base: {
       label: "Cheap rare evasion boots (not desecrated)",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask

@@ -11,6 +11,7 @@ import {
   getCraftMargins,
   getMaterialPrices,
   getCurrencyDivMap,
+  craftAttemptStats,
   type MaterialPrice,
   type CraftMarginRow,
 } from "../db/craftQueries";
@@ -23,6 +24,8 @@ import { RECIPES, type CraftRecipe, type LegReport, type RecipeMarginReport } fr
 import type { ExchangeRates } from "./priceEngine";
 import { priceLeg, priceMaterials, tryLeg, isFailure, type LegContext } from "./craftLegPricing";
 import { priceResultLeg } from "./craftResultValuation";
+import { provenanceFor } from "./craftProvenanceData";
+import { effectiveHitRate, type AttemptStats } from "./craftProvenance/calibration";
 
 /**
  * Craft-margin engine. Prices each recipe's base leg live (floor-and-percentile over up to
@@ -50,7 +53,8 @@ export function assembleReport(shell: RecipeMarginReport, base: LegReport, resul
   try {
     const { evDiv, marginPct, returnFlagged } = computeMargin(base.priceDiv, result.priceDiv, shell.materialsDiv, shell.hitRate);
     if (!result.band) throw new Error("comparable result leg has no band");
-    const nearMiss = computeNearMiss(base.priceDiv, result.band, shell.materialsDiv, shell.hitRate, { base, result });
+    // a measured 0% (20+ logged bricks, no hit) has no break-even price; EV = −cost says it all
+    const nearMiss = shell.hitRate > 0 ? computeNearMiss(base.priceDiv, result.band, shell.materialsDiv, shell.hitRate, { base, result }) : null;
     return { report: { ...shell, base, result, evDiv, marginPct, returnFlagged, nearMiss }, transient: false };
   } catch (e) {
     const error = `${shell.key}: engine error — ${e instanceof Error ? e.message : String(e)}`;
@@ -73,7 +77,8 @@ export async function buildReport(recipe: CraftRecipe, scan: ScanContext, prices
     result: null,
     materials: lines,
     materialsDiv,
-    hitRate: recipe.hitRate,
+    // logged attempts replace the curated rate once there are enough of them (calibration.ts)
+    hitRate: effectiveHitRate(recipe, provenanceFor(recipe.key), scan.attemptStats.get(recipe.key)).effective,
     evDiv: 0,
     marginPct: 0,
     error: null,
@@ -211,7 +216,7 @@ function stalestRecipe(league: string): CraftRecipe | null {
 }
 
 /** A LegContext before the rates check: rates may be null (no source answered). */
-export type ScanContext = Omit<LegContext, "rates"> & { rates: ExchangeRates | null };
+export type ScanContext = Omit<LegContext, "rates"> & { rates: ExchangeRates | null; attemptStats: ReadonlyMap<string, AttemptStats> };
 
 /** Shared per-scan context. Null rates don't abort here — buildReport skips each recipe's tick as
  *  a transient failure (previous good report kept) before spending any trade2 call. */
@@ -220,7 +225,7 @@ async function scanContext(league: string, cred: TradeCred): Promise<ScanContext
   const { stats, flaggedStats } = await fetchTradeMeta();
   const rates = resolveRates(league)?.rates ?? null;
   if (!rates) console.warn(`[craft-margin] no exchange rates for ${league} — tick skipped as transient, previous reports kept`);
-  return { idx: buildStatIndex([...stats, ...flaggedStats]), rates, cred, currencyDiv: getCurrencyDivMap(league) };
+  return { idx: buildStatIndex([...stats, ...flaggedStats]), rates, cred, currencyDiv: getCurrencyDivMap(league), attemptStats: craftAttemptStats() };
 }
 
 /** Refresh the single stalest recipe (the poller's per-tick unit of work, ≤ 3 searches + 8 fetches). */

@@ -98,11 +98,11 @@ export interface CraftRecipe {
   label: string;
   domain: CraftDomain;
   heroIcon?: string; // static poecdn art override for the recipe card (else live comparable art)
-  source: string; // where the method came from (guide/creator), for provenance
+  // where the method came from lives in craftProvenanceData.ts (provenanceFor(key))
   base: RecipeLegSpec;
   result: RecipeLegSpec;
   materials: RecipeMaterialLine[];
-  hitRate: number; // 0..1 probability an attempt yields the sellable result — shown in the UI
+  hitRate: number; // 0..1 curated probability of a sellable result; calibration.ts swaps in logged attempts once n ≥ 20
   guide: CraftGuide;
 }
 

@@ -56,6 +56,8 @@ jobs:
       # KB staleness gate: every Coach knowledge file must match its patch-stamped manifest entry.
       - run: npm run kb:check
       - run: npm run test:craft
+      # Recipe provenance + the stamped recipe-audit.json (fails until craft:audit-recipes is re-run).
+      - run: npm run test:craft-provenance
       - run: npm run test:tools
 
       - name: Install uv

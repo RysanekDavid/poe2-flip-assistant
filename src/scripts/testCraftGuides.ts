@@ -5,6 +5,8 @@
 import "../config/env";
 import { MATS } from "../core/craftMaterials";
 import { RECIPES, type CraftRecipe, type GuideStep } from "../core/craftRecipes";
+import { checkStep, recipeLegality } from "../core/craftProvenance/legality";
+import { entityByExchangeId, loadEntityCatalog } from "../core/entities/load";
 
 let fail = 0;
 const ok = (name: string, cond: boolean, extra = "") => {
@@ -143,6 +145,21 @@ const recipe = (key: string): CraftRecipe => {
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));
   ok("all material qtyPerAttempt > 0", badQty.length === 0, badQty.map((m) => m.material.id).join(","));
+}
+
+// --- step legality (craftProvenance/legality): catalog presence, KB §1/§5 floors and ilvl gates ---
+{
+  const patch = loadEntityCatalog().game_data_patch;
+  const broken = RECIPES.flatMap((r) =>
+    recipeLegality(r, entityByExchangeId, patch)
+      .filter((s) => s.verdict === "violation")
+      .map((s) => `${r.key}#${s.idx}: ${s.checks.filter((c) => c.verdict === "violation").map((c) => c.detail).join("; ")}`),
+  );
+  ok("no guide step spends a material the game lacks or below its floor / ilvl gate", broken.length === 0, broken.join(" | "));
+  // KB §4: Whittling works ONLY with a Chaos Orb — every Whittling step must pair as that rule expects
+  const whittle = RECIPES.flatMap((r) => allSteps(r).filter((s) => uses(s, MATS.omenWhittling.id) && uses(s, MATS.chaos.id)));
+  const unpaired = whittle.filter((s) => !checkStep(s, 82, entityByExchangeId, patch).some((c) => c.kind === "pairing" && c.verdict === "ok"));
+  ok("Whittling + Chaos steps match the verified Whittling rule", whittle.length >= 1 && unpaired.length === 0, `${whittle.length} steps`);
 }
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);

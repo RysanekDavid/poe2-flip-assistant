@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
-import { getCraftMargins, getMarginHistory, requestCraftRefresh, getMaterialPrices } from "../../../../db/craftQueries";
+import { craftAttemptStats, getCraftMargins, getMarginHistory, requestCraftRefresh, getMaterialPrices } from "../../../../db/craftQueries";
 import { ALL_MATERIALS } from "../../../../core/craftMaterials";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
@@ -10,6 +10,8 @@ import { parseStoredReport, rowFreshness } from "../../../../core/craftReports";
 import { rankGate } from "../../../../core/craftValuation";
 import { rankCandidates } from "../../../../core/craftRank";
 import { config } from "../../../../config/env";
+import { provenanceViews } from "../../../../core/craftProvenance/view";
+import type { ProvenanceView } from "../../../../core/craftProvenance/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,9 +23,7 @@ function recipeMeta(r: CraftRecipe) {
     label: r.label,
     domain: r.domain,
     heroIcon: r.heroIcon ?? null,
-    source: r.source,
     guide: r.guide,
-    hitRate: r.hitRate,
     baseSpec: { label: r.base.label, note: r.base.note },
     resultSpec: { label: r.result.label, note: r.result.note },
     materialSpecs: r.materials.map((m) => ({
@@ -34,6 +34,12 @@ function recipeMeta(r: CraftRecipe) {
       note: m.note ?? null,
     })),
   };
+}
+
+function viewOf(views: ReadonlyMap<string, ProvenanceView>, key: string): ProvenanceView {
+  const view = views.get(key);
+  if (!view) throw new Error(`no provenance view for recipe ${key}`);
+  return view;
 }
 
 /** Item art for every registered material — chips/checklists render the actual item icons. */
@@ -58,11 +64,13 @@ export async function GET(): Promise<Response> {
   // league they were computed for rather than silently reattributed to theirs.
   const league = getDefaultLeague();
   const stored = new Map(getCraftMargins(league).map((r) => [r.recipe_key, r]));
+  const { views, audit } = provenanceViews(RECIPES, craftAttemptStats());
   const recipes = RECIPES.map((r) => {
     const row = stored.get(r.key);
     const report = row ? parseStoredReport(r.key, row.report_json) : null;
     return {
       ...recipeMeta(r),
+      provenance: viewOf(views, r.key),
       report,
       gate: report && row ? rankGate(report, rowFreshness(row)) : { ok: false, reasons: ["not scanned yet"] },
       scannedAt: row?.scanned_at ?? null,
@@ -85,6 +93,7 @@ export async function GET(): Promise<Response> {
     ratesSource: resolved?.source ?? null,
     ratesFetchedAt: resolved?.fetchedAt ?? null,
     icons: materialIcons(league),
+    audit,
     recipes,
     rank: { picks: keys(tiers.picks), nearMisses: keys(tiers.nearMisses), unpriced: keys(tiers.unpriced) },
   });

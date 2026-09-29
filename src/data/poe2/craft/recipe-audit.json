@@ -1,0 +1,1738 @@
+{
+  "schema_version": 1,
+  "artifact_sha256": "dbaf8e1f41e441b642ac9ae38c88bd0a2471b689b586f782bc745210326c387f",
+  "repoe_version": "4.5.5.2",
+  "game_data_patch": "0.5.5b",
+  "recipes": {
+    "jewel_suffix_push": {
+      "entityRefs": [
+        "ancient-potent-liquid-contempt",
+        "annul",
+        "divine",
+        "exalted",
+        "omen-of-abyssal-echoes",
+        "omen-of-dextral-necromancy",
+        "omen-of-light",
+        "omen-of-sinistral-annulment",
+        "preserved-cranium"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "ancient-potent-liquid-contempt": "11611d51b93ef29e",
+        "annul": "70028b2010483187",
+        "divine": "11ec3678a86eb46a",
+        "exalted": "3b6942816e615f60",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-dextral-necromancy": "b5f8fa92b8de24a3",
+        "omen-of-light": "150083b22c736919",
+        "omen-of-sinistral-annulment": "f83df2a7df892208",
+        "preserved-cranium": "bc2cdb7baf3f7c3f"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Dextral Necromancy pairing matches rule omen-dextral-necromancy",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 3,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Annulment pairing matches rule omen-sinistral-annulment — that rule is itself unverified",
+              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 5,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    },
+    "bow_amanamu": {
+      "entityRefs": [
+        "artificers",
+        "greater-essence-of-seeking",
+        "greater-exalted-orb",
+        "omen-of-abyssal-echoes",
+        "omen-of-dextral-necromancy",
+        "omen-of-greater-exaltation",
+        "omen-of-the-liege",
+        "preserved-jawbone"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "artificers": "96f0053ac8b95eef",
+        "greater-essence-of-seeking": "a34601b61fa1de4e",
+        "greater-exalted-orb": "b1138c83a9985478",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-dextral-necromancy": "b5f8fa92b8de24a3",
+        "omen-of-greater-exaltation": "b3a56bc362a5d642",
+        "omen-of-the-liege": "e2abcc61d1d995e8",
+        "preserved-jawbone": "d6dc5065e20fc30e"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Dextral Necromancy pairing matches rule omen-dextral-necromancy",
+              "source": "poe2-crafting-knowledge.md §4"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of the Liege pairing matches rule omen-liege",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 3,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Greater Exalted rolls modifier level 35+; base ilvl 75+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    },
+    "ring_catalysing_exalt": {
+      "entityRefs": [
+        "greater-essence-of-insulation",
+        "greater-essence-of-opulence",
+        "greater-exalted-orb",
+        "omen-of-abyssal-echoes",
+        "omen-of-catalysing-exaltation",
+        "omen-of-greater-exaltation",
+        "omen-of-sinistral-necromancy",
+        "perfect-orb-of-augmentation",
+        "preserved-collarbone",
+        "tuls-catalyst"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "greater-essence-of-insulation": "fdb4a2242cfa5e7e",
+        "greater-essence-of-opulence": "6c652dc3eac67ad6",
+        "greater-exalted-orb": "b1138c83a9985478",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-catalysing-exaltation": "a576a0c93afd6dd0",
+        "omen-of-greater-exaltation": "b3a56bc362a5d642",
+        "omen-of-sinistral-necromancy": "a5006ae4b94c5e41",
+        "perfect-orb-of-augmentation": "c68b77de64b20acb",
+        "preserved-collarbone": "ba212d890ee28451",
+        "tuls-catalyst": "9495f9194e902322"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Augmentation rolls modifier level 70+; base ilvl 75+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 3,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Greater Exalted rolls modifier level 35+; base ilvl 75+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Catalysing Exaltation pairing matches rule omen-catalysing-exaltation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Necromancy pairing matches rule omen-sinistral-necromancy",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 5,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 6,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    },
+    "amulet_fracture_plus3": {
+      "entityRefs": [
+        "fracturing-orb",
+        "greater-essence-of-opulence",
+        "omen-of-catalysing-exaltation",
+        "omen-of-greater-exaltation",
+        "omen-of-sinistral-necromancy",
+        "perfect-exalted-orb",
+        "perfect-orb-of-augmentation",
+        "preserved-collarbone"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "fracturing-orb": "62844bf1ecff4fa7",
+        "greater-essence-of-opulence": "6c652dc3eac67ad6",
+        "omen-of-catalysing-exaltation": "a576a0c93afd6dd0",
+        "omen-of-greater-exaltation": "b3a56bc362a5d642",
+        "omen-of-sinistral-necromancy": "a5006ae4b94c5e41",
+        "perfect-exalted-orb": "9cd3b59ea993c8e9",
+        "perfect-orb-of-augmentation": "c68b77de64b20acb",
+        "preserved-collarbone": "ba212d890ee28451"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Augmentation rolls modifier level 70+; base ilvl 75+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Necromancy pairing matches rule omen-sinistral-necromancy",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 5,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Exalted rolls modifier level 50+; base ilvl 75+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Catalysing Exaltation pairing matches rule omen-catalysing-exaltation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        }
+      ]
+    },
+    "focus_rathpith_gamble": {
+      "entityRefs": [
+        "divine",
+        "unique-rathpith-globe",
+        "vaal-cultivation-orb"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "divine": "11ec3678a86eb46a",
+        "unique-rathpith-globe": "5181157298226801",
+        "vaal-cultivation-orb": "faeeadc8044efccf"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    },
+    "boots_putrefaction": {
+      "entityRefs": [
+        "artificers",
+        "omen-of-abyssal-echoes",
+        "omen-of-putrefaction",
+        "preserved-rib",
+        "scrap"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "artificers": "96f0053ac8b95eef",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-putrefaction": "34e7829146f15635",
+        "preserved-rib": "a9abfc1318aab64f",
+        "scrap": "7ed163a8694f87b6"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Putrefaction pairing matches rule omen-putrefaction",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5; poe2-crafting-knowledge.md §9"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        }
+      ]
+    },
+    "boots_putrefaction_ev": {
+      "entityRefs": [
+        "artificers",
+        "omen-of-abyssal-echoes",
+        "omen-of-putrefaction",
+        "preserved-rib",
+        "scrap"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "artificers": "96f0053ac8b95eef",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-putrefaction": "34e7829146f15635",
+        "preserved-rib": "a9abfc1318aab64f",
+        "scrap": "7ed163a8694f87b6"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Putrefaction pairing matches rule omen-putrefaction",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5; poe2-crafting-knowledge.md §9"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        }
+      ]
+    },
+    "armour_putrefaction": {
+      "entityRefs": [
+        "artificers",
+        "omen-of-abyssal-echoes",
+        "omen-of-putrefaction",
+        "preserved-rib",
+        "scrap"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "artificers": "96f0053ac8b95eef",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-putrefaction": "34e7829146f15635",
+        "preserved-rib": "a9abfc1318aab64f",
+        "scrap": "7ed163a8694f87b6"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Putrefaction pairing matches rule omen-putrefaction",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5; poe2-crafting-knowledge.md §9"
+            }
+          ]
+        },
+        {
+          "idx": 3,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        }
+      ]
+    },
+    "gloves_projectile_plus2": {
+      "entityRefs": [
+        "ancient-rib",
+        "annul",
+        "artificers",
+        "chaos",
+        "essence-of-hysteria",
+        "exalted",
+        "fracturing-orb",
+        "omen-of-abyssal-echoes"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "ancient-rib": "cd2b1d74782082e9",
+        "annul": "70028b2010483187",
+        "artificers": "96f0053ac8b95eef",
+        "chaos": "c0d7b88f7b2c5646",
+        "essence-of-hysteria": "d2e69e08cf535d35",
+        "exalted": "3b6942816e615f60",
+        "fracturing-orb": "62844bf1ecff4fa7",
+        "omen-of-abyssal-echoes": "ade6ae704af55982"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Ancient Rib rolls modifier level 40+; base ilvl 82+ meets it",
+              "source": "poe2-crafting-knowledge.md §5"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 3,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 5,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    },
+    "wand_alloy_crystallisation": {
+      "entityRefs": [
+        "annul",
+        "astrids-creativity",
+        "essence-of-the-abyss",
+        "greater-essence-of-seeking",
+        "omen-of-greater-exaltation",
+        "omen-of-sinistral-crystallisation",
+        "perfect-exalted-orb",
+        "preserved-jawbone",
+        "transcendent-alloy"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "annul": "70028b2010483187",
+        "astrids-creativity": "e122b841422c843b",
+        "essence-of-the-abyss": "69be8fc19d42cd82",
+        "greater-essence-of-seeking": "a34601b61fa1de4e",
+        "omen-of-greater-exaltation": "b3a56bc362a5d642",
+        "omen-of-sinistral-crystallisation": "7a4c6cdcffc7b9dd",
+        "perfect-exalted-orb": "9cd3b59ea993c8e9",
+        "preserved-jawbone": "d6dc5065e20fc30e",
+        "transcendent-alloy": "bc0a47847a40026a"
+      },
+      "repoeChanged": [],
+      "verdict": "unknown",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "unknown",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "unknown",
+              "detail": "no verified rule covers Omen of Sinistral Crystallisation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 3,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Exalted rolls modifier level 50+; base ilvl 80+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 5,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    },
+    "amulet_giga_spirit": {
+      "entityRefs": [
+        "eshs-catalyst",
+        "omen-of-abyssal-echoes",
+        "omen-of-catalysing-exaltation",
+        "omen-of-dextral-crystallisation",
+        "omen-of-dextral-exaltation",
+        "omen-of-greater-exaltation",
+        "perfect-essence-of-enhancement",
+        "perfect-exalted-orb",
+        "preserved-collarbone",
+        "xophs-catalyst"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "eshs-catalyst": "05ce41f626bcacb9",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-catalysing-exaltation": "a576a0c93afd6dd0",
+        "omen-of-dextral-crystallisation": "eda8b98a53102fdb",
+        "omen-of-dextral-exaltation": "aa8fa2c01e4de1ae",
+        "omen-of-greater-exaltation": "b3a56bc362a5d642",
+        "perfect-essence-of-enhancement": "fe18ed957fa216e4",
+        "perfect-exalted-orb": "9cd3b59ea993c8e9",
+        "preserved-collarbone": "ba212d890ee28451",
+        "xophs-catalyst": "3ba6f489d8b918af"
+      },
+      "repoeChanged": [],
+      "verdict": "unknown",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "unknown",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "unknown",
+              "detail": "Omen of Dextral Exaltation is not paired here as any rule expects (omen-dextral-exaltation, omen-dextral-greater-exaltation)",
+              "source": "poe2-crafting-knowledge.md §4"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "unknown",
+              "detail": "no verified rule covers Omen of Dextral Crystallisation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Exalted rolls modifier level 50+; base ilvl 75+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Catalysing Exaltation pairing matches rule omen-catalysing-exaltation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        }
+      ]
+    },
+    "quarterstaff_desecrate_crit": {
+      "entityRefs": [
+        "artificers",
+        "exalted",
+        "greater-essence-of-abrasion",
+        "omen-of-abyssal-echoes",
+        "preserved-jawbone"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "artificers": "96f0053ac8b95eef",
+        "exalted": "3b6942816e615f60",
+        "greater-essence-of-abrasion": "72c427783ad14edf",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "preserved-jawbone": "d6dc5065e20fc30e"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    },
+    "amulet_desecrated_beginner": {
+      "entityRefs": [
+        "exalted",
+        "greater-essence-of-opulence",
+        "omen-of-greater-exaltation",
+        "omen-of-sinistral-necromancy",
+        "perfect-orb-of-augmentation",
+        "preserved-collarbone"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "exalted": "3b6942816e615f60",
+        "greater-essence-of-opulence": "6c652dc3eac67ad6",
+        "omen-of-greater-exaltation": "b3a56bc362a5d642",
+        "omen-of-sinistral-necromancy": "a5006ae4b94c5e41",
+        "perfect-orb-of-augmentation": "c68b77de64b20acb",
+        "preserved-collarbone": "ba212d890ee28451"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Augmentation rolls modifier level 70+; base ilvl 75+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Necromancy pairing matches rule omen-sinistral-necromancy",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Greater Exaltation pairing matches rule omen-greater-exaltation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        }
+      ]
+    },
+    "ring_fractured_t1res": {
+      "entityRefs": [
+        "annul",
+        "chaos",
+        "essence-of-the-breach",
+        "exalted",
+        "greater-chaos-orb",
+        "omen-of-abyssal-echoes",
+        "omen-of-catalysing-exaltation",
+        "omen-of-dextral-crystallisation",
+        "omen-of-dextral-exaltation",
+        "omen-of-light",
+        "omen-of-whittling",
+        "perfect-exalted-orb",
+        "preserved-collarbone",
+        "xophs-catalyst"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "annul": "70028b2010483187",
+        "chaos": "c0d7b88f7b2c5646",
+        "essence-of-the-breach": "7e442b1ce3992008",
+        "exalted": "3b6942816e615f60",
+        "greater-chaos-orb": "b07ce516e49a4602",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-catalysing-exaltation": "a576a0c93afd6dd0",
+        "omen-of-dextral-crystallisation": "eda8b98a53102fdb",
+        "omen-of-dextral-exaltation": "aa8fa2c01e4de1ae",
+        "omen-of-light": "150083b22c736919",
+        "omen-of-whittling": "5177583fdab841c7",
+        "perfect-exalted-orb": "9cd3b59ea993c8e9",
+        "preserved-collarbone": "ba212d890ee28451",
+        "xophs-catalyst": "3ba6f489d8b918af"
+      },
+      "repoeChanged": [],
+      "verdict": "unknown",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "unknown",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Dextral Exaltation pairing matches rule omen-dextral-exaltation",
+              "source": "poe2-crafting-knowledge.md §4"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "unknown",
+              "detail": "no verified rule covers Omen of Dextral Crystallisation",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Exalted rolls modifier level 50+; base ilvl 82+ meets it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Catalysing Exaltation pairing matches rule omen-catalysing-exaltation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Whittling pairing matches rule omen-whittling",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 5,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Light pairing matches rule omen-light — that rule is itself unverified",
+              "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
+            }
+          ]
+        },
+        {
+          "idx": 6,
+          "verdict": "unknown",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "unknown",
+              "detail": "Omen of Whittling is not paired here as any rule expects (omen-whittling, omen-whittling-sinistral, omen-whittling-dextral)",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 7,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Light pairing matches rule omen-light — that rule is itself unverified",
+              "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
+            }
+          ]
+        }
+      ]
+    },
+    "jewel_liquid_5mod_budget": {
+      "entityRefs": [
+        "annul",
+        "chaos",
+        "exalted",
+        "omen-of-abyssal-echoes",
+        "omen-of-dextral-necromancy",
+        "omen-of-sinistral-annulment",
+        "potent-liquid-contempt",
+        "potent-liquid-ferocity",
+        "preserved-cranium"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "annul": "70028b2010483187",
+        "chaos": "c0d7b88f7b2c5646",
+        "exalted": "3b6942816e615f60",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-dextral-necromancy": "b5f8fa92b8de24a3",
+        "omen-of-sinistral-annulment": "f83df2a7df892208",
+        "potent-liquid-contempt": "1ebedfa5a495a955",
+        "potent-liquid-ferocity": "46fff5054ac7a9be",
+        "preserved-cranium": "bc2cdb7baf3f7c3f"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Dextral Necromancy pairing matches rule omen-dextral-necromancy",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 3,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Annulment pairing matches rule omen-sinistral-annulment — that rule is itself unverified",
+              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 5,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 6,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    },
+    "jewel_fractured_5mod": {
+      "entityRefs": [
+        "annul",
+        "chaos",
+        "divine",
+        "exalted",
+        "fracturing-orb",
+        "omen-of-abyssal-echoes",
+        "omen-of-light",
+        "omen-of-sinistral-annulment",
+        "omen-of-sinistral-necromancy",
+        "potent-liquid-contempt",
+        "potent-liquid-ferocity",
+        "preserved-cranium"
+      ],
+      "baselinePatch": "0.5.5b",
+      "baselineDigests": {
+        "annul": "70028b2010483187",
+        "chaos": "c0d7b88f7b2c5646",
+        "divine": "11ec3678a86eb46a",
+        "exalted": "3b6942816e615f60",
+        "fracturing-orb": "62844bf1ecff4fa7",
+        "omen-of-abyssal-echoes": "ade6ae704af55982",
+        "omen-of-light": "150083b22c736919",
+        "omen-of-sinistral-annulment": "f83df2a7df892208",
+        "omen-of-sinistral-necromancy": "a5006ae4b94c5e41",
+        "potent-liquid-contempt": "1ebedfa5a495a955",
+        "potent-liquid-ferocity": "46fff5054ac7a9be",
+        "preserved-cranium": "bc2cdb7baf3f7c3f"
+      },
+      "repoeChanged": [],
+      "verdict": "ok",
+      "steps": [
+        {
+          "idx": 0,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Necromancy pairing matches rule omen-sinistral-necromancy",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 1,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 2,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 3,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 4,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 5,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Abyssal Echoes pairing matches rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            }
+          ]
+        },
+        {
+          "idx": 6,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Light pairing matches rule omen-light — that rule is itself unverified",
+              "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
+            }
+          ]
+        },
+        {
+          "idx": 7,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Annulment pairing matches rule omen-sinistral-annulment — that rule is itself unverified",
+              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
+            }
+          ]
+        },
+        {
+          "idx": 8,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 9,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        },
+        {
+          "idx": 10,
+          "verdict": "ok",
+          "checks": [
+            {
+              "kind": "catalog",
+              "verdict": "ok",
+              "detail": "every material exists in the 0.5.5b game data",
+              "source": "entity catalog"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

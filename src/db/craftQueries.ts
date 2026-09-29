@@ -287,3 +287,24 @@ export function craftPnlByRecipe(userId: number): RecipePnl[] {
     )
     .all(userId) as RecipePnl[];
 }
+
+/**
+ * Closed attempts (hit or brick) per recipe across EVERY user — the calibration sample behind the
+ * measured hit rate. Unlike craftPnlByRecipe this ignores sale prices: a kept, unsold hit is still a hit.
+ */
+export function craftAttemptStats(): Map<string, { closed: number; hits: number }> {
+  const rows = getDb()
+    .prepare(
+      `SELECT recipe_key, COUNT(*) AS closed, SUM(CASE WHEN outcome = 'hit' THEN 1 ELSE 0 END) AS hits
+       FROM craft_attempts WHERE outcome IN ('hit', 'brick') GROUP BY recipe_key`,
+    )
+    .all() as Array<{ recipe_key: string; closed: number; hits: number }>;
+  return new Map(rows.map((r) => [r.recipe_key, { closed: r.closed, hits: r.hits }]));
+}
+
+/** Official patch threads with a valid body — the candidates a recipe can go stale on. */
+export function officialPatchVersions(): Array<{ threadId: number; versionText: string; title: string }> {
+  return getDb()
+    .prepare("SELECT thread_id AS threadId, version_text AS versionText, title FROM official_patch WHERE body_valid = 1 ORDER BY source_order")
+    .all() as Array<{ threadId: number; versionText: string; title: string }>;
+}
