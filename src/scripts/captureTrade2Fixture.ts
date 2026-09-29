@@ -9,6 +9,8 @@ import axios from "axios";
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
+import { config } from "../config/env";
+import { tradeMetaUserAgent } from "../api/tradeMeta";
 
 const args = process.argv.slice(2);
 const statusAt = args.indexOf("--status");
@@ -18,7 +20,8 @@ const OUT_FILE = status === "online" ? "trade2-fetch-live-online.json" : "trade2
 const BASE = "https://www.pathofexile.com/api/trade2";
 const headers = {
   "Content-Type": "application/json",
-  "User-Agent": "poe2-coach/1.0 (contact: dawelich@gmail.com)",
+  // same contact rule as every other trade2 client (DATA_SOURCE_CONTACT); throws when unset
+  "User-Agent": tradeMetaUserAgent(config.dataSourceContact),
 };
 const SearchSchema = z.object({ id: z.string(), result: z.array(z.string()), total: z.number() });
 
