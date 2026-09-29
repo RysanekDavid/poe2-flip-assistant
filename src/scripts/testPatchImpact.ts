@@ -50,24 +50,46 @@ function testMatching(): void {
     entry("Headhunter", "unique"),
     entry("Incomplete", "unique"),
     entry("Ruby Ring", "base"),
+    entry("Heavy Belt", "base"),
   ];
   const { items, categories } = mapPatchItems([
     { source: "title", text: "0.5.5c Patch Notes" },
-    { source: "body", text: "Fixed the Divine Orbital cannon.\nDivine Orbs drop more.\nGreater Rune of Alacrity grants more.\nKulemak’s Invitation is cheaper.\nGold costs reduced.\nHEADHUNTER changed.\nFixed an incomplete tooltip on ruby ring.\nNew omens added." },
+    { source: "body", text: "Fixed the Divine Orbital cannon.\nDivine Orbs drop more.\nGreater Rune of Alacrity grants more.\nKulemak’s Invitation is cheaper.\nGold costs reduced.\nHEADHUNTER changed.\nFixed an incomplete tooltip on ruby ring.\nA heavy belt of gold.\nHeavy Belt implicit changed.\nNew omens added." },
     { source: "summary", text: "Divine Orb and Kulemak's Invitation prices may shift." },
   ], catalog);
   const found = new Map(items.map((m) => [m.entry.name, m]));
-  assert.deepEqual([...found.keys()].sort(), ["Divine Orb", "Greater Rune of Alacrity", "Headhunter", "Kulemak's Invitation", "Ruby Ring"]);
+  assert.deepEqual([...found.keys()].sort(), ["Divine Orb", "Greater Rune of Alacrity", "Headhunter", "Heavy Belt", "Kulemak's Invitation"]);
   assert.ok(!found.has("Incomplete"), "a lowercase everyday word is not a one-word unique");
-  assert.equal(found.get("Ruby Ring")?.entry.kind, "base", "multi-word names match in any case");
-  assert.deepEqual(found.get("Divine Orb")?.sources, ["summary"], "plurals and longer words do not match");
+  assert.ok(!found.has("Ruby Ring"), "a lowercase base in prose is not the base");
+  assert.deepEqual(found.get("Heavy Belt")?.sources, ["body"], "a capitalized base matches");
+  assert.deepEqual(found.get("Divine Orb")?.sources, ["body", "summary"], "'Divine Orbs' counts, 'Divine Orbital' does not");
   assert.equal(found.get("Divine Orb")?.entry.kind, "ninja", "the priced catalog wins a name clash");
   assert.deepEqual(found.get("Kulemak's Invitation")?.sources, ["body", "summary"], "curly apostrophes normalize");
   assert.equal(found.get("Headhunter")?.entry.kind, "unique");
   assert.ok(!found.has("Rune of Alacrity"), "the longest name at a position wins");
   assert.ok(!found.has("Gold"), "names under 5 chars are skipped");
   assert.deepEqual(categories.map((c) => c.category), ["Ritual", "Runes"]);
-  assert.deepEqual(categories.find((c) => c.category === "Ritual")?.keywords, ["omens"]);
+  assert.deepEqual(categories.find((c) => c.category === "Ritual")?.keywords, ["omen"], "plural keyword → singular entry");
+}
+
+function testPlurals(): void {
+  const catalog = [
+    entry("Simulacrum", "ninja", "simulacrum", "Fragments"),
+    entry("Simulacrum Splinter", "ninja", "simulacrum-splinter", "Fragments"),
+    entry("Exalted Orb", "ninja", "exalted", "Currency"),
+    entry("Chaos Orb", "ninja", "chaos", "Currency"),
+    entry("Divine Orb", "ninja", "divine-orb", "Currency"),
+    entry("Expedition Logbook", "ninja", "logbook", "Expedition"),
+    entry("Ancient Crisis Fragment", "ninja", "crisis", "Fragments"),
+    entry("Chaos Box", "base"),
+  ];
+  const names = (text: string): string[] => mapPatchItems([{ source: "body", text }], catalog).items.map((m) => m.entry.name).sort();
+  assert.deepEqual(names("Simulacrum Splinters now stack to 300."), ["Simulacrum Splinter"], "the longer singular wins over 'Simulacrum'");
+  assert.deepEqual(names("Exalted Orbs and Chaos Orbs drop more."), ["Chaos Orb", "Exalted Orb"]);
+  assert.deepEqual(names("Expedition Logbooks and Ancient Crisis Fragments reworked."), ["Ancient Crisis Fragment", "Expedition Logbook"]);
+  assert.deepEqual(names("The Divine Orbital cannon was fixed."), [], "a longer word is not a plural");
+  assert.deepEqual(names("Two Chaos Boxes."), ["Chaos Box"], "'es' after x");
+  assert.deepEqual(names("Exalted Orbes."), [], "'es' only after s/x/ch/sh");
 }
 
 function seedPatch(db: Database.Database, bodyItems: string[], publishedText = "Sep 18, 2026, 12:30:00 AM"): void {
@@ -109,12 +131,16 @@ function seedMarket(db: Database.Database): void {
   // Runes item first seen after the patch → no pre, every % null.
   snap(db, LEAGUE, "alacrity", "Greater Rune of Alacrity", "Runes", 2, T + DAY);
   snap(db, "Standard", "exalted", "Exalted Orb", "Currency", 0.001, T + DAY);
+  // The poller's hourly Divine heartbeat (the base unit, always 1) marks which league it followed.
+  for (let h = -8; h <= 8 * 24; h += 1) snap(db, LEAGUE, "divine", "Divine Orb", "Currency", 1, T + h * HOUR);
+  for (let h = 0; h <= 3; h += 1) snap(db, "Standard", "divine", "Divine Orb", "Currency", 1, T + h * HOUR);
+  db.prepare("INSERT OR IGNORE INTO league_registry (league, first_seen_at) VALUES (?, '2026-05-28T00:00:00Z'), ('Standard', '2024-12-06T00:00:00Z')").run(LEAGUE);
 }
 
 function testMoves(): void {
   const db = openImpactDb();
   try {
-    seedPatch(db, ["Exalted Orb drop rate increased.", "Greater Rune of Alacrity reworked.", "Headhunter nerfed."]);
+    seedPatch(db, ["Exalted Orb drop rate increased.", "Greater Rune of Alacrity reworked.", "Headhunter nerfed.", "Divine Orb stack size raised."]);
     seedMarket(db);
     db.prepare("INSERT INTO item_values (league, name_key, value_div, source) VALUES (?, 'headhunter', 50, 'scout')").run(LEAGUE);
     const impact = computePatchImpact(THREAD, options(db, T + 8 * DAY));
@@ -140,7 +166,10 @@ function testMoves(): void {
     assert.equal(currency.medians.h24.n, 2, "median over the category incl. the unnamed flat Chaos");
     assert.ok(Math.abs((currency.medians.h24.pct ?? NaN) - 5) < 1e-9);
     assert.deepEqual(currency?.medians.h72, { pct: null, n: 0 });
-    assert.deepEqual(impact.likelyAffected, [{ name: "Headhunter", kind: "unique", sources: ["body"] }]);
+    assert.deepEqual(impact.likelyAffected, [
+      { name: "Divine Orb", kind: "exchange", sources: ["body"] },
+      { name: "Headhunter", kind: "unique", sources: ["body"] },
+    ], "the Divine base unit is never a priced row nor a Currency median member");
     assert.ok(!impact.items.some((i) => i.name === "Headhunter"), "uniques are never priced");
   } finally {
     db.close();
@@ -156,8 +185,10 @@ function testHorizonsAndBanners(): void {
     assert.ok(early);
     assert.deepEqual(early.due, { h24: true, h72: true, d7: false });
     assert.deepEqual(early.items[0]?.points.d7, { div: null, pct: null }, "future horizon stays null");
-    const old = computePatchImpact(THREAD, options(db, T + 40 * DAY));
-    assert.equal(old?.banner, "history_not_retained");
+    // Retention cutoff vs the pre window start (T − 1h − 6h); a row exactly at the cutoff survives.
+    const preStart = T - 7 * HOUR;
+    assert.equal(computePatchImpact(THREAD, options(db, preStart + 30 * DAY))?.banner, null, "pre window starts exactly at the cutoff");
+    assert.equal(computePatchImpact(THREAD, options(db, preStart + 30 * DAY + 1))?.banner, "history_not_retained");
     db.exec("DELETE FROM price_snapshots WHERE fetched_at < '2026-09-18 00:00:00'");
     assert.equal(computePatchImpact(THREAD, options(db, T + 8 * DAY))?.banner, "no_pre_data");
     db.exec("DELETE FROM price_snapshots");
@@ -165,6 +196,27 @@ function testHorizonsAndBanners(): void {
     assert.equal(empty?.banner, "no_history_league");
     assert.equal(empty?.league, null);
     assert.equal(computePatchImpact(999, options(db, T)), null);
+  } finally {
+    db.close();
+  }
+}
+
+function testSummarySource(): void {
+  const db = openImpactDb();
+  try {
+    seedPatch(db, ["Nothing named here."]);
+    seedMarket(db);
+    const summary = {
+      schema_version: 1, tldr: "Exalted Orb drops rise.", hotfix: false, groups: [], trading_impact: "",
+      review_hint: "unclear", review_reason: "",
+    };
+    const upsert = db.prepare(`INSERT INTO patch_summary (thread_id, input_sha256, status, summary_json) VALUES (?, 'x', 'done', ?)
+      ON CONFLICT(thread_id) DO UPDATE SET summary_json = excluded.summary_json`);
+    upsert.run(THREAD, JSON.stringify(summary));
+    const impact = computePatchImpact(THREAD, options(db, T + 8 * DAY));
+    assert.deepEqual(impact?.items.find((i) => i.itemId === "exalted")?.sources, ["summary"]);
+    upsert.run(THREAD, JSON.stringify({ ...summary, schema_version: 2 }));
+    assert.throws(() => computePatchImpact(THREAD, options(db, T + 8 * DAY)), /no longer matches the summary schema/, "a broken done summary fails loudly");
   } finally {
     db.close();
   }
@@ -190,7 +242,9 @@ function testMemo(): void {
 
 testPatchTime();
 testMatching();
+testPlurals();
 testMoves();
 testHorizonsAndBanners();
+testSummarySource();
 testMemo();
 console.log("patch impact tests passed");

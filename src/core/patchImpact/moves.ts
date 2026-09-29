@@ -1,4 +1,4 @@
-import { HORIZON_HOURS, type HorizonKey, type ImpactPoint } from "../../lib/patchImpactContract";
+import { HORIZON_HOURS, HORIZON_KEYS, type HorizonKey, type ImpactPoint } from "../../lib/patchImpactContract";
 import type { PricePoint } from "../../db/priceAtQueries";
 
 /**
@@ -18,6 +18,17 @@ export const TOLERANCE_MS = 3 * HOUR_MS;
 /** Everything any lookup can touch, for one bounded read per item. */
 export function snapshotWindow(patchMs: number): { fromMs: number; toMs: number } {
   return { fromMs: patchMs - PRE_GAP_MS - PRE_LOOKBACK_MS, toMs: patchMs + HORIZON_HOURS.d7 * HOUR_MS + TOLERANCE_MS };
+}
+
+/** The only stretches any lookup reads: the pre window and ±TOLERANCE around each horizon. */
+export function lookupRanges(patchMs: number): Array<{ fromMs: number; toMs: number }> {
+  const latestPre = patchMs - PRE_GAP_MS;
+  const ranges = [{ fromMs: latestPre - PRE_LOOKBACK_MS, toMs: latestPre }];
+  for (const key of HORIZON_KEYS) {
+    const target = horizonTargetMs(patchMs, key);
+    ranges.push({ fromMs: target - TOLERANCE_MS, toMs: target + TOLERANCE_MS });
+  }
+  return ranges;
 }
 
 export function horizonTargetMs(patchMs: number, key: HorizonKey): number {

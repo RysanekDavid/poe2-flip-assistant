@@ -59,17 +59,37 @@ export function patchImpactSource(threadId: number, db: Db = getDb()): PatchImpa
 }
 
 /**
- * The league that was polled most densely between two times, or null when nothing was stored.
- * Only polled leagues ever get price_snapshots rows, so "most rows" = the league the poller
- * actually followed across the patch.
+ * poe.ninja's Divine line is the base unit (always 1) and the insert dedupe heartbeats every item
+ * at least hourly, so a polled league has ~1 divine row per hour. Counting that one item rides the
+ * (league, item_id, fetched_at) index instead of scanning every snapshot of every league.
  */
-export function busiestLeagueBetween(fromMs: number, toMs: number, db: Db = getDb()): string | null {
+export const SENTINEL_ITEM_ID = "divine";
+
+function sentinelRows(league: string, fromMs: number, toMs: number, db: Db): number {
   const row = db.prepare(`
-    SELECT league, COUNT(*) AS n FROM price_snapshots
-    WHERE fetched_at BETWEEN ? AND ? AND league <> ''
-    GROUP BY league ORDER BY n DESC, league ASC LIMIT 1
-  `).get(toSqliteTime(fromMs), toSqliteTime(toMs)) as { league: string; n: number } | undefined;
-  return row?.league ?? null;
+    SELECT COUNT(*) AS n FROM price_snapshots
+    WHERE league = ? AND item_id = ? AND fetched_at BETWEEN ? AND ?
+  `).get(league, SENTINEL_ITEM_ID, toSqliteTime(fromMs), toSqliteTime(toMs)) as { n: number };
+  return row.n;
+}
+
+/**
+ * The league polled most densely between two times, or null when none was. Candidates are every
+ * registered league plus `extra` (the default league may predate its registry row).
+ */
+export function busiestLeagueBetween(fromMs: number, toMs: number, extra: readonly string[], db: Db = getDb()): string | null {
+  const registry = (db.prepare("SELECT league FROM league_registry").all() as Array<{ league: string }>).map((r) => r.league);
+  let best: { league: string; n: number } | null = null;
+  for (const league of [...new Set([...registry, ...extra])].sort()) {
+    const n = sentinelRows(league, fromMs, toMs, db);
+    if (n > 0 && (best === null || n > best.n)) best = { league, n };
+  }
+  return best?.league ?? null;
+}
+
+/** Did the poller store anything for the league in [fromMs, toMs]? */
+export function polledBetween(league: string, fromMs: number, toMs: number, db: Db = getDb()): boolean {
+  return sentinelRows(league, fromMs, toMs, db) > 0;
 }
 
 export interface NinjaCatalogRow {
@@ -79,14 +99,47 @@ export interface NinjaCatalogRow {
   icon: string | null;
 }
 
-/** Every item the league has ever had a snapshot for, with its latest name/category/art. */
-export function ninjaCatalog(league: string, db: Db = getDb()): NinjaCatalogRow[] {
+const CATALOG_TTL_MS = 3_600_000;
+const CATALOG_MAX_LEAGUES = 8;
+// Keyed by connection so a test's in-memory database never sees another database's rows.
+const catalogMemo = new WeakMap<Db, Map<string, { atMs: number; rows: NinjaCatalogRow[] }>>();
+
+/**
+ * Loose index scan: hop from item_id to the next item_id with one index seek each, then read each
+ * item's newest row by seek. A GROUP BY over the league walked every snapshot (~130 ms at 30 days).
+ */
+function readNinjaCatalog(league: string, db: Db): NinjaCatalogRow[] {
   return db.prepare(`
+    WITH RECURSIVE ids(itemId) AS (
+      SELECT MIN(item_id) FROM price_snapshots WHERE league = @league
+      UNION ALL
+      SELECT (SELECT MIN(item_id) FROM price_snapshots WHERE league = @league AND item_id > ids.itemId)
+      FROM ids WHERE ids.itemId IS NOT NULL
+    )
     SELECT s.item_id AS itemId, s.item_name AS itemName, s.category, s.icon
-    FROM price_snapshots s
-    JOIN (SELECT item_id, MAX(id) AS mx FROM price_snapshots WHERE league = ? GROUP BY item_id) m
-      ON m.item_id = s.item_id AND m.mx = s.id
-  `).all(league) as NinjaCatalogRow[];
+    FROM ids JOIN price_snapshots s ON s.id = (
+      SELECT id FROM price_snapshots WHERE league = @league AND item_id = ids.itemId
+      ORDER BY fetched_at DESC, id DESC LIMIT 1
+    )
+  `).all({ league }) as NinjaCatalogRow[];
+}
+
+/**
+ * Every item the league has ever had a snapshot for, with its latest name/category/art. The
+ * read walks the league's whole index range, so it is memoized for an hour — names and
+ * categories change only when ninja adds an item.
+ */
+export function ninjaCatalog(league: string, nowMs: number, db: Db = getDb()): NinjaCatalogRow[] {
+  const perDb = catalogMemo.get(db) ?? new Map<string, { atMs: number; rows: NinjaCatalogRow[] }>();
+  catalogMemo.set(db, perDb);
+  const hit = perDb.get(league);
+  if (hit && nowMs - hit.atMs < CATALOG_TTL_MS) return hit.rows;
+  const rows = readNinjaCatalog(league, db);
+  perDb.delete(league);
+  perDb.set(league, { atMs: nowMs, rows });
+  const oldest = perDb.keys().next();
+  if (perDb.size > CATALOG_MAX_LEAGUES && !oldest.done) perDb.delete(oldest.value);
+  return rows;
 }
 
 /** Resolved Currency Exchange names (league-agnostic: GGG base id → in-game name). */
@@ -107,29 +160,33 @@ export interface PricePoint {
   div: number;
 }
 
-/**
- * One item's snapshots in [fromMs, toMs], oldest first. Per-item reads ride the
- * (league, item_id, fetched_at) index; a league-wide window scan would read ~30 days of rows.
- */
-export function itemPricesBetween(league: string, itemIds: readonly string[], fromMs: number, toMs: number, db: Db = getDb()): Map<string, PricePoint[]> {
-  const stmt = db.prepare(`
-    SELECT chaos_equiv AS div, fetched_at AS fetchedAt FROM price_snapshots
-    WHERE league = ? AND item_id = ? AND fetched_at BETWEEN ? AND ?
-    ORDER BY fetched_at ASC, id ASC
-  `);
-  const from = toSqliteTime(fromMs);
-  const to = toSqliteTime(toMs);
-  const out = new Map<string, PricePoint[]>();
-  for (const itemId of itemIds) {
-    const rows = stmt.all(league, itemId, from, to) as Array<{ div: number; fetchedAt: string }>;
-    out.set(itemId, rows.map((r) => ({ ms: parseSqliteTimestamp(r.fetchedAt), div: r.div })));
-  }
-  return out;
+export interface TimeRange {
+  fromMs: number;
+  toMs: number;
 }
 
-/** Oldest stored snapshot for the league — before it the market history simply does not exist. */
-export function oldestSnapshotMs(league: string, db: Db = getDb()): number | null {
-  const row = db.prepare("SELECT MIN(fetched_at) AS mn FROM price_snapshots WHERE league = ?")
-    .get(league) as { mn: string | null };
-  return row.mn == null ? null : parseSqliteTimestamp(row.mn);
+// SQLite's bound-parameter ceiling is 32 766; a league has ~600 exchange items.
+const IDS_PER_QUERY = 500;
+
+/**
+ * Each item's snapshots inside the given ranges, oldest first (ranges must be chronological and
+ * disjoint). Only the few hours around each lookup are read — `item_id IN (…)` lets SQLite seek
+ * the (league, item_id, fetched_at) index once per item inside one statement — instead of the
+ * whole week after the patch for every category member.
+ */
+export function itemPricesIn(league: string, itemIds: readonly string[], ranges: readonly TimeRange[], db: Db = getDb()): Map<string, PricePoint[]> {
+  const out = new Map<string, PricePoint[]>(itemIds.map((id) => [id, []]));
+  for (let i = 0; i < itemIds.length; i += IDS_PER_QUERY) {
+    const chunk = itemIds.slice(i, i + IDS_PER_QUERY);
+    const stmt = db.prepare(`
+      SELECT item_id AS itemId, chaos_equiv AS div, fetched_at AS fetchedAt FROM price_snapshots
+      WHERE league = ? AND item_id IN (${chunk.map(() => "?").join(",")}) AND fetched_at BETWEEN ? AND ?
+      ORDER BY fetched_at ASC, id ASC
+    `);
+    for (const r of ranges) {
+      const rows = stmt.all(league, ...chunk, toSqliteTime(r.fromMs), toSqliteTime(r.toMs)) as Array<{ itemId: string; div: number; fetchedAt: string }>;
+      for (const row of rows) out.get(row.itemId)?.push({ ms: parseSqliteTimestamp(row.fetchedAt), div: row.div });
+    }
+  }
+  return out;
 }

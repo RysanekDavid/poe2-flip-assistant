@@ -5,11 +5,11 @@ import { KEYWORD_CATEGORIES } from "./keywords";
  * Patch text → the items and exchange categories it names. Pure.
  *
  * Whole-name, case-insensitive: both sides are tokenized the same way and a name matches only as a
- * run of whole tokens, so "Divine Orb" never matches inside "Divine Orbital" and plural or
- * possessive forms ("Divine Orbs") do not count — a missed mention costs less than a wrong row.
+ * run of whole tokens, so "Divine Orb" never matches inside "Divine Orbital".
  * At each position the LONGEST name wins and the scan resumes after it, so "Greater Rune of
- * Alacrity" does not also report "Rune of Alacrity". One-word names additionally need a capital
- * where they appear (see Phrase.capital).
+ * Alacrity" does not also report "Rune of Alacrity". The last word may be a plain plural, so
+ * "Simulacrum Splinters" is the Splinter, not "Simulacrum". Some names also need capitals where
+ * they appear (see Capital).
  */
 
 /** ninja = priced in price_snapshots; the rest have no stored price history. */
@@ -71,18 +71,22 @@ function tokensOf(text: string): Tokens {
   return { raw, lower: raw.map((t) => t.toLowerCase()) };
 }
 
+/**
+ * Where a phrase must be capitalized in the source text:
+ * - "first": one-word names. Uniques such as "Incomplete", "Opportunity" or "Redemption" are
+ *   everyday words in patch prose.
+ * - "words": item bases — "gold ring" or "heavy belt" is prose, "Heavy Belt" is the base.
+ * - "none": other multi-word names are distinctive enough to match in any case.
+ */
+type Capital = "none" | "first" | "words";
+
 interface Phrase<T> {
   tokens: string[];
-  /**
-   * One-word names must be capitalized where they appear. Uniques such as "Incomplete",
-   * "Opportunity" or "Redemption" are everyday words in patch prose; multi-word names are
-   * distinctive enough to match in any case.
-   */
-  capital: boolean;
+  capital: Capital;
   payload: T;
 }
 
-/** First token → phrases, longest first so the scan can stop at the first hit. */
+/** First token → phrases. */
 function buildIndex<T>(phrases: Array<Phrase<T>>): Map<string, Array<Phrase<T>>> {
   const index = new Map<string, Array<Phrase<T>>>();
   for (const phrase of phrases) {
@@ -92,22 +96,47 @@ function buildIndex<T>(phrases: Array<Phrase<T>>): Map<string, Array<Phrase<T>>>
     bucket.push(phrase);
     index.set(head, bucket);
   }
-  for (const bucket of index.values()) bucket.sort((a, b) => b.tokens.length - a.tokens.length);
   return index;
 }
 
+export const SMALL_WORDS: ReadonlySet<string> = new Set(["of", "the", "and", "a", "an", "in", "on", "to", "for"]);
 const startsUpper = (token: string | undefined): boolean => token !== undefined && token[0] !== token[0]?.toLowerCase();
 
-function matchesAt<T>(text: Tokens, at: number, phrase: Phrase<T>): boolean {
-  if (at + phrase.tokens.length > text.lower.length) return false;
-  if (phrase.capital && !startsUpper(text.raw[at])) return false;
-  return phrase.tokens.every((token, i) => text.lower[at + i] === token);
+function capitalOk(raw: readonly string[], at: number, phrase: Phrase<unknown>): boolean {
+  if (phrase.capital === "none") return true;
+  if (phrase.capital === "first") return startsUpper(raw[at]);
+  return phrase.tokens.every((token, i) => SMALL_WORDS.has(token) || startsUpper(raw[at + i]));
 }
 
+/** The last word may be a plain plural: "Orbs", "Logbooks", "Boxes" (es only after s/x/ch/sh). */
+function lastWordMatches(word: string | undefined, token: string): boolean {
+  if (word === token || word === `${token}s`) return true;
+  return /(?:s|x|ch|sh)$/.test(token) && word === `${token}es`;
+}
+
+function matchesAt<T>(text: Tokens, at: number, phrase: Phrase<T>): boolean {
+  const last = phrase.tokens.length - 1;
+  if (at + last >= text.lower.length) return false;
+  if (!phrase.tokens.every((token, i) => (i === last ? lastWordMatches(text.lower[at + i], token) : text.lower[at + i] === token))) return false;
+  return capitalOk(text.raw, at, phrase);
+}
+
+/** Buckets a word can open: itself, plus its singular stems for one-word phrases ("omens" → "omen"). */
+function candidates<T>(index: Map<string, Array<Phrase<T>>>, word: string): ReadonlyArray<Phrase<T>> {
+  const exact = index.get(word);
+  if (!word.endsWith("s")) return exact ?? [];
+  const stems = [exact, index.get(word.slice(0, -1)), word.endsWith("es") ? index.get(word.slice(0, -2)) : undefined];
+  return stems.flatMap((bucket) => bucket ?? []);
+}
+
+/** At each position the longest matching phrase wins and the scan resumes after it. */
 function scan<T>(text: Tokens, index: Map<string, Array<Phrase<T>>>, onHit: (payload: T) => void): void {
   let i = 0;
   while (i < text.lower.length) {
-    const hit = index.get(text.lower[i] ?? "")?.find((p) => matchesAt(text, i, p));
+    let hit: Phrase<T> | null = null;
+    for (const p of candidates(index, text.lower[i] ?? "")) {
+      if ((hit === null || p.tokens.length > hit.tokens.length) && matchesAt(text, i, p)) hit = p;
+    }
     if (hit) {
       onHit(hit.payload);
       i += hit.tokens.length;
@@ -140,7 +169,7 @@ function addSource<K>(map: Map<K, Set<PatchTextSource>>, key: K, source: PatchTe
 }
 
 function matchKeywords(texts: ReadonlyArray<{ source: PatchTextSource; tokens: Tokens }>): CategoryHit[] {
-  const index = buildIndex(KEYWORD_CATEGORIES.map((k) => ({ tokens: tokenize(k.keyword), capital: false, payload: k })));
+  const index = buildIndex(KEYWORD_CATEGORIES.map((k) => ({ tokens: tokenize(k.keyword), capital: "none" as const, payload: k })));
   const sources = new Map<string, Set<PatchTextSource>>();
   const keywords = new Map<string, Set<string>>();
   for (const text of texts) {
@@ -159,7 +188,8 @@ export function mapPatchItems(texts: readonly PatchText[], catalog: readonly Cat
   const entries = dedupeCatalog(catalog);
   const index = buildIndex(entries.map((entry) => {
     const tokens = tokenize(entry.name);
-    return { tokens, capital: tokens.length === 1, payload: entry };
+    const capital: Capital = tokens.length === 1 ? "first" : entry.kind === "base" ? "words" : "none";
+    return { tokens, capital, payload: entry };
   }));
   const tokenized = texts.map((t) => ({ source: t.source, tokens: tokensOf(t.text) }));
   const sources = new Map<CatalogEntry, Set<PatchTextSource>>();

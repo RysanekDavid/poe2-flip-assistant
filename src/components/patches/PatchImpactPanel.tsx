@@ -21,7 +21,6 @@ import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
 import { PriceChip } from "../ui/PriceChip";
 import { Sparkline } from "../ui/Sparkline";
-import { Tooltip } from "../ui/Tooltip";
 
 type ImpactState = { kind: "idle" } | { kind: "loading" } | { kind: "error"; message: string } | { kind: "ready"; impact: PatchImpactResponse };
 
@@ -131,9 +130,10 @@ function categoryColumns(due: PatchImpactResponse["due"]): Column<ImpactCategory
 const LIKELY_TIP: Record<LikelyAffected["kind"], string> = {
   unique: "Unique — poe2scout prices are not kept as history, so no move can be measured.",
   base: "Item base — bases have no exchange price.",
-  exchange: "Exchange item poe.ninja never priced in this league.",
+  exchange: "Exchange item without a measurable move here: poe.ninja never priced it in this league, or it is the Divine Orb (prices are in Divine).",
 };
 
+/** Native titles, not Tooltips: a long list must not add a tab stop per chip. */
 function LikelyAffectedList({ rows }: { rows: LikelyAffected[] }) {
   if (rows.length === 0) return null;
   return (
@@ -141,11 +141,13 @@ function LikelyAffectedList({ rows }: { rows: LikelyAffected[] }) {
       <p className="text-xs text-neutral-400">Likely affected (no price history):</p>
       <div className="flex flex-wrap gap-1">
         {rows.map((r) => (
-          <Tooltip key={`${r.kind}:${r.name}`} tip={`${LIKELY_TIP[r.kind]} Seen in: ${r.sources.join(", ")}.`}>
-            <span className="rounded border border-line px-1.5 py-0.5 text-xs text-neutral-300">
-              {r.name} <span className="text-neutral-500">· {r.kind}</span>
-            </span>
-          </Tooltip>
+          <span
+            key={`${r.kind}:${r.name}`}
+            title={`${LIKELY_TIP[r.kind]} Seen in: ${r.sources.join(", ")}.`}
+            className="rounded border border-line px-1.5 py-0.5 text-xs text-neutral-300"
+          >
+            {r.name} <span className="text-neutral-500">· {r.kind}</span>
+          </span>
         ))}
       </div>
     </div>

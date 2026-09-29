@@ -1,11 +1,11 @@
 import type Database from "better-sqlite3";
 import { getDb } from "../../db/database";
-import { busiestLeagueBetween, itemPricesBetween, oldestSnapshotMs, patchImpactSource, type PricePoint } from "../../db/priceAtQueries";
+import { busiestLeagueBetween, itemPricesIn, patchImpactSource, polledBetween, type PricePoint } from "../../db/priceAtQueries";
 import type { ImpactCategory, ImpactItem, LikelyAffected, PatchImpactResponse, PatchTextSource } from "../../lib/patchImpactContract";
 import { PATCH_TEXT_SOURCES } from "../../lib/patchImpactContract";
 import { buildNameCatalog, patchTexts, type NameCatalog } from "./catalog";
 import { mapPatchItems, type ItemMatch, type PatchMatches } from "./match";
-import { categoryMedians, horizonDue, itemMoves, PRE_GAP_MS, snapshotWindow, type ItemMoves } from "./moves";
+import { categoryMedians, horizonDue, itemMoves, lookupRanges, PRE_GAP_MS, PRE_LOOKBACK_MS, snapshotWindow, type ItemMoves } from "./moves";
 import { patchTimeOf, type PatchTime } from "./patchTime";
 
 /**
@@ -83,13 +83,19 @@ function idsToRead(matches: PatchMatches, catalog: NameCatalog): string[] {
   return [...ids];
 }
 
+/**
+ * Pruning deletes rows older than the retention cutoff, so the patch is out of reach as soon as its
+ * pre window STARTS before the cutoff (a row exactly at the cutoff survives the prune). "Pre data"
+ * is the poller's own heartbeat in the pre window — an index seek, and the question that matters
+ * (was the poller running right before the patch), unlike "does history start earlier".
+ */
 function bannerFor(time: PatchTime, league: string | null, moves: Map<string, ItemMoves>, opts: ImpactOptions, db: Database.Database): PatchImpactResponse["banner"] {
-  if (time.ms < opts.nowMs - opts.retentionDays * DAY_MS) return "history_not_retained";
+  const preStart = time.ms - PRE_GAP_MS - PRE_LOOKBACK_MS;
+  if (preStart < opts.nowMs - opts.retentionDays * DAY_MS) return "history_not_retained";
   if (league === null) return "no_history_league";
-  const oldest = oldestSnapshotMs(league, db);
-  const historyStartsBefore = oldest !== null && oldest <= time.ms - PRE_GAP_MS;
+  const polledBefore = polledBetween(league, preStart, time.ms - PRE_GAP_MS, db);
   const anyPre = moves.size === 0 || [...moves.values()].some((m) => m.preDiv !== null);
-  return historyStartsBefore && anyPre ? null : "no_pre_data";
+  return polledBefore && anyPre ? null : "no_pre_data";
 }
 
 /** null when the thread does not exist. */
@@ -99,11 +105,11 @@ export function computePatchImpact(threadId: number, opts: ImpactOptions): Patch
   if (!source) return null;
   const time = patchTimeOf(source);
   const window = snapshotWindow(time.ms);
-  const league = busiestLeagueBetween(window.fromMs, window.toMs, db);
-  const catalog = buildNameCatalog(league ?? opts.fallbackLeague, opts.bases, db);
+  const league = busiestLeagueBetween(window.fromMs, window.toMs, [opts.fallbackLeague], db);
+  const catalog = buildNameCatalog(league ?? opts.fallbackLeague, opts.bases, opts.nowMs, db);
   const matches = mapPatchItems(patchTexts(source), catalog.entries);
   const ids = idsToRead(matches, catalog);
-  const prices = league === null ? new Map<string, PricePoint[]>() : itemPricesBetween(league, ids, window.fromMs, window.toMs, db);
+  const prices = league === null ? new Map<string, PricePoint[]>() : itemPricesIn(league, ids, lookupRanges(time.ms), db);
   const moves = new Map<string, ItemMoves>();
   for (const id of ids) moves.set(id, itemMoves(prices.get(id) ?? [], time.ms, opts.nowMs));
   return {
