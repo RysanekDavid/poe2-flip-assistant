@@ -1,6 +1,6 @@
 "use client";
 
-import type { BookMissing, ModLiveValue, ModPoolResponse, ModPoolRow } from "../../../lib/tools/modPoolContract";
+import { MIN_UPLIFT_SAMPLES, type BookMissing, type ModLiveValue, type ModPoolResponse, type ModPoolRow } from "../../../lib/tools/modPoolContract";
 import { Button } from "../../ui/Button";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { EmptyState } from "../../ui/EmptyState";
@@ -11,14 +11,17 @@ const MISSING_TEXT: Record<BookMissing, string> = {
   "no-tier": "no tier of this family rolls at this item level",
   unresolved: "this line has no trade2 stat, so neither the book nor a search can price it",
   "not-signed": "the book never records this stat on its own (its pseudo total is missing from the trade catalog)",
+  "pseudo-only": "book records only the pseudo total — use Live for this mod",
   unavailable: "the trade2 stat catalog is unreachable right now",
 };
 
 interface Props {
   pool: ModPoolResponse;
   live: ReadonlyMap<string, LiveState>;
-  /** Seconds left on a 503 cool-down (the budget is shared, so it blocks every row). */
+  /** Seconds left on a 429/503 cool-down (it blocks every row). */
   wait: number;
+  /** A live value request is in flight: every row's button waits for it. */
+  busy: boolean;
   onValue: (row: ModPoolRow) => void;
 }
 
@@ -74,16 +77,34 @@ function FloorsCell({ r }: { r: ModPoolRow }) {
   );
 }
 
+const PSEUDO_TIP = "book records only the pseudo total — use Live for this mod";
+
+function PseudoCell({ label, implicit }: { label: string; implicit: boolean }) {
+  if (implicit) {
+    return (
+      <span className="text-neutral-500" title={`${PSEUDO_TIP}; this base's implicit already feeds ${label}, so every recorded item carries it`}>
+        —
+      </span>
+    );
+  }
+  return (
+    <span className="text-xs text-neutral-400" title={PSEUDO_TIP}>
+      {label}
+    </span>
+  );
+}
+
 function BookCell({ r, ex }: { r: ModPoolRow; ex: number | null }) {
+  if (r.pseudo) return <PseudoCell label={r.pseudo.label} implicit={r.pseudo.implicit} />;
   if (!r.book) {
     const why = r.bookMissing ? MISSING_TEXT[r.bookMissing] : "no book signal";
     return <span className="text-neutral-500" title={why}>—</span>;
   }
   const b = r.book;
   if (b.samples === 0) return <span className="text-neutral-500" title="no recorded asks for this stat on this base yet">—</span>;
-  const via = b.viaPseudo ? " · signed under its pseudo total (e.g. total elemental resistance), shared with sibling mods" : "";
+  const uplift = b.upliftPct == null ? ` · a % over the base median needs ${MIN_UPLIFT_SAMPLES}+ samples` : "";
   return (
-    <span className="inline-flex items-center gap-1.5" title={`trimmed median of ${b.samples} recorded asks${via}`}>
+    <span className="inline-flex items-center gap-1.5" title={`trimmed median of ${b.samples} recorded asks${uplift}`}>
       <PriceChip div={b.valueDiv} exPerDiv={ex} source="book" />
       <span className="text-xs tabular-nums text-neutral-500">n{b.samples}</span>
       {b.upliftPct != null && (
@@ -92,7 +113,6 @@ function BookCell({ r, ex }: { r: ModPoolRow; ex: number | null }) {
           {b.upliftPct}%
         </span>
       )}
-      {b.viaPseudo && <span className="text-xs text-neutral-500">Σ</span>}
     </span>
   );
 }
@@ -109,14 +129,23 @@ function LiveValue({ v, ex, cached }: { v: ModLiveValue; ex: number | null; cach
   );
 }
 
-function LiveCell({ r, state, ex, wait, onValue }: { r: ModPoolRow; state: LiveState | undefined; ex: number | null; wait: number; onValue: () => void }) {
+interface LiveCellProps {
+  r: ModPoolRow;
+  state: LiveState | undefined;
+  ex: number | null;
+  wait: number;
+  busy: boolean;
+  onValue: () => void;
+}
+
+function LiveCell({ r, state, ex, wait, busy, onValue }: LiveCellProps) {
   if (state?.kind === "done") return <LiveValue v={state.live} ex={ex} cached={state.cached} />;
   if (r.live) return <LiveValue v={r.live} ex={ex} cached />;
   if (!r.search?.statId) return <span className="text-neutral-500" title="no trade2 stat to search">—</span>;
   const loading = state?.kind === "loading";
   return (
     <span className="inline-flex items-center gap-1.5">
-      <Button size="sm" onClick={onValue} disabled={loading || wait > 0} title="one trade2 search + one fetch with your POESESSID; the result is shared for everyone">
+      <Button size="sm" onClick={onValue} disabled={busy || wait > 0} title="one trade2 search + one fetch with your POESESSID; the result is shared for everyone">
         {loading ? "searching…" : wait > 0 ? `retry in ${wait}s` : "value · 1 search"}
       </Button>
       {state?.kind === "error" && (
@@ -128,7 +157,7 @@ function LiveCell({ r, state, ex, wait, onValue }: { r: ModPoolRow; state: LiveS
   );
 }
 
-function columns({ pool, live, wait, onValue }: Props): Column<ModPoolRow>[] {
+function columns({ pool, live, wait, busy, onValue }: Props): Column<ModPoolRow>[] {
   const ex = pool.exaltPerDivine;
   return [
     { key: "side", header: "Side", width: "3rem", cell: (r) => <span className="text-xs uppercase text-neutral-500">{r.side === "prefix" ? "P" : "S"}</span> },
@@ -140,7 +169,7 @@ function columns({ pool, live, wait, onValue }: Props): Column<ModPoolRow>[] {
       key: "live",
       header: "Live",
       tip: `one trade search on click: rare ${pool.base}, instant buyout, carrying this stat at ≥ the tier's lowest roll; shared for ${pool.cacheHours} h`,
-      cell: (r) => <LiveCell r={r} state={live.get(rowKeyOf(r))} ex={ex} wait={wait} onValue={() => onValue(r)} />,
+      cell: (r) => <LiveCell r={r} state={live.get(rowKeyOf(r))} ex={ex} wait={wait} busy={busy} onValue={() => onValue(r)} />,
     },
     {
       key: "trade",

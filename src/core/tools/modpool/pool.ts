@@ -11,7 +11,7 @@ import { referenceValue, type ReferenceValue } from "../../priceBook";
 import type { StatIndex } from "../../statResolver";
 import { comboFor, type AffixSide, type CraftCatalog } from "../craftmoves/catalog";
 import { familyGates, floorsFor, type FamilyGate } from "../craftmoves/gates";
-import { bookSignal, resolveTier, tierTemplate, type ObsLookup, type ResolvedTier } from "./bookSignal";
+import { bookSignal, implicitPseudoRefs, resolveTier, tierTemplate, type ObsLookup, type ResolvedTier, type TierTemplate } from "./bookSignal";
 import { liveQuery } from "./liveValue";
 
 /**
@@ -76,29 +76,33 @@ interface RowCtx {
   sel: ModPoolQuery;
   inputs: PoolInputs;
   baseline: ReferenceValue;
+  /** Pseudo totals the base implicit already feeds (every recorded item carries them). */
+  implicitPseudos: ReadonlySet<string>;
 }
 
 function missingReason(idx: StatIndex | null, resolved: ResolvedTier | null): BookMissing | null {
   if (!idx) return "unavailable";
   if (!resolved) return "unresolved";
+  if (resolved.pseudo) return "pseudo-only";
   return resolved.bookRef == null ? "not-signed" : null;
 }
 
 function poolRow(g: FamilyGate, ctx: RowCtx): ModPoolRow {
   const top = g.topReachable;
-  if (!top) return { ...g, search: null, book: null, bookMissing: "no-tier", live: null, tradeUrl: null };
+  if (!top) return { ...g, search: null, book: null, bookMissing: "no-tier", pseudo: null, live: null, tradeUrl: null };
   const { sel, inputs } = ctx;
   const t = tierTemplate(top.text);
   const resolved = inputs.idx ? resolveTier(t, inputs.idx) : null;
-  const bookMissing = missingReason(inputs.idx, resolved);
-  const book = resolved?.bookRef != null ? bookSignal(inputs.obs(resolved.bookRef), ctx.baseline, resolved.viaPseudo) : null;
+  const book = resolved?.bookRef != null ? bookSignal(inputs.obs(resolved.bookRef), ctx.baseline) : null;
+  const pseudo = resolved?.pseudo ? { label: resolved.pseudo.label, implicit: ctx.implicitPseudos.has(resolved.pseudo.ref) } : null;
   const live = resolved ? inputs.live(resolved.statId, t.minRoll ?? 0) : null;
-  const query = resolved ? liveQuery({ baseType: sel.base, statId: resolved.statId, minRoll: t.minRoll, ilvl: sel.ilvl }) : null;
+  const query = resolved ? liveQuery({ baseType: sel.base, statId: resolved.statId, minRoll: t.minRoll, tierLevel: top.level }) : null;
   return {
     ...g,
     search: { line: t.line, lines: t.lines, partial: t.partial, statId: resolved?.statId ?? null, minRoll: t.minRoll },
     book,
-    bookMissing,
+    bookMissing: missingReason(inputs.idx, resolved),
+    pseudo,
     live,
     tradeUrl: live?.searchUrl ?? (query ? tradeSearchUrl(inputs.league, query) : null),
   };
@@ -109,7 +113,8 @@ export function assemblePool(cat: CraftCatalog, sel: ModPoolQuery, inputs: PoolI
   const gates = poolGates(cat, sel);
   // the base-wide baseline is read only when the catalog is up: without it no row has a book signal
   const baseline = referenceValue(inputs.idx ? inputs.obs(null) : []);
-  const rows = gates.map((g) => poolRow(g, { sel, inputs, baseline }));
+  const implicitPseudos = inputs.idx ? implicitPseudoRefs(cat.bases[sel.base]?.implicits ?? [], inputs.idx) : new Set<string>();
+  const rows = gates.map((g) => poolRow(g, { sel, inputs, baseline, implicitPseudos }));
   return {
     kind: "pool",
     league: inputs.league,
@@ -132,19 +137,27 @@ export function assemblePool(cat: CraftCatalog, sel: ModPoolQuery, inputs: PoolI
   };
 }
 
-/** What the live value of one family searches: its reachable top tier's stat and lowest roll. */
-export function liveTargetOf(
-  cat: CraftCatalog,
-  sel: ModPoolQuery,
-  family: string,
-  side: AffixSide,
-  idx: StatIndex,
-): { statId: string; minRoll: number | null; line: string } {
+/** The tier one family's live value searches, from the craft catalog alone (no trade2 data needed). */
+export interface FamilyTier {
+  line: string;
+  template: TierTemplate;
+  minRoll: number | null;
+  /** Modifier level of that tier: the live search's item-level floor. */
+  tierLevel: number;
+}
+
+/** The reachable top tier of one family at the selection's item level. */
+export function familyTier(cat: CraftCatalog, sel: ModPoolQuery, family: string, side: AffixSide): FamilyTier {
   const gate = poolGates(cat, sel).find((g) => g.family === family && g.side === side);
   if (!gate) throw new ModNotSearchableError(`${sel.base} cannot roll the ${side} family ${family}`);
   if (!gate.topReachable) throw new ModNotSearchableError(`no ${family} tier rolls at item level ${sel.ilvl}`);
-  const t = tierTemplate(gate.topReachable.text);
-  const resolved = resolveTier(t, idx);
-  if (!resolved) throw new ModNotSearchableError(`"${t.line}" has no trade2 stat — it cannot be searched`);
-  return { statId: resolved.statId, minRoll: t.minRoll, line: t.line };
+  const template = tierTemplate(gate.topReachable.text);
+  return { line: template.line, template, minRoll: template.minRoll, tierLevel: gate.topReachable.level };
+}
+
+/** The trade stat that tier's first line resolves to; throws when it has none. */
+export function statOfTier(tier: FamilyTier, idx: StatIndex): string {
+  const resolved = resolveTier(tier.template, idx);
+  if (!resolved) throw new ModNotSearchableError(`"${tier.line}" has no trade2 stat — it cannot be searched`);
+  return resolved.statId;
 }

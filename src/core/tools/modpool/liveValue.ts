@@ -11,9 +11,13 @@ import { RatesUnavailableError } from "../craftmoves/moves";
 
 /**
  * The live signal for one pool row: exactly one trade2 search + one fetch for "rare <base>, ilvl ≥
- * ilvl − slack, instant buyout, not mirrored, carrying <stat> ≥ the tier's lowest roll", valued as
- * the trimmed median of the cheapest comparables. Spent only on an explicit click, and cached per
+ * the tier's level, instant buyout, not mirrored, carrying <stat> ≥ the tier's lowest roll", valued
+ * as the trimmed median of the cheapest comparables. Spent only on an explicit click, and cached per
  * league × base × stat × roll for everyone for `modPool.cacheHours`.
+ *
+ * The query is a pure function of that cache key: (stat, roll) fix the tier, and the tier's level —
+ * not the viewer's chosen ilvl — is the item-level floor. Two viewers at ilvl 82 and 86 who reach the
+ * same tier therefore run, and share, the identical search.
  */
 
 /** trade2 fetches 10 listings per call — capping here keeps the value at 1 search + 1 fetch. */
@@ -26,7 +30,8 @@ export interface LiveTarget {
   statId: string;
   /** Tier's lowest roll; null = presence-only stat (cached under min_roll 0, searched without a min). */
   minRoll: number | null;
-  ilvl: number;
+  /** Modifier level of the tier searched: the lowest item level that can carry it. */
+  tierLevel: number;
 }
 
 export const cacheKeyOf = (t: LiveTarget): ModValueKey => ({
@@ -40,11 +45,11 @@ export const cacheKeyOf = (t: LiveTarget): ModValueKey => ({
 export const freshAfter = (nowMs: number): number => nowMs - config.modPool.cacheHours * HOUR_MS;
 
 /** The one comparable search a row's live value (and its trade link) runs. Pure. */
-export function liveQuery(t: Pick<LiveTarget, "baseType" | "statId" | "minRoll" | "ilvl">): TradeQuery {
+export function liveQuery(t: Pick<LiveTarget, "baseType" | "statId" | "minRoll" | "tierLevel">): TradeQuery {
   return {
     type: t.baseType,
     rarity: "rare",
-    ilvlMin: Math.max(0, t.ilvl - config.valuation.ilvlSlack),
+    ilvlMin: t.tierLevel,
     instantBuyout: true,
     mirrored: false,
     stats: [{ id: t.statId, min: t.minRoll ?? undefined }],

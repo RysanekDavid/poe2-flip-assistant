@@ -12,15 +12,20 @@ import { buildStatIndex, type StatIndex } from "../../core/statResolver";
 import type { CraftCatalog } from "../../core/tools/craftmoves/catalog";
 import { KB_GATE_EXAMPLES } from "../../core/tools/craftmoves/gates";
 import { RatesUnavailableError } from "../../core/tools/craftmoves/moves";
-import { resolveTier, tierTemplate } from "../../core/tools/modpool/bookSignal";
+import { implicitPseudoRefs, resolveTier, tierTemplate } from "../../core/tools/modpool/bookSignal";
+import { createLiveLimiter, LIVE_VALUES_PER_HOUR, meteredSpend } from "../../core/tools/modpool/liveLimit";
+import { lookupFamilyValue, memoObs } from "../../core/tools/modpool/load";
+import { loadStatIndex, NEGATIVE_TTL_MS, resetStatIndexCache, StatCatalogUnavailableError } from "../../core/tools/modpool/statIndex";
 import { cachedLiveValue, cacheKeyOf, fetchLiveValue, freshAfter, liveQuery, type LiveDeps, type LiveTarget } from "../../core/tools/modpool/liveValue";
-import { assemblePool, liveTargetOf, ModNotSearchableError, poolClasses, poolGates, UnknownBaseError, type PoolInputs } from "../../core/tools/modpool/pool";
+import { assemblePool, familyTier, ModNotSearchableError, poolClasses, poolGates, statOfTier, UnknownBaseError, type PoolInputs } from "../../core/tools/modpool/pool";
+import { tradeSearchUrl } from "../../lib/tradeLink";
 import {
   modPoolGetResponseSchema,
   modPoolQuerySchema,
   modPoolResponseSchema,
   modValueRequestSchema,
   type ModPoolQuery,
+  type ModPoolResponse,
 } from "../../lib/tools/modPoolContract";
 import { assertPanelExport, freshToolsDb } from "./toolsTestKit";
 
@@ -35,9 +40,10 @@ const IDX: StatIndex = buildStatIndex([
   { id: "explicit.stat_cold", text: "+#% to Cold Resistance", group: "explicit" },
   { id: "explicit.stat_cast", text: "#% increased Cast Speed", group: "explicit" },
   { id: "explicit.stat_attack_fire", text: "Adds # to # Fire damage to Attacks", group: "explicit" },
+  { id: "explicit.stat_rarity", text: "#% increased Rarity of Items found", group: "explicit" },
   { id: "pseudo.stat_total_ele", text: "+#% total Elemental Resistance", group: "pseudo" },
 ]);
-const REF = { fire: "#% to fire resistance", ele: "#% total elemental resistance", cast: "#% increased cast speed" };
+const REF = { fire: "#% to fire resistance", ele: "#% total elemental resistance", cast: "#% increased cast speed", attack: "adds # to # fire damage to attacks" };
 
 function testGatesVsKb(cat: CraftCatalog): void {
   const gates = poolGates(cat, RING);
@@ -73,12 +79,14 @@ function testTextToStat(): void {
   assert.equal(tierTemplate("(60-56)% reduced Poison Duration on you").minRoll, 56, "a high-to-low range still yields its lower bound");
 
   const fire = resolveTier(res, IDX);
-  assert.deepEqual(fire, { statId: "explicit.stat_fire", bookRef: REF.ele, viaPseudo: true }, "a pseudo source is read under its total");
+  assert.deepEqual(fire, { statId: "explicit.stat_fire", bookRef: null, pseudo: { ref: REF.ele, label: "Σ total Elemental Resistance" } }, "a pseudo source has no book ref of its own");
   const cast = resolveTier(tierTemplate("(9-12)% increased Cast Speed"), IDX);
-  assert.deepEqual(cast, { statId: "explicit.stat_cast", bookRef: REF.cast, viaPseudo: false });
+  assert.deepEqual(cast, { statId: "explicit.stat_cast", bookRef: REF.cast, pseudo: null });
   const noPseudo = buildStatIndex([{ id: "explicit.stat_fire", text: "+#% to Fire Resistance", group: "explicit" }]);
-  assert.equal(resolveTier(res, noPseudo)?.bookRef, null, "no pseudo total in the catalog → never signed");
+  assert.deepEqual([resolveTier(res, noPseudo)?.bookRef, resolveTier(res, noPseudo)?.pseudo], [null, null], "no pseudo total in the catalog → never signed");
   assert.equal(resolveTier(tierTemplate("+(5-8) to Nonsense"), IDX), null);
+  assert.deepEqual([...implicitPseudoRefs(["+(20-30)% to Fire Resistance"], IDX)], [REF.ele], "a res implicit feeds the ele res total");
+  assert.equal(implicitPseudoRefs(["(6-15)% increased Rarity of Items found"], IDX).size, 0);
 }
 
 function seedBook(): void {
@@ -90,6 +98,7 @@ function seedBook(): void {
   obs(sig("Ruby Ring", ["#% increased cast speed while channelling"]), 5); // longer ref sharing a prefix
   // sorts to "…|#% to maximum mana#b…~#abc increased cast speed#b…": an unescaped "%" in the ref matches it
   obs(sig("Ruby Ring", ["#% to maximum mana", "#abc increased cast speed"]), 6);
+  for (let i = 0; i < 2; i++) obs(sig("Ruby Ring", [REF.attack]), 7); // two samples: a value, but no uplift %
   obs("ruby ring|", 90); // legacy zero-mod row: never a sample, never the baseline
   obs(sig("Gold Ring", [REF.cast]), 70);
   obs(sig("Ruby Ring", [REF.cast]), 80, "Other League");
@@ -100,9 +109,16 @@ function testObservedByBaseRef(): void {
   const sorted = (xs: number[]) => [...xs].sort((a, b) => a - b);
   assert.deepEqual(sorted(observedByBaseRef(L, "Ruby Ring", REF.cast)), [2, 3, 4], "ref pinned to a token start; base + league scoped");
   assert.deepEqual(sorted(observedByBaseRef(L, "Ruby Ring", REF.ele)), [1, 2, 3, 4], "ref found in first and later positions");
-  assert.deepEqual(sorted(observedByBaseRef(L, "Ruby Ring", null)), [1, 2, 3, 4, 5, 6], "baseline = modded rows only");
+  assert.deepEqual(sorted(observedByBaseRef(L, "Ruby Ring", null)), [1, 2, 3, 4, 5, 6, 7, 7], "baseline = modded rows only");
   assert.deepEqual(observedByBaseRef(L, "Ruby Ring", "#_ increased cast speed"), [], "_ is literal, not a wildcard");
   assert.deepEqual(observedByBaseRef(L, "Ruby Ring", REF.fire), []);
+  let reads = 0;
+  const memo = memoObs((ref) => {
+    reads++;
+    return observedByBaseRef(L, "Ruby Ring", ref);
+  });
+  for (const ref of [REF.cast, REF.cast, null, null, REF.attack]) memo(ref);
+  assert.equal(reads, 3, "one book read per distinct ref within a pool");
 }
 
 function inputs(idx: StatIndex | null, over: Partial<PoolInputs> = {}): PoolInputs {
@@ -119,24 +135,37 @@ function inputs(idx: StatIndex | null, over: Partial<PoolInputs> = {}): PoolInpu
   };
 }
 
+function testPseudoRows(cat: CraftCatalog, pool: ModPoolResponse): void {
+  assert.ok(cat.bases["Ruby Ring"]?.implicits.some((l) => /to Fire Resistance$/.test(l)), "the catalog carries Ruby Ring's fire res implicit");
+  for (const family of ["FireResistance", "ColdResistance"]) {
+    const r = pool.rows.find((x) => x.family === family)!;
+    assert.deepEqual([r.book, r.bookMissing, r.pseudo], [null, "pseudo-only", { label: "Σ total Elemental Resistance", implicit: true }], `${family}: no per-family number`);
+  }
+  const gold = assemblePool(cat, { ...RING, base: "Gold Ring" }, inputs(IDX, { obs: (ref) => observedByBaseRef(L, "Gold Ring", ref) }));
+  assert.deepEqual(gold.rows.find((x) => x.family === "FireResistance")?.pseudo, { label: "Σ total Elemental Resistance", implicit: false }, "a rarity-implicit base shows the Σ label");
+}
+
 function testAssemble(cat: CraftCatalog): void {
   const pool = modPoolResponseSchema.parse(assemblePool(cat, RING, inputs(IDX)));
   const row = (family: string) => pool.rows.find((r) => r.family === family)!;
   const cast = row("IncreasedCastSpeed");
-  assert.equal(cast.book?.valueDiv, 3, "trimmed median of the cast speed asks");
-  assert.equal(cast.book?.samples, 3);
-  assert.deepEqual([pool.baseline.valueDiv, pool.baseline.samples], [4, 5], "base-wide trimmed median (the 1-Div ask is bait)");
-  assert.equal(cast.book?.upliftPct, -25);
-  const fire = row("FireResistance");
-  assert.ok(fire.book?.viaPseudo && fire.book.samples === 4, "fire res reads the total-ele-res signal and says so");
-  assert.equal(row("ColdResistance").book?.samples, 4, "sibling res families share the pseudo signal");
+  assert.deepEqual([cast.book?.valueDiv, cast.book?.samples], [3, 3], "trimmed median of the cast speed asks");
+  assert.deepEqual([pool.baseline.valueDiv, pool.baseline.samples], [5, 7], "base-wide trimmed median (the 1-Div ask is bait)");
+  assert.equal(cast.book?.upliftPct, -40);
+  const attack = row("FireDamage");
+  assert.deepEqual([attack.book?.valueDiv, attack.book?.samples, attack.book?.upliftPct], [7, 2, null], "under 3 samples: value and n, no %");
+  testPseudoRows(cat, pool);
   const life = row("IncreasedLife");
   assert.deepEqual([life.search?.statId, life.book, life.bookMissing, life.tradeUrl], [null, null, "unresolved", null], "unresolved → nothing, not 0");
   assert.equal(pool.coverage.families, pool.rows.length);
   assert.equal(pool.coverage.resolved, pool.rows.filter((r) => r.search?.statId).length);
-  assert.equal(pool.coverage.withSamples, 3, "cast speed + fire + cold have samples");
+  assert.equal(pool.coverage.withSamples, 2, "cast speed + attack fire damage; pseudo-only rows never count");
   assert.ok(pool.rows.every((r) => r.book == null || r.book.valueDiv == null || r.book.valueDiv > 0), "no zero Div");
-  assert.ok(cast.tradeUrl?.includes(encodeURIComponent(L)), "static trade link in the pool league");
+  const tier = familyTier(cat, RING, "IncreasedCastSpeed", "suffix");
+  const expected = tradeSearchUrl(L, liveQuery({ baseType: RING.base, statId: "explicit.stat_cast", minRoll: tier.minRoll, tierLevel: tier.tierLevel }));
+  assert.equal(cast.tradeUrl, expected, "the static link runs the live value's exact query");
+  const at86 = assemblePool(cat, { ...RING, ilvl: 86 }, inputs(IDX)).rows.find((r) => r.family === "IncreasedCastSpeed");
+  assert.equal(at86?.tradeUrl, cast.tradeUrl, "same tier at another ilvl → same link");
 
   const low = assemblePool(cat, { ...RING, ilvl: 1 }, inputs(IDX)).rows.find((r) => r.family === "FireResistance")!;
   assert.ok(low.topReachable == null ? low.bookMissing === "no-tier" && low.search == null : low.search != null);
@@ -165,15 +194,27 @@ function fakeDeps(divs: number[], rates: boolean): LiveDeps & { calls: number } 
   return deps;
 }
 
-async function testLiveCache(cat: CraftCatalog): Promise<void> {
-  const t = liveTargetOf(cat, RING, "IncreasedCastSpeed", "suffix", IDX);
-  assert.equal(t.statId, "explicit.stat_cast");
-  assert.throws(() => liveTargetOf(cat, RING, "IncreasedLife", "prefix", IDX), ModNotSearchableError);
-  assert.throws(() => liveTargetOf(cat, RING, "IncreasedCastSpeed", "prefix", IDX), ModNotSearchableError, "side must match");
-  const target: LiveTarget = { league: L, baseType: RING.base, statId: t.statId, minRoll: t.minRoll, ilvl: 82 };
-  const q = liveQuery(target);
-  assert.deepEqual([q.rarity, q.instantBuyout, q.mirrored, q.ilvlMin, q.stats], ["rare", true, false, 78, [{ id: t.statId, min: t.minRoll }]]);
+const targetAt = (cat: CraftCatalog, ilvl: number, family = "IncreasedCastSpeed"): LiveTarget => {
+  const tier = familyTier(cat, { ...RING, ilvl }, family, "suffix");
+  return { league: L, baseType: RING.base, statId: statOfTier(tier, IDX), minRoll: tier.minRoll, tierLevel: tier.tierLevel };
+};
 
+/** Review BUG: the cache key ignored ilvl while the query used it. The query is now a function of the key. */
+function testKeyDeterminesQuery(cat: CraftCatalog): void {
+  const [a, b] = [targetAt(cat, 82), targetAt(cat, 86)];
+  assert.deepEqual(cacheKeyOf(a), cacheKeyOf(b), "same tier → same cache key");
+  assert.deepEqual(liveQuery(a), liveQuery(b), "same tier → identical query, whatever ilvl was requested");
+  const q = liveQuery(a);
+  assert.deepEqual([q.rarity, q.instantBuyout, q.mirrored, q.ilvlMin, q.stats], ["rare", true, false, a.tierLevel, [{ id: a.statId, min: a.minRoll }]]);
+  const [fire81, fire82] = [targetAt(cat, 81, "FireResistance"), targetAt(cat, 82, "FireResistance")];
+  assert.notDeepEqual(cacheKeyOf(fire81), cacheKeyOf(fire82), "a different tier is a different key");
+  assert.deepEqual([fire81.tierLevel, fire82.tierLevel], [71, 82]);
+  assert.throws(() => statOfTier(familyTier(cat, RING, "IncreasedLife", "prefix"), IDX), ModNotSearchableError);
+  assert.throws(() => familyTier(cat, RING, "IncreasedCastSpeed", "prefix"), ModNotSearchableError, "side must match");
+}
+
+async function testLiveCache(cat: CraftCatalog): Promise<void> {
+  const target = targetAt(cat, 82);
   const noRates = fakeDeps([1], false);
   await assert.rejects(fetchLiveValue(target, { poesessid: "x" }, NOW, noRates), RatesUnavailableError);
   assert.equal(noRates.calls, 0, "no rates → no search spent");
@@ -186,6 +227,11 @@ async function testLiveCache(cat: CraftCatalog): Promise<void> {
   assert.equal(cachedLiveValue(target, NOW + 25 * H), null, "expired after cacheHours");
   assert.equal(freshAfter(NOW), NOW - 24 * H);
 
+  // cache before the trade2 stat catalog: with the row's statId a hit needs no stat index at all
+  const req = { itemClass: RING.itemClass, base: RING.base, ilvl: 86, family: "IncreasedCastSpeed", side: "suffix" as const, statId: target.statId };
+  const hit = await lookupFamilyValue(req, L, NOW);
+  assert.ok(hit.kind === "hit" && hit.response.cached && hit.response.live.valueDiv === 3, "an ilvl-86 click reuses the ilvl-82 search");
+
   const empty = { ...target, statId: "explicit.stat_fire", minRoll: null };
   const none = await fetchLiveValue(empty, { poesessid: "x" }, NOW, fakeDeps([], true));
   assert.equal(none.valueDiv, null, "no comparables → null, never 0");
@@ -193,9 +239,47 @@ async function testLiveCache(cat: CraftCatalog): Promise<void> {
   saveModValue(cacheKeyOf(empty), { ...none, checkedAt: NOW - 30 * H });
   assert.equal(cachedLiveValue(empty, NOW), null, "an overwritten stale row is not served");
 
-  const withLive = assemblePool(cat, RING, inputs(IDX, { live: (id, roll) => (id === t.statId && roll === (t.minRoll ?? 0) ? v : null) }));
+  const withLive = assemblePool(cat, RING, inputs(IDX, { live: (id, roll) => (id === target.statId && roll === (target.minRoll ?? 0) ? v : null) }));
   const castRow = withLive.rows.find((r) => r.family === "IncreasedCastSpeed")!;
   assert.equal(castRow.tradeUrl, v.searchUrl, "a live value's own search link replaces the static one");
+}
+
+async function testStatIndexNegativeCache(): Promise<void> {
+  resetStatIndexCache();
+  let calls = 0;
+  const down = async () => {
+    calls++;
+    throw new Error("trade2 data fetch failed for /stats (503)");
+  };
+  await assert.rejects(loadStatIndex(NOW, down), StatCatalogUnavailableError);
+  const second = await loadStatIndex(NOW + 30_000, down).catch((e: unknown) => e);
+  assert.ok(second instanceof StatCatalogUnavailableError && second.retryAfterSec === 30 && /503/.test(second.message), "a remembered failure fails fast and says why");
+  assert.equal(calls, 1, "no second trade2 read inside the negative window");
+  await assert.rejects(loadStatIndex(NOW + NEGATIVE_TTL_MS + 1, down), StatCatalogUnavailableError);
+  assert.equal(calls, 2, "retried once the window passes");
+  const up = async () => ({ at: 1, stats: [{ id: "explicit.stat_cast", text: "#% increased Cast Speed", group: "explicit" }] });
+  const idx = await loadStatIndex(NOW + 3 * NEGATIVE_TTL_MS, up);
+  assert.equal(await loadStatIndex(NOW + 3 * NEGATIVE_TTL_MS, up), idx, "the same snapshot is not rebuilt per request");
+  resetStatIndexCache();
+}
+
+async function testLiveLimiter(): Promise<void> {
+  let clock = NOW;
+  const lim = createLiveLimiter({ now: () => clock });
+  for (let i = 0; i < LIVE_VALUES_PER_HOUR; i++) lim.recordSpend(1);
+  const gate = lim.check(1);
+  assert.ok(!gate.allowed && gate.retryAfterSec === 3600, "the 11th spend in an hour is refused with Retry-After");
+  assert.ok(lim.check(2).allowed, "per user, not global");
+  const notSpent = (e: unknown) => e instanceof RatesUnavailableError;
+  await assert.rejects(meteredSpend(lim, 3, notSpent, () => Promise.reject(new RatesUnavailableError(L))), RatesUnavailableError);
+  await assert.rejects(meteredSpend(lim, 3, notSpent, () => Promise.reject(new Error("trade2 502"))), /502/);
+  await meteredSpend(lim, 3, notSpent, () => Promise.resolve(1));
+  for (let i = 0; i < LIVE_VALUES_PER_HOUR - 3; i++) lim.recordSpend(3);
+  assert.ok(lim.check(3).allowed, "a refused-before-trade2 error is not counted (2 of 3 attempts counted)");
+  lim.recordSpend(3);
+  assert.equal(lim.check(3).allowed, false);
+  clock += 3_600_001;
+  assert.ok(lim.check(1).allowed, "the window rolls");
 }
 
 function testContract(cat: CraftCatalog): void {
@@ -208,7 +292,7 @@ function testContract(cat: CraftCatalog): void {
   assert.equal(modValueRequestSchema.safeParse({ ...RING, family: "X", side: "implicit" }).success, false);
   const zero = assemblePool(cat, RING, inputs(IDX));
   const row = zero.rows[0]!;
-  const withZero = { ...zero, rows: [{ ...row, book: { valueDiv: 0, minDiv: null, samples: 0, upliftPct: null, viaPseudo: false } }] };
+  const withZero = { ...zero, rows: [{ ...row, book: { valueDiv: 0, minDiv: null, samples: 0, upliftPct: null } }] };
   assert.equal(modPoolResponseSchema.safeParse(withZero).success, false, "a 0 Div value is a contract error");
 }
 
@@ -219,7 +303,10 @@ export async function runModPoolCases(cat: CraftCatalog): Promise<void> {
   testTextToStat();
   testObservedByBaseRef();
   testAssemble(cat);
+  testKeyDeterminesQuery(cat);
   await testLiveCache(cat);
+  await testStatIndexNegativeCache();
+  await testLiveLimiter();
   testContract(cat);
   assertPanelExport("src/components/craft/modpool/ModPoolTool.tsx", "ModPoolTool", "src/components/shell/tabs/CraftTab.tsx");
   assert.deepEqual(parseTabRoute("craft", "modpool"), { tab: "craft", tool: "modpool", rejected: [] });

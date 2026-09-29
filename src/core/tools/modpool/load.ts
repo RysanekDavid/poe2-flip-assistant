@@ -1,14 +1,15 @@
-import { fetchTradeMeta } from "../../../api/tradeMeta";
 import type { TradeCred } from "../../../api/tradeClient";
 import { config } from "../../../config/env";
 import { observedByBaseRef } from "../../../db/marketQueries";
 import { freshModValues, modValueMapKey } from "../../../db/modValueQueries";
 import type { ModPoolCatalog, ModPoolQuery, ModPoolResponse, ModValueRequest, ModValueResponse } from "../../../lib/tools/modPoolContract";
 import { resolveRates } from "../../rates";
-import { buildStatIndex, type StatIndex } from "../../statResolver";
+import type { StatIndex } from "../../statResolver";
 import { loadCraftCatalog } from "../craftmoves/catalog";
+import type { ObsLookup } from "./bookSignal";
 import { cachedLiveValue, fetchLiveValue, freshAfter, type LiveTarget } from "./liveValue";
-import { assemblePool, liveTargetOf, poolClasses } from "./pool";
+import { assemblePool, familyTier, poolClasses, statOfTier } from "./pool";
+import { loadStatIndex } from "./statIndex";
 
 /**
  * Server wiring for the mod pool: catalog, cached trade2 stat catalog, price book, shared live
@@ -19,30 +20,39 @@ export function loadPoolCatalog(): ModPoolCatalog {
   return { kind: "catalog", classes: poolClasses(loadCraftCatalog()) };
 }
 
+/** One book read per distinct ref per pool: sibling res rows and the baseline must not re-query. */
+export function memoObs(read: ObsLookup): ObsLookup {
+  const memo = new Map<string | null, number[]>();
+  return (ref) => {
+    const hit = memo.get(ref);
+    if (hit) return hit;
+    const prices = read(ref);
+    memo.set(ref, prices);
+    return prices;
+  };
+}
+
 /**
- * The (24 h cached) trade2 stat catalog. When the read fails the gates still stand on their own,
- * so the failure is returned beside them instead of failing the whole pool.
+ * The stat catalog, or the reason it is down. The gates stand on their own, so an outage is
+ * returned beside them (a clear bookError the panel shows) instead of failing the whole pool.
  */
-async function statIndex(): Promise<{ idx: StatIndex | null; error: string | null }> {
+async function statIndexOrError(nowMs: number): Promise<{ idx: StatIndex | null; error: string | null }> {
   try {
-    const { stats } = await fetchTradeMeta();
-    return { idx: buildStatIndex(stats), error: null };
+    return { idx: await loadStatIndex(nowMs), error: null };
   } catch (e: unknown) {
-    const error = e instanceof Error ? e.message : String(e);
-    console.error(`[mod-pool] trade2 stat catalog unavailable: ${error}`);
-    return { idx: null, error };
+    return { idx: null, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
 export async function loadModPool(sel: ModPoolQuery, league: string, nowMs: number): Promise<ModPoolResponse> {
   const cat = loadCraftCatalog();
-  const { idx, error } = await statIndex();
+  const { idx, error } = await statIndexOrError(nowMs);
   const cached = freshModValues(league, sel.base, freshAfter(nowMs));
   return assemblePool(cat, sel, {
     league,
     idx,
     bookError: error,
-    obs: (ref) => observedByBaseRef(league, sel.base, ref),
+    obs: memoObs((ref) => observedByBaseRef(league, sel.base, ref)),
     live: (statId, minRoll) => cached.get(modValueMapKey(statId, minRoll)) ?? null,
     cacheHours: config.modPool.cacheHours,
     exaltPerDivine: resolveRates(league, nowMs)?.rates.exaltPerDivine ?? null,
@@ -50,19 +60,28 @@ export async function loadModPool(sel: ModPoolQuery, league: string, nowMs: numb
   });
 }
 
-/** The live target of one family; throws UnknownBaseError / ModNotSearchableError / catalog errors. */
-export async function liveTargetFor(req: ModValueRequest, league: string): Promise<LiveTarget> {
-  const { stats } = await fetchTradeMeta();
-  // rarity only picks which currency floors the gates show; the searched tier does not depend on it
-  const sel: ModPoolQuery = { itemClass: req.itemClass, base: req.base, ilvl: req.ilvl, rarity: "Rare" };
-  const t = liveTargetOf(loadCraftCatalog(), sel, req.family, req.side, buildStatIndex(stats));
-  return { league, baseType: req.base, statId: t.statId, minRoll: t.minRoll, ilvl: req.ilvl };
-}
+export type FamilyValueLookup = { kind: "hit"; response: ModValueResponse } | { kind: "miss"; target: LiveTarget };
 
-/** A shared cache hit, or null — the route checks this before it asks for a credential. */
-export function cachedFamilyValue(req: ModValueRequest, target: LiveTarget, nowMs: number): ModValueResponse | null {
+const hitOf = (req: ModValueRequest, target: LiveTarget, nowMs: number): FamilyValueLookup | null => {
   const live = cachedLiveValue(target, nowMs);
-  return live ? { family: req.family, side: req.side, live, cached: true } : null;
+  return live ? { kind: "hit", response: { family: req.family, side: req.side, live, cached: true } } : null;
+};
+
+/**
+ * Cache first, trade2 catalog second. The tier (roll + level) comes from the craft catalog alone, so
+ * with the row's statId a cache hit answers even while trade2 /data is down. A miss resolves the stat
+ * on the server — the client's statId only ever reads, never writes the shared cache. Throws
+ * UnknownBaseError / ModNotSearchableError / StatCatalogUnavailableError.
+ */
+export async function lookupFamilyValue(req: ModValueRequest, league: string, nowMs: number): Promise<FamilyValueLookup> {
+  const cat = loadCraftCatalog();
+  // rarity only picks which currency floors the gates show; the searched tier does not depend on it
+  const tier = familyTier(cat, { itemClass: req.itemClass, base: req.base, ilvl: req.ilvl, rarity: "Rare" }, req.family, req.side);
+  const at = (statId: string): LiveTarget => ({ league, baseType: req.base, statId, minRoll: tier.minRoll, tierLevel: tier.tierLevel });
+  const early = req.statId ? hitOf(req, at(req.statId), nowMs) : null;
+  if (early) return early;
+  const target = at(statOfTier(tier, await loadStatIndex(nowMs)));
+  return hitOf(req, target, nowMs) ?? { kind: "miss", target };
 }
 
 export async function valueFamily(req: ModValueRequest, target: LiveTarget, cred: TradeCred, nowMs: number): Promise<ModValueResponse> {

@@ -27,6 +27,11 @@ export const modValueRequestSchema = z.object({
   ilvl: z.number().int().min(1).max(100),
   family: z.string().trim().min(1).max(120),
   side: z.enum(["prefix", "suffix"]),
+  /**
+   * The stat the pool row showed. Only ever used to READ the shared cache (so a hit still answers
+   * while the trade2 stat catalog is down); a search always uses the server's own resolution.
+   */
+  statId: z.string().trim().min(1).max(120).optional(),
 });
 export type ModValueRequest = z.infer<typeof modValueRequestSchema>;
 
@@ -44,23 +49,32 @@ export const modLiveValueSchema = z.object({
 });
 export type ModLiveValue = z.infer<typeof modLiveValueSchema>;
 
+/** Below this many samples a % over the base median is noise: n stays visible, the % does not. */
+export const MIN_UPLIFT_SAMPLES = 3;
+
 /** The price-book signal: recorded asks of items on this base whose signature carries the stat. */
 export const bookSignalSchema = z.object({
   valueDiv: divSchema,
   minDiv: divSchema,
   samples: z.number().int().nonnegative(),
-  /** Trimmed median vs the base-wide book median, in %; null when either side has no value. */
+  /** Trimmed median vs the base-wide book median, in %; null below MIN_UPLIFT_SAMPLES or without a value. */
   upliftPct: z.number().nullable(),
-  /** The book signs this stat under its pseudo total (e.g. total elemental resistance). */
-  viaPseudo: z.boolean(),
 });
+
+/**
+ * A pseudo SOURCE (single res, life, an attribute) is only ever recorded under its pseudo total, so
+ * the book has no per-family number for it. `implicit`: the base's own implicit feeds that total, so
+ * every recorded item carries it and even the total says nothing about this mod.
+ */
+export const pseudoOnlySchema = z.object({ label: z.string(), implicit: z.boolean() });
 export type BookSignalView = z.infer<typeof bookSignalSchema>;
 
 /**
  * Why a row has no book signal: no tier rolls at this ilvl, the line has no trade stat, the book
- * never signs that stat (a pseudo source whose total the catalog lacks), or the catalog was offline.
+ * never signs that stat (a pseudo source whose total the catalog lacks), the book records only its
+ * pseudo total (see `pseudo`), or the catalog was offline.
  */
-export const BOOK_MISSING = ["no-tier", "unresolved", "not-signed", "unavailable"] as const;
+export const BOOK_MISSING = ["no-tier", "unresolved", "not-signed", "pseudo-only", "unavailable"] as const;
 export const bookMissingSchema = z.enum(BOOK_MISSING).nullable();
 export type BookMissing = (typeof BOOK_MISSING)[number];
 
@@ -82,6 +96,8 @@ export const modPoolRowSchema = familyGateSchema.extend({
   search: modSearchSchema.nullable(),
   book: bookSignalSchema.nullable(),
   bookMissing: bookMissingSchema,
+  /** Set exactly when bookMissing is "pseudo-only". */
+  pseudo: pseudoOnlySchema.nullable(),
   /** Fresh shared cache hit, if any; otherwise the panel offers "value live · 1 search". */
   live: modLiveValueSchema.nullable(),
   /** Prefilled trade search for the same query the live value runs; null when the stat is unresolved. */
@@ -134,5 +150,6 @@ export type ModValueResponse = z.infer<typeof modValueResponseSchema>;
 
 export const MOD_POOL_LEGEND =
   "Signals are asks for rare items carrying this mod on this base, not the mod's own price. Book = recorded asks " +
-  "(0 searches); Live = one trade search on click, shared with everyone for the cache window. Hybrid mods are " +
+  "(0 searches); single res/life/attribute mods are recorded only inside their pseudo total (Σ), so use Live for them. " +
+  "Live = one trade search on click (10/h per user), shared with everyone for the cache window. Hybrid mods are " +
   "searched on their first line (partial). Floors: tiers each verified currency cannot roll.";

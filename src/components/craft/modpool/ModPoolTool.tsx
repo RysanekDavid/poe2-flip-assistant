@@ -13,7 +13,8 @@ import { Panel } from "../../ui/Panel";
 import { useCountdown } from "../../ui/useCountdown";
 import { BasePicker } from "./BasePicker";
 import { ModPoolTable } from "./ModPoolTable";
-import { fetchFamilyValue, getJson, poolUrl, rowKeyOf, type LiveState } from "./modPoolClient";
+import { requestJson } from "../moves/craftMovesClient";
+import { fetchFamilyValue, poolUrl, rowKeyOf, type LiveState } from "./modPoolClient";
 
 type Load<T> = { kind: "loading" } | { kind: "error"; error: string } | { kind: "done"; data: T };
 /** A new read keeps the previous table on screen instead of blanking it on every ilvl keystroke. */
@@ -36,7 +37,7 @@ function useCatalog(): Load<PoolClassView[]> {
   const [state, setState] = useState<Load<PoolClassView[]>>({ kind: "loading" });
   useEffect(() => {
     let live = true;
-    getJson("/api/tools/mod-pool", modPoolCatalogSchema)
+    requestJson("/api/tools/mod-pool", { method: "GET" }, modPoolCatalogSchema)
       .then((r) => live && setState(r.ok ? { kind: "done", data: r.data.classes } : { kind: "error", error: r.error }))
       .catch((e: unknown) => {
         console.error("[mod-pool] catalog read failed", e);
@@ -57,7 +58,7 @@ function usePool(query: ModPoolQuery | null): PoolLoad | null {
     const mine = ++seq.current;
     setState((s) => (s?.kind === "done" || s?.kind === "refreshing" ? { kind: "refreshing", data: s.data } : { kind: "loading" }));
     const t = setTimeout(() => {
-      getJson(poolUrl(query), modPoolResponseSchema)
+      requestJson(poolUrl(query), { method: "GET" }, modPoolResponseSchema)
         .then((r) => {
           if (mine === seq.current) setState(r.ok ? { kind: "done", data: r.data } : { kind: "error", error: r.error });
         })
@@ -94,24 +95,29 @@ function useLiveValues(pool: ModPoolResponse | null) {
     current.current = poolKey;
     setLive(new Map());
   }, [poolKey]);
+  // one request at a time across every row: a burst of clicks would only queue into the 429/503
+  const [busy, setBusy] = useState(false);
   const onValue = useCallback(
     async (row: ModPoolRow): Promise<void> => {
       if (!pool) return;
       const key = rowKeyOf(row);
       const askedFor = current.current;
+      setBusy(true);
       setLive((m) => new Map(m).set(key, { kind: "loading" }));
-      const next = await fetchFamilyValue({ itemClass: pool.itemClass, base: pool.base, ilvl: pool.ilvl, family: row.family, side: row.side });
+      const statId = row.search?.statId ?? undefined;
+      const next = await fetchFamilyValue({ itemClass: pool.itemClass, base: pool.base, ilvl: pool.ilvl, family: row.family, side: row.side, statId });
+      setBusy(false);
       if (next.kind === "error" && next.retryAt != null) setRetryAt(next.retryAt);
       // the answer belongs to the base it was asked for; a switch meanwhile must not paint it elsewhere
       if (askedFor === current.current) setLive((m) => new Map(m).set(key, next));
     },
     [pool],
   );
-  return { live, wait, onValue };
+  return { live, wait, busy, onValue };
 }
 
 function PoolView({ pool }: { pool: ModPoolResponse }) {
-  const { live, wait, onValue } = useLiveValues(pool);
+  const { live, wait, busy, onValue } = useLiveValues(pool);
   return (
     <div className="space-y-2">
       <CoverageLine pool={pool} />
@@ -121,7 +127,7 @@ function PoolView({ pool }: { pool: ModPoolResponse }) {
         </p>
       )}
       {/* no overflow wrapper: it becomes the sticky header's scroll box and pins the header mid-table */}
-      <ModPoolTable pool={pool} live={live} wait={wait} onValue={(r) => void onValue(r)} />
+      <ModPoolTable pool={pool} live={live} wait={wait} busy={busy} onValue={(r) => void onValue(r)} />
 
     </div>
   );
