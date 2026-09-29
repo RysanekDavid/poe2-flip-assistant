@@ -1,5 +1,5 @@
 [Unit]
-Description=Nightly PoE2 Flip SQLite backup
+Description=Nightly PoE2 Coach SQLite backup
 
 [Timer]
 OnCalendar=*-*-* 03:15:00

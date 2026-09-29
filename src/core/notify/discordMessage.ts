@@ -54,7 +54,7 @@ export interface NotifyAlert {
 
 export const MAX_EMBEDS = 10;
 const TOTAL_BUDGET = 5800; // under Discord's 6000 so rounding in their count never bites
-const BOT_NAME = "PoE2 Flip Assistant";
+const BOT_NAME = "PoE2 Coach";
 
 const COLORS: Record<string, number> = {
   SNIPE: 0xfb923c,

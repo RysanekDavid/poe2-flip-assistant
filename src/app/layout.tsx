@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PoE2 Flip Assistant",
-  description: "Real-time PoE2 currency-exchange flip assistant",
+  title: "PoE2 Coach",
+  applicationName: "PoE2 Coach",
+  description: "Path of Exile 2 market, crafting and farming coach",
 };
 
 // GGG's developer terms require this exact sentence, visibly, on every page of a public

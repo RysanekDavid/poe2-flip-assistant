@@ -9,7 +9,7 @@ export function ShellFallback() {
     <main className="mx-auto w-full max-w-screen-2xl flex-1 space-y-4 p-6" aria-busy="true">
       <header className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-line bg-neutral-950/85">
         <div className="flex h-[76px] items-center px-6 py-2">
-          <h1 className="text-xl font-bold">PoE2 Flip Assistant</h1>
+          <h1 className="text-xl font-bold">PoE2 Coach</h1>
         </div>
         <div className="flex items-end gap-0.5 px-6">
           {[0, 1, 2, 3, 4].map((slot) => (

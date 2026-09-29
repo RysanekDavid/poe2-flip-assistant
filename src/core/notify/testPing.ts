@@ -8,7 +8,7 @@ import { axiosTransport, type DeliveryResult, type DiscordTransport } from "./di
 export function sendTestPing(url: string, transport: DiscordTransport = axiosTransport()): Promise<DeliveryResult> {
   return transport.post(
     url,
-    embedMessage("Test notification from PoE2 Flip Assistant", [
+    embedMessage("Test notification from PoE2 Coach", [
       {
         title: "Webhook connected",
         description: "Alert types switched on for Discord in the Alerts tab will arrive here.",

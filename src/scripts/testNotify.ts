@@ -168,6 +168,7 @@ function testMessageLimits(): void {
   ok("title links to the trade search", one.embeds[0]?.url === "https://www.pathofexile.com/trade2/search/poe2/L/abc");
   ok("value vs threshold rendered", one.embeds[0]?.fields[0]?.value === "42.1 vs threshold 35.0");
   ok("summary line for phone pushes", one.content === "1 new alert: SNIPE ×1", one.content);
+  ok("webhook posts under the app name", one.username === "PoE2 Coach", one.username);
   let threw = false;
   try {
     alertBatchMessage([]);

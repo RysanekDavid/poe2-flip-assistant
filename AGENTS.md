@@ -1,4 +1,4 @@
-# AGENTS.md — PoE2 Flip Assistant
+# AGENTS.md — PoE2 Coach
 
 This is the working contract for coding agents and contributors. `README.md` covers the product,
 `deploy/README.md` covers the server, and `docs/kb/README.md` covers the knowledge base. The root

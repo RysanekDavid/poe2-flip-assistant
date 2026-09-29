@@ -1,5 +1,5 @@
 [Unit]
-Description=PoE2 Flip Assistant - internal AI Coach
+Description=PoE2 Coach - internal AI Coach
 Wants=network-online.target
 After=network-online.target
 

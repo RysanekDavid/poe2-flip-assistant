@@ -7,7 +7,7 @@ import { fetchTradeMeta, tradeMetaUserAgent } from "../api/tradeMeta";
 const CONTACT = "ops@example.test";
 
 function testUserAgentBuilder(): void {
-  assert.equal(tradeMetaUserAgent(CONTACT), `poe2-flip-assistant/0.1 read-only data (+${CONTACT})`);
+  assert.equal(tradeMetaUserAgent(CONTACT), `poe2-coach/0.1 read-only data (+${CONTACT})`);
   assert.equal(tradeMetaUserAgent(`  ${CONTACT}\n`), tradeMetaUserAgent(CONTACT), "contact is trimmed");
   for (const empty of ["", "   "]) {
     assert.throws(() => tradeMetaUserAgent(empty), /DATA_SOURCE_CONTACT or POE_CONTACT is required/);

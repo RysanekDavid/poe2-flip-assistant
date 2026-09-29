@@ -58,7 +58,7 @@ async function main(): Promise<void> {
   console.log(`\n\n=== CATEGORY OPTIONS (valid trade2 category ids) ===`);
   try {
     const r = await axios.get("https://www.pathofexile.com/api/trade2/data/filters", {
-      headers: { "User-Agent": "poe2-flip-assistant probe (read-only)", Cookie: `POESESSID=${config.poesessid}` },
+      headers: { "User-Agent": "poe2-coach probe (read-only)", Cookie: `POESESSID=${config.poesessid}` },
       timeout: 20_000,
     });
     const out: Array<{ id: string; text: string }> = [];
