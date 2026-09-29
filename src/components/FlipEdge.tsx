@@ -1,34 +1,13 @@
 "use client";
 
 import { compact, fmtSmart } from "../lib/format";
+import type { EdgeIssue, FlipEdgeInfo, PersistedNextHour, RankGate } from "../lib/discoverContract";
 
-type EdgeIssue = "thin" | "coarse" | "single-market" | "fee-unknown" | "implausible" | "sporadic";
+// The shapes come from the /api/discover contract; re-exported for the tables that render them.
+export type { FlipEdgeInfo, PersistedNextHour, RankGate };
 
 /** Every observed number here is an hour-old digest statistic, never a live order book. */
 const VERIFY = "verify in-game before trading — hourly digest, not a live order book";
-
-/** The observed-market fields a flip row carries (see core/flipModel FlipRow). */
-export interface FlipEdgeInfo {
-  source: "cx" | "estimated";
-  edgePct: number;
-  ranked: boolean;
-  edgeKind: "cross" | "band" | null;
-  edgeLatestPct: number | null;
-  edgeMedian24Pct: number | null;
-  band: { lowDiv: number; highDiv: number } | null;
-  persistence6: number | null;
-  persistence24: number | null;
-  liquidityTier: "safe" | "risky" | "thin";
-  slowerLegDivPerHour: number;
-  timeToSellHint: { sizeUnits: number; hours: number } | null;
-  feeGold: number | null;
-  feeDiv: number | null;
-  feeComplete: boolean;
-  legsHour: number | null;
-  cxIssue: EdgeIssue | null;
-  cxRawNetPct: number | null;
-  flowObserved: boolean;
-}
 
 /** Why an item that trades on the exchange still has no computable edge. */
 const ISSUE_TEXT: Record<EdgeIssue, string> = {
@@ -72,13 +51,6 @@ function estimatedTooltip(r: FlipEdgeInfo): string {
       ? "no exchange market for this item"
       : `exchange edge not computable: ${ISSUE_TEXT[r.cxIssue]}${r.cxRawNetPct == null ? "" : ` (would read ${pct(r.cxRawNetPct)})`}`;
   return [`ESTIMATED — ${why}`, "legs + margin are a volume-based target, not an observed edge", ...flowLines(r)].join("\n");
-}
-
-/** The rank gate as the API reports it (core/cx/cxItemMarkets cxRankGate) — never hardcoded here. */
-export interface RankGate {
-  minHeldHours: number;
-  windowHours: number;
-  minSlowerDivPerHour: number;
 }
 
 function notRankedLine(gate: RankGate | null): string {
@@ -129,13 +101,6 @@ export function EdgeBadge({ row }: { row: FlipEdgeInfo }) {
 export function edgeSortTier(row: FlipEdgeInfo): number {
   if (!row.ranked) return 0;
   return row.source === "cx" ? 2 : 1;
-}
-
-/** Published edges that still showed in the next hour's digest (core/cx/cxOutcomes). */
-export interface PersistedNextHour {
-  held: number;
-  checked: number;
-  days: number;
 }
 
 function persistedLine(p: PersistedNextHour | null): string {

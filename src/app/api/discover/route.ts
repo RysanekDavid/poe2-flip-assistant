@@ -10,6 +10,7 @@ import { isFlipCandidate, scoreItem, type FlipRow } from "../../../core/flipMode
 import { cxRankGate, loadCxMarketView, type CxMarketView } from "../../../core/cx/cxItemMarkets";
 import { cxPersistedNextHour } from "../../../core/cx/cxOutcomes";
 import type { PricedItem } from "../../../api/types";
+import { DiscoverResponseSchema, type DiscoverResponse } from "../../../lib/discoverContract";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,11 +36,13 @@ function cxSummary(league: string, cx: CxMarketView | null) {
   if (cx == null) return null;
   return {
     newestHour: cx.newestHour,
-    coverage: cx.coverage,
     rankGate: cxRankGate(),
     persistedNextHour: cxPersistedNextHour(league),
   };
 }
+
+/** Parse on the way out: a shape drift fails here with the field name, not as a blank table. */
+const respond = (body: DiscoverResponse) => NextResponse.json(DiscoverResponseSchema.parse(body));
 
 /** GET /api/discover?limit=80&q=essence → market-wide flip scan; `q` searches the WHOLE market by name. */
 export async function GET(req: Request) {
@@ -52,12 +55,12 @@ export async function GET(req: Request) {
   const prices = latestSnapshots(league);
   const resolved = resolveRates(league);
   if (!resolved) {
-    return NextResponse.json({ rates: null, candidates: [], note: "no exalt/chaos price yet — poll first" });
+    return respond({ rates: null, candidates: [], note: "no exalt/chaos price yet — poll first" });
   }
   const cx = loadCxMarketView(league, prices);
   let scored = scoreAll(prices, resolved.rates, cx, q !== "");
   if (q) scored = scored.filter((c) => c.item.toLowerCase().includes(q));
-  return NextResponse.json({
+  return respond({
     rates: resolved.rates,
     ratesSource: resolved.source,
     ratesFetchedAt: resolved.fetchedAt,

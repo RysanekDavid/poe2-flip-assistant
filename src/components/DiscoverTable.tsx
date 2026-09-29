@@ -2,26 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { SearchX } from "lucide-react";
-import type { ExchangeRates } from "../core/priceEngine";
+import { DiscoverResponseSchema, type DiscoverResponse } from "../lib/discoverContract";
+import { WatchlistResponseSchema, inLeague } from "../lib/watchlistContract";
 import { DataTable, type SortDir } from "./ui/DataTable";
 import { Button } from "./ui/Button";
 import { EmptyState } from "./ui/EmptyState";
-import { edgeSortTier, MarketSourceBadge, type PersistedNextHour, type RankGate } from "./FlipEdge";
+import { edgeSortTier, MarketSourceBadge } from "./FlipEdge";
 import { discoverColumns } from "./DiscoverColumns";
 import { CxRoutesStrip } from "./CxRoutesStrip";
 import type { Candidate, FlipSelection } from "./flip/flipTypes";
 
-interface CxSummary {
-  newestHour: number;
-  rankGate: RankGate;
-  persistedNextHour: PersistedNextHour;
-}
-interface DiscoverResponse {
-  candidates?: Candidate[];
-  rates?: ExchangeRates | null;
-  fetchedAt?: string | null;
-  cx?: CxSummary | null;
-}
+type CxSummary = NonNullable<DiscoverResponse["cx"]>;
+const NO_DATA: DiscoverResponse = { rates: null, candidates: [] };
 
 type SortKey = "item" | "edgePct" | "change7d" | "volume" | "worthScore";
 const SORT_KEYS: readonly SortKey[] = ["item", "edgePct", "change7d", "volume", "worthScore"];
@@ -35,34 +27,35 @@ function cmp(a: Candidate, b: Candidate, key: SortKey, dir: SortDir): number {
   return dir === "asc" ? d : -d;
 }
 
-async function json<T>(r: Response, label: string): Promise<T> {
+async function json(r: Response, label: string): Promise<unknown> {
   if (!r.ok) throw new Error(`${label} failed (${r.status})`);
-  return (await r.json()) as T;
+  return r.json();
 }
 
 function send(method: "POST" | "DELETE", body: unknown): Promise<unknown> {
   return fetch("/api/watchlist", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) =>
-    json<unknown>(r, method === "POST" ? "watch" : "unwatch"),
+    json(r, method === "POST" ? "watch" : "unwatch"),
   );
 }
 
-/** /api/discover (whole market, or a server-side name search) + the ids you watch. */
+/** /api/discover (whole market, or a server-side name search) + the ids you watch in this league. */
 function useDiscover(query: string) {
-  const [data, setData] = useState<DiscoverResponse>({});
+  const [data, setData] = useState<DiscoverResponse>(NO_DATA);
   const [watched, setWatched] = useState<Set<string>>(new Set());
   const [err, setErr] = useState<string | null>(null);
   const loadWatched = useCallback(
     () =>
       fetch("/api/watchlist")
-        .then((r) => json<{ watchlist?: Array<{ item_id: string; active: number }> }>(r, "watchlist"))
-        .then((d) => setWatched(new Set((d.watchlist ?? []).filter((w) => w.active === 1).map((w) => w.item_id))))
+        .then(async (r) => WatchlistResponseSchema.parse(await json(r, "watchlist")))
+        // a row watched in another league is not watched HERE: its prices and alerts belong there
+        .then((d) => setWatched(new Set(d.watchlist.filter((w) => w.active === 1 && inLeague(w, d.league)).map((w) => w.item_id))))
         .catch((e: unknown) => setErr(String(e))),
     [],
   );
   const load = useCallback(() => {
     const term = query.trim();
     return fetch(`/api/discover?limit=1000${term ? `&q=${encodeURIComponent(term)}` : ""}`)
-      .then((r) => json<DiscoverResponse>(r, "discover"))
+      .then(async (r) => DiscoverResponseSchema.parse(await json(r, "discover")))
       .then((d) => {
         setData(d);
         setErr(null);
@@ -124,11 +117,13 @@ export function DiscoverTable({ selectedId, onSelect }: Props) {
   const [now, setNow] = useState(() => Date.now());
   const { sort, onSort } = useSort();
   const { data, watched, err, setErr, mutate } = useDiscover(query);
+  // a route chip whose item is not in the list is information, not an error
+  const [routeNote, setRouteNote] = useState<string | null>(null);
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 15_000);
     return () => clearInterval(t);
   }, []);
-  const rows = useMemo(() => data.candidates ?? [], [data]);
+  const rows = useMemo(() => data.candidates, [data]);
   const shown = rows
     .filter((r) => (!hideFalling || r.risk !== "DECLINE") && (!topOnly || r.worthScore >= TOP_SCORE))
     .sort((a, b) => cmp(a, b, sort.key, sort.dir));
@@ -140,11 +135,11 @@ export function DiscoverTable({ selectedId, onSelect }: Props) {
     onWatch: (r) => mutate(send("POST", { itemId: r.itemId, itemName: r.item, category: r.category })),
     onUnwatch: (r) => mutate(send("DELETE", { itemId: r.itemId })),
   });
-  const select = (row: Candidate) => onSelect({ row, rates: data.rates ?? null });
+  const select = (row: Candidate) => onSelect({ row, rates: data.rates });
   const selectRoute = ({ id, name }: { id: string; name: string }) => {
     const row = rows.find((r) => r.itemId === id);
+    setRouteNote(row ? null : `${name} is not in the current flip list (too thin or over the price cap) — search for it by name.`);
     if (row) select(row);
-    else setErr(`${name} is not in the current flip list — search for it by name`);
   };
 
   return (
@@ -155,6 +150,7 @@ export function DiscoverTable({ selectedId, onSelect }: Props) {
         <SeedButton onSeeded={() => window.dispatchEvent(new Event("watchlist-changed"))} onError={setErr} />
       </TopFlipsHeader>
       <CxRoutesStrip onSelect={selectRoute} />
+      {routeNote && <p role="status" className="mb-2 text-sm text-neutral-400">{routeNote}</p>}
       {err && <p role="alert" className="mb-2 text-sm text-bad">{err}</p>}
       <DataTable
         columns={columns}
@@ -211,7 +207,7 @@ function SeedButton({ onSeeded, onError }: { onSeeded: () => void; onError: (e: 
   const seed = () => {
     setSeeding(true);
     fetch("/api/discover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ perCategory: 2 }) })
-      .then((r) => json<unknown>(r, "watch top 2 per category"))
+      .then((r) => json(r, "watch top 2 per category"))
       .then(onSeeded)
       .catch((e: unknown) => onError(String(e)))
       .finally(() => setSeeding(false));
