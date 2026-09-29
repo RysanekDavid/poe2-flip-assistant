@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, Loader2, MessageSquare, RefreshCw, Send, SlidersHorizontal, Trash2, TriangleAlert } from "lucide-react";
 import { fetchNotifySettings, postNotifySettings, type NotifySettings } from "../../lib/notifySettings";
+import { Button } from "../ui/Button";
 import { NotifyPrefsTable } from "./NotifyPrefsTable";
 import { announceAlertsChanged } from "./AlertsContext";
 
@@ -32,7 +33,8 @@ function DeliveryStatus({ view }: { view: NotifySettings }) {
   );
 }
 
-type Run = (body: unknown, done?: string) => Promise<boolean>;
+/** `done` is the success note — fixed, or derived from the fresh view (e.g. whether a refresh was queued). */
+type Run = (body: unknown, done?: string | ((view: NotifySettings) => string)) => Promise<boolean>;
 
 function WebhookForm({ view, busy, run }: { view: NotifySettings; busy: boolean; run: Run }) {
   const [url, setUrl] = useState("");
@@ -115,13 +117,14 @@ function LiveBoardControls({ view, busy, run }: { view: NotifySettings; busy: bo
       </label>
       {board.enabled && (
         <>
-          <button
+          <Button
+            size="sm"
             disabled={busy || noHook}
-            onClick={() => void run({ action: "boardNow" }, "board refresh queued — Discord updates within a minute")}
-            className={`${BTN} border-neutral-700 hover:border-sky-500`}
+            onClick={() => void run({ action: "boardNow" }, (v) => (v.boardQueued ? "board refresh queued — updates within a minute" : "an update is already queued"))}
+            className="hover:border-amber-400/70 hover:text-amber-200"
           >
-            <RefreshCw className="h-4 w-4" /> Refresh now
-          </button>
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh now
+          </Button>
           <span className="text-xs text-neutral-500" title={board.posted ? "the next update edits the existing message" : "the next update posts a new message"}>
             updated: <span className="text-neutral-300">{ago(board.updatedAt)}</span>
           </span>
@@ -152,7 +155,7 @@ function useNotifySettings() {
     return postNotifySettings(body)
       .then((v) => {
         setView(v);
-        if (done) setInfo(done);
+        if (done) setInfo(typeof done === "string" ? done : done(v));
         announceAlertsChanged(); // the feed reads ticker/sound/popup routing from the same table
         return true;
       })

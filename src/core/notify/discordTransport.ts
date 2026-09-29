@@ -8,15 +8,16 @@ import { redactWebhook } from "./webhookUrl";
  *  - ok:           2xx, delivered. `messageId` is set only when Discord returned the message
  *                  (a POST with ?wait=true, or an edit) — a plain POST answers 204 with no body.
  *  - rate_limited: 429, retry no sooner than `retryAfterMs` (Discord says exactly when)
- *  - rejected:     other 4xx — the webhook was deleted/revoked, the edited message is gone
- *                  (404, code 10008), or the payload is invalid; the same request cannot succeed
+ *  - rejected:     other 4xx — the webhook was deleted/revoked (404, code 10015), the edited
+ *                  message is gone (404, code 10008), or the payload is invalid; the same request
+ *                  cannot succeed. `code` is Discord's JSON error code when the body carried one.
  *  - failed:       5xx / network / timeout — transient, retried with backoff
  * `detail` is always token-free: it is logged and shown in the Alerts tab.
  */
 export type DeliveryResult =
   | { kind: "ok"; messageId: string | null }
   | { kind: "rate_limited"; retryAfterMs: number; detail: string }
-  | { kind: "rejected"; status: number; detail: string }
+  | { kind: "rejected"; status: number; code?: number; detail: string } // code = Discord JSON error code, when sent
   | { kind: "failed"; detail: string };
 
 /**
@@ -65,7 +66,10 @@ export function classifyResponse(status: number, data: unknown, retryAfterHeader
     const ms = retryAfterMs(data, retryAfterHeader);
     return { kind: "rate_limited", retryAfterMs: ms, detail: `Discord rate limit — retry after ${ms} ms` };
   }
-  if (status >= 400 && status < 500) return { kind: "rejected", status, detail: discordDetail(status, data) };
+  if (status >= 400 && status < 500) {
+    const code = ErrorBody.safeParse(data).data?.code;
+    return { kind: "rejected", status, ...(code != null ? { code } : {}), detail: discordDetail(status, data) };
+  }
   return { kind: "failed", detail: discordDetail(status, data) };
 }
 

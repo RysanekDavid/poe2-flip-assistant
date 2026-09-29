@@ -9,7 +9,7 @@ import type { Currency } from "../priceEngine";
 import { embedMessage, truncate, type DiscordEmbed, type DiscordEmbedField, type DiscordMessage } from "./discordMessage";
 
 /** A board section either loaded or failed; a failure is shown on the board, never dropped. */
-export type BoardSection<T> = { ok: true; value: T } | { ok: false; error: string };
+export type BoardSection<T> = { ok: true; value: T } | { ok: false }; // failure detail stays in the server log
 
 export interface BoardCxRoute {
   item: string;
@@ -64,7 +64,8 @@ export interface BoardData {
 }
 
 export const BOARD_LIMITS = { routes: 5, bosses: 3, hot: 5 } as const;
-const BOARD_COLOR = 0x38bdf8;
+const BOARD_COLOR = 0xfbbf24; // the app's one accent (amber-400), as on amber alert embeds
+const UNAVAILABLE = "unavailable — see server log";
 const FIELD_MAX = 1000; // Discord caps a field value at 1024
 const CCY: Readonly<Record<Currency, string>> = { DIVINE: "Div", EXALT: "Ex", CHAOS: "Chaos" };
 
@@ -86,7 +87,7 @@ const BOUND: Readonly<Record<NetBound, string>> = { exact: "", lower: "≥", upp
 const MODE: Readonly<Record<FlipMode, string>> = { REAL: "your Ange prices", RECO: "estimate" };
 
 function tradesField(s: BoardSection<BoardTrades>): DiscordEmbedField {
-  if (!s.ok) return { name: "Trades", value: truncate(`unavailable: ${s.error}`, FIELD_MAX) };
+  if (!s.ok) return { name: "Trades", value: UNAVAILABLE };
   if (s.value.source === "cx") {
     const lines = s.value.routes.map(
       (r) => `• ${CCY[r.from]} → ${plain(r.item)} → ${CCY[r.to]} · ${pct(r.edgePct)} · held ${r.held6}/6 h · cap ${num(r.capDivPerHour)} div/h`,
@@ -99,7 +100,7 @@ function tradesField(s: BoardSection<BoardTrades>): DiscordEmbedField {
 }
 
 function farmFields(s: BoardSection<BoardFarm>): DiscordEmbedField[] {
-  if (!s.ok) return [{ name: "Farm", value: truncate(`unavailable: ${s.error}`, FIELD_MAX) }];
+  if (!s.ok) return [{ name: "Farm", value: UNAVAILABLE }];
   const bosses = s.value.bosses.map((b) => `• ${plain(b.name)} · ${BOUND[b.netBound]}${num(b.netDiv)} div/kill`);
   const hot = s.value.hot.map((m) => `${plain(m.label, 40)} ${pct(m.change7dPct)}`);
   return [
@@ -109,7 +110,7 @@ function farmFields(s: BoardSection<BoardFarm>): DiscordEmbedField[] {
 }
 
 function worthField(s: BoardSection<BoardWorth | null>, league: string): DiscordEmbedField {
-  if (!s.ok) return { name: "Net worth", value: truncate(`unavailable: ${s.error}`, FIELD_MAX) };
+  if (!s.ok) return { name: "Net worth", value: UNAVAILABLE };
   const w = s.value;
   if (w == null) return { name: "Net worth", value: "no snapshot yet — record one in the Wealth tab" };
   const other = w.league !== league ? ` · ${plain(w.league, 60)}` : "";

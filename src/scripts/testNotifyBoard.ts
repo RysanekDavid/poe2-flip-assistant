@@ -98,8 +98,9 @@ function testRenderer(h: BoardHarness): void {
   h.ok("unknown 24 h change renders as — (null never 0)", worth.includes("24 h —") && worth.includes("7 d −3.2%"), worth);
   h.ok("market names are markdown-escaped", embed?.fields[0]?.value.includes("\\*with\\*") === true);
   h.ok("lower-bound boss net shows ≥", embed?.fields.some((f) => f.value.includes("≥3.20 div/kill")) === true);
-  const failed = boardMessage({ ...maxedBoard(now), farm: { ok: false, error: "boss-loot.json malformed" } });
-  h.ok("a failed section is shown, not dropped", failed.embeds[0]?.fields.some((f) => f.name === "Farm" && f.value.includes("unavailable: boss-loot.json malformed")) === true);
+  const failed = boardMessage({ ...maxedBoard(now), farm: { ok: false } });
+  h.ok("a failed section is shown, not dropped", failed.embeds[0]?.fields.some((f) => f.name === "Farm" && f.value === "unavailable — see server log") === true);
+  h.ok("board embed uses the amber accent", m.embeds[0]?.color === 0xfbbf24);
   const fallback = boardMessage({ ...maxedBoard(now), trades: { ok: true, value: { source: "watchlist", spreads: [] } } });
   h.ok("no CX loops → watchlist fallback field", fallback.embeds[0]?.fields[0]?.name.startsWith("Watchlist spreads") === true);
 }
@@ -157,17 +158,18 @@ async function testFailureThrottle(
   const dead = recorder(h, () => classifyResponse(404, { message: "Unknown Webhook", code: 10015 }, undefined));
   let t = from + boardIntervalMs() + 1;
   await drain(t, dead.transport);
-  ok("dead webhook: edit 404 → re-post queued", boardRows(db).at(-1)?.status === "pending");
-  t += NOTIFY_POLICY.windowMs + 1;
-  await drain(t, dead.transport);
-  ok("…the re-post is rejected and the row fails", boardRows(db).at(-1)?.status === "failed" && dead.calls.length === 2);
+  const deadRow = boardRows(db).at(-1);
+  ok("edit 404 code 10015 (webhook gone) → row fails normally, no re-post", deadRow?.status === "failed" && dead.calls.length === 1, JSON.stringify(deadRow));
+  ok("…and the id is forgotten, so the next cycle POSTs instead of PATCHing", getBoardSettings(h.user, db).messageId === null);
   for (let i = 0; i < 5; i++) {
     t += NOTIFY_POLICY.windowMs + 1;
     await drain(t, dead.transport);
   }
-  ok("a failing board is not re-queued every tick", dead.calls.length === 2, String(dead.calls.length));
+  ok("a failing board is not re-queued every tick", dead.calls.length === 1, String(dead.calls.length));
   await drain(t + boardIntervalMs(), dead.transport);
-  ok("…only once per interval", dead.calls.length === 3, String(dead.calls.length));
+  ok("…only once per interval, as a fresh POST", dead.calls.length === 2 && dead.calls[1]?.op === "post", String(dead.calls.length));
+  t += 2 * boardIntervalMs();
+  await testEditRefused(h, drain, t);
 
   setBoardEnabled(h.user, false, db);
   const off = getBoardSettings(h.user, db);
@@ -180,6 +182,43 @@ async function testFailureThrottle(
   ok("a different webhook forgets the board message (it cannot edit it)", getBoardSettings(h.user, db).messageId === null);
   setWebhook(h.user, h.url, db);
   setBoardEnabled(h.user, false, db);
+}
+
+/** Any non-10008 4xx on an edit forgets the id: repeating a refused PATCH every cycle can never succeed. */
+async function testEditRefused(h: BoardHarness, drain: (now: number, transport: DiscordTransport) => Promise<unknown>, from: number): Promise<void> {
+  const { db, ok } = h;
+  db.prepare("UPDATE notify_settings SET board_message_id = ?, board_updated_at = NULL WHERE user_id = ?").run(ID_A, h.user);
+  const refused = recorder(h, (c) =>
+    c.op === "edit" ? classifyResponse(400, { message: "Invalid Form Body", code: 50035 }, undefined) : { kind: "ok", messageId: ID_B },
+  );
+  await drain(from, refused.transport);
+  ok("edit 400 → row failed, id forgotten", boardRows(db).at(-1)?.status === "failed" && getBoardSettings(h.user, db).messageId === null);
+  await drain(from + boardIntervalMs() + 1, refused.transport);
+  ok("…next cycle POSTs a fresh board instead of repeating the PATCH", refused.calls[1]?.op === "post" && getBoardSettings(h.user, db).messageId === ID_B);
+}
+
+/** Webhook swap or switch-off while the POST is in flight: the returned id must not be stored. */
+async function testMidSendRaces(h: BoardHarness): Promise<void> {
+  const { db, ok } = h;
+  const other = h.url.replace("987654321098765432", "111111111111111111");
+  const drain = (now: number, transport: DiscordTransport) => drainNotifications({ now: () => now, transport, db, renderBoard: () => FAKE_BOARD });
+  const during = (sideEffect: () => void): DiscordTransport =>
+    recorder(h, () => {
+      sideEffect();
+      return { kind: "ok", messageId: ID_A };
+    }).transport;
+  let t = h.t0 + 900_000_000;
+  db.exec("DELETE FROM notify_queue;");
+  setBoardEnabled(h.user, true, db);
+  await drain(t, during(() => setWebhook(h.user, other, db)));
+  const swapped = getBoardSettings(h.user, db);
+  ok("webhook changed mid-send → no stale id stored", swapped.messageId === null && swapped.updatedAt === null, JSON.stringify(swapped));
+  setWebhook(h.user, h.url, db);
+  db.exec("DELETE FROM notify_queue;");
+  t += 2 * boardIntervalMs();
+  await drain(t, during(() => setBoardEnabled(h.user, false, db)));
+  const off = getBoardSettings(h.user, db);
+  ok("switched off mid-send → id not resurrected, board stays off", !off.enabled && off.messageId === null && off.updatedAt === null, JSON.stringify(off));
 }
 
 async function testAxiosBoard(h: BoardHarness): Promise<void> {
@@ -196,7 +235,7 @@ async function testAxiosBoard(h: BoardHarness): Promise<void> {
   h.ok("edit → PATCH …/messages/{id}", seen[1]?.method === "patch" && seen[1]?.url === `${h.url}/messages/${ID_A}`);
   h.ok("edit body keeps allowed_mentions, drops username", "allowed_mentions" in body && !("username" in body), Object.keys(body).join(","));
   const gone = await axiosTransport(axios.create({ adapter: adapter(404, { message: "Unknown Message", code: 10008 }) })).edit(h.url, ID_A, FAKE_BOARD);
-  h.ok("edit 404 → rejected with status 404", gone.kind === "rejected" && gone.status === 404 && !gone.detail.includes(h.token), JSON.stringify(gone));
+  h.ok("edit 404 → rejected with status 404 and Discord code 10008", gone.kind === "rejected" && gone.status === 404 && gone.code === 10008 && !gone.detail.includes(h.token), JSON.stringify(gone));
   const before = seen.length;
   const bad = await axiosTransport(axios.create({ adapter: adapter(200, {}) })).edit(h.url, "../../evil", FAKE_BOARD);
   h.ok("non-snowflake id → rejected without any request", bad.kind === "rejected" && seen.length === before);
@@ -211,6 +250,7 @@ function testRealRender(h: BoardHarness): void {
 export async function runBoardTests(h: BoardHarness): Promise<void> {
   testRenderer(h);
   await testLifecycle(h);
+  await testMidSendRaces(h);
   await testAxiosBoard(h);
   testRealRender(h);
 }

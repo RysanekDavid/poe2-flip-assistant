@@ -386,12 +386,16 @@ export function dueBoardUserIds(now: number, intervalMs: number, db: Database.Da
   return rows.map((r) => r.user_id);
 }
 
-/** A board post/edit Discord accepted: remember which message to edit next time. */
+/**
+ * A board post/edit Discord accepted: remember which message to edit next time. Only while the
+ * board is still on — the send awaited Discord, and a switch-off in that gap must not be undone
+ * by resurrecting the id.
+ */
 export function recordBoardDelivery(userId: number, messageId: string | null, at: number, db: Database.Database = getDb()): void {
-  db.prepare("UPDATE notify_settings SET board_message_id = ?, board_updated_at = ? WHERE user_id = ?").run(messageId, at, userId);
+  db.prepare("UPDATE notify_settings SET board_message_id = ?, board_updated_at = ? WHERE user_id = ? AND board = 1").run(messageId, at, userId);
 }
 
-/** The board message is gone (deleted in Discord): the next update posts a new one. */
+/** The board message cannot be edited (deleted in Discord, or the PATCH was refused): the next update posts a new one. */
 export function clearBoardMessageId(userId: number, db: Database.Database = getDb()): void {
   db.prepare("UPDATE notify_settings SET board_message_id = NULL WHERE user_id = ?").run(userId);
 }

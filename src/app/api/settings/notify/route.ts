@@ -114,8 +114,9 @@ function runBoardNow(userId: number): Response {
   if (missing) return missing;
   if (!getBoardSettings(userId).enabled) return NextResponse.json({ error: "switch the live board on first" }, { status: 409 });
   lastBoardNowAt.set(userId, now);
-  enqueueBoard(userId); // false = one already waiting, which delivers the same fresh board
-  return NextResponse.json(settingsView(userId, { boardQueued: true }));
+  // false = an update is already waiting; it renders at send time, so it is just as fresh
+  const added = enqueueBoard(userId);
+  return NextResponse.json(settingsView(userId, { boardQueued: added }));
 }
 
 function setBoard(userId: number, enabled: boolean): Response | null {

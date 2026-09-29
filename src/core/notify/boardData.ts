@@ -1,19 +1,15 @@
 import type Database from "better-sqlite3";
-import { z } from "zod";
 import type { PricedItem } from "../../api/types";
 import { config } from "../../config/env";
 import { balanceStats } from "../../db/balanceQueries";
 import { getDb } from "../../db/database";
 import { latestSnapshots } from "../../db/marketQueries";
 import { dueBoardUserIds, enqueueBoard } from "../../db/notifyQueries";
-import { getWatchlistForLeague, manualAgeMs, type WatchItem } from "../../db/watchlistQueries";
-import { loadCxMarketView } from "../cx/cxItemMarkets";
 import { loadCxRoutes } from "../cx/cxRouteView";
 import { loadFarmBoard } from "../farm/farmLoad";
-import { scoreItem, type ManualPrice } from "../flipModel";
 import { getDefaultLeague } from "../leagueState";
 import { leagueForUser } from "../leagueUsers";
-import { resolveRates } from "../rates";
+import { scoreWatchlist } from "../watchlistSpreads";
 import { BOARD_LIMITS, boardMessage, type BoardData, type BoardFarm, type BoardSection, type BoardTrades, type BoardWorth } from "./board";
 import type { DiscordMessage } from "./discordMessage";
 import { redactWebhook } from "./webhookUrl";
@@ -36,46 +32,24 @@ export function enqueueDueBoards(now: number, db: Database.Database = getDb()): 
 }
 
 /**
- * One section failing (a missing table, a malformed curated file) must not blank the whole board:
- * it is logged loudly and shown on the board as "unavailable: …".
+ * One section failing (a missing table, a malformed curated file) must not blank the whole board.
+ * The detail goes to the server log only — exception text (paths, SQL) never reaches a Discord
+ * channel; the board says the section is unavailable.
  */
 function section<T>(userId: number, name: string, load: () => T): BoardSection<T> {
   try {
     return { ok: true, value: load() };
   } catch (e) {
-    const error = redactWebhook(e instanceof Error ? e.message : String(e));
+    const error = redactWebhook(e instanceof Error ? (e.stack ?? e.message) : String(e));
     console.error(`[notify] board for user ${userId}: ${name} section failed: ${error}`);
-    return { ok: false, error: error.slice(0, 200) };
+    return { ok: false };
   }
 }
 
-const CurrencySchema = z.enum(["DIVINE", "EXALT", "CHAOS"]);
-
-/** A watch row's manual Ange price, unless it has gone stale (the Watchlist view applies the same rule). */
-function manual(amount: number | null, ccy: string | null, fallback: "EXALT" | "CHAOS", stale: boolean): ManualPrice | null {
-  if (stale || amount == null) return null;
-  return { amount, ccy: CurrencySchema.parse(ccy ?? fallback) };
-}
-
-/** Fallback when the exchange has no fresh loops: the user's watchlist, scored like GET /api/spreads. */
+/** Fallback when the exchange has no fresh loops: the user's watchlist, scored exactly like GET /api/spreads. */
 function watchlistTrades(userId: number, league: string, prices: readonly PricedItem[], nowMs: number): BoardTrades {
-  const resolved = resolveRates(league, nowMs);
-  if (!resolved) return { source: "watchlist", spreads: [] };
-  const byId = new Map(prices.map((p) => [p.itemId, p]));
-  const cx = loadCxMarketView(league, prices, nowMs);
-  const staleMs = config.manualStaleHours * 3600_000;
-  const rows = getWatchlistForLeague(userId, league).flatMap((w: WatchItem) => {
-    const price = byId.get(w.item_id);
-    if (!price) return [];
-    const age = manualAgeMs(w.manual_set_at);
-    const stale = age != null && age > staleMs;
-    const buy = manual(w.manual_buy_exalt, w.manual_buy_ccy, "EXALT", stale);
-    const sell = manual(w.manual_sell_chaos, w.manual_sell_ccy, "CHAOS", stale);
-    return [scoreItem(price, resolved.rates, buy, sell, cx?.byItemId.get(w.item_id) ?? null)];
-  });
-  const spreads = rows
+  const spreads = (scoreWatchlist(userId, league, prices, nowMs)?.spreads ?? [])
     .filter((r) => r.ranked)
-    .sort((a, b) => b.worthScore - a.worthScore)
     .slice(0, BOARD_LIMITS.routes)
     .map((r) => ({ item: r.item, edgePct: r.edgePct, profitDiv: r.profitDiv, mode: r.mode }));
   return { source: "watchlist", spreads };

@@ -199,10 +199,31 @@ function boardMessageId(userId: number, db: Database.Database): string | null {
   return null;
 }
 
+/** Discord JSON error code for "Unknown Message" — the board message was deleted in the channel. */
+const UNKNOWN_MESSAGE = 10008;
+
 /**
- * One board update: edit the stored message, or POST ?wait=true and keep the returned id. An edit
- * answered 404 means the message was deleted in Discord: forget the id and put the row back, so the
- * next pass (after the per-user window — still one request per pass) posts a fresh board.
+ * Store the delivered board's id — unless, during the await, the user switched webhooks (the id
+ * belongs to the old one and could never be edited through the new one) or switched the board off
+ * (recordBoardDelivery only writes while board = 1, so a toggle-off is never undone).
+ */
+function recordIfCurrent(userId: number, sentTo: string, id: string | null, now: number, db: Database.Database): void {
+  const current = readWebhook(userId, db);
+  if (current.state !== "set" || current.url !== sentTo) {
+    console.warn(`[notify] user ${userId}: webhook changed while the board was being sent — not storing its message id`);
+    return;
+  }
+  if (id == null) console.error(`[notify] user ${userId}: Discord accepted the board but returned no message id — the next update posts a new one`);
+  recordBoardDelivery(userId, id, now, db);
+}
+
+/**
+ * One board update: edit the stored message, or POST ?wait=true and keep the returned id.
+ *  - edit answered 404 / code 10008 (message deleted in Discord): forget the id and put the row
+ *    back, so the next pass (after the per-user window — still one request per pass) posts afresh;
+ *  - any other 4xx on an edit: forget the id too (a PATCH that failed once would fail every cycle)
+ *    and fail the row normally — the next interval POSTs a new board, or fails again loudly if the
+ *    webhook itself is gone (404 / code 10015).
  */
 async function deliverBoard(userId: number, url: string, row: QueueRow, now: number, deps: DrainDeps, sum: DrainSummary): Promise<void> {
   const message = tryBuild(userId, [row], now, () => deps.renderBoard(userId, now), deps, sum);
@@ -211,18 +232,16 @@ async function deliverBoard(userId: number, url: string, row: QueueRow, now: num
   const result = await attempt(() =>
     editId != null ? deps.transport.edit(url, editId, message) : deps.transport.post(url, message, { wait: true }),
   );
-  if (editId != null && result.kind === "rejected" && result.status === 404) {
+  if (editId != null && result.kind === "rejected") {
     clearBoardMessageId(userId, deps.db);
-    markRetry(row.queue_id, now, now, result.detail, { counts: false, giveUp: false }, deps.db);
-    sum.retried++;
-    console.warn(`[notify] user ${userId}: board message gone (${result.detail}) — re-posting it`);
-    return;
+    if (result.code === UNKNOWN_MESSAGE) {
+      markRetry(row.queue_id, now, now, result.detail, { counts: false, giveUp: false }, deps.db);
+      sum.retried++;
+      console.warn(`[notify] user ${userId}: board message gone (${result.detail}) — re-posting it`);
+      return;
+    }
   }
-  if (result.kind === "ok") {
-    const id = editId ?? result.messageId;
-    if (id == null) console.error(`[notify] user ${userId}: Discord accepted the board but returned no message id — the next update posts a new one`);
-    recordBoardDelivery(userId, id, now, deps.db);
-  }
+  if (result.kind === "ok") recordIfCurrent(userId, url, editId ?? result.messageId, now, deps.db);
   applyResult(userId, [row], result, now, deps, sum);
 }
 
