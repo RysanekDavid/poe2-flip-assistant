@@ -54,16 +54,22 @@ export interface LosingRun {
 /**
  * P(losing kill): no priced drop worth what the guaranteed loot leaves uncovered. Π(1 − p) over
  * priced lines ≥ max(0, entry − guaranteed), independent rolls, range at its low end, unknown rates
- * as 0 (reported). Guaranteed loot covering the entry makes it exactly 0; a partly unpriced entry
- * makes it unknowable (null) — the threshold would be understated.
+ * as 0 (reported). Guaranteed loot covering the entry makes it exactly 0. It is null — unknowable,
+ * never a confident 100% — when the entry is partly unpriced (the threshold would be understated),
+ * or when no covering drop has a known rate while some drop could still cover (a covering line with
+ * an unknown rate, or an unpriced line).
  */
 export function losingRunOf(loot: readonly LootLineView[], entryDiv: number, guaranteedDiv: number, entryComplete: boolean): LosingRun {
   if (!entryComplete) return { p: null, unknownRates: 0 };
   if (guaranteedDiv >= entryDiv) return { p: 0, unknownRates: 0 };
   const uncovered = entryDiv - guaranteedDiv;
   const covering = loot.filter((l) => l.price != null && l.price.div >= uncovered && l.rate.kind !== "guaranteed");
+  const unknownRates = covering.filter((l) => l.rate.kind === "unknown").length;
+  const rated = covering.length - unknownRates;
+  const couldStillCover = unknownRates > 0 || loot.some((l) => l.price == null && l.rate.kind !== "guaranteed");
+  if (rated === 0 && couldStillCover) return { p: null, unknownRates };
   const p = covering.reduce((acc, l) => acc * (1 - (bounds(l.rate).lo ?? 0)), 1);
-  return { p, unknownRates: covering.filter((l) => l.rate.kind === "unknown").length };
+  return { p, unknownRates };
 }
 
 /** Volume of the entry line that costs the most (the hardest one to buy in bulk); null if unlisted. */

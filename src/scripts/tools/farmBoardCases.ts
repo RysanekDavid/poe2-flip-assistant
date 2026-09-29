@@ -3,7 +3,7 @@
  * the /api/farm contract round-trip. Imported by testBossEv.ts. */
 import assert from "node:assert/strict";
 import type { PricedItem } from "../../api/types";
-import { buildFarmBoard, isBossRow, isMechanicRow, mechanicIcons, type MechanicInput } from "../../core/farm/farmBoard";
+import { buildFarmBoard, isBossRow, isMechanicRow, mechanicIcons, netGroup, type MechanicInput } from "../../core/farm/farmBoard";
 import type { FarmRank } from "../../core/farmAdvisor";
 import { bossEv } from "../../core/tools/bossEv/ev";
 import { priceLookup, type PriceInputs } from "../../core/tools/bossEv/pricing";
@@ -35,6 +35,13 @@ function testMetrics(tier: Tier, inputs: Inputs): void {
 
   const liquid = bossEv(tier, priceLookup(inputs({ b: 1.5 })));
   assert.equal(liquid.entryVolume, 1 * 10, "volume of the priciest entry line (A: 2 div beats B bought at 1.5)");
+  // Only U (unknown rate) could cover the entry: zero information, never a confident 100%.
+  const onlyUnknown = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "U") }, priceLookup(inputs()));
+  assert.equal(onlyUnknown.pLosingRun, null, "no covering drop with a known rate → P(lose) unknown");
+  assert.equal(onlyUnknown.losingRunUnknownRates, 1);
+  // Every drop priced and rated, none worth the uncovered entry: a loss IS certain.
+  const cheap = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "M") }, priceLookup(inputs()));
+  assert.equal(cheap.pLosingRun, 1, "fully priced + rated and nothing covers → a genuine 100%");
   const noChase = bossEv({ ...tier, loot: tier.loot.filter((l) => l.rate.kind !== "range") }, priceLookup(inputs()));
   assert.equal(noChase.chaseOneIn, null, "no known-rate rare line → no chase odds");
   assert.equal(noChase.chaseDiv, 0);
@@ -61,11 +68,20 @@ function testBoard(tier: Tier, inputs: Inputs): void {
   const rich = view("rich", { ...tier, entry: [{ itemId: "a", qty: 0.5 }] }, inputs());
   const poor = view("poor", tier, inputs());
   const partial = view("partial", tier, missing);
-  const rows = buildFarmBoard(mechanics, [poor, partial, rich], 400);
-  assert.deepEqual(rows.map((r) => (isMechanicRow(r) ? r.category : r.id)), ["Abyss", "Breach", "rich", "poor", "partial"], "mechanics by heat, bosses by net, partial entry last");
+  // every drop priced and rated → an exact (certain) loss of 4 − (1 + 1) = 2
+  const ratedLoss = view("ratedLoss", { ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "P") }, inputs());
+  const rows = buildFarmBoard(mechanics, [poor, partial, ratedLoss, rich], 400);
+  assert.deepEqual(
+    rows.map((r) => (isMechanicRow(r) ? r.category : r.id)),
+    ["Abyss", "Breach", "rich", "ratedLoss", "poor", "partial"],
+    "mechanics by heat; bosses: sure nets, then negative lower bounds (rates unknown), then partial entries",
+  );
   const bossRows = rows.filter(isBossRow);
-  assert.ok(bossRows[0]!.netDiv > bossRows[1]!.netDiv);
-  assert.equal(bossRows[2]!.entryComplete, false);
+  assert.deepEqual(bossRows.map((r) => r.netBound), ["lower", "exact", "lower", "unknown"]);
+  assert.deepEqual(bossRows.map(netGroup), [0, 0, 1, 2]);
+  assert.equal(bossRows[2]!.uncountedDrops, 3, "U (no rate), X and Pool (no price) are left out of EV");
+  assert.ok(bossRows[2]!.netDiv < 0 && netGroup(bossRows[2]!) === 1, "a negative lower bound is not ranked as a sure loss");
+  assert.equal(bossRows[3]!.entryComplete, false);
   assert.equal(bossRows[0]!.unpricedLineage, 0);
   assert.equal(bossRows[0]!.confidence, "unverified", "EV carried by an unverified range line → weakest label");
   farmResponseSchema.parse({

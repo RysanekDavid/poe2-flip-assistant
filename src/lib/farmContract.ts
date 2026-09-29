@@ -39,8 +39,16 @@ export const bossRowSchema = z.object({
   entryVolume: z.number().nullable(),
   floorDiv: z.number(),
   chaseDiv: z.number(),
-  /** Conservative EV − entry; an upper bound when !entryComplete. */
+  /** Conservative EV − entry over the priced, rated drops only. */
   netDiv: z.number(),
+  /**
+   * How far netDiv can be trusted: `lower` when some drop has no sourced rate or no price (EV leaves
+   * it out, so the real net is at least this), `upper` when part of the entry is unpriced, `unknown`
+   * when both, `exact` otherwise.
+   */
+  netBound: z.enum(["exact", "lower", "upper", "unknown"]),
+  /** Drops EV leaves out (no sourced rate or no price) — what makes a net a lower bound. */
+  uncountedDrops: z.number().int(),
   chaseOneIn: z.number().nullable(),
   pLosingRun: z.number().nullable(),
   losingRunUnknownRates: z.number().int(),

@@ -31,9 +31,15 @@ export function defaultTier(boss: BossView): TierResult {
   return tier;
 }
 
+function netBoundOf(entryComplete: boolean, uncounted: number): BossRow["netBound"] {
+  if (entryComplete) return uncounted > 0 ? "lower" : "exact";
+  return uncounted > 0 ? "unknown" : "upper";
+}
+
 function bossRow(boss: BossView, exPerDiv: number): BossRow {
   const t = defaultTier(boss);
   const carrying = t.loot.filter((l) => (l.evDiv ?? 0) > 0).map((l) => l.confidence);
+  const uncountedDrops = t.loot.filter((l) => l.evDiv == null).length;
   return {
     kind: "boss",
     id: boss.id,
@@ -47,6 +53,8 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
     floorDiv: t.floorDiv,
     chaseDiv: t.chaseDiv,
     netDiv: t.netDiv,
+    netBound: netBoundOf(t.entryComplete, uncountedDrops),
+    uncountedDrops,
     chaseOneIn: t.chaseOneIn,
     pLosingRun: t.pLosingRun,
     losingRunUnknownRates: t.losingRunUnknownRates,
@@ -57,9 +65,19 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
   };
 }
 
-const byNet = (a: BossRow, b: BossRow): number => Number(b.entryComplete) - Number(a.entryComplete) || b.netDiv - a.netDiv;
+/**
+ * 0 — a net we can stand behind: exact, or a lower bound that is already ≥ 0;
+ * 1 — "rates unknown": a negative lower bound, the loss is NOT certain (unrated drops may cover it);
+ * 2 — entry partly unpriced: the net is an upper bound or unknown.
+ */
+export function netGroup(r: BossRow): 0 | 1 | 2 {
+  if (r.netBound === "exact" || (r.netBound === "lower" && r.netDiv >= 0)) return 0;
+  return r.netBound === "lower" ? 1 : 2;
+}
 
-/** Mechanics (already heat-ordered by rankFarms) first, then bosses by net per kill. */
+const byNet = (a: BossRow, b: BossRow): number => netGroup(a) - netGroup(b) || b.netDiv - a.netDiv;
+
+/** Mechanics (already heat-ordered by rankFarms) first, then bosses by net per kill (see netGroup). */
 export function buildFarmBoard(mechanics: readonly MechanicInput[], bosses: readonly BossView[], exPerDiv: number): FarmBoardRow[] {
   return [...mechanics.map(mechanicRow), ...bosses.map((b) => bossRow(b, exPerDiv)).sort(byNet)];
 }

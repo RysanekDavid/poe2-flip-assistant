@@ -5,7 +5,7 @@ import { breakEvenHeadline, fmtDiv, oneIn } from "../../core/tools/bossEv/headli
 import type { BossView, EntryLineView, TierResult } from "../../lib/tools/bossEvContract";
 import { ItemArt } from "../ui/ItemArt";
 import { Panel } from "../ui/Panel";
-import { DivChip } from "./DivChip";
+import { PriceChip } from "../ui/PriceChip";
 import { InfoTip } from "../ui/Tooltip";
 import { TONE_CLASS } from "./farmView";
 import { LootTable } from "./LootTable";
@@ -28,7 +28,7 @@ function EntryRow({ line, exPerDiv }: { line: EntryLineView; exPerDiv: number })
         {line.qty.toLocaleString("en-US")}× {line.name}
       </span>
       {line.unitPrice ? (
-        <DivChip div={line.unitPrice.div} exPerDiv={exPerDiv} source={line.unitPrice.source} ageMin={line.unitPrice.ageHours == null ? undefined : line.unitPrice.ageHours * 60} />
+        <PriceChip div={line.unitPrice.div} exPerDiv={exPerDiv} source={line.unitPrice.source} ageMin={line.unitPrice.ageHours == null ? undefined : line.unitPrice.ageHours * 60} />
       ) : (
         <span className="text-neutral-400" title="not listed on the currency exchange">unpriced</span>
       )}
@@ -43,15 +43,21 @@ function EntryRow({ line, exPerDiv }: { line: EntryLineView; exPerDiv: number })
 function Metrics({ tier, exPerDiv }: { tier: TierResult; exPerDiv: number }) {
   const head = breakEvenHeadline(tier, exPerDiv);
   const j = tier.jackpot;
+  const evLower = tier.loot.some((l) => l.evDiv == null);
+  // entry partly unpriced → net overstated; drops left out of EV → net understated; both → unknown
+  const netPrefix = !tier.entryComplete ? (evLower ? "? " : "≤ ") : evLower ? "≥ " : "";
   return (
     <div className="grid gap-1">
       <p className={`text-base font-semibold ${TONE_CLASS[head.tone]}`} title={head.title}>
         {head.text}
       </p>
       <p className="flex flex-wrap gap-x-4 text-sm text-neutral-400">
-        <span title="priced drops with a sourced rate, range rates at their low end">EV {fmtDiv(tier.evDiv, exPerDiv)}</span>
+        <span title="priced drops with a sourced rate, range rates at their low end">EV {evLower ? "≥ " : ""}{fmtDiv(tier.evDiv, exPerDiv)}</span>
         <span>entry {tier.entryComplete ? "" : "≥ "}{fmtDiv(tier.entryDiv, exPerDiv)}</span>
-        <span>net {tier.entryComplete ? "" : "≤ "}{fmtDiv(tier.netDiv, exPerDiv, true)}</span>
+        <span title="≥ lower bound (drops without a rate or price are left out) · ≤ upper bound (entry partly unpriced)">
+          net {netPrefix}
+          {fmtDiv(tier.netDiv, exPerDiv, true)}
+        </span>
         <span title={j.items.length === 0 ? "no priced drop is worth the entry" : `drops worth ≥ entry: ${j.items.join(", ")}`}>
           jackpot {j.killsToFirst == null ? "—" : oneIn(j.p)}
         </span>
