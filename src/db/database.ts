@@ -13,6 +13,7 @@ import { ensureNotifySchema } from "./notifyMigrations";
 import { dropRetiredHunts } from "./retiredMigrations";
 import { ensureCredColumns } from "./credMigrations";
 import { ensureWealthColumns } from "./wealthMigrations";
+import { ensureFeatureTables } from "./featureMigrations";
 
 let db: Database.Database | null = null;
 
@@ -37,8 +38,9 @@ export function getDb(): Database.Database {
 /**
  * Every schema step, in its load-bearing order: DDL files, additive columns, then the multi-tenant
  * rebuilds, league scoping and the notify schema (the comments below say why each sits where it does).
+ * Exported so schema tests can run the whole chain a second time on a live DB (idempotency).
  */
-function runMigrations(conn: Database.Database): void {
+export function runMigrations(conn: Database.Database): void {
   conn.exec(applicationSchemaSql());
   ensureCxTables(conn);
   ensureColumns(conn, "cx_edge_outcomes", CX_EDGE_DETAIL_COLUMNS);
@@ -66,6 +68,7 @@ function runMigrations(conn: Database.Database): void {
   seedLeagueRegistry(conn);
   purgeLegacyPriceBook(conn);
   ensureNotifySchema(conn); // after users.discord_webhook_enc exists — its trigger reads the column
+  ensureFeatureTables(conn); // after ensureNotifySchema: it adds the live-board columns to notify_settings
   // Browser chime + desktop popup per type; NULL (rows from before) means "use the type's default".
   ensureColumns(conn, "notify_prefs", [
     ["sound", "INTEGER"],

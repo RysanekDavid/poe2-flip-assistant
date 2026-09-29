@@ -102,6 +102,16 @@ function describeFailure(err: unknown, method: string, path: string): Error {
 
 /** Wrap a trade2 call with the limiter + governor + a clear message on the common failure modes. */
 async function call<T>(method: "get" | "post", path: string, cred: TradeCred, body?: unknown): Promise<T> {
+  return (await request<T>(method, path, cred, body)).data;
+}
+
+/** `call` that also reports the HTTP status of a successful answer (a non-2xx still throws). */
+async function request<T>(
+  method: "get" | "post",
+  path: string,
+  cred: TradeCred,
+  body?: unknown,
+): Promise<{ status: number; data: T }> {
   const kind = endpointOf(path);
   // the caller's scan meter is captured HERE, before the queue (see tradeMeter.scheduleMetered)
   return scheduleMetered(limiter, kind, async (count) => {
@@ -110,7 +120,7 @@ async function call<T>(method: "get" | "post", path: string, cred: TradeCred, bo
     try {
       const res = await axios.request<T>({ method, url: `${BASE}${path}`, data: body, timeout: 20_000, headers: authHeaders(cred) });
       gov().observe(kind, res.status, res.headers);
-      return res.data;
+      return { status: res.status, data: res.data };
     } catch (err) {
       const ax = err as AxiosError;
       if (ax.response) gov().observe(kind, ax.response.status ?? null, ax.response.headers);
@@ -146,6 +156,21 @@ export async function fetchListings(
   if (slice.length === 0) return [];
   const fetched = await call<unknown>("get", `/fetch/${slice.join(",")}?query=${queryId}&realm=poe2`, cred);
   return parseFetchResponse(fetched);
+}
+
+/**
+ * One /fetch with the body left unparsed. parseFetchResponse drops `null` entries (a listing
+ * trade2 no longer serves), and a probe asking "is this listing gone?" needs to see exactly those.
+ */
+export async function fetchListingsRaw(
+  ids: string[],
+  queryId: string,
+  cred: TradeCred = configCred(),
+): Promise<{ status: number; body: unknown }> {
+  const slice = ids.slice(0, 10);
+  if (slice.length === 0) throw new Error("fetchListingsRaw: no listing ids");
+  const res = await request<unknown>("get", `/fetch/${slice.join(",")}?query=${queryId}&realm=poe2`, cred);
+  return { status: res.status, body: res.data };
 }
 
 /**
