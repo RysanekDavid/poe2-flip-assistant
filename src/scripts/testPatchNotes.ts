@@ -76,17 +76,17 @@ async function main(): Promise<void> {
 
 async function testParsers(): Promise<void> {
   const { entries } = parsePatchIndex(indexHtml, 3);
-  assert.deepEqual(entries.map((entry) => entry.threadId), [3_991_000, 3_990_120, 3_980_000]);
-  assert.equal(entries[0]?.versionText, "0.5.4e");
+  assert.deepEqual(entries.map((entry) => entry.threadId), [4_006_357, 4_004_106, 4_002_822]);
+  assert.equal(entries[0]?.versionText, "0.5.5c");
   assert.equal(entries[0]?.publishedAt, null);
-  const localized = parsePatchIndex(indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "1. srpna 2026"), 3).entries;
+  const localized = parsePatchIndex(indexHtml.replace("Sep 18, 2026, 12:30:00 AM", "1. srpna 2026"), 3).entries;
   assert.equal(localized[0]?.publishedAt, null);
   const zoned = parsePatchIndex(
-    indexHtml.replace("Aug 1, 2026, 10:15:00 AM", "2026-08-01T10:15:00Z"),
+    indexHtml.replace("Sep 18, 2026, 12:30:00 AM", "2026-09-18T00:30:00Z"),
     3,
   ).entries;
-  assert.equal(zoned[0]?.publishedAt, "2026-08-01T10:15:00.000Z");
-  const body = parsePatchThread(threadHtml, 3_991_000);
+  assert.equal(zoned[0]?.publishedAt, "2026-09-18T00:30:00.000Z");
+  const body = parsePatchThread(threadHtml, 4_006_357);
   assert.deepEqual(body.headings, ["Gameplay Changes", "Bug Fixes"]);
   assert.deepEqual(body.listItems, [
     "Changed the first exact source-language entry.",
@@ -94,7 +94,7 @@ async function testParsers(): Promise<void> {
     "Resolved an ordering regression.",
   ]);
   assert.throws(() => parsePatchIndex(driftHtml, 2), /expected at least/);
-  assert.throws(() => parsePatchThread(driftHtml, 3_991_000), /selector/);
+  assert.throws(() => parsePatchThread(driftHtml, 4_006_357), /selector/);
 }
 
 async function testClientBoundary(): Promise<void> {
@@ -220,11 +220,11 @@ async function testWatcherStorageAndReview(): Promise<void> {
     assert.equal(first.ok, true);
     assert.equal(first.checkedThreads, 2);
     assert.equal(first.changedThreads, 2);
-    assert.equal(officialPatch(3_991_000, db)?.disposition, "pending");
-    assert.equal(officialPatch(3_980_000, db)?.bodyValid, false);
+    assert.equal(officialPatch(4_006_357, db)?.disposition, "pending");
+    assert.equal(officialPatch(4_002_822, db)?.bodyValid, false);
     const firstCount = sourceSnapshotCount(db);
     reviewOfficialPatch(
-      3_991_000, "no_gameplay_impact", "reviewer", "initial review",
+      4_006_357, "no_gameplay_impact", "reviewer", "initial review",
       null, new Date().toISOString(), db,
     );
 
@@ -232,7 +232,7 @@ async function testWatcherStorageAndReview(): Promise<void> {
     assert.equal(unchanged.ok, true);
     assert.equal(unchanged.changedThreads, 0);
     assert.equal(sourceSnapshotCount(db), firstCount);
-    assert.equal(officialPatch(3_991_000, db)?.disposition, "no_gameplay_impact");
+    assert.equal(officialPatch(4_006_357, db)?.disposition, "no_gameplay_impact");
     await assertAmendmentLifecycle(db, root);
   } finally {
     db.close();
@@ -249,25 +249,25 @@ async function testBaselineLifecycle(): Promise<void> {
       response(threadHtml, "new-1"),
       response(threadHtml, "baseline-1"),
     ]));
-    assert.equal(officialPatch(3_990_120, db)?.disposition, null);
+    assert.equal(officialPatch(4_004_106, db)?.disposition, null);
     const amendedBody = threadHtml.replace("first exact", "baseline amended exact");
     const amended = await syncPatchNotes(syncOptions(db, root, [
       notModified(), notModified(), response(amendedBody, "baseline-2"),
     ]));
     assert.equal(amended.ok, true);
-    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
+    assert.equal(officialPatch(4_004_106, db)?.disposition, "pending");
     reviewOfficialPatch(
-      3_990_120, "no_gameplay_impact", "reviewer", "baseline amendment",
+      4_004_106, "no_gameplay_impact", "reviewer", "baseline amendment",
       null, new Date().toISOString(), db,
     );
-    const normalized = normalizedBody(3_990_120, db);
+    const normalized = normalizedBody(4_004_106, db);
     const invalid = await syncPatchNotes(syncOptions(db, root, [
       notModified(), notModified(), response(driftHtml, "baseline-3"),
     ]));
     assert.equal(invalid.ok, false);
-    assert.equal(officialPatch(3_990_120, db)?.bodyValid, false);
-    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
-    assert.equal(normalizedBody(3_990_120, db), normalized);
+    assert.equal(officialPatch(4_004_106, db)?.bodyValid, false);
+    assert.equal(officialPatch(4_004_106, db)?.disposition, "pending");
+    assert.equal(normalizedBody(4_004_106, db), normalized);
   } finally {
     db.close();
     rmSync(root, { recursive: true, force: true });
@@ -283,8 +283,8 @@ async function testInitialBaselineInvalid(): Promise<void> {
       response(driftHtml, "baseline-invalid"),
     ]));
     assert.equal(result.ok, false);
-    assert.equal(officialPatch(3_990_120, db)?.bodyValid, false);
-    assert.equal(officialPatch(3_990_120, db)?.disposition, "pending");
+    assert.equal(officialPatch(4_004_106, db)?.bodyValid, false);
+    assert.equal(officialPatch(4_004_106, db)?.disposition, "pending");
   } finally {
     db.close();
     rmSync(root, { recursive: true, force: true });
@@ -296,9 +296,9 @@ async function testPreBaselineIndexFailsClosed(): Promise<void> {
   const db = openPatchDb();
   try {
     const preBaseline = indexHtml
-      .replaceAll("3991000", "3979000")
-      .replaceAll("3990120", "3978000")
-      .replaceAll("3980000", "3977000");
+      .replaceAll("4006357", "3991222")
+      .replaceAll("4004106", "3990120")
+      .replaceAll("4002822", "3987607");
     assert.equal(parsePatchIndex(preBaseline, 2).entries.length >= 2, true);
     const result = await syncPatchNotes(syncOptions(db, root, [response(preBaseline, "old-index")]));
     assert.equal(result.ok, false);
@@ -331,39 +331,39 @@ async function assertAmendmentLifecycle(db: Database.Database, root: string): Pr
     notModified(), response(changedBody, "thread-new-2"), notModified(),
   ]));
   assert.equal(changed.changedThreads, 1);
-  const amended = officialPatch(3_991_000, db);
+  const amended = officialPatch(4_006_357, db);
   assert.equal(amended?.bodyValid, true);
   assert.equal(amended?.disposition, "pending");
   assert.throws(
-    () => reviewOfficialPatch(3_991_000, "data_refreshed", "reviewer", "note", null, reviewedAt, db),
+    () => reviewOfficialPatch(4_006_357, "data_refreshed", "reviewer", "note", null, reviewedAt, db),
     /catalog SHA/,
   );
   reviewOfficialPatch(
-    3_991_000, "no_gameplay_impact", "reviewer", "amendment review", null, reviewedAt, db,
+    4_006_357, "no_gameplay_impact", "reviewer", "amendment review", null, reviewedAt, db,
   );
   assert.throws(
     () => reviewOfficialPatch(
-      3_991_000, "no_gameplay_impact", "reviewer", "overwrite", null, reviewedAt, db,
+      4_006_357, "no_gameplay_impact", "reviewer", "overwrite", null, reviewedAt, db,
     ),
     /not pending/,
   );
-  const validSnapshotId = officialPatch(3_991_000, db)?.bodySnapshotId;
-  const normalized = normalizedBody(3_991_000, db);
+  const validSnapshotId = officialPatch(4_006_357, db)?.bodySnapshotId;
+  const normalized = normalizedBody(4_006_357, db);
   const drifted = await syncPatchNotes(syncOptions(db, root, [
     notModified(), response(driftHtml, "thread-new-3"), notModified(),
   ]));
   assert.equal(drifted.ok, false);
-  const invalid = officialPatch(3_991_000, db);
+  const invalid = officialPatch(4_006_357, db);
   assert.equal(invalid?.bodyValid, false);
   assert.equal(invalid?.disposition, "pending");
   assert.equal(invalid?.bodySnapshotId, validSnapshotId);
-  assert.equal(normalizedBody(3_991_000, db), normalized);
+  assert.equal(normalizedBody(4_006_357, db), normalized);
   assert.throws(
-    () => reviewOfficialPatch(3_991_000, "no_gameplay_impact", "reviewer", "note", null, reviewedAt, db),
+    () => reviewOfficialPatch(4_006_357, "no_gameplay_impact", "reviewer", "note", null, reviewedAt, db),
     /no valid staff body/,
   );
   assert.throws(
-    () => reviewOfficialPatch(3_990_120, "no_gameplay_impact", "reviewer", "note", null, reviewedAt, db),
+    () => reviewOfficialPatch(4_004_106, "no_gameplay_impact", "reviewer", "note", null, reviewedAt, db),
     /not pending/,
   );
 }

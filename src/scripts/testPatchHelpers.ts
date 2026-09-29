@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import Database from "better-sqlite3";
 import { migratePatchProvenance } from "../db/sourceMigrations";
 import type { HttpFetcher } from "../sources/patchNotes/client";
+import { catalogManifestSchema } from "../sources/patchNotes/contracts";
 
 export const fixtureDir = join(process.cwd(), "src/sources/patchNotes/fixtures");
 
@@ -48,13 +49,20 @@ export function queueFetcher(responses: Response[]): HttpFetcher {
   };
 }
 
+// The catalog filename is content-addressed, so it changes on every RePoE re-sync.
+function currentCatalogPath(): string {
+  const manifestPath = join(process.cwd(), "src/data/poe2/repoe/manifest.json");
+  const { artifact } = catalogManifestSchema.parse(JSON.parse(readFileSync(manifestPath, "utf8")));
+  return `src/data/poe2/repoe/${artifact}`;
+}
+
 // Sync verifies the RePoE catalog SHA against the coverage file, so tests need the real trio.
 export function createProjectFixture(): string {
   const root = mkdtempSync(join(tmpdir(), "poe-patch-notes-"));
   for (const relativePath of [
     "src/data/poe2/patch-coverage.json",
     "src/data/poe2/repoe/manifest.json",
-    "src/data/poe2/repoe/catalog-75a23d387f288921.json.gz",
+    currentCatalogPath(),
   ]) {
     const target = join(root, relativePath);
     mkdirSync(dirname(target), { recursive: true });
