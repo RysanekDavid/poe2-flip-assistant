@@ -269,3 +269,34 @@ export function pruneObservations(): number {
     .prepare(`DELETE FROM price_book_obs WHERE seen_at < datetime('now', ?)`)
     .run(`-${config.snipe.obsRetentionDays} days`).changes;
 }
+
+/** `%`, `_` and the escape char itself are literal inside a stat ref ("#% to fire resistance"). */
+const likeLiteral = (s: string): string => s.replace(/[!%_]/g, (c) => `!${c}`);
+/** Past every byte a base name or ref can hold: `sig < head + LAST` bounds the index range scan. */
+const LAST = "\u{10FFFF}";
+
+/**
+ * Recent book prices for one base (the lowercased signature head, as rollSignature writes it) whose
+ * signature carries `ref` at any roll bucket; `ref` null = every modded observation of the base, the
+ * baseline an uplift is measured against. Zero-mod "<base>|" rows are legacy noise and never count.
+ * The range on `sig` keeps the (sig, seen_at) index usable; the LIKE pins the ref to a token start
+ * ("|" or "~") so "#% to fire resistance" never matches inside a longer ref.
+ */
+export function observedByBaseRef(league: string, baseType: string, ref: string | null): number[] {
+  const head = `${baseType.toLowerCase().trim()}|`;
+  const lit = likeLiteral(head);
+  const token = ref == null ? null : `${likeLiteral(ref)}#%`;
+  const first = token == null ? null : `${lit}${token}`;
+  const later = token == null ? null : `${lit}%~${token}`;
+  return (
+    getDb()
+      .prepare(
+        `SELECT price_div FROM price_book_obs
+         WHERE league = ? AND sig > ? AND sig < ? AND seen_at >= datetime('now', ?)
+           AND (? IS NULL OR sig LIKE ? ESCAPE '!' OR sig LIKE ? ESCAPE '!')`,
+      )
+      .all(league, head, `${head}${LAST}`, `-${config.snipe.obsRetentionDays} days`, token, first, later) as Array<{
+      price_div: number;
+    }>
+  ).map((r) => r.price_div);
+}

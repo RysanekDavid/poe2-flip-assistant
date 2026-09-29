@@ -20,6 +20,7 @@ import { runJewelAndTagCases } from "./craftMovesJewelCases";
 import { KB6_FACTS, testKbLiquids } from "./craftMovesKbLiquids";
 import { SAMPLE_ITEM } from "../../components/craft/moves/craftMovesClient";
 import { runRankCases } from "./craftMovesRankCases";
+import { runModPoolCases } from "./testModPool";
 
 const KB_PATH = join(process.cwd(), "docs", "research", KB);
 const kbText = readFileSync(KB_PATH, "utf8").replace(/\r/g, "");
@@ -235,8 +236,17 @@ for (const bad of ["hunt", "craft-moves", "", "MOVES"]) {
   assert.equal(route.tool, "recipes", `"${bad}" must not parse as a craft tool — falls back to the default`);
   assert.deepEqual(route.rejected, [`tool=${bad}`], `"${bad}" must be reported, not silently swapped`);
 }
-console.log(
-  `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB §3 gate rows, ${KB6_FACTS.length} KB §6 facts, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/advanced), jewels/liquids/catalysed/headers/markers, ` +
-    `${ALL_RULES.length} rules with provenance, null-not-zero pricing, desecrated marker, contract, ` +
-    "next-best-move cards (Sinistral first on an open prefix, Whittling never top-3, corrupted → none, variants collapse), outcome text, share link, panel wiring",
-);
+// tsx emits CJS here (no top-level await); the rejection is rethrown loudly, never swallowed
+runModPoolCases(cat)
+  .then(() =>
+    console.log(
+      `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB §3 gate rows, ${KB6_FACTS.length} KB §6 facts, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/advanced), jewels/liquids/catalysed/headers/markers, ` +
+        `${ALL_RULES.length} rules with provenance, null-not-zero pricing, desecrated marker, contract, ` +
+        "next-best-move cards (Sinistral first on an open prefix, Whittling never top-3, corrupted → none, variants collapse), outcome text, share link, panel wiring; " +
+        "mod pool (KB gates, text → stat, book ref boundaries + escaping, coverage, null-not-zero, live cache TTL + budget, contract)",
+    ),
+  )
+  .catch((e: unknown) => {
+    console.error(e);
+    process.exit(1);
+  });
