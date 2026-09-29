@@ -35,7 +35,7 @@
     "test:db": "tsx src/scripts/runWithTestEnv.ts db",
     "test:features-schema": "tsx src/scripts/runWithTestEnv.ts features-schema",
     "test:system": "tsx src/scripts/runWithTestEnv.ts system",
-    "test:notify": "tsx src/scripts/runWithTestEnv.ts notify && tsx src/scripts/runWithTestEnv.ts notify-drain && tsx src/scripts/runWithTestEnv.ts alert-center",
+    "test:notify": "tsx src/scripts/runWithTestEnv.ts notify && tsx src/scripts/runWithTestEnv.ts notify-drain && tsx src/scripts/runWithTestEnv.ts alert-center && tsx src/scripts/runWithTestEnv.ts alert-noise",
     "test:notify-drain": "tsx src/scripts/runWithTestEnv.ts notify-drain",
     "test:alert-center": "tsx src/scripts/runWithTestEnv.ts alert-center",
     "test:valuation": "tsx src/scripts/testValuation.ts",

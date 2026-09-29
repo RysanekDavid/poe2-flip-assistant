@@ -26,6 +26,7 @@ export interface TrendEvent {
   message: string;
   value: number;
   threshold: number;
+  signal?: "BUY" | "SELL"; // TREND only: lets the re-fire gate treat a BUY→SELL flip as news
 }
 
 /** The alertable state a signal represents. SPIKE only when no BUY/SELL call applies. */
@@ -50,7 +51,7 @@ function parseState(raw: string | null): TrendAlertState | null {
 function eventFor(state: TrendAlertState, trend: TrendSignal, change7d: number | null): TrendEvent | null {
   const threshold = config.thresholds.change7dPct;
   if (state === "BUY" || state === "SELL") {
-    return { type: "TREND", message: `${state}: ${trend.reason}`, value: trend.change7d, threshold };
+    return { type: "TREND", message: `${state}: ${trend.reason}`, value: trend.change7d, threshold, signal: state };
   }
   if (state === "SPIKE" && change7d != null) {
     return { type: "SPIKE", message: `+${change7d.toFixed(0)}% 7d — spiking, watch for a flip window`, value: change7d, threshold };

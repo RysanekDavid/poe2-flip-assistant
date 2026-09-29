@@ -16,6 +16,7 @@ const targets = {
   notify: "src/scripts/testNotify.ts",
   "notify-drain": "src/scripts/testNotifyDrain.ts",
   "alert-center": "src/scripts/testAlertCenter.ts",
+  "alert-noise": "src/scripts/testAlertNoise.ts",
   "patch-summary": "src/scripts/testPatchSummary.ts",
   rates: "src/scripts/testRates.ts",
   "snipe-db": "src/scripts/testSnipeDb.ts",

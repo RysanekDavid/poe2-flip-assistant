@@ -1,5 +1,8 @@
+import type Database from "better-sqlite3";
+import { z } from "zod";
 import { getDb } from "./database";
 import { parseStoredCard, type SnipeCard } from "../lib/snipeCard";
+import type { LastAlert } from "../core/alertRefire";
 
 /**
  * Per-user alert feed. Rows carry the league of the pipeline that produced them (the caller
@@ -48,14 +51,32 @@ export function insertAlert(
     .run({ ...a, whisper: a.whisper ?? null, link: a.link ?? null, details: a.details ?? null, userId, league });
 }
 
-/** True if an alert for this user's item+type fired within the last `minutes` — throttles repeats. */
-export function hasRecentAlert(userId: number, itemId: string, type: string, minutes: number): boolean {
+const LastAlertRow = z.object({ ageMin: z.number(), value: z.number().nullable(), message: z.string() });
+
+/** The newest alert for this user's item+type, aged in minutes — input to the re-fire policy. */
+export function lastAlert(userId: number, itemId: string, type: string): LastAlert | null {
   const row = getDb()
     .prepare(
-      `SELECT 1 FROM alerts WHERE user_id = ? AND item_id = ? AND type = ? AND created_at >= datetime('now', ?) LIMIT 1`,
+      `SELECT (julianday('now') - julianday(created_at)) * 1440 AS ageMin, value, message
+       FROM alerts WHERE user_id = ? AND item_id = ? AND type = ?
+       ORDER BY created_at DESC, id DESC LIMIT 1`,
     )
-    .get(userId, itemId, type, `-${minutes} minutes`);
-  return row != null;
+    .get(userId, itemId, type);
+  return row == null ? null : LastAlertRow.parse(row);
+}
+
+/**
+ * Retention, per user: drop alerts older than `days`, except unseen ones younger than
+ * `unseenKeepDays` (only bites when retention is configured shorter than that). Deliveries still
+ * queued for a dropped alert go with it (notify_queue.alert_id cascades).
+ */
+export function pruneAlerts(days: number, unseenKeepDays: number, db: Database.Database = getDb()): number {
+  const users = db.prepare("SELECT DISTINCT user_id AS id FROM alerts").all() as Array<{ id: number }>;
+  const del = db.prepare(
+    `DELETE FROM alerts WHERE user_id = ? AND created_at < datetime('now', ?)
+       AND NOT (seen = 0 AND created_at >= datetime('now', ?))`,
+  );
+  return db.transaction(() => users.reduce((n, u) => n + del.run(u.id, `-${days} days`, `-${unseenKeepDays} days`).changes, 0))();
 }
 
 /** True if this user was EVER alerted for this item+type — snipe listings alert once per listing id. */
