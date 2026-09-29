@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Globe } from "lucide-react";
+import { LeagueEmblem } from "./LeagueEmblem";
 
 /** GET /api/settings/league. `available` is empty (with a reason) when poe2scout is unreachable. */
 interface LeagueSettings {
@@ -144,7 +144,7 @@ function Dropdown({
       title="which league you are viewing — your own setting, it changes nothing for anyone else"
       className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-neutral-900/80 py-1 pl-2 pr-1 shadow-sm"
     >
-      <Globe className="h-3.5 w-3.5 shrink-0 text-amber-500/70" />
+      <LeagueEmblem league={pending ?? settings.league} />
       <select
         value={selected}
         disabled={pending != null}

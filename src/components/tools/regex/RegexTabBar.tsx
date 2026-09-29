@@ -1,24 +1,31 @@
 "use client";
 
 import { useRef, type KeyboardEvent } from "react";
-import { Amphora, Coins, Gem, Layers, Milestone, Store, type LucideIcon } from "lucide-react";
+import Image, { type StaticImageData } from "next/image";
 import { REGEX_TABS, type RegexTab } from "../../../lib/tools/regexPoolContract";
+import artWaystone from "../../../assets/items/waystone.png";
+import artTablet from "../../../assets/items/precursor-tablet.png";
+import artRelic from "../../../assets/items/relic.png";
+import artJewel from "../../../assets/items/emerald-jewel.png";
+import artBartering from "../../../assets/items/omen-of-bartering.png";
+import artDivine from "../../../assets/items/divine-orb.png";
 
 interface TabInfo {
   label: string;
-  Icon: LucideIcon;
+  art: StaticImageData;
   /** Tooltip: what the sub-tab searches. */
   hint: string;
 }
 
-// Lucide glyphs until the owner supplies game art for the sub-tabs.
+// Vendor borrows the Omen of Bartering (a vendor-sale omen); Price uses the Divine Orb, the unit
+// every price in the app is quoted in.
 export const REGEX_TAB_INFO: Record<RegexTab, TabInfo> = {
-  waystone: { label: "Waystone", Icon: Milestone, hint: "pick waystone mods to run or avoid" },
-  tablet: { label: "Tablet", Icon: Layers, hint: "precursor tablets by type and mod" },
-  relic: { label: "Relic", Icon: Amphora, hint: "Trial of the Sekhemas relics by mod" },
-  jewel: { label: "Jewel", Icon: Gem, hint: "jewels by colour and mod" },
-  vendor: { label: "Vendor", Icon: Store, hint: "vendor-screen gear: speed, resistances, +skills" },
-  price: { label: "Price", Icon: Coins, hint: "stash items worth at least a price" },
+  waystone: { label: "Waystone", art: artWaystone, hint: "pick waystone mods to run or avoid" },
+  tablet: { label: "Tablet", art: artTablet, hint: "precursor tablets by type and mod" },
+  relic: { label: "Relic", art: artRelic, hint: "Trial of the Sekhemas relics by mod" },
+  jewel: { label: "Jewel", art: artJewel, hint: "jewels by colour and mod" },
+  vendor: { label: "Vendor", art: artBartering, hint: "vendor-screen gear: speed, resistances, +skills" },
+  price: { label: "Price", art: artDivine, hint: "stash items worth at least a price" },
 };
 
 export const tabPanelId = (tab: RegexTab): string => `regex-panel-${tab}`;
@@ -40,7 +47,7 @@ export function RegexTabBar({ active, onSelect }: { active: RegexTab; onSelect: 
   return (
     <div role="tablist" aria-label="Regex tools" onKeyDown={onKeyDown} className="flex flex-wrap gap-1.5 border-b border-line pb-2">
       {REGEX_TABS.map((tab, i) => {
-        const { label, Icon, hint } = REGEX_TAB_INFO[tab];
+        const { label, art, hint } = REGEX_TAB_INFO[tab];
         const on = tab === active;
         return (
           <button
@@ -62,7 +69,8 @@ export function RegexTabBar({ active, onSelect }: { active: RegexTab; onSelect: 
                 : "border-neutral-800 bg-neutral-900/50 text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
             }`}
           >
-            <Icon aria-hidden className="h-4 w-4" />
+            {/* Decorative: the label beside it already names the tab for screen readers. */}
+            <Image src={art} alt="" className={`h-6 w-6 object-contain transition-opacity ${on ? "opacity-100" : "opacity-70"}`} />
             {label}
           </button>
         );
