@@ -1,5 +1,5 @@
 [Unit]
-Description=PoE2 Flip Assistant - nightly SQLite backup (online, gzip, keep 14, optional rclone)
+Description=PoE2 Coach - nightly SQLite backup (online, gzip, keep 14, optional rclone)
 # rclone (when BACKUP_RCLONE_REMOTE is set) needs the network; harmless otherwise.
 Wants=network-online.target
 After=network-online.target

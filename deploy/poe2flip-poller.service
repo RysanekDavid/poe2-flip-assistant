@@ -1,5 +1,5 @@
 [Unit]
-Description=PoE2 Flip Assistant - poller (ninja market + per-user trade2 scans)
+Description=PoE2 Coach - poller (ninja market + per-user trade2 scans)
 After=network.target poe2flip-web.service
 
 [Service]

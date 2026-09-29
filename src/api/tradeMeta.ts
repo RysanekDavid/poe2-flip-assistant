@@ -16,7 +16,7 @@ const TRADE2_DATA = "https://www.pathofexile.com/api/trade2/data";
 export function tradeMetaUserAgent(contact: string): string {
   const trimmed = contact.trim();
   if (!trimmed) throw new Error("DATA_SOURCE_CONTACT or POE_CONTACT is required for trade2 data requests");
-  return `poe2-flip-assistant/0.1 read-only data (+${trimmed})`;
+  return `poe2-coach/0.1 read-only data (+${trimmed})`;
 }
 
 export interface StatOption {

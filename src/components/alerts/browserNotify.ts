@@ -87,7 +87,7 @@ export interface BrowserChannels {
 }
 
 function popup(a: Alert): void {
-  new Notification(`PoE2 Flip — ${alertTypeLabel(a.type)}`, {
+  new Notification(`PoE2 Coach — ${alertTypeLabel(a.type)}`, {
     body: `${a.item_name ?? a.item_id}: ${a.message}${a.whisper ? "\n↳ whisper + trade link in the Alerts tab" : ""}`,
     tag: String(a.id),
   });

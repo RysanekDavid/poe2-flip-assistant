@@ -18,7 +18,7 @@ const OUT_FILE = status === "online" ? "trade2-fetch-live-online.json" : "trade2
 const BASE = "https://www.pathofexile.com/api/trade2";
 const headers = {
   "Content-Type": "application/json",
-  "User-Agent": "poe2-flip-assistant/1.0 (contact: dawelich@gmail.com)",
+  "User-Agent": "poe2-coach/1.0 (contact: dawelich@gmail.com)",
 };
 const SearchSchema = z.object({ id: z.string(), result: z.array(z.string()), total: z.number() });
 

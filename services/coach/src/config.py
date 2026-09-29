@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     tavily_api_key: SecretStr | None = None
     langsmith_api_key: SecretStr | None = None
     langsmith_tracing: bool = False
-    langsmith_project: str = "poe2-flip-coach"
+    langsmith_project: str = "poe2-coach"
     coach_proxy_secret: SecretStr | None = None
 
     chat_model: str = "gpt-5.4-mini"

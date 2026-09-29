@@ -21,7 +21,7 @@ const BASE = "https://poe.ninja/poe2/api/economy";
  * not be probed. A Referer naming the page the data belongs to is not identity spoofing.
  */
 const NINJA_CONTACT = config.dataSourceContact;
-export const NINJA_USER_AGENT = `poe2-flip-assistant/1.0${NINJA_CONTACT ? ` (contact: ${NINJA_CONTACT})` : ""}`;
+export const NINJA_USER_AGENT = `poe2-coach/1.0${NINJA_CONTACT ? ` (contact: ${NINJA_CONTACT})` : ""}`;
 
 function leagueSlug(league: string): string {
   return league.toLowerCase().replace(/\s+/g, "");

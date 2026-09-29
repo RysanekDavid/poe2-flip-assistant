@@ -1,5 +1,5 @@
 [Unit]
-Description=PoE2 Flip Assistant - web (Next.js)
+Description=PoE2 Coach - web (Next.js)
 Wants=poe2flip-coach.service
 After=network.target poe2flip-coach.service
 

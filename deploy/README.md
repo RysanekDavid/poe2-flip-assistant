@@ -1,4 +1,4 @@
-# Deploy — PoE2 Flip Assistant on Hetzner
+# Deploy — PoE2 Coach on Hetzner
 
 Single small box (CX22 ~€4/mo is plenty). Runs: Next.js web + the poller (ninja market poll
 + per-user trade2 scans) + the internal Python Coach + Caddy (TLS reverse proxy). Per-user
