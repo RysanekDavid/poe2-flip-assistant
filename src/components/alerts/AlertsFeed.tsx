@@ -7,11 +7,14 @@ import { AlertActions, LeagueTag, typeTone } from "./AlertBits";
 import { SnipeCardView, ageLabel } from "./SnipeCardView";
 import type { Alert, AlertGroup } from "../../lib/alertCenter";
 import { alertTypeLabel } from "../../lib/alertLabels";
+import { useSnipeOutcomes } from "../../lib/useSnipeOutcomes";
+import type { SnipeOutcomeView } from "../../lib/snipeOutcomeContract";
 
 /** "ALL" or one alert type. Types are open-ended here: legacy rows (VOLUME, TREND_REVERSAL)
  *  still show up as groups, so the filter mirrors whatever types the feed actually holds. */
 type Filter = { kind: "all" } | { kind: "type"; type: AlertGroup["type"] };
 const ALL: Filter = { kind: "all" };
+const NO_OUTCOMES: Record<string, SnipeOutcomeView> = {};
 
 function FilterChip({ label, unseen, total, active, tone, onClick }: {
   label: string;
@@ -55,7 +58,7 @@ function CompactRow({ a }: { a: Alert }) {
   );
 }
 
-function FeedList({ alerts, hidden }: { alerts: Alert[]; hidden: number }) {
+function FeedList({ alerts, hidden, outcomes }: { alerts: Alert[]; hidden: number; outcomes: Record<string, SnipeOutcomeView> }) {
   if (alerts.length === 0) {
     return <p className="py-10 text-center text-sm text-neutral-500">no alerts here yet</p>;
   }
@@ -64,7 +67,7 @@ function FeedList({ alerts, hidden }: { alerts: Alert[]; hidden: number }) {
       {alerts.map((a) =>
         a.type === "SNIPE" && a.details ? (
           <li key={a.id}>
-            <SnipeCardView alert={a} card={a.details} />
+            <SnipeCardView alert={a} card={a.details} outcome={outcomes[a.item_id] ?? null} />
           </li>
         ) : (
           <CompactRow key={a.id} a={a} />
@@ -104,6 +107,7 @@ function MarkSeenButton({ filter, unseen, onClick }: { filter: Filter; unseen: n
 /** Alerts tab, main column: the whole feed, filterable by type; snipes render as item cards. */
 export function AlertsFeed() {
   const { groups, unseen, error, markSeen } = useAlertCenter();
+  const { data: outcomes, error: outcomesError } = useSnipeOutcomes();
   const [chosen, setChosen] = useState<Filter>(ALL);
   const filter = effectiveFilter(chosen, groups);
   const { alerts, hidden } = useMemo(() => visible(groups, filter), [groups, filter]);
@@ -119,6 +123,7 @@ export function AlertsFeed() {
         <BellRing className={`h-5 w-5 ${unseen > 0 ? "text-amber-300" : "text-neutral-500"}`} />
         <h2 className="text-lg font-semibold">Alert feed</h2>
         {error && <span className="text-xs text-bad">could not refresh: {error}</span>}
+        {outcomesError && <span className="text-xs text-warn">snipe outcomes unavailable: {outcomesError}</span>}
         <MarkSeenButton
           filter={filter}
           unseen={filterUnseen}
@@ -139,7 +144,7 @@ export function AlertsFeed() {
           />
         ))}
       </div>
-      <FeedList alerts={alerts} hidden={hidden} />
+      <FeedList alerts={alerts} hidden={hidden} outcomes={outcomes?.byListing ?? NO_OUTCOMES} />
     </section>
   );
 }
