@@ -76,5 +76,13 @@ The dense knowledge index is built by a background start-up task (`COACH_WARM_KN
 default on; failures are logged and the first query rebuilds on demand).
 Answers carry no appended disclaimer; the UI shows one verify-in-game notice under the composer.
 
+`POST /internal/patch-summary` is called only by the poller, behind the same request-id and
+signed-actor headers as `/chat`. It turns one stored official patch thread into a fixed-schema
+summary (tldr, grouped bullets, trading impact, review hint) with a single tool-free
+`responses.parse` call on `CHAT_MODEL` (`store=False`, no retries, `PATCH_SUMMARY_TIMEOUT_SECONDS`,
+default 90). Patch text is untrusted forum data: it is delimited, the input is capped at 150k
+characters, the model cannot call tools, and URLs are stripped from its output. Coach returns
+the summary and never writes the database; the poller owns the queue and the alerts.
+
 Production runs exactly one Uvicorn worker bound to `127.0.0.1:8000`; the in-memory Qdrant index
 must not be split across processes. See `deploy/poe2flip-coach.service` and `deploy/README.md`.

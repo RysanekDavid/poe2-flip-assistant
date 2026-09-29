@@ -10,24 +10,19 @@ from typing import Protocol
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
-from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError
 
 from src.agent import build_agent
 from src.config import Settings, get_settings
 from src.errors import ContractViolation, PublicCoachError
-from src.failure_handling import (
-    log_request_timing,
-    raise_bad_request,
-    raise_fatal,
-    raise_provider_status,
-    raise_timeout,
-)
+from src.failure_handling import log_request_timing, raise_provider_failure
 from src.guardrails import inspect_input
 from src.health import health_response, warm_knowledge
 from src.items.models import ItemInspection
 from src.league import resolve_default_league
+from src.patch_summary import PatchSummarizer, summarize_patch
+from src.patch_summary_api import register_patch_summary_route
 from src.rate_limit import RateLimitExceeded, SlidingWindowRateLimiter
-from src.request_auth import InvalidProxyIdentity, actor_id, request_id
+from src.request_auth import verified_actor_id, verified_request_id
 from src.response import citations_are_valid, final_answer, turn_trace, turn_usage
 from src.retrieval import RetrievalService, get_retrieval_service
 from src.schemas import (
@@ -105,8 +100,9 @@ def create_app(
     settings: Settings | None = None,
     agent_factory: AgentFactory = build_agent,
     knowledge_warmer: KnowledgeWarmer = _warm_shared_retrieval,
+    summarizer: PatchSummarizer = summarize_patch,
 ) -> FastAPI:
-    """Create an app with injectable configuration, agent construction and index warm-up."""
+    """Create an app with injectable configuration, agent, index warm-up and patch summarizer."""
     active_settings = settings or get_settings()
     retrieval_readiness = RetrievalService(active_settings)
     app = FastAPI(
@@ -116,6 +112,7 @@ def create_app(
     )
     app.add_exception_handler(PublicCoachError, _public_error_handler)
     _register_routes(app, active_settings, retrieval_readiness)
+    register_patch_summary_route(app, active_settings, summarizer)
     return app
 
 
@@ -153,23 +150,8 @@ def _register_routes(
 
     @app.post("/chat", response_model=ChatResponse)
     async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
-        correlation_id = _verified_correlation_id(request, settings)
-        try:
-            actor = actor_id(request, settings)
-        except InvalidProxyIdentity as error:
-            logger.warning(
-                "coach_request request_id=%s outcome=proxy_auth_error exception=%s",
-                correlation_id,
-                type(error).__name__,
-            )
-            raise PublicCoachError(
-                "internal",
-                "Coach proxy authentication failed.",
-                403,
-                correlation_id,
-                False,
-                False,
-            ) from error
+        correlation_id = verified_request_id(request, settings)
+        actor = verified_actor_id(request, settings, correlation_id)
         try:
             await rate_limiter.check(actor)
         except RateLimitExceeded as error:
@@ -207,28 +189,6 @@ async def _public_error_handler(_request: Request, error: Exception) -> JSONResp
         content=body.model_dump(mode="json"),
         headers=headers,
     )
-
-
-def _verified_correlation_id(request: Request, settings: Settings) -> str:
-    try:
-        return request_id(request, settings)
-    except InvalidProxyIdentity as error:
-        import secrets
-
-        correlation_id = secrets.token_hex(12)
-        logger.warning(
-            "coach_request request_id=%s outcome=request_id_error exception=%s",
-            correlation_id,
-            type(error).__name__,
-        )
-        raise PublicCoachError(
-            "internal",
-            "Coach request authentication failed.",
-            403,
-            correlation_id,
-            False,
-            False,
-        ) from error
 
 
 async def _chat_response(
@@ -294,19 +254,8 @@ async def _locked_chat_response(
     except asyncio.CancelledError:
         log_request_timing(request_id, started, "cancelled")
         raise
-    except (TimeoutError, APITimeoutError) as error:
-        raise_timeout(error, request_id, started)
-    except APIConnectionError as error:
-        raise_timeout(error, request_id, started)
-    except BadRequestError as error:
-        log_request_timing(request_id, started, "provider_error")
-        raise_bad_request(error, request_id)
-    except APIStatusError as error:
-        raise_provider_status(error, request_id, started)
-    except ContractViolation as error:
-        raise_fatal(error, request_id, started, "contract_violation")
     except Exception as error:
-        raise_fatal(error, request_id, started, "internal")
+        raise_provider_failure(error, request_id, started)
 
 
 async def _invoke_agent(
