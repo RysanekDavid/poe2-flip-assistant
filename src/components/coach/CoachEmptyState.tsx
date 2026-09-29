@@ -39,8 +39,8 @@ export function CoachEmptyState({ disabled, onCompose, onPrompt, webReady }: {
       <div className="mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-neutral-950 shadow-[0_0_35px_rgba(245,158,11,0.08)]">
         <Image src={iconCoach} alt="" className="h-12 w-12 object-contain" />
       </div>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-500/65">Market intelligence</div>
-      <h3 className="mt-2 font-['Palatino_Linotype','Book_Antiqua',serif] text-2xl font-semibold tracking-wide text-neutral-100">
+      <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-500/65">Market intelligence</div>
+      <h3 className="mt-2 text-2xl font-semibold tracking-wide text-neutral-100">
         Make decisions from data, not trade chat.
       </h3>
       <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-500">
@@ -59,7 +59,7 @@ export function CoachEmptyState({ disabled, onCompose, onPrompt, webReady }: {
             }}
             className="group rounded-xl border border-neutral-800 bg-neutral-900/45 px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-amber-500/25 hover:bg-neutral-900/80 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <span className="text-[9px] font-semibold tracking-[0.18em] text-amber-500/55 group-hover:text-amber-400/75">{suggestion.eyebrow}</span>
+            <span className="text-xs font-semibold tracking-[0.18em] text-amber-500/55 group-hover:text-amber-400/75">{suggestion.eyebrow}</span>
             <span className="mt-2 block text-sm leading-6 text-neutral-400 group-hover:text-neutral-200">
               {suggestion.kind === "send" ? suggestion.prompt : suggestion.label}
             </span>
