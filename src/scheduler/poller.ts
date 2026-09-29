@@ -118,7 +118,7 @@ function startSnipeOutcomes(ownerCred: TradeCred | null): void {
       return runSnipeOutcomeChecks(cred);
     };
     withHeartbeat("snipe-outcomes", "", run, { problem: snipeOutcomesProblem })
-      .then((r) => console.log(`[snipe-outcomes] ${r.gone} gone, ${r.listed} listed, ${r.errors} error, ${r.retries} retry, ${r.deferred} deferred · ${r.meter.fetch} fetches, ${r.meter.search} searches`))
+      .then((r) => console.log(`[snipe-outcomes] ${r.gone} gone, ${r.listed} listed, ${r.errors} error, ${r.retries} retry, ${r.deferred} deferred · ${r.meter.fetch} fetches, ${r.meter.search} searches · fetch method ${r.fetchMethod}`))
       .catch((e) => console.error("[snipe-outcomes] run failed:", errText(e)))
       .finally(() => {
         checking = false;

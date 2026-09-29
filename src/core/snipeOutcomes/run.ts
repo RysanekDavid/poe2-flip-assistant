@@ -3,7 +3,6 @@ import { metered, newMeter, type TradeMeter } from "../../api/tradeMeter";
 import { config } from "../../config/env";
 import { getDefaultLeague } from "../leagueState";
 import { resolveRates } from "../rates";
-import { SNIPE_OUTCOMES_MAX_RESEARCH } from "../subsystems";
 import { checkOutcomes } from "./check";
 import type { OutcomeRunSummary } from "./settle";
 
@@ -21,14 +20,21 @@ export async function runSnipeOutcomeChecks(cred: TradeCred, nowMs: number = Dat
       defaultLeague: getDefaultLeague(),
       nowMs,
       maxFetches: config.snipeOutcomes.maxFetchesPerRun,
-      maxSearches: SNIPE_OUTCOMES_MAX_RESEARCH,
+      maxSearches: config.snipeOutcomes.maxSearchesPerRun,
     }),
   );
   return { ...summary, meter };
 }
 
-/** Heartbeat problem: a run that settled nothing but errors is failing, not pacing. */
+/**
+ * Heartbeat problem text. Every fetched listing reading gone while the fetch method is unverified
+ * is exactly what an expired search id serving nulls would look like — say so instead of green.
+ */
 export function snipeOutcomesProblem(s: OutcomeRunSummary): string | null {
-  if (s.errors > 0 && s.listed + s.gone === 0 && s.missed < s.errors) return `${s.errors - s.missed} check(s) ended in error and none succeeded`;
+  if (s.fetchedSlots > 0 && s.fetchedGone === s.fetchedSlots && s.fetchMethod === "unverified") {
+    return `all ${s.fetchedSlots} fetched listing(s) read gone and the fetch method is unverified — outcomes may be wrong`;
+  }
+  const failed = s.errors - s.missed;
+  if (failed > 0 && s.listed + s.gone === 0) return `${failed} check(s) ended in error and none succeeded`;
   return null;
 }

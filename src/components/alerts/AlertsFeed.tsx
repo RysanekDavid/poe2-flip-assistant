@@ -8,13 +8,18 @@ import { SnipeCardView, ageLabel } from "./SnipeCardView";
 import type { Alert, AlertGroup } from "../../lib/alertCenter";
 import { alertTypeLabel } from "../../lib/alertLabels";
 import { useSnipeOutcomes } from "../../lib/useSnipeOutcomes";
-import type { SnipeOutcomeView } from "../../lib/snipeOutcomeContract";
+import type { CardOutcome, SnipeOutcomesResponse } from "../../lib/snipeOutcomeContract";
 
 /** "ALL" or one alert type. Types are open-ended here: legacy rows (VOLUME, TREND_REVERSAL)
  *  still show up as groups, so the filter mirrors whatever types the feed actually holds. */
 type Filter = { kind: "all" } | { kind: "type"; type: AlertGroup["type"] };
 const ALL: Filter = { kind: "all" };
-const NO_OUTCOMES: Record<string, SnipeOutcomeView> = {};
+
+/** The tracked re-checks of an alert's listing, or null (untracked: pre-feature, or outcomes not loaded). */
+function cardOutcome(outcomes: SnipeOutcomesResponse | null, listingId: string): CardOutcome | null {
+  const view = outcomes?.byListing[listingId];
+  return view && outcomes ? { view, fetchMethod: outcomes.fetchMethod } : null;
+}
 
 function FilterChip({ label, unseen, total, active, tone, onClick }: {
   label: string;
@@ -58,7 +63,7 @@ function CompactRow({ a }: { a: Alert }) {
   );
 }
 
-function FeedList({ alerts, hidden, outcomes }: { alerts: Alert[]; hidden: number; outcomes: Record<string, SnipeOutcomeView> }) {
+function FeedList({ alerts, hidden, outcomes }: { alerts: Alert[]; hidden: number; outcomes: SnipeOutcomesResponse | null }) {
   if (alerts.length === 0) {
     return <p className="py-10 text-center text-sm text-neutral-500">no alerts here yet</p>;
   }
@@ -67,7 +72,7 @@ function FeedList({ alerts, hidden, outcomes }: { alerts: Alert[]; hidden: numbe
       {alerts.map((a) =>
         a.type === "SNIPE" && a.details ? (
           <li key={a.id}>
-            <SnipeCardView alert={a} card={a.details} outcome={outcomes[a.item_id] ?? null} />
+            <SnipeCardView alert={a} card={a.details} outcome={cardOutcome(outcomes, a.item_id)} />
           </li>
         ) : (
           <CompactRow key={a.id} a={a} />
@@ -144,7 +149,7 @@ export function AlertsFeed() {
           />
         ))}
       </div>
-      <FeedList alerts={alerts} hidden={hidden} outcomes={outcomes?.byListing ?? NO_OUTCOMES} />
+      <FeedList alerts={alerts} hidden={hidden} outcomes={outcomes} />
     </section>
   );
 }

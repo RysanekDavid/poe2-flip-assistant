@@ -187,6 +187,9 @@ export const config = {
     enabled: flag("SNIPE_OUTCOMES_ENABLED", true),
     // trade2 /fetch calls per 30-min run (≤10 ids each) — ≤10 fetches/h beside the scanners' budget
     maxFetchesPerRun: pos("SNIPE_OUTCOMES_MAX_FETCHES", 5, 20),
+    // re-searches per run (expired search ids + cross-checks of the fetch method) — searches are
+    // the scarce trade2 resource (600 per 6 h per IP), so this stays small
+    maxSearchesPerRun: pos("SNIPE_OUTCOMES_MAX_SEARCHES", 3, 10),
   },
 
   // League-start price curves from GGG's public exchange digests of past leagues.

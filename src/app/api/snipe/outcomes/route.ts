@@ -3,7 +3,7 @@ import { getCurrentUser } from "../../../../auth/session";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { SNIPE_PROFILES } from "../../../../core/snipeProfiles";
 import { buildOutcomesResponse } from "../../../../core/snipeOutcomes/view";
-import { outcomesSince } from "../../../../db/snipeOutcomeQueries";
+import { getFetchMethodState, outcomesSince } from "../../../../db/snipeOutcomeQueries";
 import { SnipeOutcomesResponseSchema } from "../../../../lib/snipeOutcomeContract";
 
 export const runtime = "nodejs";
@@ -23,6 +23,6 @@ export async function GET(): Promise<Response> {
   const nowMs = Date.now();
   const rows = outcomesSince(nowMs - WINDOW_DAYS * 24 * 3_600_000, MAX_ROWS);
   const labels = new Map(SNIPE_PROFILES.map((p) => [p.key, p.label] as const));
-  const body = buildOutcomesResponse(rows, { league: getDefaultLeague(), windowDays: WINDOW_DAYS, labels });
+  const body = buildOutcomesResponse(rows, { league: getDefaultLeague(), windowDays: WINDOW_DAYS, labels, fetchMethod: getFetchMethodState() });
   return NextResponse.json(SnipeOutcomesResponseSchema.parse(body));
 }

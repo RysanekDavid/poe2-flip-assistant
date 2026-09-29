@@ -1,7 +1,7 @@
-import { clearQueryId, dueOutcomes, HOUR_MS, type OutcomeRow } from "../../db/snipeOutcomeQueries";
+import { dueOutcomes, getFetchMethodState, HOUR_MS, recordFetchVerdict, writeDeferral, type OutcomeRow } from "../../db/snipeOutcomeQueries";
 import type { Listing } from "../../api/tradeListing";
 import type { Checkpoint } from "../../lib/snipeOutcomeContract";
-import { classifyFailure, failAttempt, newRun, settle, settleListing, type OutcomeDeps, type OutcomeRunSummary, type Run } from "./settle";
+import { classifyFailure, failAttempt, newRun, searchSlotFree, settleError, settleListing, type OutcomeDeps, type OutcomeRunSummary, type Run } from "./settle";
 import { applyResearch, research, researchBlocker } from "./research";
 
 /**
@@ -10,25 +10,33 @@ import { applyResearch, research, researchBlocker } from "./research";
  *   plan A (default) — /fetch the listing ids against the search that FOUND them (query_id,
  *     recorded at alert time), ≤10 ids per fetch, ≤maxFetches per run. A served entry = listed
  *     (+ its current ask), a null slot = gone.
- *   plan B (fallback, 24 h only) — when trade2 answers 400/404 for that search id (expired), or
- *     no id was stored: one fresh seller+base search per row, ≤maxSearches per run.
+ *   plan B — one fresh seller+base re-search per row, ≤maxSearches per run: at 24 h when trade2
+ *     answers 400/404 for the old search id (or none was stored), and at both checkpoints once
+ *     plan A is known to be broken.
  *
- * Which plan produced each outcome is stored with it (check_*_method). Plan A is unverified for
- * days-old search ids (the probe never ran), so a 24 h fetch that reports a WHOLE chunk gone is
- * cross-checked with one re-search: if that finds a listing listed, the id is serving nulls, the
- * chunk's ids are dropped and those rows fall to plan B.
+ * Plan A verifies itself. Nobody could probe whether trade2 answers an hours-old search id with
+ * real states or with nulls, so a fetch that reports a WHOLE chunk (≥2 rows) gone is cross-checked
+ * by re-searching one of its rows — this spends one search from the same per-run cap:
+ *   - the re-search does not find it either → the method agrees (unverified → verified);
+ *   - it finds the listing → the fetch served nulls for a live listing: the method is broken
+ *     (sticky), every later check re-searches, and past fetch-based "gone" results read as unverified;
+ *   - it fails (network, 5xx) → nothing is settled; the chunk is retried next run.
+ * At 2 h the cross-check runs while the method is unverified and a search slot is free (else the
+ * fetch stands). At 24 h it always runs — a search id that works at 2 h may still expire into
+ * nulls later — so a 24 h chunk of ≥2 rows is only fetched when a search slot is free for it.
+ * One-row chunks are never cross-checked: the search would cost as much as the answer is worth.
  */
 
 /** A 2 h check run later than this is not a 2 h observation any more. */
-export const TWO_H_WINDOW_MS = 4 * HOUR_MS;
+const TWO_H_WINDOW_MS = 4 * HOUR_MS;
+/** …nor a 24 h check run more than a day late. */
+const DAY_WINDOW_MS = 48 * HOUR_MS;
 /** Due rows read per run — far above what the fetch budget can settle. */
 const DUE_LIMIT = 200;
 const CHUNK = 10;
 
-type ChunkResult = "done" | "stale" | "deferred";
-
 /** Rows grouped by the search id they must quote, ≤10 per group, oldest first. */
-export function chunkByQuery(rows: readonly OutcomeRow[]): Array<{ queryId: string; rows: OutcomeRow[] }> {
+function chunkByQuery(rows: readonly OutcomeRow[]): Array<{ queryId: string; rows: OutcomeRow[] }> {
   const groups = new Map<string, OutcomeRow[]>();
   for (const r of rows) {
     if (r.query_id == null) continue;
@@ -43,14 +51,22 @@ export function chunkByQuery(rows: readonly OutcomeRow[]): Array<{ queryId: stri
   return chunks;
 }
 
-async function fetchChunk(run: Run, cp: Checkpoint, queryId: string, rows: OutcomeRow[]): Promise<ChunkResult | Array<Listing | null>> {
-  if (run.busy || run.summary.fetches >= run.deps.maxFetches) {
+const wantsCrossCheck = (run: Run, cp: Checkpoint, rows: readonly OutcomeRow[]): boolean =>
+  rows.length >= 2 && (cp === "24h" || run.summary.fetchMethod === "unverified");
+
+async function fetchChunk(run: Run, cp: Checkpoint, queryId: string, rows: OutcomeRow[]): Promise<"done" | "stale" | "deferred" | Array<Listing | null>> {
+  const needsSearch = cp === "24h" && wantsCrossCheck(run, cp, rows);
+  if (run.busy || run.summary.fetches >= run.deps.maxFetches || (needsSearch && !searchSlotFree(run))) {
     run.summary.deferred += rows.length;
     return "deferred";
   }
   run.summary.fetches++;
   try {
-    return await run.deps.fetchStates(rows.map((r) => r.listing_id), queryId);
+    const states = await run.deps.fetchStates(rows.map((r) => r.listing_id), queryId);
+    if (states.length !== rows.length) throw new Error(`fetchStates answered ${states.length} states for ${rows.length} ids`);
+    run.summary.fetchedSlots += states.length;
+    run.summary.fetchedGone += states.filter((s) => s == null).length;
+    return states;
   } catch (e) {
     const f = classifyFailure(e);
     if (f.kind === "abort") throw f.error;
@@ -68,93 +84,112 @@ async function fetchChunk(run: Run, cp: Checkpoint, queryId: string, rows: Outco
   }
 }
 
+/** Put a whole chunk off to the next run without settling it or counting an attempt. */
+function deferChunk(run: Run, rows: readonly OutcomeRow[], reason: string | null): void {
+  if (reason != null) writeDeferral(rows.map((r) => r.listing_id), reason);
+  run.summary.deferred += rows.length;
+}
+
 /**
- * A 24 h fetch said every row of the chunk is gone. Confirm on one re-searchable row: listed →
- * the search id serves nulls, so settle that row from the re-search, drop the chunk's id and hand
- * the rest to plan B (returned); gone or inconclusive → the fetch stands.
+ * The fetch said every row of the chunk is gone: confirm on one re-searchable row (see the
+ * module doc). Returns the rows plan B must answer instead (after a contradiction).
  */
-async function crossCheckAllGone(run: Run, rows: OutcomeRow[]): Promise<OutcomeRow[]> {
+async function crossCheckAllGone(run: Run, cp: Checkpoint, rows: OutcomeRow[]): Promise<OutcomeRow[]> {
   const probe = rows.find((r) => researchBlocker(run, r) == null);
-  if (probe != null && (run.busy || run.summary.searches >= run.deps.maxSearches)) {
-    run.summary.deferred += rows.length;
+  if (probe == null || !searchSlotFree(run)) {
+    for (const r of rows) settleListing(run, r, cp, null, "fetch"); // no independent check possible: the fetch stands
     return [];
   }
-  const verdict = probe != null ? await research(run, probe) : null;
-  if (verdict?.kind === "busy") {
-    run.summary.deferred += rows.length;
+  const verdict = await research(run, probe);
+  if (verdict.kind === "busy") {
+    deferChunk(run, rows, null);
     return [];
   }
-  if (probe != null && verdict?.kind === "listed") {
-    console.warn(`[snipe-outcomes] search ${probe.query_id ?? "?"} served null for listing ${probe.listing_id}, which a re-search found listed — its ids fall back to re-search`);
-    applyResearch(run, probe, verdict);
-    const rest = rows.filter((r) => r !== probe);
-    clearQueryId(rest.map((r) => r.listing_id));
-    run.summary.stale += rest.length;
-    return rest;
+  if (verdict.kind === "failed") {
+    console.warn(`[snipe-outcomes] cross-check of ${probe.listing_id} failed — ${verdict.message}; chunk retried next run`);
+    deferChunk(run, rows, `cross-check pending: ${verdict.message}`);
+    return [];
   }
-  for (const r of rows) settleListing(run, r, "24h", null, "fetch");
+  if (verdict.kind === "listed") {
+    run.summary.fetchMethod = recordFetchVerdict("contradicts", `search ${probe.query_id ?? "?"} served null for ${probe.listing_id}, which a re-search found listed`, run.deps.nowMs);
+    console.error(`[snipe-outcomes] fetch method BROKEN: search ${probe.query_id ?? "?"} served null for listing ${probe.listing_id}, which a re-search found listed — every check re-searches from now on`);
+    applyResearch(run, probe, cp, verdict);
+    return rows.filter((r) => r !== probe);
+  }
+  if (verdict.kind === "gone") {
+    run.summary.fetchMethod = recordFetchVerdict("agrees", `re-search agreed ${probe.listing_id} is gone`, run.deps.nowMs);
+  }
+  for (const r of rows) settleListing(run, r, cp, null, "fetch"); // agreed, or the re-search was inconclusive
   return [];
 }
 
-/** Plan A for one checkpoint; returns the rows whose search id turned out stale. */
-async function planA(run: Run, cp: Checkpoint, rows: OutcomeRow[]): Promise<OutcomeRow[]> {
+/** Plan A for one checkpoint; returns the rows plan B must answer (stale ids / method broken). */
+async function planA(run: Run, cp: Checkpoint, rows: OutcomeRow[]): Promise<{ stale: OutcomeRow[]; toPlanB: OutcomeRow[] }> {
   const stale: OutcomeRow[] = [];
+  const toPlanB: OutcomeRow[] = [];
   for (const { queryId, rows: chunk } of chunkByQuery(rows)) {
+    if (run.summary.fetchMethod === "broken") {
+      toPlanB.push(...chunk);
+      continue;
+    }
     const res = await fetchChunk(run, cp, queryId, chunk);
     if (res === "stale") stale.push(...chunk);
     if (typeof res === "string") continue;
-    if (res.length !== chunk.length) throw new Error(`fetchStates answered ${res.length} states for ${chunk.length} ids`);
-    if (cp === "24h" && res.every((s) => s == null)) {
-      stale.push(...(await crossCheckAllGone(run, chunk)));
+    if (res.every((s) => s == null) && wantsCrossCheck(run, cp, chunk)) {
+      toPlanB.push(...(await crossCheckAllGone(run, cp, chunk)));
       continue;
     }
     chunk.forEach((r, i) => settleListing(run, r, cp, res[i] ?? null, "fetch"));
   }
-  return stale;
+  return { stale, toPlanB };
+}
+
+async function planB(run: Run, cp: Checkpoint, rows: readonly OutcomeRow[]): Promise<void> {
+  for (const r of rows) {
+    const blocker = researchBlocker(run, r);
+    if (blocker != null) settleError(run, r, cp, `no fetch answer and ${blocker}`, null);
+    else if (!searchSlotFree(run)) run.summary.deferred++;
+    else applyResearch(run, r, cp, await research(run, r));
+  }
+}
+
+/** Settle rows whose window passed; return the rest. */
+function withinWindow(run: Run, cp: Checkpoint, rows: readonly OutcomeRow[], windowMs: number): OutcomeRow[] {
+  const live: OutcomeRow[] = [];
+  for (const r of rows) {
+    const ageMs = run.deps.nowMs - r.alerted_at;
+    if (ageMs <= windowMs) {
+      live.push(r);
+      continue;
+    }
+    settleError(run, r, cp, `missed the ${cp === "2h" ? "2 h" : "24 h"} window (checker reached it at ${(ageMs / HOUR_MS).toFixed(1)} h)`, null);
+    run.summary.missed++;
+  }
+  return live;
 }
 
 async function checkpoint2h(run: Run, rows: OutcomeRow[]): Promise<void> {
-  const live: OutcomeRow[] = [];
-  for (const r of rows) {
-    const lateH = (run.deps.nowMs - r.alerted_at) / HOUR_MS;
-    if (run.deps.nowMs - r.alerted_at > TWO_H_WINDOW_MS) {
-      settle(run, r, "2h", { state: "error", askDiv: null, method: null, error: `missed the 2 h window (checker reached it at ${lateH.toFixed(1)} h)` });
-      run.summary.missed++;
-    } else if (r.query_id == null) {
-      settle(run, r, "2h", { state: "error", askDiv: null, method: null, error: "no search id recorded — the 2 h check needs one" });
-    } else {
-      live.push(r);
-    }
+  const live = withinWindow(run, "2h", rows, TWO_H_WINDOW_MS);
+  const noId = live.filter((r) => r.query_id == null);
+  const { stale, toPlanB } = await planA(run, "2h", live.filter((r) => r.query_id != null));
+  // plan B at 2 h only replaces a broken fetch method; an expired id or a missing one is an observation failure
+  for (const r of [...noId, ...stale]) {
+    if (run.summary.fetchMethod === "broken") toPlanB.push(r);
+    else settleError(run, r, "2h", r.query_id == null ? "no search id recorded — the 2 h check needs one" : "search id no longer served at the 2 h check (re-search runs at 24 h only)", r.query_id == null ? null : "fetch");
   }
-  const stale = await planA(run, "2h", live);
-  // plan B is 24 h only: an expired id at 2 h is an observation failure, not a retryable one
-  for (const r of stale) {
-    settle(run, r, "2h", { state: "error", askDiv: null, method: "fetch", error: "search id no longer served at the 2 h check (re-search runs at 24 h only)" });
-  }
-}
-
-async function planB(run: Run, rows: OutcomeRow[]): Promise<void> {
-  for (const r of rows) {
-    const blocker = researchBlocker(run, r);
-    if (blocker != null) {
-      settle(run, r, "24h", { state: "error", askDiv: null, method: null, error: blocker });
-    } else if (run.busy || run.summary.searches >= run.deps.maxSearches) {
-      run.summary.deferred++;
-    } else {
-      applyResearch(run, r, await research(run, r));
-    }
-  }
+  await planB(run, "2h", toPlanB);
 }
 
 async function checkpoint24h(run: Run, rows: OutcomeRow[]): Promise<void> {
-  const noId = rows.filter((r) => r.query_id == null);
-  const stale = await planA(run, "24h", rows.filter((r) => r.query_id != null));
-  await planB(run, [...noId, ...stale]);
+  const live = withinWindow(run, "24h", rows, DAY_WINDOW_MS);
+  const noId = live.filter((r) => r.query_id == null);
+  const { stale, toPlanB } = await planA(run, "24h", live.filter((r) => r.query_id != null));
+  await planB(run, "24h", [...noId, ...stale, ...toPlanB]);
 }
 
 /** One checker run over every due row, within the run's fetch/search budget. */
 export async function checkOutcomes(deps: OutcomeDeps): Promise<OutcomeRunSummary> {
-  const run = newRun(deps);
+  const run = newRun(deps, getFetchMethodState());
   const { due2h, due24h } = dueOutcomes(deps.nowMs, DUE_LIMIT);
   await checkpoint2h(run, due2h);
   await checkpoint24h(run, due24h);

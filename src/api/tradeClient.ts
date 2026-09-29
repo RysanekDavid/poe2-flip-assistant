@@ -5,7 +5,7 @@ import { getDefaultLeague } from "../core/leagueState";
 import { buildTradeQuery, type TradeQuery } from "../lib/tradeLink";
 import { createRateGovernor, type RateGovernor, type TradeEndpoint } from "./tradeRateLimit";
 import { scheduleMetered } from "./tradeMeter";
-import { TradeAuthError, TradeRateLimitedError } from "./tradeErrors";
+import { TradeAuthError, TradeHttpError, TradeRateLimitedError } from "./tradeErrors";
 import { dbRateStore } from "../db/tradeRateQueries";
 import { parseFetchResponse, parseFetchStates, type Listing } from "./tradeListing";
 
@@ -84,21 +84,6 @@ async function reserveBudget(kind: TradeEndpoint): Promise<void> {
     if (wait === 0) return;
     if (wait > maxInlineWaitMs) throw new TradeRateLimitedError(kind, wait);
     await sleep(wait);
-  }
-}
-
-/**
- * A trade2 answer outside 2xx that is not one of the typed cases (403 auth, budget wait). Carries
- * the status so a caller can tell "this query id is no longer served" (400/404) from a transient
- * failure; `status` is null when no response arrived at all (timeout, connection reset).
- */
-export class TradeHttpError extends Error {
-  readonly status: number | null;
-
-  constructor(message: string, status: number | null) {
-    super(message);
-    this.name = "TradeHttpError";
-    this.status = status;
   }
 }
 

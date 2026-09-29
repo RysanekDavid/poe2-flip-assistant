@@ -1,24 +1,26 @@
 import { recheckQueryOf, type OutcomeRow } from "../../db/snipeOutcomeQueries";
 import type { Listing } from "../../api/tradeListing";
 import type { SearchResp } from "../../api/tradeClient";
-import { classifyFailure, errText, failAttempt, settle, settleListing, type Run } from "./settle";
+import type { Checkpoint } from "../../lib/snipeOutcomeContract";
+import { classifyFailure, errText, failAttempt, settle, settleError, settleListing, type Run } from "./settle";
 
 /**
- * Plan B — the search that found a listing is no longer served, so ONE fresh search for the
- * seller's copies of the base (listingTradeQuery, stored at alert time) tells whether it is still
- * up. Only at the 24 h checkpoint, capped per run (searches are the scarce trade2 resource).
+ * Plan B — ONE fresh search for the seller's copies of the base (listingTradeQuery, stored at
+ * alert time) tells whether a listing is still up. Used when the search that found it is no
+ * longer served, for every row once the fetch method is broken, and to cross-check the fetch
+ * method itself. Capped per run: searches are the scarce trade2 resource.
  */
-export type Research =
+type Research =
   | { kind: "listed"; listing: Listing | null } // null = found, but its ask could not be read
   | { kind: "gone" }
-  | { kind: "unusable"; reason: string } // the re-search cannot answer for this row: settle as error
-  | { kind: "failed"; message: string } // this attempt failed: retry once
+  | { kind: "unusable"; reason: string } // the re-search cannot answer for this row
+  | { kind: "failed"; message: string } // this attempt failed (network, 5xx): says nothing
   | { kind: "busy" };
 
 /** Why this row cannot be re-searched at all, or null when it can. */
 export function researchBlocker(run: Run, row: OutcomeRow): string | null {
-  if (row.recheck_query == null) return "search id expired and the seller is unknown — cannot re-search";
-  if (row.league !== run.deps.defaultLeague) return `search id expired and the league changed (${row.league} → ${run.deps.defaultLeague}) — cannot re-search`;
+  if (row.recheck_query == null) return "the seller is unknown — cannot re-search";
+  if (row.league !== run.deps.defaultLeague) return `the league changed (${row.league} → ${run.deps.defaultLeague}) — cannot re-search`;
   return null;
 }
 
@@ -64,21 +66,21 @@ export async function research(run: Run, row: OutcomeRow): Promise<Research> {
   return { kind: "gone" };
 }
 
-/** Settle the 24 h checkpoint from a re-search result. */
-export function applyResearch(run: Run, row: OutcomeRow, r: Research): void {
+/** Settle a checkpoint from a plan-B re-search result. */
+export function applyResearch(run: Run, row: OutcomeRow, cp: Checkpoint, r: Research): void {
   switch (r.kind) {
     case "listed":
-      if (r.listing == null) settle(run, row, "24h", { state: "listed", askDiv: null, method: "search", error: null });
-      else settleListing(run, row, "24h", r.listing, "search");
+      if (r.listing == null) settle(run, row, cp, { state: "listed", ask: null, method: "search", error: null });
+      else settleListing(run, row, cp, r.listing, "search");
       return;
     case "gone":
-      settle(run, row, "24h", { state: "gone", askDiv: null, method: "search", error: null });
+      settleListing(run, row, cp, null, "search");
       return;
     case "unusable":
-      settle(run, row, "24h", { state: "error", askDiv: null, method: "search", error: r.reason });
+      settleError(run, row, cp, r.reason, "search");
       return;
     case "failed":
-      failAttempt(run, row, "24h", r.message, "search");
+      failAttempt(run, row, cp, r.message, "search");
       return;
     case "busy":
       run.summary.deferred++;

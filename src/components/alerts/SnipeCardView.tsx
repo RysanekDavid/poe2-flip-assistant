@@ -10,7 +10,7 @@ import type { CardModKind, SnipeCard } from "../../lib/snipeCard";
 import { tradeCurrencyArt } from "../../lib/currencyArt";
 import { fmtDivOrEx } from "../../lib/format";
 import { LeagueTag } from "./AlertBits";
-import { outcomeChip, type SnipeOutcomeView } from "../../lib/snipeOutcomeContract";
+import { outcomeChip, type CardOutcome } from "../../lib/snipeOutcomeContract";
 
 /** In-game item-frame palette: header band + name colour by rarity. */
 const RARE_TONE = { band: "border-[#6b5a24] from-[#352b10] to-[#140f05]", name: "text-[#ffff77]" };
@@ -59,13 +59,13 @@ function valuationHint(card: SnipeCard): string {
 const CHIP_TONE = { good: "border-good/40 text-good", warn: "border-warn/40 text-warn", muted: "border-neutral-700 text-neutral-400" } as const;
 
 /** What happened to the listing after the alert — nothing for untracked (pre-feature) or unchecked listings. */
-function OutcomeChip({ outcome, card }: { outcome: SnipeOutcomeView | null; card: SnipeCard }) {
-  const chip = outcome ? outcomeChip(outcome, card.exaltPerDivine) : null;
+function OutcomeChip({ outcome }: { outcome: CardOutcome | null }) {
+  const chip = outcome ? outcomeChip(outcome.view, outcome.fetchMethod) : null;
   if (!chip) return null;
   return <span className={`mt-1 inline-block rounded border px-1.5 text-xs ${CHIP_TONE[chip.tone]}`} title={chip.hint}>{chip.label}</span>;
 }
 
-function Header({ card, alert, outcome }: { card: SnipeCard; alert: CardMeta; outcome: SnipeOutcomeView | null }) {
+function Header({ card, alert, outcome }: { card: SnipeCard; alert: CardMeta; outcome: CardOutcome | null }) {
   const tone = RARITY[(card.rarity ?? "").toLowerCase()] ?? RARE_TONE;
   return (
     <div className={`flex items-start gap-3 border-b bg-gradient-to-b px-3 py-2 ${tone.band}`}>
@@ -88,7 +88,7 @@ function Header({ card, alert, outcome }: { card: SnipeCard; alert: CardMeta; ou
           −{Math.round(card.marginPct)}%
         </div>
         <time className="block text-xs text-neutral-500" title={`found ${alert.created_at} UTC`}>{ageLabel(alert.created_at)} ago</time>
-        <OutcomeChip outcome={outcome} card={card} />
+        <OutcomeChip outcome={outcome} />
       </div>
     </div>
   );
@@ -181,7 +181,7 @@ function Actions({ card }: { card: SnipeCard }) {
 
 /** A snipe (alert or scan finding) as an item card: in-game style header, mod lines, price vs value, seller, actions.
  *  `outcome` = the listing's tracked re-checks, when there are any. */
-export function SnipeCardView({ alert, card, outcome = null }: { alert: CardMeta; card: SnipeCard; outcome?: SnipeOutcomeView | null }) {
+export function SnipeCardView({ alert, card, outcome = null }: { alert: CardMeta; card: SnipeCard; outcome?: CardOutcome | null }) {
   return (
     <article className={`overflow-hidden rounded-lg border bg-neutral-950/80 ${alert.seen === 0 ? "border-amber-500/50 shadow-[0_0_0_1px_rgba(245,158,11,0.15)]" : "border-neutral-800"}`}>
       <Header card={card} alert={alert} outcome={outcome} />

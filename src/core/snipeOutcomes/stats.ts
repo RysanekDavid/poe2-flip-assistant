@@ -15,7 +15,7 @@ function pct(part: number, whole: number): number | null {
   return whole > 0 ? (part / whole) * 100 : null;
 }
 
-export function median(xs: readonly number[]): number | null {
+function median(xs: readonly number[]): number | null {
   const s = [...xs].sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
   const hi = s[mid];

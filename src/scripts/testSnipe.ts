@@ -339,14 +339,24 @@ ok("stats: grouped per profile, busiest first, unknown key keeps its key as labe
 ok("pending: 2 h unsettled, or 24 h unsettled and not gone", isPending({ check_2h: null, check_24h: null }) && isPending({ check_2h: "listed", check_24h: null }) && !isPending({ check_2h: "gone", check_24h: null }) && !isPending({ check_2h: "error", check_24h: "error" }));
 
 // --- snipe outcomes: the card chip never claims a sale ---
+const HR = 3_600_000;
 const view = (h2: OutcomeCheck | null, h24: OutcomeCheck | null): SnipeOutcomeView => ({ listingId: "l", profile: "rings", alertedAt: 0, check2h: h2, check24h: h24, lastError: null });
-const chk = (state: OutcomeState, askDiv: number | null = null): OutcomeCheck => ({ state, at: 1, askDiv, method: "fetch" });
-ok("chip: gone at 2 h", outcomeChip(view(chk("gone"), null), 100)?.label === "gone <2h");
-ok("chip: still listed at 24 h shows the current ask", outcomeChip(view(chk("listed"), chk("listed", 0.05)), 100)?.label === "still listed 24h · ask 5 ex");
-ok("chip: listed without a rated ask omits it", outcomeChip(view(chk("listed"), chk("listed")), 100)?.label === "still listed 24h");
-ok("chip: nothing checked yet → no chip", outcomeChip(view(null, null), 100) === null);
-const chipTexts = [view(chk("gone"), null), view(chk("listed"), chk("gone")), view(chk("listed"), chk("listed", 2))].map((v) => outcomeChip(v, 100));
+const chk = (state: OutcomeState, atH: number, ask: OutcomeCheck["ask"] = null, method: OutcomeCheck["method"] = "fetch"): OutcomeCheck => ({ state, at: atH * HR, ask, method });
+const exAsk = { amount: 5, currency: "exalted" };
+ok("chip: gone label carries the real elapsed time, rounded up", outcomeChip(view(chk("gone", 2.4), null), "verified")?.label === "gone <3h");
+ok("chip: still listed at 24 h shows the ask as the listing states it", outcomeChip(view(chk("listed", 2), chk("listed", 25.5, exAsk)), "verified")?.label === "still listed 25h · ask 5 ex");
+ok("chip: an off-ladder currency keeps its own name", outcomeChip(view(chk("listed", 2), chk("listed", 24, { amount: 1, currency: "mirror" })), "verified")?.label === "still listed 24h · ask 1 mirror");
+ok("chip: listed without an ask omits it", outcomeChip(view(chk("listed", 2), chk("listed", 24)), "verified")?.label === "still listed 24h");
+ok("chip: listed at 2 h, 24 h pending", outcomeChip(view(chk("listed", 2.2, exAsk), null), "verified")?.label === "listed at 2h · ask 5 ex");
+ok("chip: nothing checked yet → no chip", outcomeChip(view(null, null), "verified") === null);
+const chipTexts = [view(chk("gone", 2), null), view(chk("listed", 2), chk("gone", 24)), view(chk("listed", 2), chk("listed", 24, exAsk))].map((v) => outcomeChip(v, "verified"));
 ok("chip: vocabulary never says sold, hint explains gone ≠ sold", chipTexts.every((c) => c != null && !/sold/i.test(c.label)) && /cannot tell/.test(chipTexts[0]?.hint ?? ""));
+const unverified = outcomeChip(view(chk("gone", 2), null), "unverified");
+ok("chip: unverified fetch method → neutral tone, caveat in the tooltip", unverified?.tone === "muted" && /unverified method/.test(unverified.hint) && unverified.label === "gone <2h");
+const broken = outcomeChip(view(chk("gone", 2), null), "broken");
+ok("chip: broken fetch method marks fetch-based gone as doubtful", broken?.label === "gone <2h?" && broken.tone === "muted" && /unreliable/.test(broken.hint));
+const searched = outcomeChip(view(chk("listed", 2), chk("gone", 24, null, "search")), "broken");
+ok("chip: a re-search result stays trusted when the fetch method is broken", searched?.tone === "good" && searched.label === "gone <24h");
 
 void meterCheck().then(() => {
   console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
