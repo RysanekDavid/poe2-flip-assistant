@@ -158,6 +158,12 @@ export function composePool(pool: RegexPool, headers: readonly PoolHeader[], sel
     if (chosen.single.length <= options.maxChars) break;
   }
   if (!chosen) throw new Error("empty ladder");
+  if (chosen.single.length === 0) {
+    // every selected filter resolved to nothing (all tablet types, ignored properties): an empty
+    // string would highlight the whole stash, so say why instead
+    const warnings = buildPoolWarnings({ ctx, tokens: [], chunks: [], masked: [], uncovered: [] });
+    return { chunks: [], tokens: [], masked: [], uncovered: [], warnings, reason: "the selection does not narrow anything down — every filter set matches all items" };
+  }
   const packed = chosen.single.length <= options.maxChars
     ? { chunks: [{ text: chosen.single, chars: chosen.single.length, covers: chosen.wanted.flatMap((t) => t.modIds) }], uncovered: [], reason: null }
     : pack(ctx, chosen, options.maxChars);
