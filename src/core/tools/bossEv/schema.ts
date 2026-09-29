@@ -67,7 +67,13 @@ const craftPartSchema = z.object({ itemId: z.string().min(1), qty: z.number().po
 
 /** One consumed entry item. `craftFrom` is the self-assembly recipe; cost = min(buy, craft). */
 export const entryLineSchema = z
-  .object({ itemId: z.string().min(1), qty: z.number().positive(), craftFrom: z.array(craftPartSchema).min(1).optional() })
+  .object({
+    itemId: z.string().min(1),
+    /** Display name for an entry ninja does not list (ninja's own name wins when it has one). */
+    name: z.string().min(1).optional(),
+    qty: z.number().positive(),
+    craftFrom: z.array(craftPartSchema).min(1).optional(),
+  })
   .strict();
 export type EntryLine = z.infer<typeof entryLineSchema>;
 

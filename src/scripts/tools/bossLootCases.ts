@@ -78,7 +78,7 @@ function testNewBosses(file: BossLootFile): void {
   const ores = lootOf(file, "aberration").filter((l) => l.priceRef.kind === "ninja" && l.priceRef.itemId.endsWith("-starlit-ore"));
   assert.equal(ores.length, 4, "four Starlit Ores priced from ninja Verisium");
   assert.ok(lootOf(file, "aberration").every((l) => l.rate.kind === "unknown"), "the Aberration publishes no rates");
-  assert.deepEqual(boss(file, "zarokh").tiers[0]!.entry, [{ itemId: "djinn-barya", qty: 1 }]);
+  assert.deepEqual(boss(file, "zarokh").tiers[0]!.entry, [{ itemId: "djinn-barya", name: "Djinn Barya", qty: 1 }]);
   assert.equal(file.ninjaCategories["djinn-barya"], null, "Djinn Barya is declared not-on-ninja");
   assert.ok(lootOf(file, "zarokh").some((l) => l.priceRef.kind === "ninja" && l.priceRef.itemId === "against-the-darkness"));
   for (const id of ["simulacrum", "aberration", "zarokh"]) {
@@ -123,6 +123,12 @@ export function runLineageUnpricedCase(file: BossLootFile): void {
     }
   }
   assert.ok(lineage >= 15, `the audit's lineage gems are flagged (${lineage})`);
+  const barya = bosses.find((b) => b.id === "zarokh")?.tiers[0]?.entryLines[0];
+  assert.deepEqual([barya?.name, barya?.costDiv], ["Djinn Barya", null], "an entry ninja does not list shows its curated name, unpriced");
+  for (const id of ["xesht", "olroth"]) {
+    const rated = file.bosses.find((b) => b.id === id)!.tiers[0]!.loot.filter((l) => l.confidence === "confirmed" && l.rate.kind !== "guaranteed");
+    assert.deepEqual(rated.map((l) => l.name), [], `${id}: no single-cited line claims confirmed`);
+  }
 }
 
 export function runCuratedCases(file: BossLootFile): void {

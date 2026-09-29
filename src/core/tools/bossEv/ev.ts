@@ -50,7 +50,7 @@ function entryLineView(line: EntryLine, prices: PriceLookup): EntryLineView {
   const item = prices.item(line.itemId);
   return {
     itemId: line.itemId,
-    name: item?.name ?? line.itemId,
+    name: item?.name ?? line.name ?? line.itemId,
     icon: item?.icon ?? null,
     qty: line.qty,
     unitPrice,
