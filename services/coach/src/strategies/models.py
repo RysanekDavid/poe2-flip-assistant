@@ -49,6 +49,14 @@ class Claim(_Strict):
     src: tuple[str, ...]
     note: str | None = Field(default=None, min_length=1)
 
+    @model_validator(mode="before")
+    @classmethod
+    def note_is_absent_not_null(cls, data: object) -> object:
+        """Match zod `.optional()`: a note is omitted or a string, never an explicit null."""
+        if isinstance(data, dict) and "note" in data and data["note"] is None:
+            raise ValueError("claim note must be omitted, not null")
+        return data
+
     @model_validator(mode="after")
     def sources_match_grade(self) -> "Claim":
         """Reject a grade that promises more sources than it cites, or a non-https source."""

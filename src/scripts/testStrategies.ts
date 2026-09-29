@@ -13,7 +13,16 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PricedItem } from "../api/types";
-import { filterStrategies, EMPTY_FILTER, parseBudget, presentMechanics, yieldNames } from "../components/farm/strategies/strategiesView";
+import {
+  EMPTY_FILTER,
+  evidenceTip,
+  filterStrategies,
+  leagueMismatch,
+  parseBudget,
+  presentMechanics,
+  showsBadge,
+  yieldNames,
+} from "../components/farm/strategies/strategiesView";
 import { config } from "../config/env";
 import { buildStrategyViews, loadStrategyBoard } from "../core/strategies/board";
 import { loadStrategies, readStrategies, STRATEGIES_DIR } from "../core/strategies/load";
@@ -171,7 +180,15 @@ assert.equal(parseBudget("cheap"), null, "unknown ?budget= is ignored, not an em
 assert.equal(parseBudget(null), null);
 assert.ok(presentMechanics(views).includes("anomaly") && !presentMechanics([]).length);
 assert.ok(yieldNames(views).includes("Fracturing Orb"));
-console.log("PASS  filters: mechanics (any of), budget ceiling, yield search, ?budget= parsing");
+assert.equal(showsBadge({ v: "vp", src: ["https://poe2db.tw/us/Hidden_Scars"] }), false, "primary facts stay unmarked");
+assert.equal(showsBadge({ v: "syn", src: [] }), true);
+assert.equal(
+  evidenceTip({ v: "vp", src: ["https://poe2db.tw/us/Hidden_Scars", "https://www.pathofexile.com/api/trade2/data/stats"], note: "Owner's pick." }),
+  "Checked against poe2db.tw/us/Hidden_Scars, pathofexile.com/api/trade2/data/stats. Owner's pick.",
+);
+assert.equal(leagueMismatch(["Forbidden Rites"], "Forbidden Rites"), null);
+assert.equal(leagueMismatch(["Forbidden Rites"], "Runes of Aldur"), "checked in Forbidden Rites, not in Runes of Aldur");
+console.log("PASS  filters: mechanics (any of), budget ceiling, yield search, ?budget= parsing; badges only off-primary, league mismatch chip");
 
 // --- route body over a seeded temp database ---
 if (!/tmp|temp|scratchpad/i.test(config.dbPath)) throw new Error(`refusing to seed ${config.dbPath}; run via npm run test:strategies`);

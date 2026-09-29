@@ -175,7 +175,7 @@
       "count": null,
       "mods": [
         {
-          "text": "Map contains 1 additional Summoning Circles",
+          "text": "Map contains an additional Summoning Circle",
           "trade_stat_id": "explicit.stat_2839545956",
           "claim": {
             "v": "vp",
@@ -197,7 +197,7 @@
           }
         },
         {
-          "text": "Unique Monsters have 1 additional Rare Modifiers",
+          "text": "Unique Monsters have an additional Rare Modifier",
           "trade_stat_id": "explicit.stat_3371085671",
           "claim": {
             "v": "vp",
@@ -230,7 +230,7 @@
   "steps": [
     "Run the Corrupted Nexus with a waystone of at least 4 modifiers; clearing it turns the surrounding corrupted maps Cleansed.",
     "Allocate Hidden Scars and From Distances Untold; take Summoning Circles on The Chosen Path and Overlord's Domain.",
-    "Run each Cleansed map with an Overseer Tablet (additional Summoning Circle / Summoning Circle chance / Unique Monsters +1 Rare Modifier).",
+    "Run each Cleansed map with an Overseer Tablet (additional Summoning Circle / Summoning Circle chance / an additional Rare Modifier on Unique Monsters).",
     "Kill every Cleansed pack and every Summoning Circle boss."
   ],
   "risks": [

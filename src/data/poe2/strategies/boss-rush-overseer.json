@@ -215,7 +215,7 @@
       "count": null,
       "mods": [
         {
-          "text": "Map Bosses have 1 additional Modifiers",
+          "text": "Map Bosses have an additional Modifier",
           "trade_stat_id": "explicit.stat_1458461453",
           "claim": {
             "v": "vp",

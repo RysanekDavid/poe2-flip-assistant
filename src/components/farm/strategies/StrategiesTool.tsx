@@ -63,6 +63,7 @@ function DataLine({ data }: { data: StrategiesResponse }) {
         prices <StaleBadge ageMin={data.pricesFetchedAt === null ? null : timestampAgeMs(data.pricesFetchedAt) / 60_000} warnAfterMin={180} />
       </span>
       <span title="patch every fact on these cards was checked against">verified {versions}</span>
+      <span>unmarked facts: checked against poe2db / trade2 data</span>
       {data.exPerDiv === null && <span className="text-amber-300">no exchange rate yet — small prices shown in div</span>}
     </p>
   );
@@ -98,7 +99,7 @@ export function StrategiesTool() {
           {shown.length === 0 ? (
             <EmptyState icon={<MapIcon className="h-5 w-5" />} sentence="No strategy matches these filters — widen the budget or clear a mechanic." />
           ) : (
-            shown.map((s) => <StrategyCard key={s.id} strategy={s} exPerDiv={data.exPerDiv} />)
+            shown.map((s) => <StrategyCard key={s.id} strategy={s} exPerDiv={data.exPerDiv} league={data.computedLeague} />)
           )}
         </>
       )}

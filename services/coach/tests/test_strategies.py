@@ -7,12 +7,14 @@ from pathlib import Path
 
 import pytest
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import ValidationError
 
 from src.config import Settings
 from src.errors import ToolInvalidInput, ToolNoResult
 from src.response import citations_are_valid
 from src.schemas import EvidenceSource
 from src.strategies import load_strategies
+from src.strategies.models import Claim
 from src.tools import get_tools
 from src.tools.engine_common import PAYLOAD_CAP_BYTES
 from src.tools.strategies import build_strategy_tool
@@ -20,6 +22,7 @@ from src.tools.strategies import build_strategy_tool
 SETTINGS = Settings(_env_file=None)
 STRATEGIES_DIR = SETTINGS.strategies_dir
 CATALOG_PATH = SETTINGS.entity_catalog_path
+LEAGUE = "Forbidden Rites"
 EXPECTED_IDS = (
     "abyss-depths-omens",
     "anomaly-lineage",
@@ -36,11 +39,22 @@ EXPECTED_IDS = (
 
 def _invoke(**overrides: object) -> dict[str, object]:
     tool = build_strategy_tool(STRATEGIES_DIR, CATALOG_PATH)
-    args: dict[str, object] = {"mechanic": None, "target_item": None, "budget": None, **overrides}
+    args: dict[str, object] = {
+        "mechanic": None,
+        "target_item": None,
+        "budget": None,
+        "strategy_id": None,
+        "league": LEAGUE,
+        **overrides,
+    }
     return json.loads(tool.invoke(args))
 
 
 def _ids(payload: dict[str, object]) -> list[str]:
+    if payload["mode"] == "detail":
+        detail = payload["strategy"]
+        assert isinstance(detail, dict)
+        return [detail["id"]]
     rows = payload["strategies"]
     assert isinstance(rows, list)
     return [row["id"] for row in rows]
@@ -100,35 +114,72 @@ def _mk(path: Path) -> Path:
     return path
 
 
-def test_filters_by_mechanic_item_and_budget() -> None:
+def test_list_mode_returns_every_match_under_the_cap() -> None:
     assert _ids(_invoke(mechanic="breach")) == ["breach-hiveblood"]
     assert _ids(_invoke(target_item="fracturing orbs")) == ["fracture-cleansed"]
-    cheap = _invoke(budget="league_start")
-    rows = cheap["strategies"]
-    assert isinstance(rows, list) and rows
-    assert all(row["budget"] == "league_start" for row in rows)
-    everything = _invoke()
-    assert everything["matches_total"] == len(EXPECTED_IDS)
-    assert len(_ids(everything)) <= 4
+    for filters in ({"budget": "league_start"}, {"mechanic": "map_boss"}, {}):
+        payload = _invoke(**filters)
+        rows = payload["strategies"]
+        assert isinstance(rows, list) and rows
+        assert len(rows) == payload["matches_total"], filters
+        assert "trimmed_rows" not in payload
+        raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        assert len(raw.encode("utf-8")) <= PAYLOAD_CAP_BYTES
+    assert all(
+        row["budget"] == "league_start" for row in _invoke(budget="league_start")["strategies"]
+    )
+    assert len(_ids(_invoke())) == len(EXPECTED_IDS)
+    listed = _invoke()
+    sources = [EvidenceSource.model_validate(s) for s in listed["sources"]]
+    assert [s.id for s in sources] == [listed["evidence_id"]]
+    assert citations_are_valid(f"Ten setups [{listed['evidence_id']}].", sources)
 
 
-def test_rows_carry_grades_stamps_and_bounded_poe2db_sources() -> None:
-    payload = _invoke(target_item="Rakiata's Flow")
-    raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    assert len(raw.encode("utf-8")) <= PAYLOAD_CAP_BYTES
-    (row,) = payload["strategies"]
-    assert row["id"] == "anomaly-lineage"
+def test_detail_mode_carries_grades_notes_risks_and_bounded_sources() -> None:
+    payload = _invoke(strategy_id="anomaly-lineage")
+    assert payload["mode"] == "detail"
+    row = payload["strategy"]
     assert row["status"] == "draft" and row["verified_against"] == "0.5.5"
+    assert row["checked_in_league"] is True and "league_note" not in row
     assert row["evidence_id"].startswith("S") and len(row["evidence_id"]) == 13
     assert 0 < len(row["poe2db_sources"]) <= 6
     assert all(url.startswith("https://poe2db.tw/us/") for url in row["poe2db_sources"])
-    assert all(y.endswith("ss)") for y in row["yields"]), "single-source drop list stays graded"
-    (ritual,) = _invoke(mechanic="ritual")["strategies"]
-    assert any(line.startswith("waystone [uv]: ") for line in ritual["unsettled"])
+    assert all(y.endswith("[ss]") for y in row["yields"]), "single-source drop list stays graded"
+    assert row["risks"] and any("Deadly" in risk for risk in row["risks"])
+    notes = row["claim_notes"]
+    assert any(line.startswith("mod ") and "[vp]: " in line for line in notes), "vp notes too"
+    ritual = _invoke(strategy_id="ritual-omens")["strategy"]
+    assert any(line.startswith("waystone [uv]: ") for line in ritual["claim_notes"])
     sources = [EvidenceSource.model_validate(s) for s in payload["sources"]]
-    assert [s.id for s in sources] == [row["evidence_id"]]
-    assert sources[0].type == "knowledge"
+    assert [s.id for s in sources] == [row["evidence_id"]] and sources[0].type == "knowledge"
     assert citations_are_valid(f"Farm Manoki [{row['evidence_id']}].", sources)
+    with pytest.raises(ToolInvalidInput):
+        _invoke(strategy_id="anomaly-lineage", mechanic="anomaly")
+    with pytest.raises(ToolNoResult):
+        _invoke(strategy_id="no-such-strategy")
+
+
+def test_rows_flag_a_league_the_strategy_was_not_checked_in() -> None:
+    other = "Runes of Aldur"
+    listed = _invoke(budget="mid", league=other)
+    rows = {row["id"]: row for row in listed["strategies"]}
+    assert rows["expedition-grand"]["checked_in_league"] is False
+    assert other in listed["league_note"]
+    assert _invoke(budget="mid")["league_note"] is None
+    detail = _invoke(mechanic="expedition", league=other)
+    assert detail["mode"] == "detail", "a single match skips the list round"
+    assert detail["strategy"]["checked_in_league"] is False
+    assert "Forbidden Rites" in detail["strategy"]["league_note"]
+
+
+def test_oversized_data_fails_at_tool_build(tmp_path: Path) -> None:
+    def bloat(data: dict[str, object]) -> None:
+        data["risks"] = [f"risk {i} " + "x" * 200 for i in range(30)]
+
+    with pytest.raises(RuntimeError, match="exceeds"):
+        build_strategy_tool(
+            _copy_one(_mk(tmp_path / "big"), "fracture-cleansed.json", bloat), CATALOG_PATH
+        )
 
 
 def test_no_match_and_bad_items_fail_loudly() -> None:
@@ -141,14 +192,22 @@ def test_no_match_and_bad_items_fail_loudly() -> None:
         _invoke(target_item=" x ")
 
 
+def test_claim_note_null_is_rejected_like_zod_optional() -> None:
+    with pytest.raises(ValidationError):
+        Claim.model_validate({"v": "uv", "src": [], "note": None})
+    assert Claim.model_validate({"v": "uv", "src": []}).note is None
+
+
 def test_schema_is_strict_with_every_field_required_and_nullable() -> None:
     tool = build_strategy_tool(STRATEGIES_DIR, CATALOG_PATH)
     provider_tool = convert_to_openai_tool(tool, strict=True)["function"]
     schema = provider_tool["parameters"]
+    visible = {"mechanic", "target_item", "budget", "strategy_id"}
     assert schema["additionalProperties"] is False
-    assert set(schema["required"]) == {"mechanic", "target_item", "budget"}
-    for name in ("mechanic", "target_item", "budget"):
+    assert set(schema["required"]) == visible == set(schema["properties"])
+    for name in visible:
         assert {"type": "null"} in schema["properties"][name]["anyOf"], name
+    assert "league" in tool.get_input_schema().model_fields, "league is injected, never model-set"
 
 
 def test_tool_is_registered(item_catalog_manifest: Path) -> None:

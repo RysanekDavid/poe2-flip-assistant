@@ -26,7 +26,7 @@ const ORDERED = /^\s*\d+[.)]\s+(.+)$/;
 const QUOTE = /^\s*>\s?(.*)$/;
 const RULE = /^\s*([-*_])(?:\s*\1){2,}\s*$/;
 // Citation prefixes must match the server grammar in services/coach/src/response.py
-// (_CITATION): M=market, L=live, K=knowledge, W=web, D=game data.
+// (_CITATION): M=market, L=live, K=knowledge, W=web, D=game data, S=strategy KB.
 const INLINE_TOKEN = /\[[MLKWDS][0-9a-f]{12}\]|`[^`\n]+`|\[[^\]\n]+\]\(https?:\/\/[^)\s]+\)|\*\*[^*\n]+\*\*|~~[^~\n]+~~|\*[^*\n]+\*|https?:\/\/[^\s<]+/gi;
 
 export function parseCoachMarkdown(source: string): MarkdownBlock[] {

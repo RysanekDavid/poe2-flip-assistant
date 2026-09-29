@@ -117,7 +117,7 @@
     {
       "name": "Overlord's Influence",
       "tree": "Atlas",
-      "effect": "Add additional content to areas with Powerful Map Bosses — options: 1 additional Strongboxes, Shrines or Azmeri Spirits. Take Strongboxes.",
+      "effect": "Add additional content to areas with Powerful Map Bosses — options: an additional Strongbox, Shrine or Azmeri Spirit. Take Strongboxes.",
       "priority": "recommended",
       "poe2db_url": "https://poe2db.tw/us/Overlords_Influence",
       "claim": {

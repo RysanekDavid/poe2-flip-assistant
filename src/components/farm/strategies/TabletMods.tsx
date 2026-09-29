@@ -5,12 +5,24 @@ import tabletArt from "../../../assets/items/precursor-tablet.png";
 import type { TabletView } from "../../../lib/strategiesContract";
 import { ClaimBadge } from "../../ui/ClaimBadge";
 import { ItemArt } from "../../ui/ItemArt";
+import { Tooltip } from "../../ui/Tooltip";
+import { evidenceTip, showsBadge } from "./strategiesView";
 
 function ModRow({ mod, base }: { mod: TabletView["mods"][number]; base: string }) {
   return (
     <li className="flex items-start gap-2 py-0.5 text-sm text-neutral-300">
       <span className="min-w-0 flex-1">
-        {mod.text} <ClaimBadge claim={mod.claim} />
+        {showsBadge(mod.claim) ? (
+          <>
+            {mod.text} <ClaimBadge claim={mod.claim} />
+          </>
+        ) : (
+          <Tooltip tip={evidenceTip(mod.claim)} align="start">
+            <span tabIndex={0} className="cursor-help">
+              {mod.text}
+            </span>
+          </Tooltip>
+        )}
       </span>
       {mod.search_url && (
         <a

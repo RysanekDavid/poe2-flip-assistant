@@ -1,14 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { CLAIM_LABEL } from "../../../lib/claim";
 import type { StrategyView } from "../../../lib/strategiesContract";
-import { ClaimBadge } from "../../ui/ClaimBadge";
 import { Panel } from "../../ui/Panel";
-import { InfoTip } from "../../ui/Tooltip";
+import { InfoTip, Tooltip } from "../../ui/Tooltip";
 import { MasterChips, NotableList, WaystoneChips } from "./StrategyParts";
 import { TabletMods } from "./TabletMods";
 import { YieldBasket } from "./YieldBasket";
-import { BUDGET_LABEL, MECHANIC_LABEL, pricedCount } from "./strategiesView";
+import { BUDGET_LABEL, leagueMismatch, MECHANIC_LABEL, pricedCount } from "./strategiesView";
 
 function Section({ title, tip, children }: { title: string; tip?: string; children: ReactNode }) {
   return (
@@ -22,26 +22,34 @@ function Section({ title, tip, children }: { title: string; tip?: string; childr
   );
 }
 
-function CardHeader({ strategy }: { strategy: StrategyView }) {
+/** Status, patch stamp and the budget grade: kept out of the header chips, one hover away. */
+function titleTip(strategy: StrategyView): string {
+  const { patch, budget } = strategy;
+  return (
+    `${strategy.status}: facts checked against ${patch.verified_against} on ${patch.stamped_at} ` +
+    `(${patch.leagues.join(", ")}). Budget tier is ${CLAIM_LABEL[budget.claim.v]}: ${budget.claim.note ?? "no note"}`
+  );
+}
+
+function CardHeader({ strategy, league }: { strategy: StrategyView; league: string }) {
+  const mismatch = leagueMismatch(strategy.patch.leagues, league);
   return (
     <header className="grid gap-1">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-lg font-semibold text-neutral-100">{strategy.title}</h3>
+        <Tooltip tip={titleTip(strategy)} align="start">
+          <h3 tabIndex={0} className="cursor-help text-lg font-semibold text-neutral-100">
+            {strategy.title}
+          </h3>
+        </Tooltip>
         {strategy.mechanics.map((m) => (
           <span key={m} className="rounded border border-line px-1.5 text-xs text-neutral-400">
             {MECHANIC_LABEL[m]}
           </span>
         ))}
-        <span className="inline-flex items-center gap-1 rounded border border-line px-1.5 text-xs text-neutral-300" title={strategy.budget.build_needs}>
+        <span className="rounded border border-line px-1.5 text-xs text-neutral-300" title={strategy.budget.build_needs}>
           budget: {BUDGET_LABEL[strategy.budget.tier]}
         </span>
-        <ClaimBadge claim={strategy.budget.claim} />
-        <span
-          className="rounded border border-line px-1.5 text-xs text-neutral-400"
-          title={`status ${strategy.status}; facts checked against ${strategy.patch.verified_against} on ${strategy.patch.stamped_at} (${strategy.patch.leagues.join(", ")})`}
-        >
-          {strategy.status} · {strategy.patch.verified_against}
-        </span>
+        {mismatch && <span className="rounded border border-line px-1.5 text-xs text-neutral-400">{mismatch}</span>}
       </div>
       <p className="text-sm text-neutral-300">{strategy.summary}</p>
     </header>
@@ -66,11 +74,18 @@ function StepsAndRisks({ strategy }: { strategy: StrategyView }) {
 }
 
 /** One strategy: master nodes, notables, tablets, waystone totals and the live-priced yield basket. */
-export function StrategyCard({ strategy, exPerDiv }: { strategy: StrategyView; exPerDiv: number | null }) {
+interface CardProps {
+  strategy: StrategyView;
+  exPerDiv: number | null;
+  /** The viewer's league: a strategy checked elsewhere says so. */
+  league: string;
+}
+
+export function StrategyCard({ strategy, exPerDiv, league }: CardProps) {
   const { priced, total } = pricedCount(strategy);
   return (
     <article aria-label={strategy.title} className="grid gap-4 rounded-lg border border-line bg-surface/60 p-4">
-      <CardHeader strategy={strategy} />
+      <CardHeader strategy={strategy} league={league} />
       <div className="grid gap-4 lg:grid-cols-2">
         <Section title="Atlas master" tip="Four master nodes are active at a time; hover a node for its effect.">
           <MasterChips master={strategy.atlas_master} />

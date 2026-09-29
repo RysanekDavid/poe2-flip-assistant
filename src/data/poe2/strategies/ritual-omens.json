@@ -150,7 +150,7 @@
     {
       "name": "Tempting Offers",
       "tree": "Ritual",
-      "effect": "Ritual Altars allow rerolling Favours 1 additional times",
+      "effect": "Ritual Altars allow rerolling Favours an additional time",
       "priority": "recommended",
       "poe2db_url": "https://poe2db.tw/us/Tempting_Offers",
       "claim": {

@@ -8,7 +8,7 @@ import type { StrategyView } from "../../../lib/strategiesContract";
 import { ClaimBadge } from "../../ui/ClaimBadge";
 import { ItemArt } from "../../ui/ItemArt";
 import { InfoTip, Tooltip } from "../../ui/Tooltip";
-import { WAYSTONE_LABEL } from "./strategiesView";
+import { evidenceTip, showsBadge, WAYSTONE_LABEL } from "./strategiesView";
 
 const CHIP = "inline-flex h-7 items-center rounded-md border border-line bg-neutral-900/60 px-2 text-xs text-neutral-200";
 
@@ -60,10 +60,11 @@ export function NotableList({ passives }: { passives: StrategyView["atlas_passiv
           <a href={p.poe2db_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-neutral-100 hover:text-amber-200">
             {p.name} <ExternalLink aria-hidden className="h-3 w-3 text-neutral-500" />
           </a>
-          <InfoTip tip={p.effect} label={`${p.name} effect`} />
+          {/* The link is the main source; every source and note (e.g. a 0.5.5 change) rides in the tip. */}
+          <InfoTip tip={`${p.effect} — ${evidenceTip(p.claim)}`} label={`${p.name} effect`} />
           <span className="text-xs text-neutral-400">{p.tree}</span>
           <span className={`rounded border px-1.5 text-xs ${PRIORITY_CLASS[p.priority]}`}>{p.priority}</span>
-          <ClaimBadge claim={p.claim} />
+          {showsBadge(p.claim) && <ClaimBadge claim={p.claim} />}
         </li>
       ))}
     </ul>

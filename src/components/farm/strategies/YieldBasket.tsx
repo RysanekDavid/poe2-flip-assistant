@@ -5,6 +5,7 @@ import { ClaimBadge } from "../../ui/ClaimBadge";
 import { ItemArt } from "../../ui/ItemArt";
 import { PriceChip } from "../../ui/PriceChip";
 import { InfoTip } from "../../ui/Tooltip";
+import { evidenceTip, showsBadge } from "./strategiesView";
 
 // "main"/"side" rather than the data's primary/secondary: "primary" is already an evidence-grade label.
 const ROLE: Record<YieldView["role"], { label: string; className: string }> = {
@@ -21,8 +22,8 @@ function YieldRow({ item, exPerDiv }: { item: YieldView; exPerDiv: number | null
       <span className={`rounded border px-1.5 text-xs ${ROLE[item.role].className}`} title="what this item is to the strategy">
         {ROLE[item.role].label}
       </span>
-      <InfoTip tip={item.why} label={`Why ${item.ref.name}`} />
-      <ClaimBadge claim={item.claim} />
+      <InfoTip tip={`${item.why} ${evidenceTip(item.claim)}`.trim()} label={`Why ${item.ref.name}`} />
+      {showsBadge(item.claim) && <ClaimBadge claim={item.claim} />}
       <span className="ml-auto">
         {/* Unpriced shows a dash, never 0: an unknown price is not a worthless item. */}
         <PriceChip div={item.price?.div ?? null} exPerDiv={exPerDiv} source={item.price ? "ninja" : undefined} ageMin={item.price?.ageMin} />

@@ -135,7 +135,7 @@
     {
       "name": "Overlord's Domain",
       "tree": "Atlas",
-      "effect": "Add additional content to areas with Powerful Map Bosses — options: 1 additional Essences; a Summoning Circle and Reactivation Runes; 1 additional Rogue Exiles. Take Essences.",
+      "effect": "Add additional content to areas with Powerful Map Bosses — options: an additional Essence; a Summoning Circle and Reactivation Runes; an additional Rogue Exile. Take Essences.",
       "priority": "core",
       "poe2db_url": "https://poe2db.tw/us/Overlords_Domain",
       "claim": {
@@ -161,7 +161,7 @@
     {
       "name": "Inexplicable Alchemy",
       "tree": "Atlas",
-      "effect": "Exalted Orbs may be used to add Essences to Essence Monsters, up to 1 additional Essences",
+      "effect": "Exalted Orbs may be used to add Essences to Essence Monsters, up to 1 additional Essence",
       "priority": "recommended",
       "poe2db_url": "https://poe2db.tw/us/Inexplicable_Alchemy",
       "claim": {

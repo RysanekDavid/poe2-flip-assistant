@@ -4,6 +4,7 @@
  * filter chips and the ?budget= deep link.
  */
 import { BUDGET_TIERS, type BudgetTier, type Mechanic, type WaystoneTotal } from "../../../core/strategies/schema";
+import type { Claim } from "../../../lib/claim";
 import type { StrategyView } from "../../../lib/strategiesContract";
 
 export const MECHANIC_LABEL: Record<Mechanic, string> = {
@@ -81,6 +82,26 @@ export function presentMechanics(strategies: readonly Pick<StrategyView, "mechan
 /** Distinct yield names for the typeahead, alphabetical. */
 export function yieldNames(strategies: readonly Pick<StrategyView, "yields">[]): string[] {
   return [...new Set(strategies.flatMap((s) => s.yields.map((y) => y.ref.name)))].sort((a, b) => a.localeCompare(b));
+}
+
+/** A primary-graded fact shows no badge; its sources and note ride in the row's tooltip instead. */
+export function showsBadge(claim: Claim): boolean {
+  return claim.v !== "vp";
+}
+
+/** "checked against poe2db.tw/us/Hidden_Scars, …" plus the note, for a row tooltip. */
+export function evidenceTip(claim: Claim): string {
+  const hosts = claim.src.map((url) => {
+    const { host, pathname } = new URL(url);
+    return `${host.replace(/^www\./, "")}${pathname === "/" ? "" : pathname}`;
+  });
+  const checked = hosts.length > 0 ? `Checked against ${hosts.join(", ")}.` : "";
+  return [checked, claim.note ?? ""].filter((part) => part !== "").join(" ");
+}
+
+/** Where the strategy was verified, when that is not the viewer's league; null when it is. */
+export function leagueMismatch(leagues: readonly string[], league: string): string | null {
+  return leagues.includes(league) ? null : `checked in ${leagues.join(", ")}, not in ${league}`;
 }
 
 /** How much of the basket the exchange prices; unit prices are never summed — drop rates are unknown. */
