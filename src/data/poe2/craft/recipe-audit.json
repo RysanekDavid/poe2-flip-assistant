@@ -93,7 +93,7 @@
               "kind": "pairing",
               "verdict": "unknown",
               "detail": "Omen of Sinistral Annulment pairing matches only the unverified rule omen-sinistral-annulment",
-              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
+              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §1, §5"
             }
           ]
         },
@@ -1555,7 +1555,7 @@
               "kind": "pairing",
               "verdict": "unknown",
               "detail": "Omen of Sinistral Annulment pairing matches only the unverified rule omen-sinistral-annulment",
-              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
+              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §1, §5"
             }
           ]
         },
@@ -1746,7 +1746,7 @@
               "kind": "pairing",
               "verdict": "unknown",
               "detail": "Omen of Sinistral Annulment pairing matches only the unverified rule omen-sinistral-annulment",
-              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §5"
+              "source": "poe2-crafting-knowledge.md §4; docs/kb/currency-core.md §1, §5"
             }
           ]
         },

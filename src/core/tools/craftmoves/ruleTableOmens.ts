@@ -1,8 +1,8 @@
 import type { ItemState } from "./classify";
 import { KB, KB_CURRENCY_CORE, type MoveRule, type Verdict } from "./ruleTypes";
-import { all, isRare, needMods, needOpen, whittlingTarget } from "./rulePredicates";
+import { all, isMagicOrRare, isRare, needMods, needOpen, whittlingTarget } from "./rulePredicates";
 
-/** Omens riding an Exalted / Chaos / Annulment click (KB §1, §4, §8). */
+/** Omens riding an Exalted / Chaos / Annulment click (KB §1, §4, §8). The Annulment omens follow the orb onto magic items. */
 
 const S4 = `${KB} §4`;
 
@@ -178,24 +178,24 @@ const REMOVAL: MoveRule[] = [
     label: "Omen of Sinistral Annulment + Orb of Annulment",
     family: "omen",
     materials: ["omenSinistralAnnulment", "annul"],
-    requires: "rare with a prefix",
+    requires: "magic or rare with a prefix",
     effect: "the Annulment removes a PREFIX",
-    notes: [`the side mapping is KB-confirmed (§4); Annulment's own behaviour is only in ${KB_CURRENCY_CORE} §5`],
-    source: `${S4}; ${KB_CURRENCY_CORE} §5`,
+    notes: [`the side mapping is KB-confirmed (§4); Annulment's own behaviour and its magic-or-rare target are only in ${KB_CURRENCY_CORE} §1, §5`],
+    source: `${S4}; ${KB_CURRENCY_CORE} §1, §5`,
     verified: false,
-    check: (s) => (isRare(s) ? all([needMods(s, 1, "prefix")]) : null),
+    check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1, "prefix")]) : null),
   },
   {
     id: "omen-dextral-annulment",
     label: "Omen of Dextral Annulment + Orb of Annulment",
     family: "omen",
     materials: ["omenDextralAnnulment", "annul"],
-    requires: "rare with a suffix",
+    requires: "magic or rare with a suffix",
     effect: "the Annulment removes a SUFFIX",
-    notes: [`the side mapping is KB-confirmed (§4); Annulment's own behaviour is only in ${KB_CURRENCY_CORE} §5`],
-    source: `${S4}; ${KB_CURRENCY_CORE} §5`,
+    notes: [`the side mapping is KB-confirmed (§4); Annulment's own behaviour and its magic-or-rare target are only in ${KB_CURRENCY_CORE} §1, §5`],
+    source: `${S4}; ${KB_CURRENCY_CORE} §1, §5`,
     verified: false,
-    check: (s) => (isRare(s) ? all([needMods(s, 1, "suffix")]) : null),
+    check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1, "suffix")]) : null),
   },
 ];
 

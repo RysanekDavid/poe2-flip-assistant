@@ -1,7 +1,7 @@
 import type { MaterialKey } from "../../craftMaterials";
 import type { ItemState } from "./classify";
 import { KB, KB_CURRENCY_CORE, type MoveRule, type UnlistedMaterial, type Verdict } from "./ruleTypes";
-import { all, isMagic, isNormal, isRare, needMods } from "./rulePredicates";
+import { all, isMagic, isRare, needMods } from "./rulePredicates";
 
 /** Things written INTO an item: essences (crafted slot), catalysts (quality), liquid emotions (KB §6–§8). */
 
@@ -18,31 +18,27 @@ const ESSENCE_NOTES = [
   "pick the essence whose guaranteed mod you want — read its actual mod first (Essence of Insulation = FIRE resistance)",
 ];
 
+/*
+ * Targets per currency-core §4 (poe2db + entity-catalog item text, 0.5.5b; changed in 0.3.0): Lesser,
+ * regular and Greater essences upgrade a MAGIC item to rare; Perfect, corrupted and Abyss/Breach
+ * essences replace a mod on a RARE. No essence touches a normal item.
+ */
+const CC4 = `${KB_CURRENCY_CORE} §4`;
+
+const MAGIC_TO_RARE: Omit<MoveRule, "id" | "label"> = {
+  family: "essence",
+  materials: [ANY_ESSENCE],
+  requires: "magic item",
+  effect: "magic → rare, adding the essence's guaranteed mod (the item's one crafted mod)",
+  notes: [...ESSENCE_NOTES, `whether the magic item's own mods are kept is not in the item text (${CC4}, unverified)`],
+  source: `${CC4}; ${S7}`,
+  verified: false,
+  check: (s) => (isMagic(s) ? (s.slots.crafted > 0 ? { block: ONE_CRAFTED } : { pass: true }) : null),
+};
+
 const ESSENCES: MoveRule[] = [
-  {
-    id: "essence-normal",
-    label: "Essence",
-    family: "essence",
-    materials: [ANY_ESSENCE],
-    requires: "normal item",
-    effect: "normal → magic with the essence's guaranteed mod (the item's one crafted mod)",
-    notes: ESSENCE_NOTES,
-    source: `${KB_CURRENCY_CORE} §4; ${S7}`,
-    verified: false,
-    check: (s) => (isNormal(s) ? { pass: true } : null),
-  },
-  {
-    id: "essence-greater",
-    label: "Greater Essence",
-    family: "essence",
-    materials: [ANY_ESSENCE],
-    requires: "magic item",
-    effect: "magic → rare, keeping the essence's guaranteed mod",
-    notes: ESSENCE_NOTES,
-    source: `${KB_CURRENCY_CORE} §4; ${S7}`,
-    verified: false,
-    check: (s) => (isMagic(s) ? (s.slots.crafted > 0 ? { block: ONE_CRAFTED } : { pass: true }) : null),
-  },
+  { ...MAGIC_TO_RARE, id: "essence", label: "Essence (Lesser or regular)" },
+  { ...MAGIC_TO_RARE, id: "essence-greater", label: "Greater Essence" },
   {
     id: "essence-perfect",
     label: "Perfect Essence",
@@ -50,8 +46,12 @@ const ESSENCES: MoveRule[] = [
     materials: [ANY_ESSENCE],
     requires: "rare item with at least one mod",
     effect: "removes a random mod, then writes the essence's guaranteed mod into the single crafted slot",
-    notes: [...ESSENCE_NOTES, "Greater-then-Perfect essence stacking is dead in 0.5.x"],
-    source: S7,
+    notes: [
+      ...ESSENCE_NOTES,
+      "Greater-then-Perfect essence stacking is dead in 0.5.x",
+      `the corrupted essences (Delirium, Horror, Hysteria, Insanity) and Abyss/Breach essences also replace a mod on a rare (${CC4})`,
+    ],
+    source: `${S7}; ${CC4}`,
     verified: true,
     check: perfectEssenceCheck,
   },

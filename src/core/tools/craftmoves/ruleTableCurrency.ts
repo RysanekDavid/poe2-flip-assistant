@@ -1,7 +1,7 @@
 import type { MaterialKey } from "../../craftMaterials";
 import type { ItemState } from "./classify";
 import { KB, KB_CURRENCY_CORE, type MoveRule, type Verdict } from "./ruleTypes";
-import { all, floorNote, isMagic, isNormal, isRare, lowIlvlWarning, needMods, needOpen, PASS } from "./rulePredicates";
+import { all, floorNote, isMagic, isMagicOrRare, isNormal, isRare, lowIlvlWarning, needMods, needOpen, PASS } from "./rulePredicates";
 
 /** Plain currency: transmute/aug/regal/alchemy/exalt/chaos/divine/annul/fracture (KB §1, §2). */
 
@@ -9,6 +9,9 @@ const S1 = `${KB} §1`;
 const S2 = `${KB} §2`;
 const CC1 = `${KB_CURRENCY_CORE} §1`;
 const CC2 = `${KB_CURRENCY_CORE} §2`;
+/** The corrected Alchemy / Annulment / Divine targets: poe2db + entity-catalog item text (0.5.5b). */
+const CC_TARGETS = `${KB_CURRENCY_CORE} §1, §5`;
+const TARGET_NOT_IN_KB = `the rarity target is quoted item text in ${CC1}, not in the verified ${KB}`;
 
 interface Tier {
   suffix: string;
@@ -149,44 +152,61 @@ function fractureCheck(s: ItemState): Verdict {
   return { pass: true, notes };
 }
 
+/** Alchemy on a Magic item starts over: "Current modifiers are not retained" (currency-core §1). */
+function alchemyCheck(s: ItemState): Verdict {
+  if (isNormal(s)) return PASS;
+  if (!isMagic(s)) return null;
+  return { pass: true, warnings: [`throws the magic mods away — Alchemy makes a fresh 4-mod rare; Regal keeps them (${CC1})`] };
+}
+
+/** Divine has no rarity gate ("left click an item"); on a Normal item only the implicits can move. */
+function divineCheck(s: ItemState): Verdict {
+  if (isNormal(s)) {
+    return {
+      pass: true,
+      notes: ["a normal item has no explicit mods — only its implicit values reroll"],
+      unverifiedBecause: `Divine on a normal item is only in ${CC1}`,
+    };
+  }
+  return all([needMods(s, 1)], { pass: true, notes: s.slots.fractured > 0 ? [`the fractured mod's values are Divine-proof (${S2})`] : [] });
+}
+
 const SINGLES: MoveRule[] = [
   {
     id: "alchemy",
     label: "Orb of Alchemy",
     family: "currency",
     materials: ["alch"],
-    requires: "normal item",
-    effect: "normal → rare with four mods",
-    source: CC1,
+    requires: "normal or magic item",
+    effect: "normal or magic → rare with four random mods; a magic item's mods are discarded, not kept",
+    notes: [TARGET_NOT_IN_KB],
+    source: CC_TARGETS,
     verified: false,
-    check: onNormal,
+    check: alchemyCheck,
   },
   {
     id: "divine",
     label: "Divine Orb",
     family: "currency",
     materials: ["divine"],
-    requires: "magic or rare item with at least one mod",
+    requires: "any item with mods to reroll — no rarity limit",
     effect: "rerolls the numeric values of ALL mods within their current tiers — cannot change tiers or target a subset",
     notes: [`only divine when every mod deserves a reroll (${KB} TOP rule 10)`],
-    source: S1,
+    source: `${S1}; ${CC1}`,
     verified: true,
-    check: (s) =>
-      isMagic(s) || isRare(s)
-        ? all([needMods(s, 1)], { pass: true, notes: s.slots.fractured > 0 ? [`the fractured mod's values are Divine-proof (${S2})`] : [] })
-        : null,
+    check: divineCheck,
   },
   {
     id: "annul",
     label: "Orb of Annulment",
     family: "currency",
     materials: ["annul"],
-    requires: "rare item with at least one mod",
+    requires: "magic or rare item with at least one mod",
     effect: "removes one random existing mod",
-    notes: [`Omen of Whittling does NOT work with Annulment (${KB} §4)`],
-    source: `${KB_CURRENCY_CORE} §5`,
+    notes: [`Omen of Whittling does NOT work with Annulment (${KB} §4)`, TARGET_NOT_IN_KB],
+    source: CC_TARGETS,
     verified: false,
-    check: (s) => (isRare(s) ? all([needMods(s, 1)]) : null),
+    check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1)]) : null),
   },
   {
     id: "fracture",
