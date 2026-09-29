@@ -51,7 +51,15 @@ export const RepoeSchema = z.object({
     mods: z.record(z.string(), RepoeModSchema),
     base_items: z.record(
       z.string(),
-      z.object({ item_class: z.string(), name: z.string().nullish(), release_state: z.string(), tags: z.array(z.string()) }).passthrough(),
+      z
+        .object({
+          item_class: z.string(),
+          name: z.string().nullish(),
+          release_state: z.string(),
+          tags: z.array(z.string()),
+          implicits: z.array(z.string()).optional(),
+        })
+        .passthrough(),
     ),
     item_classes: z.record(z.string(), z.object({ name: z.string().nullish() }).passthrough()),
     mods_by_base: z.record(

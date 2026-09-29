@@ -30,6 +30,15 @@ function craftableClassNames(repoe: Repoe): Map<string, string> {
   return out;
 }
 
+/** Display lines of a base's implicit mods; an id missing from the mods table is a snapshot break. */
+function implicitLines(repoe: Repoe, baseId: string, ids: readonly string[]): string[] {
+  return ids.flatMap((modId) => {
+    const mod = repoe.mods[modId];
+    if (!mod) throw new Error(`base ${baseId} lists implicit ${modId} missing from RePoE mods`);
+    return mod.text ? cleanTemplate(mod.text).split("\n") : []; // hidden implicits have no display line
+  });
+}
+
 /** Released, named bases of the craftable classes, keyed by display name. */
 function collectBases(repoe: Repoe, classNames: Map<string, string>): { bases: Record<string, CatalogBase>; byId: Map<string, string> } {
   const bases: Record<string, CatalogBase> = {};
@@ -41,7 +50,7 @@ function collectBases(repoe: Repoe, classNames: Map<string, string>): { bases: R
     byId.set(id, name);
     const prev = bases[name];
     if (!prev) {
-      bases[name] = { id, itemClass, tags: b.tags, ambiguous: false };
+      bases[name] = { id, itemClass, tags: b.tags, ambiguous: false, implicits: implicitLines(repoe, id, b.implicits ?? []) };
       continue;
     }
     const same = prev.itemClass === itemClass && comboKeyOf(prev.tags) === comboKeyOf(b.tags);

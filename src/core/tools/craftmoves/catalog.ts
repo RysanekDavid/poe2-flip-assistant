@@ -56,6 +56,8 @@ const BaseSchema = z.object({
   tags: z.array(z.string()),
   /** Other released bases share this display name with a different tag set (the combo is a guess). */
   ambiguous: z.boolean(),
+  /** Implicit display lines, trade markup stripped: "+(20-30)% to Fire Resistance". */
+  implicits: z.array(z.string()),
 });
 export type CatalogBase = z.infer<typeof BaseSchema>;
 
