@@ -24,12 +24,23 @@ const EMPTY: Omit<SellHint, "action" | "reason"> = {
   competitionNote: null,
 };
 
+/** Nothing priced a tradeable item yet — the two ways a price check can still get a number. */
+export const UNPRICED_TRADE = "no market price — value it live (1 search) or open the trade link";
+
 export function noHint(reason: string): SellHint {
   return { ...EMPTY, action: "none", reason };
 }
 
-/** A planned row → sell now on the exchange, list at fair, or hold a rising liquid market. */
-export function hintFromRow(row: PlanRow, ninja: { change7d: number | null; volume: number | null }, exPerDiv: number): SellHint {
+/**
+ * A planned row → sell now on the exchange, list at fair, or hold a rising liquid market.
+ * `unpricedReason` replaces the planner's own unpriced text, which points at a Wealth reprice check.
+ */
+export function hintFromRow(
+  row: PlanRow,
+  ninja: { change7d: number | null; volume: number | null },
+  exPerDiv: number,
+  unpricedReason: string,
+): SellHint {
   if (RAW_ORBS.has(row.name.trim().toLowerCase())) return noHint("raw currency — it is what you sell into");
   const v = sellVerdict({ row, askDiv: null, change7d: ninja.change7d, volume: ninja.volume, comp: null, exPerDiv });
   const trade = row.trade;
@@ -48,7 +59,7 @@ export function hintFromRow(row: PlanRow, ninja: { change7d: number | null; volu
   };
   switch (v.verdict) {
     case "unpriced":
-      return noHint(row.reason);
+      return noHint(unpricedReason);
     case "hold":
       return { ...priced, action: "hold", reason: v.reason };
     case "sell-cx":
@@ -60,9 +71,9 @@ export function hintFromRow(row: PlanRow, ninja: { change7d: number | null; volu
   }
 }
 
-/** A trade value (book reference or live comparables) → list one unit at that fair price. */
-export function hintFromValue(valueDiv: number | null, rates: ExchangeRates, what: string): SellHint {
-  if (valueDiv == null || !(valueDiv > 0)) return noHint(`no ${what} — value it live (1 search) or check the trade link`);
+/** A trade value (book reference or live comparables) → list one unit at that fair price; `emptyReason` when there is none. */
+export function hintFromValue(valueDiv: number | null, rates: ExchangeRates, what: string, emptyReason: string): SellHint {
+  if (valueDiv == null || !(valueDiv > 0)) return noHint(emptyReason);
   const q = tradeListingQuote(valueDiv, 1, null, rates);
   return {
     ...EMPTY,

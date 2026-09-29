@@ -1,13 +1,15 @@
 import type { PriceCheckBase, PriceConfidence, ValueOrigin } from "../../lib/priceCheckContract";
+import { tradeSearchUrl, type TradeQuery } from "../../lib/tradeLink";
 import type { ValueSource } from "../../lib/wealthContract";
 import { planLiquidation } from "../wealth/plan";
-import { hintFromRow } from "./hint";
+import { hintFromRow, UNPRICED_TRADE } from "./hint";
 import type { MarketAges, PriceCheckServices } from "./services";
 
 /**
  * Currency / stackables: the exchange mid (GGG history, else poe.ninja) × the pasted stack, and the
  * Sell planner's own route for it — sell into the exchange after the gold fee, list, or hold.
- * Zero trade2 requests.
+ * A Currency-rarity stack poe.ninja does not list is a trade item: priced like the planner prices
+ * it (poe2scout, else unpriced), with a trade link and a live comparable search. Zero trade2 here.
  */
 
 /** The fields a kind module fills; check.ts adds league, rates, live gate and the craft link. */
@@ -37,12 +39,17 @@ export function confidenceOf(source: ValueSource, samples: number | null, ages: 
   return { source: origin, samples, ageMin: ageOf(origin, ages) };
 }
 
-export async function priceStackable(name: string, qty: number, s: PriceCheckServices): Promise<PricedFields> {
+/** The trade-site search a stack that is not on the exchange is valued and sold through. */
+export const stackTradeQuery = (name: string): TradeQuery => ({ type: name });
+
+export async function priceStackable(name: string, qty: number, onExchange: boolean, s: PriceCheckServices): Promise<PricedFields> {
   const key = name.toLowerCase();
   const { ctx, warnings } = await s.planContext([key]);
   const row = planLiquidation([{ name, qty }], ctx).rows[0];
   if (row == null) throw new Error(`price check: the planner returned no row for ${name}`);
   const line = ctx.ninjaByName.get(key) ?? null;
+  const unpriced = onExchange ? "exchange item with no usable price right now" : UNPRICED_TRADE;
+  const offExchange = onExchange ? [] : [`not on the exchange in ${s.league} — sold on the trade site`];
   return {
     name: row.name,
     baseType: row.name,
@@ -51,8 +58,8 @@ export async function priceStackable(name: string, qty: number, s: PriceCheckSer
     unitDiv: row.unitDiv,
     totalDiv: row.unitDiv == null ? null : row.unitDiv * qty,
     confidence: confidenceOf(row.valueSource, null, s.ages),
-    hint: hintFromRow(row, { change7d: line?.change7d ?? null, volume: line?.volume ?? null }, s.rates.rates.exaltPerDivine),
-    tradeUrl: null,
-    warnings: [...warnings, ...row.warnings, ...(row.cx?.warnings ?? [])],
+    hint: hintFromRow(row, { change7d: line?.change7d ?? null, volume: line?.volume ?? null }, s.rates.rates.exaltPerDivine, unpriced),
+    tradeUrl: onExchange ? null : tradeSearchUrl(s.league, stackTradeQuery(row.name)),
+    warnings: [...offExchange, ...warnings, ...row.warnings, ...(row.cx?.warnings ?? [])],
   };
 }

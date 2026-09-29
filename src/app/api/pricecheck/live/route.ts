@@ -3,7 +3,7 @@ import { withCredStatus } from "../../../../auth/credStatus";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { LiveNotAllowedError, priceCheckLive } from "../../../../core/pricecheck/check";
-import { priceCheckServices } from "../../../../core/pricecheck/wiring";
+import { liveServices } from "../../../../core/pricecheck/wiring";
 import { NotAnItemError, RatesUnavailableError } from "../../../../core/tools/craftmoves/moves";
 import { priceCheckLiveResponseSchema, priceCheckRequestSchema } from "../../../../lib/priceCheckContract";
 import { tradeErrorResponse } from "../../../../lib/tradeRouteError";
@@ -29,7 +29,8 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "no POESESSID stored — add your session cookie in Settings to value live" }, { status: 409 });
   }
   try {
-    const services = priceCheckServices(user.id, true);
+    // the live call needs no exchange view or valuation cache: classify, gate, search, price
+    const services = liveServices(user.id);
     // record what this trade2 call says about the caller's stored POESESSID (403 → expired banner)
     const value = await withCredStatus(user.id, cred, () => priceCheckLive(body.data.text, services, cred));
     return NextResponse.json(priceCheckLiveResponseSchema.parse(value));

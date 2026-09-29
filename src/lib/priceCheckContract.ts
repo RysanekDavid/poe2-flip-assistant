@@ -16,11 +16,6 @@ export const priceCheckRequestSchema = z.object({
     .min(1, "paste an item (Ctrl+C in game)")
     .max(PRICE_CHECK_MAX_TEXT, `item text is over ${PRICE_CHECK_MAX_TEXT} characters`),
 });
-export type PriceCheckRequest = z.infer<typeof priceCheckRequestSchema>;
-
-export const PRICE_CHECK_KINDS = ["currency", "unique", "rare", "other"] as const;
-export const priceCheckKindSchema = z.enum(PRICE_CHECK_KINDS);
-export type PriceCheckKind = z.infer<typeof priceCheckKindSchema>;
 
 export const valueOriginSchema = z.enum(["cx", "ninja", "scout", "book", "trade"]);
 export type ValueOrigin = z.infer<typeof valueOriginSchema>;
@@ -87,7 +82,11 @@ const baseSchema = z.object({
 export type PriceCheckBase = z.infer<typeof baseSchema>;
 
 export const priceCheckResponseSchema = z.discriminatedUnion("kind", [
-  baseSchema.extend({ kind: z.literal("currency") }),
+  baseSchema.extend({
+    kind: z.literal("currency"),
+    /** False for a Currency-rarity stack poe.ninja does not list: it is priced and sold on trade. */
+    onExchange: z.boolean(),
+  }),
   baseSchema.extend({ kind: z.literal("unique") }),
   baseSchema.extend({
     kind: z.literal("rare"),
@@ -95,12 +94,12 @@ export const priceCheckResponseSchema = z.discriminatedUnion("kind", [
     resolvedMods: z.number().int().nonnegative().nullable(),
     bookError: z.string().nullable(),
   }),
-  baseSchema.extend({ kind: z.literal("other"), reason: z.string() }),
+  baseSchema.extend({ kind: z.literal("other") }),
 ]);
 export type PriceCheckResponse = z.infer<typeof priceCheckResponseSchema>;
 
 export const priceCheckLiveResponseSchema = z.object({
-  kind: z.enum(["unique", "rare"]),
+  kind: z.enum(["currency", "unique", "rare"]),
   valueDiv: z.number().positive().nullable(),
   minDiv: z.number().positive().nullable(),
   samples: z.number().int().nonnegative(),

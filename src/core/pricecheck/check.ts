@@ -7,9 +7,9 @@ import { NotAnItemError } from "../tools/craftmoves/moves";
 import { classifyPaste, type PasteClass } from "./classify";
 import { noHint } from "./hint";
 import { liveRare, priceRare } from "./rare";
-import type { PriceCheckServices } from "./services";
-import { priceStackable } from "./stackable";
-import { liveUnique, priceUnique } from "./unique";
+import type { LiveServices, PriceCheckServices } from "./services";
+import { priceStackable, stackTradeQuery } from "./stackable";
+import { liveNamed, priceUnique, uniqueTradeQuery } from "./unique";
 
 /**
  * Paste → what it is worth and how to sell it. The base check never spends trade2 budget; the live
@@ -24,7 +24,7 @@ export class LiveNotAllowedError extends Error {
   }
 }
 
-function readPaste(text: string, s: PriceCheckServices): { parsed: ParsedItem; cls: PasteClass } {
+function readPaste(text: string, s: Pick<LiveServices, "isExchangeItem">): { parsed: ParsedItem; cls: PasteClass } {
   const parsed = parseItem(text);
   if (!parsed) throw new NotAnItemError();
   return { parsed, cls: classifyPaste(parsed, readItemMeta(text), text, (n) => s.isExchangeItem(n)) };
@@ -32,13 +32,31 @@ function readPaste(text: string, s: PriceCheckServices): { parsed: ParsedItem; c
 
 /** Whether the live button may run for this paste, and the reason shown when it may not. */
 export function liveGate(cls: PasteClass, s: Pick<PriceCheckServices, "league" | "defaultLeague" | "hasCred">): LiveGate {
-  if (cls.kind === "currency") return { allowed: false, reason: "exchange items are priced from the Currency Exchange — no search needed" };
+  if (cls.kind === "currency" && cls.onExchange) {
+    return { allowed: false, reason: "exchange items are priced from the Currency Exchange — no search needed" };
+  }
   if (cls.kind === "other") return { allowed: false, reason: cls.reason };
   if (s.league !== s.defaultLeague) {
     return { allowed: false, reason: `live values search ${s.defaultLeague} — you are viewing ${s.league}` };
   }
   if (!s.hasCred) return { allowed: false, reason: "add your POESESSID in Settings to value live" };
   return { allowed: true, reason: null };
+}
+
+function priceOther(cls: Extract<PasteClass, { kind: "other" }>) {
+  return {
+    kind: "other" as const,
+    name: cls.name,
+    baseType: cls.baseType,
+    icon: null,
+    qty: 1,
+    unitDiv: null,
+    totalDiv: null,
+    confidence: { source: null, samples: null, ageMin: null },
+    hint: noHint(cls.reason),
+    tradeUrl: null,
+    warnings: [],
+  };
 }
 
 export async function priceCheck(text: string, s: PriceCheckServices): Promise<PriceCheckResponse> {
@@ -51,42 +69,29 @@ export async function priceCheck(text: string, s: PriceCheckServices): Promise<P
   };
   switch (cls.kind) {
     case "currency":
-      return { ...common, kind: "currency", ...(await priceStackable(cls.name, cls.qty, s)) };
+      return { ...common, kind: "currency", onExchange: cls.onExchange, ...(await priceStackable(cls.name, cls.qty, cls.onExchange, s)) };
     case "unique":
-      return { ...common, kind: "unique", ...(await priceUnique(cls.name, cls.baseType, s)) };
+      return { ...common, kind: "unique", ...(await priceUnique(cls.name, cls.baseType, cls.corrupted, s)) };
     case "rare":
       return { ...common, kind: "rare", ...(await priceRare(parsed, s)) };
     case "other":
-      return {
-        ...common,
-        kind: "other",
-        name: cls.name,
-        baseType: cls.baseType,
-        icon: null,
-        qty: 1,
-        unitDiv: null,
-        totalDiv: null,
-        confidence: { source: null, samples: null, ageMin: null },
-        hint: noHint(cls.reason),
-        tradeUrl: null,
-        warnings: [],
-        reason: cls.reason,
-      };
+      return { ...common, ...priceOther(cls) };
   }
 }
 
 /** One trade2 search + one fetch with the caller's cookie. The route checks the cookie first. */
-export async function priceCheckLive(text: string, s: PriceCheckServices, cred: TradeCred): Promise<PriceCheckLiveResponse> {
+export async function priceCheckLive(text: string, s: LiveServices, cred: TradeCred): Promise<PriceCheckLiveResponse> {
   const { cls } = readPaste(text, s);
   const gate = liveGate(cls, { ...s, hasCred: true });
   if (!gate.allowed) throw new LiveNotAllowedError(gate.reason ?? "live value unavailable for this item");
   switch (cls.kind) {
+    case "currency":
+      return liveNamed("currency", stackTradeQuery(cls.name), s, cred);
     case "unique":
-      return liveUnique(cls.name, cls.baseType, s, cred);
+      return liveNamed("unique", { ...uniqueTradeQuery(cls.name, cls.baseType, cls.corrupted), mirrored: false }, s, cred);
     case "rare":
       return liveRare(text, s, cred);
-    case "currency":
     case "other":
-      throw new Error(`liveGate allowed a ${cls.kind} paste`);
+      throw new Error("liveGate allowed an unpriceable paste");
   }
 }
