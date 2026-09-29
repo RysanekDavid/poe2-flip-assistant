@@ -22,6 +22,8 @@ import { runFarmBoardCases } from "./farmBoardCases";
 import { runFarmOverhaulCases } from "./farmOverhaulCases";
 import { runFarmSpeedCases, runFarmSpeedDbCases } from "./farmSpeedCases";
 import { assertPanelExport, freshToolsDb } from "./toolsTestKit";
+import { runUniqueTradeCases } from "./uniqueTradeCases";
+import { runUniqueTradeDbCases } from "./uniqueTradeDbCases";
 
 const NOW = Date.parse("2026-09-28T12:00:00Z");
 const ART: BossArt = new Map();
@@ -127,7 +129,7 @@ const SRC = { title: "synthetic", url: "https://example.com/s", accessed: "2026-
 function syntheticInputs(overrides: Partial<Record<string, number>> = {}): PriceInputs {
   const base: Record<string, number> = { a: 1, b: 5, c: 1, g: 1, p: 10, r: 40, u: 100, ...overrides };
   const ninja = new Map(Object.entries(base).map(([id, div]) => [id, { div, name: id.toUpperCase(), icon: null, ageHours: 0.5, volume: div * 10 }]));
-  return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), nowMs: NOW };
+  return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), nowMs: NOW };
 }
 
 const TIER: Tier = {
@@ -315,7 +317,7 @@ function testHeadlines(): void {
 
 function testCuratedEvaluates(): void {
   const file = parseBossLoot(readCurated());
-  const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), nowMs: NOW };
+  const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), nowMs: NOW };
   const bosses = evaluateBosses(file, priceLookup(empty), ART);
   const rows = buildFarmBoard([], bosses, 0);
   const payload = {
@@ -350,10 +352,19 @@ runFarmSpeedCases(TIER, syntheticInputs);
 assertPanelExport("src/components/farm/FarmBoard.tsx", "FarmBoard", "src/components/shell/tabs/FarmTab.tsx");
 assert.deepEqual(TABS.map((t) => t.id), [...TAB_IDS], "tab nav order must match TAB_IDS, each id once");
 assert.equal(new Set(TABS.map((t) => t.label)).size, TABS.length, "tab labels must be distinct");
-console.log(
-  "ALL PASS — boss-loot strict schema + dated sources + ninja category coverage, 2026-09-29 audit corrections, lineage gems priced from scout's lineage list (0 / absent → unpriced), " +
-    "curated poecdn art, omen-pool range, floor fallback + EV confidence wording, loot sort, Tul & Esh + Uhtred rows, " +
-    "synthetic EV (guaranteed/point/range/unknown/unpriced/manual), floor/chase/P(lose)/liquidity metrics, farm board order + contract, " +
-    "farm Div/hour by own pace (bounds, nulls, PUT validation, per-user rows, loadFarmBoard), " +
-    "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, panel wiring",
-);
+runUniqueTradeDbCases(parseBossLoot(readCurated()));
+runUniqueTradeCases(parseBossLoot(readCurated()))
+  .then(() =>
+    console.log(
+      "ALL PASS — boss-loot strict schema + dated sources + ninja category coverage, 2026-09-29 audit corrections, lineage gems priced from scout's lineage list (0 / absent → unpriced), " +
+        "curated poecdn art, omen-pool range, floor fallback + EV confidence wording, loot sort, Tul & Esh + Uhtred rows, " +
+        "synthetic EV (guaranteed/point/range/unknown/unpriced/manual), floor/chase/P(lose)/liquidity metrics, farm board order + contract, " +
+        "farm Div/hour by own pace (bounds, nulls, PUT validation, per-user rows, loadFarmBoard), " +
+        "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, panel wiring, " +
+        "trade2 fallback for scout-unpriced boss uniques (aggregation, candidates, hourly cap, job failures, reader precedence, reasons)",
+    ),
+  )
+  .catch((e: unknown) => {
+    console.error(e);
+    process.exit(1);
+  });

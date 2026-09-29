@@ -23,7 +23,7 @@ const readJson = (rel: string): Record<string, unknown> => JSON.parse(readFileSy
 
 function inputs(ninja: Record<string, number>, scout: Record<string, number> = {}): PriceInputs {
   const quotes = Object.entries(ninja).map(([id, div]) => [id, { div, name: id, icon: `${POECDN}?${id}`, ageHours: div, volume: 1 }] as const);
-  return { ninja: new Map(quotes), scout: new Map(Object.entries(scout)), scoutAgeHours: 3, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), nowMs: NOW };
+  return { ninja: new Map(quotes), scout: new Map(Object.entries(scout)), scoutAgeHours: 3, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), nowMs: NOW };
 }
 
 function testArtSchema(): void {
@@ -108,9 +108,9 @@ function testPoolAndScoutZero(): void {
   assert.equal(bossEv(two, priceLookup(inputs({ o1: 10, o2: 1 })), new Map()).loot[0]?.pool?.medianDiv, 5.5, "even member count: mean of the middle two");
   assert.equal(bossEv(POOL_TIER, priceLookup(inputs({ e: 2 })), new Map()).loot[0]?.pool, null, "no member priced → no range, unpriced");
   const zero = r.loot[1]!;
-  assert.deepEqual([zero.price, zero.evDiv, zero.unpricedReason], [null, null, "not listed by poe2scout"], "scout 0 is unpriced, never 0");
+  assert.deepEqual([zero.price, zero.evDiv, zero.unpricedReason], [null, null, "not listed by poe2scout; not searched on trade yet"], "scout 0 is unpriced, never 0");
   const listedZero = bossEv(POOL_TIER, priceLookup({ ...inputs({ e: 2 }), scoutZero: new Set(["zero"]) }), new Map()).loot[1];
-  assert.equal(listedZero?.unpricedReason, "listed by poe2scout at 0 (no current price)", "listed at 0 is told apart from not listed");
+  assert.equal(listedZero?.unpricedReason, "listed by poe2scout at 0 (no current price); not searched on trade yet", "listed at 0 is told apart from not listed");
   const accented = { ...inputs({}), lineage: new Map([[scoutKey("Morrigan’s Insight"), 2]]) };
   assert.equal(resolvePrice({ kind: "scout", name: "Mórrigan's Insight" }, accented)?.div, 2, "case, apostrophe and diacritic insensitive");
   assert.equal(scoutKey("  MÓRRIGAN’S   Insight "), "morrigan's insight");
