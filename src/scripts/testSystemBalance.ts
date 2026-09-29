@@ -8,6 +8,7 @@ import { listHeartbeats } from "../db/heartbeatQueries";
 import type { BalanceSnapshot } from "../db/queries";
 import type { UserPublic } from "../db/userQueries";
 import { balanceProblem, snapshotBalancesAll, type BalanceLoopDeps } from "../scheduler/balanceLoop";
+import { refreshScoutValues } from "../scheduler/scoutValuesLoop";
 
 const RATES = { exaltPerDivine: 400, chaosPerDivine: 20 };
 
@@ -66,4 +67,30 @@ export async function testBalanceLoop(): Promise<void> {
   const hb = listHeartbeats().find((h) => h.name === "unique-values");
   assert.equal(hb?.last_error, "scout 502", "…but it is recorded on its own heartbeat");
   console.log("PASS  balance auto-read: web path (resolveRates + recordTradeBalance), uniques failure recorded");
+  await testScoutValuesLoop();
+}
+
+/** Poller refresh of scout uniques + lineage: per-league heartbeats, a lineage outage red on its own row. */
+async function testScoutValuesLoop(): Promise<void> {
+  getDb().exec("DELETE FROM subsystem_heartbeat");
+  const calls: string[] = [];
+  const result = await refreshScoutValues({
+    leagues: () => ["Rise", "Old"],
+    uniques: async (l) => {
+      calls.push(`u:${l}`);
+      return 3;
+    },
+    lineage: async (l) => {
+      calls.push(`g:${l}`);
+      if (l === "Rise") throw new Error("lineage 502");
+      return 2;
+    },
+  });
+  assert.deepEqual(calls, ["u:Rise", "g:Rise", "u:Old", "g:Old"], "every polled league, uniques then lineage");
+  assert.deepEqual([result.written, result.failed], [8, ["lineage-values/Rise: lineage 502"]], "one failure does not stop the others");
+  const hb = (name: string, league: string) => listHeartbeats().find((h) => h.name === name && h.league === league);
+  assert.equal(hb("lineage-values", "Rise")?.last_error, "lineage 502", "the lineage outage is red on its own row");
+  assert.equal(hb("unique-values", "Rise")?.last_error, null, "…never masked by (or masking) fresh uniques");
+  assert.ok(hb("lineage-values", "Old")?.last_ok_at, "the other league's lineage refresh still ran");
+  console.log("PASS  scout value refresh: per-league unique + lineage heartbeats, failures isolated and recorded");
 }

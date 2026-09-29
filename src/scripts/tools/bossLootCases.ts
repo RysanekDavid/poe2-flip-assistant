@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import { CATEGORIES } from "../../api/types";
 import { evaluateBosses } from "../../core/tools/bossEv/ev";
 import { loadPriceInputs, priceLookup, referencedNinjaIds } from "../../core/tools/bossEv/pricing";
-import type { Boss, BossLootFile, LootLine, Rate } from "../../core/tools/bossEv/schema";
-import { LINEAGE_SOURCE, lineageRows } from "../../core/valuation";
-import { upsertItemValues } from "../../db/marketQueries";
+import type { Boss, BossLootFile, EntryLine, LootLine, Rate } from "../../core/tools/bossEv/schema";
+import { assertDisjoint, lineageRows } from "../../core/valuation";
+import { SCOUT_LINEAGE_SOURCE, SCOUT_UNIQUE_SOURCE, scoutKeysOf, scoutValueMap, uniqueValueMap, upsertItemValues } from "../../db/marketQueries";
 
 const AUDIT_DAY = "2026-09-29";
 
@@ -29,14 +29,16 @@ function rateOf(file: BossLootFile, id: string, name: string): Rate {
 }
 
 const point = (p: number): Rate => ({ kind: "point", p });
+/** Entry lines without their curated art, which the art tests cover. */
+const bare = (entry: readonly EntryLine[]): Array<Omit<EntryLine, "icon">> => entry.map(({ icon: _icon, ...rest }) => rest);
 
 function testXeshtAndBodach(file: BossLootFile): void {
   const xesht = boss(file, "xesht");
-  assert.deepEqual(xesht.tiers.map((t) => [t.id, t.entry]), [["sac", [{ itemId: "breachlord-sac", qty: 1 }]]], "Xesht: one Breachlord Sac per attempt");
+  assert.deepEqual(xesht.tiers.map((t) => [t.id, bare(t.entry)]), [["sac", [{ itemId: "breachlord-sac", qty: 1 }]]], "Xesht: one Breachlord Sac per attempt");
   assert.ok(!xesht.tiers.some((t) => t.entry.some((e) => e.itemId === "breach-splinter")), "Xesht: no splinter difficulty tiers in 0.5");
   assert.ok(xesht.sources.some((s) => s.url.includes("game8.co/games/Path-of-Exile-2/archives/604463")));
   const bodach = boss(file, "bodach").tiers[0]!;
-  assert.deepEqual(bodach.entry, [{ itemId: "call-of-the-shadows", qty: 5, craftFrom: [{ itemId: "head-of-the-king", qty: 0.2 }] }]);
+  assert.deepEqual(bare(bodach.entry), [{ itemId: "call-of-the-shadows", qty: 5, craftFrom: [{ itemId: "head-of-the-king", qty: 0.2 }] }]);
   const want: Array<[string, number]> = [
     ["Forgotten Warden", 0.34], ["Sylvan's Effigy", 0.14], ["Periphery", 0.09], ["Carved Tenacity", 0.08], ["Mórrigan's Insight", 0.04],
     ["Liminal Coil", 0.03], ["Catha's Brilliance", 0.03], ["Carved Mischief", 0.02], ["Vestige of Darkness", 0.01], ["Carved Cunning", 0.01],
@@ -82,11 +84,11 @@ function testNewBosses(file: BossLootFile): void {
   assert.equal(sim.entry[0]?.itemId, "simulacrum");
   assert.deepEqual(rateOf(file, "simulacrum", "Raven's Reflection"), { kind: "guaranteed" });
   assert.ok(sim.loot.some((l) => l.priceRef.kind === "ninja" && l.priceRef.itemId === "tangmazus-reliquary-key" && l.rate.kind === "unknown"));
-  assert.deepEqual(boss(file, "aberration").tiers[0]!.entry, [{ itemId: "the-triskelion-reforged", qty: 1 }]);
+  assert.deepEqual(bare(boss(file, "aberration").tiers[0]!.entry), [{ itemId: "the-triskelion-reforged", qty: 1 }]);
   const ores = lootOf(file, "aberration").filter((l) => l.priceRef.kind === "ninja" && l.priceRef.itemId.endsWith("-starlit-ore"));
   assert.equal(ores.length, 4, "four Starlit Ores priced from ninja Verisium");
   assert.ok(lootOf(file, "aberration").every((l) => l.rate.kind === "unknown"), "the Aberration publishes no rates");
-  assert.deepEqual(boss(file, "zarokh").tiers[0]!.entry, [{ itemId: "djinn-barya", name: "Djinn Barya", qty: 1 }]);
+  assert.deepEqual(bare(boss(file, "zarokh").tiers[0]!.entry), [{ itemId: "djinn-barya", name: "Djinn Barya", qty: 1 }]);
   assert.equal(file.ninjaCategories["djinn-barya"], null, "Djinn Barya is declared not-on-ninja");
   assert.ok(lootOf(file, "zarokh").some((l) => l.priceRef.kind === "ninja" && l.priceRef.itemId === "against-the-darkness"));
   for (const id of ["simulacrum", "aberration", "zarokh"]) {
@@ -113,20 +115,28 @@ const ABSENT_GEM = "Tul's Stillness";
 
 /**
  * Lineage gems price from poe2scout's lineage list (item_values rows tagged scout-lineage), in
- * Exalted converted at the league rate; a gem scout prices at 0 or omits resolves to null — in
- * `unpriced`, never an EV of 0. Needs the temp DB (run after freshToolsDb).
+ * Exalted converted at the league rate. A gem listed at 0 and one not listed both resolve to null —
+ * in `unpriced` with distinct reasons, never an EV of 0. Scout's spelling may differ from ours in
+ * case, apostrophes and diacritics. Needs the temp DB (run after freshToolsDb).
  */
 export function runLineagePricingCase(file: BossLootFile): void {
   const league = "LINEAGE";
   const lines = file.bosses.flatMap((b) => b.tiers.flatMap((t) => t.loot));
   const scoutNames = lines.flatMap((l) => (l.priceRef.kind === "scout" && !l.lineage ? [l.priceRef.name] : []));
-  upsertItemValues(league, scoutNames.map((n) => ({ nameKey: n.toLowerCase(), div: 1, source: "scout" })));
+  upsertItemValues(league, scoutNames.map((n) => ({ nameKey: n.toLowerCase(), div: 1, source: SCOUT_UNIQUE_SOURCE })));
   const gems = lines.flatMap((l) => (l.lineage && l.priceRef.kind === "scout" && l.name !== ABSENT_GEM ? [l.priceRef.name] : []));
-  const rows = lineageRows(gems.map((name) => ({ name, priceExalt: name === ZERO_GEM ? 0 : 538 })), 538);
-  assert.ok(rows.every((r) => r.source === LINEAGE_SOURCE && r.div === 1), "538 ex at 538 ex/div = 1 div, tagged apart from uniques");
-  assert.ok(!rows.some((r) => r.nameKey === ZERO_GEM.toLowerCase()), "a 0 ex gem never becomes a 0 div row");
+  // scout's own spelling: no diacritic, curly apostrophe
+  const spelled = (n: string): string => (n === "Mórrigan's Insight" ? "Morrigan’s Insight" : n);
+  const rows = lineageRows(gems.map((name) => ({ name: spelled(name), priceExalt: name === ZERO_GEM ? 0 : 538 })), 538);
+  assert.ok(rows.every((r) => r.source === SCOUT_LINEAGE_SOURCE), "lineage rows are tagged apart from uniques");
+  assert.equal(rows.find((r) => r.nameKey === ZERO_GEM.toLowerCase())?.div, 0, "a 0 ex gem is stored as 'listed at 0', which readers skip");
   assert.throws(() => lineageRows([], 0), /positive ex\/div/, "no rate, no conversion");
+  const clash = new Set([rows[0]!.nameKey]);
+  assert.throws(() => assertDisjoint(rows, clash, SCOUT_UNIQUE_SOURCE), /collide/, "a name in both lists must not overwrite silently");
+  assert.doesNotThrow(() => assertDisjoint(rows, scoutKeysOf(league, SCOUT_UNIQUE_SOURCE), SCOUT_UNIQUE_SOURCE), "curated gem names do not collide with uniques");
   upsertItemValues(league, rows);
+  assert.ok(!uniqueValueMap(league).has(rows[0]!.nameKey), "unique readers (the regex tool) never see lineage rows");
+  assert.ok(!scoutValueMap(league).has(ZERO_GEM.toLowerCase()), "a 0 row is never read as a value");
   const bosses = evaluateBosses(file, priceLookup(loadPriceInputs(league, referencedNinjaIds(file))), new Map());
   let lineage = 0;
   for (const b of bosses) {
@@ -143,6 +153,8 @@ export function runLineagePricingCase(file: BossLootFile): void {
   assert.ok(lineage >= 25, `the lineage gems are flagged (${lineage})`);
   const xesht = bosses.find((b) => b.id === "xesht")?.tiers[0];
   assert.equal(xesht?.unpricedLineage, 2, "Xesht: the 0-priced and the absent gem count as unpriced lineage");
+  const reason = (name: string): string | null | undefined => xesht?.loot.find((l) => l.name === name)?.unpricedReason;
+  assert.deepEqual([reason(ZERO_GEM), reason(ABSENT_GEM)], ["listed by poe2scout at 0 (no current price)", "not listed by poe2scout"]);
   const barya = bosses.find((b) => b.id === "zarokh")?.tiers[0]?.entryLines[0];
   assert.deepEqual([barya?.name, barya?.costDiv], ["Djinn Barya", null], "an entry ninja does not list shows its curated name, unpriced");
   for (const id of ["xesht", "olroth"]) {

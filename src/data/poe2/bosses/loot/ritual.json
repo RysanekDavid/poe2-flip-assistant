@@ -1,0 +1,87 @@
+{
+  "ninjaCategories": {
+    "an-audience-with-the-king": "Ritual",
+    "head-of-the-king": "Ritual",
+    "omen-of-amelioration": "Ritual",
+    "omen-of-dextral-annulment": "Ritual",
+    "omen-of-dextral-erasure": "Ritual",
+    "omen-of-dextral-exaltation": "Ritual",
+    "omen-of-greater-exaltation": "Ritual",
+    "omen-of-refreshment": "Ritual",
+    "omen-of-resurgence": "Ritual",
+    "omen-of-sinistral-annulment": "Ritual",
+    "omen-of-sinistral-erasure": "Ritual",
+    "omen-of-sinistral-exaltation": "Ritual",
+    "omen-of-whittling": "Ritual",
+    "ritualistic-reliquary-key": "Fragments",
+    "call-of-the-shadows": "Fragments",
+    "carved-tenacity": "Idols",
+    "carved-mischief": "Idols",
+    "carved-cunning": "Idols",
+    "carved-majesty": "Idols"
+  },
+  "bosses": [
+    {
+      "id": "king-in-the-mists",
+      "name": "The King in the Mists",
+      "mechanic": "Ritual",
+      "accessChain": "Fill the Tribute to the King bar with unspent Ritual Tribute to get An Audience with the King; the Audience is consumed on entry. Head of the King is guaranteed (0.5.0 notes), plus at least one omen from a pool whose weights are unpublished — priced as a min–max range and counted at its cheapest member. Maxroll's 17-omen list dates from 0.2; the six that can no longer drop are removed (Omen of Corruption per the 0.5.0 notes; Greater Annulment and the Alchemy and Coronation pairs, drop disabled in 0.3.0 per Fextralife), leaving 11.",
+      "sources": [
+        {"title":"Maxroll — PoE2 Ritual resource","url":"https://maxroll.gg/poe2/resources/ritual","accessed":"2026-09-28"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},
+        {"title":"Path of Exile 2 — 0.5.0 patch notes","url":"https://www.pathofexile.com/forum/view-thread/3932540","accessed":"2026-09-29"},
+        {"title":"poe2db — The King in the Mists (unique list)","url":"https://poe2db.tw/us/The_King_in_the_Mists","accessed":"2026-09-29"},
+        {"title":"Fextralife — Omen of Greater Annulment (drop disabled in 0.3.0)","url":"https://pathofexile2.wiki.fextralife.com/Omen+of+Greater+Annulment","accessed":"2026-09-29"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "An Audience with the King",
+          "entry": [{"itemId":"an-audience-with-the-king","qty":1,"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvUml0dWFsL1Zvb2Rvb0tpbmdFZmZpZ3kiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/0b02c113cc/VoodooKingEffigy.png"}],
+          "loot": [
+            {"name":"Head of the King","priceRef":{"kind":"ninja","itemId":"head-of-the-king"},"rate":{"kind":"guaranteed"},"confidence":"confirmed","source":{"title":"Path of Exile 2 — 0.5.0 patch notes","url":"https://www.pathofexile.com/forum/view-thread/3932540","accessed":"2026-09-29"}},
+            {"name":"Omen (≥1 of 11, random)","priceRef":{"kind":"pool","members":[{"itemId":"omen-of-amelioration","name":"Omen of Amelioration"},{"itemId":"omen-of-dextral-annulment","name":"Omen of Dextral Annulment"},{"itemId":"omen-of-dextral-erasure","name":"Omen of Dextral Erasure"},{"itemId":"omen-of-dextral-exaltation","name":"Omen of Dextral Exaltation"},{"itemId":"omen-of-greater-exaltation","name":"Omen of Greater Exaltation"},{"itemId":"omen-of-refreshment","name":"Omen of Refreshment"},{"itemId":"omen-of-resurgence","name":"Omen of Resurgence"},{"itemId":"omen-of-sinistral-annulment","name":"Omen of Sinistral Annulment"},{"itemId":"omen-of-sinistral-erasure","name":"Omen of Sinistral Erasure"},{"itemId":"omen-of-sinistral-exaltation","name":"Omen of Sinistral Exaltation"},{"itemId":"omen-of-whittling","name":"Omen of Whittling"}]},"rate":{"kind":"guaranteed"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}},
+            {"name":"Beetlebite","priceRef":{"kind":"scout","name":"Beetlebite"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},"rarity":{"label":"Common","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Ingenuity","priceRef":{"kind":"scout","name":"Ingenuity"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},"rarity":{"label":"Common","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"The Burden of Shadows","priceRef":{"kind":"scout","name":"The Burden of Shadows"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"From Nothing","priceRef":{"kind":"scout","name":"From Nothing"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Pragmatism","priceRef":{"kind":"scout","name":"Pragmatism"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},"rarity":{"label":"Very Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Ritualistic Reliquary Key","priceRef":{"kind":"ninja","itemId":"ritualistic-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},"rarity":{"label":"Extremely Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodach",
+      "name": "The Bodach",
+      "mechanic": "Ritual",
+      "accessChain": "Slot five Call of the Shadows into the Effigy at Caer Tarth; all five are consumed. Or self-supply: one Head of the King turns five Atlas maps into Rites of the Nameless, whose final altars drop the five Calls (priced as 1 Head per 5 Calls). Rates from one 100-run Farm of Exile sample (0.5.5) that disagrees with Maxroll's rarity tiers on Carved Tenacity and Vestige of Darkness — both marked conflicting; Carved Majesty did not drop in that sample.",
+      "sources": [
+        {"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"},
+        {"title":"Maxroll — PoE2 Ritual resource","url":"https://maxroll.gg/poe2/resources/ritual","accessed":"2026-09-29"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},
+        {"title":"Path of Exile 2 — 0.5.0 patch notes","url":"https://www.pathofexile.com/forum/view-thread/3932540","accessed":"2026-09-29"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "5× Call of the Shadows",
+          "entry": [{"itemId":"call-of-the-shadows","qty":5,"craftFrom":[{"itemId":"head-of-the-king","qty":0.2}],"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvUml0dWFsL1JpdHVhbEVmZmlneVBpZWNlcyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/6fb287c8f4/RitualEffigyPieces.png"}],
+          "loot": [
+            {"name":"Forgotten Warden","priceRef":{"kind":"scout","name":"Forgotten Warden"},"rate":{"kind":"point","p":0.34},"confidence":"single-source","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"}},
+            {"name":"Sylvan's Effigy","priceRef":{"kind":"scout","name":"Sylvan's Effigy"},"rate":{"kind":"point","p":0.14},"confidence":"single-source","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"}},
+            {"name":"Periphery","priceRef":{"kind":"scout","name":"Periphery"},"rate":{"kind":"point","p":0.09},"confidence":"single-source","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"}},
+            {"name":"Carved Tenacity","priceRef":{"kind":"ninja","itemId":"carved-tenacity"},"rate":{"kind":"point","p":0.08},"confidence":"conflicting","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"},"rarity":{"label":"Extremely Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Mórrigan's Insight","priceRef":{"kind":"scout","name":"Mórrigan's Insight"},"rate":{"kind":"point","p":0.04},"confidence":"single-source","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"},"lineage":true},
+            {"name":"Liminal Coil","priceRef":{"kind":"scout","name":"Liminal Coil"},"rate":{"kind":"point","p":0.03},"confidence":"single-source","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Catha's Brilliance","priceRef":{"kind":"scout","name":"Catha's Brilliance"},"rate":{"kind":"point","p":0.03},"confidence":"single-source","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"},"lineage":true},
+            {"name":"Carved Mischief","priceRef":{"kind":"ninja","itemId":"carved-mischief"},"rate":{"kind":"point","p":0.02},"confidence":"single-source","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"}},
+            {"name":"Vestige of Darkness","priceRef":{"kind":"scout","name":"Vestige of Darkness"},"rate":{"kind":"point","p":0.01},"confidence":"conflicting","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"},"rarity":{"label":"Very Common","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Carved Cunning","priceRef":{"kind":"ninja","itemId":"carved-cunning"},"rate":{"kind":"point","p":0.01},"confidence":"single-source","source":{"title":"Farm of Exile — The Bodach (100 runs, 0.5.5)","url":"https://farmofexile.com/poe2/article/the-bodach","accessed":"2026-09-29"}},
+            {"name":"Carved Majesty","priceRef":{"kind":"ninja","itemId":"carved-majesty"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},"rarity":{"label":"Very Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}}
+          ]
+        }
+      ]
+    }
+  ]
+}

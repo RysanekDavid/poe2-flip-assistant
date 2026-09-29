@@ -47,7 +47,7 @@ const errText = (e: unknown): string => (e instanceof Error ? e.message : String
  */
 async function refreshUniquesTracked(league: string, refresh: BalanceLoopDeps["refreshUniques"]): Promise<void> {
   try {
-    await withHeartbeat("unique-values", "", () => refresh(league));
+    await withHeartbeat("unique-values", league, () => refresh(league));
   } catch (e: unknown) {
     console.warn(`[balance] unique-price refresh failed — uniques valued from the older cache: ${errText(e)}`);
   }

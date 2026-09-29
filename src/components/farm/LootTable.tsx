@@ -7,12 +7,13 @@ import type { LootLineView } from "../../lib/tools/bossEvContract";
 import { DataTable, type Column } from "../ui/DataTable";
 import { ItemArt } from "../ui/ItemArt";
 import { PriceChip } from "../ui/PriceChip";
+import { artSrc } from "./farmArt";
 import { CONFIDENCE_HINT, LineageBadge } from "./farmView";
 
 function DropCell({ line }: { line: LootLineView }) {
   return (
     <span className="flex items-center gap-2">
-      <ItemArt src={line.icon} size={8} />
+      <ItemArt src={artSrc(line.icon)} size={8} />
       <span className="text-neutral-100">{line.name}</span>
       {line.lineage && <LineageBadge />}
     </span>
@@ -25,7 +26,7 @@ function PoolPrice({ line, exPerDiv }: { line: LootLineView; exPerDiv: number | 
   if (!pool) return null;
   const rate = exPerDiv ?? 0;
   const missing = pool.unpricedMembers.length > 0 ? `\nnot on poe.ninja: ${pool.unpricedMembers.join(", ")}` : "";
-  const title = `one random pick, weights unpublished — EV and floor count the cheapest\nmin ${fmtDiv(pool.minDiv, rate)} · median ${fmtDiv(pool.medianDiv, rate)} · max ${fmtDiv(pool.maxDiv, rate)}\n${pool.priced} of ${pool.total} members priced${missing}`;
+  const title = `at least one random pick, weights unpublished — EV and floor count one, at the cheapest member\nmin ${fmtDiv(pool.minDiv, rate)} · median ${fmtDiv(pool.medianDiv, rate)} · max ${fmtDiv(pool.maxDiv, rate)}\n${pool.priced} of ${pool.total} members priced${missing}`;
   return (
     <span className="inline-flex items-center gap-1 text-sm tabular-nums text-neutral-100" title={title}>
       {fmtDiv(pool.minDiv, rate)} – {fmtDiv(pool.maxDiv, rate)}

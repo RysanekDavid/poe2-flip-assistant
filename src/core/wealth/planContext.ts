@@ -1,7 +1,7 @@
 import { fetchDemand } from "../../api/scoutClient";
 import type { PricedItem } from "../../api/types";
 import { config } from "../../config/env";
-import { uniqueValueMap } from "../../db/marketQueries";
+import { scoutValueMap } from "../../db/marketQueries";
 import type { CxMarketView } from "../cx/cxItemMarkets";
 import { getDefaultLeague } from "../leagueState";
 import type { ExchangeRates } from "../priceEngine";
@@ -55,7 +55,8 @@ export function buildPlanContext(i: PlanContextInputs): PlanContext {
     rates: i.rates,
     ninjaByName: i.ninjaByName,
     cxByItemId: i.cxView?.byItemId ?? new Map(),
-    uniqueDiv: uniqueValueMap(i.league),
+    // lineage gems sit in stashes too; both are poe2scout values
+    uniqueDiv: scoutValueMap(i.league),
     compDiv: i.compDiv,
     competition: i.competition,
     params: { goldPerExalt: config.cx.goldPerExalt, flowSharePct: config.cx.flowSharePct, maxGridStepPct: config.cx.maxGridStepPct },

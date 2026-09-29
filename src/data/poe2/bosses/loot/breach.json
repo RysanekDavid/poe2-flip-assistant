@@ -1,0 +1,69 @@
+{
+  "ninjaCategories": {
+    "breachstone": "Breach",
+    "breachlord-sac": "Fragments",
+    "xeshts-reliquary-key": "Fragments"
+  },
+  "bosses": [
+    {
+      "id": "tul-and-esh",
+      "name": "It That Was Tul & It That Was Esh",
+      "mechanic": "Breach",
+      "accessChain": "Using a Breachstone reveals a Breach Stronghold: several Atlas maps inside the Breach domain (Hives, then Hive and Sky Fortresses, with Tul and Esh at the core), each run with its own waystone (0.5.0 notes: \"Using a Breachstone will reveal the maps inside the domain\"; expcarry). The map count is unverified, so only the Breachstone is priced: net is a rough upper bound on value per Stronghold, not per map. The Breachlord Sac — the entry to Xesht — looks guaranteed per Tul & Esh kill (Game8, poe2db). The Stronghold maps' own loot is not counted either.",
+      "sources": [
+        {"title":"Path of Exile 2 — 0.5.0 patch notes","url":"https://www.pathofexile.com/forum/view-thread/3932540","accessed":"2026-09-29"},
+        {"title":"expcarry — Xesht: Breach access, mechanics and rewards","url":"https://expcarry.com/poe-2-xesht-breach-access-mechanics-rewards-guide","accessed":"2026-09-29"},
+        {"title":"poe2db — Breachstone (reveals Breach Strongholds)","url":"https://poe2db.tw/us/Breachstone","accessed":"2026-09-29"},
+        {"title":"Game8 — Breachlord Sac","url":"https://game8.co/games/Path-of-Exile-2/archives/604463","accessed":"2026-09-29"},
+        {"title":"poe2db — Breachlord Sac","url":"https://poe2db.tw/us/Breachlord_Sac","accessed":"2026-09-29"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "Breachstone",
+          "entry": [{"itemId":"breachstone","qty":1,"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQnJlYWNoL0JyZWFjaHN0b25lIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/d60587d724/Breachstone.png"}],
+          "unmodelledEntry": {"label":"N× Waystone + Stronghold clear","note":"a waystone for every Stronghold map on the way to Tul and Esh (map count unverified) and the time to clear them","icon":"asset:waystone"},
+          "loot": [
+            {"name":"Breachlord Sac","priceRef":{"kind":"ninja","itemId":"breachlord-sac"},"rate":{"kind":"guaranteed"},"confidence":"single-source","source":{"title":"Game8 — Breachlord Sac","url":"https://game8.co/games/Path-of-Exile-2/archives/604463","accessed":"2026-09-29"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "xesht",
+      "name": "Xesht, We That Are One",
+      "mechanic": "Breach",
+      "accessChain": "Kill It That Was Tul and It That Was Esh in a Breach Stronghold (revealed by a Breachstone — see their row) for a Breachlord Sac, and hand it to the Dreamer in the Monastery of the Keepers; each attempt consumes one Sac. The 50/100/150-splinter difficulty tiers are the pre-0.5 model and are not offered here. No drop rates are published. Breach Rings no longer drop (0.5.0).",
+      "sources": [
+        {"title":"Game8 — Breachlord Sac","url":"https://game8.co/games/Path-of-Exile-2/archives/604463","accessed":"2026-09-29"},
+        {"title":"expcarry — Xesht: Breach access, mechanics and rewards","url":"https://expcarry.com/poe-2-xesht-breach-access-mechanics-rewards-guide","accessed":"2026-09-29"},
+        {"title":"Path of Exile 2 — 0.5.0 patch notes","url":"https://www.pathofexile.com/forum/view-thread/3932540","accessed":"2026-09-29"},
+        {"title":"timesaver.gg — Xesht guide (0.5.4c)","url":"https://timesaver.gg/blog/poe2-xesht-guide","accessed":"2026-09-29"},
+        {"title":"Maxroll — PoE2 Breach resource (higher difficulty adds items to the pool)","url":"https://maxroll.gg/poe2/resources/breach","accessed":"2026-09-29"},
+        {"title":"poe2db — Breachlord Sac","url":"https://poe2db.tw/us/Breachlord_Sac","accessed":"2026-09-29"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}
+      ],
+      "tiers": [
+        {
+          "id": "sac",
+          "label": "Breachlord Sac",
+          "entry": [{"itemId":"breachlord-sac","qty":1,"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvUXVlc3RJdGVtcy9CcmVhY2hsb3JkU2FjIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/07670f51fe/BreachlordSac.png"}],
+          "loot": [
+            {"name":"Beyond Reach","priceRef":{"kind":"scout","name":"Beyond Reach"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Common","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Choir of the Storm","priceRef":{"kind":"scout","name":"Choir of the Storm"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Uncommon","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"The Pandemonius","priceRef":{"kind":"scout","name":"The Pandemonius"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Uncommon","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Xoph's Blood","priceRef":{"kind":"scout","name":"Xoph's Blood"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Uncommon","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Hand of Wisdom and Action","priceRef":{"kind":"scout","name":"Hand of Wisdom and Action"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Skin of the Loyal","priceRef":{"kind":"scout","name":"Skin of the Loyal"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Controlled Metamorphosis","priceRef":{"kind":"scout","name":"Controlled Metamorphosis"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Xesht's Reliquary Key","priceRef":{"kind":"ninja","itemId":"xeshts-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Xoph's Pyre","priceRef":{"kind":"scout","name":"Xoph's Pyre"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"lineage":true,"rarity":{"label":"Very Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Tul's Stillness","priceRef":{"kind":"scout","name":"Tul's Stillness"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"lineage":true,"rarity":{"label":"Very Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Esh's Radiance","priceRef":{"kind":"scout","name":"Esh's Radiance"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"lineage":true,"rarity":{"label":"Very Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Uul-Netol's Embrace","priceRef":{"kind":"scout","name":"Uul-Netol's Embrace"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"lineage":true,"rarity":{"label":"Very Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}}
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import type { BossRow, EntryChip } from "../../../lib/farmContract";
 import type { LootLineView } from "../../../lib/tools/bossEvContract";
-import { fmtDiv } from "./headline";
+import { fmtDiv, fmtRate } from "./headline";
 
 /*
  * The farm board's cell wording, pure and client-safe so the rules are unit-tested rather than
@@ -25,11 +25,34 @@ export function leftOutText(row: Pick<BossRow, "unknownRate" | "unpriced" | "unp
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
-/** The EV/net tooltip's data line: how complete the number is and how well its rates are sourced. */
-export function evConfidenceText(row: Pick<BossRow, "unknownRate" | "unpriced" | "unpricedLineage" | "confidence">): string {
+type EvRow = Pick<BossRow, "unknownRate" | "unpriced" | "unpricedLineage" | "confidence" | "unmodelledEntry">;
+
+/**
+ * The EV/net tooltip's data line: how complete the number is and how well its rates are sourced.
+ * "Listed" is deliberate: the curated drop list is only as complete as its sources.
+ */
+export function evConfidenceText(row: EvRow): string {
+  const parts: string[] = [];
+  if (row.unmodelledEntry) parts.push(`upper bound — the entry leaves out ${row.unmodelledEntry.label}`);
   const leftOut = leftOutText(row);
-  const head = leftOut ? `lower bound — ${leftOut}` : "every drop priced and rated";
-  return `${head} · weakest deciding rate: ${row.confidence}`;
+  if (leftOut) parts.push(row.unmodelledEntry ? `EV skips: ${leftOut}` : `lower bound — ${leftOut}`);
+  if (parts.length === 0) parts.push("every listed drop priced and rated");
+  return `${parts.join("; ")} · weakest deciding rate: ${row.confidence}`;
+}
+
+/** Floor tooltip: the drops it sums, each with its rate and per-kill share. */
+export function floorTitle(drops: BossRow["floorDrops"], exPerDiv: number): string {
+  const lines = drops.map((d) => `${d.name} — ${fmtDiv(d.evDiv, exPerDiv)} per kill (${fmtRate(d.rate)})`);
+  return ["priced loot on most kills (guaranteed, or 1 in 10 or better):", ...lines].join("\n");
+}
+
+/** P(lose) caveats: covering drops without a rate, and data weaker than confirmed behind the number. */
+export function loseCaveats(row: Pick<BossRow, "losingRunUnknownRates" | "losingRunConfidence" | "unmodelledEntry">): string[] {
+  const out: string[] = [];
+  if (row.losingRunUnknownRates > 0) out.push(`${row.losingRunUnknownRates} covering drop(s) have no known rate and count as never dropping`);
+  if (row.losingRunConfidence != null && row.losingRunConfidence !== "confirmed") out.push(`rests on ${row.losingRunConfidence} data`);
+  if (row.unmodelledEntry) out.push(`the entry leaves out ${row.unmodelledEntry.label}`);
+  return out;
 }
 
 /**

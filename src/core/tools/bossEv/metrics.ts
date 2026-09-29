@@ -1,5 +1,6 @@
 import type { EntryLineView, LootLineView } from "../../../lib/tools/bossEvContract";
-import type { Rate } from "./schema";
+import { weakest } from "./confidence";
+import type { Confidence, Rate } from "./schema";
 
 /*
  * The farm board's per-kill numbers, pure. A drop "lands on most kills" at 1 in 10 or better (by
@@ -25,9 +26,14 @@ function bounds(rate: Rate): { lo: number | null; hi: number | null } {
 
 const sumEv = (lines: readonly LootLineView[]): number => lines.reduce((acc, l) => acc + (l.evDiv ?? 0), 0);
 
+/** The priced lines the floor is made of: guaranteed, or LOW rate at least 1 in 10. */
+export function floorLinesOf(loot: readonly LootLineView[]): LootLineView[] {
+  return loot.filter((l) => (bounds(l.rate).lo ?? 0) >= CHASE_BELOW && (l.evDiv ?? 0) > 0);
+}
+
 /** Priced value from guaranteed lines and lines whose LOW rate is at least 1 in 10. */
 export function floorOf(loot: readonly LootLineView[]): number {
-  return sumEv(loot.filter((l) => (bounds(l.rate).lo ?? 0) >= CHASE_BELOW));
+  return sumEv(floorLinesOf(loot));
 }
 
 const isChase = (l: LootLineView): boolean => {
@@ -49,6 +55,8 @@ export function chaseOneInOf(loot: readonly LootLineView[]): number | null {
 export interface LosingRun {
   p: number | null;
   unknownRates: number;
+  /** Weakest confidence among the lines that decide p; null when p is null or nothing decides it. */
+  confidence: Confidence | null;
 }
 
 /**
@@ -60,16 +68,18 @@ export interface LosingRun {
  * an unknown rate, or an unpriced line).
  */
 export function losingRunOf(loot: readonly LootLineView[], entryDiv: number, guaranteedDiv: number, entryComplete: boolean): LosingRun {
-  if (!entryComplete) return { p: null, unknownRates: 0 };
-  if (guaranteedDiv >= entryDiv) return { p: 0, unknownRates: 0 };
+  if (!entryComplete) return { p: null, unknownRates: 0, confidence: null };
+  const guaranteed = loot.filter((l) => l.rate.kind === "guaranteed" && (l.evDiv ?? 0) > 0);
+  // a 0% resting on one guide's "guaranteed" is only as good as that guide
+  if (guaranteedDiv >= entryDiv) return { p: 0, unknownRates: 0, confidence: weakest(guaranteed.map((l) => l.confidence)) };
   const uncovered = entryDiv - guaranteedDiv;
   const covering = loot.filter((l) => l.price != null && l.price.div >= uncovered && l.rate.kind !== "guaranteed");
   const unknownRates = covering.filter((l) => l.rate.kind === "unknown").length;
-  const rated = covering.length - unknownRates;
+  const rated = covering.filter((l) => l.rate.kind !== "unknown");
   const couldStillCover = unknownRates > 0 || loot.some((l) => l.price == null && l.rate.kind !== "guaranteed");
-  if (rated === 0 && couldStillCover) return { p: null, unknownRates };
+  if (rated.length === 0 && couldStillCover) return { p: null, unknownRates, confidence: null };
   const p = covering.reduce((acc, l) => acc * (1 - (bounds(l.rate).lo ?? 0)), 1);
-  return { p, unknownRates };
+  return { p, unknownRates, confidence: weakest([...rated, ...guaranteed].map((l) => l.confidence)) };
 }
 
 /** Volume of the entry line that costs the most (the hardest one to buy in bulk); null if unlisted. */

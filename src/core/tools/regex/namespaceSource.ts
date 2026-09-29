@@ -31,6 +31,7 @@ export async function loadRegexNamespace(league: string): Promise<LoadedNamespac
     uniques: sqliteUtcToIso(latestItemValuesUpdatedAt(league)),
     tradeMeta: new Date(meta.at).toISOString(),
   };
+  // uniques only: lineage-gem rows share item_values but must never be offered as a "Unique"
   const uniqueValues = uniqueValueMap(league);
   const signature = `${dataAsOf.ninja}|${dataAsOf.uniques}|${uniqueValues.size}|${meta.at}`;
   const ns = memoNamespace(league, signature, () =>

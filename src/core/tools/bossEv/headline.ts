@@ -1,5 +1,6 @@
 import { fmtDivOrEx } from "../../../lib/format";
 import type { TierResult } from "../../../lib/tools/bossEvContract";
+import { weakest } from "./confidence";
 import { rateBounds } from "./ev";
 import type { Confidence, Rate } from "./schema";
 
@@ -47,14 +48,7 @@ export function fmtDiv(div: number, exPerDiv: number, signed = false): string {
   return signed ? `+${body}` : body;
 }
 
-// Two disagreeing samples beat no sample at all, but trail a single uncontested one.
-const CONFIDENCE_RANK: Record<Confidence, number> = { unverified: 0, conflicting: 1, "single-source": 2, confirmed: 3 };
-
-/** Weakest label among the deciding lines; nothing deciding is nothing confirmed. */
-export function weakest(confidences: readonly Confidence[]): Confidence {
-  if (confidences.length === 0) return "unverified";
-  return confidences.reduce<Confidence>((w, c) => (CONFIDENCE_RANK[c] < CONFIDENCE_RANK[w] ? c : w), "confirmed");
-}
+export { weakest };
 
 /** A decisive tone survives only when the deciding rates are all confirmed. */
 export function capTone(tone: Tone, deciding: readonly Confidence[]): Tone {
@@ -101,6 +95,10 @@ export function breakEvenHeadline(tier: TierResult, exPerDiv: number): Headline 
     return { text: "entry partly unpriced", tone: "muted", title: "at least one entry item has no market price — break-even would be understated" };
   }
   const sure = `guaranteed loot ${fmtDiv(tier.guaranteedDiv, exPerDiv)} vs entry ${fmtDiv(tier.entryDiv, exPerDiv)}`;
+  if (tier.unmodelledEntry) {
+    // the priced entry is only part of the cost, so any "covers the entry" verdict would overclaim
+    return { text: `upper bound — entry leaves out ${tier.unmodelledEntry.label}`, tone: "muted", title: `${tier.unmodelledEntry.note}\n${sure}` };
+  }
   const covered = coveredHeadline(tier, sure, exPerDiv);
   if (covered) return covered;
   const chase = tier.breakEven[0];

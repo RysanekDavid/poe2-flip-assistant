@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { confidenceSchema, rarityLabelSchema, rateSchema, sourceSchema } from "../../core/tools/bossEv/schema";
+import { confidenceSchema, rarityLabelSchema, rateSchema, sourceSchema, unmodelledEntrySchema } from "../../core/tools/bossEv/schema";
 
 /**
  * Per-boss evaluation shapes (entry, loot, tier metrics). GET /api/farm (src/lib/farmContract.ts)
@@ -95,7 +95,7 @@ export const jackpotSchema = z.object({
   /** Items priced at or above the entry cost. */
   items: z.array(z.string()),
   /** P(at least one per kill), range lines at their low end — the conservative reading. Treats
-   *  drops as independent rolls, which overstates it when they share an exclusive pool. */
+   *  drops as independent rolls, which UNDERstates it when they share a one-of-N pool (Σp ≥ 1 − Π(1 − p)). */
   p: z.number(),
   /** Same with range lines at their high end. */
   pHigh: z.number(),
@@ -105,6 +105,9 @@ export const jackpotSchema = z.object({
 });
 export type Jackpot = z.infer<typeof jackpotSchema>;
 
+export const floorDropSchema = z.object({ name: z.string(), evDiv: z.number(), rate: rateSchema });
+export type FloorDrop = z.infer<typeof floorDropSchema>;
+
 export const tierResultSchema = z.object({
   tierId: z.string(),
   label: z.string(),
@@ -112,6 +115,8 @@ export const tierResultSchema = z.object({
   /** false when any entry line is unpriced — entryDiv is then a lower bound. */
   entryComplete: z.boolean(),
   entryLines: z.array(entryLineViewSchema),
+  /** A real cost of the attempt the tool cannot price; when set, net is an upper bound. */
+  unmodelledEntry: unmodelledEntrySchema.nullable(),
   loot: z.array(lootLineViewSchema),
   guaranteedDiv: z.number(),
   /** Conservative EV: range rates at their low end (so evDiv === evLowDiv). */
@@ -130,6 +135,8 @@ export const tierResultSchema = z.object({
   unknownRate: z.array(z.string()),
   /** Priced value that lands on most kills: guaranteed lines plus lines at least 1 in 10 (low end). */
   floorDiv: z.number(),
+  /** The priced lines floorDiv sums, for its tooltip. */
+  floorDrops: z.array(floorDropSchema),
   /** Priced EV from drops rarer than 1 in 10 (high end below 10%) — the lottery part. */
   chaseDiv: z.number(),
   /** 1 / Σp over the rare (< 1 in 10) lines with a known rate; null when none has one. */
@@ -142,6 +149,8 @@ export const tierResultSchema = z.object({
   pLosingRun: z.number().nullable(),
   /** Entry-covering lines whose rate is unknown — pLosingRun counts them as never dropping. */
   losingRunUnknownRates: z.number().int(),
+  /** Weakest confidence behind pLosingRun (a 0% from one guide's "guaranteed" is single-source). */
+  losingRunConfidence: confidenceSchema.nullable(),
   /** poe.ninja volume of the priciest entry item: can you actually buy in. */
   entryVolume: z.number().nullable(),
   varianceNote: z.string(),

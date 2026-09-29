@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { CATEGORIES } from "../../../api/types";
 import { PATCH_VERSION_RE } from "../../../sources/patchNotes/contracts";
+import { localArtId } from "./localArt";
 
 /*
- * Curated pinnacle-boss data (src/data/poe2/bosses/boss-loot.json). Every schema is .strict() so a
+ * Curated pinnacle-boss data (src/data/poe2/bosses/loot/*.json, assembled by curated.ts). Every schema is .strict() so a
  * typo'd key in the hand-edited file fails loudly instead of silently dropping a loot line.
  * Plain zod only (no node/DB imports): the client contract re-uses these schemas.
  */
@@ -29,10 +30,13 @@ export const confidenceSchema = z.enum(["confirmed", "single-source", "conflicti
 export type Confidence = z.infer<typeof confidenceSchema>;
 
 /**
- * Hand-set art: only poecdn URLs (the Caddy CSP img-src allows *.poecdn.com). Used where poe.ninja
- * has no image or does not list the item at all.
+ * Hand-set art: a poecdn URL (the Caddy CSP img-src allows *.poecdn.com) or an "asset:<id>" token
+ * for the few items with no official URL (localArt.ts). Used where poe.ninja has no image or does
+ * not list the item at all.
  */
-export const artUrlSchema = z.string().regex(/^https:\/\/web\.poecdn\.com\/gen\/image\//, "expected a web.poecdn.com/gen/image URL");
+export const artUrlSchema = z
+  .string()
+  .refine((s) => /^https:\/\/web\.poecdn\.com\/gen\/image\//.test(s) || localArtId(s) != null, "expected a web.poecdn.com/gen/image URL or a known asset: token");
 
 const poolMemberSchema = z.object({ itemId: z.string().min(1), name: z.string().min(1) }).strict();
 
@@ -99,11 +103,20 @@ export const entryLineSchema = z
   .strict();
 export type EntryLine = z.infer<typeof entryLineSchema>;
 
+/**
+ * A cost an attempt really has but the tool cannot price (e.g. the waystones for every map of a
+ * Breach Stronghold, count unverified). Its presence makes the entry a lower bound and the net an
+ * upper bound — never a quiet omission.
+ */
+export const unmodelledEntrySchema = z.object({ label: z.string().min(1), note: z.string().min(1), icon: artUrlSchema.optional() }).strict();
+export type UnmodelledEntry = z.infer<typeof unmodelledEntrySchema>;
+
 export const tierSchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
     label: z.string().min(1),
     entry: z.array(entryLineSchema).min(1),
+    unmodelledEntry: unmodelledEntrySchema.optional(),
     loot: z.array(lootLineSchema).min(1),
   })
   .strict();
@@ -195,7 +208,7 @@ export function parseBossLoot(raw: unknown): BossLootFile {
   const parsed = bossLootFileSchema.safeParse(raw);
   if (!parsed.success) {
     const issues = parsed.error.issues.slice(0, 5).map((i) => `${i.path.join(".")}: ${i.message}`);
-    throw new Error(`boss-loot.json invalid — ${issues.join("; ")}`);
+    throw new Error(`boss loot tables invalid — ${issues.join("; ")}`);
   }
   return parsed.data;
 }

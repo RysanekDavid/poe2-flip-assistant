@@ -6,7 +6,7 @@ import type {
   LootLineView,
   TierResult,
 } from "../../../lib/tools/bossEvContract";
-import { chaseOf, chaseOneInOf, entryVolumeOf, floorOf, losingRunOf } from "./metrics";
+import { chaseOf, chaseOneInOf, entryVolumeOf, floorLinesOf, floorOf, losingRunOf } from "./metrics";
 import type { BossArt } from "./art";
 import type { PriceLookup } from "./pricing";
 import type { BossLootFile, EntryLine, LootLine, PriceRef, Rate, Tier } from "./schema";
@@ -65,7 +65,7 @@ function entryLineView(line: EntryLine, prices: PriceLookup): EntryLineView {
 }
 
 /** Why a line has no price, in the words of the market that failed to price it. */
-function unpricedReason(ref: PriceRef): string {
+function unpricedReason(ref: PriceRef, prices: PriceLookup): string {
   switch (ref.kind) {
     case "unpriced":
       return ref.reason;
@@ -75,7 +75,7 @@ function unpricedReason(ref: PriceRef): string {
       return "no pool member listed on poe.ninja";
     case "scout":
       // scout's 0 means "no current listing price", never "free"
-      return "poe2scout has no current price";
+      return prices.scoutListedAtZero(ref.name) ? "listed by poe2scout at 0 (no current price)" : "not listed by poe2scout";
     case "manual":
       return "no market price found";
   }
@@ -97,7 +97,7 @@ function lootLineView(line: LootLine, prices: PriceLookup, art: BossArt): LootLi
     priceKind: line.priceRef.kind,
     pool: prices.pool(line.priceRef),
     rarity: line.rarity ?? null,
-    unpricedReason: price == null ? unpricedReason(line.priceRef) : null,
+    unpricedReason: price == null ? unpricedReason(line.priceRef, prices) : null,
     price,
     rate: line.rate,
     confidence: line.confidence,
@@ -155,6 +155,7 @@ export function bossEv(tier: Tier, prices: PriceLookup, art: BossArt): TierResul
     entryDiv,
     entryComplete,
     entryLines,
+    unmodelledEntry: tier.unmodelledEntry ?? null,
     loot,
     guaranteedDiv,
     evDiv,
@@ -168,10 +169,12 @@ export function bossEv(tier: Tier, prices: PriceLookup, art: BossArt): TierResul
     unpricedLineage: unpriced.filter((l) => l.lineage).length,
     unknownRate: loot.filter((l) => l.rate.kind === "unknown").map((l) => l.name),
     floorDiv: floorOf(loot),
+    floorDrops: floorLinesOf(loot).map((l) => ({ name: l.name, evDiv: l.evDiv ?? 0, rate: l.rate })),
     chaseDiv: chaseOf(loot),
     chaseOneIn: chaseOneInOf(loot),
     pLosingRun: losing.p,
     losingRunUnknownRates: losing.unknownRates,
+    losingRunConfidence: losing.confidence,
     entryVolume: entryVolumeOf(entryLines),
   };
   return { ...partial, varianceNote: varianceNote(partial) };
@@ -204,10 +207,11 @@ export function varianceNote(result: Omit<TierResult, "varianceNote">): string {
     parts.push(
       kills < 1.5
         ? "Most kills include a drop worth the entry (assumes independent rolls)."
-        : `A drop worth the entry lands about once per ${Math.round(kills)} kills (assumes independent rolls; an exclusive drop pool makes this optimistic).`,
+        : `A drop worth the entry lands about once per ${Math.round(kills)} kills (assumes independent rolls; when the drops are one-of-N per kill the real odds are a little better).`,
     );
   }
   if (result.unknownRate.length > 0) parts.push(`${result.unknownRate.length} drop(s) have no known rate and are left out of EV.`);
+  if (result.unmodelledEntry) parts.push(`The entry leaves out ${result.unmodelledEntry.label}, so net is an upper bound.`);
   return parts.join(" ");
 }
 

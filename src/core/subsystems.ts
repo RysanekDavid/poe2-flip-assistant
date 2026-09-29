@@ -14,6 +14,7 @@ export const SUBSYSTEM_NAMES = [
   "craft-sweep",
   "balance",
   "unique-values",
+  "lineage-values",
   "patch-notes",
   "patch-summary",
   "league-watch",
@@ -45,6 +46,8 @@ const SCAN_DRAIN_SEC = 20;
 /** Snipe-outcome checker cadence; the poller schedules with this same constant. */
 export const SNIPE_OUTCOMES_INTERVAL_MIN = 30;
 const SNIPE_OUTCOMES_SEC = SNIPE_OUTCOMES_INTERVAL_MIN * 60;
+/** poe2scout value-cache tick; the poller schedules with this same constant (each refresh has its own 6h guard). */
+export const SCOUT_VALUES_INTERVAL_SEC = 60 * 60;
 
 /** Cadences come from the same config the poller schedules with, so they cannot drift apart. */
 export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemName, SubsystemSpec> {
@@ -62,7 +65,8 @@ export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemN
     "craft-margin": { label: "Craft margin tick", hint: "Refresh the stalest craft recipe's EV from trade2.", perLeague: false, expectedSec: cfg.craftMargin.intervalMin * 60, enabled: cfg.craftMargin.enabled },
     "craft-sweep": { label: "Craft refresh-all", hint: "Owner-requested sweep of every recipe (on demand).", perLeague: false, expectedSec: null, enabled: cfg.craftMargin.enabled },
     balance: { label: "Balance auto-read", hint: "Per-user net-worth snapshot from public stash listings.", perLeague: false, expectedSec: balance, enabled: balance != null },
-    "unique-values": { label: "Unique prices", hint: "Daily poe2scout unique-price cache used to value showcase gear.", perLeague: false, expectedSec: balance, enabled: balance != null },
+    "unique-values": { label: "Unique prices", hint: "poe2scout unique-price cache (item_values), refreshed at most every 6h per polled league — values showcase gear and Farm boss uniques.", perLeague: true, expectedSec: SCOUT_VALUES_INTERVAL_SEC, enabled: true },
+    "lineage-values": { label: "Lineage gem prices", hint: "poe2scout lineage-support-gem prices (item_values), refreshed at most every 6h per polled league on their own age — Farm boss lineage drops.", perLeague: true, expectedSec: SCOUT_VALUES_INTERVAL_SEC, enabled: true },
     "patch-notes": { label: "Patch notes", hint: "Official PoE2 patch-notes watcher feeding Coach patch reviews.", perLeague: false, expectedSec: cfg.patchNotes.intervalMin * 60, enabled: cfg.patchNotes.enabled },
     "patch-summary": { label: "Patch summaries", hint: "Queued patch threads summarized by Coach (AI), then announced once as a PATCH alert. Red = Coach unreachable or rejecting; jobs back off and retry.", perLeague: false, expectedSec: cfg.patchNotes.intervalMin * 60, enabled: cfg.patchNotes.enabled },
     "league-watch": { label: "League watcher", hint: "poe.ninja proposes, poe2scout confirms a new challenge league.", perLeague: false, expectedSec: LEAGUE_WATCH_SEC, enabled: true },

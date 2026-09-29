@@ -1,8 +1,18 @@
 import type { PricedItem } from "../../../api/types";
-import { latestSnapshots, priceHistory, uniqueValueMap, itemValuesAgeHours } from "../../../db/marketQueries";
+import {
+  itemValuesAgeHours,
+  latestSnapshots,
+  lineageValueMap,
+  priceHistory,
+  SCOUT_LINEAGE_SOURCE,
+  SCOUT_UNIQUE_SOURCE,
+  scoutZeroKeys,
+  uniqueValueMap,
+} from "../../../db/marketQueries";
 import { timestampAgeMs } from "../../../lib/sqliteTime";
 import type { PoolRange, ResolvedPrice } from "../../../lib/tools/bossEvContract";
 import { lootNinjaIds, type BossLootFile, type PriceRef } from "./schema";
+import { scoutKey } from "./scoutKey";
 
 /** One exchange item as the latest poe.ninja snapshot has it. */
 export interface NinjaQuote {
@@ -18,9 +28,14 @@ export interface NinjaQuote {
 /** Everything pricing needs, read once per request so the math below stays pure. */
 export interface PriceInputs {
   ninja: ReadonlyMap<string, NinjaQuote>;
-  /** poe2scout unique and lineage-gem prices (item_values), keyed by lowercased name. */
+  /** poe2scout unique prices, keyed by scoutKey (case, apostrophe and diacritic insensitive). */
   scout: ReadonlyMap<string, number>;
   scoutAgeHours: number | null;
+  /** poe2scout lineage-gem prices, keyed by scoutKey; aged on their own refresh. */
+  lineage: ReadonlyMap<string, number>;
+  lineageAgeHours: number | null;
+  /** scoutKeys poe2scout lists at 0 — "listed at 0" rather than "not listed". */
+  scoutZero: ReadonlySet<string>;
   nowMs: number;
 }
 
@@ -28,6 +43,8 @@ export interface PriceLookup {
   price(ref: PriceRef): ResolvedPrice | null;
   /** The spread of a pool line; null for any other kind, or when no member is priced. */
   pool(ref: PriceRef): PoolRange | null;
+  /** True when poe2scout lists the name with no current price (0), false when it does not list it. */
+  scoutListedAtZero(name: string): boolean;
   /** Display name, icon and traded volume for an exchange item id, or null when ninja does not list it. */
   item(itemId: string): { name: string; icon: string | null; volume: number } | null;
 }
@@ -76,8 +93,11 @@ export function resolvePrice(ref: PriceRef, inputs: PriceInputs): ResolvedPrice 
       return range ? { div: range.minDiv, source: "ninja", ageHours: range.ageHours } : null;
     }
     case "scout": {
-      const div = inputs.scout.get(ref.name.toLowerCase());
-      return div != null && div > 0 ? { div, source: "scout", ageHours: inputs.scoutAgeHours } : null;
+      const key = scoutKey(ref.name);
+      const unique = inputs.scout.get(key);
+      if (unique != null && unique > 0) return { div: unique, source: "scout", ageHours: inputs.scoutAgeHours };
+      const gem = inputs.lineage.get(key);
+      return gem != null && gem > 0 ? { div: gem, source: "scout", ageHours: inputs.lineageAgeHours } : null;
     }
     case "manual":
       return { div: ref.div, source: "manual", ageHours: (inputs.nowMs - Date.parse(`${ref.asOf}T00:00:00Z`)) / HOUR_MS };
@@ -90,6 +110,7 @@ export function priceLookup(inputs: PriceInputs): PriceLookup {
   return {
     price: (ref) => resolvePrice(ref, inputs),
     pool: (ref) => poolRange(ref, inputs),
+    scoutListedAtZero: (name) => inputs.scoutZero.has(scoutKey(name)),
     item: (itemId) => {
       const quote = inputs.ninja.get(itemId);
       return quote ? { name: quote.name, icon: quote.icon, volume: quote.volume } : null;
@@ -135,5 +156,18 @@ export function loadPriceInputs(
       volume: row.volume,
     });
   }
-  return { ninja, scout: uniqueValueMap(league), scoutAgeHours: itemValuesAgeHours(league), nowMs };
+  return {
+    ninja,
+    scout: byScoutKey(uniqueValueMap(league)),
+    scoutAgeHours: itemValuesAgeHours(league, SCOUT_UNIQUE_SOURCE),
+    lineage: byScoutKey(lineageValueMap(league)),
+    lineageAgeHours: itemValuesAgeHours(league, SCOUT_LINEAGE_SOURCE),
+    scoutZero: new Set([...scoutZeroKeys(league)].map(scoutKey)),
+    nowMs,
+  };
+}
+
+/** Re-key an item_values map (lowercased names) by scoutKey, so curated spellings still match. */
+function byScoutKey(values: ReadonlyMap<string, number>): Map<string, number> {
+  return new Map([...values].map(([k, v]) => [scoutKey(k), v]));
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { confidenceSchema } from "../core/tools/bossEv/schema";
-import { bossViewSchema } from "./tools/bossEvContract";
+import { confidenceSchema, unmodelledEntrySchema } from "../core/tools/bossEv/schema";
+import { bossViewSchema, floorDropSchema } from "./tools/bossEvContract";
 
 /**
  * GET /api/farm — the Farm tab's one payload: mechanic baskets ranked by 7d heat, pinnacle bosses
@@ -74,8 +74,11 @@ export const bossRowSchema = z.object({
   entryDiv: z.number(),
   entryComplete: z.boolean(),
   entry: z.array(entryChipSchema).min(1),
+  /** A real entry cost the tool cannot price — the net is then an upper bound. */
+  unmodelledEntry: unmodelledEntrySchema.nullable(),
   entryVolume: z.number().nullable(),
   floorDiv: z.number(),
+  floorDrops: z.array(floorDropSchema),
   chaseDiv: z.number(),
   /** Conservative EV − entry over the priced, rated drops only. */
   netDiv: z.number(),
@@ -85,6 +88,7 @@ export const bossRowSchema = z.object({
   chaseOneIn: z.number().nullable(),
   pLosingRun: z.number().nullable(),
   losingRunUnknownRates: z.number().int(),
+  losingRunConfidence: confidenceSchema.nullable(),
   headline: z.object({ text: z.string(), tone: toneSchema, title: z.string() }),
   /** Weakest confidence among the lines that carry the EV; "unverified" when none has a rate. */
   confidence: confidenceSchema,

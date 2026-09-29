@@ -10,6 +10,7 @@ import type { BossArt } from "../../core/tools/bossEv/art";
 import { bossEv, evaluateBosses, jackpotOf } from "../../core/tools/bossEv/ev";
 import { breakEvenHeadline, capTone, fmtDiv, oneIn } from "../../core/tools/bossEv/headline";
 import { loadPriceInputs, priceLookup, referencedNinjaIds, resolvePrice, type PriceInputs } from "../../core/tools/bossEv/pricing";
+import { rawBossLoot } from "../../core/tools/bossEv/curated";
 import { comparePatch, parseBossLoot, patchWarning, type Tier } from "../../core/tools/bossEv/schema";
 import { insertSnapshots } from "../../db/marketQueries";
 import { getDb } from "../../db/database";
@@ -27,9 +28,7 @@ const ART: BossArt = new Map();
 const close = (actual: number, expected: number, what: string): void =>
   assert.ok(Math.abs(actual - expected) < 1e-9, `${what}: expected ${expected}, got ${actual}`);
 
-function readCurated(): unknown {
-  return JSON.parse(readFileSync(join(process.cwd(), "src/data/poe2/bosses/boss-loot.json"), "utf8")) as unknown;
-}
+const readCurated = (): Record<string, unknown> => rawBossLoot();
 
 function testCuratedFile(): void {
   const file = parseBossLoot(readCurated());
@@ -66,7 +65,7 @@ function testCuratedFile(): void {
 function rejects(what: string, mutate: (raw: { bosses: Array<Record<string, unknown> & { tiers: Array<{ loot: Array<Record<string, unknown>> }> }> } & Record<string, unknown>) => void): void {
   const raw = readCurated() as Parameters<typeof mutate>[0];
   mutate(raw);
-  assert.throws(() => parseBossLoot(raw), /boss-loot\.json invalid/, what);
+  assert.throws(() => parseBossLoot(raw), /boss loot tables invalid/, what);
 }
 
 function firstLoot(raw: Parameters<Parameters<typeof rejects>[1]>[0]): Record<string, unknown> {
@@ -128,7 +127,7 @@ const SRC = { title: "synthetic", url: "https://example.com/s", accessed: "2026-
 function syntheticInputs(overrides: Partial<Record<string, number>> = {}): PriceInputs {
   const base: Record<string, number> = { a: 1, b: 5, c: 1, g: 1, p: 10, r: 40, u: 100, ...overrides };
   const ninja = new Map(Object.entries(base).map(([id, div]) => [id, { div, name: id.toUpperCase(), icon: null, ageHours: 0.5, volume: div * 10 }]));
-  return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, nowMs: NOW };
+  return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), nowMs: NOW };
 }
 
 const TIER: Tier = {
@@ -316,7 +315,7 @@ function testHeadlines(): void {
 
 function testCuratedEvaluates(): void {
   const file = parseBossLoot(readCurated());
-  const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, nowMs: NOW };
+  const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), nowMs: NOW };
   const bosses = evaluateBosses(file, priceLookup(empty), ART);
   const rows = buildFarmBoard([], bosses, 0);
   const payload = {

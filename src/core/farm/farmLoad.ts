@@ -6,14 +6,14 @@ import { resolveRates } from "../rates";
 import { evaluateBosses } from "../tools/bossEv/ev";
 import { loadPriceInputs, priceLookup, referencedNinjaIds } from "../tools/bossEv/pricing";
 import { parseBossArt } from "../tools/bossEv/art";
-import { parseBossLoot, patchWarning } from "../tools/bossEv/schema";
+import { loadBossLoot } from "../tools/bossEv/curated";
+import { patchWarning } from "../tools/bossEv/schema";
 import { buildFarmBoard, isBossRow, isMechanicRow, mechanicIcons } from "./farmBoard";
 import bossArtRaw from "../../data/poe2/bosses/boss-art.json";
-import bossLootRaw from "../../data/poe2/bosses/boss-loot.json";
 import patchCoverageRaw from "../../data/poe2/patch-coverage.json";
 
 // Parsed at module load: a malformed curated file must break every caller loudly, not price nothing.
-const BOSS_LOOT = parseBossLoot(bossLootRaw);
+const BOSS_LOOT = loadBossLoot();
 const BOSS_ART = parseBossArt(bossArtRaw);
 const NINJA_IDS = referencedNinjaIds(BOSS_LOOT);
 const COVERAGE_PATCH = patchCoverageSchema.parse(patchCoverageRaw).game_data_patch;

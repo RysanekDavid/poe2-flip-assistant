@@ -150,7 +150,7 @@ export function cxItemNames(db: Db = getDb()): string[] {
 
 /** Lowercased unique names poe2scout priced for the league (item_values keeps no history). */
 export function scoutUniqueKeys(league: string, db: Db = getDb()): string[] {
-  const rows = db.prepare("SELECT name_key AS nameKey FROM item_values WHERE league = ? AND source = 'scout'")
+  const rows = db.prepare("SELECT name_key AS nameKey FROM item_values WHERE league = ? AND source = 'scout' AND value_div > 0")
     .all(league) as Array<{ nameKey: string }>;
   return rows.map((r) => r.nameKey);
 }

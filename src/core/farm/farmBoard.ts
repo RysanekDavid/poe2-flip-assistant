@@ -43,6 +43,8 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
   const t = defaultTier(boss);
   const carrying = t.loot.filter((l) => (l.evDiv ?? 0) > 0).map((l) => l.confidence);
   const uncountedDrops = t.loot.filter((l) => l.evDiv == null).length;
+  // an entry cost the tool cannot price understates the entry exactly like an unpriced line
+  const entryFull = t.entryComplete && t.unmodelledEntry == null;
   return {
     kind: "boss",
     id: boss.id,
@@ -53,15 +55,18 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
     entryDiv: t.entryDiv,
     entryComplete: t.entryComplete,
     entry: t.entryLines.map((l) => ({ name: l.name, qty: l.qty, icon: l.icon, costDiv: l.costDiv, route: l.route })),
+    unmodelledEntry: t.unmodelledEntry,
     entryVolume: t.entryVolume,
     floorDiv: t.floorDiv,
+    floorDrops: t.floorDrops,
     chaseDiv: t.chaseDiv,
     netDiv: t.netDiv,
-    netBound: netBoundOf(t.entryComplete, uncountedDrops),
+    netBound: netBoundOf(entryFull, uncountedDrops),
     uncountedDrops,
     chaseOneIn: t.chaseOneIn,
     pLosingRun: t.pLosingRun,
     losingRunUnknownRates: t.losingRunUnknownRates,
+    losingRunConfidence: t.losingRunConfidence,
     headline: breakEvenHeadline(t, exPerDiv),
     confidence: weakest(carrying),
     unpriced: t.unpriced,
@@ -74,16 +79,19 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
 /**
  * 0 — a net we can stand behind: exact, or a lower bound that is already ≥ 0;
  * 1 — "rates unknown": a negative lower bound, the loss is NOT certain (unrated drops may cover it);
- * 2 — entry partly unpriced: the net is an upper bound or unknown.
+ * 2 — entry partly unpriced or not fully modelled: the net is an upper bound or unknown.
  */
 export function netGroup(r: BossRow): 0 | 1 | 2 {
   if (r.netBound === "exact" || (r.netBound === "lower" && r.netDiv >= 0)) return 0;
   return r.netBound === "lower" ? 1 : 2;
 }
 
-const byNet = (a: BossRow, b: BossRow): number => netGroup(a) - netGroup(b) || b.netDiv - a.netDiv;
+/** Within a group a net carried by confirmed data outranks a bigger one resting on a single guide. */
+const confirmedFirst = (r: BossRow): number => (r.confidence === "confirmed" ? 0 : 1);
 
-/** Mechanics (already heat-ordered by rankFarms) first, then bosses by net per kill (see netGroup). */
+const byNet = (a: BossRow, b: BossRow): number => netGroup(a) - netGroup(b) || confirmedFirst(a) - confirmedFirst(b) || b.netDiv - a.netDiv;
+
+/** Mechanics (already heat-ordered by rankFarms) first, then bosses by net group, confidence, net per kill. */
 export function buildFarmBoard(mechanics: readonly MechanicInput[], bosses: readonly BossView[], exPerDiv: number): FarmBoardRow[] {
   return [...mechanics.map(mechanicRow), ...bosses.map((b) => bossRow(b, exPerDiv)).sort(byNet)];
 }

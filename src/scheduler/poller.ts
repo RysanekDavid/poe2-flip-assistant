@@ -13,6 +13,7 @@ import { startPatchNotesWatcher } from "../sources/patchNotes/watcher";
 import { startLeagueWatcher } from "./leagueWatcher";
 import { getPolledLeagues } from "../core/leagueUsers";
 import { balanceProblem, snapshotBalancesAll } from "./balanceLoop";
+import { startScoutValues } from "./scoutValuesLoop";
 import { startNotifyDrainer } from "../core/notify/drainer";
 import { getUserById } from "../db/userQueries";
 import { runSnipeOutcomeChecks, snipeOutcomesProblem } from "../core/snipeOutcomes/run";
@@ -41,6 +42,7 @@ function start(): void {
   startSnipeOutcomes(ownerCred);
   startCraftMargin(ownerCred);
   startBalanceLoop();
+  startScoutValues(); // poe2scout unique + lineage-gem prices for every polled league
   startNotifyDrainer(); // Discord deliveries queued by the alerts trigger (core/notify)
 }
 
