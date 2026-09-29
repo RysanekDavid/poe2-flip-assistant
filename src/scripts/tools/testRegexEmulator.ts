@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { SAFE_REGEX_LINE_CHARS, SafeRegexError, compileSafeRegex, parseSafeRegex, serializeSafeRegex } from "../../core/tools/regex/safeRegex";
-import { compileSearch, matchesItem, tooltipLines } from "../../core/tools/regex/searchEmulator";
+import { compileSearch, evaluateSearch, matchesItem, tooltipLines } from "../../core/tools/regex/searchEmulator";
 import { SearchParseError } from "../../core/tools/regex/explain";
 import { composePool } from "../../core/tools/regex/poolCompose";
 import { POOL_HEADERS } from "../../core/tools/regex/pools/headers";
@@ -48,7 +48,8 @@ function testDialect(): void {
     assert.throws(() => parseSafeRegex(p), (e: unknown) => e instanceof SafeRegexError && e.position === position, `"${p}" must be refused at ${position}`);
   }
   assert.equal(serializeSafeRegex(parseSafeRegex("(a|b)c\\d[x-z]")), "(?:a|b)c[0-9][x-z]", "groups become non-capturing, \\d an explicit class");
-  testAdversarialTiming();
+  const worst = testAdversarialTiming();
+  console.log(`[regex] worst accepted adversarial shape: ${worst.worst.toFixed(1)} ms cold (${worst.shape.slice(0, 50)})`);
   const line = "a".repeat(SAFE_REGEX_LINE_CHARS);
   assert.throws(() => matchesItem(compileSearch("a.*z"), [`${line}x`]), RangeError, "longer lines are refused, not tested");
   // composer "any" output: several spanning tokens, one .* per top-level branch
@@ -56,38 +57,68 @@ function testDialect(): void {
   assert.doesNotThrow(() => parseSafeRegex(Array.from({ length: 17 }, () => "(a|b)(c|d)(e|f)(g|h)").join("|")), "a long top-level alternation adds up, it does not multiply");
 }
 
-/** Review-reported ReDoS shapes: each must be refused, or finish under 50 ms on a max-length line. */
-function testAdversarialTiming(): void {
-  const lines = ["a".repeat(SAFE_REGEX_LINE_CHARS), `${"a".repeat(100)}${"b".repeat(100)}${"c".repeat(100)}`, "1".repeat(SAFE_REGEX_LINE_CHARS)];
-  const shapes = [
-    "a?a?a?a?a?a?a?a?aaaaaaaa[a-z]*[a-z]*b",
-    "a?a?a?a?a?a?a?a?aaaaaaaa.*b.*c",
-    "a.*a.*z",
-    "[a-z]*[a-z]*b",
-    ".*.*b",
-    "a?a?a?a?a?a?a?aaaaaaa.*b",
-    "a?a?a?a?a?a?aaaaaa.*b",
-    "(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a).*b",
-    "(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)b",
-    "a?a?a?a?a?a?a?a?aaaaaaaab",
-    "\\d+\\d+x",
-    "[0-9]*[0-9]*[0-9]*x",
-  ];
-  for (const shape of shapes) {
-    let compiled: ReturnType<typeof compileSearch>;
-    try {
-      compiled = compileSearch(`"${shape}"`);
-    } catch (error: unknown) {
-      assert.ok(error instanceof SafeRegexError, `${shape} failed with ${String(error)}`);
-      continue;
-    }
+const DOTS = ".".repeat(100);
+const G11 = "(a|a|a|a|a|a|a|a|a|a|a)";
+const G10 = "(a|a|a|a|a|a|a|a|a|a)";
+
+/** Review-reported ReDoS shapes and relatives: each is refused, or runs < 50 ms COLD on every line. */
+const ADVERSARIAL = [
+  "a?a?a?a?a?a?a?a?aaaaaaaa[a-z]*[a-z]*b",
+  "a?a?a?a?a?a?a?a?aaaaaaaa.*b.*c",
+  "a.*a.*z",
+  "[a-z]*[a-z]*b",
+  ".*.*b",
+  "a?a?a?a?a?a?a?aaaaaaa.*b",
+  "a?a?a?a?a?a?aaaaaa.*b",
+  "(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a).*b",
+  "(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)b",
+  "a?a?a?a?a?a?a?a?aaaaaaaab",
+  "\\d+\\d+x",
+  "[0-9]*[0-9]*[0-9]*x",
+  // tail re-matched after .* when V8 has no literal-tail fast path (anchor or group after it)
+  `${G11}${G10}.*${DOTS}$b`,
+  `${G11}${G10}.*${DOTS}(b)`,
+  `${DOTS}^b`,
+  `.*${DOTS}^b`,
+  `a.*${DOTS}$b`,
+  `(a|b).*${".".repeat(60)}(b)`,
+  `a?a?a?a?a?a?.*${".".repeat(20)}$b`,
+  `[a-z]*${"[a-z]".repeat(20)}$`,
+  // top-level alternatives run in turn: three heavy branches in one term, four medium ones
+  [1, 2, 3].map((i) => `${G11}${G10}.*${DOTS}$${"bcd"[i - 1]}`).join("|"),
+  [0, 1, 2, 3].map((i) => `.*${".".repeat(105)}$${"bcde"[i]}`).join("|"),
+  [0, 1, 2, 3].map((i) => `${"xyzw"[i]}.*${".".repeat(105)}(b)`).join("|"),
+  // just under the budgets: these must be accepted AND fast, or the model is too loose
+  `.*${".".repeat(50)}$b`,
+  [0, 1].map((i) => `.*${".".repeat(40)}$${"bc"[i]}`).join("|"),
+  `(a|b)(a|b).*${".".repeat(12)}(b)`,
+  "a?a?a?a?aaaa.*b",
+];
+
+/** Shapes the budget must accept (so the timing assertions above measure something real). */
+const NEAR_LIMIT = ADVERSARIAL.slice(-4);
+
+function testAdversarialTiming(): { worst: number; shape: string } {
+  const lines = ["a".repeat(SAFE_REGEX_LINE_CHARS), "b".repeat(SAFE_REGEX_LINE_CHARS), `${"a".repeat(150)}${"b".repeat(150)}`, "1".repeat(SAFE_REGEX_LINE_CHARS)];
+  let worst = { worst: 0, shape: "" };
+  for (const shape of NEAR_LIMIT) assert.doesNotThrow(() => compileSearch(`"${shape}"`), `near-limit shape ${shape.slice(0, 40)} is accepted`);
+  for (const shape of ADVERSARIAL) {
     for (const line of lines) {
+      let compiled: ReturnType<typeof compileSearch>;
+      try {
+        compiled = compileSearch(`"${shape}"`); // fresh RegExp per line: the timing below is a cold first run
+      } catch (error: unknown) {
+        assert.ok(error instanceof SafeRegexError, `${shape.slice(0, 40)} failed with ${String(error)}`);
+        break;
+      }
       const t0 = performance.now();
       matchesItem(compiled, [line]);
       const ms = performance.now() - t0;
-      assert.ok(ms < 50, `accepted shape ${shape} took ${ms.toFixed(1)} ms on a ${line.length}-char line`);
+      assert.ok(ms < 50, `accepted shape ${shape.slice(0, 60)} took ${ms.toFixed(1)} ms cold on a ${line.length}-char line`);
+      if (ms > worst.worst) worst = { worst: ms, shape };
     }
   }
+  return worst;
 }
 
 function testSearchParsing(): void {
@@ -98,6 +129,15 @@ function testSearchParsing(): void {
   assert.throws(() => compileSearch('"(.+)+x"'), SafeRegexError, "pasted ReDoS is refused, not compiled");
   assert.throws(() => compileSearch('abc "def'), SearchParseError);
   assert.throws(() => compileSearch("a".repeat(501)), SearchParseError, "over 500 chars is refused before compiling");
+  assert.throws(() => compileSearch("\\D5"), SafeRegexError, "\\D is refused, not lowercased into \\d");
+  assert.throws(() => compileSearch('"x|\\W"'), SafeRegexError, "case-sensitive escapes survive term splitting");
+  assert.ok(matchesItem("\\d5", ["Rune 45"]) && !matchesItem("\\d5", ["Rune X5"]), "\\d still means a digit");
+  assert.ok(matchesItem("ABC", ["xabcx"]), "literals stay case-insensitive");
+  assert.throws(() => matchesItem("abc", Array.from({ length: 101 }, () => "x")), RangeError, "over 100 lines is not one item");
+  const ev = evaluateSearch('abc "!zzz"', ["xx", "xabcx"]);
+  assert.deepEqual(ev, { ok: true, matched: true, terms: [{ raw: "abc", negated: false, holds: true, hitLines: [1] }, { raw: '"!zzz"', negated: true, holds: true, hitLines: [] }] });
+  assert.deepEqual(evaluateSearch('"(.+)+x"', ["x"]), { ok: false, error: "a quantifier on a group can nest repetition — not supported (at char 5)", position: 4 }, "refusals come back as data for the worker");
+  assert.equal(evaluateSearch("a", ["x".repeat(301)]).ok, false, "oversized lines are a refusal, not a throw");
   assert.throws(() => compileSearch(Array.from({ length: 41 }, (_, i) => `t${i}`).join(" ")), SearchParseError, "over 40 terms is refused");
 }
 

@@ -6,9 +6,15 @@
  *     when any line matches (so ^ and $ are line anchors);
  *   - "!a|b" negates the whole alternation (NOT (a OR b)).
  * Patterns go through safeRegex (validated AST, re-serialized), never `new RegExp(rawText)`.
+ *
+ * Defense in depth: safeRegex's step budgets bound backtracking by construction, and every input
+ * is capped (search length and terms, line length and count). The UI still runs pasted/explained
+ * strings in a Web Worker with a hard ~200 ms timeout and terminates it on overrun, so a gap in the
+ * cost model degrades to "explanation unavailable", never a frozen tab. For that this module stays
+ * worker-friendly: pure functions, no DOM or Node APIs, plain-data results (evaluateSearch).
  */
 import { SearchParseError, parseSearch } from "./explain";
-import { SAFE_REGEX_LINE_CHARS, compileSafeRegex } from "./safeRegex";
+import { SAFE_REGEX_LINE_CHARS, SafeRegexError, compileSafeRegex } from "./safeRegex";
 
 export interface CompiledTerm {
   raw: string;
@@ -37,8 +43,8 @@ export function compileSearch(search: string): CompiledSearch {
   const terms = ast.terms.map((t) => ({
     raw: t.raw,
     negated: t.negated,
-    // parseSearch splits on every "|", including those inside ( ); rejoining restores the pattern
-    regex: compileSafeRegex(t.alternatives.join("|")),
+    // the original-case pattern: lowercasing first would turn a refused \D into an accepted \d
+    regex: compileSafeRegex(t.pattern),
   }));
   return { source: search, terms };
 }
@@ -65,9 +71,17 @@ export function tooltipLines(clipboard: string): string[] {
  */
 export const EMULATOR_MAX_LINE_CHARS = SAFE_REGEX_LINE_CHARS;
 
-export function termMatches(term: CompiledTerm, lines: readonly string[]): boolean {
+/** A tooltip has a few dozen lines; the cost bound is per line, so the count is capped too. */
+export const EMULATOR_MAX_LINES = 100;
+
+function assertTooltip(lines: readonly string[]): void {
+  if (lines.length > EMULATOR_MAX_LINES) throw new RangeError(`${lines.length} lines is not one item (limit ${EMULATOR_MAX_LINES})`);
   const long = lines.find((l) => l.length > EMULATOR_MAX_LINE_CHARS);
   if (long !== undefined) throw new RangeError(`a ${long.length}-char line is not tooltip text (limit ${EMULATOR_MAX_LINE_CHARS})`);
+}
+
+export function termMatches(term: CompiledTerm, lines: readonly string[]): boolean {
+  assertTooltip(lines);
   const hit = lines.some((line) => term.regex.test(line));
   return hit !== term.negated;
 }
@@ -76,4 +90,30 @@ export function termMatches(term: CompiledTerm, lines: readonly string[]): boole
 export function matchesItem(search: string | CompiledSearch, lines: readonly string[]): boolean {
   const compiled = typeof search === "string" ? compileSearch(search) : search;
   return compiled.terms.every((t) => termMatches(t, lines));
+}
+
+export type SearchEvaluation =
+  | { ok: true; matched: boolean; terms: Array<{ raw: string; negated: boolean; holds: boolean; hitLines: number[] }> }
+  | { ok: false; error: string; position: number | null };
+
+/**
+ * Worker entry point: search text + tooltip lines in, structured-clone-safe result out. Refusals
+ * (parse errors, patterns outside the dialect, oversized input) come back as `ok: false` with the
+ * reason — the one place errors become data, because a worker must answer every message.
+ */
+export function evaluateSearch(search: string, lines: readonly string[]): SearchEvaluation {
+  let compiled: CompiledSearch;
+  try {
+    compiled = compileSearch(search);
+    assertTooltip(lines);
+  } catch (error: unknown) {
+    if (error instanceof SearchParseError || error instanceof SafeRegexError) return { ok: false, error: error.message, position: error.position };
+    if (error instanceof RangeError) return { ok: false, error: error.message, position: null };
+    throw error;
+  }
+  const terms = compiled.terms.map((t) => {
+    const hitLines = lines.flatMap((line, i) => (t.regex.test(line) ? [i] : []));
+    return { raw: t.raw, negated: t.negated, holds: (hitLines.length > 0) !== t.negated, hitLines };
+  });
+  return { ok: true, matched: terms.every((t) => t.holds), terms };
 }
