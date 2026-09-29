@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Wallet } from "lucide-react";
 import { ComputedLeague } from "../ui/ComputedLeague";
+import { parseSqliteTimestamp } from "../../lib/sqliteTime";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { Panel } from "../ui/Panel";
@@ -33,7 +34,7 @@ function NoSnapshot({ stashEnabled }: { stashEnabled: boolean }) {
 function WorthBody({ data, onChanged }: { data: BalanceData; onChanged: () => void }) {
   const [manual, setManual] = useState(false);
   const latest = data.stats.latest;
-  const chart = data.series.map((s) => ({ t: s.fetched_at.slice(5, 16), value: s.net_worth_div }));
+  const chart = data.series.map((s) => ({ ms: parseSqliteTimestamp(s.fetched_at), value: s.net_worth_div }));
   return (
     <>
       {latest ? (

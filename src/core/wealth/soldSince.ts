@@ -6,7 +6,8 @@
  *  - a relist (price edit, tab move) can change the listing id, so per item name no more listings
  *    count as gone than the name's listing count actually dropped;
  *  - a truncated latest read (trade2 caps a search at 100 ids, most expensive first) did not see
- *    its cheapest listings, so a previous listing at or under the cheapest ask it did see is not
+ *    its cheapest listings (sorted by PER-UNIT ask), so a previous listing whose unit ask is at or
+ *    under the cheapest unit ask it did see is not
  *    evidence of anything.
  * Rows stored before listing ids were captured (listingId null) are ignored.
  */
@@ -15,6 +16,8 @@ export interface ReadListing {
   name: string;
   /** Your ask for the whole listing (unit ask × stack), Div; null when not ladder-priced. */
   askDiv: number | null;
+  /** Your ask per unit, Div — what the trade2 account read sorts by (the truncation floor). */
+  unitAskDiv: number | null;
 }
 
 export interface SoldSinceResult {
@@ -32,7 +35,7 @@ const countByName = (rows: readonly ReadListing[]): Map<string, number> => {
 
 function truncationFloor(current: readonly ReadListing[], truncated: boolean): number | null {
   if (!truncated) return null;
-  const asks = current.map((r) => r.askDiv).filter((a): a is number => a != null);
+  const asks = current.map((r) => r.unitAskDiv).filter((a): a is number => a != null);
   // truncated with no priced listing seen: nothing previous can be told apart from "not read"
   return asks.length > 0 ? Math.min(...asks) : Number.POSITIVE_INFINITY;
 }
@@ -53,7 +56,7 @@ export function soldSince(
   const gone: ReadListing[] = [];
   for (const r of prev) {
     if (nowIds.has(r.listingId ?? "")) continue;
-    if (floor != null && (r.askDiv == null || r.askDiv <= floor)) continue;
+    if (floor != null && (r.unitAskDiv == null || r.unitAskDiv <= floor)) continue;
     const key = r.name.toLowerCase();
     const left = budget.get(key) ?? 0;
     if (left <= 0) continue;

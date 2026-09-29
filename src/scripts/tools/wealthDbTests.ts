@@ -18,13 +18,10 @@ import {
 } from "../../db/balanceItemQueries";
 import { ensureCredColumns } from "../../db/credMigrations";
 import { getCredStatus, resetCredStatus } from "../../db/credStatusQueries";
-import {
-  finishRepriceRun, getRepriceRun, listingComps, markRepriceRequested, pruneListingComps, repriceNextAt, upsertListingComp, REPRICE_COOLDOWN_MS,
-  type CompWrite,
-} from "../../db/listingCompsQueries";
-import { consumeScanRequests, requestScan } from "../../db/scanRequestQueries";
+import { listingComps, pruneListingComps, upsertListingComp, type CompWrite } from "../../db/listingCompsQueries";
 import { ensureWealthColumns } from "../../db/wealthMigrations";
 import { columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
+import { runRepriceQueueTests } from "./repriceQueueTests";
 import { testSellContract } from "./wealthContractTest";
 
 const RATES = { exaltPerDivine: 400, chaosPerDivine: 20 };
@@ -122,14 +119,18 @@ function testMigrations(db: Database.Database): void {
 
 async function testCredStatus(db: Database.Database): Promise<void> {
   const u = insertUser(db, "cookie");
+  const stored = { poesessid: "a".repeat(32), source: "stored" as const };
   assert.deepEqual(getCredStatus(u), { state: "unknown", checkedAt: null, error: null });
-  await assert.rejects(withCredStatus(u, async () => Promise.reject(new TradeAuthError("post", "/search/poe2/L"))), TradeAuthError);
+  const envCred = { poesessid: "b".repeat(32), source: "env" as const };
+  await assert.rejects(withCredStatus(u, envCred, async () => Promise.reject(new TradeAuthError("post", "/search"))), TradeAuthError);
+  assert.equal(getCredStatus(u).state, "unknown", "the owner's .env fallback cookie never judges the saved one");
+  await assert.rejects(withCredStatus(u, stored, async () => Promise.reject(new TradeAuthError("post", "/search/poe2/L"))), TradeAuthError);
   const expired = getCredStatus(u);
   assert.equal(expired.state, "expired");
   assert.match(expired.error ?? "", /403.*POESESSID/);
-  await assert.rejects(withCredStatus(u, async () => Promise.reject(new TradeRateLimitedError("search", 5000))), TradeRateLimitedError);
+  await assert.rejects(withCredStatus(u, stored, async () => Promise.reject(new TradeRateLimitedError("search", 5000))), TradeRateLimitedError);
   assert.equal(getCredStatus(u).state, "expired", "a busy budget says nothing about the cookie");
-  assert.equal(await withCredStatus(u, async () => 7), 7);
+  assert.equal(await withCredStatus(u, stored, async () => 7), 7);
   assert.deepEqual([getCredStatus(u).state, getCredStatus(u).error], ["ok", null], "a success clears expired");
   resetCredStatus(u);
   assert.deepEqual(getCredStatus(u), { state: "unknown", checkedAt: null, error: null }, "a new cookie has not been tried");
@@ -159,28 +160,10 @@ export async function runWealthDbTests(): Promise<void> {
   testMigrations(db);
   await testCredStatus(db);
   testComps(db);
-  testRepriceQueue(db);
+  await runRepriceQueueTests(db);
   await testRepriceScan();
   testNoTradeSearchInWealthRoutes();
   testSellContract();
-}
-
-function testRepriceQueue(db: Database.Database): void {
-  const u = insertUser(db, "repricer");
-  const t0 = Date.parse("2026-09-29T12:00:00Z");
-  assert.equal(repriceNextAt(getRepriceRun(u), t0), null, "never checked → may check now");
-  markRepriceRequested(u, new Date(t0));
-  requestScan("reprice", u);
-  assert.equal(repriceNextAt(getRepriceRun(u), t0 + 60_000)?.getTime(), t0 + REPRICE_COOLDOWN_MS, "6h cooldown from the request");
-  assert.deepEqual(consumeScanRequests("reprice"), [u], "the web only enqueues; the poller drains");
-  assert.deepEqual(consumeScanRequests("reprice"), [], "a drained request is gone");
-  finishRepriceRun(u, { checked: 0, searches: 0, error: "trade2 search budget is busy" });
-  assert.equal(repriceNextAt(getRepriceRun(u), t0 + 60_000), null, "a run that failed before any search frees the cooldown");
-  markRepriceRequested(u, new Date(t0));
-  finishRepriceRun(u, { checked: 1, searches: 3, error: "trade2 403" });
-  assert.ok(repriceNextAt(getRepriceRun(u), t0 + 60_000) != null, "a run that spent searches holds it even when it failed");
-  assert.equal(repriceNextAt(getRepriceRun(u), t0 + REPRICE_COOLDOWN_MS + 1), null, "free again after 6h");
-  assert.throws(() => finishRepriceRun(999_999, { checked: 0, searches: 0, error: null }), /no reprice run/);
 }
 
 const row = (name: string, over: Partial<BalanceItemRow>): BalanceItemRow => ({
@@ -240,7 +223,7 @@ function testNoTradeSearchInWealthRoutes(): void {
     readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? files(join(dir, f)) : [join(dir, f)]));
   for (const f of files(resolve("src/app/api/wealth"))) {
     const src = readFileSync(f, "utf8");
-    assert.ok(!/tradeClient|searchListings|createSearch|fetchListings|repriceRun/.test(src), `${f} must not reach trade2`);
+    assert.ok(!/tradeClient|searchListings|createSearch|fetchListings|wealth\/repriceRun"/.test(src), `${f} must not reach trade2`);
   }
   near(REPRICE_MAX_SEARCHES * 2 * 3 / 6, 8, "3 users × (8 searches + 8 fetches) / 6h = 8 requests/h, ≤ 4 searches/h");
 }

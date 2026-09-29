@@ -3,6 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import type { Pnl, TabRow, TabSeriesPoint } from "./useBalance";
 import { ComputedLeague } from "../ui/ComputedLeague";
+import { parseSqliteTimestamp } from "../../lib/sqliteTime";
 
 export const fmt = (n: number, d = 1): string => n.toLocaleString("en-US", { maximumFractionDigits: d });
 
@@ -25,9 +26,16 @@ function DivDelta({ label, v }: { label: string; v: number }) {
   );
 }
 
-/** A green value-over-time line, or a hint when there are too few points for a trend. */
+/** "29/09 19:40" — English UI, 24h clock, whatever the browser locale. */
+export const fmtStamp = (ms: number): string =>
+  new Date(ms).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).replace(",", "");
+
+/**
+ * A green value-over-time line on a REAL time axis, or a hint when there are too few points.
+ * Evenly spaced category ticks drew a week without reads as one step — time scale keeps gaps visible.
+ */
 export function ValueChart({ points, height, label, empty }: {
-  points: { t: string; value: number }[];
+  points: { ms: number; value: number }[];
   height: number;
   label: string;
   empty: [string, string]; // [no points, one point]
@@ -43,10 +51,23 @@ export function ValueChart({ points, height, label, empty }: {
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={points}>
         <CartesianGrid stroke="#262626" />
-        <XAxis dataKey="t" tick={{ fill: "#737373", fontSize: 12 }} />
+        <XAxis
+          dataKey="ms"
+          type="number"
+          scale="time"
+          domain={["dataMin", "dataMax"]}
+          tickFormatter={fmtStamp}
+          minTickGap={24}
+          tick={{ fill: "#737373", fontSize: 12 }}
+        />
         <YAxis tick={{ fill: "#737373", fontSize: 12 }} width={44} domain={["auto", "auto"]} />
-        <Tooltip contentStyle={{ background: "#171717", border: "1px solid #404040" }} formatter={(v: number) => [`${fmt(v)} Div`, label]} />
-        <Line type="linear" dataKey="value" stroke="#22c55e" dot={false} strokeWidth={2} />
+        <Tooltip
+          contentStyle={{ background: "#171717", border: "1px solid #404040" }}
+          labelFormatter={(ms: number) => fmtStamp(ms)}
+          formatter={(v: number) => [`${fmt(v)} Div`, label]}
+        />
+        {/* dots mark each actual read, so a long straight segment reads as "no reads here" */}
+        <Line type="linear" dataKey="value" stroke="#22c55e" dot={{ r: 2, fill: "#22c55e" }} strokeWidth={2} isAnimationActive={false} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -54,7 +75,7 @@ export function ValueChart({ points, height, label, empty }: {
 
 /** HERO — realized profit from logged flips (auto, frictionless, no stash read). */
 export function PnlHero({ pnl, league }: { pnl: Pnl | null; league: string | null }) {
-  const points = (pnl?.points ?? []).map((p) => ({ t: p.t.slice(5, 16), value: p.cum }));
+  const points = (pnl?.points ?? []).map((p) => ({ ms: parseSqliteTimestamp(p.t), value: p.cum }));
   return (
     <div className="mb-4 grid grid-cols-1 gap-4 rounded border border-neutral-800 bg-neutral-950/40 p-3 lg:grid-cols-[260px_1fr]">
       <div className="flex flex-col justify-center">

@@ -48,7 +48,7 @@ export function useSell(reloadKey: number): {
   }, [load]);
 
   // A queued check finishes in the poller within a few minutes; pick its comps up without a reload.
-  const queued = data?.reprice.state === "queued";
+  const queued = data?.reprice.state === "queued" || data?.reprice.state === "running";
   useEffect(() => {
     if (!queued) return;
     const timer = setInterval(load, 30_000);

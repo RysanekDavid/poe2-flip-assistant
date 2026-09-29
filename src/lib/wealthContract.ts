@@ -155,7 +155,7 @@ export const sellRowSchema = planRowSchema.omit({ reason: true }).extend({
   /** poe.ninja 7-day change in %, exchange items only. */
   change7d: z.number().nullable(),
   verdict: verdictSchema,
-  /** Per-unit price to post (exchange mid, list or reprice target); null for hold / unpriced. */
+  /** Per-unit price to post (exchange mid, list or reprice target); null for hold / unpriced and for an ask already under fair. */
   targetDiv: z.number().nullable(),
   /** The verdict in ≤80 characters, number-backed. */
   reason: z.string().max(80),
@@ -191,7 +191,8 @@ export const soldSinceSchema = z.object({
 });
 export type SoldSince = z.infer<typeof soldSinceSchema>;
 
-export const REPRICE_STATES = ["idle", "queued", "done", "failed"] as const;
+/** running = the poller took it; lost = unfinished but neither queued nor running (poller restart). */
+export const REPRICE_STATES = ["idle", "queued", "running", "lost", "done", "failed"] as const;
 export const repriceStatusSchema = z.object({
   state: z.enum(REPRICE_STATES),
   requestedAt: z.string().nullable(),

@@ -130,7 +130,7 @@ function testSellVerdict(): void {
   const listNew = v(byName("Headhunter"));
   assert.deepEqual(listNew, { verdict: "list", targetDiv: 40, reason: "list at 40 div (fair)" });
   assert.equal(v(byName("Headhunter"), { askDiv: 46 }).verdict, "list", "46 ≤ 40 × 1.15 → keep listing");
-  assert.deepEqual(v(byName("Headhunter"), { askDiv: 11 }), { verdict: "list", targetDiv: 40, reason: "yours 11 div is 73% under 40 div fair" }, "an under-fair ask is flagged, never called fair");
+  assert.deepEqual(v(byName("Headhunter"), { askDiv: 11 }), { verdict: "list", targetDiv: null, reason: "yours 11 div is 73% under 40 div fair — check before raising" }, "an under-fair ask is flagged, never called fair, and gets no raise-the-price note");
   const over = v(byName("Headhunter"), { askDiv: 46.1 });
   assert.deepEqual([over.verdict, over.targetDiv, over.reason], ["reprice", 40, "yours 46.1 div is 15% over 40 div fair"]);
   const stuck = v(byName("Mageblood"), { askDiv: 5, comp: comp(3.2, 3.1) });
@@ -141,7 +141,9 @@ function testSellVerdict(): void {
 }
 
 function testSoldSince(): void {
-  const L = (listingId: string | null, name: string, askDiv: number | null): ReadListing => ({ listingId, name, askDiv });
+  const L = (listingId: string | null, name: string, askDiv: number | null, stack = 1): ReadListing => ({
+    listingId, name, askDiv, unitAskDiv: askDiv == null ? null : askDiv / stack,
+  });
   const prev = [L("a", "Headhunter", 40), L("b", "Doom Grip", 3), L("c", "Rune", 0.2), L("d", "Rune", 0.2), L("e", "Omen", null)];
   const now = [L("a", "Headhunter", 40), L("d2", "Rune", 0.2), L("d", "Rune", 0.2)];
   const r = soldSince(prev, now, false);
@@ -150,6 +152,8 @@ function testSoldSince(): void {
   assert.deepEqual(cut?.names, [], "truncated read: anything at/under the cheapest seen ask (40) may just be unread");
   const cutLow = soldSince([L("x", "Big", 50), L("y", "Small", 1)], [L("z", "Mid", 10)], true);
   assert.deepEqual(cutLow?.names, ["Big"], "only listings above the truncation floor count");
+  const stack = soldSince([L("s", "Splinter", 4, 20), L("x", "Big", 50)], [L("z", "Mid", 1)], true);
+  assert.deepEqual(stack?.names, ["Big"], "truncation floor is per unit: a 20-stack at 0.2/unit (4 whole) under a 1 div floor may be unread");
   assert.equal(soldSince([L(null, "Old", 5)], [], false), null, "pre-capture rows (no ids) → unknown, not 0");
   assert.deepEqual(soldSince([L("a", "X", null)], [], false), { count: 1, askDiv: null, names: ["X"] }, "no ask → askDiv null, never 0");
 }

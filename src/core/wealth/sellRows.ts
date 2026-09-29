@@ -65,6 +65,6 @@ export function sellTotals(plan: LiquidationPlan, rows: readonly SellRow[]): Sel
 export function readListings(rows: readonly BalanceItemRow[], rates: ExchangeRates): ReadListing[] {
   return rows.filter((r) => !RAW_ORBS.has(key(r.item_name))).map((r) => {
     const unit = r.ask_amount == null || r.ask_currency == null ? null : amountInDivine(r.ask_amount, r.ask_currency, rates);
-    return { listingId: r.listing_id, name: r.item_name, askDiv: unit == null ? null : unit * r.stack_size };
+    return { listingId: r.listing_id, name: r.item_name, unitAskDiv: unit, askDiv: unit == null ? null : unit * r.stack_size };
   });
 }

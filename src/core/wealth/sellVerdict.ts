@@ -9,7 +9,8 @@ import type { ListingComp, PlanRow, SellVerdict } from "../../lib/wealthContract
  *     more next week than the exchange does now)
  *  3. the planner routed it to the exchange → sell-cx at the exchange mid
  *  4. your ask is > REPRICE_OVER × fair  → reprice to fair (it sits above what buyers pay)
- *  5. otherwise                    → list at fair (or keep the listing, when already near fair)
+ *  5. otherwise                    → list at fair (keep the listing when within 15%; an ask more than
+ *     15% UNDER fair is flagged but gets no target — see tradeVerdict)
  */
 export const HOLD_MIN_CHANGE_PCT = 25;
 export const HOLD_MIN_VOLUME = 50;
@@ -48,10 +49,12 @@ function tradeVerdict(fairDiv: number, v: VerdictInput): Verdict {
         : `yours ${d(askDiv)} is ${Math.round((askDiv / fairDiv - 1) * 100)}% over ${d(fairDiv)} fair`;
     return { verdict: "reprice", targetDiv: fairDiv, reason };
   }
-  // Under fair stays "list": a low ask sells, and the fair value (poe2scout daily, ninja) is not
-  // trusted enough to tell you to raise it — but the gap is shown, never described as "fair".
+  // Under fair stays "list" with NO target: a low ask sells, and the fair value (poe2scout daily,
+  // ninja) is not trusted enough to hand you a raise-the-price note — the gap is shown, never hidden.
   const underPct = Math.round((1 - askDiv / fairDiv) * 100);
-  if (underPct > 15) return { verdict: "list", targetDiv: fairDiv, reason: `yours ${d(askDiv)} is ${underPct}% under ${d(fairDiv)} fair` };
+  if (underPct > 15) {
+    return { verdict: "list", targetDiv: null, reason: `yours ${d(askDiv)} is ${underPct}% under ${d(fairDiv)} fair — check before raising` };
+  }
   return { verdict: "list", targetDiv: fairDiv, reason: `listed at ${d(askDiv)} — within 15% of ${d(fairDiv)} fair` };
 }
 

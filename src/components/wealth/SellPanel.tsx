@@ -14,14 +14,24 @@ import { useSell } from "./useSell";
 const clock = (stamp: string): string =>
   new Date(parseSqliteTimestamp(stamp)).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-/** "3 gone since last read" — sold, or delisted/moved private; trade2 can't tell which. */
+const SOLD_NAMES_SHOWN = 3;
+
+/** "3 gone since the read at 15:00: A, B +1 more" — sold, or delisted/moved private; trade2 can't tell which. */
 function SoldLine({ data }: { data: SellResponse }) {
   const s = data.sold;
   if (s == null) return null;
   const ex = data.provenance.rates.exaltPerDivine;
+  const shown = s.names.slice(0, SOLD_NAMES_SHOWN).join(", ");
+  const more = s.names.length - SOLD_NAMES_SHOWN;
   return (
-    <span title={s.names.length > 0 ? `${s.names.join(", ")} — sold, or delisted / moved to a private tab` : undefined}>
+    <span className="min-w-0" title={s.names.length > 0 ? `${s.names.join(", ")} — sold, or delisted / moved to a private tab` : undefined}>
       <span className="font-semibold text-neutral-100">{s.count}</span> gone since the read at {clock(s.previousAt)}
+      {shown !== "" && (
+        <span className="text-neutral-300">
+          : <span className="inline-block max-w-[18rem] truncate align-bottom">{shown}</span>
+          {more > 0 && <span className="text-neutral-400"> +{more} more</span>}
+        </span>
+      )}
       {s.askDiv != null && <span className="text-neutral-400"> · asked {fmtDivOrEx(s.askDiv, ex)}</span>}
     </span>
   );
@@ -29,6 +39,8 @@ function SoldLine({ data }: { data: SellResponse }) {
 
 function repriceText(r: RepriceStatus): string {
   if (r.state === "queued") return "check queued — runs in the background, results in a few minutes";
+  if (r.state === "running") return "checking your listings now…";
+  if (r.state === "lost") return "check lost (server restarted) — request again";
   if (r.state === "failed") return `last check failed: ${r.error ?? "unknown error"}`;
   if (r.state === "done") return `checked ${r.checked} listing${r.checked === 1 ? "" : "s"}${r.finishedAt ? ` at ${clock(r.finishedAt)}` : ""}`;
   return r.candidates > 0 ? `${r.candidates} listing${r.candidates === 1 ? "" : "s"} over 1 div, listed > 1 day` : "no listing over 1 div listed > 1 day";
@@ -37,11 +49,11 @@ function repriceText(r: RepriceStatus): string {
 /** Queue a trade2 comparables check of your own stale listings (≤8 searches, then 6h cooldown). */
 function RepriceAction({ r, requesting, error, onRequest }: { r: RepriceStatus; requesting: boolean; error: string | null; onRequest: () => void }) {
   const searches = Math.min(8, r.candidates);
-  const blocked = r.nextAt != null || r.candidates === 0 || r.state === "queued";
+  const blocked = r.nextAt != null || r.candidates === 0 || r.state === "queued" || r.state === "running";
   const next = r.nextAt == null ? null : `next check ${clock(r.nextAt)}`;
   return (
     <span className="flex flex-wrap items-center gap-2">
-      <span className={r.state === "failed" ? "text-amber-300" : "text-neutral-400"}>{repriceText(r)}</span>
+      <span className={r.state === "failed" || r.state === "lost" ? "text-amber-300" : "text-neutral-400"}>{repriceText(r)}</span>
       {next && <span className="text-neutral-500">· {next}</span>}
       <Button size="sm" variant="secondary" disabled={blocked || requesting} onClick={onRequest} title="trade2 comparables for your own listings: fair price + cheapest competitor">
         {requesting ? "Queuing…" : `Check prices · ${searches} search${searches === 1 ? "" : "es"}`}
