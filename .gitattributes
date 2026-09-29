@@ -1,0 +1,4 @@
+# Generated datasets: builders write LF, and a CRLF checkout would make an unchanged rebuild look dirty.
+src/data/poe2/regex/*.json text eol=lf
+# Gzipped snapshots and derived catalogs are byte-exact artifacts (sha256-pinned).
+*.gz binary
