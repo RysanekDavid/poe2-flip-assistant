@@ -9,6 +9,7 @@ import { modKey, type PoolNamespace } from "./poolNamespace";
 import type { PoolHeader } from "./pools/headers";
 import type { PoolMod, RegexPool } from "./pools/schema";
 import { slotCount } from "./pools/template";
+import { numberRangeRegex } from "./numberRange";
 import {
   baseTypeTokens,
   corruptedToken,
@@ -125,7 +126,7 @@ function stateTerms(ctx: ComposeContext): Term[] {
 function avoidTerm(ctx: ComposeContext, rung: Rung): Term | null {
   if (ctx.avoids.length === 0) return null;
   const allowed = new Set(ctx.avoids.map((m) => modKey(m.id)));
-  const tokens = dedupe(ctx.avoids.map((m) => modToken(ctx.ns, m, allowed, { anchors: rung.anchors, kind: "avoid" })));
+  const tokens = dedupe(ctx.avoids.map((m) => modToken(ctx.ns, m, allowed, { anchors: rung.anchors, exclusive: false, kind: "avoid" })));
   return { tokens, negated: true, modIds: [] };
 }
 
@@ -148,16 +149,22 @@ function dedupe(tokens: readonly PoolToken[]): PoolToken[] {
  * "At least N" on a mod line: the highest roll the data allows bounds how many digits a value can
  * have, which keeps `[1-9]..` out of a 2-digit line's pattern. Doubled for headroom, because
  * "increased effect of modifiers" sources (atlas, instilling) push shown values past the tier max.
+ * When the bounded pattern is no shorter, the open one (up to 3 digits) is used instead; otherwise
+ * the implied cap is stated on the token so the UI can show it.
  */
-function openCeiling(mod: PoolMod, line: number, slot: number, min: number): number {
+function openBounds(mod: PoolMod, line: number, slot: number, min: number, round10: boolean): { max: number | null; note?: string } {
   const rolled = mod.tiers.flatMap((t) => t.lines.filter((l) => l.line === line).map((l) => l.ranges[slot]?.max ?? 0));
-  const top = Math.max(min, 2 * Math.max(0, ...rolled));
-  return 10 ** String(Math.ceil(top)).length - 1;
+  const highest = Math.max(0, ...rolled);
+  const ceiling = 10 ** String(Math.ceil(Math.max(min, 2 * highest))).length - 1;
+  const bounded = numberRangeRegex(min, ceiling, { round10 });
+  if (bounded.length >= numberRangeRegex(min, null, { round10 }).length) return { max: null };
+  return { max: ceiling, note: `values above ${ceiling} are not matched (highest roll in the data: ${highest})` };
 }
 
 function wantTokens(ctx: ComposeContext, mod: PoolMod, rung: Rung, allowed: ReadonlySet<string>, collectNotes: boolean): PoolToken[] {
   const ths = ctx.thresholds.get(mod.id) ?? [];
-  if (ths.length === 0) return [modToken(ctx.ns, mod, allowed, { anchors: rung.anchors })];
+  // "all" terms must each be satisfied by their own mod, so exclusivity is worth any length there
+  if (ths.length === 0) return [modToken(ctx.ns, mod, allowed, { anchors: rung.anchors, exclusive: ctx.selection.match === "all" })];
   const usable = ctx.selection.match === "any" ? ths.slice(0, 1) : ths;
   if (collectNotes && usable.length < ths.length) {
     ctx.notes.ignored.push(`${mod.id}: "any" mode keeps one threshold per mod (an alternation cannot AND two numbers)`);
@@ -165,8 +172,9 @@ function wantTokens(ctx: ComposeContext, mod: PoolMod, rung: Rung, allowed: Read
   return usable.map(({ line, slot, range }) => {
     const template = mod.lines[line]?.template;
     if (template === undefined) throw new Error(`${mod.id} lost line ${line}`);
-    const bounds = { min: range.min, max: range.max ?? openCeiling(mod, line, slot, range.min) };
-    return thresholdToken(ctx.ns, { key: modKey(mod.id), template }, slot, bounds, { kind: "threshold", round10: rung.round10 });
+    const open = range.max === null ? openBounds(mod, line, slot, range.min, rung.round10) : { max: range.max };
+    const token = thresholdToken(ctx.ns, { key: modKey(mod.id), template }, slot, { min: range.min, max: open.max }, { kind: "threshold", round10: rung.round10 });
+    return open.note ? { ...token, note: open.note } : token;
   });
 }
 

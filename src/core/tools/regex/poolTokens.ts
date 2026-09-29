@@ -34,6 +34,8 @@ export interface PoolToken {
   rounded: boolean;
   /** Fallback text the player should check in-game before trusting. */
   verify: boolean;
+  /** A limit the token applies that the selection did not ask for (e.g. an implied upper bound). */
+  note?: string;
 }
 
 export interface ValueBounds {
@@ -153,17 +155,36 @@ function fallbackModToken(ns: PoolNamespace, mod: PoolMod, views: readonly TierV
   return { text: escapeSearchText(common), kind, covers: [modKey(mod.id)], collisions, anchored: false, rounded: false, verify: true };
 }
 
+const MOD_PREFIX = modKey("");
+
+/** Whether a (safe) candidate still lands on another pool mod's line — allowed, but worth avoiding. */
+function hitsOtherMod(c: Candidate, ns: PoolNamespace, self: string): boolean {
+  const isOther = (owner: string): boolean => owner !== self && owner.startsWith(MOD_PREFIX);
+  if (c.anchor !== "") return ns.lines.some((l) => isOther(l.owner) && anchoredHit(c, l));
+  return unsafeMatches(c.core, ns, new Set([self]), Number.MAX_SAFE_INTEGER).some((e) => isOther(e.key));
+}
+
+/*
+ * A fragment that also lands on another mod (allowed in an "any" alternation, or an identical
+ * line) makes `alsoMatches` noise and can mask wanted mods when used to avoid. A candidate that
+ * stays on its own mod wins if it costs at most this much more; "exclusive" callers take it at
+ * any cost.
+ */
+export const EXCLUSIVE_MARGIN = 3;
+
+export interface ModTokenOptions {
+  /** true: ^/$ fragments compete on length; false: they are a last resort. */
+  anchors: boolean;
+  /** Take a fragment that hits no other mod whenever one exists, whatever it costs. */
+  exclusive: boolean;
+  kind?: TokenKind;
+}
+
 /**
  * Shortest safe fragment for a mod. `allowedKeys` are namespace keys it may also match (other mods
  * in the same alternation); the mod itself is always allowed, headers never should be.
- * `anchors: true` lets ^/$ fragments compete on length; false uses them only as a last resort.
  */
-export function modToken(
-  ns: PoolNamespace,
-  mod: PoolMod,
-  allowedKeys: ReadonlySet<string>,
-  options: { anchors: boolean; kind?: TokenKind },
-): PoolToken {
+export function modToken(ns: PoolNamespace, mod: PoolMod, allowedKeys: ReadonlySet<string>, options: ModTokenOptions): PoolToken {
   const self = modKey(mod.id);
   const allowed = new Set([...allowedKeys, self]);
   const kind = options.kind ?? "mod";
@@ -171,12 +192,17 @@ export function modToken(
   const [first] = views;
   if (!first) throw new Error(`mod ${mod.id} has no tiers`);
   const same = new Set(mod.lines.map((l) => l.template));
+  const token = (text: string, anchored: boolean): PoolToken => ({ text, kind, covers: [self], collisions: [], anchored, rounded: false, verify: false });
+  let shared: Candidate | null = null;
   for (const c of candidatesOf(first, !options.anchors)) {
+    if (shared && !options.exclusive && c.cost > shared.cost + EXCLUSIVE_MARGIN) break;
     if (!views.every((v) => inView(c, v)) || hitLines(c, ns, allowed, same, 1).length > 0) continue;
-    return { text: renderCandidate(c), kind, covers: [self], collisions: [], anchored: c.anchor !== "", rounded: false, verify: false };
+    if (!hitsOtherMod(c, ns, self)) return token(renderCandidate(c), c.anchor !== "");
+    shared ??= c;
   }
-  const span = spanToken(ns, mod, allowed, same);
-  if (span) return { text: span.text, kind, covers: [self], collisions: [], anchored: span.anchored, rounded: false, verify: false };
+  if (shared) return token(renderCandidate(shared), shared.anchor !== "");
+  const span = spanToken(ns, mod, allowed, same, options.exclusive ? Number.POSITIVE_INFINITY : EXCLUSIVE_MARGIN);
+  if (span) return token(span.text, span.anchored);
   return fallbackModToken(ns, mod, views, allowed, kind);
 }
 

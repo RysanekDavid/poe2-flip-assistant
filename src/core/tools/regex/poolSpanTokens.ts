@@ -7,7 +7,7 @@
  * is compiled and tested against every namespace line with real digits in the number slots.
  */
 import { escapeSearchText } from "./fragment";
-import type { PoolNamespace } from "./poolNamespace";
+import { modKey, type PoolNamespace } from "./poolNamespace";
 import { fillSample, tokenCoversMod } from "./poolSamples";
 import type { PoolMod } from "./pools/schema";
 import { segmentsOf } from "./pools/template";
@@ -66,18 +66,29 @@ function spansOf(mod: PoolMod): Span[] {
   return [...out.values()].sort((a, b) => a.cost - b.cost || Number(a.anchored) - Number(b.anchored) || a.text.localeCompare(b.text));
 }
 
-/** Cheapest number-straddling pattern that covers every tier and hits no other line; null if none. */
+/**
+ * Cheapest number-straddling pattern that covers every tier and hits no line outside the allowed
+ * set; among those within `margin` of the cheapest, one that hits no other mod at all wins.
+ */
 export function spanToken(
   ns: PoolNamespace,
   mod: PoolMod,
   allowed: ReadonlySet<string>,
   same: ReadonlySet<string>,
+  margin: number,
 ): { text: string; anchored: boolean } | null {
-  const others = ns.lines.filter((l) => !allowed.has(l.owner) && !same.has(l.template)).map((l) => fillSample(l.template, SAMPLE_VALUE));
+  const self = modKey(mod.id);
+  const sample = (keep: (owner: string, template: string) => boolean): string[] =>
+    ns.lines.filter((l) => keep(l.owner, l.template)).map((l) => fillSample(l.template, SAMPLE_VALUE));
+  const outside = sample((owner, template) => !allowed.has(owner) && !same.has(template));
+  const otherMods = sample((owner) => owner !== self && owner.startsWith(modKey("")));
+  let shared: Span | null = null;
   for (const span of spansOf(mod).slice(0, MAX_TRIES)) {
+    if (shared && span.cost > shared.cost + margin) break;
     const regex = compileSafeRegex(span.text);
-    if (!tokenCoversMod(regex, mod) || others.some((l) => regex.test(l))) continue;
-    return { text: span.text, anchored: span.anchored };
+    if (!tokenCoversMod(regex, mod) || outside.some((l) => regex.test(l))) continue;
+    if (!otherMods.some((l) => regex.test(l))) return { text: span.text, anchored: span.anchored };
+    shared ??= span;
   }
-  return null;
+  return shared ? { text: shared.text, anchored: shared.anchored } : null;
 }
