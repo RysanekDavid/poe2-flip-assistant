@@ -4,6 +4,7 @@
  * constants too, so the client bundle never imports the server-side cover algorithm.
  */
 import { z } from "zod";
+import { TAB_SELECTION_SCHEMAS } from "./regexPoolContract";
 
 /*
  * 250 per the owner (2026-09-28) and the other PoE2 regex tools (poeregex.cz, poe.re); one forum
@@ -39,12 +40,24 @@ export type RegexParams = z.infer<typeof RegexParamsSchema>;
 
 /*
  * A preset stores the selection only: max chars is a per-browser game constant, and the regex
- * itself is regenerated from live prices on load. Defaults let older rows parse after new fields.
+ * itself is regenerated on load. Defaults let older rows parse after new fields.
  */
-export const PresetParamsSchema = RegexParamsSchema.omit({ maxChars: true }).extend({
+export const PricePresetParamsSchema = RegexParamsSchema.omit({ maxChars: true }).extend({
+  tab: z.literal("price"),
   categories: RegexParamsSchema.shape.categories.default([]),
   includeUniques: z.boolean().default(false),
 });
+export type PricePresetParams = z.infer<typeof PricePresetParamsSchema>;
+
+/*
+ * Every tab's selection, discriminated by `tab`. Rows saved before the Regex tool had tabs carry
+ * no `tab` field — they are Price presets, so the preprocess step labels them before the union
+ * discriminates (a row with an unknown tab still fails and is shown flagged).
+ */
+export const PresetParamsSchema = z.preprocess(
+  (raw) => (raw !== null && typeof raw === "object" && !Array.isArray(raw) && !("tab" in raw) ? { ...raw, tab: "price" } : raw),
+  z.discriminatedUnion("tab", [PricePresetParamsSchema, ...TAB_SELECTION_SCHEMAS]),
+);
 export type PresetParams = z.infer<typeof PresetParamsSchema>;
 
 const ChunkSchema = z.object({ text: z.string(), chars: z.number().int(), covers: z.array(z.string()) });

@@ -8,7 +8,7 @@ import {
   RegexParamsSchema,
   requestRegexApi,
   type BuildResponse,
-  type PresetParams,
+  type PricePresetParams,
 } from "../../../lib/tools/regexContract";
 import { PresetBar } from "./PresetBar";
 import { RegexExplain } from "./RegexExplain";
@@ -19,7 +19,8 @@ import { RegexParamsForm } from "./RegexParamsForm";
 const MAX_CHARS_KEY = "tools-regex-max-chars";
 const BUILD_DEBOUNCE_MS = 300;
 
-const DEFAULT_PARAMS: PresetParams = {
+const DEFAULT_PARAMS: PricePresetParams = {
+  tab: "price",
   mode: "keep",
   minDiv: 1,
   categories: CATEGORIES.map((c) => c.type),
@@ -68,7 +69,7 @@ interface BuildState {
 }
 
 /** Debounced rebuild on every change; the last good result stays on screen while it runs. */
-function useBuild(params: PresetParams, maxChars: number): BuildState {
+function useBuild(params: PricePresetParams, maxChars: number): BuildState {
   const [state, setState] = useState<BuildState>({ result: null, error: null, loading: true });
   useEffect(() => {
     const body = RegexParamsSchema.safeParse({ ...params, maxChars });
@@ -93,7 +94,7 @@ function useBuild(params: PresetParams, maxChars: number): BuildState {
 }
 
 export function RegexTool() {
-  const [params, setParams] = useState<PresetParams>(DEFAULT_PARAMS);
+  const [params, setParams] = useState<PricePresetParams>(DEFAULT_PARAMS);
   const [maxChars, setMaxChars] = useMaxChars();
   const [explainText, setExplainText] = useState("");
   const { result, error, loading } = useBuild(params, maxChars);
