@@ -5,7 +5,6 @@ import { evLabel, priceLabel, type RecipeView } from "./craft/craftView";
 import { useCraftMargins } from "./craft/CraftMarginsContext";
 import { ConfidenceBadge } from "./craft/NearMissLine";
 import type { NearMiss } from "../core/craftRecipes";
-import { ComputedLeague } from "./ui/ComputedLeague";
 import { RETURN_FLAG_MULTIPLE } from "../core/craftValuation";
 
 const SLOTS = 3;
@@ -21,7 +20,7 @@ function PickChip({ r, rank, ex }: { r: RecipeView; rank: number; ex: number | n
   const ev = r.report?.evDiv ?? 0;
   return (
     <span className="flex items-center gap-2 rounded-md bg-neutral-950/50 px-2.5 py-1.5 text-sm">
-      <span className="text-xs text-neutral-600">{rank}.</span>
+      <span className="text-xs text-neutral-500">{rank}.</span>
       <RecipeIcon r={r} />
       <span className="text-neutral-300">{r.label}</span>
       <span className="font-semibold tabular-nums text-emerald-400">{evLabel(ev, ex)}</span>
@@ -84,10 +83,9 @@ export function CraftTopPicks() {
   return (
     <section className="flex flex-wrap items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900/50 px-4 py-3">
       <span className="flex items-center gap-1.5 text-sm font-semibold text-neutral-200">
-        <Flame className={`h-4 w-4 ${picks.length > 0 ? "text-orange-400" : "text-neutral-600"}`} />
+        <Flame className={`h-4 w-4 ${picks.length > 0 ? "text-orange-400" : "text-neutral-500"}`} />
         craft right now
       </span>
-      <ComputedLeague league={data.computedLeague} />
       {picks.map((r, i) => (
         <PickChip key={r.key} r={r} rank={i + 1} ex={ex} />
       ))}
@@ -96,14 +94,14 @@ export function CraftTopPicks() {
         <NearMissChip key={r.key} r={r} ex={ex} />
       ))}
       {picks.length === 0 && near.length === 0 && (
-        <span className="text-xs text-amber-500">
+        <span className="text-xs text-neutral-400">
           {data.rank.nearMisses.length > 0
-            ? `${data.rank.nearMisses.length} priced recipe(s) predate comparable valuation — awaiting rescan`
+            ? `${data.rank.nearMisses.length} priced recipe(s) wait for a rescan`
             : "no recipe priced both legs on the current scan"}
-          {" "}({data.rank.unpriced.length} unpriced — open a card for its error); one recipe rescans every {data.intervalMin}m
+          {" "}({data.rank.unpriced.length} unpriced — open a card for its error) · rescans every {data.intervalMin} min
         </span>
       )}
-      <span className="text-xs text-neutral-600">modelled EV · curated hit rates · instant-buyout asks, not sales</span>
+      <span className="text-xs text-neutral-500">modelled EV · curated hit rates · instant-buyout asks, not sales</span>
     </section>
   );
 }

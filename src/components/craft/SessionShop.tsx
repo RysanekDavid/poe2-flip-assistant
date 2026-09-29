@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
+import { Button } from "../ui/Button";
 import { MatIcon, priceLabel, type RecipeView } from "./craftView";
 
 /** Costs the server could not prefill and asked the user for (409 `needs`). */
@@ -82,7 +83,7 @@ function ShoppingChecklist({ r, ex, icons, bought, toggle }: ChecklistProps) {
           <li key={m.id}>
             <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-800/50">
               <input type="checkbox" checked={bought.has(m.id)} onChange={() => toggle(m.id)} />
-              <span className={`inline-flex items-center gap-1.5 ${bought.has(m.id) ? "text-neutral-600 line-through" : ""}`}>
+              <span className={`inline-flex items-center gap-1.5 ${bought.has(m.id) ? "text-neutral-500 line-through" : ""}`}>
                 <MatIcon icon={icons[m.id] ?? null} size={6} />
                 {m.qty}× {m.label}
               </span>
@@ -137,20 +138,19 @@ export function ShopScreen({ needs, msg, onStart, ...list }: ShopProps) {
       <BaseCard r={list.r} ex={list.ex} />
       <ShoppingChecklist {...list} />
       {needs.length > 0 && <ManualCostInputs needs={needs} values={values} set={(f, v) => setValues((s) => ({ ...s, [f]: v }))} />}
-      {msg && <p className="text-sm text-amber-400">⚠ {msg}</p>}
       {/* Always clickable once costs are known — an expert with everything in the stash shouldn't
           be forced to tick boxes. */}
-      <button
-        onClick={() => onStart(manual)}
-        disabled={needs.length > 0 && manualInvalid}
-        className={`w-full rounded-md px-3 py-2.5 text-sm font-semibold text-white transition disabled:opacity-40 ${
-          allBought ? "animate-pulse bg-emerald-600 hover:animate-none hover:bg-emerald-500" : "bg-emerald-800/80 hover:bg-emerald-700"
-        }`}
-      >
+      <Button variant="primary" className="w-full" onClick={() => onStart(manual)} disabled={needs.length > 0 && manualInvalid}>
         {allBought
           ? "everything bought — start crafting →"
           : `start crafting → (${boughtCount}/${total} bought — logs the attempt at today's costs)`}
-      </button>
+      </Button>
+      {/* directly under the button that caused it: a refused start (409 + needs) must be seen */}
+      {msg && (
+        <p role="alert" className="text-sm text-amber-300">
+          ⚠ {msg}
+        </p>
+      )}
     </div>
   );
 }
