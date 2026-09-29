@@ -10,6 +10,8 @@ import { CX_EDGE_DETAIL_COLUMNS } from "./cxEdgeDetail";
 import { applicationSchemaSql } from "./schemaFiles";
 import { ensureNotifySchema } from "./notifyMigrations";
 import { dropRetiredHunts } from "./retiredMigrations";
+import { ensureCredColumns } from "./credMigrations";
+import { ensureWealthColumns } from "./wealthMigrations";
 
 let db: Database.Database | null = null;
 
@@ -78,6 +80,8 @@ export function getDb(): Database.Database {
     ["session_version", "INTEGER NOT NULL DEFAULT 0"],
     ["discord_webhook_enc", "TEXT"], // AES-GCM token from secretbox (the webhook URL embeds a secret)
   ]);
+  ensureCredColumns(conn); // POESESSID health (auth/credStatus)
+  ensureWealthColumns(conn); // balance_items listing identity (sold-since, reprice)
 
   // Multi-tenancy: every private table gains user_id (existing rows backfill to owner id=1).
   // Shared market data (price_snapshots) stays global. balance_tabs inherits via its snapshot.

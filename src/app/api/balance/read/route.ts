@@ -3,6 +3,7 @@ import { tradeErrorResponse } from "../../../../lib/tradeRouteError";
 import { balanceStats } from "../../../../db/balanceQueries";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
+import { withCredStatus } from "../../../../auth/credStatus";
 import { recordTradeBalance } from "../../../../core/balanceRead";
 import { refreshUniqueValues } from "../../../../core/valuation";
 import { getDefaultLeague } from "../../../../core/leagueState";
@@ -49,7 +50,8 @@ export async function POST(): Promise<Response> {
   }
   try {
     const warning = await refreshUniquesWarning();
-    const { snapshot, scan } = await recordTradeBalance(user.id, league, cred.account, resolved.rates, cred);
+    const account = cred.account;
+    const { snapshot, scan } = await withCredStatus(user.id, () => recordTradeBalance(user.id, league, account, resolved.rates, cred));
     return NextResponse.json({ snapshot, stats: balanceStats(user.id, league), scan, warning, computedLeague: league });
   } catch (e) {
     return tradeErrorResponse(e);
