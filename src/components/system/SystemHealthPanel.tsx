@@ -141,13 +141,12 @@ export function SystemHealthPanel() {
       </header>
       {error && <p role="alert" className="mb-2 text-xs text-bad">system health unavailable — {error}</p>}
       {!data && !error && <p className="text-xs text-neutral-500">loading…</p>}
-      {data && (
-        <div className="grid gap-3">
-          <SummaryChips health={data} nowMs={nowMs} />
-          <HeartbeatTable rows={data.heartbeats} nowMs={nowMs} />
-          <SnipeDiagTable />
-        </div>
-      )}
+      <div className="grid gap-3">
+        {data && <SummaryChips health={data} nowMs={nowMs} />}
+        {data && <HeartbeatTable rows={data.heartbeats} nowMs={nowMs} />}
+        {/* its own route and poll: scan diagnostics stay readable when the health route is down */}
+        <SnipeDiagTable />
+      </div>
     </section>
   );
 }
