@@ -8,7 +8,7 @@ import { ninjaIdsOf, priceMoves, type SnapshotPrice } from "../../core/tools/cra
 import { tierGates } from "../../core/tools/craftmoves/gates";
 import { assembleMoves } from "../../core/tools/craftmoves/moves";
 import { outcomeText, rolledLines } from "../../core/tools/craftmoves/outcome";
-import { rankMoves } from "../../core/tools/craftmoves/rank";
+import { rankMoves, tierOf } from "../../core/tools/craftmoves/rank";
 import { legalMoves } from "../../core/tools/craftmoves/rules";
 import { craftMovesResponseSchema } from "../../lib/tools/craftMovesContract";
 import { decodeItem, encodeItem, SHARE_MAX_BYTES, shareQuery } from "../../lib/tools/shareItem";
@@ -65,6 +65,17 @@ function testCheapestAndVariants(cat: CraftCatalog): void {
   assert.ok(ids.includes("exalt-greater"), "the cheapest Exalt tier represents them");
 }
 
+/** Currency tiers classify like their base orb; essences are distinct moves, never merged. */
+function testTierClassification(): void {
+  const stub = (id: string) => ({ id, label: id, family: "currency" as const, materials: [], requires: "", effect: "", warnings: [], notes: [], floor: null, source: "", verified: true, totalDiv: null, totalEx: null });
+  const tiers = (ids: string[]) => ids.map((id) => tierOf(stub(id), null));
+  assert.deepEqual(tiers(["chaos", "chaos-greater", "chaos-perfect"]), [3, 3, 3], "every Chaos tier frees a slot");
+  assert.deepEqual(tiers(["exalt", "exalt-greater", "regal-perfect", "aug-greater", "transmute-perfect", "alchemy", "omen-greater-exaltation"]), [2, 2, 2, 2, 2, 2, 2]);
+  assert.deepEqual(tiers(["essence-greater", "essence-perfect"]), [1, 3], "Greater Essence adds, Perfect Essence replaces");
+  assert.deepEqual(tiers(["omen-sinistral-greater-exaltation", "omen-dextral-greater-exaltation"]), [1, 1], "side-steered double adds are aimed adds");
+  assert.deepEqual(tiers(["divine", "fracture", "omen-whittling", "bone-preserved"]), [null, null, null, null], "never a card");
+}
+
 function testLockedAndContract(cat: CraftCatalog): void {
   const corrupted = classify(cat, itemText({ ...RING, rarity: "Rare", ilvl: 82, lines: ringLines(cat, ["IncreasedLife"], ["FireResistance"]), extra: ["Corrupted"] }));
   const body = { league: "T", ...assembleMoves(corrupted, cat, new Map(), null), bookValue: null, bookError: null };
@@ -107,6 +118,7 @@ export function runRankCases(cat: CraftCatalog): void {
   testOpenPrefixRing(cat);
   testFullRare(cat);
   testCheapestAndVariants(cat);
+  testTierClassification();
   testLockedAndContract(cat);
   testOutcomeText(cat);
   testShareLink();

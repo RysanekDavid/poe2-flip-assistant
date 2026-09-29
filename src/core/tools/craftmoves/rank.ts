@@ -21,18 +21,27 @@ type Side = "prefix" | "suffix";
 const SIDE_ADDS: Record<string, Side | "any"> = {
   "omen-sinistral-exaltation": "prefix",
   "omen-dextral-exaltation": "suffix",
+  "omen-sinistral-greater-exaltation": "prefix",
+  "omen-dextral-greater-exaltation": "suffix",
   "essence-normal": "any",
   "essence-greater": "any",
 };
 
-const RANDOM_ADD = /^(exalt|regal|aug|transmute)(-greater|-perfect)?$|^alchemy$|^omen-greater-exaltation$/;
+/** exalt-greater / chaos-perfect → exalt / chaos: currency tiers are one decision (and one card).
+ *  Essences are NOT tiers of each other — Greater adds, Perfect replaces — so they keep their id. */
+const variantKey = (id: string): string => id.replace(/^(exalt|regal|aug|transmute|chaos)-(greater|perfect)$/, "$1");
+
+// matched against variantKey(id), so every currency tier classifies exactly like its base orb
+const RANDOM_ADD = /^(exalt|regal|aug|transmute|alchemy|omen-greater-exaltation)$/;
 const REMOVAL = /^(annul|chaos|essence-perfect|omen-(sinistral|dextral)-(erasure|annulment))$/;
 
-function tierOf(move: PricedMoveView, target: FamilyGateView | null): Tier | null {
+/** Card tier of one move (null: never a card), given the family being aimed at. */
+export function tierOf(move: PricedMoveView, target: FamilyGateView | null): Tier | null {
   const side = SIDE_ADDS[move.id];
   if (side === "any" || (side != null && (target == null || target.side === side))) return 1;
-  if (side != null || RANDOM_ADD.test(move.id)) return 2;
-  if (REMOVAL.test(move.id)) return 3;
+  const key = variantKey(move.id);
+  if (side != null || RANDOM_ADD.test(key)) return 2;
+  if (REMOVAL.test(key)) return 3;
   return null;
 }
 
@@ -67,8 +76,6 @@ function whyOf(move: PricedMoveView, tier: Tier, aim: FamilyGateView | null): st
   return `adds one random mod to an open slot${aim ? ` — could roll ${familyLabel(aim)}` : ""}`;
 }
 
-/** exalt-greater / exalt-perfect → exalt: one card per decision, not per currency tier. */
-const variantKey = (id: string): string => id.replace(/-(greater|perfect)$/, "");
 
 const byCost = (a: PricedMoveView, b: PricedMoveView): number =>
   (a.totalDiv ?? Number.POSITIVE_INFINITY) - (b.totalDiv ?? Number.POSITIVE_INFINITY) || a.id.localeCompare(b.id);
