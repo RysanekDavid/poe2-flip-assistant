@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { confidenceSchema, rateSchema, sourceSchema } from "../../core/tools/bossEv/schema";
+import { confidenceSchema, rarityLabelSchema, rateSchema, sourceSchema } from "../../core/tools/bossEv/schema";
 
 /**
  * Per-boss evaluation shapes (entry, loot, tier metrics). GET /api/farm (src/lib/farmContract.ts)
@@ -42,9 +42,28 @@ export const entryLineViewSchema = z.object({
 });
 export type EntryLineView = z.infer<typeof entryLineViewSchema>;
 
+/** A pool line's spread; single numbers (EV, floor) use minDiv. */
+export const poolRangeSchema = z.object({
+  minDiv: z.number(),
+  medianDiv: z.number(),
+  maxDiv: z.number(),
+  /** Members ninja prices, out of `total`. */
+  priced: z.number().int(),
+  total: z.number().int(),
+  unpricedMembers: z.array(z.string()),
+  /** Oldest priced member's age. */
+  ageHours: z.number().nullable(),
+});
+export type PoolRange = z.infer<typeof poolRangeSchema>;
+
 export const lootLineViewSchema = z.object({
   name: z.string(),
-  priceKind: z.enum(["ninja", "scout", "manual", "unpriced"]),
+  /** ninja art, else the curated poecdn art (boss-art.json); null when neither has one. */
+  icon: z.string().nullable(),
+  priceKind: z.enum(["ninja", "pool", "scout", "manual", "unpriced"]),
+  pool: poolRangeSchema.nullable(),
+  /** A qualitative rarity label with its own source, when one is curated. */
+  rarity: rarityLabelSchema.nullable(),
   /** Why the line has no price, when it has none. */
   unpricedReason: z.string().nullable(),
   price: resolvedPriceSchema.nullable(),
@@ -55,7 +74,7 @@ export const lootLineViewSchema = z.object({
   evDiv: z.number().nullable(),
   evLowDiv: z.number().nullable(),
   evHighDiv: z.number().nullable(),
-  /** A Lineage support gem (poe2scout rarely lists them). */
+  /** A Lineage support gem (priced from poe2scout's lineage list). */
   lineage: z.boolean(),
 });
 export type LootLineView = z.infer<typeof lootLineViewSchema>;

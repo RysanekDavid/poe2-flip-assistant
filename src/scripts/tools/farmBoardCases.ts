@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import type { PricedItem } from "../../api/types";
 import { buildFarmBoard, isBossRow, isMechanicRow, mechanicIcons, netGroup, type MechanicInput } from "../../core/farm/farmBoard";
 import type { FarmRank } from "../../core/farmAdvisor";
+import type { BossArt } from "../../core/tools/bossEv/art";
 import { bossEv } from "../../core/tools/bossEv/ev";
 import { priceLookup, type PriceInputs } from "../../core/tools/bossEv/pricing";
 import type { Tier } from "../../core/tools/bossEv/schema";
@@ -13,11 +14,13 @@ import type { BossView } from "../../lib/tools/bossEvContract";
 
 export type Inputs = (overrides?: Partial<Record<string, number>>) => PriceInputs;
 
+const ART: BossArt = new Map();
+
 const close = (actual: number | null, expected: number, what: string): void =>
   assert.ok(actual != null && Math.abs(actual - expected) < 1e-9, `${what}: expected ${expected}, got ${actual}`);
 
 function testMetrics(tier: Tier, inputs: Inputs): void {
-  const r = bossEv(tier, priceLookup(inputs()));
+  const r = bossEv(tier, priceLookup(inputs()), ART);
   // lo ≥ 1/10: G 1 (guaranteed) + P 10×0.1 + M 2×0.25; X and Pool are unpriced and add nothing.
   close(r.floorDiv, 2.5, "floor = guaranteed + common priced lines");
   close(r.chaseDiv, 40 * 0.01, "chase = rare lines at their low end (R 1–5%)");
@@ -26,23 +29,23 @@ function testMetrics(tier: Tier, inputs: Inputs): void {
   close(r.pLosingRun, 0.9 * 0.99, "P(lose) = Π(1 − p) over priced drops ≥ the uncovered entry");
   assert.equal(r.losingRunUnknownRates, 1, "U covers the entry but has no rate");
 
-  const covered = bossEv({ ...tier, entry: [{ itemId: "a", qty: 0.5 }] }, priceLookup(inputs()));
+  const covered = bossEv({ ...tier, entry: [{ itemId: "a", qty: 0.5 }] }, priceLookup(inputs()), ART);
   assert.equal(covered.pLosingRun, 0, "guaranteed loot ≥ entry → a kill never loses");
 
   const missing = inputs();
   (missing.ninja as Map<string, unknown>).delete("a");
-  assert.equal(bossEv(tier, priceLookup(missing)).pLosingRun, null, "partly unpriced entry → P(lose) unknowable, not optimistic");
+  assert.equal(bossEv(tier, priceLookup(missing), ART).pLosingRun, null, "partly unpriced entry → P(lose) unknowable, not optimistic");
 
-  const liquid = bossEv(tier, priceLookup(inputs({ b: 1.5 })));
+  const liquid = bossEv(tier, priceLookup(inputs({ b: 1.5 })), ART);
   assert.equal(liquid.entryVolume, 1 * 10, "volume of the priciest entry line (A: 2 div beats B bought at 1.5)");
   // Only U (unknown rate) could cover the entry: zero information, never a confident 100%.
-  const onlyUnknown = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "U") }, priceLookup(inputs()));
+  const onlyUnknown = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "U") }, priceLookup(inputs()), ART);
   assert.equal(onlyUnknown.pLosingRun, null, "no covering drop with a known rate → P(lose) unknown");
   assert.equal(onlyUnknown.losingRunUnknownRates, 1);
   // Every drop priced and rated, none worth the uncovered entry: a loss IS certain.
-  const cheap = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "M") }, priceLookup(inputs()));
+  const cheap = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "M") }, priceLookup(inputs()), ART);
   assert.equal(cheap.pLosingRun, 1, "fully priced + rated and nothing covers → a genuine 100%");
-  const noChase = bossEv({ ...tier, loot: tier.loot.filter((l) => l.rate.kind !== "range") }, priceLookup(inputs()));
+  const noChase = bossEv({ ...tier, loot: tier.loot.filter((l) => l.rate.kind !== "range") }, priceLookup(inputs()), ART);
   assert.equal(noChase.chaseOneIn, null, "no known-rate rare line → no chase odds");
   assert.equal(noChase.chaseDiv, 0);
 }
@@ -53,7 +56,7 @@ export const rank = (category: string, change: number, driver: string): FarmRank
 });
 
 export function view(id: string, tier: Tier, inputs: PriceInputs): BossView {
-  return { id, name: id, mechanic: "M", accessChain: "x", icon: null, sources: [], tiers: [bossEv(tier, priceLookup(inputs))] };
+  return { id, name: id, mechanic: "M", accessChain: "x", icon: null, sources: [], tiers: [bossEv(tier, priceLookup(inputs), ART)] };
 }
 
 function testBoard(tier: Tier, inputs: Inputs): void {

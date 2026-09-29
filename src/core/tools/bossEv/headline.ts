@@ -47,7 +47,8 @@ export function fmtDiv(div: number, exPerDiv: number, signed = false): string {
   return signed ? `+${body}` : body;
 }
 
-const CONFIDENCE_RANK: Record<Confidence, number> = { unverified: 0, "single-source": 1, confirmed: 2 };
+// Two disagreeing samples beat no sample at all, but trail a single uncontested one.
+const CONFIDENCE_RANK: Record<Confidence, number> = { unverified: 0, conflicting: 1, "single-source": 2, confirmed: 3 };
 
 /** Weakest label among the deciding lines; nothing deciding is nothing confirmed. */
 export function weakest(confidences: readonly Confidence[]): Confidence {

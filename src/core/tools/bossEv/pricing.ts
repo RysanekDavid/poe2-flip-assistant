@@ -1,8 +1,8 @@
 import type { PricedItem } from "../../../api/types";
 import { latestSnapshots, priceHistory, uniqueValueMap, itemValuesAgeHours } from "../../../db/marketQueries";
 import { timestampAgeMs } from "../../../lib/sqliteTime";
-import type { ResolvedPrice } from "../../../lib/tools/bossEvContract";
-import type { BossLootFile, PriceRef } from "./schema";
+import type { PoolRange, ResolvedPrice } from "../../../lib/tools/bossEvContract";
+import { lootNinjaIds, type BossLootFile, type PriceRef } from "./schema";
 
 /** One exchange item as the latest poe.ninja snapshot has it. */
 export interface NinjaQuote {
@@ -18,7 +18,7 @@ export interface NinjaQuote {
 /** Everything pricing needs, read once per request so the math below stays pure. */
 export interface PriceInputs {
   ninja: ReadonlyMap<string, NinjaQuote>;
-  /** poe2scout unique floor prices, keyed by lowercased name. */
+  /** poe2scout unique and lineage-gem prices (item_values), keyed by lowercased name. */
   scout: ReadonlyMap<string, number>;
   scoutAgeHours: number | null;
   nowMs: number;
@@ -26,11 +26,42 @@ export interface PriceInputs {
 
 export interface PriceLookup {
   price(ref: PriceRef): ResolvedPrice | null;
+  /** The spread of a pool line; null for any other kind, or when no member is priced. */
+  pool(ref: PriceRef): PoolRange | null;
   /** Display name, icon and traded volume for an exchange item id, or null when ninja does not list it. */
   item(itemId: string): { name: string; icon: string | null; volume: number } | null;
 }
 
 const HOUR_MS = 3_600_000;
+
+function median(sorted: readonly number[]): number {
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+/**
+ * Min/median/max over the pool members ninja prices. The weights are unpublished, so no member is
+ * favoured; members ninja does not list are named, never counted as 0.
+ */
+export function poolRange(ref: PriceRef, inputs: PriceInputs): PoolRange | null {
+  if (ref.kind !== "pool") return null;
+  const priced = ref.members.flatMap((m) => {
+    const quote = inputs.ninja.get(m.itemId);
+    return quote ? [{ div: quote.div, ageHours: quote.ageHours }] : [];
+  });
+  if (priced.length === 0) return null;
+  const divs = priced.map((p) => p.div).sort((a, b) => a - b);
+  const ages = priced.flatMap((p) => (p.ageHours == null ? [] : [p.ageHours]));
+  return {
+    minDiv: divs[0]!,
+    medianDiv: median(divs),
+    maxDiv: divs[divs.length - 1]!,
+    priced: priced.length,
+    total: ref.members.length,
+    unpricedMembers: ref.members.filter((m) => !inputs.ninja.has(m.itemId)).map((m) => m.name),
+    ageHours: ages.length > 0 ? Math.max(...ages) : null,
+  };
+}
 
 /** A curated reference → a Divine price with source and age, or null when nothing prices it. */
 export function resolvePrice(ref: PriceRef, inputs: PriceInputs): ResolvedPrice | null {
@@ -38,6 +69,11 @@ export function resolvePrice(ref: PriceRef, inputs: PriceInputs): ResolvedPrice 
     case "ninja": {
       const quote = inputs.ninja.get(ref.itemId);
       return quote ? { div: quote.div, source: "ninja", ageHours: quote.ageHours } : null;
+    }
+    case "pool": {
+      // the pool's floor: an unknown-weight pick is worth at least its cheapest member
+      const range = poolRange(ref, inputs);
+      return range ? { div: range.minDiv, source: "ninja", ageHours: range.ageHours } : null;
     }
     case "scout": {
       const div = inputs.scout.get(ref.name.toLowerCase());
@@ -53,6 +89,7 @@ export function resolvePrice(ref: PriceRef, inputs: PriceInputs): ResolvedPrice 
 export function priceLookup(inputs: PriceInputs): PriceLookup {
   return {
     price: (ref) => resolvePrice(ref, inputs),
+    pool: (ref) => poolRange(ref, inputs),
     item: (itemId) => {
       const quote = inputs.ninja.get(itemId);
       return quote ? { name: quote.name, icon: quote.icon, volume: quote.volume } : null;
@@ -69,7 +106,7 @@ export function referencedNinjaIds(file: BossLootFile): Set<string> {
         ids.add(line.itemId);
         for (const part of line.craftFrom ?? []) ids.add(part.itemId);
       }
-      for (const loot of tier.loot) if (loot.priceRef.kind === "ninja") ids.add(loot.priceRef.itemId);
+      for (const id of lootNinjaIds(tier.loot)) ids.add(id);
     }
   }
   return ids;

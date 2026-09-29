@@ -52,6 +52,7 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
     tierId: t.tierId,
     entryDiv: t.entryDiv,
     entryComplete: t.entryComplete,
+    entry: t.entryLines.map((l) => ({ name: l.name, qty: l.qty, icon: l.icon, costDiv: l.costDiv, route: l.route })),
     entryVolume: t.entryVolume,
     floorDiv: t.floorDiv,
     chaseDiv: t.chaseDiv,
@@ -65,6 +66,7 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
     confidence: weakest(carrying),
     unpriced: t.unpriced,
     unpricedLineage: t.unpricedLineage,
+    unknownRate: t.unknownRate.length,
     ...NO_SPEED,
   };
 }

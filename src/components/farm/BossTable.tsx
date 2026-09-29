@@ -2,15 +2,15 @@
 
 import { useState, type FocusEvent } from "react";
 import { orderBosses, type BossOrder } from "../../core/farm/farmSpeed";
-import { fmtDiv } from "../../core/tools/bossEv/headline";
 import { compact } from "../../lib/format";
 import { MAX_MINUTES_PER_RUN, type BossRow } from "../../lib/farmContract";
 import { DataTable, type Column, type TableSort } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
 import { PriceChip } from "../ui/PriceChip";
+import { BOUND_PREFIX, EntryCell, FloorCell, NetCell } from "./bossCells";
 import { deleteSpeed, putSpeed, useRowSaves, type RowSaves } from "./farmSpeedApi";
-import { ConfidenceChip, fmtDivHour, fmtOneIn, fmtPct, TONE_CLASS, UnpricedChip } from "./farmView";
+import { fmtDivHour, fmtOneIn, fmtPct } from "./farmView";
 import { SpeedInput } from "./SpeedInput";
 
 /** A computed Divine sum where 0 means "nothing priced lands here", not a free item. */
@@ -19,39 +19,6 @@ function SumCell({ div, exPerDiv, none }: { div: number; exPerDiv: number | null
   return (
     <span className="text-neutral-500" title={none}>
       —
-    </span>
-  );
-}
-
-function EntryCell({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null }) {
-  if (r.entryComplete) return <PriceChip div={r.entryDiv} exPerDiv={exPerDiv} source="ninja" />;
-  return (
-    <span className="text-neutral-400" title="part of the entry is not on the exchange — the cost shown is a lower bound">
-      {r.entryDiv > 0 ? `≥ ${fmtDiv(r.entryDiv, exPerDiv ?? 0)}` : "unpriced"}
-    </span>
-  );
-}
-
-const BOUND_PREFIX: Record<BossRow["netBound"], string> = { exact: "", lower: "≥ ", upper: "≤ ", unknown: "" };
-
-function NetCell({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null }) {
-  const net = fmtDiv(r.netDiv, exPerDiv ?? 0, true);
-  if (r.netBound === "unknown") {
-    return (
-      <span className="text-neutral-400" title="entry partly unpriced and some drops have no rate — net unknown">
-        ?
-      </span>
-    );
-  }
-  // a negative LOWER bound is not a loss: drops without a sourced rate or price may cover it
-  const unsure = r.netBound === "lower" && r.netDiv < 0;
-  const title = unsure
-    ? `rates unknown — lower bound: ${r.uncountedDrops} drop(s) without a sourced rate or price are not counted`
-    : `${r.headline.text}\n${r.headline.title}`;
-  return (
-    <span className={`tabular-nums ${unsure ? "text-neutral-300" : TONE_CLASS[r.headline.tone]}`} title={title}>
-      {BOUND_PREFIX[r.netBound]}
-      {net}
     </span>
   );
 }
@@ -149,23 +116,13 @@ function columns(exPerDiv: number | null, selectedId: string | null, onSelect: (
       header: "Boss",
       cell: (r) => <BossNameCell r={r} selected={r.id === selectedId} onSelect={onSelect} />,
     },
-    { key: "entry", header: "Entry", align: "right", tip: "cheapest of buying the key or crafting it, at today's exchange prices", cell: (r) => <EntryCell r={r} exPerDiv={exPerDiv} /> },
-    { key: "floor", header: "Floor", align: "right", tip: "priced loot that lands on most kills: guaranteed drops plus drops at 1 in 10 or better", cell: (r) => <SumCell div={r.floorDiv} exPerDiv={exPerDiv} none="no priced drop lands on most kills" /> },
+    { key: "entry", header: "Entry", align: "right", tip: "what one attempt consumes, at the cheaper of buying or crafting each item at today's exchange prices — hover for the breakdown", cell: (r) => <EntryCell r={r} exPerDiv={exPerDiv} /> },
+    { key: "floor", header: "Floor", align: "right", tip: "priced loot that lands on most kills: guaranteed drops plus drops at 1 in 10 or better (a random pick from a pool counts at its cheapest member)", cell: (r) => <FloorCell r={r} exPerDiv={exPerDiv} /> },
     { key: "chase", header: "Chase", align: "right", tip: "priced EV of drops rarer than 1 in 10 — the lottery part of a kill", cell: (r) => <SumCell div={r.chaseDiv} exPerDiv={exPerDiv} none="no priced rare drop with a sourced rate" /> },
-    { key: "net", header: "Net", align: "right", tip: "expected loot − entry per kill over priced drops with a sourced rate. ≥ = lower bound (some drops have no rate — a negative one is not a sure loss); ≤ = upper bound (entry partly unpriced)", cell: (r) => <NetCell r={r} exPerDiv={exPerDiv} /> },
+    { key: "net", header: "Net", align: "right", tip: "expected loot − entry per kill over priced drops with a sourced rate. ≥ = lower bound (some drops have no rate — a negative one is not a sure loss); ≤ = upper bound (entry partly unpriced). Hover a value for what EV leaves out and how its rates are sourced.", cell: (r) => <NetCell r={r} exPerDiv={exPerDiv} /> },
     { key: "oneIn", header: "Chase odds", align: "right", tip: "kills per rare (< 1 in 10) drop of any kind, from the sourced rates", cell: (r) => (r.chaseOneIn == null ? <span className="text-neutral-500">—</span> : <span className="tabular-nums">{fmtOneIn(r.chaseOneIn)}</span>) },
     { key: "lose", header: "P(lose)", align: "right", tip: "chance one kill does not pay for its entry; * = some covering drops have no known rate", cell: (r) => <LoseCell r={r} /> },
     { key: "liq", header: "Liquidity", align: "right", tip: "poe.ninja traded volume of the priciest entry item — how easily you can buy in", cell: (r) => (r.entryVolume == null ? <span className="text-neutral-500">—</span> : <span className="tabular-nums">{compact(r.entryVolume)}</span>) },
-    {
-      key: "chips",
-      header: "Data",
-      cell: (r) => (
-        <span className="flex items-center gap-1.5">
-          <ConfidenceChip confidence={r.confidence} />
-          <UnpricedChip names={r.unpriced} lineage={r.unpricedLineage} />
-        </span>
-      ),
-    },
   ];
 }
 
