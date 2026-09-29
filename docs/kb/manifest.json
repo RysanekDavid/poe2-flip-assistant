@@ -34,7 +34,7 @@
       "patch": "0.5.4",
       "league": "Runes of Aldur",
       "stamped_at": "2026-09-29",
-      "sha256": "3e7acf268bfbf88e23320c6e1da80ad8804da49532ced484beb826ba6baa5759"
+      "sha256": "a2e49355c221c494a7cfdaf728b2713cc68e20ea5a20aeaf351021f11b3c3b7d"
     },
     {
       "path": "docs/kb/atlas-juicing.md",
@@ -61,8 +61,8 @@
       "path": "docs/kb/drop-sources.md",
       "patch": "0.5.x",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-07-15",
-      "sha256": "dbe078a44ebedc69e232b3e7900b34ddb3343924383c1defcea82af570fd32f6"
+      "stamped_at": "2026-09-29",
+      "sha256": "04a2a7ae0680b08b57e120b715c7291312ce31b109b79415902ec7f929f41ec0"
     },
     {
       "path": "docs/kb/community-reddit.md",
@@ -76,7 +76,7 @@
       "patch": "0.5.x",
       "league": "Runes of Aldur",
       "stamped_at": "2026-09-29",
-      "sha256": "a2b42197d11faeb87e496bd793726855d24ab94f6d07933d2a806e89ade7baa7"
+      "sha256": "204875aeea973f2ae47a807171028dee4299208cc4d91f56aa63b1d604bd0dd4"
     },
     {
       "path": "docs/research/poe2-crafting-knowledge.md",
