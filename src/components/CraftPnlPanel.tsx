@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { NotebookPen, Trash2 } from "lucide-react";
 import { priceLabel, evLabel, MatIcon } from "./craft/craftView";
+import { CALIBRATION_MIN_N } from "../core/craftProvenance/calibration";
 
 /** Other components dispatch this after logging an attempt so the panel refreshes instantly. */
 export const PNL_CHANGED_EVENT = "craft-pnl-changed";
@@ -34,7 +35,8 @@ interface Resp {
   attempts: Attempt[];
   byRecipe: RecipePnl[];
   labels: Record<string, string>;
-  hitRates: Record<string, number>;
+  // model = curated; measured pools every user's closed attempts; effective is what the EV uses
+  hitRates: Record<string, { model: number; measured: number | null; n: number; effective: number }>;
   icons: Record<string, string>;
   computedLeague: string;
   exaltPerDivine: number | null;
@@ -84,11 +86,29 @@ function CloseControls({ onClose }: { onClose: (outcome: "hit" | "brick", soldDi
   );
 }
 
-/** Per-recipe reality check: real hit rate vs model, realized net, pending attempts. */
+const pctOf = (x: number): string => `${(x * 100).toFixed(0)}%`;
+
+/** Curated model vs the all-users measured rate, and which one the EV currently uses. */
+function HitRateCompare({ rates }: { rates: Resp["hitRates"][string] }) {
+  const usesMeasured = rates.measured !== null && rates.n >= CALIBRATION_MIN_N;
+  const measured = rates.measured === null ? "no closed attempts yet" : `measured ${pctOf(rates.measured)} n=${rates.n}`;
+  return (
+    <span
+      className="text-neutral-500"
+      title={`Measured pools every user's closed attempts; it replaces the model in the EV at n ≥ ${CALIBRATION_MIN_N}. The EV uses ${usesMeasured ? "measured" : "model"}.`}
+    >
+      {" "}
+      (model {pctOf(rates.model)} · {measured}
+      {usesMeasured ? " — in use" : ""})
+    </span>
+  );
+}
+
+/** Per-recipe reality check: real hit rate vs model and measured, realized net, pending attempts. */
 function RecipeSummary({ r, data }: { r: RecipePnl; data: Resp }) {
   const net = r.sold_div - r.spent_div;
   const realHit = r.closed > 0 ? (r.hits / r.closed) * 100 : null;
-  const modelHit = (data.hitRates[r.recipe_key] ?? 0) * 100;
+  const rates = data.hitRates[r.recipe_key];
   const ex = data.exaltPerDivine;
   return (
     <div className="rounded-md border border-neutral-800 bg-neutral-950/40 px-2.5 py-1.5 text-xs">
@@ -97,8 +117,8 @@ function RecipeSummary({ r, data }: { r: RecipePnl; data: Resp }) {
         {data.labels[r.recipe_key] ?? r.recipe_key}
       </div>
       <div className="text-neutral-500">
-        {r.attempts} attempts · hit {realHit != null ? `${realHit.toFixed(0)}%` : "—"}
-        <span className="text-neutral-500"> (model {modelHit.toFixed(0)}%)</span> · realized{" "}
+        {r.attempts} attempts · your hit {realHit != null ? `${realHit.toFixed(0)}%` : "—"}
+        {rates && <HitRateCompare rates={rates} />} · realized{" "}
         <span className={net >= 0 ? "text-emerald-400" : "text-bad"}>{evLabel(net, ex)}</span>
         {r.pending > 0 && (
           <span className="text-sky-400" title="open attempts and hits you kept / haven't sold — not counted as profit or loss yet">

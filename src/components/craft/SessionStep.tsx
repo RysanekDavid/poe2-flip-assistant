@@ -2,6 +2,8 @@
 
 import { Check, ChevronLeft, AlertTriangle, ClipboardCheck, FlaskConical } from "lucide-react";
 import type { GuideStep } from "../../core/craftRecipes";
+import type { StepLegality } from "../../core/craftProvenance/schema";
+import { LegalityChip } from "./ProvenanceChips";
 import type { MatInfoFn } from "./craftView";
 
 /** Screens of an inline craft session. */
@@ -128,12 +130,25 @@ function StepNav({ step, idx, last, failed, go }: StepNavProps) {
 }
 
 /** One big step at a time: what to slam, what to do, what to look for, what to check. */
-export function StepScreen(props: { step: GuideStep; idx: number; total: number; failed: boolean; matInfo: MatInfoFn; go: (s: Screen) => void }) {
-  const { step, idx, total, failed, matInfo, go } = props;
+interface StepScreenProps {
+  step: GuideStep;
+  idx: number;
+  total: number;
+  failed: boolean;
+  matInfo: MatInfoFn;
+  go: (s: Screen) => void;
+  /** Audit verdict for this step's materials; null for a step that spends none. */
+  legality: StepLegality | null;
+}
+
+export function StepScreen({ step, idx, total, failed, matInfo, go, legality }: StepScreenProps) {
   return (
     <div className="space-y-4 p-4">
-      <div className="text-center text-xs uppercase tracking-wide text-neutral-500">
-        step {idx + 1} / {total}
+      <div className="flex items-center justify-center gap-2 text-xs text-neutral-500">
+        <span className="uppercase tracking-wide">
+          step {idx + 1} / {total}
+        </span>
+        {legality && <LegalityChip step={legality} />}
       </div>
       <StepMats step={step} matInfo={matInfo} />
       <p className="text-center text-lg font-medium text-neutral-100">{step.do}</p>

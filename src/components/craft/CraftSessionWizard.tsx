@@ -207,7 +207,15 @@ export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number
         />
       )}
       {screen.kind === "step" && cur && (
-        <StepScreen step={cur.step} idx={screen.idx} total={steps.length} failed={screen.failed} matInfo={matInfo} go={s.setScreen} />
+        <StepScreen
+          step={cur.step}
+          idx={screen.idx}
+          total={steps.length}
+          failed={screen.failed}
+          matInfo={matInfo}
+          go={s.setScreen}
+          legality={r.provenance.steps.find((l) => l.idx === screen.idx) ?? null}
+        />
       )}
       {screen.kind === "outcome" && (
         <OutcomeScreen brick={screen.brick} brickText={r.guide.brick} msg={s.msg} onSave={onSave} onSkip={() => s.reset(false)} />
