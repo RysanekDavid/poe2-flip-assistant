@@ -13,7 +13,7 @@ import { buildPoolNamespace, memoPoolNamespace, modKey } from "./poolNamespace";
 import type { PoolHeader } from "./pools/headers";
 import type { RegexPool } from "./pools/schema";
 import { LADDER, globalTerms, resolveContext, wantTerms, type ComposeContext, type Term } from "./poolTerms";
-import { tokenHitsMod } from "./poolSamples";
+import { tokenCoversMod, tokenHitsMod } from "./poolSamples";
 import type { PoolToken } from "./poolTokens";
 import { compileSafeRegex } from "./safeRegex";
 import { buildPoolWarnings } from "./poolWarnings";
@@ -49,12 +49,12 @@ export interface PoolComposeOptions {
 const renderTerm = (t: Term): string => renderChunk(t.tokens.map((x) => x.text), t.negated ? "trash" : "keep");
 const joinTerms = (terms: readonly string[]): string => terms.filter((t) => t.length > 0).join(" ");
 
-/** "any" mode: fold wanted mods an earlier literal token already hits into that token. */
+/** "any" mode: fold a wanted mod into an earlier literal token that already hits EVERY tier of it. */
 function mergeAnyTerms(ctx: ComposeContext, terms: readonly Term[]): Term[] {
   const kept: Term[] = [];
   for (const term of terms) {
     const mod = ctx.wants.find((m) => m.id === term.modIds[0]);
-    const host = mod && kept.find((k) => k.tokens.every((t) => t.kind === "mod") && k.tokens.some((t) => tokenHitsMod(compileSafeRegex(t.text), mod)));
+    const host = mod && kept.find((k) => k.tokens.every((t) => t.kind === "mod") && k.tokens.some((t) => tokenCoversMod(compileSafeRegex(t.text), mod)));
     if (!host || term.tokens.some((t) => t.kind === "threshold")) {
       kept.push(term);
       continue;
