@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { TOOL_IDS, TOOLS } from "../../components/tools/toolRegistry";
+import { TAB_IDS, TABS } from "../../components/shell/tabRegistry";
 import { bossEv, evaluateBosses, jackpotOf } from "../../core/tools/bossEv/ev";
 import { breakEvenHeadline, capTone, fmtDiv, oneIn } from "../../core/tools/bossEv/headline";
 import { loadPriceInputs, priceLookup, referencedNinjaIds, resolvePrice, type PriceInputs } from "../../core/tools/bossEv/pricing";
@@ -14,7 +14,7 @@ import { insertSnapshots } from "../../db/marketQueries";
 import { getDb } from "../../db/database";
 import { bossEvResponseSchema } from "../../lib/tools/bossEvContract";
 import { patchCoverageSchema } from "../../sources/patchNotes/contracts";
-import { assertToolPanel, freshToolsDb } from "./toolsTestKit";
+import { assertPanelExport, freshToolsDb } from "./toolsTestKit";
 
 const NOW = Date.parse("2026-09-28T12:00:00Z");
 const close = (actual: number, expected: number, what: string): void =>
@@ -315,10 +315,9 @@ testDbPricing();
 testPatchWarning();
 testHeadlines();
 testCuratedEvaluates();
-assertToolPanel("boss-ev", "BossEvTool");
-assert.deepEqual(TOOLS.map((t) => t.id), [...TOOL_IDS], "sub-nav order must match TOOL_IDS, each id once");
-assert.equal(new Set(TOOLS.map((t) => t.module)).size, TOOLS.length, "each tool has its own panel module");
-assert.equal(new Set(TOOLS.map((t) => t.label)).size, TOOLS.length, "sub-nav labels must be distinct");
+assertPanelExport("src/components/tools/bossev/BossEvTool.tsx", "BossEvTool", "src/components/shell/tabs/FarmTab.tsx");
+assert.deepEqual(TABS.map((t) => t.id), [...TAB_IDS], "tab nav order must match TAB_IDS, each id once");
+assert.equal(new Set(TABS.map((t) => t.label)).size, TABS.length, "tab labels must be distinct");
 console.log(
   "ALL PASS — boss-loot strict schema + dated sources, synthetic EV (guaranteed/point/range/unknown/unpriced/manual), " +
     "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, contract, panel wiring",

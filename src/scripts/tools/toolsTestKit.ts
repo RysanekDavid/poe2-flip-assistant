@@ -2,11 +2,10 @@
  * DB_PATH at a temp file. */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import type Database from "better-sqlite3";
 import { config } from "../../config/env";
 import { getDb } from "../../db/database";
-import { TOOLS, type ToolId } from "../../components/tools/toolRegistry";
 
 /** A fresh temp DB with the full application schema; refuses to touch a real database. */
 export function freshToolsDb(): Database.Database {
@@ -25,15 +24,30 @@ export function columnsOf(db: Database.Database, table: string): string[] {
   return rows.map((r) => r.name);
 }
 
-/** The registry entry has a panel file that exports the component ToolsTab lazy-imports. */
-export function assertToolPanel(id: ToolId, component: string): void {
-  const meta = TOOLS.find((t) => t.id === id);
-  assert.ok(meta, `tool ${id} must be registered in toolRegistry.ts`);
-  const path = join(process.cwd(), "src/components/tools", `${meta.module}.tsx`);
-  assert.ok(existsSync(path), `panel file for ${id} missing: ${path}`);
-  assert.match(readFileSync(path, "utf8"), new RegExp(`export function ${component}\\b`), `${path} must export ${component}`);
-  const tab = readFileSync(join(process.cwd(), "src/components/tools/ToolsTab.tsx"), "utf8");
-  assert.ok(tab.includes(`import("./${meta.module}")`), `ToolsTab must lazy-import ./${meta.module}`);
+/** Module specifier `importedBy` would use for `panel`: "../../tools/regex/RegexTool". */
+function importSpecifier(importedBy: string, panel: string): string {
+  const rel = relative(dirname(importedBy), panel).split(sep).join("/").replace(/\.tsx?$/, "");
+  return rel.startsWith(".") ? rel : `./${rel}`;
+}
+
+/**
+ * A tool panel is still wired into the app: `panelPath` (repo-relative .tsx) exports `component`,
+ * and `importedBy` (the shell tab that renders it) imports that module, statically or lazily — so
+ * moving or renaming a panel fails test:tools instead of silently dropping it from the UI.
+ */
+export function assertPanelExport(panelPath: string, component: string, importedBy: string): void {
+  const panel = join(process.cwd(), panelPath);
+  const host = join(process.cwd(), importedBy);
+  assert.ok(existsSync(panel), `panel file missing: ${panelPath}`);
+  assert.ok(existsSync(host), `importing file missing: ${importedBy}`);
+  assert.match(readFileSync(panel, "utf8"), new RegExp(`export function ${component}\\b`), `${panelPath} must export ${component}`);
+  const specifier = importSpecifier(host, panel);
+  const source = readFileSync(host, "utf8");
+  assert.ok(
+    source.includes(`from "${specifier}"`) || source.includes(`import("${specifier}")`),
+    `${importedBy} must import ${specifier} (the ${component} panel)`,
+  );
+  assert.match(source, new RegExp(`\\b${component}\\b`), `${importedBy} must reference ${component}`);
 }
 
 export function insertUser(db: Database.Database, name: string): number {

@@ -4,6 +4,8 @@
 
 :root {
   color-scheme: dark;
+  /* Short tabs have no scrollbar; reserving its gutter stops the header jumping on tab switch. */
+  scrollbar-gutter: stable;
 }
 
 @layer base {

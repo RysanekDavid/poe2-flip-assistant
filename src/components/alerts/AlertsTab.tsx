@@ -12,15 +12,24 @@ function popupBlockedReason(perm: NotifyPermission): string | null {
   return "allow desktop notifications above first";
 }
 
+/** How alerts reach you: browser permission plus the per-type routing grid. Also on Settings. */
+export function AlertRouting() {
+  const [perm, request] = useNotifyPermission();
+  return (
+    <>
+      <DesktopNotifyControl perm={perm} request={request} />
+      <NotificationsSettings popupBlocked={popupBlockedReason(perm)} />
+    </>
+  );
+}
+
 /** Alerts tab: the feed on the left, how alerts reach you on the right. */
 export function AlertsTab() {
-  const [perm, request] = useNotifyPermission();
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
       <AlertsFeed />
-      <aside className="space-y-4 lg:sticky lg:top-36">
-        <DesktopNotifyControl perm={perm} request={request} />
-        <NotificationsSettings popupBlocked={popupBlockedReason(perm)} />
+      <aside className="space-y-4 lg:sticky lg:top-[var(--shell-h,9rem)]">
+        <AlertRouting />
       </aside>
     </div>
   );

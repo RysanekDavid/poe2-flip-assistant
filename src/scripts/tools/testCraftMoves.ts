@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { toolIdSchema } from "../../components/tools/toolRegistry";
+import { parseTabRoute } from "../../components/shell/tabRegistry";
 import { parseItem } from "../../core/itemParser";
 import { buildStatIndex, resolveLine } from "../../core/statResolver";
 import { loadCraftCatalog, type CraftCatalog } from "../../core/tools/craftmoves/catalog";
@@ -15,7 +15,7 @@ import { priceMoves } from "../../core/tools/craftmoves/cost";
 import { assembleMoves } from "../../core/tools/craftmoves/moves";
 import { craftMovesResponseSchema, rulesStale } from "../../lib/tools/craftMovesContract";
 import { itemText, RING, ringDesecratedSuffix, ringLines, renderFamily } from "./craftMovesFixtures";
-import { assertToolPanel } from "./toolsTestKit";
+import { assertPanelExport } from "./toolsTestKit";
 import { runJewelAndTagCases } from "./craftMovesJewelCases";
 import { KB6_FACTS, testKbLiquids } from "./craftMovesKbLiquids";
 import { SAMPLE_ITEM } from "../../components/tools/craftmoves/craftMovesClient";
@@ -226,10 +226,12 @@ testRuleProvenance();
 testPricing();
 testParserMarker();
 testContract(cat);
-assertToolPanel("craft-moves", "CraftMovesTool");
-assert.equal(toolIdSchema.parse("craft-moves"), "craft-moves");
-for (const bad of ["hunt", "craftmoves", "", "CRAFT-MOVES"]) {
-  assert.equal(toolIdSchema.safeParse(bad).success, false, `"${bad}" must not parse as a tool id`);
+assertPanelExport("src/components/tools/craftmoves/CraftMovesTool.tsx", "CraftMovesTool", "src/components/shell/tabs/CraftTab.tsx");
+assert.deepEqual(parseTabRoute("craft", "moves"), { tab: "craft", tool: "moves", rejected: [] });
+for (const bad of ["hunt", "craft-moves", "", "MOVES"]) {
+  const route = parseTabRoute("craft", bad);
+  assert.equal(route.tool, "recipes", `"${bad}" must not parse as a craft tool — falls back to the default`);
+  assert.deepEqual(route.rejected, [`tool=${bad}`], `"${bad}" must be reported, not silently swapped`);
 }
 console.log(
   `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB §3 gate rows, ${KB6_FACTS.length} KB §6 facts, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/advanced), jewels/liquids/catalysed/headers/markers, ` +

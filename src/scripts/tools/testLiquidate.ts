@@ -16,7 +16,7 @@ import { stashNote, tradeListingQuote } from "../../core/tools/liquidate/tradeRo
 import { BALANCE_ITEMS_KEEP_SNAPSHOTS, insertBalanceItems, latestStashItems } from "../../db/balanceItemQueries";
 import { getDb } from "../../db/database";
 import { liquidateRequestSchema } from "../../lib/tools/liquidateContract";
-import { assertToolPanel, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
+import { assertPanelExport, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
 
 const RATES = { exaltPerDivine: 400, chaosPerDivine: 20 };
 const GOLD_PER_EX = 5000;
@@ -292,5 +292,5 @@ testBundleTotals();
 testBalanceItems();
 testAccountScanItems();
 testStackedOwnListings();
-assertToolPanel("liquidate", "LiquidateTool");
+assertPanelExport("src/components/tools/liquidate/LiquidateTool.tsx", "LiquidateTool", "src/components/shell/tabs/WealthTab.tsx");
 console.log("ALL PASS — cx quote (denomination, cap, ratio clamp, grid, fee, ETA), trade quote, plan (thin + manual) + bundle (totals, line split), balance_items retention + cascade, trade2 fixture items, stacked own listings (ask × stack, per-unit import), panel wiring");
