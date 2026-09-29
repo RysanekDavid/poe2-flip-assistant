@@ -50,7 +50,7 @@
     "patch:sync": "tsx src/scripts/syncPatchNotes.ts",
     "patch:review": "tsx src/scripts/reviewPatch.ts",
     "patch:summarize": "tsx src/scripts/summarizePatches.ts",
-    "test:patch": "tsx src/scripts/testPatchNotes.ts && tsx src/scripts/testPatchSummarySync.ts && tsx src/scripts/runWithTestEnv.ts patch-summary",
+    "test:patch": "tsx src/scripts/testPatchNotes.ts && tsx src/scripts/testPatchImpact.ts && tsx src/scripts/testPatchSummarySync.ts && tsx src/scripts/runWithTestEnv.ts patch-summary",
     "kb:check": "tsx src/scripts/kbCheck.ts",
     "craft:check-stats": "tsx src/scripts/checkRecipeStats.ts",
     "db:migrate": "tsx src/db/migrate.ts",
