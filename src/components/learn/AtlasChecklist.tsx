@@ -66,8 +66,9 @@ function StepRow({ step, index, done, next, busy, onToggle }: StepRowProps) {
         </div>
         <p className="text-sm leading-5 text-neutral-300">{step.detail}</p>
         {step.warnings.map((w) => (
-          <p key={w} className="flex gap-1.5 text-sm text-amber-200/90">
-            <AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {w}
+          <p key={w.text} className="flex flex-wrap items-center gap-1.5 text-sm text-amber-200/90">
+            <AlertTriangle aria-hidden className="h-3.5 w-3.5 shrink-0" /> {w.text}
+            {w.claim && <ClaimBadge claim={w.claim} />}
           </p>
         ))}
         {step.strategy_ids.length > 0 && (

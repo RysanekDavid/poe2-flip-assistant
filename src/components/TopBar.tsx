@@ -3,8 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, LogOut } from "lucide-react";
-import { z } from "zod";
 import { BellIcon, XIcon } from "./ui/icons";
+import { useNavMode } from "./shell/NavModeProvider";
 import { AlertsPanel } from "./AlertFeed";
 import { assertOk, warnOnFailure } from "../lib/clientWarn";
 import { useAlertCenter } from "./alerts/AlertsContext";
@@ -84,37 +84,13 @@ function WealthChip() {
   );
 }
 
-const MeResponse = z.object({ user: z.object({ name: z.string() }).nullable() });
-
-/** Signed-in account name; bounces to /login when the session no longer resolves. */
-function useSignedInName(): string | null {
-  const router = useRouter();
-  const [name, setName] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`/api/auth/me → ${r.status}`);
-        return MeResponse.parse(await r.json());
-      })
-      .then(({ user }) => {
-        // Session revoked elsewhere ("log out everywhere", password change): /me already cleared
-        // the cookie, so leave the private dashboard instead of rendering it anonymous.
-        if (user === null) {
-          router.replace("/login");
-          return;
-        }
-        setName(user.name);
-      })
-      .catch((error: unknown) => console.error("[auth] could not load the current user", error));
-  }, [router]);
-  return name;
-}
-
-/** Current user + logout. Mirrors who owns the private data shown on the page. */
+/**
+ * Current user + logout. Mirrors who owns the private data shown on the page. The name comes from
+ * NavModeProvider's single /api/auth/me read, which also bounces a revoked session to /login.
+ */
 function UserMenu() {
   const router = useRouter();
-  const name = useSignedInName();
+  const { name } = useNavMode().me;
 
   async function logout(): Promise<void> {
     // Leave for /login either way, but a failed logout may have left the session cookie set.
@@ -125,7 +101,6 @@ function UserMenu() {
     router.refresh();
   }
 
-  if (!name) return null;
   return (
     <div className="relative flex items-center gap-3 rounded-lg border border-neutral-800 px-3 py-1.5" data-tour="account">
       {/* fieldset-style legend sitting on the border */}

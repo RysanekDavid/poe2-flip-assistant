@@ -5,7 +5,7 @@ import { CircleHelp } from "lucide-react";
 import iconExchange from "../../assets/Currency_exchange.png";
 import iconMarket from "../../assets/Web_market.png";
 import { CURRENCY_ART } from "../../lib/currencyArt";
-import { PICKUP_THRESHOLD_EX, type PickupHint, type SellRoute } from "../../lib/learnContract";
+import { PICKUP_RULE_TEXT, type PickupHint, type SellRoute } from "../../lib/learnContract";
 import { Tooltip } from "../ui/Tooltip";
 
 const ROUTE: Record<SellRoute, { label: string; tip: string; art: StaticImageData | null }> = {
@@ -51,15 +51,11 @@ const HINT: Record<PickupHint, { label: string; tone: string }> = {
   unknown: { label: "No live price", tone: "text-neutral-400" },
 };
 
-const HINT_TIP =
-  `Rule of thumb, not a rule: worth ≥ ${PICKUP_THRESHOLD_EX} Exalted Orb each → worth the inventory slot. ` +
-  "Cheap stackables can still be worth it in bulk, and prices move — check again later in the league.";
-
 /** The "pick up?" rule of thumb, labelled as such so nobody reads it as a verdict. */
 export function PickupHintBadge({ hint }: { hint: PickupHint }) {
   const meta = HINT[hint];
   return (
-    <Tooltip tip={HINT_TIP} side="bottom" align="start">
+    <Tooltip tip={PICKUP_RULE_TEXT} side="bottom" align="start">
       <span tabIndex={0} className={CHIP}>
         <img src={CURRENCY_ART.ex} alt="" className="h-4 w-4 object-contain" />
         <span className="text-xs uppercase tracking-wider text-neutral-400">Rule of thumb</span>

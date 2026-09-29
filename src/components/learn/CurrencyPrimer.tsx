@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Coins, ExternalLink, Loader2 } from "lucide-react";
 import { ENTITY_KIND_LABEL } from "../../core/entities/schema";
 import type { PickupAdvice } from "../../core/learn/schema";
-import { primerResponseSchema, type PrimerCard } from "../../lib/learnContract";
+import { PICKUP_RULE_TEXT, primerResponseSchema, type PrimerCard } from "../../lib/learnContract";
 import { ClaimBadge } from "../ui/ClaimBadge";
 import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
@@ -12,10 +12,11 @@ import { PriceChip } from "../ui/PriceChip";
 import { Tooltip } from "../ui/Tooltip";
 import { useLearnGet } from "./useLearnApi";
 
+// "always" is exactly the lookup's pickup rule (testLearn checks every entry), so it quotes that text.
 const PICKUP: Record<PickupAdvice, { label: string; tip: string; tone: string }> = {
-  always: { label: "Always pick up", tip: "Worth taking every time it drops.", tone: "border-good/40 text-good" },
-  stack: { label: "Pick up & stack", tip: "Cheap one at a time, but it adds up: keep a stack to use or sell in bulk.", tone: "border-line text-neutral-200" },
-  skip_low: { label: "Skip early", tip: "Low value per inventory slot — leave it (or let your loot filter hide it) until you need it.", tone: "border-line text-neutral-400" },
+  always: { label: "Always pick up", tip: PICKUP_RULE_TEXT, tone: "border-good/40 text-good" },
+  stack: { label: "Pick up & stack", tip: "Under the line one at a time, but it adds up: keep a stack to use or sell in bulk.", tone: "border-line text-neutral-200" },
+  skip_low: { label: "Skip early", tip: "Under the line and rarely worth a slot — leave it (or let your loot filter hide it) until you need it.", tone: "border-line text-neutral-400" },
 };
 
 type Filter = PickupAdvice | "all";

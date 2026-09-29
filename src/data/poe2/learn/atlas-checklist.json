@@ -1,6 +1,9 @@
 {
   "schema_version": 1,
-  "patch": { "verified_against": "0.5.5", "stamped_at": "2026-09-29" },
+  "patch": {
+    "verified_against": "0.5.5",
+    "stamped_at": "2026-09-29"
+  },
   "route_source": "Fubgun's 0.5.5 atlas route (2026-09-03), checked against poe2db, the 0.5.5 patch notes, Game8 and timesaver.gg",
   "steps": [
     {
@@ -24,7 +27,16 @@
       "title": "Rush map bosses, run maps magic",
       "detail": "Early maps are for unlocking, not profit: go straight to the boss, kill it, leave. Run waystones magic; use Alchemy only on higher tiers when you need sustain.",
       "warnings": [
-        "Don't slot Breach, Delirium, Ritual, Expedition or Abyss tablets until you can actually run that mechanic — save or sell them."
+        {
+          "text": "Don't slot Breach, Delirium, Ritual, Expedition or Abyss tablets until you can actually run that mechanic — save or sell them.",
+          "claim": {
+            "v": "ss",
+            "src": [
+              "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
+            ],
+            "note": "Fubgun's advice alone ('Tablets are not worth slotting before you have league mechanic access'); no source gives a mechanical reason."
+          }
+        }
       ],
       "strategy_ids": [],
       "claim": {
@@ -34,7 +46,7 @@
           "https://www.iggm.com/news/poe-2-0-5-5-atlas-progression-guide-how-to-complete-passive-tree-avoid-traps",
           "https://www.poecurrency.com/news/poe-2-0-5-5-forbidden-rites-event-league-endgame-strategy-fast-atlas-unlocks-high-profit-farming"
         ],
-        "note": "Three guides agree on boss-rushing. The tablet warning is Fubgun's alone ('Tablets are not worth slotting before you have league mechanic access'); no source gives a mechanical reason, so treat it as single-source."
+        "note": "Three guides agree on boss-rushing and running maps magic while unlocking."
       }
     },
     {
@@ -74,8 +86,12 @@
       "title": "Spend Atlas points — skip Man Trap and Survival of the Fittest",
       "detail": "Spend points as you earn them. Man Trap and Survival of the Fittest unlock after an Eastern or Western Gateway; leave both off while you progress.",
       "warnings": [
-        "Man Trap: Fubgun reports its essence Rogue Exiles often spawn outside the essence area, which wastes time.",
-        "Survival of the Fittest (Desert maps): merges extra rares into one stronger rare — fewer rares, fewer Abyss omens."
+        {
+          "text": "Man Trap: Fubgun reports its essence Rogue Exiles often spawn outside the essence area, which wastes time."
+        },
+        {
+          "text": "Survival of the Fittest (Desert maps): merges extra rares into one stronger rare — fewer rares, fewer Abyss omens."
+        }
       ],
       "strategy_ids": [],
       "claim": {
@@ -110,7 +126,11 @@
       "id": "arbiter-of-ash",
       "title": "Kill the Arbiter of Ash at the Burning Monolith",
       "detail": "Place the Crisis Fragments in the Burning Monolith door and kill the Arbiter of Ash. This opens the Fortress centre and the path to the Origin Tower.",
-      "warnings": ["0.5.5: he resists Fire and takes extra Cold damage — fire builds hit him less."],
+      "warnings": [
+        {
+          "text": "0.5.5: he resists Fire and takes extra Cold damage — fire builds hit him less."
+        }
+      ],
       "strategy_ids": [],
       "claim": {
         "v": "vs",
@@ -127,7 +147,11 @@
       "id": "matriarch-patriarch-halls",
       "title": "Beat one Matriarch Hall and one Patriarch Hall",
       "detail": "These are the 'halls': T15 maps near the Origin Tower. Their bosses drop the Origin Cradle and the Origin Spark — the two parts of the Arbiter of Divinity key.",
-      "warnings": ["T15 waystones only, with limited attempts — bring a build that can kill the boss."],
+      "warnings": [
+        {
+          "text": "T15 waystones only, with limited attempts — bring a build that can kill the boss."
+        }
+      ],
       "strategy_ids": [],
       "claim": {
         "v": "vs",
@@ -141,21 +165,28 @@
     },
     {
       "id": "forge-origin-core",
-      "title": "Forge the Origin Core at the Precursor Reactor",
-      "detail": "Take the Origin Spark and Origin Cradle to the Precursor Reactor at the base of the Origin Tower to forge the Origin Core, then carry it to the top of the tower.",
+      "title": "Forge the Origin Core at the Origin Tower",
+      "detail": "Combine the Origin Spark and the Origin Cradle at the Origin Tower to make the Origin Core, then bring it to the apex of the tower.",
       "warnings": [],
       "strategy_ids": [],
       "claim": {
         "v": "vp",
-        "src": ["https://poe2db.tw/us/Origin_Core", "https://game8.co/games/Path-of-Exile-2/archives/602195"],
-        "note": "poe2db: made from 1 Origin Spark + 1 Origin Cradle; take it 'to the apex of the Tower of Origins'. A quest version and a tradeable Pinnacle Key version exist."
+        "src": [
+          "https://poe2db.tw/us/Origin_Core",
+          "https://game8.co/games/Path-of-Exile-2/archives/602195"
+        ],
+        "note": "poe2db Origin Core: 'created by combining 1x Origin Spark and 1x Origin Cradle at the Origin Tower'; usage 'Bring to the apex of the Origin Tower' (quest) / 'the Tower of Origins' (pinnacle key)."
       }
     },
     {
       "id": "arbiter-of-divinity-quest",
       "title": "Kill the quest Arbiter of Divinity",
       "detail": "Use the quest Origin Core to fight the Arbiter of Divinity. It finishes the story step, but since 0.5.5 it completes no Fortress section by itself.",
-      "warnings": ["0.5.5: resists Lightning and takes extra Fire damage."],
+      "warnings": [
+        {
+          "text": "0.5.5: resists Lightning and takes extra Fire damage."
+        }
+      ],
       "strategy_ids": [],
       "claim": {
         "v": "vp",
@@ -169,8 +200,12 @@
     {
       "id": "arbiter-of-divinity-full",
       "title": "Kill a non-quest Arbiter of Divinity to finish the Fortress",
-      "detail": "Run another Matriarch Hall and Patriarch Hall (or buy an Origin Core) and kill the Arbiter again with the non-quest core. That one kill completes the whole Precursor Fortress and its Atlas points.",
-      "warnings": ["The quest kill unlocks no points — only a kill with a non-quest Origin Core does."],
+      "detail": "Run another Matriarch Hall and Patriarch Hall (or buy an Origin Core) and kill the Arbiter again with the non-quest core. That kill completes the whole Precursor Fortress for the map owner, so you can allocate the Atlas tree as you like.",
+      "warnings": [
+        {
+          "text": "The quest kill unlocks no points — only a kill with a non-quest Origin Core does."
+        }
+      ],
       "strategy_ids": [],
       "claim": {
         "v": "vp",
@@ -179,7 +214,7 @@
           "https://timesaver.gg/blog/poe2-atlas-points-arbiter-of-divinity-0-5-5",
           "https://poe2db.tw/us/Origin_Core"
         ],
-        "note": "0.5.5 patch notes: a non-quest Origin Core kill 'now completes the entire Precursor Fortress'. poe2db lists the tradeable Origin Core."
+        "note": "0.5.5 patch notes: 'Defeating the Arbiter of Divinity using the non-quest version of the Origin Core now completes the entire Precursor Fortress for the Map owner, allowing you to allocate the Atlas Passive Tree as desired.'"
       }
     },
     {

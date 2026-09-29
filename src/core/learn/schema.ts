@@ -41,6 +41,12 @@ export const primerEntrySchema = z
     /** Who uses it and for what, in one plain line for someone new to the game. */
     who_uses: z.string().min(1).max(160),
     pickup: pickupAdviceSchema,
+    /**
+     * Exalted per item behind the pickup bucket: the lower of poe.ninja and poe2scout on the
+     * file's stamped_at. "always" must agree with isWorthPickingUp(ref_ex) (testLearn checks), so
+     * the curated bucket and the live lookup hint follow one rule.
+     */
+    ref_ex: z.number().positive().finite(),
     claim: claimSchema,
   })
   .strict();
@@ -55,12 +61,21 @@ export const currencyPrimerSchema = z
   .strict();
 export type CurrencyPrimer = z.infer<typeof currencyPrimerSchema>;
 
+export const atlasWarningSchema = z
+  .object({
+    text: z.string().min(1).max(240),
+    /** Its own evidence when it is backed differently from the step (e.g. one creator's advice). */
+    claim: claimSchema.optional(),
+  })
+  .strict();
+export type AtlasWarning = z.infer<typeof atlasWarningSchema>;
+
 export const atlasStepSchema = z
   .object({
     id: learnIdSchema,
     title: z.string().min(1).max(80),
     detail: z.string().min(1).max(400),
-    warnings: z.array(z.string().min(1).max(240)).max(4),
+    warnings: z.array(atlasWarningSchema).max(4),
     /** Farm strategy ids (src/data/poe2/strategies/<id>.json) this step leads into. */
     strategy_ids: z.array(learnIdSchema),
     claim: claimSchema,

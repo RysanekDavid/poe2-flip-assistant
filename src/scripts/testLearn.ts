@@ -19,7 +19,8 @@ import { getDb } from "../db/database";
 import { insertSnapshots, replaceScoutValues, SCOUT_UNIQUE_SOURCE } from "../db/marketQueries";
 import { createUser, getUserById, type UserRow } from "../db/userQueries";
 import { CLAIM_VERDICTS, type ClaimVerdict } from "../lib/claim";
-import { entitySearchResponseSchema, primerResponseSchema, progressResponseSchema } from "../lib/learnContract";
+import { entitySearchResponseSchema, isWorthPickingUp, primerResponseSchema, progressResponseSchema } from "../lib/learnContract";
+import { currentData, entitySearchUrl, type Remote } from "../lib/learnSearch";
 import { BEGINNER_TABS, BEGINNER_TOOLS, defaultTabFor, parseModeRoute, visibleTabs, visibleTools } from "../lib/navMode";
 import { scoutKey } from "../lib/scoutKey";
 
@@ -132,6 +133,9 @@ function testDataRefs(): Record<ClaimVerdict, number> {
   const grades = Object.fromEntries(CLAIM_VERDICTS.map((v) => [v, 0])) as Record<ClaimVerdict, number>;
   for (const entry of CURRENCY_PRIMER.entries) {
     assert.ok(entityById(entry.entity_id), `primer entity ${entry.entity_id} is in the catalog`);
+    // One pickup rule: the curated "always" bucket is exactly the live lookup's "pick up" line.
+    assert.equal(entry.pickup === "always", isWorthPickingUp(entry.ref_ex), `primer ${entry.entity_id}: bucket ${entry.pickup} vs ${entry.ref_ex} Ex`);
+    assert.equal(entry.pickup === "always", pickupHintOf(entry.ref_ex, 1) === "pick_up");
     grades[entry.claim.v] += 1;
   }
   for (const step of ATLAS_CHECKLIST.steps) {
@@ -139,7 +143,11 @@ function testDataRefs(): Record<ClaimVerdict, number> {
       assert.ok(existsSync(join(process.cwd(), "src", "data", "poe2", "strategies", `${id}.json`)), `atlas step ${step.id} → strategy ${id}`);
     }
     grades[step.claim.v] += 1;
+    for (const warning of step.warnings) if (warning.claim) grades[warning.claim.v] += 1;
   }
+  const tablets = ATLAS_CHECKLIST.steps.find((s) => s.id === "boss-rush-maps")?.warnings[0];
+  assert.equal(tablets?.claim?.v, "ss", "the tablet warning is one creator's advice and says so");
+  assert.ok(ATLAS_CHECKLIST.steps.some((s) => s.warnings.some((w) => w.text.startsWith("Man Trap:"))), "poe2db spelling");
   pass(`JSON refs resolve: ${CURRENCY_PRIMER.entries.length} primer entries, ${ATLAS_CHECKLIST.steps.length} atlas steps`);
   return grades;
 }
@@ -147,6 +155,18 @@ function testDataRefs(): Record<ClaimVerdict, number> {
 const seed = (itemId: string, baseValue: number): PricedItem => ({
   itemId, itemName: itemId, category: "Currency", baseValue, volume: 100, change7d: null, spark7d: null, icon: null,
 });
+
+/** The typeahead only offers (and Enter only picks) results for the text currently in the box. */
+function testSearchFreshness(): void {
+  assert.equal(entitySearchUrl("  "), null);
+  const exUrl = entitySearchUrl(" exalted ");
+  assert.equal(exUrl, "/api/entities?q=exalted&limit=8");
+  const answered: Remote<string> = { kind: "ok", url: exUrl ?? "", data: "exalted rows" };
+  assert.equal(currentData(answered, exUrl), "exalted rows");
+  assert.equal(currentData(answered, entitySearchUrl("exalted orb")), null, "a debouncing newer query hides the stale rows");
+  assert.equal(currentData(answered, null), null);
+  assert.equal(currentData<string>({ kind: "loading" }, exUrl), null);
+}
 
 async function testLookup(user: UserRow): Promise<void> {
   const league = leagueForUser(user.id);
@@ -166,6 +186,7 @@ async function testLookup(user: UserRow): Promise<void> {
   const mageblood = lookupEntities("mageblood", 1, prices)[0];
   assert.deepEqual([mageblood?.price, mageblood?.pickup_hint], [null, "unknown"], "unpriced unique");
   assert.equal(sellRouteOf({ kind: "other", exchange_id: null }), "unknown");
+  testSearchFreshness();
   assert.equal(pickupHintOf(0.5, null), "unknown", "no rate, no verdict");
 
   const get = (q: string) => entitiesGet(user, new URL(`http://127.0.0.1/api/entities?${q}`), Date.now());

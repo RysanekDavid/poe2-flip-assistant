@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import type { z } from "zod";
 import { assertOk, describeError } from "../../lib/clientWarn";
 import { entitySearchResponseSchema, type EntitySearchResponse } from "../../lib/learnContract";
+import type { Remote } from "../../lib/learnSearch";
 
-export type Remote<T> = { kind: "idle" } | { kind: "loading" } | { kind: "ok"; data: T } | { kind: "error"; message: string };
+export type { Remote } from "../../lib/learnSearch";
 
 /** GET a Learn route and parse it with its contract; `url` null means "nothing to fetch". */
 export function useLearnGet<T>(url: string | null, schema: z.ZodType<T>, delayMs = 0): Remote<T> {
@@ -20,7 +21,7 @@ export function useLearnGet<T>(url: string | null, schema: z.ZodType<T>, delayMs
       setState({ kind: "loading" });
       fetch(url, { signal: controller.signal })
         .then(async (r) => schema.parse(await assertOk(r, url).json()))
-        .then((data) => setState({ kind: "ok", data }))
+        .then((data) => setState({ kind: "ok", url, data }))
         .catch((error: unknown) => {
           // A superseded keystroke aborts its request on purpose; anything else is a real failure.
           if (controller.signal.aborted) return;
@@ -39,8 +40,6 @@ export function useLearnGet<T>(url: string | null, schema: z.ZodType<T>, delayMs
 export const SEARCH_DEBOUNCE_MS = 200;
 
 /** Debounced typeahead over the entity catalog (blank query = idle, no request). */
-export function useEntitySearch(query: string): Remote<EntitySearchResponse> {
-  const q = query.trim();
-  const url = q === "" ? null : `/api/entities?${new URLSearchParams({ q, limit: "8" }).toString()}`;
+export function useEntitySearch(url: string | null): Remote<EntitySearchResponse> {
   return useLearnGet(url, entitySearchResponseSchema, SEARCH_DEBOUNCE_MS);
 }

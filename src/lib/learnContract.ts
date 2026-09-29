@@ -13,12 +13,26 @@ export const SELL_ROUTES = ["cx", "trade", "unknown"] as const;
 export const sellRouteSchema = z.enum(SELL_ROUTES);
 export type SellRoute = z.infer<typeof sellRouteSchema>;
 
-/** The "pick up?" rule of thumb: worth ≥ 1 Exalted each → pick it up. */
+/** The "pick up?" rule of thumb: worth ≥ PICKUP_THRESHOLD_EX Exalted each → pick it up. */
 export const PICKUP_HINTS = ["pick_up", "low_value", "unknown"] as const;
 export const pickupHintSchema = z.enum(PICKUP_HINTS);
 export type PickupHint = z.infer<typeof pickupHintSchema>;
 
+/**
+ * The one pickup line, shared by the live lookup hint and the curated primer buckets (testLearn
+ * asserts they agree). 1 Ex is the smallest trade unit: anything worth one can actually be sold.
+ * At 0.5.5 prices (1 Div ≈ 540–590 Ex) it keeps every basic crafting orb from Transmutation
+ * (~1 Ex) up and drops shards and Scrolls of Wisdom; a 2 Ex line would call the Exalted Orb
+ * itself "skip".
+ */
 export const PICKUP_THRESHOLD_EX = 1;
+
+export const isWorthPickingUp = (ex: number): boolean => ex >= PICKUP_THRESHOLD_EX;
+
+/** The rule as UI text — every pickup tooltip quotes this, so the app states it once. */
+export const PICKUP_RULE_TEXT =
+  `Rule of thumb, not a rule: worth at least ${PICKUP_THRESHOLD_EX} Exalted Orb each → worth the inventory slot. ` +
+  "Cheaper stackables can still add up in bulk, and prices move over a league.";
 
 export const lookupPriceSchema = z
   .object({

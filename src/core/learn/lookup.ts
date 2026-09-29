@@ -10,7 +10,7 @@ import {
 import { parseSqliteTimestamp } from "../../lib/sqliteTime";
 import { scoutKey } from "../../lib/scoutKey";
 import {
-  PICKUP_THRESHOLD_EX,
+  isWorthPickingUp,
   type EntityLookup,
   type LookupPrice,
   type PickupHint,
@@ -33,10 +33,10 @@ export function sellRouteOf(row: Pick<EntityRow, "kind" | "exchange_id">): SellR
   return "unknown";
 }
 
-/** Rule of thumb only: ≥ 1 Exalted each is worth the inventory slot. Unknown without both numbers. */
+/** Rule of thumb only (isWorthPickingUp). Unknown without both numbers. */
 export function pickupHintOf(div: number | null, exPerDiv: number | null): PickupHint {
   if (div === null || exPerDiv === null) return "unknown";
-  return div * exPerDiv >= PICKUP_THRESHOLD_EX ? "pick_up" : "low_value";
+  return isWorthPickingUp(div * exPerDiv) ? "pick_up" : "low_value";
 }
 
 /** Every price source a lookup needs for one league, read once per request. */

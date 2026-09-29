@@ -3,7 +3,8 @@
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { Loader2, Search } from "lucide-react";
 import { ENTITY_KIND_LABEL } from "../../core/entities/schema";
-import type { EntityLookup } from "../../lib/learnContract";
+import type { EntityLookup, EntitySearchResponse } from "../../lib/learnContract";
+import { currentData, entitySearchUrl, type Remote } from "../../lib/learnSearch";
 import { EntityCard, type EntityCardData } from "../coach/EntityChip";
 import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
@@ -81,12 +82,36 @@ function ExampleChips({ onChoose }: { onChoose: (name: string) => void }) {
   );
 }
 
-function SearchStatus({ search, query }: { search: ReturnType<typeof useEntitySearch>; query: string }) {
+function SearchStatus({ search, current, query }: { search: Remote<EntitySearchResponse>; current: EntitySearchResponse | null; query: string }) {
   if (search.kind === "error") return <p className="mt-2 text-sm text-bad">Search failed: {search.message}</p>;
-  if (search.kind === "ok" && search.data.results.length === 0) {
+  if (current !== null && current.results.length === 0) {
     return <p className="mt-2 text-sm text-neutral-400">No item matches “{query.trim()}”.</p>;
   }
   return null;
+}
+
+interface ListKeys {
+  results: readonly EntityLookup[];
+  active: number;
+  setActive: (index: number) => void;
+  setOpen: (open: boolean) => void;
+  pick: (entity: EntityLookup) => void;
+}
+
+/** Arrow keys move, Enter picks the highlighted current result, Escape closes the list. */
+function listKeyHandler({ results, active, setActive, setOpen, pick }: ListKeys): (e: KeyboardEvent<HTMLInputElement>) => void {
+  return (e) => {
+    const moved = nextIndex(e.key, active, results.length);
+    const highlighted = results[active];
+    if (moved !== null) {
+      e.preventDefault();
+      setOpen(true);
+      setActive(moved);
+    } else if (e.key === "Enter" && highlighted) {
+      e.preventDefault();
+      pick(highlighted);
+    } else if (e.key === "Escape") setOpen(false);
+  };
 }
 
 /** Combobox: debounced catalog search, arrow keys + Enter to pick, Escape to close. */
@@ -96,9 +121,12 @@ function SearchBox({ onPick }: { onPick: (entity: EntityLookup, exPerDiv: number
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
-  const search = useEntitySearch(query);
-  const results = search.kind === "ok" ? search.data.results : [];
-  const exPerDiv = search.kind === "ok" ? search.data.ex_per_div : null;
+  const url = entitySearchUrl(query);
+  const search = useEntitySearch(url);
+  // Only results for the text in the box: a debouncing keystroke must not let Enter pick a stale row.
+  const current = currentData(search, url);
+  const results = current?.results ?? [];
+  const exPerDiv = current?.ex_per_div ?? null;
   const type = (text: string) => {
     setQuery(text);
     setActive(0);
@@ -108,17 +136,7 @@ function SearchBox({ onPick }: { onPick: (entity: EntityLookup, exPerDiv: number
     onPick(entity, exPerDiv);
     setOpen(false);
   };
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    const moved = nextIndex(e.key, active, results.length);
-    if (moved !== null) {
-      e.preventDefault();
-      setOpen(true);
-      setActive(moved);
-    } else if (e.key === "Enter" && results[active]) {
-      e.preventDefault();
-      pick(results[active]);
-    } else if (e.key === "Escape") setOpen(false);
-  };
+  const onKeyDown = listKeyHandler({ results, active, setActive, setOpen, pick });
   const expanded = open && results.length > 0;
   return (
     <div className="space-y-2">
@@ -140,9 +158,11 @@ function SearchBox({ onPick }: { onPick: (entity: EntityLookup, exPerDiv: number
           placeholder="Type an item: currency, omen, essence, unique…"
           className="h-10 w-full rounded-md border border-neutral-700 bg-neutral-950 pl-9 pr-9 text-sm text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-amber-400/60"
         />
-        {search.kind === "loading" && <Loader2 aria-label="searching" className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-neutral-400" />}
+        {url !== null && current === null && search.kind !== "error" && (
+          <Loader2 aria-label="searching" className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-neutral-400" />
+        )}
         {expanded && <ResultList id={listId} results={results} active={active} exPerDiv={exPerDiv} onPick={pick} />}
-        <SearchStatus search={search} query={query} />
+        <SearchStatus search={search} current={current} query={query} />
       </div>
       <ExampleChips onChoose={(name) => { type(name); inputRef.current?.focus(); }} />
     </div>
