@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { roundPrice } from "../lib/format";
 import { assertOk, describeError, warnOnFailure } from "../lib/clientWarn";
-import { EmptySection } from "./ui/EmptySection";
+import { Briefcase } from "lucide-react";
+import { EmptyState } from "./ui/EmptyState";
 
 type Ccy = "DIVINE" | "EXALT" | "CHAOS";
 const CCY_SHORT: Record<string, string> = { DIVINE: "Div", EXALT: "Ex", CHAOS: "Ch" };
@@ -79,9 +80,10 @@ export function PositionsPanel() {
 
   if (positions.length === 0) {
     return (
-      <EmptySection
+      <EmptyState
+        icon={<Briefcase className="h-5 w-5" />}
         title="Open Positions"
-        hint={error ? `could not load positions — ${error}` : "none open — in a Flip Plan, hit “buy → open position” after placing a buy order; mark-to-market shows here until you sell"}
+        sentence={error ? `could not load positions — ${error}` : "none open — in a Flip Plan, hit “buy → open position” after placing a buy order; mark-to-market shows here until you sell"}
       />
     );
   }

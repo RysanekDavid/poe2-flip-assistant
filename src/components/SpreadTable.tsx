@@ -5,7 +5,8 @@ import { compact, fmtSmart } from "../lib/format";
 import { formatDenom, formatObservedDenom, type Denom } from "../core/treasury";
 import { categoryColor, marginTint, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { FlameIcon, ArrowDownIcon } from "./ui/icons";
-import { EmptySection } from "./ui/EmptySection";
+import { Eye } from "lucide-react";
+import { EmptyState } from "./ui/EmptyState";
 import { Sparkline } from "./ui/Sparkline";
 import { EdgeBadge, edgeTooltip, type FlipEdgeInfo, type RankGate } from "./FlipEdge";
 
@@ -117,9 +118,10 @@ export function SpreadTable({
 
   if (rows.length === 0 && !err) {
     return (
-      <EmptySection
+      <EmptyState
+        icon={<Eye className="h-5 w-5" />}
         title="Watchlist — tracked spreads"
-        hint="empty — add items from Top Flips (+ watch / seed), then enter your real Ange prices for true spreads"
+        sentence="empty — add items from Top Flips (+ watch / seed), then enter your real Ange prices for true spreads"
       />
     );
   }

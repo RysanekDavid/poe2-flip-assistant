@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Compass, Flame, Wallet, ShieldAlert, X } from "lucide-react";
 import { assertOk, warnOnFailure } from "../lib/clientWarn";
+import { useTabRoute } from "./shell/useTabRoute";
+import { stepTour, TOUR_STEPS } from "./onboardingTour";
 import "driver.js/dist/driver.css";
 
-const INTRO_VERSION = "v1"; // bump to re-show the welcome to everyone after a big change
+const INTRO_VERSION = "v2"; // bump to re-show the welcome to everyone after a big change
 
 interface Me {
   id: number;
@@ -13,43 +15,12 @@ interface Me {
   role: string;
 }
 
-const TOUR_STEPS = [
-  {
-    element: '[data-tour="tabs"]',
-    popover: {
-      title: "Three areas",
-      description:
-        "Currency Exchange = in-game Ange flips. Web Market = trade-site tools (uniques, craft, snipe). Wealth = your net worth over time.",
-    },
-  },
-  {
-    element: '[data-tour="farm"]',
-    popover: {
-      title: "What to farm now",
-      description: "In-game activities ranked by how hard their drop basket is pumping. HOT = grind it and sell into the spike.",
-    },
-  },
-  {
-    element: '[data-tour="alerts"]',
-    popover: {
-      title: "Live alerts",
-      description: "Fires when a snipe, craft margin, watched spread or price spike clears its threshold. For desktop popups and sound, open the Alerts tab → Desktop popups.",
-    },
-  },
-  {
-    element: '[data-tour="account"]',
-    popover: {
-      title: "Your account",
-      description: "Market data is shared by everyone here, but your Wealth and Flip log are private to you. Reopen this guide anytime via 'Guide'.",
-    },
-  },
-];
-
 /** First-run welcome + a driver.js tour. Per-user (localStorage), re-openable via the 'open-guide' event. */
 export function Onboarding() {
   const [user, setUser] = useState<Me | null>(null);
   const [open, setOpen] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const { go } = useTabRoute();
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -76,8 +47,16 @@ export function Onboarding() {
   const startTour = useCallback(async () => {
     dismiss();
     const { driver } = await import("driver.js");
-    driver({ showProgress: true, popoverClass: "poe2-tour", steps: TOUR_STEPS }).drive();
-  }, [dismiss]);
+    const tour = driver({
+      showProgress: true,
+      popoverClass: "poe2-tour",
+      steps: TOUR_STEPS.map((s) => ({ element: s.element, popover: { title: s.title, description: s.description } })),
+      // Steps live on different tabs: switch tab first, then highlight (see onboardingTour.ts).
+      onNextClick: () => stepTour(tour, 1, go),
+      onPrevClick: () => stepTour(tour, -1, go),
+    });
+    tour.drive();
+  }, [dismiss, go]);
 
   return (
     <>
@@ -106,7 +85,7 @@ export function Onboarding() {
                 <h2 className="text-xl font-bold">Welcome{user ? `, ${user.name}` : ""} 👋</h2>
                 <p className="text-sm text-neutral-500">PoE2 Flip Assistant — quick orientation</p>
               </div>
-              <button onClick={dismiss} className="text-neutral-500 hover:text-neutral-200">
+              <button onClick={dismiss} aria-label="Close" className="text-neutral-500 hover:text-neutral-200">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -114,7 +93,7 @@ export function Onboarding() {
             <ul className="space-y-2 text-sm">
               <li className="flex gap-2.5">
                 <Compass className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
-                <span><b>Currency Exchange & Web Market</b> are shared market intelligence — same prices, charts and farm advice for everyone.</span>
+                <span><b>Exchange, Market & Farm</b> are shared market intelligence — same prices, charts and farm advice for everyone.</span>
               </li>
               <li className="flex gap-2.5">
                 <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
@@ -122,7 +101,7 @@ export function Onboarding() {
               </li>
               <li className="flex gap-2.5">
                 <Flame className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-                <span><b>What to farm now</b> tells you which in-game activity is spiking, so you grind the right thing.</span>
+                <span><b>Farm</b> tells you which in-game activity is spiking, so you grind the right thing.</span>
               </li>
             </ul>
 

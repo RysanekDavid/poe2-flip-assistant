@@ -8,7 +8,26 @@ interface Metrics {
   explicitAny: number;
   lines: number;
   longFunctions: number;
+  lowContrastText: number;
   silentPromiseCatches: number;
+  tinyText: number;
+}
+
+// neutral-600/700 text on the neutral-950 page is ~2.6:1 / 1.9:1, below the 4.5:1 AA floor.
+const LOW_CONTRAST_TEXT = /text-neutral-(600|700)\b/g;
+// The type scale starts at 12px; arbitrary smaller sizes were unreadable beside the game client.
+// Matches any arbitrary px/rem size (decimals, optional /line-height after the bracket).
+const ARBITRARY_TEXT_SIZE = /text-\[(\d*\.?\d+)(px|rem)\]/g;
+const MIN_TEXT_PX = 12;
+
+function countTinyText(source: string): number {
+  let count = 0;
+  for (const match of source.matchAll(ARBITRARY_TEXT_SIZE)) {
+    const value = Number(match[1]);
+    const px = match[2] === "rem" ? value * 16 : value;
+    if (px < MIN_TEXT_PX) count += 1;
+  }
+  return count;
 }
 
 const root = process.cwd();
@@ -29,7 +48,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `ALL PASS — TypeScript policy lint vs ${baseline.label} (no new size debt, explicit any, or silent catches)`,
+  `ALL PASS — TypeScript policy lint vs ${baseline.label} (no new size debt, explicit any, silent catches, low-contrast or tiny text)`,
 );
 
 function sourceFiles(directory: string): string[] {
@@ -108,7 +127,9 @@ function inspect(path: string, source: string): Metrics {
     explicitAny,
     lines: source.split(/\r?\n/).length,
     longFunctions: functionLines.filter((lines) => lines > 60).length,
+    lowContrastText: source.match(LOW_CONTRAST_TEXT)?.length ?? 0,
     silentPromiseCatches,
+    tinyText: countTinyText(source),
   };
 }
 
@@ -144,6 +165,8 @@ function validate(path: string, current: Metrics, previous: Metrics | null): voi
   );
   compareDebt(path, "file lines", current.lines, previous?.lines ?? 0, 500);
   compareDebt(path, "long functions", current.longFunctions, previous?.longFunctions ?? 0, 0);
+  compareDebt(path, "low-contrast neutral-600/700 text", current.lowContrastText, previous?.lowContrastText ?? 0, 0);
+  compareDebt(path, "tiny (<12px) text", current.tinyText, previous?.tinyText ?? 0, 0);
 }
 
 function compareDebt(

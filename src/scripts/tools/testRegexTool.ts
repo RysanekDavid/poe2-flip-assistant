@@ -16,7 +16,7 @@ import {
   type FragmentPick,
 } from "../../core/tools/regex/compose";
 import { SearchParseError, explainSearch, parseSearch } from "../../core/tools/regex/explain";
-import { assertToolPanel, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
+import { assertPanelExport, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
 
 function testSchemaOrder(): void {
   const ddl = applicationSchemaSql();
@@ -236,7 +236,7 @@ testCoverAndSelect();
 testChunking();
 testParseAndExplain();
 testTrashUncovered();
-assertToolPanel("regex", "RegexTool");
+assertPanelExport("src/components/tools/regex/RegexTool.tsx", "RegexTool", "src/components/shell/tabs/RegexTab.tsx");
 console.log(
   "ALL PASS — regex_presets schema + round-trip, namespace, collision-safe fragments, cover, chunking, parser/explain, panel wiring",
 );
