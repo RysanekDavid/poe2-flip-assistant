@@ -53,7 +53,9 @@ fireAlert(USER, A, cooldown);
 fireAlert(USER, A, cooldown);
 age(5);
 fireAlert(USER, A, cooldown);
-ok("non-snipe alerts keep the cooldown behaviour (re-alert after it)", count("SELECT COUNT(*) c FROM alerts WHERE item_id = 'divine'") === 2);
+ok("a spread that merely stays open does not re-alert hours later", count("SELECT COUNT(*) c FROM alerts WHERE item_id = 'divine'") === 1);
+fireAlert(USER, A, { ...cooldown, value: 30 });
+ok("…but a +50% move past the cooldown does", count("SELECT COUNT(*) c FROM alerts WHERE item_id = 'divine'") === 2);
 
 // --- alerts feed: market alerts filtered to the viewed league; own-pipeline alerts labeled ---
 fireAlert(USER, B, { ...snipe, itemId: "listing-beta" });

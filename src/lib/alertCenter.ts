@@ -117,3 +117,35 @@ export function freshForNotify(alerts: readonly Alert[], lastNotifiedId: number,
 export function maxAlertId(alerts: readonly Alert[]): number {
   return alerts.reduce((m, a) => Math.max(m, a.id), 0);
 }
+
+/** Consecutive repeats of one type + item, folded into a single feed row. */
+export interface AlertRun {
+  alert: Alert; // the newest of the run — its message carries the latest value
+  count: number;
+  unseen: boolean; // any alert in the run still unseen
+}
+
+// item_name is part of the key: LEAGUE rows share item_id "league" but name different leagues.
+const runKey = (a: Alert): string => `${a.type}\u0000${a.item_id}\u0000${a.item_name ?? ""}`;
+
+/**
+ * Fold ADJACENT alerts of the same type + item (input newest first) into one row with a ×N count.
+ * Only adjacent ones: an interleaved alert for something else keeps the timeline honest. SNIPE
+ * never folds — each is its own listing and card. Pure.
+ */
+export function collapseRuns(alerts: readonly Alert[]): AlertRun[] {
+  const runs: AlertRun[] = [];
+  let lastKey: string | null = null;
+  for (const a of alerts) {
+    const key = a.type === "SNIPE" ? null : runKey(a);
+    const run = runs[runs.length - 1];
+    if (run && key !== null && key === lastKey) {
+      run.count += 1;
+      run.unseen ||= a.seen === 0;
+    } else {
+      runs.push({ alert: a, count: 1, unseen: a.seen === 0 });
+    }
+    lastKey = key;
+  }
+  return runs;
+}

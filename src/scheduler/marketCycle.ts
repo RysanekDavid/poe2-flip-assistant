@@ -1,6 +1,6 @@
 import { fetchAll } from "../api/ninjaClient";
 import { config } from "../config/env";
-import { fireAlert } from "../core/alertEngine";
+import { fireAlert, pruneAlertFeed } from "../core/alertEngine";
 import { loadCxMarketView, type CxMarketView } from "../core/cx/cxItemMarkets";
 import { cxHistoryProblem, pruneCxMarketHistory, syncCxHistory } from "../core/cx/cxIngest";
 import { leagueStartProblem, syncLeagueStart } from "../core/cx/leagueStart/backfill";
@@ -71,7 +71,9 @@ function pruneAll(): string {
   pruneMarginHistory(config.retentionDays); // keep craft EV history bounded like everything else
   const cxPruned = pruneCxMarketHistory(); // null = not due (hourly)
   const cxNote = cxPruned == null ? "" : `, ${cxPruned} exchange market-hour(s) older than ${config.cx.historyDays}d`;
-  return `pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${cxNote}`;
+  const alerts = pruneAlertFeed(); // null = not due (hourly)
+  const alertNote = alerts == null ? "" : `, ${alerts} alert(s) older than ${config.alertRetention.days}d`;
+  return `pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${alertNote}${cxNote}`;
 }
 
 const errText = (err: unknown): string => (err instanceof Error ? err.message : String(err));

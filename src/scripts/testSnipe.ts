@@ -255,6 +255,8 @@ ok("env: every leftover HUNT_* key is named at boot", retired.length === 2, reti
 ok("env: HUNT_MIN_REQUEST_MS points at its replacement", retired.some((w) => w.includes("HUNT_MIN_REQUEST_MS was renamed to TRADE_MIN_REQUEST_MS")));
 ok("env: other HUNT_* keys say the feature is gone", retired.some((w) => w.includes("HUNT_SCAN_SEC") && w.includes("Hunt feature was removed")));
 ok("env: no retired keys → no warnings", retiredEnvWarnings({ TRADE_MIN_REQUEST_MS: "6000" }).length === 0);
+const toast = retiredEnvWarnings({ DESKTOP_NOTIFY: "false" });
+ok("env: a leftover DESKTOP_NOTIFY is named at boot", toast.length === 1 && toast[0]?.includes("DESKTOP_NOTIFY is set but server-side OS toasts were removed") === true, toast.join(" | "));
 
 // --- web routes answer a busy shared budget with 503 + Retry-After, not a hung request ---
 const busy = tradeErrorResponse(new TradeRateLimitedError("search", 31_200));
