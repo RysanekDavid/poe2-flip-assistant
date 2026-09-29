@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-export type ItemArtSize = 5 | 6 | 8 | 12;
+export type ItemArtSize = 4 | 5 | 6 | 8 | 12;
 
 // Literal class names so Tailwind's content scan keeps them.
 const SIZE_CLASS: Record<ItemArtSize, string> = {
+  4: "h-4 w-4",
   5: "h-5 w-5",
   6: "h-6 w-6",
   8: "h-8 w-8",

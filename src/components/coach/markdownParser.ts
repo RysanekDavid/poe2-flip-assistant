@@ -6,7 +6,9 @@ export type MarkdownInline =
   | { kind: "strike"; children: MarkdownInline[] }
   | { kind: "code"; value: string }
   | { kind: "link"; label: string; url: string }
-  | { kind: "citation"; id: string };
+  | { kind: "citation"; id: string }
+  // Produced only by entityWrap.ts from server-returned entities, never by parsing model text.
+  | { kind: "entity"; id: string; text: string };
 
 export type MarkdownBlock =
   | { kind: "paragraph"; content: MarkdownInline[] }

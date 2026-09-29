@@ -69,6 +69,8 @@ assert.equal(
     toolsUsed: ["fetch_live_prices"],
     processorsUsed: [],
     sources: [{ id: "L1", type: "live", title: "poe.ninja", url: "https://poe.ninja" }],
+    entities: [],
+    unlinkedMentions: [],
   }).sources.length,
   1,
 );

@@ -4,6 +4,7 @@ from langchain_core.tools import BaseTool
 
 from src.config import Settings
 from src.tools.craft import get_craft_margins
+from src.tools.entities import build_entity_tool
 from src.tools.farm import get_farm_advice
 from src.tools.flips import get_top_flips
 from src.tools.items import build_game_data_tool, build_item_tool
@@ -26,6 +27,7 @@ def get_tools(settings: Settings) -> list[BaseTool]:
         retrieve_knowledge,
         build_item_tool(settings.item_catalog_path),
         build_game_data_tool(settings.item_catalog_path),
+        build_entity_tool(settings.entity_catalog_path),
     ]
     if settings.has_tavily_key:
         tools.append(search_recent_poe2)
@@ -42,6 +44,7 @@ __all__ = [
     "get_top_flips",
     "build_item_tool",
     "build_game_data_tool",
+    "build_entity_tool",
     "retrieve_knowledge",
     "search_recent_poe2",
 ]

@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  ENTITY_ID_PATTERN,
+  POE2DB_URL_PATTERN,
+  POECDN_ICON_PATTERN,
+  entityKindSchema,
+} from "../core/entities/schema";
 
 export const coachUuidSchema = z.string().uuid();
 const requestIdSchema = z.string().regex(/^[a-f0-9]{24,32}$/);
@@ -48,6 +54,26 @@ export const coachSourceSchema = z.object({
   url: z.string().url().regex(/^https?:\/\//i).nullable(),
 }).strict();
 
+/**
+ * A catalog entity the answer mentions (services/coach/src/entities/models.py CoachEntity).
+ * `mentions` are exact substrings of the answer; the client wraps only those and the name.
+ */
+export const coachEntitySchema = z.object({
+  id: z.string().regex(ENTITY_ID_PATTERN),
+  name: z.string().min(1).max(160),
+  kind: entityKindSchema,
+  icon_url: z.string().regex(POECDN_ICON_PATTERN).nullable(),
+  summary: z.string().min(1).max(4_000).nullable(),
+  directions: z.string().min(1).max(2_000).nullable(),
+  poe2db_url: z.string().url().regex(POE2DB_URL_PATTERN),
+  mentions: z.array(z.string().min(1).max(160)).max(8),
+  price_div: z.number().positive().finite().nullable(),
+  price_at: z.string().datetime({ offset: true }).nullable(),
+}).strict();
+const coachEntitiesSchema = z.array(coachEntitySchema).max(20);
+/** Matched item text the Coach gave no chip (past the cap, uncorroborated one-word unique). */
+export const coachUnlinkedMentionsSchema = z.array(z.string().min(1).max(160)).max(40);
+
 export const coachBrowserRequestSchema = z.object({
   message: z.string().trim().min(1).max(8_000),
   conversationId: coachUuidSchema,
@@ -77,6 +103,9 @@ export const coachUpstreamResponseSchema = z.object({
   processors_used: z.array(z.string().min(1)),
   sources: z.array(coachSourceSchema),
   usage: coachTurnUsageSchema,
+  // Optional: a Coach release older than this web release (rollback window) omits it.
+  entities: coachEntitiesSchema.optional(),
+  unlinked_mentions: coachUnlinkedMentionsSchema.optional(),
 });
 
 export const coachBrowserResponseSchema = z.object({
@@ -89,6 +118,8 @@ export const coachBrowserResponseSchema = z.object({
   toolsUsed: z.array(z.string().min(1)),
   processorsUsed: z.array(z.string().min(1)),
   sources: z.array(coachSourceSchema),
+  entities: coachEntitiesSchema,
+  unlinkedMentions: coachUnlinkedMentionsSchema,
 });
 
 export const coachHealthSchema = z.object({
@@ -129,5 +160,6 @@ export function parseCoachUpstreamError(
 
 export type CoachBrowserResponse = z.infer<typeof coachBrowserResponseSchema>;
 export type CoachSource = z.infer<typeof coachSourceSchema>;
+export type CoachEntity = z.infer<typeof coachEntitySchema>;
 export type CoachTurnUsage = z.infer<typeof coachTurnUsageSchema>;
 export type CoachError = z.infer<typeof coachErrorResponseSchema>["error"];
