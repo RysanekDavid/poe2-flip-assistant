@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { Radar } from "lucide-react";
 import { fmtDivOrEx } from "../../lib/format";
-import { fetchSnipeScanStatus, type SnipeDiag, type SnipeScanStatus } from "../../lib/snipeScanContract";
+import { fetchSnipeScanStatus, parseScanReport, type SnipeDiag, type SnipeScanStatus } from "../../lib/snipeScanContract";
 import { useVisiblePoll } from "../../lib/useVisiblePoll";
 import { DataTable, type Column } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
@@ -30,7 +30,8 @@ function diagColumns(exPerDiv: number): Column<SnipeDiag>[] {
 
 /** The last scan's budget line and per-archetype yield: what the scanner searched, valued and found. */
 function DiagBody({ status }: { status: SnipeScanStatus }) {
-  const report = status.lastReport;
+  const { report, error } = parseScanReport(status.lastReport);
+  if (error) return <p role="alert" className="text-xs text-warn">{error}</p>;
   if (!report) return <EmptyState icon={<Radar className="h-5 w-5" />} sentence="No auto-snipe scan has reported yet." />;
   return (
     <>
@@ -41,7 +42,7 @@ function DiagBody({ status }: { status: SnipeScanStatus }) {
       </p>
       <DataTable
         columns={diagColumns(report.exaltPerDivine)}
-        rows={report.diags}
+        rows={report.diags ?? []}
         rowKey={(d) => d.key}
         emptyState={<p className="text-xs text-neutral-400">The last scan recorded no archetype diagnostics.</p>}
       />

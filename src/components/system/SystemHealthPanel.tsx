@@ -144,8 +144,9 @@ export function SystemHealthPanel() {
       <div className="grid gap-3">
         {data && <SummaryChips health={data} nowMs={nowMs} />}
         {data && <HeartbeatTable rows={data.heartbeats} nowMs={nowMs} />}
-        {/* its own route and poll: scan diagnostics stay readable when the health route is down */}
-        <SnipeDiagTable />
+        {/* mounted only once the owner-only health probe succeeded — members never fetch diagnostics
+            (the scan route strips them for members too) */}
+        {data && <SnipeDiagTable />}
       </div>
     </section>
   );

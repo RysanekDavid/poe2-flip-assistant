@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { ExternalLink, Loader2, Play, Radar, TriangleAlert } from "lucide-react";
-import { fetchSnipeScanStatus, findingCard, type SnipeScanReport, type SnipeScanStatus } from "../lib/snipeScanContract";
+import { fetchSnipeScanStatus, findingCard, parseScanReport, type ParsedReport, type SnipeScanReport, type SnipeScanStatus } from "../lib/snipeScanContract";
 import { useVisiblePoll } from "../lib/useVisiblePoll";
 import { SnipeCardView, ageLabel } from "./alerts/SnipeCardView";
 import { Button } from "./ui/Button";
@@ -59,8 +59,7 @@ function useSnipeScanner() {
   return { status, scanning, notice: notice ?? status?.lastError ?? null, scanNow };
 }
 
-function StatusLine({ status }: { status: SnipeScanStatus }) {
-  const found = status.lastReport?.findings.length ?? 0;
+function StatusLine({ status, found }: { status: SnipeScanStatus; found: number | null }) {
   return (
     <span className="flex flex-wrap items-center gap-x-2 text-xs text-neutral-400">
       <span>{status.enabled ? `scans every ${status.intervalMin}m` : "manual scans only"}</span>
@@ -69,7 +68,9 @@ function StatusLine({ status }: { status: SnipeScanStatus }) {
       {status.lastScanAt && (
         <>
           <span aria-hidden>·</span>
-          <span title={`${status.lastScanAt} UTC`}>last scan {ageLabel(status.lastScanAt)} ago · {found} snipe{found === 1 ? "" : "s"}</span>
+          <span title={`${status.lastScanAt} UTC`}>
+            last scan {ageLabel(status.lastScanAt)} ago{found != null && ` · ${found} snipe${found === 1 ? "" : "s"}`}
+          </span>
         </>
       )}
     </span>
@@ -99,25 +100,39 @@ function Findings({ report, at }: { report: SnipeScanReport; at: string | null }
   );
 }
 
+/** Why Scan now is unavailable, or null when it can run. */
+function scanBlocker(status: SnipeScanStatus | null): string | null {
+  if (!status) return "loading scanner status…";
+  if (!status.canScan) return "scans spend the shared trade budget — only the owner can start one";
+  if (!status.live) return "needs your POESESSID (Settings)";
+  return null;
+}
+
+function ScanBody({ status, parsed }: { status: SnipeScanStatus; parsed: ParsedReport }) {
+  // an unreadable report is reported by the notice above; the scanner itself stays usable
+  if (parsed.error) return null;
+  if (parsed.report) return <Findings report={parsed.report} at={status.lastScanAt} />;
+  return <EmptyState icon={<Radar className="h-5 w-5" />} sentence="No scan has run yet — Scan now, or wait for the scheduled scan." />;
+}
+
 /** Market tab: the auto-snipe scanner's state, a manual scan, and what the last scan found. */
 export function AutoSnipeBar() {
   const { status, scanning, notice, scanNow } = useSnipeScanner();
+  const parsed = parseScanReport(status?.lastReport);
+  const blocker = scanBlocker(status);
+  const banner = notice ?? parsed.error;
   return (
     <section className="rounded-lg border border-line bg-neutral-900/50 p-4">
       <header className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <h3 className="text-lg font-semibold text-neutral-100">Snipes</h3>
-        {status && <StatusLine status={status} />}
-        <Button size="sm" className="ml-auto" onClick={scanNow} disabled={scanning || !status?.live} title={status?.live ? "queue one scan now" : "needs your POESESSID (Settings)"}>
+        {status && <StatusLine status={status} found={parsed.report?.findings.length ?? null} />}
+        <Button size="sm" className="ml-auto" onClick={scanNow} disabled={scanning || blocker != null} title={blocker ?? "queue one scan now"}>
           {scanning ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" /> : <Play aria-hidden className="h-3.5 w-3.5" />}
           {scanning ? "scan queued…" : "Scan now"}
         </Button>
       </header>
-      {notice && <p role="alert" className="mb-3 rounded border border-warn/40 bg-warn/10 px-2 py-1 text-sm text-warn">{notice}</p>}
-      {status?.lastReport ? (
-        <Findings report={status.lastReport} at={status.lastScanAt} />
-      ) : (
-        status && <EmptyState icon={<Radar className="h-5 w-5" />} sentence="No scan has run yet — Scan now, or wait for the scheduled scan." />
-      )}
+      {banner && <p role="alert" className="mb-3 rounded border border-warn/40 bg-warn/10 px-2 py-1 text-sm text-warn">{banner}</p>}
+      {status && <ScanBody status={status} parsed={parsed} />}
     </section>
   );
 }

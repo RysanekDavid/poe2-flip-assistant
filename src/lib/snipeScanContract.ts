@@ -11,7 +11,7 @@ const FindingSchema = z.object({
   card: z.unknown().optional(), // reports from before item cards have none
 });
 
-/** Per-archetype scan diagnostics (core/autoSnipe ProfileDiag) — owner-facing, shown under System. */
+/** Per-archetype scan diagnostics (core/autoSnipe ProfileDiag) — owner-only, shown under System. */
 export const SnipeDiagSchema = z.object({
   key: z.string(),
   label: z.string(),
@@ -32,24 +32,52 @@ const ReportSchema = z.object({
   valuations: z.number(),
   maxValuations: z.number(),
   findings: z.array(FindingSchema),
-  diags: z.array(SnipeDiagSchema),
+  diags: z.array(SnipeDiagSchema).optional(), // stripped for members (see reportForViewer)
   errors: z.array(z.object({ profile: z.string(), error: z.string() })),
 });
 export type SnipeScanReport = z.infer<typeof ReportSchema>;
 
-/** GET /api/snipe/scan. */
+/**
+ * GET /api/snipe/scan. `lastReport` is the stored JSON as-is and is parsed on its own
+ * (parseScanReport): an old or damaged report must not take the scanner status — and Scan now —
+ * down with it.
+ */
 export const SnipeScanStatusSchema = z.object({
   enabled: z.boolean(),
   live: z.boolean(),
+  /** Scans spend the shared trade2 budget, so only the owner may queue one. */
+  canScan: z.boolean(),
   intervalMin: z.number(),
   profiles: z.array(z.object({ key: z.string(), label: z.string(), category: z.string() })),
-  lastReport: ReportSchema.nullable(),
+  lastReport: z.unknown(),
   lastScanAt: z.string().nullable(),
   pending: z.boolean(),
   lastError: z.string().nullable(),
   failedAt: z.string().nullable(),
 });
 export type SnipeScanStatus = z.infer<typeof SnipeScanStatusSchema>;
+
+export type ParsedReport = { report: SnipeScanReport | null; error: string | null };
+
+/** The last report, or why it cannot be read (null report + null error = no scan yet). */
+export function parseScanReport(raw: unknown): ParsedReport {
+  if (raw == null) return { report: null, error: null };
+  const parsed = ReportSchema.safeParse(raw);
+  if (parsed.success) return { report: parsed.data, error: null };
+  const issue = parsed.error.issues[0];
+  return { report: null, error: `last report unreadable (${issue?.path.join(".") || "root"}: ${issue?.message ?? "invalid"}) — run a new scan` };
+}
+
+/**
+ * The stored report as a viewer may see it: archetype diagnostics are internal tuning data, so a
+ * member's copy has none (the UI hides them too; this is the server-side guarantee).
+ */
+export function reportForViewer(raw: unknown, isOwner: boolean): unknown {
+  if (isOwner || raw == null || typeof raw !== "object" || Array.isArray(raw)) return raw;
+  const copy: Record<string, unknown> = { ...raw };
+  delete copy.diags;
+  return copy;
+}
 
 export type FindingCard = { ok: true; card: SnipeCard } | { ok: false; error: string };
 
