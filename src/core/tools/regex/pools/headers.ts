@@ -117,6 +117,15 @@ export const POOL_HEADERS: Readonly<Record<PoolTab, readonly PoolHeader[]>> = {
   jewel: JEWEL,
 };
 
+/** Vendor screens show equipment; these header lines sit on every item there. */
+export const VENDOR_HEADERS: readonly PoolHeader[] = [
+  ...RARITY_HEADERS,
+  { id: "quality", template: "Quality: +#%", kind: "property", verified: "unverified", note: "equipment quality line; not in the corpus yet" },
+  { id: "requiredLevel", template: "Requires: Level #", kind: "property", verified: "unverified", note: "requirement line wording varies with attributes" },
+  { id: "sockets", template: "Sockets: #", kind: "property", verified: "unverified" },
+  ...COMMON_TAIL,
+];
+
 export function headerById(tab: PoolTab, id: string): PoolHeader {
   const header = POOL_HEADERS[tab].find((h) => h.id === id);
   if (!header) throw new Error(`no ${tab} header "${id}"`);

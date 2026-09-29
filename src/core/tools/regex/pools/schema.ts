@@ -82,6 +82,8 @@ export const RegexPoolSchema = z
     bands: z.array(LabelledSchema).min(1),
     /** Base type names ("Breach Tablet", "Waystone (Tier 15)") — searchable text on every item. */
     bases: z.array(z.string().min(1)),
+    /** Bands each base belongs to ("Breach Tablet" → ["breach"]), for type/tier filters. */
+    baseBands: z.record(z.string(), z.array(z.string().min(1)).min(1)),
     /** Line templates items of this tab can carry but nobody selects (corruption implicits). */
     foreignLines: z.array(z.string().min(1)),
     mods: z.array(PoolModSchema).min(1),
@@ -90,6 +92,11 @@ export const RegexPoolSchema = z
     const groups = new Set(pool.groups.map((g) => g.id));
     const bands = new Set(pool.bands.map((b) => b.id));
     const ids = new Set<string>();
+    for (const base of pool.bases) {
+      const unknown = (pool.baseBands[base] ?? []).find((b) => !bands.has(b));
+      if (!pool.baseBands[base]) ctx.addIssue({ code: "custom", message: `base ${base} has no bands` });
+      if (unknown) ctx.addIssue({ code: "custom", message: `base ${base} has unknown band ${unknown}` });
+    }
     for (const mod of pool.mods) {
       const issue = poolModIssue(mod, groups, bands);
       if (issue) ctx.addIssue({ code: "custom", message: `${mod.id}: ${issue}` });

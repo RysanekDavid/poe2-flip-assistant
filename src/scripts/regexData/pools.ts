@@ -180,19 +180,20 @@ function releasedBases(repoe: Repoe, ids: readonly string[]): string[] {
   });
 }
 
-function walkTab(repoe: Repoe, tab: PoolTab): { walk: Walk; bases: string[] } {
+function walkTab(repoe: Repoe, tab: PoolTab): { walk: Walk; baseBands: Map<string, Set<string>> } {
   const src = TAB_SOURCES[tab];
   const combos = repoe.mods_by_base[src.classKey];
   if (!combos) throw new Error(`RePoE mods_by_base has no "${src.classKey}" class`);
   const walk: Walk = { repoe, src, tiers: new Map(), foreign: new Set(), stats: { zeroWeight: [], hiddenText: [] } };
-  const bases = new Set<string>();
+  const baseBands = new Map<string, Set<string>>();
   for (const [combo, entry] of Object.entries(combos)) {
     const names = releasedBases(repoe, entry.bases);
     if (names.length === 0) continue; // e.g. the unique-only Timeless Jewel combo
-    for (const n of names) bases.add(n);
+    const band = src.bandOf(new Set(combo.split(",")));
+    for (const n of names) baseBands.set(n, new Set([...(baseBands.get(n) ?? []), ...(band ? [band] : [])]));
     walkCombo(walk, combo, entry.mods);
   }
-  return { walk, bases: [...bases].sort() };
+  return { walk, baseBands };
 }
 
 const trailingNumber = (id: string): number | null => {
@@ -277,8 +278,9 @@ function collapse(tab: PoolTab, tiers: Iterable<RawTier>, bandOrder: readonly st
 
 export function buildPool(repoe: Repoe, tab: PoolTab, stamp: Stamp): { pool: RegexPool; stats: PoolBuildStats } {
   const src = TAB_SOURCES[tab];
-  const { walk, bases } = walkTab(repoe, tab);
+  const { walk, baseBands } = walkTab(repoe, tab);
   const bandOrder = src.bands.map((b) => b.id);
+  const bases = [...baseBands.keys()].sort();
   const mods = collapse(tab, walk.tiers.values(), bandOrder);
   const groups = [...TAB_GROUPS[tab]];
   const groupRank = (g: string): number => (g === OTHER_GROUP.id ? groups.length : groups.findIndex((x) => x.id === g));
@@ -291,6 +293,7 @@ export function buildPool(repoe: Repoe, tab: PoolTab, stamp: Stamp): { pool: Reg
     groups: usedGroups,
     bands: [...src.bands],
     bases,
+    baseBands: Object.fromEntries(bases.map((b) => [b, bandOrder.filter((id) => baseBands.get(b)?.has(id))])),
     foreignLines: [...walk.foreign].sort(),
     mods,
   };
