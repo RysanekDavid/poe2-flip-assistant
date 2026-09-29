@@ -5,9 +5,9 @@ import Image, { type StaticImageData } from "next/image";
 import { REGEX_TABS, type RegexTab } from "../../../lib/tools/regexPoolContract";
 import artWaystone from "../../../assets/items/waystone.png";
 import artTablet from "../../../assets/items/precursor-tablet.png";
-import artRelic from "../../../assets/items/relic.png";
+import artRelic from "../../../assets/items/coffer-relic.png";
 import artJewel from "../../../assets/items/emerald-jewel.png";
-import artBartering from "../../../assets/items/omen-of-bartering.png";
+import artGold from "../../../assets/items/gold.png";
 import artDivine from "../../../assets/items/divine-orb.png";
 
 interface TabInfo {
@@ -17,14 +17,14 @@ interface TabInfo {
   hint: string;
 }
 
-// Vendor borrows the Omen of Bartering (a vendor-sale omen); Price uses the Divine Orb, the unit
-// every price in the app is quoted in.
+// Vendor shows Gold, what an NPC pays for gear; Price uses the Divine Orb, the unit every price in
+// the app is quoted in.
 export const REGEX_TAB_INFO: Record<RegexTab, TabInfo> = {
   waystone: { label: "Waystone", art: artWaystone, hint: "pick waystone mods to run or avoid" },
   tablet: { label: "Tablet", art: artTablet, hint: "precursor tablets by type and mod" },
   relic: { label: "Relic", art: artRelic, hint: "Trial of the Sekhemas relics by mod" },
   jewel: { label: "Jewel", art: artJewel, hint: "jewels by colour and mod" },
-  vendor: { label: "Vendor", art: artBartering, hint: "vendor-screen gear: speed, resistances, +skills" },
+  vendor: { label: "Vendor", art: artGold, hint: "vendor-screen gear: speed, resistances, +skills" },
   price: { label: "Price", art: artDivine, hint: "stash items worth at least a price" },
 };
 

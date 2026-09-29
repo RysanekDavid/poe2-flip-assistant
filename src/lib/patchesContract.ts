@@ -11,9 +11,7 @@ import {
 
 export const patchSummaryStateSchema = z.object({
   status: z.enum(SUMMARY_STATUSES),
-  model: z.string().nullable(),
-  promptVersion: z.string().nullable(),
-  summarizedAt: z.string().nullable(),
+  // model / prompt version / summarized-at stay in patch_summary for operators; the UI never shows them.
   truncated: z.boolean(),
   /** The last good summary; kept while an edited thread is re-summarized. */
   data: patchSummarySchema.nullable(),

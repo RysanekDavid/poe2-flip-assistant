@@ -31,10 +31,10 @@ function publishedLabel(patch: PatchListItem): string {
   return Number.isNaN(date.getTime()) ? patch.publishedText : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-function Chip({ text, tip, accent = false }: { text: string; tip: string; accent?: boolean }) {
+function Chip({ text, tip }: { text: string; tip: string }) {
   return (
     <Tooltip tip={tip} align="end">
-      <span className={`rounded border px-1.5 py-0.5 text-xs ${accent ? "border-amber-400/40 text-amber-200" : "border-line text-neutral-300"}`}>{text}</span>
+      <span className="rounded border border-line px-1.5 py-0.5 text-xs text-neutral-300">{text}</span>
     </Tooltip>
   );
 }
@@ -60,11 +60,13 @@ function useResummarize(threadId: number, onChanged: () => void) {
 
 function HeaderRight({ patch, canResummarize, onChanged }: Omit<PatchCardProps, "defaultOpen">) {
   const resummarize = useResummarize(patch.threadId, onChanged);
-  const badge = patch.summary ? summaryBadge(patch.summary.status) : null;
+  // A finished summary is announced once, by its own ⓘ heading; the header only flags pending/failed.
+  const status = patch.summary?.status;
+  const badge = status && status !== "done" ? summaryBadge(status) : null;
   return (
     <>
       <span className="text-xs text-neutral-400">{publishedLabel(patch)}</span>
-      {badge && <Chip text={badge.label} tip={badge.hint} accent={patch.summary?.status === "done"} />}
+      {badge && <Chip text={badge.label} tip={badge.hint} />}
       {canResummarize && patch.review && <Chip text={reviewLabel(patch.review)} tip="Owner review state (patch:review) — the AI hint below never changes it." />}
       {canResummarize && patch.bodyValid && (
         <Button size="sm" variant="ghost" onClick={resummarize.run} disabled={resummarize.busy} title="Queue a fresh AI summary (no new alert)" aria-label="Re-summarize this patch">

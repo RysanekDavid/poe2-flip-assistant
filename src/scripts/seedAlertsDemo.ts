@@ -58,4 +58,11 @@ insertAlert(OWNER, league, { type: "SNIPE", itemId: "demo-legacy", itemName: "Ol
 insertAlert(OWNER, league, { type: "SPREAD", itemId: "demo-spread", itemName: "Greater Rune of Alacrity", message: "REAL spread 18% ≥ 15%", value: 18, threshold: 15 });
 insertAlert(OWNER, league, { type: "TREND", itemId: "demo-trend", itemName: "Masterwork Rune", message: "7d +78% · trend → rising", value: 78, threshold: 50 });
 insertAlert(OWNER, league, { type: "CRAFT_MARGIN", itemId: "demo-craft", itemName: "Boots · putrefaction ES", message: "EV +42% per attempt", value: 42, threshold: 30 });
-console.log(`seeded 6 demo alerts for user ${OWNER} in "${league}" → ${config.dbPath}`);
+insertAlert(OWNER, league, { type: "SPIKE", itemId: "demo-spike", itemName: "Omen of Light", message: "+120% 7d — spiking, watch for a flip window", value: 120, threshold: 50 });
+insertAlert(OWNER, league, { type: "LEAGUE", itemId: "league", itemName: league, message: `Default league is now ${league}`, value: 0, threshold: 0 });
+insertAlert(OWNER, league, { type: "PATCH", itemId: "patch:demo", itemName: "0.5.1 — Hotfix", message: "Synthetic patch notes", value: 0, threshold: 0 });
+// Three in a row for one item: the feed folds them into one "×3" row showing the newest value.
+for (const pct of [16, 19, 24]) {
+  insertAlert(OWNER, league, { type: "SPREAD", itemId: "demo-spread-run", itemName: "Divine Orb", message: `REAL spread ${pct}% ≥ 15%`, value: pct, threshold: 15 });
+}
+console.log(`seeded 12 demo alerts for user ${OWNER} in "${league}" → ${config.dbPath}`);
