@@ -48,3 +48,32 @@ stamp differs from the manifest, so **re-run the build after every `npm run sync
 commit both. The JSON (~3.4 MB, mostly tier pools repeated across base-type combos) is gzipped
 (~160 KB); Node's gzip writes mtime 0, so an unchanged snapshot rebuilds to identical bytes. Like
 the snapshot it comes from, it holds no spawn weights the tool could turn into probabilities.
+
+## Derived artifact: regex datasets
+
+`regex/{waystone,tablet,relic,jewel}.json` are the mod pools the Tools → Regex pool tabs build
+stash-search strings from, and `regex/vendor.json` is the collision namespace for vendor searches
+(equipment prefix/suffix/implicit/desecrated/essence lines, base names, item class names). The
+browser lazy-imports one file per tab, so they are plain JSON, each capped at 400 KB. Generated
+from the committed snapshot by:
+
+```bash
+npm run build:regex-data
+```
+
+Per tab the builder walks `mods_by_base` (`Waystones`, `Tablet`, `Relics`, `Jewels`), keeps the
+prefix/suffix mods that can actually spawn on each tag combo (zero spawn weight is excluded) plus
+the desecrated mods that spawn there, and collapses tiers into one row per mod family. Unique,
+Expedition-logbook and corruption sides are not selectable; corruption lines are kept as
+collision-only `foreignLines`. Every line is stored as a template with rolled numbers replaced by
+`#` (signs stay literal) plus its lowercased `segments` and per-tier ranges. Waystone and tablet
+mods also carry fixed "N% more Waystones/Rarity/Pack size/Effectiveness …" lines that the tooltip
+sums into header properties (`Item Rarity: +40%`, `Monster Rarity: +103%`, …); the builder drops
+them, because a search can never hit them. Header property spellings are hand-written in
+`src/core/tools/regex/pools/headers.ts` with a verification level each.
+
+Like the craft catalog, every file is stamped with the source `artifact_sha256`, RePoE version and
+game-data patch, and `test:tools:regex` fails while a stamp differs from `repoe/manifest.json` —
+**re-run `npm run build:regex-data` after every `npm run sync:poe2-data`** and commit the result.
+Tier numbers in the files are ordinals (1 = weakest), not the in-game `Tier: N` label, which counts
+down from the best tier available on that base.

@@ -16,6 +16,7 @@ import {
   type FragmentPick,
 } from "../../core/tools/regex/compose";
 import { SearchParseError, explainSearch, parseSearch } from "../../core/tools/regex/explain";
+import { emptyPoolSelection, thresholdKey } from "../../lib/tools/regexPoolContract";
 import { assertPanelExport, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
 
 function testSchemaOrder(): void {
@@ -47,10 +48,30 @@ function testPresets(): Database.Database {
   return db;
 }
 
+/** Rows saved before tabs existed read as Price presets; pool-tab presets round-trip intact. */
+function testPresetTabs(db: Database.Database, userId: number): void {
+  const legacy = { mode: "trash", minDiv: 2, categories: ["Runes"], includeUniques: false };
+  db.prepare("INSERT INTO regex_presets (user_id, league, name, params_json) VALUES (?, 'L', 'legacy', ?)").run(userId, JSON.stringify(legacy));
+  const read = listRegexPresets(userId).find((p) => p.name === "legacy");
+  assert.deepEqual(read?.params, { tab: "price", ...legacy }, "a row without tab migrates to the price tab on read");
+  const pool = {
+    ...emptyPoolSelection("waystone"),
+    mods: { MapMonsterDamageAsFire: "want" as const, MapPlayerMaximumResists: "avoid" as const },
+    thresholds: { [thresholdKey("MapMonsterDamageAsFire", 0, 0)]: { min: 15, max: null } },
+    props: { itemRarity: { min: 40, max: null } },
+    tier: { min: 15, max: 16 },
+  };
+  const savedPool = saveRegexPreset(userId, "L", "t15 fire", pool);
+  assert.deepEqual(savedPool.params, pool, "a waystone preset survives the round-trip");
+  db.prepare("INSERT INTO regex_presets (user_id, league, name, params_json) VALUES (?, 'L', 'future', ?)").run(userId, JSON.stringify({ tab: "maps3d" }));
+  assert.match(listRegexPresets(userId).find((p) => p.name === "future")?.invalid ?? "", /tab/, "an unknown tab is flagged, not guessed");
+  db.prepare("DELETE FROM regex_presets WHERE user_id = ?").run(userId);
+}
+
 function testPresetRoundTrip(db: Database.Database): void {
   const carol = insertUser(db, "regex-carol");
   const dave = insertUser(db, "regex-dave");
-  const params = { mode: "keep" as const, minDiv: 1.5, categories: ["Runes", "Currency"], includeUniques: true };
+  const params = { tab: "price" as const, mode: "keep" as const, minDiv: 1.5, categories: ["Runes", "Currency"], includeUniques: true };
   const saved = saveRegexPreset(carol, "Runes of Aldur", "runes 1.5+", params);
   assert.deepEqual(saved.params, params, "params survive the JSON round-trip");
   assert.equal(saved.invalid, null);
@@ -58,7 +79,8 @@ function testPresetRoundTrip(db: Database.Database): void {
   const again = saveRegexPreset(carol, "Standard", "runes 1.5+", { ...params, minDiv: 3 });
   assert.equal(again.id, saved.id, "same name upserts in place");
   assert.equal(again.league, "Standard");
-  assert.equal(again.params?.minDiv, 3);
+  assert.equal(again.params?.tab === "price" ? again.params.minDiv : null, 3);
+  testPresetTabs(db, dave);
 
   db.prepare("INSERT INTO regex_presets (user_id, league, name, params_json) VALUES (?, 'L', 'broken', ?)").run(
     carol,

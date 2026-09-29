@@ -7,7 +7,7 @@ import {
   REGEX_MAX_CHARS_DEFAULT,
   REGEX_MAX_CHARS_MAX,
   REGEX_MAX_CHARS_MIN,
-  type PresetParams,
+  type PricePresetParams,
 } from "../../../lib/tools/regexContract";
 
 const CATEGORY_IDS = CATEGORIES.map((c) => c.type);
@@ -39,7 +39,7 @@ function Chip({ on, onClick, tone, title, children }: {
   );
 }
 
-function CategoryChips({ params, onChange }: { params: PresetParams; onChange: (p: PresetParams) => void }) {
+function CategoryChips({ params, onChange }: { params: PricePresetParams; onChange: (p: PricePresetParams) => void }) {
   const selected = new Set(params.categories);
   const toggle = (c: string) =>
     onChange({ ...params, categories: selected.has(c) ? params.categories.filter((x) => x !== c) : [...params.categories, c] });
@@ -70,8 +70,8 @@ function CategoryChips({ params, onChange }: { params: PresetParams; onChange: (
   );
 }
 
-function ModeToggle({ params, onChange }: { params: PresetParams; onChange: (p: PresetParams) => void }) {
-  const opt = (mode: PresetParams["mode"], label: string, title: string) => (
+function ModeToggle({ params, onChange }: { params: PricePresetParams; onChange: (p: PricePresetParams) => void }) {
+  const opt = (mode: PricePresetParams["mode"], label: string, title: string) => (
     <button
       type="button"
       onClick={() => onChange({ ...params, mode })}
@@ -90,7 +90,7 @@ function ModeToggle({ params, onChange }: { params: PresetParams; onChange: (p: 
   );
 }
 
-function Threshold({ params, onChange }: { params: PresetParams; onChange: (p: PresetParams) => void }) {
+function Threshold({ params, onChange }: { params: PricePresetParams; onChange: (p: PricePresetParams) => void }) {
   const set = (minDiv: number) => onChange({ ...params, minDiv: Number.isFinite(minDiv) && minDiv >= 0 ? minDiv : 0 });
   return (
     <label className="flex items-center gap-2 text-xs text-neutral-400" title="Divine value per unit">
@@ -145,8 +145,8 @@ function MaxChars({ value, onChange }: { value: number; onChange: (n: number) =>
 }
 
 export function RegexParamsForm({ params, onChange, maxChars, onMaxChars }: {
-  params: PresetParams;
-  onChange: (p: PresetParams) => void;
+  params: PricePresetParams;
+  onChange: (p: PricePresetParams) => void;
   maxChars: number;
   onMaxChars: (n: number) => void;
 }) {

@@ -1,0 +1,24 @@
+Item Class: Waystones
+Rarity: Rare
+Barren Frontier
+Waystone (Tier 15)
+--------
+Revives Available: 0 (augmented)
+Item Rarity: +40% (augmented)
+Monster Rarity: +103% (augmented)
+Waystone Drop Chance: +120% (augmented)
+--------
+Item Level: 81
+--------
+23% more Monster Life
+Monsters Break Armour equal to 26% of Physical Damage dealt
+18% increased Monster Damage
+Monster Damage Penetrates 14% Elemental Resistances
+Monsters are Armoured
+Monsters take 29% reduced Extra Damage from Critical Hits
+Monsters gain 15% of maximum Life as Extra maximum Energy Shield
+Monster have 106% increased Elemental Ailment Application
+--------
+Can be used in a Map Device, allowing you to enter a Map. Waystones can only be used once.
+--------
+Corrupted

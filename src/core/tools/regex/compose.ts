@@ -192,8 +192,8 @@ function buildWarnings({ mode, chunkCount, verifyCount, uncoveredCount }: Warnin
   if (mode === "trash") {
     out.push({
       code: "trash-negation-unconfirmed",
-      label: "! unconfirmed",
-      detail: "Whether a leading ! negates the whole a|b|c alternation is not yet confirmed in-game — test before selling.",
+      label: '"!a|b" = none of',
+      detail: 'A leading ! is read as "none of a|b|…", as poe2.re strings rely on; not yet confirmed by our own in-game test — check once before selling.',
     });
   }
   if (mode === "trash" && chunkCount > 1) {
