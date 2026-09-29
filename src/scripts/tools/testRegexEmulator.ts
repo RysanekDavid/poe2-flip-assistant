@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { SafeRegexError, compileSafeRegex, parseSafeRegex, serializeSafeRegex } from "../../core/tools/regex/safeRegex";
+import { SAFE_REGEX_LINE_CHARS, SafeRegexError, compileSafeRegex, parseSafeRegex, serializeSafeRegex } from "../../core/tools/regex/safeRegex";
 import { compileSearch, matchesItem, tooltipLines } from "../../core/tools/regex/searchEmulator";
 import { SearchParseError } from "../../core/tools/regex/explain";
 import { composePool } from "../../core/tools/regex/poolCompose";
@@ -37,7 +37,8 @@ function testDialect(): void {
     ["a||b", 2],
     ["*a", 0],
     ["^*", 1],
-    ["a.*b.*c.*d", 7],
+    ["a.*b.*c.*d", 0], // four unbounded repeats in one branch: over the step budget
+    ["x|a.*b.*c", 2], // the budget is per top-level branch; the error points at the branch
     ["(a|b)(a|b)(a|b)(a|b)(a|b)(a|b)(a|b)(a|b)(a|b)x", 0],
     ["a?a?a?a?a?a?a?a?a?aaaaaaaaa", 0],
     ["", 0],
@@ -47,13 +48,46 @@ function testDialect(): void {
     assert.throws(() => parseSafeRegex(p), (e: unknown) => e instanceof SafeRegexError && e.position === position, `"${p}" must be refused at ${position}`);
   }
   assert.equal(serializeSafeRegex(parseSafeRegex("(a|b)c\\d[x-z]")), "(?:a|b)c[0-9][x-z]", "groups become non-capturing, \\d an explicit class");
-  const worst = compileSearch('"a.*b.*z"');
-  const line = "a".repeat(100) + "b".repeat(100) + "c".repeat(100);
-  const t0 = Date.now();
-  assert.equal(matchesItem(worst, [line]), false);
-  assert.ok(Date.now() - t0 < 250, "the worst accepted shape on a max-length line stays fast");
-  assert.throws(() => matchesItem(worst, [`${line}x`]), RangeError, "longer lines are refused, not tested");
+  testAdversarialTiming();
+  const line = "a".repeat(SAFE_REGEX_LINE_CHARS);
+  assert.throws(() => matchesItem(compileSearch("a.*z"), [`${line}x`]), RangeError, "longer lines are refused, not tested");
+  // composer "any" output: several spanning tokens, one .* per top-level branch
+  assert.doesNotThrow(() => compileSearch('"r skills h| .*% increased are|inions have .*% increased m| .*% increased sk"'), "unbounded repeats count per branch");
   assert.doesNotThrow(() => parseSafeRegex(Array.from({ length: 17 }, () => "(a|b)(c|d)(e|f)(g|h)").join("|")), "a long top-level alternation adds up, it does not multiply");
+}
+
+/** Review-reported ReDoS shapes: each must be refused, or finish under 50 ms on a max-length line. */
+function testAdversarialTiming(): void {
+  const lines = ["a".repeat(SAFE_REGEX_LINE_CHARS), `${"a".repeat(100)}${"b".repeat(100)}${"c".repeat(100)}`, "1".repeat(SAFE_REGEX_LINE_CHARS)];
+  const shapes = [
+    "a?a?a?a?a?a?a?a?aaaaaaaa[a-z]*[a-z]*b",
+    "a?a?a?a?a?a?a?a?aaaaaaaa.*b.*c",
+    "a.*a.*z",
+    "[a-z]*[a-z]*b",
+    ".*.*b",
+    "a?a?a?a?a?a?a?aaaaaaa.*b",
+    "a?a?a?a?a?a?aaaaaa.*b",
+    "(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a).*b",
+    "(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)(a|a)b",
+    "a?a?a?a?a?a?a?a?aaaaaaaab",
+    "\\d+\\d+x",
+    "[0-9]*[0-9]*[0-9]*x",
+  ];
+  for (const shape of shapes) {
+    let compiled: ReturnType<typeof compileSearch>;
+    try {
+      compiled = compileSearch(`"${shape}"`);
+    } catch (error: unknown) {
+      assert.ok(error instanceof SafeRegexError, `${shape} failed with ${String(error)}`);
+      continue;
+    }
+    for (const line of lines) {
+      const t0 = performance.now();
+      matchesItem(compiled, [line]);
+      const ms = performance.now() - t0;
+      assert.ok(ms < 50, `accepted shape ${shape} took ${ms.toFixed(1)} ms on a ${line.length}-char line`);
+    }
+  }
 }
 
 function testSearchParsing(): void {
@@ -63,6 +97,8 @@ function testSearchParsing(): void {
   assert.equal(matchesItem(s, ["Monsters deal 17% of Damage as Extra Fire", "-10% maximum Player Resistances", "x 4"]), false, "negated alternation excludes");
   assert.throws(() => compileSearch('"(.+)+x"'), SafeRegexError, "pasted ReDoS is refused, not compiled");
   assert.throws(() => compileSearch('abc "def'), SearchParseError);
+  assert.throws(() => compileSearch("a".repeat(501)), SearchParseError, "over 500 chars is refused before compiling");
+  assert.throws(() => compileSearch(Array.from({ length: 41 }, (_, i) => `t${i}`).join(" ")), SearchParseError, "over 40 terms is refused");
 }
 
 function testCorpusNormalization(): void {

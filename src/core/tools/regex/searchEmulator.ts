@@ -7,8 +7,8 @@
  *   - "!a|b" negates the whole alternation (NOT (a OR b)).
  * Patterns go through safeRegex (validated AST, re-serialized), never `new RegExp(rawText)`.
  */
-import { parseSearch } from "./explain";
-import { compileSafeRegex } from "./safeRegex";
+import { SearchParseError, parseSearch } from "./explain";
+import { SAFE_REGEX_LINE_CHARS, compileSafeRegex } from "./safeRegex";
 
 export interface CompiledTerm {
   raw: string;
@@ -21,9 +21,19 @@ export interface CompiledSearch {
   terms: CompiledTerm[];
 }
 
-/** Throws SearchParseError (quoting/empty terms) or SafeRegexError (pattern outside the dialect). */
+/*
+ * The game box holds 250 chars; 500 leaves room for pasted guide strings (same cap as the price
+ * explain route). Each term is compiled and tested per line, so their count is capped too.
+ */
+export const SEARCH_MAX_CHARS = 500;
+export const SEARCH_MAX_TERMS = 40;
+
+/** Throws SearchParseError (length, quoting, empty or too many terms) or SafeRegexError (pattern outside the dialect). */
 export function compileSearch(search: string): CompiledSearch {
+  if (search.length > SEARCH_MAX_CHARS) throw new SearchParseError(`search is longer than ${SEARCH_MAX_CHARS} chars`, SEARCH_MAX_CHARS);
   const ast = parseSearch(search);
+  const extra = ast.terms[SEARCH_MAX_TERMS];
+  if (extra) throw new SearchParseError(`more than ${SEARCH_MAX_TERMS} terms`, extra.position);
   const terms = ast.terms.map((t) => ({
     raw: t.raw,
     negated: t.negated,
@@ -53,7 +63,7 @@ export function tooltipLines(clipboard: string): string[] {
  * Real tooltip lines stay far below this. The dialect's backtracking bound is polynomial in line
  * length, so a pasted wall of text is refused rather than tested.
  */
-export const EMULATOR_MAX_LINE_CHARS = 300;
+export const EMULATOR_MAX_LINE_CHARS = SAFE_REGEX_LINE_CHARS;
 
 export function termMatches(term: CompiledTerm, lines: readonly string[]): boolean {
   const long = lines.find((l) => l.length > EMULATOR_MAX_LINE_CHARS);
