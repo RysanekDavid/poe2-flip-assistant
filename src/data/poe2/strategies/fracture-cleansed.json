@@ -85,7 +85,7 @@
         "https://poe2db.tw/us/Masters_of_the_Atlas",
         "https://poe2db.tw/us/Corrupted_Nexus"
       ],
-      "note": "Owner's notes pick Doryani; poe2db's Corrupted Nexus page has Doryani reward Nexus clears. The node picks are our synthesis."
+      "note": "Owner's notes pick Doryani; poe2db's Corrupted Nexus page has Doryani reward Nexus clears. The node picks are our synthesis. T4 is a free pick: no Doryani T4 node touches Cleansed maps or Summoning Circles."
     }
   },
   "atlas_passives": [
@@ -181,8 +181,11 @@
             "v": "vp",
             "src": [
               "https://poe2db.tw/us/Overseer_Tablet",
+              "https://poe2db.tw/us/Irradiated_Tablet",
+              "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
-            ]
+            ],
+            "note": "Prefix 'Summoner's'; rolls on any tablet base."
           }
         },
         {
@@ -192,19 +195,25 @@
             "v": "vp",
             "src": [
               "https://poe2db.tw/us/Overseer_Tablet",
+              "https://poe2db.tw/us/Irradiated_Tablet",
+              "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
-            ]
+            ],
+            "note": "Suffix 'of the Summoning'; rolls on any tablet base."
           }
         },
         {
-          "text": "Unique Monsters have an additional Rare Modifier",
+          "text": "Unique Monsters have 1 additional Rare Modifier",
           "trade_stat_id": "explicit.stat_3371085671",
           "claim": {
             "v": "vp",
             "src": [
               "https://poe2db.tw/us/Overseer_Tablet",
+              "https://poe2db.tw/us/Irradiated_Tablet",
+              "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
-            ]
+            ],
+            "note": "Suffix 'of Contest'; rolls on any tablet base."
           }
         }
       ]
@@ -229,8 +238,9 @@
   },
   "steps": [
     "Run the Corrupted Nexus with a waystone of at least 4 modifiers; clearing it turns the surrounding corrupted maps Cleansed.",
+    "Set Doryani: Evolutionary Pressure, Improved Calibration, Volatile Connection; T4 is a free pick.",
     "Allocate Hidden Scars and From Distances Untold; take Summoning Circles on The Chosen Path and Overlord's Domain.",
-    "Run each Cleansed map with an Overseer Tablet (additional Summoning Circle / Summoning Circle chance / an additional Rare Modifier on Unique Monsters).",
+    "Run each Cleansed map with a tablet carrying the Summoning Circle prefix, Summoning Circle chance or the extra Rare Modifier on Unique Monsters. They roll on any base; an Overseer Tablet also feeds Lord of the Runes.",
     "Kill every Cleansed pack and every Summoning Circle boss."
   ],
   "risks": [

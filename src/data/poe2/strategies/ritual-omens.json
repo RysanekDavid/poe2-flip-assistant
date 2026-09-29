@@ -117,7 +117,7 @@
       "src": [
         "https://poe2db.tw/us/Masters_of_the_Atlas"
       ],
-      "note": "No master node targets Ritual; stronger tablet mods are the only lever. Our pick, not measured."
+      "note": "No master node targets Ritual; stronger tablet mods are the only lever. Our pick, not measured. T1, T2 and T4 are free picks."
     }
   },
   "atlas_passives": [
@@ -200,6 +200,21 @@
         ],
         "note": "New in 0.5.5."
       }
+    },
+    {
+      "name": "Between Two Worlds",
+      "tree": "Ritual",
+      "effect": "Ritual Altars spawn a Wildwood Wisp",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Between_Two_Worlds",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Between_Two_Worlds",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "Wisps are the Viridian Wildwood's collectible (0.5.5); what an altar Wisp does outside the Wildwood is not stated."
+      }
     }
   ],
   "tablets": [
@@ -252,6 +267,45 @@
             ],
             "note": "No search button: trade2's closest stat reads 'an additional time' (120737942); that it is this mod is unconfirmed."
           }
+        },
+        {
+          "text": "Favours Deferred at Ritual Altars in Map reappear (25–40)% sooner",
+          "trade_stat_id": "explicit.stat_28208665",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of the Appeal'."
+          }
+        },
+        {
+          "text": "Rerolling Favours at Ritual Altars in Map costs (20–30)% reduced Tribute",
+          "trade_stat_id": "explicit.stat_2282052746",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of the Dogma'; trade2 words this stat as 'increased'."
+          }
+        },
+        {
+          "text": "Favours Rerolled at Ritual Altars in Map have (3–6)% chance to cost no Tribute",
+          "trade_stat_id": "explicit.stat_937291386",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of the Occult'."
+          }
         }
       ]
     }
@@ -272,12 +326,15 @@
   },
   "steps": [
     "Allocate Mysterious Rites and Patient Devotion, then Tempting Offers and the Increased Tribute nodes.",
+    "Set Hilda: Ancient Inscriptions; T1, T2 and T4 are free picks.",
     "Slot two Ritual Tablets (0.5.5: more than one adds an extra altar if possible), led by 'of Omens'.",
-    "Reroll for Omens; defer the ones you cannot afford yet and buy them when they return."
+    "Reroll for Omens; defer the ones you cannot afford yet and buy them when they return.",
+    "Forbidden Rites: Ritual can reward Sacred Blooms, which add the Viridian Wildwood to a cluster of maps; Wisps collected there make that map's monsters more powerful and rewarding (0.5.5)."
   ],
   "risks": [
     "Royal Lenience defers with tribute already offered to the King at 500% more cost — it trades away Audience progress.",
-    "Which Omens a favour list offers is random; the basket prices examples only."
+    "Which Omens a favour list offers is random; the basket prices examples only.",
+    "Sacred Blooms drop only in the Forbidden Rites league; 0.5.5 disabled the Viridian Wildwood unique map."
   ],
   "measured": null
 }

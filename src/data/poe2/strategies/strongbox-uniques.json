@@ -89,6 +89,17 @@
             "https://poe2db.tw/us/Masters_of_the_Atlas"
           ]
         }
+      },
+      {
+        "name": "Keen Appraisal",
+        "tier": 4,
+        "effect": "50% increased Exceptional Items found",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
       }
     ],
     "alt": "Doryani T3 Mechanical Guardians: non-unique strongboxes are guarded by a dormant Construct and have 2% increased Item Quantity per Modifier.",
@@ -97,7 +108,7 @@
       "src": [
         "https://poe2db.tw/us/Masters_of_the_Atlas"
       ],
-      "note": "All three nodes name strongboxes directly (poe2db); the combination is our synthesis. Not measured."
+      "note": "All three nodes name strongboxes directly (poe2db); the combination is our synthesis. Not measured. T4 Keen Appraisal is our pick: the only Jado T4 node that adds loot on any map."
     }
   },
   "atlas_passives": [
@@ -175,13 +186,15 @@
       "mods": [
         {
           "text": "Map contains (1–2) additional Strongboxes",
-          "trade_stat_id": "explicit.stat_3240183538",
+          "trade_stat_id": null,
           "claim": {
             "v": "vp",
             "src": [
               "https://poe2db.tw/us/Overseer_Tablet",
+              "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
-            ]
+            ],
+            "note": "Suffix 'of Compartments' (Overseer only). No search button: RePoE's stat for it is maps_with_powerful_bosses_additional_strongbox_+, whose area text 'Areas with Powerful Map Bosses…' sits on 3040603554, not the 3240183538 used before — unconfirmed."
           }
         },
         {
@@ -193,6 +206,19 @@
               "https://poe2db.tw/us/Overseer_Tablet",
               "https://www.pathofexile.com/api/trade2/data/stats"
             ]
+          }
+        },
+        {
+          "text": "Map contains an additional Strongbox",
+          "trade_stat_id": null,
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://poe2db.tw/us/Irradiated_Tablet",
+              "https://repoe-fork.github.io/poe2/"
+            ],
+            "note": "Suffix 'of the Antiquarian'; rolls on any tablet base. No search button: trade2 lists this text under 3040603554 and a close one under 3240183538."
           }
         }
       ]
@@ -212,9 +238,9 @@
     }
   },
   "steps": [
-    "Set Jado: Trove Seekers, Mysterious Gifts, Stolen Relics.",
+    "Set Jado: Trove Seekers, Mysterious Gifts, Stolen Relics, Keen Appraisal.",
     "Allocate The Chosen Path and Overlord's Influence on Strongboxes, then Hidden Compartments.",
-    "Slot an Overseer Tablet with additional strongboxes or strongbox chance.",
+    "Slot an Overseer Tablet with additional strongboxes or strongbox chance; the 'of the Antiquarian' strongbox and the chance mod also roll on any tablet.",
     "Open every strongbox; use Cryptic Keys to reopen the good ones."
   ],
   "risks": [

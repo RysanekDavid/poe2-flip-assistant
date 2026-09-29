@@ -130,7 +130,7 @@
         "https://poe2db.tw/us/Masters_of_the_Atlas",
         "https://poe2db.tw/us/Close_to_the_Surface"
       ],
-      "note": "Owner's notes pick Doryani for Abyss. Our reading: with Close to the Surface, waystone mods (which Improved Calibration strengthens) also apply in Abyssal Depths. Not measured."
+      "note": "Owner's notes pick Doryani for Abyss. Our reading: with Close to the Surface, waystone mods (which Improved Calibration strengthens) also apply in Abyssal Depths. Not measured. T3 and T4 are free picks: no Doryani T3/T4 node touches Abyss."
     }
   },
   "atlas_passives": [
@@ -211,6 +211,47 @@
           "https://poe2db.tw/us/Abyssal_Ire"
         ]
       }
+    },
+    {
+      "name": "Ghastly Relics",
+      "tree": "Abyss",
+      "effect": "Large Abyssal Chests from Abyss Pits are instead an Abyssal Strongbox",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Ghastly_Relics",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Ghastly_Relics",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "0.5.5: applies to all Large Abyssal Chests from Pits, not only the final Chest, and fixed Abyssal Strongboxes not dropping Abyssal Currency."
+      }
+    },
+    {
+      "name": "Dark Depths",
+      "tree": "Abyss",
+      "effect": "Abysses have a 30% chance to contain 2 additional Pits; Abysses have a 20% chance to contain 3 additional Pits; Abysses have a 10% chance to contain 4 additional Pits",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Dark_Depths",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Dark_Depths"
+        ]
+      }
+    },
+    {
+      "name": "From Below",
+      "tree": "Abyss",
+      "effect": "Abysses contain 1 additional Pits",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/From_Below",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/From_Below"
+        ]
+      }
     }
   ],
   "tablets": [
@@ -273,6 +314,45 @@
               "https://www.pathofexile.com/api/trade2/data/stats"
             ]
           }
+        },
+        {
+          "text": "(20–30)% increased chance for Desecrated Currency from Abysses in Map",
+          "trade_stat_id": "explicit.stat_1710200734",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Abyss_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Ossification'."
+          }
+        },
+        {
+          "text": "Map has (20–40)% chance to contain four additional Abysses",
+          "trade_stat_id": "explicit.stat_2890355696",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Abyss_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Schisms'; optional."
+          }
+        },
+        {
+          "text": "Map contains an additional Abyss",
+          "trade_stat_id": "explicit.stat_1070816711",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Abyss_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Hollows'; optional. trade2 also lists 'Map contains # additional Abysses' (3490187949); this id is the exact-text match."
+          }
         }
       ]
     }
@@ -294,9 +374,9 @@
     }
   },
   "steps": [
-    "Allocate Close to the Surface, Vile Treasures (Omens), Rotting Bones and the Depths Chance nodes.",
-    "Set Doryani: Evolutionary Pressure and Improved Calibration.",
-    "Slot an Abyss Tablet with Depths chance and Abyssal-modifier chance; effectiveness and rare-monster mods second.",
+    "Allocate Close to the Surface, Vile Treasures (Omens), Rotting Bones and the Depths Chance nodes; then Ghastly Relics, Dark Depths and From Below for more pits and strongboxes.",
+    "Set Doryani: Evolutionary Pressure and Improved Calibration; T3 and T4 are free picks.",
+    "Slot an Abyss Tablet with Depths chance and Abyssal-modifier chance; Desecrated Currency chance, effectiveness and rare-monster mods second.",
     "Close every pit; the final Abyss can open an Abyssal Depths — always take it."
   ],
   "risks": [

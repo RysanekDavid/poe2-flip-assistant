@@ -107,6 +107,17 @@
             "https://poe2db.tw/us/Masters_of_the_Atlas"
           ]
         }
+      },
+      {
+        "name": "Patient Battue",
+        "tier": 4,
+        "effect": "25% chance 1 Rare Monster is replaced by a random Map Boss; 5% chance 3 additional Rare Monsters are replaced by a random Map Boss",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
       }
     ],
     "alt": null,
@@ -116,7 +127,7 @@
         "https://poe2db.tw/us/Masters_of_the_Atlas",
         "https://poe2db.tw/us/These_demons_are_all_your_own..."
       ],
-      "note": "No master node targets Delirium. Our picks: more rares (which 'These demons are all your own...' turns into Delirium Demons in fog) and stronger tablets. Not measured."
+      "note": "No master node targets Delirium. Our picks: more rares (which 'These demons are all your own...' turns into Delirium Demons in fog) and stronger tablets. Not measured. T4 Patient Battue: more Map Bosses slain in fog for Grand Mirror Chance. T2 is a free pick."
     }
   },
   "atlas_passives": [
@@ -145,6 +156,19 @@
         "v": "vp",
         "src": [
           "https://poe2db.tw/us/Is_this_about_me..._or_you_"
+        ]
+      }
+    },
+    {
+      "name": "You thought you were free?",
+      "tree": "Delirium",
+      "effect": "25% chance an additional Simulacrum is transformed when Delirium Fog reaches 100% Deliriousness (requires completing a Simulacrum)",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/You_thought_you_were_free_",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/You_thought_you_were_free_"
         ]
       }
     },
@@ -241,6 +265,44 @@
               "https://www.pathofexile.com/api/trade2/data/stats"
             ]
           }
+        },
+        {
+          "text": "Delirium Monsters in Map have (15–30)% increased Pack Size",
+          "trade_stat_id": "explicit.stat_3465791711",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Delirium_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Persecution'; optional."
+          }
+        },
+        {
+          "text": "Delirium Fog in Map dissipates (20–30)% slower",
+          "trade_stat_id": "explicit.stat_3350944114",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Delirium_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of the Unending'; optional. trade2 words this stat as 'faster'."
+          }
+        },
+        {
+          "text": "Delirium Fog in Map lasts (6–12) additional seconds before dissipating",
+          "trade_stat_id": null,
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Delirium_Tablet",
+              "https://repoe-fork.github.io/poe2/"
+            ],
+            "note": "Suffix 'of Eternity'; optional. No search button: trade2 lists two stats with this text (3226351972, 1174954559)."
+          }
         }
       ]
     }
@@ -262,6 +324,7 @@
   },
   "steps": [
     "Allocate Recurring Nightmares, 'Is this about me... or you?' and the Fracturing Mirror / Liquid Emotion notables.",
+    "Set Hilda: Breeding Season, Ancient Inscriptions, Patient Battue; T2 is a free pick.",
     "Use a Grand Mirror: its fog spreads to 10 maps (0.5.5).",
     "Run the fogged maps with a Delirium Tablet (Fracturing Mirrors, unique bosses, splinter stacks).",
     "Sell Simulacrum Splinters in stacks, or run the Simulacrum."

@@ -98,7 +98,7 @@
       "src": [
         "https://poe2db.tw/us/Masters_of_the_Atlas"
       ],
-      "note": "Our synthesis from the node texts: more (and more Powerful) Map Bosses per map. Not measured."
+      "note": "Our synthesis from the node texts: more (and more Powerful) Map Bosses per map. Not measured. T2 is a free pick: no Hilda T2 node adds boss loot (Soul Eaters only makes Map Bosses stronger)."
     }
   },
   "atlas_passives": [
@@ -244,7 +244,7 @@
   },
   "steps": [
     "Allocate Fit for a King, Hard-Won Treasures, Pathkeepers and Eons of Domination.",
-    "Set Hilda: Mighty Prey, Ancient Inscriptions, Patient Battue.",
+    "Set Hilda: Mighty Prey, Ancient Inscriptions, Patient Battue; T2 is a free pick.",
     "Slot an Overseer Tablet with Map Boss rarity ('of Treasure') first, quantity ('of Hoards') second.",
     "Rush to the boss; keep Overseer tablets that Powerful Map Bosses drop for the next maps."
   ],

@@ -115,7 +115,7 @@
         "https://poe2db.tw/us/Masters_of_the_Atlas",
         "https://poe2db.tw/us/Moment_of_Risk"
       ],
-      "note": "Owner's notes pick Doryani for Breach. Our reading: Evolutionary Pressure and Moment of Risk both scale per Explicit Modifier on the Map, and Improved Calibration strengthens waystone mods. Not measured."
+      "note": "Owner's notes pick Doryani for Breach. Our reading: Evolutionary Pressure and Moment of Risk both scale per Explicit Modifier on the Map, and Improved Calibration strengthens waystone mods. Not measured. T3 and T4 are free picks: no Doryani T3/T4 node touches Breach."
     }
   },
   "atlas_passives": [
@@ -228,6 +228,19 @@
           }
         },
         {
+          "text": "(30–60)% increased Quantity of Wombgifts found in Map",
+          "trade_stat_id": "explicit.stat_472809816",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Breach_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of the Form'."
+          }
+        },
+        {
           "text": "Unstable Breaches in Map spawn (1–2) additional Rare Monsters when Stabilised",
           "trade_stat_id": "explicit.stat_3762913035",
           "claim": {
@@ -283,9 +296,9 @@
   },
   "steps": [
     "Allocate Moment of Risk and Breeding Program (pick the Wombgift type you sell), then the Hiveblood and Wombgift quantity nodes.",
-    "Set Doryani: Evolutionary Pressure and Improved Calibration.",
+    "Set Doryani: Evolutionary Pressure and Improved Calibration; T3 and T4 are free picks.",
     "Roll waystones for monster rarity, effectiveness and item rarity; more explicit mods feed Moment of Risk.",
-    "Slot a Breach Tablet: Wombgift level-up first, then Hiveblood quantity, then extra Unstable Breach rares.",
+    "Slot a Breach Tablet: Wombgift level-up first, then Hiveblood or Wombgift quantity, then extra Unstable Breach rares.",
     "Grow Wombgifts on the Genesis Tree with the Hiveblood you collect."
   ],
   "risks": [

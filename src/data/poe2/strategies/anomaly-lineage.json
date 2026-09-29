@@ -90,6 +90,17 @@
     "master": "jado",
     "nodes": [
       {
+        "name": "Trove Seekers",
+        "tier": 1,
+        "effect": "100% increased amount of Rare Chests; Strongboxes have 100% increased chance to be Unique",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
         "name": "Unforeseen Threats",
         "tier": 2,
         "effect": "5% chance on completing Maps for a nearby Anomaly Map to be revealed",
@@ -130,7 +141,7 @@
         "https://poe2db.tw/us/Masters_of_the_Atlas",
         "https://poe2db.tw/us/Anomaly_Map"
       ],
-      "note": "Owner's notes: Jado for Anomaly maps. Unforeseen Threats is the only master node that reveals Anomaly Maps (poe2db); the other picks are our synthesis."
+      "note": "Owner's notes: Jado for Anomaly maps. Unforeseen Threats is the only master node that reveals Anomaly Maps (poe2db); the other picks are our synthesis. T1 Trove Seekers: no T1 node touches anomalies, it adds chests on every map; In The Wrong Hands only if the anomaly boss counts as a Powerful Map Boss (poe2db does not say)."
     }
   },
   "atlas_passives": [
@@ -145,6 +156,20 @@
         "src": [
           "https://poe2db.tw/us/Memories_of_the_Karui"
         ]
+      }
+    },
+    {
+      "name": "Forest Mastery",
+      "tree": "Atlas",
+      "effect": "Select a bonus within Forest Areas: 50% increased chance to find Uncut Gems / 50% increased chance to find Lineage Supports / 15% increased Rare Monsters (level 75+ areas, requires completing the Burning Monolith). Take Lineage Supports.",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Forest_Mastery",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Forest_Mastery"
+        ],
+        "note": "Applies only while the map counts as Forest, i.e. with Mastered Domain's Forest roll."
       }
     },
     {
@@ -202,16 +227,17 @@
       "count": null,
       "mods": [
         {
-          "text": "Map also counts as a Water Map",
-          "trade_stat_id": "explicit.stat_3271982291",
+          "text": "Map also counts as a Forest Map",
+          "trade_stat_id": "explicit.stat_864099561",
           "claim": {
             "v": "vp",
             "src": [
               "https://poe2db.tw/us/Mastered_Domain",
+              "https://github.com/Kvan7/Exiled-Exchange-2/issues/955",
               "https://www.pathofexile.com/api/trade2/data/stats",
               "https://poe2db.tw/us/The_Jade_Isles"
             ],
-            "note": "First run only (owner's notes). poe2db already lists The Jade Isles as Water/Ocean, so the biome line may add nothing."
+            "note": "Rolls one of six biome lines (Water, Mountain, Grass, Forest, Swamp, Desert); the Jade Isles is already Water, so take the Forest roll for Forest Mastery's lineage option. First run only (1 use)."
           }
         }
       ]
@@ -262,16 +288,17 @@
     }
   },
   "steps": [
-    "Set Jado: Unforeseen Threats, Partial Translations, Untold Histories; allocate Memories of the Karui.",
+    "Set Jado: Trove Seekers, Unforeseen Threats, Partial Translations, Untold Histories; allocate Memories of the Karui and Forest Mastery (Lineage Supports).",
     "Reveal The Jade Isles (Eye of the Storm): activate a Karui Beacon in a nearby map to lift the Maelstrom.",
-    "First run: Visions of Paradise + Mastered Domain + one Overseer Tablet (Map Boss rarity first, then quantity).",
+    "First run: Visions of Paradise + Mastered Domain (Forest roll) + one Overseer Tablet (Map Boss rarity first, then quantity).",
     "Later runs: three Overseer Tablets with Map Boss rarity and quantity.",
     "Kill Manoki, the Chosen; sell the lineage supports (unpriced ones show a dash, not 0)."
   ],
   "risks": [
     "Anomaly bosses are Deadly (poe2db Anomaly Map).",
     "poe2db does not say whether Map Boss tablet mods apply to the anomaly boss; the owner's runs rely on it — verify on your own kills.",
-    "The drop list is a community-wiki section, not datamined; which lineage drops is random among the four."
+    "The drop list is a community-wiki section, not datamined; which lineage drops is random among the four.",
+    "Forest Mastery applies only on Forest-counted runs (the one Mastered Domain run). poe2db doesn't say whether it raises the anomaly boss's lineage drop."
   ],
   "measured": null
 }
