@@ -148,5 +148,5 @@ function decodeBase64Url(value: string): ArrayBuffer {
 
 // Skip Next internals and static assets; everything else is gated.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png).*)"],
 };
