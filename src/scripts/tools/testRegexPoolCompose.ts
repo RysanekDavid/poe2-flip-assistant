@@ -10,6 +10,7 @@ import { modKey } from "../../core/tools/regex/poolNamespace";
 import { POOL_HEADERS, RARITIES } from "../../core/tools/regex/pools/headers";
 import { POOL_TABS, RegexPoolSchema, type PoolMod, type RegexPool } from "../../core/tools/regex/pools/schema";
 import { compileSafeRegex } from "../../core/tools/regex/safeRegex";
+import { REGEX_MAX_CHARS_MAX } from "../../lib/tools/regexContract";
 import { compileSearch, matchesItem, type CompiledSearch } from "../../core/tools/regex/searchEmulator";
 import { TABLET_TYPES, decodeShare, emptyPoolSelection, encodeShare, thresholdKey, type PoolTabSelection, type ValueRange } from "../../lib/tools/regexPoolContract";
 import { itemLines, makeRng, passingSpec, randomSelection, roll, rolledLines, satisfying, type ItemSpec, type Rng } from "./regexPoolFixtures";
@@ -167,6 +168,11 @@ function testEdges(pool: RegexPool): void {
   const many = composePool(pool, POOL_HEADERS[pool.tab], { ...emptyPoolSelection(pool.tab), mods: every }, { maxChars: 20 });
   assert.ok(many.chunks.length > 1 && many.warnings.some((w) => w.code === "multi-string"), `${pool.tab}: 40 wanted mods in 20 chars split with a warning: ${JSON.stringify({ c: many.chunks, w: many.warnings, r: many.reason })}`);
   assert.deepEqual(new Set(many.chunks.flatMap((c) => c.covers).concat(many.uncovered)), new Set(Object.keys(every)), "every wanted mod is in a string or reported uncovered");
+  // the widest strings the UI allows must still fit the safe dialect's backtracking budgets
+  for (const match of ["any", "all"] as const) {
+    const wide = composePool(pool, POOL_HEADERS[pool.tab], { ...emptyPoolSelection(pool.tab), mods: every, match }, { maxChars: REGEX_MAX_CHARS_MAX });
+    for (const chunk of wide.chunks) assert.doesNotThrow(() => compileSearch(chunk.text), `${pool.tab} ${match} ${REGEX_MAX_CHARS_MAX}-char chunk compiles: ${chunk.text}`);
+  }
 }
 
 /** Filters that resolve to nothing give a reason (warnings kept), never an empty string. */

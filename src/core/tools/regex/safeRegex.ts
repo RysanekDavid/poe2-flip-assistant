@@ -44,12 +44,18 @@ export const SAFE_REGEX_MAX_LENGTH = 500;
 /** Longest tooltip line a compiled pattern is ever tested against (the emulator enforces it). */
 export const SAFE_REGEX_LINE_CHARS = 300;
 /*
- * Worst-case backtracking of one top-level branch ≈ paths × n^(unbounded + 1) steps on an
- * n-char line (every start position × every split of each `*`/`+`). Measured on V8 at n = 300:
- * one `.*` with 64 paths ≈ 15 ms, two `.*` ≈ 30–70 ms, 8 × `a?` with two `.*` ≈ 21 s. 1e7 keeps
- * every accepted branch under ~20 ms: at most one unbounded repeat, then at most ~111 paths.
+ * Worst-case backtracking of one top-level branch on an n-char line ≈
+ *   paths × n (start positions) × n^unbounded (splits of each `*`/`+`) × tail
+ * where tail = atoms after the first unbounded repeat, re-matched at every split (min(tail, n),
+ * at least 1). V8 skips most of that when the tail is a plain literal, but not when an anchor or
+ * group follows it, so the model assumes the worst. Measured cold on V8 at n = 300 (≈2–3 ms per
+ * 1e6): `.*` + 100 atoms + `$b` 13 ms (9e6); with 110 paths in front 1.3 s (1e9); two `.*`
+ * 30–70 ms; 8 × `a?` with two `.*` 21 s. The composer's own terms peak at ~3.1e6, so 5e6 per
+ * branch and 8e6 per pattern keep every accepted string under ~25 ms with room to spare.
  */
-export const SAFE_REGEX_STEP_BUDGET = 1e7;
+export const SAFE_REGEX_STEP_BUDGET = 5e6;
+/** Top-level alternatives run one after another, so their costs add up (4 × 9e6 measured 50 ms). */
+export const SAFE_REGEX_PATTERN_BUDGET = 8e6;
 
 const QUANTIFIERS = new Set(["*", "+", "?"]);
 const ESCAPABLE = /[^A-Za-z0-9]/;
@@ -190,6 +196,10 @@ export function parseSafeRegex(source: string): RegexAst {
   const alternatives = parser.alternation(null);
   if (!parser.done()) parser.fail("unmatched )");
   alternatives.forEach((branch, i) => checkBudget(branch, parser.branchStarts[i] ?? 0));
+  const total = alternatives.reduce((sum, branch) => sum + branchSteps(branch), 0);
+  if (total > SAFE_REGEX_PATTERN_BUDGET) {
+    throw new SafeRegexError(`all alternatives together could backtrack ~${total.toExponential(1)} steps (limit ${SAFE_REGEX_PATTERN_BUDGET.toExponential(0)}) — split the search`, 0);
+  }
   return { alternatives };
 }
 
@@ -209,16 +219,42 @@ function unboundedIn(seq: RegexSequence): number {
   }, 0);
 }
 
+/** Atoms a match attempt walks once: a group counts as its longest alternative. */
+function atomCount(seq: RegexSequence): number {
+  return seq.reduce((n, { atom }) => n + (atom.kind === "group" ? Math.max(...atom.alternatives.map(atomCount)) : 1), 0);
+}
+
+/** Atoms after the first unbounded repeat (inside a group, the rest of that group counts too). */
+function tailAfterUnbounded(seq: RegexSequence): number | null {
+  for (let i = 0; i < seq.length; i++) {
+    const piece = seq[i];
+    if (!piece) continue;
+    const rest = atomCount(seq.slice(i + 1));
+    if (piece.quantifier === "*" || piece.quantifier === "+") return rest;
+    if (piece.atom.kind === "group") {
+      const inner = piece.atom.alternatives.map(tailAfterUnbounded).filter((t): t is number => t !== null);
+      if (inner.length > 0) return Math.max(...inner) + rest;
+    }
+  }
+  return null;
+}
+
+/** The step model above for one top-level branch (exported for tests and tuning). */
+export function branchSteps(branch: RegexSequence, paths = sequencePaths(branch)): number {
+  const n = SAFE_REGEX_LINE_CHARS;
+  const tail = Math.max(1, Math.min(tailAfterUnbounded(branch) ?? 0, n));
+  return paths * n * n ** unboundedIn(branch) * tail;
+}
+
 function checkBudget(branch: RegexSequence, at: number): void {
   const paths = sequencePaths(branch);
   if (paths > SAFE_REGEX_MAX_PATHS) {
     throw new SafeRegexError(`${paths} alternative combinations in one branch (limit ${SAFE_REGEX_MAX_PATHS}) — backtracking would explode`, at);
   }
-  const unbounded = unboundedIn(branch);
-  const steps = paths * SAFE_REGEX_LINE_CHARS ** (unbounded + 1);
+  const steps = branchSteps(branch, paths);
   if (steps > SAFE_REGEX_STEP_BUDGET) {
     throw new SafeRegexError(
-      `branch with ${unbounded} unbounded repeat(s) (* or +) and ${paths} paths could backtrack ~${steps.toExponential(1)} steps (limit ${SAFE_REGEX_STEP_BUDGET.toExponential(0)}) — use at most one .* per alternative`,
+      `branch with ${unboundedIn(branch)} unbounded repeat(s) (* or +) and ${paths} paths could backtrack ~${steps.toExponential(1)} steps (limit ${SAFE_REGEX_STEP_BUDGET.toExponential(0)}) — use at most one .* per alternative and keep what follows it short`,
       at,
     );
   }
