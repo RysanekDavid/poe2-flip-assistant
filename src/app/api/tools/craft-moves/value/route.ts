@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../../auth/session";
+import { withCredStatus } from "../../../../../auth/credStatus";
 import { getCallerCred } from "../../../../../auth/tradeCred";
 import { getDefaultLeague } from "../../../../../core/leagueState";
 import { liveValue, NotAnItemError, RatesUnavailableError } from "../../../../../core/tools/craftmoves/moves";
@@ -27,7 +28,9 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "no POESESSID stored — add your session cookie in Settings to value live" }, { status: 409 });
   }
   try {
-    const value = await liveValue(body.data.text, getDefaultLeague(), cred, body.data.targetLine);
+    const { text, targetLine } = body.data;
+    // record what this trade2 call says about the caller's stored POESESSID (403 → expired banner)
+    const value = await withCredStatus(user.id, cred, () => liveValue(text, getDefaultLeague(), cred, targetLine));
     return NextResponse.json(craftValueResponseSchema.parse(value));
   } catch (e: unknown) {
     if (e instanceof NotAnItemError) return NextResponse.json({ error: e.message }, { status: 422 });
