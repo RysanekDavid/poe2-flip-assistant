@@ -4,7 +4,6 @@ import { AtlasChecklist } from "../../learn/AtlasChecklist";
 import { CurrencyPrimer } from "../../learn/CurrencyPrimer";
 import { WhatIsThis } from "../../learn/WhatIsThis";
 import { PageHeader } from "../../ui/PageHeader";
-import { ToolChips } from "../ToolChips";
 import { useTabRoute } from "../useTabRoute";
 
 const VIEW = {
@@ -35,7 +34,7 @@ export function LearnTab() {
   const view = VIEW[tool];
   return (
     <div className="space-y-4" data-tour="learn">
-      <PageHeader title={view.title} purpose={view.purpose} action={<ToolChips tab="learn" />} />
+      <PageHeader title={view.title} purpose={view.purpose} />
       <LearnBody tool={tool} />
     </div>
   );

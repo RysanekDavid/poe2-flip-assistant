@@ -8,7 +8,6 @@ import { assertOk, describeError, warnOnFailure } from "../../../lib/clientWarn"
 import { timestampAgeMs } from "../../../lib/sqliteTime";
 import { strategiesResponseSchema, type StrategiesResponse } from "../../../lib/strategiesContract";
 import { useVisiblePoll } from "../../../lib/useVisiblePoll";
-import { ToolChips } from "../../shell/ToolChips";
 import { Button } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
 import { PageHeader } from "../../ui/PageHeader";
@@ -82,12 +81,9 @@ export function StrategiesTool() {
         purpose="Atlas setups per mechanic: master, notables, tablets, waystones and what the basket sells for."
         legend="Every fact carries its evidence grade — hover a chip for its sources. Amber means unverified or conflicting: test it in game before you spend on it. Cards are drafts until reviewed."
         action={
-          <>
-            <ToolChips tab="farm" />
-            <Button variant="ghost" size="sm" onClick={reload} aria-label="Refresh strategy prices">
-              <RefreshCw aria-hidden className="h-4 w-4" />
-            </Button>
-          </>
+          <Button variant="ghost" size="sm" onClick={reload} aria-label="Refresh strategy prices">
+            <RefreshCw aria-hidden className="h-4 w-4" />
+          </Button>
         }
       />
       {error && <p role="alert" className="text-sm text-bad">Strategies unavailable — {error}</p>}

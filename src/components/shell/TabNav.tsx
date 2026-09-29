@@ -66,7 +66,7 @@ export function TabNav() {
   const onClick = tabClickHandler(go);
   const coach = tabMeta("coach");
   return (
-    <nav aria-label="Sections" className="flex items-end gap-0.5 px-6" data-tour="tabs">
+    <nav aria-label="Sections" className="flex items-end gap-0.5 px-4 max-md:overflow-x-auto max-md:overflow-y-hidden md:px-6" data-tour="tabs">
       {visibleTabs(mode)
         .filter((t) => t.id !== "coach")
         .map((t) => (

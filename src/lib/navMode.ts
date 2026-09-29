@@ -56,6 +56,21 @@ export function visibleTools(mode: NavMode, tab: TabId): readonly ToolMeta[] | u
   return kept;
 }
 
+export type UserRole = "owner" | "member";
+
+/**
+ * Tools whose section renders only for the owner (Settings › System health is empty for members).
+ * They stay routable — ?tool=system still parses — they just get no sub-tab that would do nothing.
+ */
+export const OWNER_ONLY_TOOLS: Partial<Record<TabId, readonly string[]>> = { settings: ["system"] };
+
+/** The sub-tab bar's tools: null when fewer than two remain, since one tool needs no switcher. */
+export function subTabsFor(mode: NavMode, tab: TabId, role: UserRole): readonly ToolMeta[] | null {
+  const ownerOnly = role === "owner" ? [] : (OWNER_ONLY_TOOLS[tab] ?? []);
+  const tools = visibleTools(mode, tab)?.filter((t) => !ownerOnly.includes(t.id));
+  return tools && tools.length >= 2 ? tools : null;
+}
+
 export function defaultTabFor(mode: NavMode): TabId {
   return mode === "beginner" ? "learn" : DEFAULT_TAB;
 }
