@@ -22,7 +22,7 @@ function Pips({ label, used, cap, open }: { label: string; used: number; cap: nu
   const title = open == null ? `${used} ${label} read — open slots unknown` : `${used}/${cap} ${label}, ${open} open`;
   return (
     <span className="inline-flex items-center gap-1" title={title}>
-      <span className="w-4 text-[10px] uppercase text-neutral-500">{label[0]}</span>
+      <span className="w-4 text-xs uppercase text-neutral-500">{label[0]}</span>
       {pips.map((p, i) => (
         <span
           key={i}
@@ -43,9 +43,9 @@ function AffixLine({ a }: { a: AffixView }) {
     .join(" · ");
   return (
     <li className="flex items-baseline gap-2" title={title}>
-      <span className="w-4 shrink-0 text-center text-[10px] uppercase text-neutral-500">{a.side ? a.side[0] : "?"}</span>
+      <span className="w-4 shrink-0 text-center text-xs uppercase text-neutral-500">{a.side ? a.side[0] : "?"}</span>
       <span className={unknown ? "text-amber-400" : KIND_TONE[a.kind]}>{a.lines.join(" / ")}</span>
-      {a.tier && <span className="text-[10px] tabular-nums text-neutral-600">T{a.tier.rank}</span>}
+      {a.tier && <span className="text-xs tabular-nums text-neutral-500">T{a.tier.rank}</span>}
     </li>
   );
 }
@@ -62,7 +62,7 @@ function Tags({ s }: { s: ItemStateView }) {
   return (
     <div className="flex flex-wrap gap-1">
       {tags.map(([label, cls, hint]) => (
-        <span key={label} title={hint} className={`rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${cls}`}>
+        <span key={label} title={hint} className={`rounded border px-1.5 py-0.5 text-xs uppercase tracking-wider ${cls}`}>
           {label}
         </span>
       ))}
@@ -92,13 +92,13 @@ export function ItemStateCard({ s }: { s: ItemStateView }) {
         {s.affixes.map((a, i) => <AffixLine key={i} a={a} />)}
         {s.unmatched.map((l) => (
           <li key={l} className="flex items-baseline gap-2 text-amber-400" title="not in the catalog for this base — open slots cannot be proven">
-            <span className="w-4 shrink-0 text-center text-[10px]">?</span>
+            <span className="w-4 shrink-0 text-center text-xs">?</span>
             {l}
           </li>
         ))}
       </ul>
       {s.flags.length > 0 && (
-        <ul className="mt-2 space-y-0.5 text-[11px] text-amber-500/80">
+        <ul className="mt-2 space-y-0.5 text-xs text-amber-500/80">
           {s.flags.map((f) => <li key={f.code + f.message}>{f.message}</li>)}
         </ul>
       )}

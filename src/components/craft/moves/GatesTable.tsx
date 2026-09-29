@@ -17,7 +17,7 @@ function FloorChips({ g }: { g: FamilyGateView }) {
           <span
             key={f.currency}
             title={title}
-            className={`rounded px-1 text-[10px] tabular-nums ${f.softFloor ? "bg-amber-950/60 text-amber-400" : f.cutTiers > 0 ? "bg-neutral-800 text-neutral-300" : "text-neutral-600"}`}
+            className={`rounded px-1 text-xs tabular-nums ${f.softFloor ? "bg-amber-950/60 text-amber-400" : f.cutTiers > 0 ? "bg-neutral-800 text-neutral-300" : "text-neutral-500"}`}
           >
             {f.currency.split(" ")[0]} ≥{f.floor}: {f.softFloor ? "soft" : `−${f.cutTiers}`}
           </span>
@@ -32,12 +32,12 @@ function GateRow({ g }: { g: FamilyGateView }) {
   const capped = top != null && top.rank < g.tiers;
   return (
     <tr className={g.present ? "bg-neutral-900/60" : undefined}>
-      <td className="px-2 py-1 text-[10px] uppercase text-neutral-500">{g.side[0]}</td>
+      <td className="px-2 py-1 text-xs uppercase text-neutral-500">{g.side[0]}</td>
       <td className="px-2 py-1 text-neutral-300" title={g.family}>
         {labelOf(g)}
-        {g.present && <span className="ml-1 text-[10px] text-amber-400" title="on the item now">●</span>}
+        {g.present && <span className="ml-1 text-xs text-amber-400" title="on the item now">●</span>}
         {g.kbRow && (
-          <span className="ml-1 rounded border border-emerald-900 px-1 text-[9px] text-emerald-400" title={`cross-checked against KB §3: ${g.kbRow}`}>
+          <span className="ml-1 rounded border border-emerald-900 px-1 text-xs text-emerald-400" title={`cross-checked against KB §3: ${g.kbRow}`}>
             KB
           </span>
         )}
@@ -55,24 +55,22 @@ function GateRow({ g }: { g: FamilyGateView }) {
   );
 }
 
-/** Per-family tier gates: what this item level reaches, and what each verified floor cuts. */
-export function GatesTable({ gates, ilvl }: { gates: FamilyGateView[]; ilvl: number | null }) {
+/**
+ * Per-family tier gates: what this item level reaches, and what each verified floor cuts. Tiers
+ * count upward in-game: the highest number is the best tier. Rendered inside a titled Panel.
+ */
+export function GatesTable({ gates }: { gates: FamilyGateView[] }) {
   const [all, setAll] = useState(false);
   if (gates.length === 0) return null;
   const present = gates.filter((g) => g.present);
   const shown = all || present.length === 0 ? gates : present;
   return (
-    <section className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-neutral-200" title="tiers count upward in-game: the highest number is the best tier">
-          Tier gates at ilvl {ilvl ?? "?"}
-        </h3>
-        {present.length > 0 && (
-          <button onClick={() => setAll((v) => !v)} className="text-xs text-neutral-500 hover:text-neutral-300">
-            {all ? "only this item's mods" : `all ${gates.length} families`}
-          </button>
-        )}
-      </div>
+    <div>
+      {present.length > 0 && (
+        <button type="button" onClick={() => setAll((v) => !v)} className="text-sm text-neutral-400 hover:text-neutral-100">
+          {all ? "only this item's mods" : `all ${gates.length} families`}
+        </button>
+      )}
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="text-left text-neutral-500">
@@ -89,6 +87,6 @@ export function GatesTable({ gates, ilvl }: { gates: FamilyGateView[]; ilvl: num
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }

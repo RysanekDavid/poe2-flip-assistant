@@ -50,7 +50,7 @@ export function fmtDiv(div: number, exPerDiv: number, signed = false): string {
 const CONFIDENCE_RANK: Record<Confidence, number> = { unverified: 0, "single-source": 1, confirmed: 2 };
 
 /** Weakest label among the deciding lines; nothing deciding is nothing confirmed. */
-function weakest(confidences: readonly Confidence[]): Confidence {
+export function weakest(confidences: readonly Confidence[]): Confidence {
   if (confidences.length === 0) return "unverified";
   return confidences.reduce<Confidence>((w, c) => (CONFIDENCE_RANK[c] < CONFIDENCE_RANK[w] ? c : w), "confirmed");
 }

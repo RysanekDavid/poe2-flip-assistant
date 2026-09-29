@@ -16,6 +16,8 @@ import { readItemMeta } from "./itemMeta";
 import { evaluateRules } from "./rules";
 import { tierGates } from "./gates";
 import { ninjaIdsOf, priceMoves, type SnapshotPrice } from "./cost";
+import { outcomeText, rolledLines } from "./outcome";
+import { rankMoves } from "./rank";
 
 /**
  * Paste → next craft moves. Zero trade2 SEARCH budget: classification, rules and gates are local;
@@ -47,12 +49,15 @@ export function assembleMoves(
   rates: ResolvedRates | null,
 ): Omit<CraftMovesResponse, "league" | "bookValue" | "bookError"> {
   const ev = evaluateRules(state);
+  const moves = priceMoves(ev.moves, prices, rates?.rates ?? null);
+  const gates = tierGates(state, cat);
   return {
     state,
     locked: ev.locked,
-    moves: priceMoves(ev.moves, prices, rates?.rates ?? null),
+    moves,
+    ranked: rankMoves(moves, state, gates),
     blocked: ev.blocked,
-    gates: tierGates(state, cat),
+    gates,
     patch: { rules: RULES_PATCH, data: cat.gameDataPatch, repoe: cat.repoeVersion, reverifyAfter: RULES_REVERIFY_AFTER },
     rates: { exaltPerDivine: rates?.rates.exaltPerDivine ?? null, source: rates?.source ?? null },
     odds: ODDS_LINKS.map((l) => ({ ...l })),
@@ -104,9 +109,12 @@ export class RatesUnavailableError extends Error {
 /** trade2 fetches 10 listings per call — capping here keeps the live value at 1 search + 1 fetch. */
 const LIVE_COMPARABLES = 10;
 
-/** The live comparable value: exactly one trade2 search + one fetch, through the web limiter. */
-export async function liveValue(text: string, league: string, cred: TradeCred): Promise<CraftValueResponse> {
-  const parsed = parseOrThrow(text);
+/**
+ * The live comparable value: exactly one trade2 search + one fetch, through the web limiter. With a
+ * `targetLine` it values the move's hoped-for outcome (the item plus that mod at its lowest roll).
+ */
+export async function liveValue(text: string, league: string, cred: TradeCred, targetLine?: string): Promise<CraftValueResponse> {
+  const parsed = parseOrThrow(targetLine ? outcomeText(text, targetLine) : text);
   const rates = resolveRates(league);
   if (!rates) throw new RatesUnavailableError(league); // checked first: never spend a search we can't price
   const plan = await planValuation(parsed);
@@ -121,5 +129,6 @@ export async function liveValue(text: string, league: string, cred: TradeCred): 
     total: v.total,
     searchUrl: res.searchUrl,
     searchedStats: plan.searchStats.length,
+    targetLine: targetLine ? rolledLines(targetLine).join(" / ") : null,
   };
 }

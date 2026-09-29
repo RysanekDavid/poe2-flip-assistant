@@ -7,7 +7,7 @@ const source = (...segments: string[]): string =>
   readFileSync(join(process.cwd(), ...segments), "utf8");
 
 const discover = source("src", "components", "DiscoverTable.tsx");
-const farm = source("src", "components", "FarmAdvisor.tsx");
+const farm = source("src", "components", "farm", "FarmBoard.tsx");
 const craft = source("src", "components", "CraftTopPicks.tsx");
 const comparable = source("src", "components", "craft", "MarginBreakdown.tsx");
 const coach = source("src", "components", "coach", "CoachMessage.tsx");
