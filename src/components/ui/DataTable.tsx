@@ -17,6 +17,8 @@ export interface Column<T> {
   width?: string;
   /** Only honoured when the table gets a `sort` prop. */
   sortable?: boolean;
+  /** Let long text wrap — even inside a long token (overflow-wrap:anywhere also shrinks the auto-layout column) — instead of the default one-line cell. */
+  wrap?: boolean;
   cell: (row: T) => ReactNode;
 }
 
@@ -116,7 +118,7 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, s
               className={`h-9 ${onRowClick ? "cursor-pointer hover:bg-neutral-800/50" : ""} ${selected ? "bg-amber-400/10" : ""}`}
             >
               {columns.map((c) => (
-                <td key={c.key} className={`whitespace-nowrap border-b border-line/70 px-2 text-neutral-200 ${ALIGN_CLASS[c.align ?? "left"]}`}>
+                <td key={c.key} className={`${c.wrap ? "whitespace-normal py-1.5 [overflow-wrap:anywhere]" : "whitespace-nowrap"} border-b border-line/70 px-2 text-neutral-200 ${ALIGN_CLASS[c.align ?? "left"]}`}>
                   {c.cell(row)}
                 </td>
               ))}

@@ -4,16 +4,25 @@ import { cloneElement, isValidElement, useId, useState, type ReactElement, type 
 import { Info } from "lucide-react";
 
 type Side = "top" | "bottom";
+/** Horizontal anchor: "end" keeps a bubble from a right-edge trigger inside the viewport. */
+export type TooltipAlign = "start" | "center" | "end";
 
 interface TooltipProps {
   tip: ReactNode;
   children: ReactNode;
   side?: Side;
+  align?: TooltipAlign;
 }
 
 const SIDE_CLASS: Record<Side, string> = {
   top: "bottom-full mb-1.5",
   bottom: "top-full mt-1.5",
+};
+
+const ALIGN_CLASS: Record<TooltipAlign, string> = {
+  start: "left-0",
+  center: "left-1/2 -translate-x-1/2",
+  end: "right-0",
 };
 
 type DescribedProps = { "aria-describedby"?: string };
@@ -30,12 +39,14 @@ function isFocusableHost(node: ReactNode): node is ReactElement<DescribedProps> 
 }
 
 /**
- * Hover + keyboard-focus tooltip without a positioning library. The bubble stays in the DOM (only
- * visually hidden) so aria-describedby always resolves for screen readers. A focusable host child
- * (<button>, <a>, tabIndex set) receives aria-describedby itself; anything else gets a focusable
- * wrapper so keyboard users can still reach the tip. Pass host elements to avoid a double tab stop.
+ * Hover + keyboard-focus tooltip without a positioning library. The bubble stays in the DOM but is
+ * display:none while closed — a merely invisible bubble still widens the page near the right edge
+ * — and aria-describedby keeps resolving, since a description may reference hidden content. A
+ * focusable host child (<button>, <a>, tabIndex set) receives aria-describedby itself; anything else
+ * gets a focusable wrapper so keyboard users can still reach the tip. Pass host elements to avoid a
+ * double tab stop.
  */
-export function Tooltip({ tip, children, side = "top" }: TooltipProps) {
+export function Tooltip({ tip, children, side = "top", align = "center" }: TooltipProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const trigger = isFocusableHost(children) ? (
@@ -60,7 +71,7 @@ export function Tooltip({ tip, children, side = "top" }: TooltipProps) {
       <span
         id={id}
         role="tooltip"
-        className={`pointer-events-none absolute left-1/2 z-50 w-max max-w-xs -translate-x-1/2 whitespace-normal rounded-md border border-line bg-neutral-900 px-2 py-1 text-left text-xs font-normal normal-case tracking-normal text-neutral-200 shadow-lg ${SIDE_CLASS[side]} ${open ? "visible opacity-100" : "invisible opacity-0"}`}
+        className={`pointer-events-none absolute z-50 w-max max-w-xs whitespace-normal rounded-md border border-line bg-neutral-900 px-2 py-1 text-left text-xs font-normal normal-case tracking-normal text-neutral-200 shadow-lg ${SIDE_CLASS[side]} ${ALIGN_CLASS[align]} ${open ? "block" : "hidden"}`}
       >
         {tip}
       </span>
@@ -69,9 +80,9 @@ export function Tooltip({ tip, children, side = "top" }: TooltipProps) {
 }
 
 /** The ⓘ affordance used by table headers and page legends: an icon-only, focusable tooltip trigger. */
-export function InfoTip({ tip, label = "More info", side }: { tip: ReactNode; label?: string; side?: Side }) {
+export function InfoTip({ tip, label = "More info", side, align }: { tip: ReactNode; label?: string; side?: Side; align?: TooltipAlign }) {
   return (
-    <Tooltip tip={tip} side={side}>
+    <Tooltip tip={tip} side={side} align={align}>
       <button type="button" aria-label={label} className="inline-flex rounded text-neutral-500 hover:text-neutral-300">
         <Info className="h-3.5 w-3.5" aria-hidden />
       </button>

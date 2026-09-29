@@ -43,9 +43,9 @@ function columns(pool: RegexPool | null, headers: readonly PoolHeader[]): Column
     return mod ? modLabel(mod) : id;
   };
   return [
-    { key: "text", header: "Search text", width: "12rem", cell: (t) => <code className="break-all font-mono text-amber-200">{t.text}</code> },
+    { key: "text", header: "Search text", width: "12rem", wrap: true, cell: (t) => <code className="break-all font-mono text-amber-200">{t.text}</code> },
     { key: "kind", header: "Part", width: "9rem", cell: (t) => <span className="text-neutral-300">{KIND_LABEL[t.kind]}</span> },
-    { key: "covers", header: "Stands for", cell: (t) => <span className="text-neutral-200">{t.covers.map((k) => coverName(k, pool, headers)).join(" · ")}</span> },
+    { key: "covers", header: "Stands for", wrap: true, cell: (t) => <span className="text-neutral-200">{t.covers.map((k) => coverName(k, pool, headers)).join(" · ")}</span> },
     {
       key: "also",
       header: "Also matches",
@@ -60,7 +60,7 @@ function columns(pool: RegexPool | null, headers: readonly PoolHeader[]): Column
           </Tooltip>
         ),
     },
-    { key: "flags", header: "Notes", cell: (t) => <span className="text-xs text-neutral-400">{flagsOf(t).join(" · ") || "—"}</span> },
+    { key: "flags", header: "Notes", wrap: true, cell: (t) => <span className="text-xs text-neutral-400">{flagsOf(t).join(" · ") || "—"}</span> },
   ];
 }
 
