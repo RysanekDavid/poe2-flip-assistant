@@ -6,7 +6,7 @@ import type { PoolHeader } from "../../../core/tools/regex/pools/headers";
 import type { RegexPool } from "../../../core/tools/regex/pools/schema";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { EmptyState } from "../../ui/EmptyState";
-import { Panel } from "../../ui/Panel";
+import { DrawerSection } from "./BandTools";
 import { Tooltip } from "../../ui/Tooltip";
 import { modLabel } from "./modView";
 
@@ -64,16 +64,16 @@ function columns(pool: RegexPool | null, headers: readonly PoolHeader[]): Column
   ];
 }
 
-/** "How the string is built": each piece of the search and what it stands for. Collapsed by default. */
+/** "How the string is built": each piece of the search and what it stands for (explain drawer). */
 export function TokenTable({ tokens, pool, headers }: { tokens: readonly ComposedToken[]; pool: RegexPool | null; headers: readonly PoolHeader[] }) {
   return (
-    <Panel title="How the string is built" collapsible defaultOpen={false} right={<span className="text-xs text-neutral-400">{tokens.length} parts</span>}>
+    <DrawerSection title="How the string is built" right={<span className="text-xs font-normal text-neutral-400">{tokens.length} parts</span>}>
       <DataTable
         columns={columns(pool, headers)}
         rows={[...tokens]}
         rowKey={(t) => `${t.kind}:${t.text}:${t.covers.join(",")}`}
-        emptyState={<EmptyState icon={<SearchCode className="h-5 w-5" />} sentence="Mark a mod Want or Avoid, or set a filter, to build a string." />}
+        emptyState={<EmptyState icon={<SearchCode className="h-5 w-5" />} sentence="Mark a mod Avoid or Want, or set a filter, to build a string." />}
       />
-    </Panel>
+    </DrawerSection>
   );
 }
