@@ -187,7 +187,7 @@
     },
     {
       "entity_id": "artificers",
-      "who_uses": "Adds a rune socket to a martial weapon, wand, staff or armour so you can slot runes.",
+      "who_uses": "Adds an Augment Socket to a Martial Weapon, wand, staff or Armour so you can slot runes.",
       "pickup": "always",
       "ref_ex": 1.65,
       "claim": {
@@ -197,7 +197,7 @@
           "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
           "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
         ],
-        "note": "Effect from poe2db. poe.ninja 1.65 Ex, poe2scout 2.7 Ex on 2026-09-29 — both over the 1 Ex line."
+        "note": "Effect from poe2db: \"Adds an Augment Socket to a Martial Weapon, wand, staff or Armour\". poe.ninja 1.65 Ex, poe2scout 2.7 Ex on 2026-09-29 — both over the 1 Ex line."
       }
     },
     {
