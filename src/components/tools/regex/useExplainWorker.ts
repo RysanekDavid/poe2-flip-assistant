@@ -38,6 +38,8 @@ export function useExplainWorker(job: ExplainJob | null): ExplainRun {
   const [run, setRun] = useState<ExplainRun>({ status: "idle" });
   useEffect(() => {
     runner.current = new TimedWorker({ create: createPort, parse: (d) => ExplainJobResultSchema.parse(d), timeoutMs: EXPLAIN_TIMEOUT_MS });
+    // load the worker now, while the player is still picking mods, not on the first paste
+    runner.current.warm();
     return () => {
       runner.current?.dispose();
       runner.current = null;

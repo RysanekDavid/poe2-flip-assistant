@@ -43,7 +43,7 @@ export function Segmented<T extends string>({ options, value, onChange, label, c
     e.preventDefault();
   };
   return (
-    <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} className="inline-flex shrink-0 overflow-hidden rounded-md border border-neutral-700">
+    <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} className="inline-flex shrink-0 self-start overflow-hidden rounded-md border border-neutral-700">
       {options.map((o, i) => {
         const on = o.value === value;
         return (

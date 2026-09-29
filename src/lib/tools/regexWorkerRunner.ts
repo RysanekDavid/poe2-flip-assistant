@@ -4,6 +4,10 @@
  * terminated — the only way to stop a running regex — and a fresh one is created for the next
  * job, so the page answers "too complex" instead of freezing. DOM-free (the worker and the timer
  * are injected) so the deadline logic is unit-tested in node.
+ *
+ * The deadline measures evaluation only: a worker announces `{ ready: true }` once its script has
+ * loaded, and a job's clock starts then. Otherwise a cold start (download + parse of the worker
+ * chunk) would eat the budget and every job after a kill would "time out" on startup alone.
  */
 import { z } from "zod";
 
@@ -30,18 +34,23 @@ export type WorkerOutcome<T> =
   | { kind: "failed"; message: string }
   | { kind: "superseded" };
 
-/** What a worker posts back: the job id plus either a result or the error it caught. */
+/** What a worker posts: the ready handshake, or a job id plus either a result or the error it caught. */
 export const WorkerReplySchema = z.union([
+  z.object({ ready: z.literal(true) }).strict(),
   z.object({ id: z.number().int(), result: z.unknown() }).strict(),
   z.object({ id: z.number().int(), error: z.string() }).strict(),
 ]);
 export type WorkerReply = z.infer<typeof WorkerReplySchema>;
+
+/** A worker that has not loaded after this long is reported as broken, not waited on forever. */
+export const WORKER_STARTUP_MS = 10_000;
 
 export interface TimedWorkerOptions<Res> {
   create: () => WorkerPort;
   /** Validates the result payload; a throw becomes a "failed" outcome. */
   parse: (data: unknown) => Res;
   timeoutMs: number;
+  startupMs?: number;
   timers?: Timers;
 }
 
@@ -49,10 +58,13 @@ interface Pending<Res> {
   id: number;
   resolve: (outcome: WorkerOutcome<Res>) => void;
   timer: unknown;
+  /** The clock running is the startup one (the job's deadline starts at the ready handshake). */
+  starting: boolean;
 }
 
 export class TimedWorker<Req, Res> {
   private port: WorkerPort | null = null;
+  private ready = false;
   private pending: Pending<Res> | null = null;
   private nextId = 1;
   private readonly timers: Timers;
@@ -63,15 +75,19 @@ export class TimedWorker<Req, Res> {
     this.timers = options.timers ?? browserTimers;
   }
 
+  /** Creates the worker ahead of the first job so its load time is already paid. */
+  warm(): void {
+    this.ensurePort();
+  }
+
   /** Runs one job. A job still running is superseded: its worker is busy, so it is killed. */
   run(request: Req): Promise<WorkerOutcome<Res>> {
     if (this.pending) this.settle({ kind: "superseded" }, true);
     const port = this.ensurePort();
     const id = this.nextId++;
-    const { timeoutMs } = this.options;
     return new Promise((resolve) => {
-      const timer = this.timers.set(() => this.settle({ kind: "timeout", ms: timeoutMs }, true), timeoutMs);
-      this.pending = { id, resolve, timer };
+      this.pending = { id, resolve, timer: null, starting: !this.ready };
+      this.pending.timer = this.ready ? this.deadline() : this.startupClock();
       port.post({ id, request });
     });
   }
@@ -81,38 +97,62 @@ export class TimedWorker<Req, Res> {
     this.kill();
   }
 
+  private deadline(): unknown {
+    const ms = this.options.timeoutMs;
+    return this.timers.set(() => this.settle({ kind: "timeout", ms }, true), ms);
+  }
+
+  private startupClock(): unknown {
+    const ms = this.options.startupMs ?? WORKER_STARTUP_MS;
+    return this.timers.set(() => this.settle({ kind: "failed", message: `the explain worker did not start within ${ms} ms` }, true), ms);
+  }
+
   private ensurePort(): WorkerPort {
     if (this.port) return this.port;
     const port = this.options.create();
     this.created += 1;
+    this.ready = false;
     port.listen(
       (data) => this.onData(port, data),
       (message) => {
-        if (port === this.port) this.settle({ kind: "failed", message: `worker crashed: ${message}` }, true);
+        if (port === this.port) this.fail(`worker crashed: ${message}`);
       },
     );
     this.port = port;
     return port;
   }
 
+  private onReady(): void {
+    this.ready = true;
+    const p = this.pending;
+    if (!p?.starting) return;
+    this.timers.clear(p.timer);
+    p.starting = false;
+    p.timer = this.deadline();
+  }
+
   private onData(port: WorkerPort, data: unknown): void {
     // a terminated worker can still deliver a message queued before terminate(); it answers nothing
-    if (port !== this.port || !this.pending) return;
+    if (port !== this.port) return;
     const reply = WorkerReplySchema.safeParse(data);
     if (!reply.success) {
-      this.settle({ kind: "failed", message: `worker sent a malformed reply: ${reply.error.issues[0]?.message ?? "invalid"}` }, true);
+      this.fail(`worker sent a malformed reply: ${reply.error.issues[0]?.message ?? "invalid"}`);
       return;
     }
-    if (reply.data.id !== this.pending.id) return; // an answer to a superseded job on the same worker
-    if ("error" in reply.data) {
-      this.settle({ kind: "failed", message: reply.data.error }, false);
-      return;
-    }
+    if ("ready" in reply.data) return this.onReady();
+    if (!this.pending || reply.data.id !== this.pending.id) return; // answer to a superseded job
+    if ("error" in reply.data) return this.settle({ kind: "failed", message: reply.data.error }, false);
     try {
       this.settle({ kind: "ok", value: this.options.parse(reply.data.result) }, false);
     } catch (error: unknown) {
       this.settle({ kind: "failed", message: `worker result rejected: ${error instanceof Error ? error.message : String(error)}` }, true);
     }
+  }
+
+  /** A broken worker: fail the running job (if any) and kill it either way. */
+  private fail(message: string): void {
+    if (this.pending) this.settle({ kind: "failed", message }, true);
+    else this.kill();
   }
 
   private settle(outcome: WorkerOutcome<Res>, kill: boolean): void {
@@ -127,5 +167,6 @@ export class TimedWorker<Req, Res> {
   private kill(): void {
     this.port?.terminate();
     this.port = null;
+    this.ready = false;
   }
 }

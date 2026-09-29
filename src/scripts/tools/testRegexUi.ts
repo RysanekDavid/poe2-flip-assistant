@@ -130,14 +130,22 @@ function manualTimers(): Timers & { fire: () => void; live: number } {
 
 const jobId = (port: FakePort, i = port.posted.length - 1): number => (port.posted[i] as { id: number }).id;
 
-/** Deadline runner: answers, timeouts (kill + fresh worker), supersession, errors, stale replies. */
-export async function testWorkerRunner(): Promise<void> {
+function makeRunner() {
   const { ports, create } = fakeWorkers();
   const timers = manualTimers();
-  const runner = new TimedWorker<string, number>({ create, parse: (d) => (typeof d === "number" ? d : Number.NaN), timeoutMs: 200, timers });
+  const runner = new TimedWorker<string, number>({ create, parse: (d) => (typeof d === "number" ? d : Number.NaN), timeoutMs: 200, startupMs: 5000, timers });
+  return { ports, timers, runner };
+}
+
+/** Deadline runner: ready handshake, answers, timeouts (kill + fresh worker), supersession. */
+async function testRunnerDeadline(): Promise<void> {
+  const { ports, timers, runner } = makeRunner();
   const ok = runner.run("a");
   const p0 = ports[0];
   assert.ok(p0);
+  assert.equal(timers.live, 1, "a cold worker runs the startup clock, not the job deadline");
+  p0.reply({ ready: true });
+  assert.equal(timers.live, 1, "the handshake swaps the startup clock for the deadline");
   p0.reply({ id: jobId(p0), result: 7 });
   assert.deepEqual(await ok, { kind: "ok", value: 7 });
   assert.equal(timers.live, 0, "an answered job clears its deadline");
@@ -155,19 +163,38 @@ export async function testWorkerRunner(): Promise<void> {
   assert.ok(p1.terminated, "the superseded job's busy worker is killed");
   const p2 = ports[2];
   assert.ok(p2);
+  p2.reply({ ready: true });
   p2.reply({ id: jobId(p2), error: "search is empty" });
   assert.deepEqual(await superseding, { kind: "failed", message: "search is empty" });
   assert.equal(p2.terminated, false, "a reported error keeps the healthy worker");
-
-  const malformed = runner.run("d");
-  p2.reply({ nope: true });
-  assert.equal((await malformed).kind, "failed");
-  assert.ok(p2.terminated, "a malformed reply kills the worker");
-  const crashed = runner.run("e");
-  ports[3]?.crash("SyntaxError in worker");
-  assert.deepEqual(await crashed, { kind: "failed", message: "worker crashed: SyntaxError in worker" });
   runner.dispose();
   assert.equal(timers.live, 0, "dispose leaves no timer behind");
+}
+
+/** Broken workers: malformed replies, crashes and a worker that never loads all fail loudly. */
+async function testRunnerFailures(): Promise<void> {
+  const { ports, timers, runner } = makeRunner();
+  runner.warm();
+  const p0 = ports[0];
+  assert.ok(p0 && runner.created === 1, "warm() loads the worker before the first job");
+  p0.reply({ ready: true });
+  const malformed = runner.run("d");
+  p0.reply({ nope: true });
+  assert.equal((await malformed).kind, "failed");
+  assert.ok(p0.terminated, "a malformed reply kills the worker");
+  const crashed = runner.run("e");
+  ports[1]?.crash("SyntaxError in worker");
+  assert.deepEqual(await crashed, { kind: "failed", message: "worker crashed: SyntaxError in worker" });
+  const stuck = runner.run("f");
+  timers.fire();
+  assert.deepEqual(await stuck, { kind: "failed", message: "the explain worker did not start within 5000 ms" });
+  assert.ok(ports[2]?.terminated, "a worker that never loads is killed");
+  runner.dispose();
+}
+
+export async function testWorkerRunner(): Promise<void> {
+  await testRunnerDeadline();
+  await testRunnerFailures();
 }
 
 export function testExplainJob(): void {

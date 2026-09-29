@@ -30,3 +30,7 @@ globalThis.addEventListener("message", (event: MessageEvent<unknown>) => {
   }
   globalThis.postMessage(reply);
 });
+
+// Handshake: the runner starts a job's deadline only now, so script load time never counts.
+const ready: WorkerReply = { ready: true };
+globalThis.postMessage(ready);
