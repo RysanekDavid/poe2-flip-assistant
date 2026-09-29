@@ -39,6 +39,11 @@ def test_manifest_product_corpus_loads_with_stamps() -> None:
     assert "docs/kb/drop-sources.md" in sources
     assert sources >= _REQUIRED_PLAYER_KNOWLEDGE
     assert all("[REFUTED]" not in document.page_content for document in documents)
+    assert not any(_REFUTED_ENTRY_TEXT in document.page_content for document in documents)
+    assert not any(
+        "adversarial verification" in str(document.metadata["heading"]).lower()
+        for document in documents
+    )
     assert all(document.metadata["patch"] and document.metadata["league"] for document in documents)
     assert all(len(str(document.metadata["stamped_at"])) == 10 for document in documents)
 
@@ -48,6 +53,48 @@ def test_meta_documents_are_never_ingested() -> None:
 
     assert "docs/kb/README.md" not in sources
     assert not any("audit" in source or "data-source" in source for source in sources)
+
+
+_REFUTED_ENTRY_TEXT = "- **REFUTED** —"
+
+_FIXTURE_KB = """# Fixture domain
+
+## Wallet warnings
+
+- Tablets are consumed the instant they're slotted. [single-source]
+- **REFUTED** — Omen of Chaotic Rarity forces Item Rarity mods
+  → poe2db: the mods it rolls do not grant Item Rarity.
+- Hiveblood caps at 100,000. [verified-primary]
+- The old "only way" claim is **REFUTED** (2026-09-28): an in-place correction stays.
+
+## Only refuted
+
+- **REFUTED** — a claim with nothing true left in its section
+
+## Adversarial verification (post-research)
+
+- confirmed — a claim the log re-checked
+  → still part of the log, never ingested
+"""
+
+
+def test_refuted_entries_and_the_adversarial_log_are_never_ingested(tmp_path: Path) -> None:
+    kb_file = tmp_path / "docs/kb/fixture.md"
+    kb_file.parent.mkdir(parents=True)
+    kb_file.write_text(_FIXTURE_KB, encoding="utf-8")
+    _write_manifest(tmp_path, [_entry("docs/kb/fixture.md")], exist_ok=True)
+
+    documents = load_corpus(tmp_path)
+
+    headings = {str(document.metadata["heading"]) for document in documents}
+    text = "\n".join(document.page_content for document in documents)
+    assert headings == {"Fixture domain", "Wallet warnings"}
+    assert "Tablets are consumed" in text
+    assert "Hiveblood caps at 100,000" in text
+    assert "an in-place correction stays" in text
+    assert "Omen of Chaotic Rarity" not in text
+    assert "do not grant Item Rarity" not in text
+    assert "a claim the log re-checked" not in text
 
 
 def test_missing_manifest_listed_file_fails_loudly(tmp_path: Path) -> None:
@@ -104,9 +151,9 @@ def _entry(path: str) -> dict[str, str]:
     }
 
 
-def _write_manifest(root: Path, corpus: list[dict[str, str]]) -> None:
+def _write_manifest(root: Path, corpus: list[dict[str, str]], *, exist_ok: bool = False) -> None:
     target = root / MANIFEST_PATH
-    target.parent.mkdir(parents=True)
+    target.parent.mkdir(parents=True, exist_ok=exist_ok)
     target.write_text(
         json.dumps({"schema_version": 1, "corpus": corpus, "excluded": []}), encoding="utf-8"
     )
