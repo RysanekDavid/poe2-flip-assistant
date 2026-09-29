@@ -1,5 +1,5 @@
 import type { StaticImageData } from "next/image";
-import { ScrollText, Search, type LucideIcon } from "lucide-react";
+import { BookOpen, ScrollText, Search, type LucideIcon } from "lucide-react";
 import iconExchange from "../../assets/Currency_exchange.png";
 import iconMarket from "../../assets/Web_market.png";
 import iconCraft from "../../assets/Craft.png";
@@ -25,6 +25,7 @@ export const TAB_ICONS: Record<TabId, TabIcon> = {
   wealth: art(iconWealth),
   regex: { kind: "glyph", Icon: Search },
   patches: { kind: "glyph", Icon: ScrollText },
+  learn: { kind: "glyph", Icon: BookOpen },
   alerts: art(iconAlerts),
   settings: art(iconSettings),
   coach: art(iconCoach),

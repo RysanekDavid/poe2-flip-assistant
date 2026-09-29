@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import { config } from "../config/env";
 
 /**
  * Static reference data from the official PoE2 trade site: the mod (stat) list and
@@ -7,8 +8,16 @@ import axios, { AxiosError } from "axios";
  * These change only on patches, so cache hard.
  */
 const TRADE2_DATA = "https://www.pathofexile.com/api/trade2/data";
-const UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36";
+
+/**
+ * GGG asks third-party tools to identify themselves with a reachable contact; a spoofed browser UA
+ * hides who is calling. No contact means no request: the caller sees why instead of a silent 403.
+ */
+export function tradeMetaUserAgent(contact: string): string {
+  const trimmed = contact.trim();
+  if (!trimmed) throw new Error("DATA_SOURCE_CONTACT or POE_CONTACT is required for trade2 data requests");
+  return `poe2-flip-assistant/0.1 read-only data (+${trimmed})`;
+}
 
 export interface StatOption {
   id: string; // e.g. "explicit.stat_3299347043"
@@ -49,8 +58,9 @@ interface TradeMeta {
 let cache: TradeMeta | null = null;
 
 async function get<T>(path: string): Promise<T> {
+  const userAgent = tradeMetaUserAgent(config.dataSourceContact);
   try {
-    const res = await axios.get(`${TRADE2_DATA}${path}`, { timeout: 25_000, headers: { "User-Agent": UA } });
+    const res = await axios.get(`${TRADE2_DATA}${path}`, { timeout: 25_000, headers: { "User-Agent": userAgent } });
     return res.data as T;
   } catch (err) {
     const ax = err as AxiosError;

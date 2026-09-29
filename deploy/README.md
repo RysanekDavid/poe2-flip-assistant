@@ -71,8 +71,9 @@ chown poe2flip:poe2flip .env.local .coach.env
 ```
 
 Set `DATA_SOURCE_CONTACT` in `.env.local` to a monitored email address or operator contact URL.
-The official patch watcher is enabled by default and the deployment preflight rejects a blank
-contact while it is enabled.
+Every trade2 data request (craft, snipe, mod pool) and the official patch watcher identify
+themselves with it and refuse to run without it, so the deployment preflight rejects a blank
+contact before it builds or switches a release, whether or not the patch watcher is enabled.
 
 On an existing server, preserve `.env.local` and create `.coach.env` from its dedicated example.
 **Never overwrite it from the example:** preserving `AUTH_SECRET` keeps sessions valid and

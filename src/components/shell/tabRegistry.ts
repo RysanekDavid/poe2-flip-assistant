@@ -4,7 +4,7 @@ import { z } from "zod";
  * Plain data (no React, no image imports) so the URL router, the nav and the node test scripts all
  * read one list. Tab art lives in tabIcons.ts because tsx cannot import PNGs outside Next.
  */
-export const TAB_IDS = ["exchange", "market", "farm", "craft", "wealth", "regex", "patches", "alerts", "settings", "coach"] as const;
+export const TAB_IDS = ["exchange", "market", "farm", "craft", "wealth", "regex", "patches", "learn", "alerts", "settings", "coach"] as const;
 
 export const tabIdSchema = z.enum(TAB_IDS);
 export type TabId = z.infer<typeof tabIdSchema>;
@@ -40,7 +40,15 @@ export const TABS: readonly TabMeta[] = [
       { id: "board", label: "Market board" },
     ],
   },
-  { id: "farm", label: "Farm", hint: "what to farm now · pinnacle boss EV" },
+  {
+    id: "farm",
+    label: "Farm",
+    hint: "what to farm now · pinnacle boss EV · atlas strategies",
+    tools: [
+      { id: "board", label: "Farm board" },
+      { id: "strategies", label: "Strategies" },
+    ],
+  },
   {
     id: "craft",
     label: "Craft",
@@ -62,6 +70,16 @@ export const TABS: readonly TabMeta[] = [
   },
   { id: "regex", label: "Regex", hint: "stash search: waystones · tablets · relics · jewels · vendor · price", openTools: true },
   { id: "patches", label: "Patches", hint: "official patch notes · AI summary · what it means for trading" },
+  {
+    id: "learn",
+    label: "Learn",
+    hint: "what is this item · currency primer · atlas checklist",
+    tools: [
+      { id: "what", label: "What is this" },
+      { id: "currency", label: "Currency primer" },
+      { id: "atlas", label: "Atlas checklist" },
+    ],
+  },
   { id: "alerts", label: "Alerts", hint: "alert feed · sound, popup & Discord routing" },
   {
     id: "settings",
@@ -70,6 +88,7 @@ export const TABS: readonly TabMeta[] = [
     tools: [
       { id: "account", label: "Account" },
       { id: "notify", label: "Notifications" },
+      { id: "mode", label: "Mode" },
       { id: "system", label: "System" },
     ],
   },

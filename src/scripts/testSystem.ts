@@ -1,5 +1,5 @@
 /* Subsystem heartbeats, stale derivation, the owner System Health route and the honest poe.ninja
- * User-Agent — against a TEMP DB with every network call faked.
+ * and trade2 data User-Agents — against a TEMP DB with every network call faked.
  * Run: npm run test:system (src/scripts/runWithTestEnv.ts sets DB_PATH + AUTH_SECRET). */
 import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
@@ -16,6 +16,7 @@ import {
 } from "../core/subsystems";
 import { testHealthRoute, testCoachSummary, testGovernorState } from "./testSystemHealth";
 import { testNinjaUserAgent } from "./testSystemNinja";
+import { testTradeMetaUserAgent } from "./testTradeMetaUa";
 import { testBalanceLoop } from "./testSystemBalance";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
@@ -142,7 +143,8 @@ async function main(): Promise<void> {
   await testHealthRoute();
   await testBalanceLoop();
   await testNinjaUserAgent();
-  console.log("ALL PASS — heartbeats, stale derivation, owner-only system health, balance loop, honest ninja UA");
+  await testTradeMetaUserAgent();
+  console.log("ALL PASS — heartbeats, stale derivation, owner-only system health, balance loop, honest ninja + trade2 data UA");
   // ninjaLimiter's reservoir refresh keeps an interval alive; the suite is done.
   process.exit(0);
 }

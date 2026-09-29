@@ -110,7 +110,13 @@ assert.match(coachEnv, /^COACH_PROXY_SECRET=$/m);
 assert.match(deploy, /COACH_PROXY_SECRET must match in \.env\.local and \.coach\.env/);
 assert.match(deploy, /source "\$SCRIPT_DIR\/deploy-helpers\.sh"/);
 assert.doesNotMatch(productEnv, /^POE_CONTACT=$/m);
-assert.match(deploy, /DATA_SOURCE_CONTACT is required when PATCH_NOTES_ENABLED is true or omitted/);
+// trade2 data needs the contact whatever PATCH_NOTES_ENABLED says; the gate runs before the release
+// is built or switched, so a missing contact leaves the old release serving.
+assert.match(deploy, /DATA_SOURCE_CONTACT is required in \$APP_DIR\/\.env\.local/);
+assert.match(deploy, /^if ! grep -Eq '\^DATA_SOURCE_CONTACT=\[\^\[:space:\]\]\.\*\$' \.env\.local; then$/m, "contact gate is unconditional");
+assert.doesNotMatch(deploy, /PATCH_NOTES_ENABLED|patch_notes_enabled/, "contact gate no longer depends on the patch watcher");
+assert.ok(deploy.indexOf("DATA_SOURCE_CONTACT is required") < deploy.indexOf("trap rollback ERR"), "contact gate precedes the rollback trap");
+assert.match(deployReadme, /deployment preflight rejects a blank\s+contact/);
 assertAppOriginShapeGate();
 assert.equal(packageConfig.engines?.node, ">=20.18.1");
 assert.match(rootReadme, /Node\.js 20\.18\.1\+/);

@@ -64,7 +64,8 @@ export const config = {
   // --- trade2 credentials (read-only price checks: autosnipe, craft margins, balance) ---
   poesessid: process.env.POESESSID ?? "", // session cookie for your own account; empty disables live search
   poeContact: process.env.POE_CONTACT ?? "", // your email — GGG asks third-party tools to identify themselves
-  dataSourceContact: process.env.DATA_SOURCE_CONTACT ?? process.env.POE_CONTACT ?? "",
+  // `||` not `??`: an empty DATA_SOURCE_CONTACT= line copied from the example must not hide POE_CONTACT
+  dataSourceContact: (process.env.DATA_SOURCE_CONTACT?.trim() || process.env.POE_CONTACT?.trim() || ""),
   poeAccount: process.env.POE_ACCOUNT ?? "", // your account name — needed to read your own stash (balance tracking)
   poeRealm: process.env.POE_REALM ?? "poe2", // realm for stash reads ('poe2' | 'pc')
   // optional explicit currency-tab indices "0,3"; empty = auto-find the currency-type tab

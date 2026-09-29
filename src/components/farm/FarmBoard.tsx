@@ -10,6 +10,7 @@ import { useVisiblePoll } from "../../lib/useVisiblePoll";
 import { Button } from "../ui/Button";
 import { PageHeader } from "../ui/PageHeader";
 import { StaleBadge } from "../ui/StaleBadge";
+import { ToolChips } from "../shell/ToolChips";
 import { BossDetail } from "./BossDetail";
 import { BossTable } from "./BossTable";
 import { MechanicStrip } from "./MechanicStrip";
@@ -100,9 +101,12 @@ export function FarmBoard() {
         purpose="Mechanic baskets by 7d heat, pinnacle bosses by net per kill — and your Div/hour at your own pace."
         legend={LEGEND}
         action={
-          <Button variant="ghost" size="sm" onClick={reload} aria-label="Refresh farm data">
-            <RefreshCw aria-hidden className="h-4 w-4" />
-          </Button>
+          <>
+            <ToolChips tab="farm" />
+            <Button variant="ghost" size="sm" onClick={reload} aria-label="Refresh farm data">
+              <RefreshCw aria-hidden className="h-4 w-4" />
+            </Button>
+          </>
         }
       />
       {error && <p role="alert" className="text-sm text-bad">Farm data unavailable — {error}</p>}
