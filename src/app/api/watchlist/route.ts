@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getWatchlist, addWatch, removeWatch, setManualPrices, manualAgeMs } from "../../../db/watchlistQueries";
+import {
+  getWatchlist,
+  addWatch,
+  removeWatch,
+  setManualPrices,
+  setManualPricesInLeague,
+  manualAgeMs,
+} from "../../../db/watchlistQueries";
 import { getCurrentUser } from "../../../auth/session";
 import { config } from "../../../config/env";
-import { WatchlistResponseSchema, type WatchlistResponse } from "../../../lib/watchlistContract";
+import { leagueForUser } from "../../../core/leagueUsers";
+import { ManualPricesBodySchema, WatchlistResponseSchema, type WatchlistResponse } from "../../../lib/watchlistContract";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +25,7 @@ export async function GET() {
     return { ...w, manual_stale: ageMs != null && ageMs > staleMs };
   });
   // Parse on the way out: a malformed row fails here with its field name, not in the flip card.
-  const body: WatchlistResponse = WatchlistResponseSchema.parse({ watchlist });
+  const body: WatchlistResponse = WatchlistResponseSchema.parse({ league: leagueForUser(user.id), watchlist });
   return NextResponse.json(body);
 }
 
@@ -40,32 +48,23 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true }, { status: 201 });
 }
 
-const CCY = z.enum(["DIVINE", "EXALT", "CHAOS"]);
-const ManualBody = z.object({
-  itemId: z.string().min(1),
-  manualBuyExalt: z.number().positive().nullable(),
-  manualSellChaos: z.number().positive().nullable(),
-  manualBuyCcy: CCY.nullish(),
-  manualSellCcy: CCY.nullish(),
-});
-
-/** PATCH /api/watchlist → set/clear real observed Ange prices + their currencies (REAL-mode spread). */
+/**
+ * PATCH /api/watchlist → set or clear your real Ange prices (REAL-mode spread). A `set` is always
+ * for the league you are viewing: the row is watched/re-stamped there in the same transaction.
+ */
 export async function PATCH(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const parsed = ManualBody.safeParse(await req.json());
+  const parsed = ManualPricesBodySchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
-  const { itemId, manualBuyExalt, manualSellChaos, manualBuyCcy, manualSellCcy } = parsed.data;
-  setManualPrices(
-    user.id,
-    itemId,
-    manualBuyExalt,
-    manualBuyExalt != null ? (manualBuyCcy ?? "EXALT") : null,
-    manualSellChaos,
-    manualSellChaos != null ? (manualSellCcy ?? "CHAOS") : null,
-  );
+  const body = parsed.data;
+  if (body.action === "clear") {
+    setManualPrices(user.id, body.itemId, null, null, null, null);
+  } else {
+    setManualPricesInLeague(user.id, leagueForUser(user.id), body, body.buy, body.sell);
+  }
   return NextResponse.json({ ok: true });
 }
 

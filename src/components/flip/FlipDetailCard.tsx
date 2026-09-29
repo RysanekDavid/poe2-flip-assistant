@@ -3,27 +3,41 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { formatDenom, formatObservedDenom, type Denom } from "../../core/treasury";
 import { compact } from "../../lib/format";
-import { WatchlistResponseSchema, type WatchRow } from "../../lib/watchlistContract";
+import { WatchlistResponseSchema, inLeague, type WatchRow } from "../../lib/watchlistContract";
 import { ItemArt } from "../ui/ItemArt";
 import { edgeTooltip } from "../FlipEdge";
 import { CCY_ART, fmtMid, type FlipSelection } from "./flipTypes";
 import { FlipRange } from "./FlipRange";
 import { FlipPlanForm } from "./FlipPlanForm";
 
+interface WatchState {
+  /** The row in the league you are viewing — the only one whose prices apply here. */
+  watch: WatchRow | null;
+  /** Set when the item is watched in a DIFFERENT league (one row per item: saving moves it). */
+  foreignLeague: string | null;
+  loaded: boolean;
+  error: string | null;
+}
+
+const EMPTY: WatchState = { watch: null, foreignLeague: null, loaded: false, error: null };
+
 /** This item's watchlist row (manual Ange prices), refetched whenever the watchlist changes. */
-function useWatchRow(itemId: string): { watch: WatchRow | null; loaded: boolean; error: string | null } {
-  const [state, setState] = useState<{ watch: WatchRow | null; loaded: boolean; error: string | null }>({ watch: null, loaded: false, error: null });
+function useWatchRow(itemId: string): WatchState {
+  const [state, setState] = useState<WatchState>(EMPTY);
   const load = useCallback(() => {
     fetch("/api/watchlist")
       .then(async (r) => {
         if (!r.ok) throw new Error(`/api/watchlist → ${r.status}`);
-        const { watchlist } = WatchlistResponseSchema.parse(await r.json());
-        setState({ watch: watchlist.find((w) => w.item_id === itemId) ?? null, loaded: true, error: null });
+        const { league, watchlist } = WatchlistResponseSchema.parse(await r.json());
+        const row = watchlist.find((w) => w.item_id === itemId) ?? null;
+        const here = row != null && inLeague(row, league);
+        const foreignLeague = row != null && !here && row.active === 1 ? (row.league ?? "an untagged league") : null;
+        setState({ watch: here ? row : null, foreignLeague, loaded: true, error: null });
       })
-      .catch((e: unknown) => setState({ watch: null, loaded: true, error: e instanceof Error ? e.message : String(e) }));
+      .catch((e: unknown) => setState({ ...EMPTY, loaded: true, error: e instanceof Error ? e.message : String(e) }));
   }, [itemId]);
   useEffect(() => {
-    setState({ watch: null, loaded: false, error: null });
+    setState(EMPTY);
     load();
     window.addEventListener("watchlist-changed", load);
     return () => window.removeEventListener("watchlist-changed", load);
@@ -84,7 +98,7 @@ function ReversionHint({ pct }: { pct: number | null }) {
  */
 export function FlipDetailCard({ selection }: { selection: FlipSelection }) {
   const { row, rates } = selection;
-  const { watch, loaded, error } = useWatchRow(row.itemId);
+  const { watch, foreignLeague, loaded, error } = useWatchRow(row.itemId);
   const observed = row.source === "cx";
   return (
     <section className="flex h-full flex-col rounded-lg border border-line bg-neutral-900/50 p-4">
@@ -106,7 +120,7 @@ export function FlipDetailCard({ selection }: { selection: FlipSelection }) {
       <FlipRange itemId={row.itemId} />
       {error && <p role="alert" className="mt-3 text-xs text-bad">saved prices unavailable — {error}</p>}
       {/* keyed by item: a new item re-seeds the form from its saved prices, a save keeps what you typed */}
-      {loaded && <FlipPlanForm key={row.itemId} row={row} rates={rates} manual={watch} />}
+      {loaded && <FlipPlanForm key={row.itemId} row={row} rates={rates} manual={watch} foreignLeague={foreignLeague} />}
     </section>
   );
 }

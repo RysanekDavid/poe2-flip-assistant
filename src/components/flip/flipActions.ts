@@ -1,4 +1,5 @@
 import { toDivine, type Currency, type ExchangeRates } from "../../core/priceEngine";
+import type { ManualPricesBody } from "../../lib/watchlistContract";
 import type { Candidate } from "./flipTypes";
 
 /** What the plan form holds, parsed. Amounts are per unit in their own currency. */
@@ -17,21 +18,30 @@ async function send(url: string, method: "POST" | "PATCH", body: unknown): Promi
   throw new Error(`${method} ${url} failed (${r.status})${detail ? `: ${detail.slice(0, 160)}` : ""}`);
 }
 
-/**
- * Save your real Ange prices (switches the watched row to REAL mode). Prices only live on a
- * watchlist row, so an unwatched Top Flips item is watched first — otherwise the save would
- * update nothing and the prices would silently vanish.
- */
-export async function saveManualPrices(row: Candidate, watched: boolean, p: PlanInput | null): Promise<void> {
-  if (!watched) await send("/api/watchlist", "POST", { itemId: row.itemId, itemName: row.item, category: row.category });
-  await send("/api/watchlist", "PATCH", {
-    itemId: row.itemId,
-    manualBuyExalt: p?.buy ?? null,
-    manualSellChaos: p?.sell ?? null,
-    manualBuyCcy: p?.buyCcy ?? "EXALT",
-    manualSellCcy: p?.sellCcy ?? "CHAOS",
-  });
+async function patchPrices(body: ManualPricesBody): Promise<void> {
+  await send("/api/watchlist", "PATCH", body);
   window.dispatchEvent(new Event("watchlist-changed"));
+}
+
+/**
+ * Save your real Ange prices for the league you are viewing (the watched row switches to REAL
+ * mode). The server watches — or re-stamps — the row in that league in the same step, so an
+ * unwatched Top Flips item, or one watched in another league, never loses the prices.
+ */
+export function saveManualPrices(row: Candidate, p: PlanInput): Promise<void> {
+  return patchPrices({
+    action: "set",
+    itemId: row.itemId,
+    itemName: row.item,
+    category: row.category,
+    buy: { amount: p.buy, ccy: p.buyCcy },
+    sell: { amount: p.sell, ccy: p.sellCcy },
+  });
+}
+
+/** Drop the saved prices; the row falls back to the market estimate. */
+export function clearManualPrices(row: Candidate): Promise<void> {
+  return patchPrices({ action: "clear", itemId: row.itemId });
 }
 
 /** A completed round trip straight into Flip History: qty × (sell − buy). */
