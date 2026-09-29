@@ -1,6 +1,6 @@
 /*
  * Shared loader for the committed RePoE snapshot, used by every offline builder that derives a
- * slim artifact from it (build:craft-catalog, build:regex-data). The web process never loads this
+ * slim artifact from it (build:craft-catalog, build:regex-data, sync:entities). The web process never loads this
  * ~60 MB payload; builders stamp their output with the manifest's artifact_sha256 so tests can
  * fail while a derived artifact lags a re-sync.
  */
@@ -95,7 +95,14 @@ export function spawnsOn(m: RepoeMod, tags: ReadonlySet<string>): boolean {
   return false;
 }
 
-export function loadSnapshot(): Snapshot {
+/** The verified snapshot before any builder-specific schema: each builder parses the sources it needs. */
+export interface RawSnapshot {
+  manifest: Manifest;
+  decoded: unknown;
+  gameDataPatch: string;
+}
+
+export function readSnapshot(): RawSnapshot {
   const manifest = ManifestSchema.parse(JSON.parse(readFileSync(join(DATA_DIR, "repoe", "manifest.json"), "utf8")));
   const compressed = readFileSync(join(DATA_DIR, "repoe", manifest.artifact));
   if (sha256(compressed) !== manifest.artifact_sha256) {
@@ -106,10 +113,21 @@ export function loadSnapshot(): Snapshot {
     throw new Error("patch-coverage.json describes a different RePoE snapshot — its game_data_patch would mislabel the catalog");
   }
   const decoded: unknown = JSON.parse(gunzipSync(compressed).toString("utf8"));
-  const parsed = RepoeSchema.safeParse(decoded);
+  return { manifest, decoded, gameDataPatch: coverage.game_data_patch };
+}
+
+/** Parse `value` or throw naming the first mismatching paths — a silent partial parse would ship a wrong artifact. */
+export function parseSnapshotShape<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
+  const parsed = schema.safeParse(value);
   if (!parsed.success) {
     const where = parsed.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`);
-    throw new Error(`RePoE snapshot shape mismatch: ${where.join("; ")}`);
+    throw new Error(`${label} shape mismatch: ${where.join("; ")}`);
   }
-  return { manifest, repoe: parsed.data.sources, gameDataPatch: coverage.game_data_patch };
+  return parsed.data;
+}
+
+export function loadSnapshot(): Snapshot {
+  const { manifest, decoded, gameDataPatch } = readSnapshot();
+  const parsed = parseSnapshotShape(RepoeSchema, decoded, "RePoE snapshot");
+  return { manifest, repoe: parsed.sources, gameDataPatch };
 }
