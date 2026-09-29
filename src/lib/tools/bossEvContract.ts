@@ -2,8 +2,9 @@ import { z } from "zod";
 import { confidenceSchema, rateSchema, sourceSchema } from "../../core/tools/bossEv/schema";
 
 /**
- * GET /api/tools/boss-ev. Shared by the route and the Boss EV panel so a server-side shape change
- * fails the client parse loudly instead of rendering blanks. All money is Divine.
+ * Per-boss evaluation shapes (entry, loot, tier metrics). GET /api/farm (src/lib/farmContract.ts)
+ * embeds them, so a server-side shape change fails the client parse loudly instead of rendering
+ * blanks. All money is Divine.
  */
 
 export const priceSourceSchema = z.enum(["ninja", "scout", "manual"]);
@@ -36,6 +37,8 @@ export const entryLineViewSchema = z.object({
   craftParts: z.array(craftPartViewSchema),
   costDiv: z.number().nullable(),
   route: z.enum(["buy", "craft"]).nullable(),
+  /** poe.ninja traded volume of the entry item; null when ninja does not list it. */
+  volume: z.number().nullable(),
 });
 export type EntryLineView = z.infer<typeof entryLineViewSchema>;
 
@@ -52,6 +55,8 @@ export const lootLineViewSchema = z.object({
   evDiv: z.number().nullable(),
   evLowDiv: z.number().nullable(),
   evHighDiv: z.number().nullable(),
+  /** A Lineage support gem (poe2scout rarely lists them). */
+  lineage: z.boolean(),
 });
 export type LootLineView = z.infer<typeof lootLineViewSchema>;
 
@@ -101,7 +106,25 @@ export const tierResultSchema = z.object({
   jackpot: jackpotSchema,
   breakEven: z.array(breakEvenSchema),
   unpriced: z.array(z.string()),
+  /** How many of `unpriced` are Lineage gems — shown apart, they are the usual scout gap. */
+  unpricedLineage: z.number().int(),
   unknownRate: z.array(z.string()),
+  /** Priced value that lands on most kills: guaranteed lines plus lines at least 1 in 10 (low end). */
+  floorDiv: z.number(),
+  /** Priced EV from drops rarer than 1 in 10 (high end below 10%) — the lottery part. */
+  chaseDiv: z.number(),
+  /** 1 / Σp over the rare (< 1 in 10) lines with a known rate; null when none has one. */
+  chaseOneIn: z.number().nullable(),
+  /**
+   * P(a kill drops nothing covering the entry beyond the guaranteed loot), independent rolls, range
+   * rates at their low end, unknown rates counted as 0 (so it overstates the risk); null when the
+   * entry is partly unpriced.
+   */
+  pLosingRun: z.number().nullable(),
+  /** Entry-covering lines whose rate is unknown — pLosingRun counts them as never dropping. */
+  losingRunUnknownRates: z.number().int(),
+  /** poe.ninja volume of the priciest entry item: can you actually buy in. */
+  entryVolume: z.number().nullable(),
   varianceNote: z.string(),
 });
 export type TierResult = z.infer<typeof tierResultSchema>;
@@ -116,22 +139,3 @@ export const bossViewSchema = z.object({
   tiers: z.array(tierResultSchema).min(1),
 });
 export type BossView = z.infer<typeof bossViewSchema>;
-
-export const bossEvRatesSchema = z.object({
-  exaltPerDivine: z.number(),
-  chaosPerDivine: z.number(),
-  source: z.enum(["cx", "ninja", "scout"]),
-  fetchedAt: z.string().nullable(),
-});
-
-export const bossEvResponseSchema = z.object({
-  computedLeague: z.string(),
-  dataAsOf: z.string(),
-  patch: z.string(),
-  patchWarning: z.object({ level: z.enum(["obsolete", "recheck"]), text: z.string() }).nullable(),
-  rates: bossEvRatesSchema.nullable(),
-  pricesFetchedAt: z.string().nullable(),
-  scoutAgeHours: z.number().nullable(),
-  bosses: z.array(bossViewSchema),
-});
-export type BossEvResponse = z.infer<typeof bossEvResponseSchema>;

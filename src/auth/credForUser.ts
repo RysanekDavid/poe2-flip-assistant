@@ -11,9 +11,9 @@ import { config } from "../config/env";
  */
 export function credForUser(u: { id: number; role: string }): TradeCred | null {
   const c = getUserCred(u.id);
-  if (c) return c;
+  if (c) return { ...c, source: "stored" };
   if (u.role === "owner" && config.poesessid) {
-    return { poesessid: config.poesessid, contact: config.poeContact, account: config.poeAccount };
+    return { poesessid: config.poesessid, contact: config.poeContact, account: config.poeAccount, source: "env" };
   }
   return null;
 }

@@ -5,7 +5,7 @@ import { getDefaultLeague } from "../core/leagueState";
 import { buildTradeQuery, type TradeQuery } from "../lib/tradeLink";
 import { createRateGovernor, type RateGovernor, type TradeEndpoint } from "./tradeRateLimit";
 import { scheduleMetered } from "./tradeMeter";
-import { TradeRateLimitedError } from "./tradeErrors";
+import { TradeAuthError, TradeRateLimitedError } from "./tradeErrors";
 import { dbRateStore } from "../db/tradeRateQueries";
 import { parseFetchResponse, type Listing } from "./tradeListing";
 
@@ -52,11 +52,13 @@ export interface TradeCred {
   poesessid: string; // the caller's session cookie
   contact?: string; // identifying email for the User-Agent
   account?: string; // account name (own-stash / own-listing reads)
+  /** stored = the user's own saved cookie; env = the owner's .env fallback. Only a stored cookie's health is recorded. */
+  source?: "stored" | "env";
 }
 
 /** Fall back to the .env.local owner cred when no per-user cred is supplied (local single-tenant mode). */
 function configCred(): TradeCred {
-  return { poesessid: config.poesessid, contact: config.poeContact, account: config.poeAccount };
+  return { poesessid: config.poesessid, contact: config.poeContact, account: config.poeAccount, source: "env" };
 }
 
 function authHeaders(cred: TradeCred): Record<string, string> {
@@ -92,7 +94,7 @@ function describeFailure(err: unknown, method: string, path: string): Error {
     const retry = ax.response?.headers?.["retry-after"];
     return new Error(`trade2 rate-limited (429)${retry ? ` — backing off ${retry}s` : ""}.`);
   }
-  if (status === 403) return new Error("trade2 403 — POESESSID invalid/expired or Cloudflare challenge. Refresh your cookie.");
+  if (status === 403) return new TradeAuthError(method, path);
   // surface the API's error body (trade2 explains 400s, e.g. an invalid filter id)
   const body = ax.response?.data ? ` — ${JSON.stringify(ax.response.data).slice(0, 300)}` : "";
   return new Error(`trade2 ${method.toUpperCase()} ${path} failed (${status ?? "no-status"})${body}`);

@@ -1,3 +1,4 @@
+import type { PricedItem } from "../../../api/types";
 import { latestSnapshots, priceHistory, uniqueValueMap, itemValuesAgeHours } from "../../../db/marketQueries";
 import { timestampAgeMs } from "../../../lib/sqliteTime";
 import type { ResolvedPrice } from "../../../lib/tools/bossEvContract";
@@ -10,6 +11,8 @@ export interface NinjaQuote {
   icon: string | null;
   /** Age of THIS item's newest row, not the league's: an item ninja stopped listing keeps an old row. */
   ageHours: number | null;
+  /** ninja's traded volume for the item (its liquidity), as the snapshot stores it. */
+  volume: number;
 }
 
 /** Everything pricing needs, read once per request so the math below stays pure. */
@@ -23,8 +26,8 @@ export interface PriceInputs {
 
 export interface PriceLookup {
   price(ref: PriceRef): ResolvedPrice | null;
-  /** Display name + icon for an exchange item id, or null when ninja does not list it. */
-  item(itemId: string): { name: string; icon: string | null } | null;
+  /** Display name, icon and traded volume for an exchange item id, or null when ninja does not list it. */
+  item(itemId: string): { name: string; icon: string | null; volume: number } | null;
 }
 
 const HOUR_MS = 3_600_000;
@@ -52,7 +55,7 @@ export function priceLookup(inputs: PriceInputs): PriceLookup {
     price: (ref) => resolvePrice(ref, inputs),
     item: (itemId) => {
       const quote = inputs.ninja.get(itemId);
-      return quote ? { name: quote.name, icon: quote.icon } : null;
+      return quote ? { name: quote.name, icon: quote.icon, volume: quote.volume } : null;
     },
   };
 }
@@ -76,9 +79,15 @@ export function referencedNinjaIds(file: BossLootFile): Set<string> {
  * Read the league's market once. Only the referenced ids get a per-item age lookup (one indexed
  * query each, ~40 items) — the league-wide latestFetchedAt would call a delisted item fresh.
  */
-export function loadPriceInputs(league: string, ids: ReadonlySet<string>, nowMs: number = Date.now()): PriceInputs {
+export function loadPriceInputs(
+  league: string,
+  ids: ReadonlySet<string>,
+  nowMs: number = Date.now(),
+  // the farm route already read the league's latest snapshots for the mechanic heat — reuse them
+  snapshots: readonly PricedItem[] = latestSnapshots(league),
+): PriceInputs {
   const ninja = new Map<string, NinjaQuote>();
-  for (const row of latestSnapshots(league)) {
+  for (const row of snapshots) {
     if (!ids.has(row.itemId) || !(row.baseValue > 0)) continue;
     const newest = priceHistory(league, row.itemId, 1)[0];
     ninja.set(row.itemId, {
@@ -86,6 +95,7 @@ export function loadPriceInputs(league: string, ids: ReadonlySet<string>, nowMs:
       name: row.itemName,
       icon: row.icon,
       ageHours: newest ? timestampAgeMs(newest.fetchedAt, nowMs) / HOUR_MS : null,
+      volume: row.volume,
     });
   }
   return { ninja, scout: uniqueValueMap(league), scoutAgeHours: itemValuesAgeHours(league), nowMs };

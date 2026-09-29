@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { NotebookPen, Trash2 } from "lucide-react";
 import { priceLabel, evLabel, MatIcon } from "./craft/craftView";
-import { ComputedLeague } from "./ui/ComputedLeague";
 
 /** Other components dispatch this after logging an attempt so the panel refreshes instantly. */
 export const PNL_CHANGED_EVENT = "craft-pnl-changed";
@@ -73,7 +72,7 @@ function CloseControls({ onClose }: { onClose: (outcome: "hit" | "brick", soldDi
         onChange={(e) => setSold(e.target.value)}
         placeholder="sold (div)"
         title="leave empty if you kept the hit / haven't sold it yet — it stays pending, not a loss"
-        className="w-20 rounded border border-neutral-700 bg-neutral-900 px-1.5 py-0.5 text-xs text-neutral-200 placeholder:text-neutral-600"
+        className="w-20 rounded border border-neutral-700 bg-neutral-900 px-1.5 py-0.5 text-xs text-neutral-200 placeholder:text-neutral-500"
       />
       <button onClick={() => onClose("hit", val)} className="rounded border border-emerald-700/60 px-1.5 py-0.5 text-xs text-emerald-400 hover:bg-emerald-900/30">
         hit
@@ -99,7 +98,7 @@ function RecipeSummary({ r, data }: { r: RecipePnl; data: Resp }) {
       </div>
       <div className="text-neutral-500">
         {r.attempts} attempts · hit {realHit != null ? `${realHit.toFixed(0)}%` : "—"}
-        <span className="text-neutral-600"> (model {modelHit.toFixed(0)}%)</span> · realized{" "}
+        <span className="text-neutral-500"> (model {modelHit.toFixed(0)}%)</span> · realized{" "}
         <span className={net >= 0 ? "text-emerald-400" : "text-bad"}>{evLabel(net, ex)}</span>
         {r.pending > 0 && (
           <span className="text-sky-400" title="open attempts and hits you kept / haven't sold — not counted as profit or loss yet">
@@ -143,12 +142,12 @@ function AttemptRow({ a, data, onClose, onRemove }: { a: Attempt; data: Resp; on
         <OutcomeCell a={a} onClose={onClose} />
       </td>
       <td className="px-2 py-1.5 text-right tabular-nums">{a.sold_div != null ? priceLabel(a.sold_div, ex) : "—"}</td>
-      <td className={`px-2 py-1.5 text-right font-medium tabular-nums ${net == null ? "text-neutral-600" : net >= 0 ? "text-emerald-400" : "text-bad"}`}>
+      <td className={`px-2 py-1.5 text-right font-medium tabular-nums ${net == null ? "text-neutral-500" : net >= 0 ? "text-emerald-400" : "text-bad"}`}>
         {net == null ? "pending" : evLabel(net, ex)}
       </td>
       <td className="px-2 py-1.5 text-right text-xs text-neutral-500">{ageOf(a.created_at)}</td>
       <td className="px-2 py-1.5 text-right">
-        <button onClick={onRemove} title="delete attempt" className="text-neutral-600 hover:text-bad">
+        <button onClick={onRemove} title="delete attempt" className="text-neutral-500 hover:text-bad">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </td>
@@ -197,7 +196,6 @@ export function CraftPnlPanel() {
         <NotebookPen className="h-4 w-4 text-neutral-500" />
         <h2 className="text-base font-semibold text-neutral-100">Craft P&L — your attempts</h2>
         <span className="text-xs text-neutral-500">· craft sessions log here automatically · unsold hits stay pending</span>
-        <ComputedLeague league={data?.computedLeague} />
       </div>
       {err && <p className="mb-2 text-sm text-bad">⚠ {err}</p>}
       {data && data.byRecipe.length > 0 && (
@@ -208,7 +206,7 @@ export function CraftPnlPanel() {
         </div>
       )}
       {!data || attempts.length === 0 ? (
-        <p className="text-sm text-neutral-600">no attempts logged yet</p>
+        <p className="text-sm text-neutral-500">no attempts logged yet</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

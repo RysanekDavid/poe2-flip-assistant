@@ -8,6 +8,7 @@ import { CraftSessionInline } from "./CraftSessionWizard";
 import { MaterialsTable } from "./MaterialsTable";
 import { NearMissLine } from "./NearMissLine";
 import { evLabel, priceLabel, type RecipeView } from "./craftView";
+import { GateNote } from "./GateNote";
 import { RETURN_FLAG_MULTIPLE } from "../../core/craftValuation";
 
 /** How a leg's number was derived — a percentile of floor-passing asks or a comparable median,
@@ -61,7 +62,7 @@ function LegBlock({ title, leg, note, ex }: { title: string; leg: LegReport | nu
           <p className="mt-1 text-xs text-amber-500">⚠ unresolved (search widened): {leg.unresolvedStats.join("; ")}</p>
         )}
         {/* the caveat prose lives in a hover tooltip — the panel stays scannable */}
-        <p className="mt-1 cursor-help text-xs text-neutral-600 underline decoration-dotted underline-offset-2" title={note}>
+        <p className="mt-1 cursor-help text-xs text-neutral-500 underline decoration-dotted underline-offset-2" title={note}>
           ⓘ how this is priced
         </p>
       </div>
@@ -107,7 +108,7 @@ function CardActions({ recipeKey }: { recipeKey: string }) {
 
 /** Full EV derivation for one recipe: session, actions, itemized materials, the literal formula
  *  and both legs. Rendered inside the expanded row of the margin panel. */
-export function MarginBreakdown({ r, ex, icons }: { r: RecipeView; ex: number | null; icons: Record<string, string> }) {
+export function MarginBreakdown({ r, ex, icons, intervalMin }: { r: RecipeView; ex: number | null; icons: Record<string, string>; intervalMin: number }) {
   const rep = r.report;
   return (
     <div className="space-y-3 border-t border-neutral-800 bg-neutral-950/30 p-4">
@@ -118,8 +119,8 @@ export function MarginBreakdown({ r, ex, icons }: { r: RecipeView; ex: number | 
         </p>
       )}
       {rep && !r.gate.ok && rep.status === "ok" && (
-        <p className="text-xs text-amber-500" title={r.gate.reasons.join("\n")}>
-          ⚠ low confidence — not ranked or alerted: {r.gate.reasons.join(" · ")}
+        <p className="flex flex-wrap items-center gap-2 text-sm text-neutral-300">
+          Not ranked or alerted yet <GateNote r={r} intervalMin={intervalMin} />
         </p>
       )}
 

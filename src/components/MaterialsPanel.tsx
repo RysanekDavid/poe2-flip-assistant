@@ -7,7 +7,7 @@ import { PriceChart } from "./PriceChart";
 import { SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../lib/tableStyle";
 import { MATERIAL_GROUPS, type MaterialGroup } from "../core/craftMaterials";
 import { MatIcon } from "./craft/craftView";
-import { ComputedLeague } from "./ui/ComputedLeague";
+import { Panel } from "./ui/Panel";
 
 interface MaterialRow {
   id: string;
@@ -69,15 +69,9 @@ export function MaterialsPanel() {
   const byGroup = (g: MaterialGroup) => (data?.materials ?? []).filter((m) => m.group === g);
 
   return (
-    <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-      <header className="mb-3 flex items-center gap-2.5">
-        <FlaskConical className="h-5 w-5 text-violet-400" />
-        <h2 className="text-lg font-semibold">Craft Materials</h2>
-        <span className="text-xs text-neutral-500">· live ninja prices for the recipe inputs</span>
-        <ComputedLeague league={data?.computedLeague} />
-      </header>
-
-      {err && <p className="text-sm text-bad">error: {err}</p>}
+    // collapsed by default: every recipe card already itemizes its own materials with prices
+    <Panel title="Material prices" collapsible defaultOpen={false} right={<FlaskConical aria-hidden className="h-4 w-4 text-neutral-400" />}>
+      {err && <p role="alert" className="text-sm text-bad">error: {err}</p>}
 
       <div className={SCROLL_BOX}>
         <table className="w-full text-sm">
@@ -120,8 +114,7 @@ export function MaterialsPanel() {
           <PriceChart itemId={selected.id} itemName={selected.name} />
         </div>
       )}
-
-    </section>
+    </Panel>
   );
 }
 
@@ -149,8 +142,16 @@ function GroupRows({
       {rows.map((m) => (
         <tr
           key={m.id}
+          tabIndex={0}
+          role="button"
+          aria-pressed={selectedId === m.id}
           onClick={() => onSelect(m)}
-          className={`${ROW_BASE} cursor-pointer ${selectedId === m.id ? "bg-sky-950/40" : ""}`}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            onSelect(m);
+          }}
+          className={`${ROW_BASE} cursor-pointer ${selectedId === m.id ? "bg-amber-400/10" : ""}`}
           title="click → price history"
         >
           <td className={`${CELL} font-medium text-neutral-200`}>
@@ -164,7 +165,7 @@ function GroupRows({
             <span className="inline-flex items-center justify-end gap-1.5">
               {m.spark7d && <Sparkline data={m.spark7d} />}
               <span
-                className={`tabular-nums ${m.change7d == null ? "text-neutral-600" : m.change7d >= 0 ? "text-good" : "text-bad"}`}
+                className={`tabular-nums ${m.change7d == null ? "text-neutral-500" : m.change7d >= 0 ? "text-good" : "text-bad"}`}
               >
                 {m.change7d == null ? "—" : `${m.change7d >= 0 ? "+" : ""}${m.change7d.toFixed(0)}%`}
               </span>
