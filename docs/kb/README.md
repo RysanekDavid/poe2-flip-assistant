@@ -27,11 +27,29 @@ docs/research/
 
 - Every file carries a **patch stamp** (`0.5.x`) and a **built/updated date** at the top.
 - Every fact is tagged **[CONFIRMED]** (2+ independent sources), **[single-source]**, or
-  **[unverified]**, with source URLs inline.
+  **[unverified]**, with source URLs inline. Two more tags for re-checks:
+  - **[verified-primary]** — quoted verbatim from datamined or official text (poe2db, RePoE, GGG
+    patch notes), with the URL and the access date. Outranks any number of guides.
+  - **[cf]** — sources conflict. Record both values with their sources and name the winner
+    (datamine/official beats guides). Never silently overwrite one with the other.
 - Each domain file ends with `## Wallet warnings`, `## Profit angles`, `## Open questions` —
   the tool mines warnings from the first, recipes from the second, research tasks from the third.
-- Corrections from adversarial verification are applied in place; refuted claims are kept in a
-  `## Refuted` block (so they don't get re-added by the next research round).
+- Corrections from adversarial verification are applied **in place in the body**; a correction
+  that only lands in the log leaves the wrong claim retrievable. See the refuted log below.
+
+## Refuted log
+
+Each domain file ends with `## Adversarial verification (post-research)`: one entry per checked
+claim, `- <verdict> — <claim>` followed by indented `→ <evidence> (<urls>)` lines. Verdicts are
+`confirmed`, `unverifiable`, `**REFUTED**`, or `overturned (claim stands, <date>)` when a later
+re-check proves a refutation wrong.
+
+- The log is history, kept so the next research round doesn't re-add a refuted claim. It is
+  **never ingested**: the Coach's chunker (`services/coach/src/retrieval/chunks.py`) drops that
+  heading whole, and drops any list item that *starts* with `**REFUTED**` or `[REFUTED]` under any
+  other heading. An in-place correction that mentions a refutation mid-sentence is kept.
+- Re-checks append a dated `→ <date> re-check: …` line to the entry instead of rewriting it.
+- When a log entry refutes something, fix the body in the same change.
 
 ## Manifest and freshness gate
 
@@ -44,6 +62,17 @@ Research or audit notes under `docs/research/` are ingested only when listed.
 `npm run kb:check` runs in CI and fails when a listed file is missing, when a file changed after
 its stamp, or when a new `docs/kb/*.md` page is not classified. After re-verifying an edited file,
 set its `stamped_at` (and `patch`/`league` if they moved) and paste the `sha256` the check prints.
+
+### Stamp policy
+
+- **A stamp is a verification claim.** `patch`/`league` say "every fact in this file was checked
+  against this patch"; the Coach relays them with each citation and caveats older stamps.
+- **Move `patch`/`league` only after a full re-read and re-check of the whole file** against the
+  new patch. A partial correction (a few facts fixed against poe2db or patch notes) updates
+  `stamped_at` and `sha256` only, keeps the old `patch`/`league`, and names the corrected sections
+  in a dated "Corrections" line under the file's patch stamp.
+- **Never bulk re-stamp.** Stamp each file on its own, in the commit that verified it; a stale
+  stamp that makes the Coach caveat is correct, a fresh stamp on unchecked facts is not.
 
 ## Update loop (the "autonomous" part)
 

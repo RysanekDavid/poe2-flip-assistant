@@ -5,6 +5,20 @@ Python/LangGraph sidecar used only through the authenticated Next.js `/api/coach
 - Reads the root `data/poe2flip.db` in SQLite read-only mode.
 - Loads the integrity-checked, versioned RePoE catalog from `src/data/poe2/repoe/` for exact base,
   modifier, tier, affix-side, implicit, skill, and special-outcome inspection.
+- Loads the generated entity catalog `src/data/poe2/entities.json.gz` (`npm run sync:entities`,
+  path override `POE2_ENTITY_CATALOG`) at start-up; a missing or invalid file stops the service.
+  `lookup_entity` returns one item card (in-game text, directions, kind, stack size). After the
+  final answer, a deterministic annotator lists the catalog entities the answer mentions as
+  `entities` on the chat response, for the UI's hoverable chips. It matches longest-first on word
+  boundaries: names and aliases, derived plurals ("Divine Orbs", "Omens of Light"), and only
+  number-anchored shorthands ("3 div", "150 ex"). It never matches bare "Chaos", "Divine" or
+  "Exalted". Ranges ("3-4 div") chip once. Code, links and citations are skipped. One-word names
+  and every unique name match only in exact case ("sacred flame" is prose, "Sacred Flame" a
+  unique), and a one-word unique ("Opportunity") only when a tool of the same turn also named it.
+  Items named by this turn's market tools are added too, with the live Divine price when
+  `fetch_live_prices` returned one. The list is capped at 20; matched text with no chip (past the
+  cap, or an uncorroborated unique) is returned as `unlinked_mentions` so the client keeps it
+  plain instead of chipping a shorter name inside it.
 - Builds RAG only from the files listed in `docs/kb/manifest.json`, each stamped with the patch,
   league and date it was verified against. Every chunk and citation carries that stamp.
   `npm run kb:check` (CI) fails when a listed file is missing, edited after its stamp (content

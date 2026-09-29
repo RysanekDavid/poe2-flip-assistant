@@ -8,11 +8,12 @@ import {
   type CoachConversationSummary,
   type CoachHistoryMessage,
 } from "../lib/coachHistoryContract";
-import { coachSourceSchema, type CoachSource } from "../lib/coachContract";
+import { coachEntitySchema, coachSourceSchema, coachUnlinkedMentionsSchema, type CoachEntity, type CoachSource } from "../lib/coachContract";
 import { insertCoachUsage, type CoachUsageRecord } from "./coachUsageQueries";
 
 const stringArraySchema = z.array(z.string().min(1));
 const sourceArraySchema = z.array(coachSourceSchema);
+const entityArraySchema = z.array(coachEntitySchema).max(20);
 const MAX_CONVERSATIONS = 20;
 const MAX_TURNS = 50;
 const DEFAULT_LEASE_MS = 180_000;
@@ -45,6 +46,8 @@ export interface CompleteCoachTurnInput extends BeginCoachTurnInput {
   toolsUsed: string[];
   processorsUsed: string[];
   sources: CoachSource[];
+  entities: CoachEntity[];
+  unlinkedMentions: string[];
   completedAt?: string;
   usage?: CoachUsageRecord;
 }
@@ -58,6 +61,8 @@ export interface StoredCoachTurn {
   toolsUsed: string[];
   processorsUsed: string[];
   sources: CoachSource[];
+  entities: CoachEntity[];
+  unlinkedMentions: string[];
   completedAt: string;
 }
 
@@ -88,6 +93,8 @@ interface TurnRow {
   tools_json: string;
   processors_json: string;
   sources_json: string;
+  entities_json: string;
+  unlinked_json: string;
   completed_at: string;
   turn_count?: number;
 }
@@ -126,7 +133,7 @@ export function getCoachConversation(
   if (!conversation) throw new CoachHistoryError("not_found");
   const turns = database.prepare(`
     SELECT conversation_id, turn_id, ordinal, user_message, assistant_answer,
-           tools_json, processors_json, sources_json, completed_at
+           tools_json, processors_json, sources_json, entities_json, unlinked_json, completed_at
     FROM coach_turns
     WHERE user_id = ? AND conversation_id = ?
     ORDER BY ordinal ASC
@@ -310,11 +317,13 @@ function insertTurn(
   const tools = stringArraySchema.parse(input.toolsUsed);
   const processors = stringArraySchema.parse(input.processorsUsed);
   const sources = sourceArraySchema.parse(input.sources);
+  const entities = entityArraySchema.parse(input.entities);
+  const unlinked = coachUnlinkedMentionsSchema.parse(input.unlinkedMentions);
   database.prepare(`
     INSERT INTO coach_turns
       (user_id, conversation_id, turn_id, ordinal, user_message, assistant_answer,
-       tools_json, processors_json, sources_json, completed_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       tools_json, processors_json, sources_json, entities_json, unlinked_json, completed_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     userId,
     input.conversationId,
@@ -325,6 +334,8 @@ function insertTurn(
     JSON.stringify(tools),
     JSON.stringify(processors),
     JSON.stringify(sources),
+    JSON.stringify(entities),
+    JSON.stringify(unlinked),
     completedAt,
   );
 }
@@ -389,7 +400,8 @@ function findTurn(
   return database.prepare(`
     SELECT turn.conversation_id, turn.turn_id, turn.ordinal, turn.user_message,
            turn.assistant_answer, turn.tools_json, turn.processors_json,
-           turn.sources_json, turn.completed_at, conversation.turn_count
+           turn.sources_json, turn.entities_json, turn.unlinked_json, turn.completed_at,
+           conversation.turn_count
     FROM coach_turns AS turn
     JOIN coach_conversations AS conversation
       ON conversation.user_id = turn.user_id AND conversation.id = turn.conversation_id
@@ -433,6 +445,8 @@ function storedTurn(row: TurnRow): StoredCoachTurn {
     toolsUsed: parseJson(row.tools_json, stringArraySchema),
     processorsUsed: parseJson(row.processors_json, stringArraySchema),
     sources: parseJson(row.sources_json, sourceArraySchema),
+    entities: parseJson(row.entities_json, entityArraySchema),
+    unlinkedMentions: parseJson(row.unlinked_json, coachUnlinkedMentionsSchema),
     completedAt: isoTimestamp(row.completed_at),
   };
 }
@@ -454,13 +468,15 @@ function historyMessages(row: TurnRow): CoachHistoryMessage[] {
   return [
     {
       id: `${turn.turnId}:user`, turnId: turn.turnId, role: "user",
-      content: turn.userMessage, toolsUsed: [], processorsUsed: [], sources: [],
+      content: turn.userMessage, toolsUsed: [], processorsUsed: [], sources: [], entities: [],
+      unlinkedMentions: [],
       createdAt: turn.completedAt,
     },
     {
       id: `${turn.turnId}:assistant`, turnId: turn.turnId, role: "assistant",
       content: turn.assistantAnswer, toolsUsed: turn.toolsUsed,
-      processorsUsed: turn.processorsUsed, sources: turn.sources,
+      processorsUsed: turn.processorsUsed, sources: turn.sources, entities: turn.entities,
+      unlinkedMentions: turn.unlinkedMentions,
       createdAt: turn.completedAt,
     },
   ];

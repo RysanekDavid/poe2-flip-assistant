@@ -11,7 +11,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.retrieval.manifest import CorpusEntry, load_manifest
 
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
-_EXCLUDED = re.compile(r"refuted|open questions?|unverified", re.I)
+# The adversarial log lists refuted AND unverified claims next to confirmed ones; its heading
+# keeps the whole log out of retrieval so a refuted claim can never be cited as fact.
+_EXCLUDED = re.compile(r"refuted|open questions?|unverified|adversarial verification", re.I)
+# Anchored to the start of a list item or paragraph: a log entry that *is* a refuted claim.
+# An in-place correction that merely mentions a refutation mid-sentence stays ingested.
+_REFUTED_ENTRY = re.compile(r"^(\s*)(?:(?:[-*+]|\d+[.)])\s+)?(?:\*\*REFUTED\*\*|\[REFUTED\])")
 
 
 @dataclass(frozen=True)
@@ -40,9 +45,8 @@ def load_corpus(corpus_dir: Path) -> list[Document]:
 
 def _documents_for_file(path: Path, entry: CorpusEntry) -> list[Document]:
     sections = parse_sections(path.read_text(encoding="utf-8"), entry.path)
-    base_docs = [
-        _section_document(section, entry) for section in sections if not _excluded(section)
-    ]
+    kept = [_without_refuted(section) for section in sections if not _excluded(section)]
+    base_docs = [_section_document(section, entry) for section in kept if section is not None]
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1_000,
         chunk_overlap=150,
@@ -106,7 +110,30 @@ def _assign_chunk_ids(chunks: list[Document]) -> list[Document]:
 
 
 def _excluded(section: MarkdownSection) -> bool:
-    return bool(_EXCLUDED.search(section.heading) or "[REFUTED]" in section.content)
+    return bool(_EXCLUDED.search(section.heading))
+
+
+def _without_refuted(section: MarkdownSection) -> MarkdownSection | None:
+    """Drop refuted entries (and their indented follow-up lines); None when nothing else is left."""
+    kept: list[str] = []
+    refuted_indent: int | None = None
+    for line in section.content.splitlines():
+        indent = len(line) - len(line.lstrip())
+        if refuted_indent is not None and line.strip() and indent > refuted_indent:
+            continue
+        refuted_indent = None
+        match = _REFUTED_ENTRY.match(line)
+        if match:
+            refuted_indent = len(match.group(1))
+            continue
+        kept.append(line)
+    content = "\n".join(kept).strip()
+    if content == section.content:
+        return section
+    # A section that held only refuted entries would otherwise survive as a bare heading.
+    if not content or _HEADING.match(content):
+        return None
+    return MarkdownSection(source=section.source, heading=section.heading, content=content)
 
 
 def _slug(value: str) -> str:
