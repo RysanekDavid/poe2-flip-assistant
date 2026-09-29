@@ -4,7 +4,7 @@ import { useState } from "react";
 import { familyLabel } from "../../../core/tools/craftmoves/rank";
 import type { CraftMovesResponse, RankedMoveView } from "../../../lib/tools/craftMovesContract";
 import { Button } from "../../ui/Button";
-import { DivChip } from "../../farm/DivChip";
+import { PriceChip } from "../../ui/PriceChip";
 import { evLabel, MatIcon, priceLabel } from "../craftView";
 import { fetchLiveValue, useCountdown, type LiveState } from "./SellAsIsCard";
 
@@ -105,7 +105,7 @@ function MoveCard({ card, rank, text, ex, asIsDiv, odds }: ValueProps & { rank: 
         </p>
       )}
       <p className="flex items-center gap-2 text-sm text-neutral-400">
-        cost <DivChip div={m.totalDiv} exPerDiv={ex} source="ninja" />
+        cost <PriceChip div={m.totalDiv} exPerDiv={ex} source="ninja" />
         {m.floor != null && <span className="text-xs" title={`cannot roll tiers below modifier level ${m.floor} (soft floor)`}>≥ lvl {m.floor}</span>}
       </p>
       <OddsLine odds={odds} />

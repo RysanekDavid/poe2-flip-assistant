@@ -42,9 +42,7 @@ export function fmtRate(rate: Rate): string {
 /** Amount in div (≥1) or ex (below); `signed` adds an explicit + for net values. */
 export function fmtDiv(div: number, exPerDiv: number, signed = false): string {
   if (div === 0) return "0 div";
-  const abs = Math.abs(div);
-  // without a Divine→Exalted rate fmtDivOrEx rounds 0.006 to "0 div" — keep two significant digits
-  const body = abs < 0.1 && !(exPerDiv > 0) ? `${abs.toPrecision(2)} div` : fmtDivOrEx(abs, exPerDiv);
+  const body = fmtDivOrEx(Math.abs(div), exPerDiv);
   if (div < 0) return `−${body}`;
   return signed ? `+${body}` : body;
 }

@@ -4,7 +4,7 @@ import { ExternalLink } from "lucide-react";
 import { fmtDiv, fmtRate } from "../../core/tools/bossEv/headline";
 import type { LootLineView } from "../../lib/tools/bossEvContract";
 import { DataTable, type Column } from "../ui/DataTable";
-import { DivChip } from "./DivChip";
+import { PriceChip } from "../ui/PriceChip";
 import { ConfidenceChip } from "./farmView";
 
 function PriceCell({ line, exPerDiv }: { line: LootLineView; exPerDiv: number | null }) {
@@ -16,7 +16,7 @@ function PriceCell({ line, exPerDiv }: { line: LootLineView; exPerDiv: number | 
       </span>
     );
   }
-  return <DivChip div={line.price.div} exPerDiv={exPerDiv} source={line.price.source} ageMin={line.price.ageHours == null ? undefined : line.price.ageHours * 60} />;
+  return <PriceChip div={line.price.div} exPerDiv={exPerDiv} source={line.price.source} ageMin={line.price.ageHours == null ? undefined : line.price.ageHours * 60} />;
 }
 
 function evText(line: LootLineView, exPerDiv: number): { text: string; title: string } {

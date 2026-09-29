@@ -222,6 +222,11 @@ ok("…then the long window blocks until those requests age out (bounded by 6h)"
 // --- 8. alert rendering ---
 ok("sub-Div ask rendered in exalted", fmtDivOrEx(0.25, 200) === "50 ex" && fmtDivOrEx(1 / 200, 200) === "1 ex");
 ok("≥1 Div rendered in div; 0 → dash", fmtDivOrEx(2, 200) === "2 div" && fmtDivOrEx(0, 200) === "—");
+ok(
+  "no rate: sub-Div keeps two significant digits, never '0 div'",
+  fmtDivOrEx(0.0061, 0) === "0.0061 div" && fmtDivOrEx(0.5, 0) === "0.5 div" && fmtDivOrEx(0.123, 0) === "0.12 div" && fmtDivOrEx(1.25, 0) === "1.3 div",
+  `${fmtDivOrEx(0.0061, 0)} / ${fmtDivOrEx(0.5, 0)} / ${fmtDivOrEx(0.123, 0)} / ${fmtDivOrEx(1.25, 0)}`,
+);
 const msg = snipeAlertMessage({ marginPct: 42, askDiv: 0.5, valueDiv: 2, samples: 7, exPerDiv: 200, basis: "comps" });
 ok("alert text never says '0 vs'", msg.includes("100 ex vs ~2 div") && !/\b0 vs/.test(msg), msg);
 
