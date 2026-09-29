@@ -9,7 +9,7 @@
  *   - the page filters, and the route body against a seeded temp database.
  */
 import assert from "node:assert/strict";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PricedItem } from "../api/types";
@@ -23,6 +23,7 @@ import {
   showsBadge,
   yieldNames,
 } from "../components/farm/strategies/strategiesView";
+import { TABLET_BASE_ART, TABLET_UNIQUE_ART, tabletArtFile } from "../components/farm/strategies/tabletArt";
 import { config } from "../config/env";
 import { buildStrategyViews, loadStrategyBoard } from "../core/strategies/board";
 import { loadStrategies, readStrategies, STRATEGIES_DIR } from "../core/strategies/load";
@@ -94,6 +95,19 @@ for (const s of strategies) {
 }
 for (const [id, counts] of Object.entries(grades)) console.log(`INFO  ${id}: ${JSON.stringify(counts)}`);
 console.log("PASS  evidence floor: master + tablets carry vp/vs claims; every uv/cf claim and stat-less mod has a note");
+
+// --- tablet art: per base / unique, never one picture for all ---
+const tabletPool = JSON.parse(readFileSync("src/data/poe2/regex/tablet.json", "utf8")) as { bases: string[] };
+assert.deepEqual(Object.keys(TABLET_BASE_ART).sort(), [...tabletPool.bases].sort(), "art for every tablet base in the RePoE pool");
+for (const file of [...Object.values(TABLET_BASE_ART), ...Object.values(TABLET_UNIQUE_ART)]) {
+  assert.ok(existsSync(join("src/assets/items", file)), `self-hosted tablet art ${file} exists`);
+}
+for (const s of strategies) for (const t of s.tablets) tabletArtFile(t);
+assert.equal(tabletArtFile({ type: "Overseer Tablet", unique: null }), "overseer-tablet.webp");
+assert.equal(tabletArtFile({ type: "Irradiated Tablet", unique: "Mastered Domain" }), "mastered-domain.png", "a unique shows its own art");
+assert.throws(() => tabletArtFile({ type: "Overseer Tablet", unique: "Season of the Hunt" }), /no tablet art for unique/);
+assert.throws(() => tabletArtFile({ type: "Waystone", unique: null }), /no tablet art for base/);
+console.log("PASS  tablet art: every pool base and strategy tablet resolves to an existing file; unknown names throw");
 
 // --- the loader fails loudly on each defect class ---
 const SAMPLE = strategies.find((s) => s.id === "fracture-cleansed");
