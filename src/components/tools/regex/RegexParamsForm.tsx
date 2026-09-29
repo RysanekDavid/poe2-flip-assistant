@@ -3,12 +3,8 @@
 import type { ReactNode } from "react";
 import { CATEGORIES } from "../../../api/types";
 import { categoryColor } from "../../../lib/tableStyle";
-import {
-  REGEX_MAX_CHARS_DEFAULT,
-  REGEX_MAX_CHARS_MAX,
-  REGEX_MAX_CHARS_MIN,
-  type PricePresetParams,
-} from "../../../lib/tools/regexContract";
+import type { PricePresetParams } from "../../../lib/tools/regexContract";
+import { MaxCharsInput } from "./controls";
 
 const CATEGORY_IDS = CATEGORIES.map((c) => c.type);
 
@@ -116,34 +112,6 @@ function Threshold({ params, onChange }: { params: PricePresetParams; onChange: 
   );
 }
 
-function MaxChars({ value, onChange }: { value: number; onChange: (n: number) => void }) {
-  const isDefault = value === REGEX_MAX_CHARS_DEFAULT;
-  return (
-    <label
-      className="flex items-center gap-2 text-xs text-neutral-400"
-      title={`Stash search character limit — ${REGEX_MAX_CHARS_DEFAULT} by default; if the game cuts your string short, lower it here. Saved in this browser only.`}
-    >
-      max
-      <input
-        type="number"
-        min={REGEX_MAX_CHARS_MIN}
-        max={REGEX_MAX_CHARS_MAX}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-16 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-right tabular-nums text-neutral-100"
-      />
-      chars
-      {isDefault ? (
-        <span className="rounded border border-neutral-700 px-1 text-[10px] uppercase text-neutral-500">default</span>
-      ) : (
-        <button type="button" onClick={() => onChange(REGEX_MAX_CHARS_DEFAULT)} className="text-neutral-600 hover:text-neutral-300">
-          reset
-        </button>
-      )}
-    </label>
-  );
-}
-
 export function RegexParamsForm({ params, onChange, maxChars, onMaxChars }: {
   params: PricePresetParams;
   onChange: (p: PricePresetParams) => void;
@@ -156,7 +124,7 @@ export function RegexParamsForm({ params, onChange, maxChars, onMaxChars }: {
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <ModeToggle params={params} onChange={onChange} />
         <Threshold params={params} onChange={onChange} />
-        <MaxChars value={maxChars} onChange={onMaxChars} />
+        <MaxCharsInput value={maxChars} onChange={onMaxChars} />
       </div>
     </div>
   );
