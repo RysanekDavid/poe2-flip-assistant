@@ -58,6 +58,8 @@ jobs:
       - run: npm run test:craft
       - run: npm run test:tools
       - run: npm run test:strategies
+      - run: npm run test:learn
+      - run: npm run test:demo-user
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5

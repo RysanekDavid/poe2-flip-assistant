@@ -18,18 +18,36 @@ function ageMinutes(iso: string | null): number | undefined {
   return Number.isFinite(at) ? (Date.now() - at) / 60_000 : undefined;
 }
 
-function EntityPrice({ entity }: { entity: CoachEntity }) {
+/**
+ * What an entity card renders: a Coach entity, or any other catalog row with a price (the Learn
+ * "What is this?" lookup). price_source says whose number it is; Coach prices are poe.ninja.
+ */
+export type EntityCardData = Pick<CoachEntity, "name" | "kind" | "icon_url" | "summary" | "directions" | "poe2db_url" | "price_div" | "price_at"> & {
+  price_source?: "ninja" | "scout";
+};
+
+const PRICE_SOURCE_LABEL = { ninja: "poe.ninja reference", scout: "poe2scout daily price" } as const;
+
+function EntityPrice({ entity, exPerDiv }: { entity: EntityCardData; exPerDiv: number | null }) {
   if (entity.price_div === null) return null;
   const age = ageMinutes(entity.price_at);
+  const source = entity.price_source ?? "ninja";
   return (
     <div className="mt-2 flex items-center gap-2 border-t border-line pt-2 text-xs text-neutral-400">
-      <PriceChip div={entity.price_div} exPerDiv={null} source="ninja" ageMin={age} />
-      <span>poe.ninja reference{age === undefined ? "" : ` · ${fmtAgeMin(age)} old`}</span>
+      <PriceChip div={entity.price_div} exPerDiv={exPerDiv} source={source} ageMin={age} />
+      <span>{PRICE_SOURCE_LABEL[source]}{age === undefined ? "" : ` · ${fmtAgeMin(age)} old`}</span>
     </div>
   );
 }
 
-export function EntityCard({ entity, titleId }: { entity: CoachEntity; titleId: string }) {
+interface EntityCardProps {
+  entity: EntityCardData;
+  titleId: string;
+  /** Exalted per Divine, so a sub-Divine price reads in ex; Coach chips pass none. */
+  exPerDiv?: number | null;
+}
+
+export function EntityCard({ entity, titleId, exPerDiv = null }: EntityCardProps) {
   return (
     <div>
       <div className="flex items-start gap-3">
@@ -45,7 +63,7 @@ export function EntityCard({ entity, titleId }: { entity: CoachEntity; titleId: 
         <p className="mt-2 text-xs text-neutral-400">No in-game description in the game data.</p>
       )}
       {entity.directions && <p className="mt-1.5 text-xs leading-5 text-neutral-400">{entity.directions}</p>}
-      <EntityPrice entity={entity} />
+      <EntityPrice entity={entity} exPerDiv={exPerDiv} />
       <a
         href={entity.poe2db_url}
         target="_blank"

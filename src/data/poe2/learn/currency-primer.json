@@ -1,0 +1,356 @@
+{
+  "schema_version": 1,
+  "patch": {
+    "verified_against": "0.5.5",
+    "stamped_at": "2026-09-29"
+  },
+  "entries": [
+    {
+      "entity_id": "wisdom",
+      "who_uses": "Everyone early on: identifies an item. Once the Hooded One is in town he identifies for free.",
+      "pickup": "skip_low",
+      "ref_ex": 0.02,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Scroll_of_Wisdom",
+          "https://boostmatch.gg/blog/poe-2/articles/poe-2-0-5-scroll-wisdom-guide",
+          "https://www.u4n.com/news/scroll-of-wisdom-in-poe-2-simple-tips-every-player-should-know.html"
+        ],
+        "note": "Effect from poe2db. The free Hooded One identify is from boostmatch; u4n only says NPCs identify for free later. Pickup bucket from poe.ninja/poe2scout prices on 2026-09-29 (~0.02–0.06 Ex)."
+      }
+    },
+    {
+      "entity_id": "transmutation-shard",
+      "who_uses": "No direct use: 10 shards combine into one Orb of Transmutation.",
+      "pickup": "stack",
+      "ref_ex": 0.2,
+      "claim": {
+        "v": "cf",
+        "src": [
+          "https://poe2db.tw/us/Transmutation_Shard",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Prices conflict: poe2scout listed 20 Ex, which cannot be right for a tenth of a ~1 Ex orb; poe.ninja listed ~0.2 Ex. Like every entry, the bucket uses the lower price."
+      }
+    },
+    {
+      "entity_id": "transmute",
+      "who_uses": "Everyone: makes a white item magic with 1 mod — cheap levelling gear and waystone upgrades.",
+      "pickup": "always",
+      "ref_ex": 1.0,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Orb_of_Transmutation",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. ~1–1.1 Ex each on both price sites (2026-09-29): right on the 1 Ex line, and the base of every early craft."
+      }
+    },
+    {
+      "entity_id": "aug",
+      "who_uses": "Crafters add a second mod to a magic item that has only one.",
+      "pickup": "always",
+      "ref_ex": 2.4,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Orb_of_Augmentation",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Magic items hold at most 2 mods (poe2db). ~2.4–2.6 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "regal",
+      "who_uses": "Crafters turn a magic item rare: it keeps its mods and gains one more.",
+      "pickup": "always",
+      "ref_ex": 2.1,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Regal_Orb",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. ~2–3 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "alch",
+      "who_uses": "Everyone: turns a white or magic item into a rare with 4 random mods — gear and waystones.",
+      "pickup": "always",
+      "ref_ex": 3.4,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Orb_of_Alchemy",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "poe2db item text: Normal or Magic → Rare with 4 mods (older guides say Normal only). ~3.4–3.8 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "exalted",
+      "who_uses": "Everyone: the everyday trade currency. Crafters add one mod to a rare with a free slot.",
+      "pickup": "always",
+      "ref_ex": 1,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Exalted_Orb",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. Both price sites quote in Exalted, so it is the everyday trade unit."
+      }
+    },
+    {
+      "entity_id": "chaos",
+      "who_uses": "Crafters swap one random mod on a rare. Also a mid-value trade currency.",
+      "pickup": "always",
+      "ref_ex": 66,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Chaos_Orb",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db: removes one random mod and adds one. ~66–69 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "divine",
+      "who_uses": "The main high-value trade currency. Crafters reroll the numbers on a finished item's mods.",
+      "pickup": "always",
+      "ref_ex": 538,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Divine_Orb",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues"
+        ],
+        "note": "Effect from poe2db. Priced in the hundreds of Exalted on both sites (2026-09-29)."
+      }
+    },
+    {
+      "entity_id": "annul",
+      "who_uses": "Crafters remove one random mod from a magic or rare item.",
+      "pickup": "always",
+      "ref_ex": 366,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Orb_of_Annulment",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "poe2db usage text says 'magic or rare item'. Worth over half a Divine on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "vaal",
+      "who_uses": "Corrupts an item for a gamble (socket, enchant or reroll). The item can't be changed after.",
+      "pickup": "always",
+      "ref_ex": 7.4,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Vaal_Orb",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "poe2db: 'Modifies an item unpredictably and Corrupts it… Corrupted items cannot be modified again'. The outcome list comes from community corruption tables. ~7.5 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "chance",
+      "who_uses": "Gamblers: turns a white item into its unique version — or destroys it.",
+      "pickup": "always",
+      "ref_ex": 9.6,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Orb_of_Chance",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. ~9.7 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "artificers",
+      "who_uses": "Adds a rune socket to a martial weapon, wand, staff or armour so you can slot runes.",
+      "pickup": "always",
+      "ref_ex": 1.65,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Artificers_Orb",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. poe.ninja 1.65 Ex, poe2scout 2.7 Ex on 2026-09-29 — both over the 1 Ex line."
+      }
+    },
+    {
+      "entity_id": "gcp",
+      "who_uses": "Adds quality to a skill gem. It sells well, so always grab it.",
+      "pickup": "always",
+      "ref_ex": 14.7,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Gemcutters_Prism",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. ~15 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "scrap",
+      "who_uses": "Adds quality to armour for more defence.",
+      "pickup": "always",
+      "ref_ex": 8.6,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Armourers_Scrap",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. Surprisingly valuable in 0.5.5: ~9 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "whetstone",
+      "who_uses": "Adds quality to a martial weapon for more damage.",
+      "pickup": "always",
+      "ref_ex": 2.7,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Blacksmiths_Whetstone",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. ~2.7–3.3 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "bauble",
+      "who_uses": "Adds quality to a flask. Cheap, but it sells.",
+      "pickup": "always",
+      "ref_ex": 3.1,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Glassblowers_Bauble",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. ~3–5.7 Ex on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "fracturing-orb",
+      "who_uses": "Crafters lock one random mod on a rare with 4+ mods so later crafting can't remove it.",
+      "pickup": "always",
+      "ref_ex": 3700,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Fracturing_Orb",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. Several Divine each on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "perfect-exalted-orb",
+      "who_uses": "Endgame crafters add a mod of level 50+ to a rare. Only drops in level 79+ areas.",
+      "pickup": "always",
+      "ref_ex": 1700,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Perfect_Exalted_Orb",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "poe2db: Minimum Modifier Level 50, Drop Level 79. ~3 Div on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "mirror",
+      "who_uses": "Copies a non-unique item. The rarest currency; mirrored copies can't be changed.",
+      "pickup": "always",
+      "ref_ex": 2380000,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Mirror_of_Kalandra",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Currency",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=currency&perPage=100"
+        ],
+        "note": "Effect from poe2db. Thousands of Divine on 2026-09-29."
+      }
+    },
+    {
+      "entity_id": "omen-of-whittling",
+      "who_uses": "Crafters: while it is active, your next Chaos Orb removes the lowest-level mod.",
+      "pickup": "always",
+      "ref_ex": 7300,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://poe2db.tw/us/Omen_of_Whittling",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Ritual",
+          "https://game8.co/games/Path-of-Exile-2/archives/491759"
+        ],
+        "note": "Item text and drop level 75 from poe2db. Price from poe.ninja only (~12 Div on 2026-09-29). 'Bought with Ritual tribute' seen in search results only."
+      }
+    },
+    {
+      "entity_id": "omen-of-light",
+      "who_uses": "Crafters: your next Orb of Annulment removes only Desecrated mods. Drops from Abyss rares.",
+      "pickup": "always",
+      "ref_ex": 5200,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://poe2db.tw/us/Omen_of_Light",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Ritual",
+          "https://www.poecurrency.com/news/poe-2-patch-0-5-5-abyss-farming-changed-omen-of-light-moved-to-abyssal-depths",
+          "https://timesaver.gg/blog/poe2-amanamu-farming-guide"
+        ],
+        "note": "Item text from poe2db; price from poe.ninja only (~9 Div on 2026-09-29). Drop source per search results: any rare in Abyssal Depths in 0.5.5; in normal maps only Amanamu-faction rares."
+      }
+    },
+    {
+      "entity_id": "essence-of-the-body",
+      "who_uses": "Crafters turn a magic item rare with a guaranteed maximum Life mod.",
+      "pickup": "always",
+      "ref_ex": 1,
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Essence_of_the_Body",
+          "https://poe2db.tw/us/Lesser_Essence_of_the_Body",
+          "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Essences",
+          "https://api.poe2scout.com/poe2/Leagues/Forbidden%20Rites/Currencies/ByCategory?Category=essences&perPage=200"
+        ],
+        "note": "poe2db: every tier, Lesser included, 'Upgrades a Magic item to a Rare item, adding a guaranteed modifier' (older guides say white → magic). Thin market: poe.ninja ~7 Ex vs poe2scout 1 Ex on 2026-09-29 — both at or over the 1 Ex line."
+      }
+    }
+  ]
+}

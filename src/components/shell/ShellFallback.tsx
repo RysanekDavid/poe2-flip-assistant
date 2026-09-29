@@ -1,8 +1,8 @@
-import { TABS } from "./tabRegistry";
-
 /**
- * Static chrome shown while AppShell waits on the URL params: same header geometry, title and tab
- * labels, so the first paint is the app rather than a blank page. Nothing here is interactive.
+ * Static chrome shown while AppShell waits on the URL params and the signed-in user: same header
+ * geometry and title, so the first paint is the app rather than a blank page. Tab slots are
+ * unlabelled skeletons because which tabs exist depends on the user's nav mode, not yet known here.
+ * Nothing here is interactive.
  */
 export function ShellFallback() {
   return (
@@ -12,10 +12,10 @@ export function ShellFallback() {
           <h1 className="text-xl font-bold">PoE2 Flip Assistant</h1>
         </div>
         <div className="flex items-end gap-0.5 px-6">
-          {TABS.filter((t) => t.id !== "coach").map((t) => (
-            <span key={t.id} className="flex items-center gap-2 border-b-2 border-transparent px-2.5 py-1.5 text-sm font-medium text-neutral-400">
-              <span aria-hidden className="h-7 w-7 rounded bg-neutral-900" />
-              {t.label}
+          {[0, 1, 2, 3, 4].map((slot) => (
+            <span key={slot} aria-hidden className="flex items-center gap-2 border-b-2 border-transparent px-2.5 py-1.5">
+              <span className="h-7 w-7 rounded bg-neutral-900" />
+              <span className="h-3 w-14 rounded bg-neutral-900" />
             </span>
           ))}
         </div>

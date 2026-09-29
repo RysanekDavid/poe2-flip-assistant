@@ -25,9 +25,12 @@ works, while Wealth, positions, attempts, and stash history remain empty until m
 ```bash
 read -r -s -p 'Demo password: ' DEMO_PASSWORD; printf '\n'
 printf '%s\n' "$DEMO_PASSWORD" | sudo -u poe2flip bash -c \
-  'cd /opt/poe2flip/current && npx tsx src/scripts/addUser.ts demo_member member'
+  'cd /opt/poe2flip/current && npx tsx src/scripts/addUser.ts demo_member member --advanced'
 unset DEMO_PASSWORD
 ```
+
+`--advanced` gives the demo account the full nav (Exchange, Market board, Craft, …); without it a
+new account starts in Beginner mode, and switching back needs Settings, which stays off camera.
 
 The script refuses passwords in argv/interactive echoed input and does not print its generated
 API key. Never open Settings, DevTools, cookies, a password manager, server logs, or terminals in
