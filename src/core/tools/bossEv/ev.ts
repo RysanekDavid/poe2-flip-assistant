@@ -150,7 +150,8 @@ export function bossEv(tier: Tier, prices: PriceLookup): TierResult {
   return { ...partial, varianceNote: varianceNote(partial) };
 }
 
-const div = (n: number): string => (Math.abs(n) >= 10 ? n.toFixed(0) : n.toFixed(2));
+// two significant digits below 0.01 so a tiny value never prints as "0.00"
+const div = (n: number): string => (Math.abs(n) >= 10 ? n.toFixed(0) : Math.abs(n) >= 0.01 || n === 0 ? n.toFixed(2) : n.toPrecision(2));
 
 /** One-paragraph "what a typical run looks like", so a positive EV is not read as a steady income. */
 export function varianceNote(result: Omit<TierResult, "varianceNote">): string {

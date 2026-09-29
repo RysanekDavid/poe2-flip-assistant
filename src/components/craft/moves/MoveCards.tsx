@@ -4,7 +4,7 @@ import { useState } from "react";
 import { familyLabel } from "../../../core/tools/craftmoves/rank";
 import type { CraftMovesResponse, RankedMoveView } from "../../../lib/tools/craftMovesContract";
 import { Button } from "../../ui/Button";
-import { PriceChip } from "../../ui/PriceChip";
+import { DivChip } from "../../farm/DivChip";
 import { evLabel, MatIcon, priceLabel } from "../craftView";
 import { fetchLiveValue, useCountdown, type LiveState } from "./SellAsIsCard";
 
@@ -99,9 +99,13 @@ function MoveCard({ card, rank, text, ex, asIsDiv, odds }: ValueProps & { rank: 
       </header>
       <h4 className="text-sm font-semibold text-neutral-100">{m.label}</h4>
       <p className="text-sm text-neutral-300">{card.why}</p>
-      {aim && <p className="text-xs text-neutral-400">best this item level rolls: {familyLabel(aim)}{aim.topReachable ? ` (tier ${aim.topReachable.rank}/${aim.tiers})` : ""}</p>}
+      {aim?.topReachable && (
+        <p className="text-xs text-neutral-400" title={`best tier in the game: ${familyLabel({ ...aim, topReachable: null })} (needs ilvl ${aim.best.level})`}>
+          tier {aim.topReachable.rank} of {aim.tiers} is the best this item level rolls
+        </p>
+      )}
       <p className="flex items-center gap-2 text-sm text-neutral-400">
-        cost <PriceChip div={m.totalDiv} exPerDiv={ex} source="ninja" />
+        cost <DivChip div={m.totalDiv} exPerDiv={ex} source="ninja" />
         {m.floor != null && <span className="text-xs" title={`cannot roll tiers below modifier level ${m.floor} (soft floor)`}>≥ lvl {m.floor}</span>}
       </p>
       <OddsLine odds={odds} />

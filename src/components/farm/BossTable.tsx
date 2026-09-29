@@ -6,12 +6,12 @@ import type { BossRow } from "../../lib/farmContract";
 import { DataTable, type Column } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
-import { PriceChip } from "../ui/PriceChip";
+import { DivChip } from "./DivChip";
 import { ConfidenceChip, fmtOneIn, fmtPct, TONE_CLASS, UnpricedChip } from "./farmView";
 
 /** A computed Divine sum where 0 means "nothing priced lands here", not a free item. */
 function SumCell({ div, exPerDiv, none }: { div: number; exPerDiv: number | null; none: string }) {
-  if (div > 0) return <PriceChip div={div} exPerDiv={exPerDiv} />;
+  if (div > 0) return <DivChip div={div} exPerDiv={exPerDiv} />;
   return (
     <span className="text-neutral-500" title={none}>
       —
@@ -20,7 +20,7 @@ function SumCell({ div, exPerDiv, none }: { div: number; exPerDiv: number | null
 }
 
 function EntryCell({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null }) {
-  if (r.entryComplete) return <PriceChip div={r.entryDiv} exPerDiv={exPerDiv} source="ninja" />;
+  if (r.entryComplete) return <DivChip div={r.entryDiv} exPerDiv={exPerDiv} source="ninja" />;
   return (
     <span className="text-neutral-400" title="part of the entry is not on the exchange — the cost shown is a lower bound">
       {r.entryDiv > 0 ? `≥ ${fmtDiv(r.entryDiv, exPerDiv ?? 0)}` : "unpriced"}

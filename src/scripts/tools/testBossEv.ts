@@ -304,6 +304,7 @@ function testHeadlines(): void {
 
   assert.equal(fmtDiv(0, 400), "0 div");
   assert.equal(fmtDiv(-0.5, 400, true), "−200 ex");
+  assert.equal(fmtDiv(0.0061, 0), "0.0061 div", "no rate: a tiny value keeps its digits, never reads as 0 div");
   assert.equal(oneIn(1), "every kill");
   assert.equal(capTone("good", []), "warn", "nothing deciding is nothing confirmed");
 }

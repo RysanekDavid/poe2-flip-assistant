@@ -5,7 +5,7 @@ import { breakEvenHeadline, fmtDiv, oneIn } from "../../core/tools/bossEv/headli
 import type { BossView, EntryLineView, TierResult } from "../../lib/tools/bossEvContract";
 import { ItemArt } from "../ui/ItemArt";
 import { Panel } from "../ui/Panel";
-import { PriceChip } from "../ui/PriceChip";
+import { DivChip } from "./DivChip";
 import { InfoTip } from "../ui/Tooltip";
 import { TONE_CLASS } from "./farmView";
 import { LootTable } from "./LootTable";
@@ -28,7 +28,7 @@ function EntryRow({ line, exPerDiv }: { line: EntryLineView; exPerDiv: number })
         {line.qty.toLocaleString("en-US")}× {line.name}
       </span>
       {line.unitPrice ? (
-        <PriceChip div={line.unitPrice.div} exPerDiv={exPerDiv} source={line.unitPrice.source} ageMin={line.unitPrice.ageHours == null ? undefined : line.unitPrice.ageHours * 60} />
+        <DivChip div={line.unitPrice.div} exPerDiv={exPerDiv} source={line.unitPrice.source} ageMin={line.unitPrice.ageHours == null ? undefined : line.unitPrice.ageHours * 60} />
       ) : (
         <span className="text-neutral-400" title="not listed on the currency exchange">unpriced</span>
       )}
