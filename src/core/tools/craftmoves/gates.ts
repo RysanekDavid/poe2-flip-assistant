@@ -1,4 +1,4 @@
-import { comboFor, type AffixSide, type CraftCatalog } from "./catalog";
+import { AFFIX_SIDES, comboFor, type AffixSide, type CatalogCombo, type CraftCatalog } from "./catalog";
 import type { ItemState } from "./classify";
 import { KB } from "./ruleTypes";
 
@@ -113,24 +113,34 @@ function floorCuts(reachable: TierRef[], floors: readonly CurrencyFloor[]): Floo
   });
 }
 
-function kbRowFor(itemClass: string | null, family: string): string | null {
+function kbRowFor(itemClass: string, family: string): string | null {
   return KB_GATE_EXAMPLES.find((e) => e.itemClass === itemClass && e.family === family)?.kbRows.join(" / ") ?? null;
 }
 
-/** Gates for every prefix/suffix family the item's base can roll; present families first. */
-export function tierGates(state: ItemState, cat: CraftCatalog): FamilyGate[] {
-  if (!state.itemClass || !state.baseType) return [];
-  const combo = comboFor(cat, state.itemClass, state.baseType);
-  if (!combo) return [];
-  const floors = VERIFIED_FLOORS.filter((f) => f.rarity === state.rarity);
-  const present = new Set(state.affixes.map((a) => a.family).filter((f): f is string => f != null));
+/** The KB-verified floors that apply to a currency tier used on an item of this rarity. */
+export function floorsFor(rarity: string): CurrencyFloor[] {
+  return VERIFIED_FLOORS.filter((f) => f.rarity === rarity);
+}
+
+export interface FamilyGateOpts {
+  itemClass: string;
+  /** null = unknown item level: every tier counts as reachable. */
+  ilvl: number | null;
+  /** Families already on the item (sorted first); the mod pool browser passes an empty set. */
+  present: ReadonlySet<string>;
+  floors: readonly CurrencyFloor[];
+}
+
+/** Gates for every prefix/suffix family a base combo can roll; present families first. */
+export function familyGates(combo: CatalogCombo, cat: CraftCatalog, opts: FamilyGateOpts): FamilyGate[] {
+  const { ilvl } = opts;
   const out: FamilyGate[] = [];
-  for (const side of ["prefix", "suffix"] as const) {
+  for (const side of AFFIX_SIDES) {
     for (const [family, tiers] of Object.entries(combo[side])) {
       const refs = tierRefs(cat, tiers);
       const best = refs[refs.length - 1];
       if (!best) continue;
-      const reachable = state.ilvl == null ? refs : refs.filter((t) => t.level <= state.ilvl!);
+      const reachable = ilvl == null ? refs : refs.filter((t) => t.level <= ilvl);
       out.push({
         family,
         side,
@@ -138,11 +148,20 @@ export function tierGates(state: ItemState, cat: CraftCatalog): FamilyGate[] {
         reachable: reachable.length,
         topReachable: reachable[reachable.length - 1] ?? null,
         best,
-        present: present.has(family),
-        floors: floorCuts(reachable, floors),
-        kbRow: kbRowFor(state.itemClass, family),
+        present: opts.present.has(family),
+        floors: floorCuts(reachable, opts.floors),
+        kbRow: kbRowFor(opts.itemClass, family),
       });
     }
   }
   return out.sort((a, b) => Number(b.present) - Number(a.present) || a.side.localeCompare(b.side) || a.family.localeCompare(b.family));
+}
+
+/** Gates for a classified item: its base's families, with the ones it already carries first. */
+export function tierGates(state: ItemState, cat: CraftCatalog): FamilyGate[] {
+  if (!state.itemClass || !state.baseType) return [];
+  const combo = comboFor(cat, state.itemClass, state.baseType);
+  if (!combo) return [];
+  const present = new Set(state.affixes.map((a) => a.family).filter((f): f is string => f != null));
+  return familyGates(combo, cat, { itemClass: state.itemClass, ilvl: state.ilvl, present, floors: floorsFor(state.rarity) });
 }

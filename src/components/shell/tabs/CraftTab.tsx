@@ -8,6 +8,7 @@ import { CraftTopPicks } from "../../CraftTopPicks";
 import { CraftPnlPanel } from "../../CraftPnlPanel";
 import { MaterialsPanel } from "../../MaterialsPanel";
 import { CraftMarginsProvider, useCraftMargins } from "../../craft/CraftMarginsContext";
+import { MOD_POOL_LEGEND } from "../../../lib/tools/modPoolContract";
 import { decodeItem, SHARE_PARAM } from "../../../lib/tools/shareItem";
 import { ComputedLeague } from "../../ui/ComputedLeague";
 import { PageHeader } from "../../ui/PageHeader";
@@ -16,6 +17,10 @@ import { ToolChips } from "../ToolChips";
 import { useTabRoute } from "../useTabRoute";
 
 const CraftMovesTool = dynamic(() => import("../../craft/moves/CraftMovesTool").then((m) => m.CraftMovesTool), {
+  loading: PanelLoading,
+});
+
+const ModPoolTool = dynamic(() => import("../../craft/modpool/ModPoolTool").then((m) => m.ModPoolTool), {
   loading: PanelLoading,
 });
 
@@ -75,6 +80,20 @@ function MovesView() {
   );
 }
 
+function ModPoolView() {
+  return (
+    <>
+      <PageHeader
+        title="Craft"
+        purpose="Pick a base: every mod it rolls at your item level, its tier gates, and what items carrying it ask."
+        legend={MOD_POOL_LEGEND}
+        action={<ToolChips tab="craft" />}
+      />
+      <ModPoolTool />
+    </>
+  );
+}
+
 function RecipesView() {
   return (
     // one shared /api/craft/margins poller for the header chip, top picks and the recipe list
@@ -95,8 +114,10 @@ function RecipesView() {
   );
 }
 
-/** Craft tab: recipes that pay today (tool=recipes) or paste an item for its next best move (tool=moves). */
+/** Craft tab: recipes that pay today (tool=recipes), an item's next best move (tool=moves) or a base's mod pool (tool=modpool). */
 export function CraftTab() {
   const { tool } = useTabRoute();
-  return tool === "moves" ? <MovesView /> : <RecipesView />;
+  if (tool === "moves") return <MovesView />;
+  if (tool === "modpool") return <ModPoolView />;
+  return <RecipesView />;
 }
