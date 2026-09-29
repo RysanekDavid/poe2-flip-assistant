@@ -13,6 +13,8 @@ from pydantic import (
     model_validator,
 )
 
+from src.entities.models import CoachEntity
+
 MessageText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=8_000)
 ]
@@ -91,6 +93,8 @@ class ChatResponse(BaseModel):
     processors_used: list[str]
     sources: list[EvidenceSource]
     usage: TurnUsage
+    #: Catalog entities the answer mentions or this turn's tools named, for hoverable chips.
+    entities: list[CoachEntity] = Field(default_factory=list, max_length=20)
 
 
 class CoachErrorDetail(BaseModel):

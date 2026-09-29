@@ -13,6 +13,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from src.agent import build_agent
 from src.config import Settings, get_settings
+from src.entities import EntityMatcher, annotate_answer, collect_turn_evidence, get_entity_matcher
 from src.errors import ContractViolation, PublicCoachError
 from src.failure_handling import log_request_timing, raise_provider_failure
 from src.guardrails import inspect_input
@@ -23,7 +24,13 @@ from src.patch_summary import PatchSummarizer, summarize_patch
 from src.patch_summary_api import register_patch_summary_route
 from src.rate_limit import RateLimitExceeded, SlidingWindowRateLimiter
 from src.request_auth import verified_actor_id, verified_request_id
-from src.response import citations_are_valid, final_answer, turn_trace, turn_usage
+from src.response import (
+    citations_are_valid,
+    final_answer,
+    turn_tool_outputs,
+    turn_trace,
+    turn_usage,
+)
 from src.retrieval import RetrievalService, get_retrieval_service
 from src.schemas import (
     ChatRequest,
@@ -121,6 +128,8 @@ def _lifespan(
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        # Loaded before serving: a missing or corrupt entity catalog must stop start-up, not a turn.
+        get_entity_matcher(settings.entity_catalog_path)
         app.state.agent_provider = AgentProvider(settings, agent_factory)
         warmup: asyncio.Task[None] | None = None
         # Dense embeddings need the model key; without it Coach is unconfigured anyway.
@@ -286,11 +295,16 @@ async def _invoke_agent(
                 "recursion_limit": settings.max_tool_iterations * 2 + 4,
             },
         )
-        return _completed_response(result, payload, request_id, started)
+        matcher = get_entity_matcher(settings.entity_catalog_path)
+        return _completed_response(result, payload, request_id, started, matcher)
 
 
 def _completed_response(
-    result: dict[str, object], payload: ChatRequest, request_id: str, started: float
+    result: dict[str, object],
+    payload: ChatRequest,
+    request_id: str,
+    started: float,
+    matcher: EntityMatcher,
 ) -> ChatResponse:
     """Validate one graph result and expose only grounded evidence."""
     try:
@@ -301,6 +315,8 @@ def _completed_response(
         answer = final_answer(messages)
         if not citations_are_valid(answer, sources):
             raise ContractViolation("Agent returned an ungrounded citation set")
+        evidence = collect_turn_evidence(turn_tool_outputs(messages), matcher.catalog)
+        entities = annotate_answer(answer, matcher, evidence)
         usage = turn_usage(messages, duration_ms=round((monotonic() - started) * 1000))
     except ContractViolation:
         raise
@@ -314,6 +330,7 @@ def _completed_response(
         processors_used=processors,
         sources=sources,
         usage=usage,
+        entities=entities,
     )
 
 
