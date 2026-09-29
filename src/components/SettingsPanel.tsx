@@ -186,6 +186,19 @@ export function SettingsPanel() {
   );
 }
 
+/**
+ * Beginner-mode account block: password and sessions only. The POESESSID trade connection above
+ * belongs to features beginner mode hides, so it is not offered until the user switches to Advanced.
+ */
+export function AccountSecurityPanel() {
+  return (
+    <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4 [&>div:first-child]:mt-0 [&>div:first-child]:border-t-0 [&>div:first-child]:pt-0">
+      <ChangePassword />
+      <LogoutEverywhere />
+    </section>
+  );
+}
+
 /** Change the logged-in user's password (verifies the current one server-side). */
 function ChangePassword() {
   const [current, setCurrent] = useState("");

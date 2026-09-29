@@ -8,7 +8,7 @@ import { parsePasswordInput, parseProvisionArgs } from "./addUserInput";
  * The generated agent API key stays in the database and is never printed by this workflow.
  */
 async function main(): Promise<void> {
-  const { name, role } = parseProvisionArgs(process.argv.slice(2));
+  const { name, role, navMode } = parseProvisionArgs(process.argv.slice(2));
   if (process.stdin.isTTY) {
     throw new Error("refusing echoed password input; pipe one line from a shell read -s command");
   }
@@ -18,8 +18,8 @@ async function main(): Promise<void> {
   if (getUserByName(name)) {
     throw new Error(`user "${name}" already exists`);
   }
-  const u = await createUser(name, password, role);
-  console.log(`created user #${u.id} "${u.name}" (${u.role})`);
+  const u = await createUser(name, password, role, { navMode });
+  console.log(`created user #${u.id} "${u.name}" (${u.role}, ${u.nav_mode} nav)`);
   console.log("No API key or password was printed. POESESSID remains unset.");
 }
 

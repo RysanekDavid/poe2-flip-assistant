@@ -23,6 +23,10 @@ It never buys, sells, whispers, clicks, or controls the game.
   logged attempts toward the curated estimate ((hits + 20·model) ÷ (n + 20), pooled from 2+
   players with no player over half the sample).
 - **Wealth:** opt-in read-only valuation of a user's public stash tabs.
+- **Learn (new players):** "What is this?" item lookup (catalog text, live price, sell route,
+  pick-up rule of thumb), a claim-graded currency primer and an atlas progression checklist with
+  per-account progress. New accounts start in **Beginner** nav (Learn · Farm strategies · Price
+  check · Alerts · Settings); pre-existing accounts keep **Advanced**; Settings › Mode switches.
 - **Coach:** authenticated LangGraph sidecar with market, knowledge, game-data, and optional
   recent-web tools. Every answer exposes tool/source evidence and a human-verification boundary.
   Item names in answers are hoverable chips with game art, in-game text and any live price.

@@ -12,6 +12,7 @@ import { AlertsTab } from "../alerts/AlertsTab";
 import { CoachPanel } from "../coach/CoachPanel";
 import { TabNav } from "./TabNav";
 import { CredBanner } from "./CredBanner";
+import { NavModeProvider, useNavMode } from "./NavModeProvider";
 import { useTabRoute } from "./useTabRoute";
 import { tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
 import { ExchangeTab } from "./tabs/ExchangeTab";
@@ -43,19 +44,26 @@ function useShellHeightVar(ref: RefObject<HTMLElement | null>): void {
 }
 
 /**
- * A mistyped or outdated link must not silently show another page: warn, then replace (not push)
- * with the canonical URL so Back skips the broken entry. Lives here only — one shell, one rewrite.
+ * A mistyped, outdated or mode-hidden link must not silently show another page: warn, then replace
+ * (not push) with the canonical URL so Back skips the broken entry. The page itself already renders
+ * the fallback route (useTabRoute resolves it), so there is no blank frame while the URL catches up.
+ * Lives here only — one shell, one rewrite.
  */
-function useCanonicalRoute(route: TabRoute, rejected: readonly string[]): void {
+function useCanonicalRoute(route: TabRoute, rejected: readonly string[], hidden: readonly string[]): void {
   const router = useRouter();
   const pathname = usePathname();
-  const problem = rejected.join(", ");
+  const { mode } = useNavMode();
+  const unknown = rejected.join(", ");
+  const hiddenText = hidden.join(", ");
   const href = tabRouteHref(route);
   useEffect(() => {
-    if (problem === "") return;
-    console.warn(`[tabs] ignoring unknown ${problem} — showing ${href}`);
+    if (unknown === "" && hiddenText === "") return;
+    if (unknown !== "") console.warn(`[tabs] ignoring unknown ${unknown} — showing ${href}`);
+    if (hiddenText !== "") {
+      console.warn(`[tabs] ${hiddenText} is hidden in ${mode} mode (Settings › Mode) — showing ${href}`);
+    }
     router.replace(`${pathname}${href}`, { scroll: false });
-  }, [problem, href, pathname, router]);
+  }, [unknown, hiddenText, mode, href, pathname, router]);
 }
 
 /** Coach is kept mounted (below) so an open conversation survives tab switches. */
@@ -84,9 +92,19 @@ function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
   }
 }
 
+/** The dashboard. NavModeProvider sits outside everything else: the nav mode decides which tabs exist. */
 export function AppShell() {
-  const { tab, tool, rejected } = useTabRoute();
-  useCanonicalRoute({ tab, tool }, rejected);
+  return (
+    <NavModeProvider>
+      <ShellBody />
+    </NavModeProvider>
+  );
+}
+
+function ShellBody() {
+  const { tab, tool, rejected, hidden } = useTabRoute();
+  const { mode } = useNavMode();
+  useCanonicalRoute({ tab, tool }, rejected, hidden);
   const headerRef = useRef<HTMLElement>(null);
   useShellHeightVar(headerRef);
 
@@ -97,7 +115,8 @@ export function AppShell() {
         <Onboarding />
         {/* stale-league warning — every price below is wrong if this fires */}
         <LeagueBanner />
-        <CredBanner />
+        {/* POESESSID health: beginner mode hides the trade connection it would send them to */}
+        {mode === "advanced" && <CredBanner />}
         <header ref={headerRef} className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-line bg-neutral-950/85 backdrop-blur">
           <div className="flex items-center justify-between px-6 py-2">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

@@ -2,6 +2,7 @@ import { getDb } from "./database";
 import { hashPassword, verifyPassword, verifyDummyPassword, genApiKey } from "../auth/credentials";
 import { encryptSecret, decryptSecret } from "../auth/secretbox";
 import { type TradeCred } from "../api/tradeClient";
+import type { NavMode } from "../lib/navMode";
 
 export type UserRole = "owner" | "member";
 
@@ -14,6 +15,8 @@ export interface UserRow {
   created_at: string;
   /** Bumped to revoke every outstanding session token for this user. */
   session_version: number;
+  /** Beginner or full (advanced) navigation — lib/navMode. */
+  nav_mode: NavMode;
 }
 
 /** Public-safe view of a user — never leak the password hash or (beyond setup) the api key. */
@@ -48,23 +51,38 @@ export function listUsers(): UserPublic[] {
   }));
 }
 
-/** Create a user. `id` may be forced (used to seed the owner as id=1 so existing data backfills cleanly). */
+export interface CreateUserOptions {
+  /** Forced id (seeding the owner as id=1 so existing data backfills cleanly). */
+  id?: number;
+  /** New accounts start in beginner nav; the column default ('advanced') only covers pre-existing rows. */
+  navMode?: NavMode;
+}
+
+/** Create a user. */
 export async function createUser(
   name: string,
   password: string,
   role: UserRole = "member",
-  id?: number,
+  { id, navMode = "beginner" }: CreateUserOptions = {},
 ): Promise<UserRow> {
   const hash = await hashPassword(password);
   const stmt = id
     ? getDb().prepare(
-        "INSERT INTO users (id, name, password_hash, api_key, role) VALUES (@id, @name, @hash, @key, @role)",
+        "INSERT INTO users (id, name, password_hash, api_key, role, nav_mode) VALUES (@id, @name, @hash, @key, @role, @navMode)",
       )
-    : getDb().prepare("INSERT INTO users (name, password_hash, api_key, role) VALUES (@name, @hash, @key, @role)");
-  const info = stmt.run({ id, name, hash, key: genApiKey(), role });
+    : getDb().prepare(
+        "INSERT INTO users (name, password_hash, api_key, role, nav_mode) VALUES (@name, @hash, @key, @role, @navMode)",
+      );
+  const info = stmt.run({ id, name, hash, key: genApiKey(), role, navMode });
   const created = getUserById(Number(info.lastInsertRowid));
   if (!created) throw new Error(`user "${name}" missing right after insert`);
   return created;
+}
+
+/** Switch a user's navigation mode (Settings › Mode). */
+export function setNavMode(id: number, mode: NavMode): void {
+  const info = getDb().prepare("UPDATE users SET nav_mode = ? WHERE id = ?").run(mode, id);
+  if (info.changes !== 1) throw new Error(`no user #${id} to set a nav mode for`);
 }
 
 /**
