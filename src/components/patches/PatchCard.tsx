@@ -14,6 +14,7 @@ import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
 import { Tooltip } from "../ui/Tooltip";
 import { PatchBody } from "./PatchBody";
+import { PatchImpactPanel } from "./PatchImpactPanel";
 import { PatchSummaryView } from "./PatchSummaryView";
 
 interface PatchCardProps {
@@ -99,6 +100,7 @@ export function PatchCard({ patch, canResummarize, defaultOpen, onChanged }: Pat
         )}
         <PatchSummaryView summary={patch.summary} />
         {patch.bodyValid && <PatchBody threadId={patch.threadId} />}
+        <PatchImpactPanel threadId={patch.threadId} />
       </div>
     </Panel>
   );
