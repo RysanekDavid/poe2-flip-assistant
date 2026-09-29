@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { TopBar } from "../TopBar";
 import { Onboarding } from "../Onboarding";
@@ -11,6 +11,7 @@ import { AlertsProvider } from "../alerts/AlertsContext";
 import { AlertsTab } from "../alerts/AlertsTab";
 import { CoachPanel } from "../coach/CoachPanel";
 import { TabNav } from "./TabNav";
+import { SubTabBar, subTabId, subTabPanelId, useSubTabs } from "./SubTabBar";
 import { CredBanner } from "./CredBanner";
 import { NavModeProvider, useNavMode } from "./NavModeProvider";
 import { useTabRoute } from "./useTabRoute";
@@ -92,6 +93,18 @@ function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
   }
 }
 
+/** With a sub-tab bar on screen, the page is its tabpanel; without one it needs no wrapper. */
+function ToolPanel({ children }: { children: ReactNode }) {
+  const { tab, tool, toolShown } = useSubTabs();
+  // the panel is labelled by its sub-tab, so it needs one on screen
+  if (!toolShown || tool === null) return <>{children}</>;
+  return (
+    <div role="tabpanel" id={subTabPanelId(tab)} aria-labelledby={subTabId(tab, tool)} className="space-y-4">
+      {children}
+    </div>
+  );
+}
+
 /** The dashboard. NavModeProvider sits outside everything else: the nav mode decides which tabs exist. */
 export function AppShell() {
   return (
@@ -118,7 +131,7 @@ function ShellBody() {
         {/* POESESSID health: beginner mode hides the trade connection it would send them to */}
         {mode === "advanced" && <CredBanner />}
         <header ref={headerRef} className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-line bg-neutral-950/85 backdrop-blur">
-          <div className="flex items-center justify-between px-6 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 md:px-6">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <h1 className="text-xl font-bold">PoE2 Coach</h1>
               {/* league picker sits with the rates it controls — per account, switchable anytime */}
@@ -130,8 +143,13 @@ function ShellBody() {
             <TopBar />
           </div>
           <TabNav />
+          <SubTabBar />
         </header>
-        {tab !== "coach" && <ActiveTab tab={tab} />}
+        {tab !== "coach" && (
+          <ToolPanel>
+            <ActiveTab tab={tab} />
+          </ToolPanel>
+        )}
         <CoachPanel active={tab === "coach"} />
       </main>
     </AlertsProvider>

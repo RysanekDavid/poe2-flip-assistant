@@ -73,6 +73,54 @@ export function entryLabel(chip: Pick<EntryChip, "qty" | "name">): string {
   return `${chip.qty.toLocaleString("en-US")}× ${chip.name}`;
 }
 
+/** "Fragment" → "Fragments", "Fate" → "Fates", "Sac" → "Sacs"; the entry names are all simple nouns. */
+function pluralWord(word: string): string {
+  if (/(s|x|ch|sh)$/.test(word)) return `${word}es`;
+  if (/[^aeiou]y$/.test(word)) return `${word.slice(0, -1)}ies`;
+  return `${word}s`;
+}
+
+/** Trailing words every name shares ("Crisis Fragment" of Weathered/Faded/Ancient Crisis Fragment). */
+function sharedTail(names: readonly string[]): string[] {
+  const split = names.map((n) => n.trim().split(/\s+/));
+  const shortest = Math.min(...split.map((w) => w.length));
+  const tail: string[] = [];
+  for (let i = 1; i <= shortest; i += 1) {
+    const word = split[0]?.[split[0].length - i];
+    if (word === undefined || !split.every((w) => w[w.length - i] === word)) break;
+    tail.unshift(word);
+  }
+  return tail;
+}
+
+/**
+ * The entry cell's one-line summary: "An Audience with the King" for one item (the quantity only
+ * when it is more than one), "3 Crisis Fragments" when every item shares a family name, else
+ * "2 items". Counts are units consumed, so 5× of one thing never reads as one.
+ */
+export function entrySummaryLabel(chips: readonly Pick<EntryChip, "qty" | "name">[]): string {
+  const first = chips[0];
+  if (!first) throw new Error("entrySummaryLabel: an entry has at least one item");
+  if (chips.length === 1) return first.qty > 1 ? entryLabel(first) : first.name;
+  const units = chips.reduce((sum, c) => sum + c.qty, 0);
+  const tail = sharedTail(chips.map((c) => c.name));
+  const last = tail.at(-1);
+  if (last === undefined) return `${units.toLocaleString("en-US")} items`;
+  return `${units.toLocaleString("en-US")} ${[...tail.slice(0, -1), pluralWord(last)].join(" ")}`;
+}
+
+/**
+ * Short form of an unmodelled entry cost for the table ("N× Waystone + Stronghold clear" →
+ * "Waystones"); the full label and its note stay in the tooltip.
+ */
+export function unmodelledShort(label: string): string {
+  const head = (label.split(" + ")[0] ?? label).replace(/^\S+×\s*/, "").trim();
+  if (head === "") throw new Error(`unmodelledShort: nothing to show for "${label}"`);
+  const words = head.split(/\s+/);
+  const last = words.at(-1) ?? head;
+  return /×/.test(label) ? [...words.slice(0, -1), pluralWord(last)].join(" ") : head;
+}
+
 /** Full cost breakdown for the entry tooltip, one item per line, then the total. */
 export function entryBreakdown(chips: readonly EntryChip[], entryDiv: number, complete: boolean, exPerDiv: number): string {
   const lines = chips.map((c) => {

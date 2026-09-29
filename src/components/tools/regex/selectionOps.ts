@@ -48,6 +48,15 @@ export function setModState<S extends PoolTabSelection>(sel: S, modId: string, c
   return { ...sel, mods, thresholds };
 }
 
+/**
+ * One click on a mod card with the Avoid/Want brush: unmarked → the brush bucket, already in that
+ * bucket → unmarked (Ignore), in the other bucket → moved. Goes through setModState, so a mod that
+ * leaves Want still drops its thresholds.
+ */
+export function toggleInBucket<S extends PoolTabSelection>(sel: S, modId: string, brush: ModState): S {
+  return setModState(sel, modId, sel.mods[modId] === brush ? "ignore" : brush);
+}
+
 export function setThreshold<S extends PoolTabSelection>(sel: S, key: string, range: ValueRange | null): S {
   const thresholds = { ...sel.thresholds };
   if (range === null) delete thresholds[key];

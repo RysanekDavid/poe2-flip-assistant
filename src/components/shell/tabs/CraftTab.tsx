@@ -13,7 +13,6 @@ import { decodeItem, SHARE_PARAM } from "../../../lib/tools/shareItem";
 import { ComputedLeague } from "../../ui/ComputedLeague";
 import { PageHeader } from "../../ui/PageHeader";
 import { PanelLoading } from "../PanelLoading";
-import { ToolChips } from "../ToolChips";
 import { useTabRoute } from "../useTabRoute";
 
 const CraftMovesTool = dynamic(() => import("../../craft/moves/CraftMovesTool").then((m) => m.CraftMovesTool), {
@@ -72,7 +71,6 @@ function MovesView() {
         title="Craft"
         purpose="Paste an item: its three next best moves, what they cost and what a hit is worth."
         legend={MOVES_LEGEND}
-        action={<ToolChips tab="craft" />}
       />
       {shared.error && <p role="alert" className="text-sm text-bad">{shared.error}</p>}
       <CraftMovesTool initialText={shared.text} />
@@ -87,7 +85,6 @@ function ModPoolView() {
         title="Craft"
         purpose="Pick a base: every mod it rolls at your item level, its tier gates, and what items carrying it ask."
         legend={MOD_POOL_LEGEND}
-        action={<ToolChips tab="craft" />}
       />
       <ModPoolTool />
     </>
@@ -102,12 +99,7 @@ function RecipesView() {
         title="Craft"
         purpose="Recipes that pay today at current prices — craft the amber ones, review the rest."
         legend={RECIPES_LEGEND}
-        action={
-          <>
-            <RecipesLeague />
-            <ToolChips tab="craft" />
-          </>
-        }
+        action={<RecipesLeague />}
       />
       <Recipes />
     </CraftMarginsProvider>

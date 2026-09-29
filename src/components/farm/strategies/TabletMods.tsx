@@ -1,16 +1,18 @@
 "use client";
 
 import { Search } from "lucide-react";
-import tabletArt from "../../../assets/items/precursor-tablet.png";
 import type { TabletView } from "../../../lib/strategiesContract";
 import { ClaimBadge } from "../../ui/ClaimBadge";
 import { ItemArt } from "../../ui/ItemArt";
 import { Tooltip } from "../../ui/Tooltip";
 import { evidenceTip, showsBadge } from "./strategiesView";
+import { tabletArtSrc } from "./tabletArtImages";
 
 function ModRow({ mod, base }: { mod: TabletView["mods"][number]; base: string }) {
   return (
     <li className="flex items-start gap-2 py-0.5 text-sm text-neutral-300">
+      {/* A magic tablet holds one prefix and one suffix; a unique's mods are fixed, so no tag. */}
+      {mod.side !== "unique" && <span className="mt-0.5 w-12 shrink-0 text-xs text-neutral-400">{mod.side}</span>}
       <span className="min-w-0 flex-1">
         {showsBadge(mod.claim) ? (
           <>
@@ -44,7 +46,7 @@ function TabletBlock({ tablet }: { tablet: TabletView }) {
   const label = tablet.unique ? `${tablet.unique} (${tablet.type})` : tablet.type;
   return (
     <li className="flex gap-2">
-      <ItemArt src={tabletArt.src} size={8} />
+      <ItemArt src={tabletArtSrc(tablet)} size={8} />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-neutral-100">
           {label}

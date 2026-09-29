@@ -252,7 +252,7 @@
     {
       "id": "hilda-hunting",
       "title": "Hilda: hunt the Great Beasts",
-      "detail": "Talk to Hilda at her campsite west of the Atlas start and kill the Great Beast map bosses she marks. Finishing the hunts unlocks her rare-monster and boss nodes; the first hunt is worth doing early.",
+      "detail": "Talk to Hilda at her campsite slightly south-west of the Atlas start and kill the Great Beast map bosses she marks. Finishing the hunts unlocks her rare-monster and boss nodes; the first hunt is worth doing early.",
       "warnings": [],
       "strategy_ids": [],
       "claim": {
@@ -260,9 +260,10 @@
         "src": [
           "https://game8.co/games/Path-of-Exile-2/archives/603208",
           "https://domistae.github.io/poe2-leveling/poe2_endgame_guide.html",
-          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/",
+          "https://www.pathofexile.com/forum/view-thread/3932540"
         ],
-        "note": "Game8 says 4 Great Beasts; Fubgun says Hilda reveals three map bosses (possibly 1 + 3). We follow Game8 and leave the count out of the step. domistae: the first contract already gives a 25% chance to upgrade a normal map boss."
+        "note": "Game8 says 4 Great Beasts; Fubgun says Hilda reveals three map bosses (possibly 1 + 3). We follow Game8 and leave the count out of the step. domistae: the first contract already gives a 25% chance to upgrade a normal map boss. Location from the 0.5.0 patch notes: \"Hilda's Campsite slightly south-west of your starting location on the atlas\"."
       }
     }
   ]

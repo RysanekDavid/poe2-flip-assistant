@@ -1,7 +1,9 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ExternalLink } from "lucide-react";
 import { breakEvenHeadline, fmtDiv, oneIn } from "../../core/tools/bossEv/headline";
+import { compact } from "../../lib/format";
 import type { BossView, EntryLineView, TierResult } from "../../lib/tools/bossEvContract";
 import { ItemArt } from "../ui/ItemArt";
 import { Panel } from "../ui/Panel";
@@ -33,11 +35,25 @@ function EntryRow({ line, exPerDiv }: { line: EntryLineView; exPerDiv: number })
       ) : (
         <span className="text-neutral-400" title="not listed on the currency exchange">unpriced</span>
       )}
+      {line.volume != null && (
+        <span className="text-xs tabular-nums text-neutral-500" title="poe.ninja traded volume — how easily you can buy in">
+          vol {compact(line.volume)}
+        </span>
+      )}
       <span className="ml-auto flex gap-1.5 text-xs">
         <RouteCost label="buy" div={line.buyDiv} chosen={line.route === "buy"} title="buy every unit on the exchange" exPerDiv={exPerDiv} />
         {line.craftParts.length > 0 && <RouteCost label="craft" div={line.craftDiv} chosen={line.route === "craft"} title={`assemble from ${recipe}`} exPerDiv={exPerDiv} />}
       </span>
     </li>
+  );
+}
+
+function Stat({ label, title, children }: { label: string; title?: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-0.5 rounded-md border border-line bg-neutral-900/60 px-3 py-2" title={title}>
+      <span className="text-xs text-neutral-500">{label}</span>
+      <span className="text-base tabular-nums text-neutral-100">{children}</span>
+    </div>
   );
 }
 
@@ -49,24 +65,34 @@ function Metrics({ tier, exPerDiv }: { tier: TierResult; exPerDiv: number }) {
   const entryFull = tier.entryComplete && tier.unmodelledEntry == null;
   const netPrefix = !entryFull ? (evLower ? "? " : "≤ ") : evLower ? "≥ " : "";
   return (
-    <div className="grid gap-1">
+    <div className="grid gap-2">
       <p className={`text-base font-semibold ${TONE_CLASS[head.tone]}`} title={head.title}>
         {head.text}
       </p>
-      <p className="flex flex-wrap gap-x-4 text-sm text-neutral-400">
-        <span title="priced drops with a sourced rate, range rates at their low end">EV {evLower ? "≥ " : ""}{fmtDiv(tier.evDiv, exPerDiv)}</span>
-        <span>entry {entryFull ? "" : "≥ "}{fmtDiv(tier.entryDiv, exPerDiv)}</span>
-        <span title="≥ lower bound (drops without a rate or price are left out) · ≤ upper bound (entry partly unpriced)">
-          net {netPrefix}
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <Stat label="Expected loot" title="priced drops with a sourced rate, range rates at their low end">
+          {evLower ? "≥ " : ""}
+          {fmtDiv(tier.evDiv, exPerDiv)}
+        </Stat>
+        <Stat label="Entry">
+          {entryFull ? "" : "≥ "}
+          {fmtDiv(tier.entryDiv, exPerDiv)}
+        </Stat>
+        <Stat label="Net per kill" title="≥ lower bound (drops without a rate or price are left out) · ≤ upper bound (entry partly unpriced)">
+          {netPrefix}
           {fmtDiv(tier.netDiv, exPerDiv, true)}
-        </span>
-        <span title={j.items.length === 0 ? "no priced drop is worth the entry" : `drops worth ≥ entry: ${j.items.join(", ")}`}>
-          jackpot {j.killsToFirst == null ? "—" : oneIn(j.p)}
-        </span>
-      </p>
+        </Stat>
+        <Stat label="Jackpot" title={j.items.length === 0 ? "no priced drop is worth the entry" : `drops worth ≥ entry: ${j.items.join(", ")}`}>
+          {j.killsToFirst == null ? "—" : oneIn(j.p)}
+        </Stat>
+      </div>
       <p className="text-sm text-neutral-400">{tier.varianceNote}</p>
     </div>
   );
+}
+
+function SectionLabel({ children }: { children: ReactNode }) {
+  return <h4 className="text-xs font-medium uppercase tracking-wide text-neutral-400">{children}</h4>;
 }
 
 function TierChips({ boss, tier, onTier }: { boss: BossView; tier: TierResult; onTier: (id: string) => void }) {
@@ -113,7 +139,8 @@ export function BossDetail({ boss, tier, onTier, exPerDiv }: Props) {
           </div>
         </header>
         <Metrics tier={tier} exPerDiv={exPerDiv} />
-        <ul className="grid gap-1.5" aria-label="Entry per attempt">
+        <SectionLabel>Entry per attempt</SectionLabel>
+        <ul className="-mt-1.5 grid gap-1.5" aria-label="Entry per attempt">
           {tier.entryLines.map((line) => (
             <EntryRow key={line.itemId} line={line} exPerDiv={exPerDiv} />
           ))}
@@ -123,7 +150,10 @@ export function BossDetail({ boss, tier, onTier, exPerDiv }: Props) {
             </li>
           )}
         </ul>
-        <LootTable loot={tier.loot} exPerDiv={exPerDiv > 0 ? exPerDiv : null} />
+        <SectionLabel>Drops</SectionLabel>
+        <div className="-mt-1.5">
+          <LootTable loot={tier.loot} exPerDiv={exPerDiv > 0 ? exPerDiv : null} />
+        </div>
         <footer className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-400">
           {boss.sources.map((s) => (
             <a key={s.url} href={s.url} target="_blank" rel="noreferrer" title={`checked ${s.accessed}`} className="inline-flex items-center gap-1 hover:text-neutral-100">

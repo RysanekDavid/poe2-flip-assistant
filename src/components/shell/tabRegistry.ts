@@ -14,19 +14,16 @@ export const DEFAULT_TAB: TabId = "exchange";
 export interface ToolMeta {
   id: string;
   label: string;
+  /** Hover text on the sub-tab: what the tool answers, so no prose sits under the bar. */
+  hint: string;
 }
 
 export interface TabMeta {
   id: TabId;
   label: string;
   hint: string;
-  /** Fixed sub-tools, first = default. */
+  /** Fixed sub-tools, first = default. Tabs without a list reject every ?tool=. */
   tools?: readonly ToolMeta[];
-  /**
-   * The tab's own internals own ?tool= (e.g. regex modes): any slug-shaped value is passed through
-   * untouched. Tabs with neither this nor `tools` reject every ?tool=.
-   */
-  openTools?: true;
 }
 
 export const TABS: readonly TabMeta[] = [
@@ -36,8 +33,8 @@ export const TABS: readonly TabMeta[] = [
     label: "Market",
     hint: "price check · trade site demand · snipes",
     tools: [
-      { id: "price", label: "Price check" },
-      { id: "board", label: "Market board" },
+      { id: "price", label: "Price check", hint: "paste an item: what it is worth and how to sell it" },
+      { id: "board", label: "Market board", hint: "what sells on the trade site, and listings under value" },
     ],
   },
   {
@@ -45,8 +42,8 @@ export const TABS: readonly TabMeta[] = [
     label: "Farm",
     hint: "what to farm now · pinnacle boss EV · atlas strategies",
     tools: [
-      { id: "board", label: "Farm board" },
-      { id: "strategies", label: "Strategies" },
+      { id: "board", label: "Farm board", hint: "mechanic heat and pinnacle boss net per kill" },
+      { id: "strategies", label: "Strategies", hint: "atlas strategies by mechanic and budget" },
     ],
   },
   {
@@ -54,9 +51,9 @@ export const TABS: readonly TabMeta[] = [
     label: "Craft",
     hint: "profitable recipes · next move for an item · mod pool with prices",
     tools: [
-      { id: "recipes", label: "Recipes" },
-      { id: "moves", label: "Paste item" },
-      { id: "modpool", label: "Mod pool" },
+      { id: "recipes", label: "Recipes", hint: "recipes that pay at today's prices" },
+      { id: "moves", label: "Paste item", hint: "paste an item: its next best crafting moves" },
+      { id: "modpool", label: "Mod pool", hint: "every mod a base rolls, with tier gates and prices" },
     ],
   },
   {
@@ -64,20 +61,33 @@ export const TABS: readonly TabMeta[] = [
     label: "Wealth",
     hint: "net worth · what to sell",
     tools: [
-      { id: "worth", label: "Net worth" },
-      { id: "sell", label: "Sell" },
+      { id: "worth", label: "Net worth", hint: "what your public stash is worth, now and over time" },
+      { id: "sell", label: "Sell", hint: "what to sell, list, reprice or hold" },
     ],
   },
-  { id: "regex", label: "Regex", hint: "stash search: waystones · tablets · relics · jewels · vendor · price", openTools: true },
+  {
+    id: "regex",
+    label: "Regex",
+    hint: "stash search: waystones · tablets · relics · jewels · vendor · price",
+    // REGEX_TABS (regexPoolContract) in the same order; test:learn holds the two together
+    tools: [
+      { id: "waystone", label: "Waystone", hint: "pick waystone mods to run or avoid" },
+      { id: "tablet", label: "Tablet", hint: "precursor tablets by type and mod" },
+      { id: "relic", label: "Relic", hint: "Trial of the Sekhemas relics by mod" },
+      { id: "jewel", label: "Jewel", hint: "jewels by colour and mod" },
+      { id: "vendor", label: "Vendor", hint: "vendor-screen gear: speed, resistances, +skills" },
+      { id: "price", label: "Price", hint: "stash items worth at least a price" },
+    ],
+  },
   { id: "patches", label: "Patches", hint: "official patch notes · AI summary · what it means for trading" },
   {
     id: "learn",
     label: "Learn",
     hint: "what is this item · currency primer · atlas checklist",
     tools: [
-      { id: "what", label: "What is this" },
-      { id: "currency", label: "Currency primer" },
-      { id: "atlas", label: "Atlas checklist" },
+      { id: "what", label: "What is this", hint: "find any item: what it does and what it is worth" },
+      { id: "currency", label: "Currency primer", hint: "the first currencies you meet and whether to pick them up" },
+      { id: "atlas", label: "Atlas checklist", hint: "the endgame unlock route, step by step" },
     ],
   },
   { id: "alerts", label: "Alerts", hint: "alert feed · sound, popup & Discord routing" },
@@ -86,16 +96,14 @@ export const TABS: readonly TabMeta[] = [
     label: "Settings",
     hint: "account · trade connection · notifications · system",
     tools: [
-      { id: "account", label: "Account" },
-      { id: "notify", label: "Notifications" },
-      { id: "mode", label: "Mode" },
-      { id: "system", label: "System" },
+      { id: "account", label: "Account", hint: "password, sessions and trade connection" },
+      { id: "notify", label: "Notifications", hint: "delivery status; routing lives in the Alerts tab" },
+      { id: "mode", label: "Mode", hint: "Beginner or Advanced navigation" },
+      { id: "system", label: "System", hint: "system health (owner only)" },
     ],
   },
   { id: "coach", label: "Coach", hint: "market · craft · verified sources" },
 ];
-
-const toolSlugSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,31}$/);
 
 function defaultTool(tools: readonly ToolMeta[]): ToolMeta {
   const first = tools[0];
@@ -137,10 +145,8 @@ export function parseTabRoute(rawTab: string | null, rawTool: string | null): Ta
     if (rawTool !== null && !known) rejected.push(`tool=${rawTool}`);
     return { tab, tool: (known ?? defaultTool(tools)).id, rejected };
   }
-  if (rawTool === null) return { tab, tool: null, rejected };
-  const slug = meta.openTools ? toolSlugSchema.safeParse(rawTool) : null;
-  if (!slug?.success) rejected.push(`tool=${rawTool}`);
-  return { tab, tool: slug?.success ? slug.data : null, rejected };
+  if (rawTool !== null) rejected.push(`tool=${rawTool}`);
+  return { tab, tool: null, rejected };
 }
 
 /** Canonical query string for a route; the default tool is still written so links are explicit. */

@@ -115,7 +115,7 @@
         "https://poe2db.tw/us/Masters_of_the_Atlas",
         "https://poe2db.tw/us/Moment_of_Risk"
       ],
-      "note": "Owner's notes pick Doryani for Breach. Our reading: Evolutionary Pressure and Moment of Risk both scale per Explicit Modifier on the Map, and Improved Calibration strengthens waystone mods. Not measured."
+      "note": "Owner's notes pick Doryani for Breach. Our reading: Evolutionary Pressure and Moment of Risk both scale per Explicit Modifier on the Map, and Improved Calibration strengthens waystone mods. Not measured. T3 and T4 are free picks: no Doryani T3/T4 node touches Breach."
     }
   },
   "atlas_passives": [
@@ -196,6 +196,20 @@
           "https://poe2db.tw/us/Swelling_Hives"
         ]
       }
+    },
+    {
+      "name": "Study the Chains",
+      "tree": "Breach",
+      "effect": "Vruun, Marshal of Xesht has 50% increased chance to drop Lineage Supports",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Study_the_Chains",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Study_the_Chains"
+        ],
+        "note": "Optional lineage angle, with the 'of the Commander' tablet suffix."
+      }
     }
   ],
   "tablets": [
@@ -206,6 +220,7 @@
       "mods": [
         {
           "text": "Wombgifts have (10–30)% chance to drop one Level higher in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_2889272422",
           "claim": {
             "v": "vp",
@@ -218,6 +233,7 @@
         },
         {
           "text": "(30–60)% increased Quantity of Hiveblood found in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_2778285247",
           "claim": {
             "v": "vp",
@@ -228,7 +244,22 @@
           }
         },
         {
+          "text": "(30–60)% increased Quantity of Wombgifts found in Map",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_472809816",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Breach_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of the Form'."
+          }
+        },
+        {
           "text": "Unstable Breaches in Map spawn (1–2) additional Rare Monsters when Stabilised",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3762913035",
           "claim": {
             "v": "vp",
@@ -242,6 +273,7 @@
         },
         {
           "text": "Monsters have (10–15)% increased Effectiveness",
+          "side": "prefix",
           "trade_stat_id": "explicit.stat_2065500219",
           "claim": {
             "v": "vp",
@@ -253,6 +285,7 @@
         },
         {
           "text": "(8–12)% increased Rarity of Items found in Map",
+          "side": "prefix",
           "trade_stat_id": "explicit.stat_2306002879",
           "claim": {
             "v": "vp",
@@ -260,6 +293,20 @@
               "https://poe2db.tw/us/Breach_Tablet",
               "https://www.pathofexile.com/api/trade2/data/stats"
             ]
+          }
+        },
+        {
+          "text": "Unstable Breaches in Map have (20–50)% increased chance to contain Vruun, Marshal of Xesht",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_2433436306",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Breach_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of the Commander'; optional lineage angle with Study the Chains."
           }
         }
       ]
@@ -283,9 +330,9 @@
   },
   "steps": [
     "Allocate Moment of Risk and Breeding Program (pick the Wombgift type you sell), then the Hiveblood and Wombgift quantity nodes.",
-    "Set Doryani: Evolutionary Pressure and Improved Calibration.",
+    "Set Doryani: Evolutionary Pressure and Improved Calibration; T3 and T4 are free picks.",
     "Roll waystones for monster rarity, effectiveness and item rarity; more explicit mods feed Moment of Risk.",
-    "Slot a Breach Tablet: Wombgift level-up first, then Hiveblood quantity, then extra Unstable Breach rares.",
+    "Slot a Breach Tablet; pick one suffix (Wombgift level-up first, else Hiveblood or Wombgift quantity, else extra Unstable Breach rares) and one prefix (monster effectiveness or item rarity).",
     "Grow Wombgifts on the Genesis Tree with the Hiveblood you collect."
   ],
   "risks": [
