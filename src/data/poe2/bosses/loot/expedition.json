@@ -49,7 +49,7 @@
       "id": "aberration",
       "name": "The Aberration",
       "mechanic": "Expedition",
-      "accessChain": "Reforge the Shattered Triskelion that Olroth always drops into The Triskelion Reforged at the Verisium Anvil (the reforge materials are unverified, so only buying the key is priced) and use it to enter the Verisium Crater; the key is consumed. No drop rates are published, and the Starlit Ores trade in tiny volume.",
+      "accessChain": "Reforge the Shattered Triskelion that Olroth always drops into The Triskelion Reforged at the Verisium Anvil (the reforge materials are unverified, so only buying the key is priced) and use it to enter the Verisium Crater; the key is consumed. The area name is in conflict: timesaver.gg says Verisium Crater, while poe2db's monster data places The Aberration in \"Ruins of Kingsmarch\". No drop rates are published, and the Starlit Ores trade in tiny volume.",
       "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3JhZnRpbmcvVmVyaXNpdW0vVmVyaXNpdW1PcmVfU3RhcmxpdF8yeDMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ef8350565a/VerisiumOre_Starlit_2x3.png",
       "sources": [
         {"title":"timesaver.gg — The Aberration guide","url":"https://timesaver.gg/blog/poe2-the-aberration-guide","accessed":"2026-09-29"},
