@@ -65,6 +65,7 @@ function commitTurn(userId: number, conversationId: string): void {
     toolsUsed: [],
     processorsUsed: [],
     sources: [],
+    entities: [],
     nowMs: 1_900_000_000_000,
   };
   assert.equal(beginCoachTurn(userId, input, db).kind, "acquired");

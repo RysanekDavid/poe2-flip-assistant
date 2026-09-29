@@ -14,6 +14,19 @@ import {
   type CompleteCoachTurnInput,
 } from "../db/coachHistoryQueries";
 
+const DIVINE_ENTITY = {
+  id: "divine",
+  name: "Divine Orb",
+  kind: "currency",
+  icon_url: "https://web.poecdn.com/gen/image/WzI1LDE0XQ/2986e220b3/CurrencyModValues.png",
+  summary: "Randomises the numeric values of modifiers on an item",
+  directions: null,
+  poe2db_url: "https://poe2db.tw/us/Divine_Orb",
+  mentions: ["Divine Orbs", "3 div"],
+  price_div: 1,
+  price_at: "2026-09-29T10:00:00Z",
+} as const satisfies CompleteCoachTurnInput["entities"][number];
+
 const db = new Database(":memory:");
 db.pragma("foreign_keys = ON");
 db.exec(applicationSchemaSql());
@@ -59,6 +72,13 @@ function testAtomicFirstTurn(): void {
   assert.equal(detail.messages.length, 2);
   assert.deepEqual(detail.messages[1]?.toolsUsed, ["retrieve_knowledge"]);
   assert.equal(detail.messages[1]?.sources[0]?.id, "K1");
+  // Entity chips survive a history reload with the live price seen at answer time.
+  assert.deepEqual(detail.messages[1]?.entities, [DIVINE_ENTITY]);
+  assert.deepEqual(detail.messages[0]?.entities, []);
+  assert.deepEqual(stored.entities, [DIVINE_ENTITY]);
+  const replay = beginCoachTurn(1, pending, db);
+  assert.equal(replay.kind, "replay");
+  if (replay.kind === "replay") assert.deepEqual(replay.turn.entities, [DIVINE_ENTITY]);
 }
 
 function testIdempotenceAndLeases(): void {
@@ -220,6 +240,7 @@ function turnInput(
     toolsUsed: ["retrieve_knowledge"],
     processorsUsed: ["deterministic_item_inspection"],
     sources: [{ id: "K1", type: "knowledge", title: "Source", url: "https://example.com" }],
+    entities: [DIVINE_ENTITY],
     nowMs,
     leaseMs,
     completedAt: new Date(nowMs).toISOString(),

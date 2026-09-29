@@ -71,6 +71,8 @@ export async function POST(request: Request) {
         toolsUsed: response.tools_used,
         processorsUsed: response.processors_used,
         sources: response.sources,
+        // An older Coach (rollback window) sends no entities; the answer then renders without chips.
+        entities: response.entities ?? [],
         usage: {
           requestId: response.request_id,
           usage: response.usage,
@@ -203,6 +205,7 @@ function browserTurn(
     toolsUsed: turn.toolsUsed,
     processorsUsed: turn.processorsUsed,
     sources: turn.sources,
+    entities: turn.entities,
   };
 }
 
