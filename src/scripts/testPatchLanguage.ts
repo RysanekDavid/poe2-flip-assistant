@@ -130,10 +130,10 @@ export async function testNonEnglishThreadNotStored(): Promise<void> {
     const result = await syncPatchNotes(syncOptions(db, root, [
       response(indexHtml, "index-1"), response(germanHtml, "new-german"), response(threadHtml, "base-1"),
     ]));
-    assert.deepEqual(result.failedThreads.map((failure) => failure.threadId), [3_991_000]);
+    assert.deepEqual(result.failedThreads.map((failure) => failure.threadId), [4_006_357]);
     assert.match(patchSyncProblem(result) ?? "", /1 of 2 thread\(s\) failed, 1 kept: .*not from the English/);
-    assert.equal(officialPatch(3_991_000, db)?.bodyValid, false);
-    assert.equal(officialPatch(3_990_120, db)?.bodyValid, true);
+    assert.equal(officialPatch(4_006_357, db)?.bodyValid, false);
+    assert.equal(officialPatch(4_004_106, db)?.bodyValid, true);
     console.log("PASS  non-English thread is recorded as a sync problem, not stored");
   } finally {
     db.close();
@@ -161,7 +161,7 @@ export async function testOtherForumRowsRetired(): Promise<void> {
     assert.equal(countRows(db, "pending_patch_effect", "thread_id = 4006365"), 0);
     assert.equal(countRows(db, "evidence_link", "entity_id = '4006365'"), 0);
     assert.equal(countRows(db, "source_snapshot"), snapshotsBefore + 2, "raw snapshots are kept");
-    assert.equal(officialPatch(3_991_000, db)?.bodyValid, true, "English rows untouched");
+    assert.equal(officialPatch(4_006_357, db)?.bodyValid, true, "English rows untouched");
     const state = sourceSyncState("ggg_poe2_patch_notes", db);
     assert.equal(state.lastSuccessAt, null, "a German index is no proof the English one was checked");
     assert.equal(db.prepare("PRAGMA foreign_key_check").all().length, 0);

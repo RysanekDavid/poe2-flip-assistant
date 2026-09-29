@@ -83,13 +83,13 @@ export async function testPartialThreadFailure(): Promise<void> {
     assert.equal(result.ok, false);
     assert.equal(result.checkedThreads, 2);
     assert.equal(result.changedThreads, 1, "the parseable thread was stored");
-    assert.deepEqual(result.failedThreads.map((failure) => failure.threadId), [3_991_000]);
+    assert.deepEqual(result.failedThreads.map((failure) => failure.threadId), [4_006_357]);
     assert.match(result.failedThreads[0]?.reason ?? "", TRIED_BOTH_LAYOUTS);
-    assert.equal(officialPatch(3_990_120, db)?.bodyValid, true);
-    assert.equal(officialPatch(3_991_000, db)?.bodyValid, false);
+    assert.equal(officialPatch(4_004_106, db)?.bodyValid, true);
+    assert.equal(officialPatch(4_006_357, db)?.bodyValid, false);
     assert.match(
       recorded[0]?.error ?? "",
-      /^sync incomplete: 1 of 2 thread\(s\) failed, 1 kept: thread 3991000: staff patch body selector/,
+      /^sync incomplete: 1 of 2 thread\(s\) failed, 1 kept: thread 4006357: staff patch body selector/,
     );
     assertFailureRecorded(db);
 
@@ -98,7 +98,7 @@ export async function testPartialThreadFailure(): Promise<void> {
     ]));
     assert.equal(patchSyncProblem(recovered), null);
     assert.deepEqual(recovered.failedThreads, []);
-    assert.equal(officialPatch(3_991_000, db)?.bodyValid, true);
+    assert.equal(officialPatch(4_006_357, db)?.bodyValid, true);
     console.log("PASS  partial thread failure keeps good threads and reports the bad one");
   } finally {
     db.close();
@@ -109,7 +109,7 @@ export async function testPartialThreadFailure(): Promise<void> {
 function assertFailureRecorded(db: Database.Database): void {
   const snapshot = db.prepare(`
     SELECT valid, parse_error AS error FROM source_snapshot
-    WHERE snapshot_kind = 'thread' AND external_id = '3991000'
+    WHERE snapshot_kind = 'thread' AND external_id = '4006357'
   `).get() as { valid: number; error: string } | undefined;
   assert.equal(snapshot?.valid, 0);
   assert.match(snapshot?.error ?? "", TRIED_BOTH_LAYOUTS);
@@ -117,6 +117,6 @@ function assertFailureRecorded(db: Database.Database): void {
     SELECT last_error AS error, last_success_at AS success FROM source_sync_state
     WHERE source_id = 'ggg_poe2_patch_notes'
   `).get() as { error: string | null; success: string | null } | undefined;
-  assert.match(state?.error ?? "", /^thread 3991000: /);
+  assert.match(state?.error ?? "", /^thread 4006357: /);
   assert.notEqual(state?.success, null, "the index itself was still a valid check");
 }

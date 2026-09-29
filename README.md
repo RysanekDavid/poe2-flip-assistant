@@ -53,7 +53,7 @@ query credential columns.
 | poe2scout | Unique-item market flow | Aggregated signal, not a live listing. |
 | SQLite snapshots | Historical trends | Observed history; legacy `chaos_equiv` values are Divine. |
 | Curated KB | Stable mechanics and warnings | Patch-sensitive; confidence labels must be preserved. |
-| RePoE 4.5.4.7 | Bases, modifiers, tiers and item descriptions | Compatibility data, not exact crafting probabilities. |
+| RePoE 4.5.5.2 | Bases, modifiers, tiers and item descriptions | Compatibility data, not exact crafting probabilities. |
 | Tavily | Recent public-web evidence | Optional and lower authority than primary/game data. |
 
 Top Flip is a heuristic, FarmAdvisor is basket heat rather than Div/hour, and Craft EV uses a

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "game_data_patch": "0.5.4d",
-  "official_patch_thread_id": 3990120,
-  "official_patch_published_at": "2026-07-28T05:40:33Z",
-  "catalog_sha256": "75a23d387f288921061a4ec1feda80ed9c1858de551daa1b9de2b674559161c8"
+  "game_data_patch": "0.5.5b",
+  "official_patch_thread_id": 4004106,
+  "official_patch_published_at": "2026-09-11T03:39:22Z",
+  "catalog_sha256": "dbaf8e1f41e441b642ac9ae38c88bd0a2471b689b586f782bc745210326c387f"
 }
