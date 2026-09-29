@@ -7,7 +7,7 @@ import { createRateGovernor, type RateGovernor, type TradeEndpoint } from "./tra
 import { scheduleMetered } from "./tradeMeter";
 import { TradeAuthError, TradeRateLimitedError } from "./tradeErrors";
 import { dbRateStore } from "../db/tradeRateQueries";
-import { parseFetchResponse, type Listing } from "./tradeListing";
+import { parseFetchResponse, parseFetchStates, type Listing } from "./tradeListing";
 
 /**
  * Read-only client for the official PoE2 trade API. We search and price-check —
@@ -87,17 +87,32 @@ async function reserveBudget(kind: TradeEndpoint): Promise<void> {
   }
 }
 
+/**
+ * A trade2 answer outside 2xx that is not one of the typed cases (403 auth, budget wait). Carries
+ * the status so a caller can tell "this query id is no longer served" (400/404) from a transient
+ * failure; `status` is null when no response arrived at all (timeout, connection reset).
+ */
+export class TradeHttpError extends Error {
+  readonly status: number | null;
+
+  constructor(message: string, status: number | null) {
+    super(message);
+    this.name = "TradeHttpError";
+    this.status = status;
+  }
+}
+
 function describeFailure(err: unknown, method: string, path: string): Error {
   const ax = err as AxiosError;
   const status = ax.response?.status;
   if (status === 429) {
     const retry = ax.response?.headers?.["retry-after"];
-    return new Error(`trade2 rate-limited (429)${retry ? ` — backing off ${retry}s` : ""}.`);
+    return new TradeHttpError(`trade2 rate-limited (429)${retry ? ` — backing off ${retry}s` : ""}.`, 429);
   }
   if (status === 403) return new TradeAuthError(method, path);
   // surface the API's error body (trade2 explains 400s, e.g. an invalid filter id)
   const body = ax.response?.data ? ` — ${JSON.stringify(ax.response.data).slice(0, 300)}` : "";
-  return new Error(`trade2 ${method.toUpperCase()} ${path} failed (${status ?? "no-status"})${body}`);
+  return new TradeHttpError(`trade2 ${method.toUpperCase()} ${path} failed (${status ?? "no-status"})${body}`, status ?? null);
 }
 
 /** Wrap a trade2 call with the limiter + governor + a clear message on the common failure modes. */
@@ -174,23 +189,39 @@ export async function fetchListingsRaw(
 }
 
 /**
+ * Is each listing still served? One /fetch for up to 10 ids against `queryId` (the search that
+ * found them), one state per id in request order: the Listing (current ask) or null (gone).
+ * A stale query id surfaces as TradeHttpError 400/404 — the caller decides whether to re-search.
+ */
+export async function fetchListingStates(
+  ids: string[],
+  queryId: string,
+  cred: TradeCred = configCred(),
+): Promise<Array<Listing | null>> {
+  if (ids.length === 0 || ids.length > 10) throw new Error(`fetchListingStates: 1–10 ids per fetch, got ${ids.length}`);
+  const fetched = await call<unknown>("get", `/fetch/${ids.join(",")}?query=${queryId}&realm=poe2`, cred);
+  return parseFetchStates(fetched, ids);
+}
+
+/**
  * Search live listings for a query and fetch up to `limit`. Default sort is cheapest
- * first; pass { indexed: "desc" } for newest first. Returns the market total too.
+ * first; pass { indexed: "desc" } for newest first. Returns the market total too, and the
+ * search's query id — the id a later /fetch of these listings must quote.
  */
 export async function searchListings(
   q: TradeQuery,
   limit = 10,
   sort: TradeSort = "asc",
   cred: TradeCred = configCred(),
-): Promise<{ total: number; listings: Listing[] }> {
+): Promise<{ total: number; listings: Listing[]; queryId: string }> {
   const search = await createSearch(q, sort, cred);
   const ids = (search.result ?? []).slice(0, Math.min(limit, 30));
-  if (ids.length === 0) return { total: search.total ?? 0, listings: [] };
+  if (ids.length === 0) return { total: search.total ?? 0, listings: [], queryId: search.id };
   const listings: Listing[] = [];
   for (let i = 0; i < ids.length; i += 10) {
     listings.push(...(await fetchListings(ids.slice(i, i + 10), search.id, cred)));
   }
-  return { total: search.total ?? listings.length, listings };
+  return { total: search.total ?? listings.length, listings, queryId: search.id };
 }
 
 /**

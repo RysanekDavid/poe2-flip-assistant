@@ -3,7 +3,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { evaluateSnipe, type SnipeGateLimits } from "../core/snipeGate";
-import { parseFetchResponse, parseListing, isBuyable, isZeroModRare, type Listing } from "../api/tradeListing";
+import { parseFetchResponse, parseFetchStates, parseListing, isBuyable, isZeroModRare, type Listing } from "../api/tradeListing";
+import { isPending, outcomeStats, profileStats } from "../core/snipeOutcomes/stats";
+import { outcomeChip, type OutcomeCheck, type OutcomeState, type SnipeOutcomeView } from "../lib/snipeOutcomeContract";
 import { listingDiv } from "../core/listingPrice";
 import { referenceValue, signatureModCount } from "../core/priceBook";
 import { buildPlan, listingToItem, valueFromComparables } from "../core/comparableValuation";
@@ -305,6 +307,46 @@ async function meterCheck(): Promise<void> {
   const bad = await runQueueScenario(naive, (m, fn) => als.run(m, fn));
   ok("control: in-job context read mis-attributes under the same queue", !(bad.scan.search === 3 && bad.scan.fetch === 2 && bad.other.search === 3), `${JSON.stringify(bad.scan)} / ${JSON.stringify(bad.other)}`);
 }
+
+// --- snipe outcomes: fetch states keep every requested id; a null slot means gone ---
+const fetchEntry = (id: string, amount = 5): Record<string, unknown> => ({
+  id,
+  listing: { indexed: "2026-09-25T10:00:00Z", price: { amount, currency: "exalted" }, account: { name: "Seller" } },
+  item: { name: "Doom Grip", baseType: "Vaal Gauntlets", rarity: "Rare" },
+});
+const states = parseFetchStates({ result: [null, fetchEntry("b")] }, ["a", "b"]);
+ok("fetch states: null slot → gone, served entry → listing, request order kept", states.length === 2 && states[0] === null && states[1]?.listingId === "b");
+const reordered = parseFetchStates({ result: [fetchEntry("b"), fetchEntry("a", 7)] }, ["a", "b"]);
+ok("fetch states: matched by id, not by position", reordered[0]?.price?.amount === 7 && reordered[1]?.listingId === "b");
+ok("fetch states: fewer entries than ids throws", throws(() => parseFetchStates({ result: [fetchEntry("a")] }, ["a", "b"])));
+ok("fetch states: an unrequested listing throws", throws(() => parseFetchStates({ result: [fetchEntry("x"), null] }, ["a", "b"])));
+ok("fetch states: the same listing twice throws", throws(() => parseFetchStates({ result: [fetchEntry("a"), fetchEntry("a")] }, ["a", "b"])));
+ok("fetch states: a body without result[] throws", throws(() => parseFetchStates({ error: { code: 2 } }, ["a"])));
+ok("parseFetchResponse still drops the null slots", parseFetchResponse({ result: [null, fetchEntry("b")] }).length === 1);
+
+// --- snipe outcomes: hit-rate math ---
+const oRow = (m: number, h2: OutcomeState | null, h24: OutcomeState | null) => ({ profile: "rings", margin_pct: m, check_2h: h2, check_24h: h24 });
+const st = profileStats("rings", "Rings", [oRow(40, "gone", null), oRow(30, "listed", "gone"), oRow(20, "listed", "listed"), oRow(10, "error", "listed"), oRow(60, null, null)]);
+ok("stats: n counts every tracked row", st.n === 5);
+ok("stats: 2 h share over decided 2 h checks only (error + unchecked left out)", st.checked2h === 3 && Math.abs((st.gone2hPct ?? -1) - 100 / 3) < 1e-9, JSON.stringify(st));
+ok("stats: gone at 2 h counts as gone by 24 h", st.decided24h === 4 && st.gone24hPct === 50 && st.listed24hPct === 50);
+ok("stats: errors counted per checkpoint", st.errors === 1);
+ok("stats: median margin gone vs still listed", st.medianMarginGonePct === 35 && st.medianMarginListedPct === 15);
+const empty = profileStats("x", "X", [oRow(10, null, null)]);
+ok("stats: nothing decided → null shares and medians, never 0", empty.gone2hPct === null && empty.gone24hPct === null && empty.listed24hPct === null && empty.medianMarginGonePct === null);
+const grouped = outcomeStats([{ ...oRow(1, "gone", null), profile: "b" }, oRow(1, "gone", null), oRow(2, "listed", null)], new Map([["rings", "Rings"]]));
+ok("stats: grouped per profile, busiest first, unknown key keeps its key as label", grouped[0]?.label === "Rings" && grouped[0]?.n === 2 && grouped[1]?.label === "b");
+ok("pending: 2 h unsettled, or 24 h unsettled and not gone", isPending({ check_2h: null, check_24h: null }) && isPending({ check_2h: "listed", check_24h: null }) && !isPending({ check_2h: "gone", check_24h: null }) && !isPending({ check_2h: "error", check_24h: "error" }));
+
+// --- snipe outcomes: the card chip never claims a sale ---
+const view = (h2: OutcomeCheck | null, h24: OutcomeCheck | null): SnipeOutcomeView => ({ listingId: "l", profile: "rings", alertedAt: 0, check2h: h2, check24h: h24, lastError: null });
+const chk = (state: OutcomeState, askDiv: number | null = null): OutcomeCheck => ({ state, at: 1, askDiv, method: "fetch" });
+ok("chip: gone at 2 h", outcomeChip(view(chk("gone"), null), 100)?.label === "gone <2h");
+ok("chip: still listed at 24 h shows the current ask", outcomeChip(view(chk("listed"), chk("listed", 0.05)), 100)?.label === "still listed 24h · ask 5 ex");
+ok("chip: listed without a rated ask omits it", outcomeChip(view(chk("listed"), chk("listed")), 100)?.label === "still listed 24h");
+ok("chip: nothing checked yet → no chip", outcomeChip(view(null, null), 100) === null);
+const chipTexts = [view(chk("gone"), null), view(chk("listed"), chk("gone")), view(chk("listed"), chk("listed", 2))].map((v) => outcomeChip(v, 100));
+ok("chip: vocabulary never says sold, hint explains gone ≠ sold", chipTexts.every((c) => c != null && !/sold/i.test(c.label)) && /cannot tell/.test(chipTexts[0]?.hint ?? ""));
 
 void meterCheck().then(() => {
   console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
