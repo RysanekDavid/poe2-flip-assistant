@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { tradeErrorResponse } from "../../../../lib/tradeRouteError";
-import { balanceStats } from "../../../../db/balanceQueries";
+import { readResponseSchema } from "../../../../lib/balanceContract";
 import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { withCredStatus } from "../../../../auth/credStatus";
@@ -52,7 +52,8 @@ export async function POST(): Promise<Response> {
     const warning = await refreshUniquesWarning();
     const account = cred.account;
     const { snapshot, scan } = await withCredStatus(user.id, () => recordTradeBalance(user.id, league, account, resolved.rates, cred));
-    return NextResponse.json({ snapshot, stats: balanceStats(user.id, league), scan, warning, computedLeague: league });
+    // parsed: drops the per-item rows (up to 100 listings with mods) the panel never reads
+    return NextResponse.json(readResponseSchema.parse({ snapshot, scan, warning, computedLeague: league }));
   } catch (e) {
     return tradeErrorResponse(e);
   }

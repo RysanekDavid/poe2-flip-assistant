@@ -14,6 +14,7 @@ import { startLeagueWatcher } from "./leagueWatcher";
 import { getPolledLeagues } from "../core/leagueUsers";
 import { balanceProblem, snapshotBalancesAll } from "./balanceLoop";
 import { startNotifyDrainer } from "../core/notify/drainer";
+import { getUserById } from "../db/userQueries";
 
 const OWNER_ID = 1; // seeded owner; the autosnipe + craft-margin scans run under the owner's cred
 
@@ -66,7 +67,13 @@ function startTradeScans(): void {
   // Manual scans from the web are queued in the DB and run HERE, on this process's limiter.
   setInterval(() => {
     const ownerCredNow = (): TradeCred | null => credForUser({ id: OWNER_ID, role: "owner" });
-    withHeartbeat("scan-drain", "", () => drainScanRequests(ownerCredNow), {
+    // per-user reprice checks run under that user's own cookie, resolved per request
+    const credFor = (userId: number): TradeCred | null => {
+      const user = getUserById(userId);
+      if (!user) throw new Error(`reprice requested for unknown user ${userId}`);
+      return credForUser(user);
+    };
+    withHeartbeat("scan-drain", "", () => drainScanRequests(ownerCredNow, credFor), {
       problem: (errors) => (errors.length > 0 ? errors.join("; ") : null),
     }).catch((e) => console.error("[scan-drain] failed:", errText(e)));
   }, 20_000);

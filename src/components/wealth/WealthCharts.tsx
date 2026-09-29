@@ -7,7 +7,7 @@ import { ComputedLeague } from "../ui/ComputedLeague";
 export const fmt = (n: number, d = 1): string => n.toLocaleString("en-US", { maximumFractionDigits: d });
 
 export function Delta({ label, pct }: { label: string; pct: number | null }) {
-  if (pct == null) return <span className="text-xs text-neutral-600">{label} —</span>;
+  if (pct == null) return <span className="text-xs text-neutral-500">{label} —</span>;
   const up = pct >= 0;
   return (
     <span className={`rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums ${up ? "bg-good/10 text-good" : "bg-bad/10 text-bad"}`}>
@@ -46,7 +46,7 @@ export function ValueChart({ points, height, label, empty }: {
         <XAxis dataKey="t" tick={{ fill: "#737373", fontSize: 11 }} />
         <YAxis tick={{ fill: "#737373", fontSize: 11 }} width={44} domain={["auto", "auto"]} />
         <Tooltip contentStyle={{ background: "#171717", border: "1px solid #404040" }} formatter={(v: number) => [`${fmt(v)} Div`, label]} />
-        <Line type="monotone" dataKey="value" stroke="#22c55e" dot={false} strokeWidth={2} />
+        <Line type="linear" dataKey="value" stroke="#22c55e" dot={false} strokeWidth={2} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -120,7 +120,7 @@ function TabLine({ t, hist, total, max }: { t: TabRow; hist: { value: number }[]
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="truncate text-sm font-medium text-neutral-200">{t.tab}</span>
-          <span className="text-xs text-neutral-600">{t.items} items</span>
+          <span className="text-xs text-neutral-500">{t.items} items</span>
           {t.unpriced > 0 && (
             <span className="text-xs text-amber-500/70" title="no market price + no usable listing price (e.g. showcase ~price 99999 mirror)">
               {t.unpriced} unpriced
@@ -144,17 +144,17 @@ function TabLine({ t, hist, total, max }: { t: TabRow; hist: { value: number }[]
       </div>
       <div className="w-24 shrink-0 text-right">
         <div className="text-sm font-bold tabular-nums text-emerald-400">{fmt(t.value_div)}</div>
-        <div className="text-xs text-neutral-600">{total > 0 ? fmt((t.value_div / total) * 100, 0) : 0}%</div>
+        <div className="text-xs text-neutral-500">{total > 0 ? fmt((t.value_div / total) * 100, 0) : 0}%</div>
       </div>
       <div className="hidden w-28 shrink-0 sm:block">
         {hist.length > 1 ? (
           <ResponsiveContainer width="100%" height={36}>
             <LineChart data={hist}>
-              <Line type="monotone" dataKey="value" stroke="#34d399" dot={false} strokeWidth={1.5} />
+              <Line type="linear" dataKey="value" stroke="#34d399" dot={false} strokeWidth={1.5} />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="text-right text-xs text-neutral-700">no trend</div>
+          <div className="text-right text-xs text-neutral-500">no trend</div>
         )}
       </div>
     </div>
@@ -176,7 +176,7 @@ export function TabBreakdown({ tabs, series }: { tabs: TabRow[]; series: TabSeri
     <div className="mt-5">
       <div className="mb-2 flex items-baseline justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">by stash tab</span>
-        <span className="text-xs text-neutral-600">{tabs.length} public tabs · {fmt(total)} Div total</span>
+        <span className="text-xs text-neutral-500">{tabs.length} public tabs · {fmt(total)} Div total</span>
       </div>
       <div className="space-y-1.5">
         {tabs.map((t) => (

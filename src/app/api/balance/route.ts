@@ -12,6 +12,8 @@ import { readCurrencyFromTrade } from "../../../api/accountScan";
 import { getDefaultLeague } from "../../../core/leagueState";
 import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
+import { sessionDelta } from "../../../core/wealth/sessionDelta";
+import { balanceResponseSchema, manualResponseSchema, type BalanceResponse } from "../../../lib/balanceContract";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,16 +32,20 @@ export async function GET(): Promise<Response> {
   // Realized flip P&L is logged per the VIEWER's league (flips are per-league ledgers), which can
   // differ from the default league net worth is read in — so it carries its own league label.
   const pnlLeague = leagueForUser(user.id);
-  return NextResponse.json({
+  const balances = getBalances(user.id, league, 500);
+  const body: BalanceResponse = {
     computedLeague: league,
     pnlLeague,
-    balances: getBalances(user.id, league, 500),
+    balances,
     stats: balanceStats(user.id, league),
+    session: sessionDelta(balances),
     pnl: realizedPnl(user.id, pnlLeague),
-    stashEnabled: accountReadEnabled(cred ?? undefined),
+    // no cred of their own → no read; accountReadEnabled() with no argument would test the .env cred
+    stashEnabled: cred != null && accountReadEnabled(cred),
     tabs: latestTabs(user.id, league),
     tabSeries: tabSeries(user.id, league, 60),
-  });
+  };
+  return NextResponse.json(balanceResponseSchema.parse(body));
 }
 
 const ManualBody = z.object({
@@ -97,5 +103,5 @@ export async function POST(req: Request): Promise<Response> {
     source: "manual",
     note: b.note ?? (otherDiv > 0 ? `gear ~${otherDiv.toFixed(1)} Div auto` : null),
   });
-  return NextResponse.json({ snapshot, stats: balanceStats(user.id, league), computedLeague: league });
+  return NextResponse.json(manualResponseSchema.parse({ snapshot, stats: balanceStats(user.id, league), computedLeague: league }));
 }
