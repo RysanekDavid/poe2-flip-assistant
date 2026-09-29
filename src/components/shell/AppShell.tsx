@@ -132,7 +132,7 @@ function ShellBody() {
         <header ref={headerRef} className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-line bg-neutral-950/85 backdrop-blur">
           <div className="flex items-center justify-between px-6 py-2">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <h1 className="text-xl font-bold">PoE2 Flip Assistant</h1>
+              <h1 className="text-xl font-bold">PoE2 Coach</h1>
               {/* league picker sits with the rates it controls — per account, switchable anytime */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <MarketStatus />

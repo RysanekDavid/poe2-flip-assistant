@@ -1,4 +1,4 @@
-"""FastAPI boundary for the PoE2 Flip Coach."""
+"""FastAPI boundary for the PoE2 Coach."""
 
 import asyncio
 import logging
@@ -113,7 +113,7 @@ def create_app(
     active_settings = settings or get_settings()
     retrieval_readiness = RetrievalService(active_settings)
     app = FastAPI(
-        title="PoE2 Flip Coach",
+        title="PoE2 Coach",
         version="0.1.0",
         lifespan=_lifespan(active_settings, agent_factory, knowledge_warmer),
     )

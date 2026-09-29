@@ -1,5 +1,5 @@
 [Unit]
-Description=Monthly PoE2 Flip SQLite VACUUM (low-traffic window, after the nightly backup)
+Description=Monthly PoE2 Coach SQLite VACUUM (low-traffic window, after the nightly backup)
 
 [Timer]
 OnCalendar=*-*-01 04:30:00
