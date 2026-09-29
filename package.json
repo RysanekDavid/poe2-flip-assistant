@@ -14,6 +14,7 @@
     "start": "next start",
     "probe": "tsx src/scripts/probe.ts",
     "probe:cx-depth": "tsx src/scripts/probeCxDepth.ts",
+    "league:backfill": "tsx src/scripts/backfillLeagueStart.ts",
     "probe:fetch-stale": "tsx src/scripts/probeFetchStale.ts",
     "test:coach": "tsx src/scripts/testCoach.ts && tsx src/scripts/testCoachHistory.ts && tsx src/scripts/testKbManifest.ts",
     "test:middleware": "tsx src/scripts/testMiddleware.ts",

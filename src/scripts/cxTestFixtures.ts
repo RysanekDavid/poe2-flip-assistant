@@ -173,3 +173,13 @@ export function persistentAndSpikeRows(): CxMarketRow[] {
 export function near(actual: number | null | undefined, expected: number, eps = 1e-9): boolean {
   return actual != null && Math.abs(actual - expected) <= eps * Math.max(1, Math.abs(expected));
 }
+
+/**
+ * A digest for REQUEST hour `hour` (next_change_id = hour + 1h) listing each given league with
+ * the captured base-currency markets relabeled to it, plus that league's extra item markets.
+ */
+export function leagueDigest(hour: number, leagues: ReadonlyArray<{ league: string; extra: readonly CxMarket[] }>): CxDigest {
+  const base = REAL_DIGEST.markets.filter((m) => m.league === FR);
+  const markets = leagues.flatMap(({ league, extra }) => [...base.map((m) => ({ ...m, league })), ...extra]);
+  return { ...REAL_DIGEST, next_change_id: hour + CX_HOUR_SECONDS, markets };
+}

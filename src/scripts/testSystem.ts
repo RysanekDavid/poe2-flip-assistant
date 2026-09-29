@@ -98,6 +98,7 @@ const CFG: SubsystemConfig = {
   balanceIntervalMin: 0,
   patchNotes: { ...config.patchNotes, enabled: true, intervalMin: 30 },
   snipeOutcomes: { ...config.snipeOutcomes, enabled: true },
+  leagueStart: { ...config.leagueStart, backfillEnabled: true },
 };
 
 function testStaleDerivation(): void {
