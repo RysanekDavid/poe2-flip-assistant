@@ -22,9 +22,6 @@ function summaryState(row: PatchListRow, isOwner: boolean): PatchSummaryState | 
   const detail = broken ? STORED_SUMMARY_BROKEN : row.lastError;
   return {
     status: row.summaryStatus,
-    model: row.model,
-    promptVersion: row.promptVersion,
-    summarizedAt: row.summarizedAt,
     truncated: row.truncated,
     data,
     error: isOwner ? detail : null,

@@ -130,15 +130,16 @@ const runKey = (a: Alert): string => `${a.type}\u0000${a.item_id}\u0000${a.item_
 
 /**
  * Fold ADJACENT alerts of the same type + item (input newest first) into one row with a ×N count.
- * Only adjacent ones: an interleaved alert for something else keeps the timeline honest. Pure.
+ * Only adjacent ones: an interleaved alert for something else keeps the timeline honest. SNIPE
+ * never folds — each is its own listing and card. Pure.
  */
 export function collapseRuns(alerts: readonly Alert[]): AlertRun[] {
   const runs: AlertRun[] = [];
   let lastKey: string | null = null;
   for (const a of alerts) {
-    const key = runKey(a);
+    const key = a.type === "SNIPE" ? null : runKey(a);
     const run = runs[runs.length - 1];
-    if (run && key === lastKey) {
+    if (run && key !== null && key === lastKey) {
       run.count += 1;
       run.unseen ||= a.seen === 0;
     } else {

@@ -53,37 +53,46 @@ export function insertAlert(
 
 const LastAlertRow = z.object({ ageMin: z.number(), value: z.number().nullable(), message: z.string() });
 
-/** The newest alert for this user's item+type, aged in minutes — input to the re-fire policy. */
-export function lastAlert(userId: number, itemId: string, type: string): LastAlert | null {
+/**
+ * The newest alert for this user's item+type in this league, aged in minutes — the re-fire
+ * baseline. League-scoped: a spread alerted in the old economy is no reason to stay quiet about
+ * the new one, and legacy NULL-league rows carry no usable baseline.
+ */
+export function lastAlert(userId: number, league: string, itemId: string, type: string): LastAlert | null {
   const row = getDb()
     .prepare(
       `SELECT (julianday('now') - julianday(created_at)) * 1440 AS ageMin, value, message
-       FROM alerts WHERE user_id = ? AND item_id = ? AND type = ?
+       FROM alerts WHERE user_id = ? AND league = ? COLLATE NOCASE AND item_id = ? AND type = ?
        ORDER BY created_at DESC, id DESC LIMIT 1`,
     )
-    .get(userId, itemId, type);
+    .get(userId, league, itemId, type);
   return row == null ? null : LastAlertRow.parse(row);
 }
 
 /**
- * Retention, per user: drop alerts older than `days`, except unseen ones younger than
- * `unseenKeepDays` (only bites when retention is configured shorter than that). Deliveries still
- * queued for a dropped alert go with it (notify_queue.alert_id cascades).
+ * Retention: drop alerts older than `days`, except unseen ones younger than `unseenKeepDays`
+ * (only bites when retention is configured shorter than that). Seen state is per user row, so one
+ * statement covers every user. Deliveries still queued for a dropped alert go with it
+ * (notify_queue.alert_id cascades). SNIPE once-ever dedupe survives via snipe_outcomes.
  */
 export function pruneAlerts(days: number, unseenKeepDays: number, db: Database.Database = getDb()): number {
-  const users = db.prepare("SELECT DISTINCT user_id AS id FROM alerts").all() as Array<{ id: number }>;
-  const del = db.prepare(
-    `DELETE FROM alerts WHERE user_id = ? AND created_at < datetime('now', ?)
-       AND NOT (seen = 0 AND created_at >= datetime('now', ?))`,
-  );
-  return db.transaction(() => users.reduce((n, u) => n + del.run(u.id, `-${days} days`, `-${unseenKeepDays} days`).changes, 0))();
+  return db
+    .prepare(
+      `DELETE FROM alerts WHERE created_at < datetime('now', ?)
+         AND NOT (seen = 0 AND created_at >= datetime('now', ?))`,
+    )
+    .run(`-${days} days`, `-${unseenKeepDays} days`).changes;
 }
 
-/** True if this user was EVER alerted for this item+type — snipe listings alert once per listing id. */
+/**
+ * True if this user was EVER alerted for this item+type — snipe listings alert once per listing id.
+ * The feed is pruned after ALERT_RETENTION_DAYS, so for SNIPE the never-pruned snipe_outcomes row
+ * (written right after a listing is alerted) keeps "once ever" true past retention.
+ */
 export function hasAlertEver(userId: number, itemId: string, type: string): boolean {
-  const row = getDb()
-    .prepare(`SELECT 1 FROM alerts WHERE user_id = ? AND item_id = ? AND type = ? LIMIT 1`)
-    .get(userId, itemId, type);
+  const db = getDb();
+  if (type === "SNIPE" && db.prepare("SELECT 1 FROM snipe_outcomes WHERE listing_id = ?").get(itemId) != null) return true;
+  const row = db.prepare(`SELECT 1 FROM alerts WHERE user_id = ? AND item_id = ? AND type = ? LIMIT 1`).get(userId, itemId, type);
   return row != null;
 }
 

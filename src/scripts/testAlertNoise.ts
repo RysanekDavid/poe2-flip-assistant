@@ -4,7 +4,8 @@
 import { config } from "../config/env";
 import { getDb } from "../db/database";
 import { pruneAlerts } from "../db/alertQueries";
-import { fireAlert } from "../core/alertEngine";
+import { recordSnipeOutcome } from "../db/snipeOutcomeQueries";
+import { fireAlert, pruneAlertFeed } from "../core/alertEngine";
 import { refireDecision, type LastAlert, type RefirePolicy } from "../core/alertRefire";
 import { collapseRuns, type Alert } from "../lib/alertCenter";
 
@@ -21,6 +22,8 @@ const ok = (name: string, cond: boolean, extra = ""): void => {
 
 testRefirePolicy();
 testFireAlertGate();
+testSnipeSurvivesPrune();
+testPruneGate();
 testRetention();
 testCollapse();
 
@@ -60,6 +63,32 @@ function testFireAlertGate(): void {
   age(25);
   ok("a day later the same margin reminds once", fireAlert(1, "L", { ...craft, value: 70 }) === true && count() === 3);
   ok("other users are gated separately", fireAlert(2, "L", craft) === true);
+  ok("an alert in the old league does not suppress the first one in a new league", fireAlert(1, "New League", craft) === true);
+  db.prepare("INSERT INTO alerts (user_id, league, type, item_id, item_name, message, value) VALUES (1, NULL, 'SPREAD', 'legacy-x', 'x', 'm', 99)").run();
+  ok("a legacy NULL-league row is no baseline", fireAlert(1, "L", { ...craft, type: "SPREAD", itemId: "legacy-x", value: 20 }) === true);
+}
+
+function testSnipeSurvivesPrune(): void {
+  const db = getDb();
+  db.exec("DELETE FROM alerts; DELETE FROM snipe_outcomes");
+  const snipe = { type: "SNIPE" as const, itemId: "listing-pruned", itemName: "Doom Grip", message: "m", value: 40, threshold: 35, dedupe: "once" as const };
+  ok("a new listing alerts", fireAlert(1, "L", snipe) === true);
+  recordSnipeOutcome({
+    listingId: snipe.itemId, league: "L", profile: "p", baseType: "Vaal Gauntlets", itemName: snipe.itemName,
+    askDiv: 1, valueDiv: 2, marginPct: 40, samples: 8, queryId: "q", recheckQuery: null, alertedAt: Date.now(),
+  });
+  db.prepare("UPDATE alerts SET created_at = datetime('now', '-40 days'), seen = 1").run();
+  ok("the old snipe row leaves the feed", pruneAlerts(30, 7, db) === 1);
+  ok("the same listing never re-alerts after its alert was pruned", fireAlert(1, "L", snipe) === false);
+  ok("a listing with neither an alert nor an outcome still alerts", fireAlert(1, "L", { ...snipe, itemId: "listing-new" }) === true);
+}
+
+function testPruneGate(): void {
+  const t0 = 1_000_000_000_000;
+  const first = pruneAlertFeed(t0, true);
+  ok("forced prune runs", typeof first === "number");
+  ok("a prune inside the hour is skipped", pruneAlertFeed(t0 + 30 * 60_000) === null);
+  ok("an hour later it runs again", typeof pruneAlertFeed(t0 + 61 * 60_000) === "number");
 }
 
 function testRetention(): void {
@@ -109,5 +138,7 @@ function testCollapse(): void {
   ok("an unseen alert anywhere in the run keeps the row unseen", runs[0]?.unseen === true);
   ok("a different type in between breaks the run", runs.map((r) => r.count).join(",") === "3,1,1,1,1", runs.map((r) => r.count).join(","));
   ok("LEAGUE rows for different leagues stay apart", runs.filter((r) => r.alert.type === "LEAGUE").length === 2);
+  const snipes = collapseRuns([mk(2, "SNIPE", "listing"), mk(1, "SNIPE", "listing")]);
+  ok("SNIPE cards never fold, even with the same listing id", snipes.length === 2 && snipes.every((r) => r.count === 1));
   ok("empty feed → no rows", collapseRuns([]).length === 0);
 }

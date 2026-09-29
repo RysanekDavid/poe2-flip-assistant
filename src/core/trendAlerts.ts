@@ -11,8 +11,13 @@ import { analyzeTrend, type TrendSignal } from "./trendDetector";
  *
  * The signals are level conditions (e.g. "7d > +50% and 24h > 0"), so a pumping item satisfied
  * them for days and re-alerted every cooldown window — 44 alerts for one item in 4 days
- * (docs/research/flip-snipe-audit-2026-09-25.md). Now an item alerts when it ENTERS BUY, SELL or
- * SPIKE (or moves between them) and stays quiet while it holds; dropping back to NONE re-arms it.
+ * (docs/research/flip-snipe-audit-2026-09-25.md). Now an item produces an event only when it ENTERS
+ * BUY, SELL or SPIKE (or moves between them) and stays quiet while it holds.
+ *
+ * An event is a candidate, not a guaranteed alert: fireAlert's re-fire gate (core/alertRefire)
+ * still applies per user. A re-entry after dropping to NONE — an item flapping across a threshold —
+ * alerts only on a material move over the last alerted value or once the quiet window has passed;
+ * a BUY↔SELL change always alerts.
  *
  * State is per market item per league — not per user — so it is evaluated once per sweep and the
  * same event is delivered to every viewer watching that item.
@@ -26,7 +31,7 @@ export interface TrendEvent {
   message: string;
   value: number;
   threshold: number;
-  signal?: "BUY" | "SELL"; // TREND only: lets the re-fire gate treat a BUY→SELL flip as news
+  signal?: "BUY" | "SELL"; // TREND only: the re-fire gate always passes a BUY↔SELL change
 }
 
 /** The alertable state a signal represents. SPIKE only when no BUY/SELL call applies. */
@@ -36,7 +41,7 @@ export function trendAlertState(trend: TrendSignal, change7d: number | null, spi
   return "NONE";
 }
 
-/** Fire only when entering an alertable state that differs from the recorded one. */
+/** An event candidate only when entering an alertable state that differs from the recorded one. */
 export function isTransition(prev: TrendAlertState | null, next: TrendAlertState): boolean {
   return next !== "NONE" && next !== prev;
 }
@@ -60,8 +65,8 @@ function eventFor(state: TrendAlertState, trend: TrendSignal, change7d: number |
 }
 
 /**
- * Advance EVERY market item's state for one sweep (one transaction) and return the transitions
- * that earn an alert, by item id. Alerts go only to watchers; the state machine covers all items.
+ * Advance EVERY market item's state for one sweep (one transaction) and return the transition
+ * events by item id. Alerts go only to watchers; the state machine covers all items.
  */
 export function advanceTrends(league: string, items: readonly PricedItem[]): Map<string, TrendEvent> {
   const events = new Map<string, TrendEvent>();
@@ -75,8 +80,9 @@ export function advanceTrends(league: string, items: readonly PricedItem[]): Map
 }
 
 /**
- * Advance one item's recorded state and return the alert its transition earns, if any.
- * The new state is always recorded, so a NONE in between re-arms the next entry.
+ * Advance one item's recorded state and return the event its transition produces, if any. The new
+ * state is always recorded, so a NONE in between makes the next entry an event again — whether
+ * that event reaches a user is fireAlert's re-fire gate's call (see the module comment).
  */
 export function advanceTrend(league: string, itemId: string, itemName: string, current: PricedItem): TrendEvent | null {
   const history = priceHistory(league, itemId, 168);

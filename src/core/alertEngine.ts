@@ -1,4 +1,4 @@
-import { insertAlert, lastAlert, hasAlertEver } from "../db/alertQueries";
+import { insertAlert, lastAlert, hasAlertEver, pruneAlerts } from "../db/alertQueries";
 import { config } from "../config/env";
 import { SnipeCardSchema, type SnipeCard } from "../lib/snipeCard";
 import { refireDecision } from "./alertRefire";
@@ -26,15 +26,19 @@ export interface AlertInput {
   details?: SnipeCard | null; // item card (SNIPE) — validated again here, it is persisted as-is
   // "once": alert at most once EVER per itemId+type — for listing-level snipes, where the
   // cooldown just re-pinged the same unsold bait every hour (Sol Trail ×12).
-  // "material" (default): see core/alertRefire — a repeat needs a real move or a quiet day.
+  // "material" (default): the core/alertRefire gate against this user's last alert for the same
+  // item+type IN THIS LEAGUE — past ALERT_COOLDOWN_MIN a repeat fires only when the value rose
+  // ALERT_REFIRE_RISE_PCT over the last alerted one or ALERT_REFIRE_QUIET_HOURS have passed. That
+  // applies to TREND/SPIKE re-entries too: an item flapping in and out of a state is not news.
   dedupe?: "material" | "once";
-  signal?: string; // TREND call (BUY/SELL): a direction change always re-alerts
+  signal?: string; // TREND call (BUY/SELL): a BUY↔SELL change always fires, whatever the value
 }
 
-function isDuplicate(userId: number, a: AlertInput): boolean {
+function isDuplicate(userId: number, league: string, a: AlertInput): boolean {
   if (a.dedupe === "once") return hasAlertEver(userId, a.itemId, a.type);
   const policy = { cooldownMin: config.alertCooldownMin, ...config.alertRefire };
-  return refireDecision(lastAlert(userId, a.itemId, a.type), { value: a.value, signal: a.signal }, policy) !== "fire";
+  const last = lastAlert(userId, league, a.itemId, a.type);
+  return refireDecision(last, { value: a.value, signal: a.signal }, policy) !== "fire";
 }
 
 /**
@@ -46,13 +50,14 @@ function isDuplicate(userId: number, a: AlertInput): boolean {
  * only ever run in the app default. Reading the recipient's current view here would file a
  * default-league snipe under whatever league they happened to be looking at.
  *
- * Deduped per user + item + type (see AlertInput.dedupe). DB failures propagate.
+ * Deduped per user + item + type, the material gate also per league (see AlertInput.dedupe). DB
+ * failures propagate.
  *
  * Discord delivery is not wired here: the alerts insert trigger (db/notifyMigrations) queues it
  * per the recipient's routing prefs, and the poller's drainer (core/notify) sends it.
  */
 export function fireAlert(userId: number, league: string, a: AlertInput): boolean {
-  if (isDuplicate(userId, a)) return false;
+  if (isDuplicate(userId, league, a)) return false;
   insertAlert(userId, league, {
     type: a.type,
     itemId: a.itemId,
@@ -65,4 +70,18 @@ export function fireAlert(userId: number, league: string, a: AlertInput): boolea
     details: a.details == null ? null : JSON.stringify(SnipeCardSchema.parse(a.details)),
   });
   return true;
+}
+
+/** Alert retention runs hourly, not every 5-minute poll — a day-granular cutoff gains nothing faster. */
+const PRUNE_EVERY_MS = 60 * 60 * 1000;
+let lastPruneAt = -Infinity;
+
+/**
+ * Prune the alert feed per config.alertRetention, at most once an hour (`force` bypasses that for
+ * tests). Returns rows removed, or null when this call was skipped.
+ */
+export function pruneAlertFeed(nowMs: number = Date.now(), force = false): number | null {
+  if (!force && nowMs - lastPruneAt < PRUNE_EVERY_MS) return null;
+  lastPruneAt = nowMs;
+  return pruneAlerts(config.alertRetention.days, config.alertRetention.unseenKeepDays);
 }
