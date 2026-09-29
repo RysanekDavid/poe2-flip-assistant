@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { manualResponseSchema } from "../../lib/balanceContract";
+import { parseSqliteTimestamp } from "../../lib/sqliteTime";
+import { Button } from "../ui/Button";
 import { Delta, fmt } from "./WealthCharts";
-import { postJson, type Snapshot, type Source, type Stats } from "./useBalance";
+import { postJson, type Session, type Snapshot, type Source, type Stats } from "./useBalance";
 
-const SOURCE_META: Record<Source, string> = { trade: "🌐 trade", stash: "📦 stash", ocr: "👁 ocr", manual: "✍ manual" };
+const SOURCE_LABEL: Record<Source, string> = { trade: "trade read", stash: "stash", ocr: "ocr", manual: "manual entry" };
 
 function Holding({ label, v }: { label: string; v: number }) {
   return (
@@ -21,7 +24,7 @@ function TruncationWarning({ s }: { s: Snapshot }) {
   const missing = s.listed_total - s.listed_seen;
   return (
     <p role="alert" className="mt-2 rounded border border-amber-600/60 bg-amber-950/40 px-2 py-1.5 text-xs font-medium text-amber-300">
-      ⚠ read {s.listed_seen} of {s.listed_total} listings — the {missing} cheapest items are NOT counted in this net worth.
+      Read {s.listed_seen} of {s.listed_total} listings — the {missing} cheapest are not in this net worth.
     </p>
   );
 }
@@ -41,33 +44,54 @@ function GearLine({ s }: { s: Snapshot }) {
           ({fmt(atAsk)} at your asks)
         </span>
       ) : (
-        <span className="text-neutral-600">(market value, auto from trade)</span>
+        <span>(market value)</span>
       )}
     </div>
   );
 }
 
-/** Current net worth: value, like-with-like deltas, currency split, gear, truncation. */
-export function NetWorthCard({ stats }: { stats: Stats | null }) {
-  const latest = stats?.latest ?? null;
-  if (!latest) {
-    return (
-      <div className="rounded border border-neutral-800 bg-neutral-950/40 p-3">
-        <p className="py-4 text-center text-sm text-neutral-500">no snapshot yet — read your stash or enter manually</p>
-      </div>
-    );
+/** "19:40", or "Tue 19:40" once the session started on another day. */
+function clockOf(sqliteStamp: string): string {
+  const at = new Date(parseSqliteTimestamp(sqliteStamp));
+  // en-GB: English UI with a 24h clock, whatever the browser's own locale
+  const time = at.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return at.toDateString() === new Date().toDateString() ? time : `${at.toLocaleDateString("en-GB", { weekday: "short" })} ${time}`;
+}
+
+/** Change since the session's first read — same source only, like the % deltas. */
+function SessionLine({ session }: { session: Session | null }) {
+  if (session == null) {
+    return <p className="mt-1 text-xs text-neutral-500">this session: read again later to see the change</p>;
   }
+  const up = session.deltaDiv >= 0;
   return (
-    <div className="rounded border border-neutral-800 bg-neutral-950/40 p-3">
+    <p className="mt-1 text-sm" title={`from ${fmt(session.startDiv)} Div at the session's first read; a 3h gap between reads starts a new session`}>
+      <span className="text-neutral-400">this session </span>
+      <span className={`font-semibold tabular-nums ${up ? "text-good" : "text-bad"}`}>
+        {up ? "+" : ""}
+        {fmt(session.deltaDiv)} Div
+      </span>
+      <span className="text-neutral-500"> (since {clockOf(session.startAt)})</span>
+    </p>
+  );
+}
+
+/** Current net worth: value, this session, like-with-like deltas, currency split, gear, truncation. */
+export function NetWorthCard({ stats, session }: { stats: Stats; session: Session | null }) {
+  const latest = stats.latest;
+  if (!latest) throw new Error("NetWorthCard needs a snapshot — render the empty state instead");
+  return (
+    <div className="rounded-lg border border-line bg-neutral-950/40 p-3">
       <div className="flex items-baseline gap-1.5">
         <span className="text-3xl font-bold tabular-nums">{fmt(latest.net_worth_div)}</span>
         <span className="text-sm text-neutral-400">Div</span>
-        <span className="ml-auto text-xs text-neutral-600">{SOURCE_META[latest.source]}</span>
+        <span className="ml-auto text-xs text-neutral-500">{SOURCE_LABEL[latest.source]}</span>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5" title={`changes compare ${latest.source} snapshots only (like-with-like)`}>
-        <Delta label="24h" pct={stats?.change24hPct ?? null} />
-        <Delta label="7d" pct={stats?.change7dPct ?? null} />
-        <Delta label="all" pct={stats?.changeAllPct ?? null} />
+      <SessionLine session={session} />
+      <div className="mt-2 flex flex-wrap gap-1.5" title={`changes compare ${SOURCE_LABEL[latest.source]} snapshots only (like-with-like)`}>
+        <Delta label="24h" pct={stats.change24hPct} />
+        <Delta label="7d" pct={stats.change7dPct} />
+        <Delta label="all" pct={stats.changeAllPct} />
       </div>
       <div className="mt-2 grid grid-cols-3 gap-1 text-center text-xs">
         <Holding label="Div" v={latest.divine} />
@@ -89,7 +113,7 @@ function Num({ label, v, set }: { label: string; v: string; set: (s: string) => 
         onChange={(e) => set(e.target.value)}
         inputMode="decimal"
         placeholder="0"
-        className="w-20 rounded border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-right text-sm tabular-nums"
+        className="w-20 rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-right text-sm tabular-nums"
       />
     </label>
   );
@@ -104,21 +128,23 @@ export function ManualForm({ onSaved }: { onSaved: () => void }) {
 
   const submit = () => {
     setError(null);
-    postJson("/api/balance", { divine: Number(divine || 0), exalted: Number(exalted || 0), chaos: Number(chaos || 0) })
+    postJson("/api/balance", manualResponseSchema, { divine: Number(divine || 0), exalted: Number(exalted || 0), chaos: Number(chaos || 0) })
       .then(onSaved)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   };
 
   return (
-    <div className="rounded border border-neutral-800 bg-neutral-950/40 p-3">
-      <p className="mb-2 text-xs text-neutral-500">read your currency-tab stacks → type here. Gear value is added automatically from trade.</p>
+    <div className="rounded-lg border border-line bg-neutral-950/40 p-3">
+      <p className="mb-2 text-xs text-neutral-400">Type your currency-tab stacks. Gear from public tabs is added automatically.</p>
       <div className="flex flex-wrap items-end gap-2">
         <Num label="Divine" v={divine} set={setDivine} />
         <Num label="Exalted" v={exalted} set={setExalted} />
         <Num label="Chaos" v={chaos} set={setChaos} />
-        <button onClick={submit} className="rounded bg-good/80 px-3 py-1.5 text-sm font-semibold text-neutral-950 hover:bg-good">save</button>
+        <Button variant="secondary" onClick={submit}>
+          Save
+        </Button>
       </div>
-      {error && <p role="alert" className="mt-2 text-xs text-bad">⚠ {error}</p>}
+      {error && <p role="alert" className="mt-2 text-xs text-bad">{error}</p>}
     </div>
   );
 }

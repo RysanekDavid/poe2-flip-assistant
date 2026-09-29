@@ -13,3 +13,17 @@ export class TradeRateLimitedError extends Error {
     this.retryAfterSec = sec;
   }
 }
+
+/**
+ * trade2 answered 403: the POESESSID is expired/invalid (or Cloudflare challenged the request).
+ * Typed so per-user call sites can flip the user's stored cred state to "expired" (auth/credStatus)
+ * and the UI can say so once, instead of every panel showing its own opaque upstream error.
+ */
+export class TradeAuthError extends Error {
+  readonly status = 403;
+
+  constructor(method: string, path: string) {
+    super(`trade2 403 on ${method.toUpperCase()} ${path} — POESESSID invalid/expired or Cloudflare challenge. Refresh your cookie in Settings.`);
+    this.name = "TradeAuthError";
+  }
+}

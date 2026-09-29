@@ -2,15 +2,26 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "../../../../auth/session";
 import { setUserPoe, getUserPoeStatus } from "../../../../db/userQueries";
+import { getCredStatus, resetCredStatus } from "../../../../db/credStatusQueries";
+import { liftRepriceCooldown } from "../../../../db/repriceRunQueries";
+import { poeSettingsResponseSchema, type PoeSettingsResponse } from "../../../../lib/poeSettingsContract";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** GET /api/settings/poe → whether the logged-in user has a stored POESESSID (never returns the secret). */
+/** Parsed on the way out so a drifted column can never reach the client as a silently wrong shape. */
+function settingsBody(userId: number): PoeSettingsResponse {
+  return poeSettingsResponseSchema.parse({ ...getUserPoeStatus(userId), credStatus: getCredStatus(userId) });
+}
+
+/**
+ * GET /api/settings/poe → whether the logged-in user has a stored POESESSID (never returns the
+ * secret) and whether it still works (credStatus, set by the last per-user trade2 call).
+ */
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  return NextResponse.json(getUserPoeStatus(user.id));
+  return NextResponse.json(settingsBody(user.id));
 }
 
 const Body = z.object({
@@ -26,7 +37,8 @@ const Body = z.object({
 /**
  * POST /api/settings/poe { poesessid, contact?, account?, disconnect? } → store (encrypted).
  * Empty poesessid KEEPS the stored secret (the field is write-only and always blank in the UI);
- * only disconnect=true clears it.
+ * only disconnect=true clears it. A new or removed cookie resets credStatus to unknown; a new one
+ * also lifts a finished reprice check's cooldown.
  */
 export async function POST(req: Request): Promise<Response> {
   const user = await getCurrentUser();
@@ -37,5 +49,8 @@ export async function POST(req: Request): Promise<Response> {
   }
   const { poesessid, contact, account, disconnect } = parsed.data;
   setUserPoe(user.id, disconnect ? null : poesessid, contact, account);
-  return NextResponse.json(getUserPoeStatus(user.id));
+  if (disconnect || poesessid !== "") resetCredStatus(user.id);
+  // a new cookie deserves a fresh reprice check — the last one may have died on the old cookie's 403
+  if (!disconnect && poesessid !== "") liftRepriceCooldown(user.id);
+  return NextResponse.json(settingsBody(user.id));
 }

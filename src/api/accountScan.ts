@@ -1,5 +1,5 @@
 import { createSearch, fetchListings, type TradeCred } from "./tradeClient";
-import type { Listing, ListingPrice } from "./tradeListing";
+import type { Listing, ListingMod, ListingPrice } from "./tradeListing";
 import { amountInDivine, ratedDiv } from "../core/listingPrice";
 import { buildValuer, type Valuer } from "../core/valuation";
 import type { ExchangeRates } from "../core/priceEngine";
@@ -27,8 +27,21 @@ export interface TabValue {
  */
 export type ScannedValueSource = "ninja" | "scout" | "ask" | "ladder";
 
-/** One listing as read — stored per snapshot (balance_items) so Liquidate can plan per item. */
+/** A rare's rolls as read, kept so a reprice check can search its comparables without a re-read. */
+export interface ScannedRare {
+  itemLevel: number | null;
+  corrupted: boolean;
+  mirrored: boolean;
+  modLines: ListingMod[];
+}
+
+/** One listing as read — stored per snapshot (balance_items) so the Sell column can plan per item. */
 export interface ScannedItem {
+  /** trade2 listing hash: the same own listing across reads (sold-since-snapshot, reprice comps). */
+  listingId: string;
+  /** When trade2 indexed the listing — how long it has sat unsold. */
+  indexed: string | null;
+  rare: ScannedRare | null; // rares only; null for everything else
   tab: string;
   itemName: string;
   baseType: string;
@@ -104,7 +117,12 @@ function addOrbs(l: Listing, acc: AccountCurrency, t: TabAcc, rates: Rates): num
 /** Fold one listing into the account + tab totals, and keep it as a per-item row. */
 function addListing(l: Listing, acc: AccountCurrency, t: TabAcc, valuer: Valuer, rates: Rates): void {
   t.items++;
+  const rare: ScannedRare | null =
+    (l.rarity ?? "").toLowerCase() === "rare"
+      ? { itemLevel: l.itemLevel, corrupted: l.corrupted, mirrored: l.mirrored, modLines: l.modLines }
+      : null;
   const item: ScannedItem = {
+    listingId: l.listingId, indexed: l.indexed, rare,
     tab: t.tab, itemName: l.itemName, baseType: l.baseType, rarity: l.rarity,
     stackSize: Math.max(1, l.stackSize), marketDiv: null, marketSource: null, ask: l.price,
   };

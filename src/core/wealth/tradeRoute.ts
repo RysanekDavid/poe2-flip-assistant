@@ -1,6 +1,6 @@
-import type { ListingCompetition, TradeListingQuote } from "../../../lib/tools/liquidateContract";
-import type { Currency, ExchangeRates } from "../../priceEngine";
-import { denominate, type Denom } from "../../treasury";
+import type { ListingCompetition, TradeListingQuote } from "../../lib/wealthContract";
+import type { Currency, ExchangeRates } from "../priceEngine";
+import { denominate, type Denom } from "../treasury";
 
 /**
  * Selling through a trade2 listing (stash-tab price note). Pure.

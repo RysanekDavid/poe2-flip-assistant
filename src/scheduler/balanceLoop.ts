@@ -1,5 +1,6 @@
 import type { TradeCred } from "../api/tradeClient";
 import { credForUser } from "../auth/credForUser";
+import { withCredStatus } from "../auth/credStatus";
 import { recordTradeBalance } from "../core/balanceRead";
 import { withHeartbeat } from "../core/heartbeat";
 import { getDefaultLeague } from "../core/leagueState";
@@ -67,7 +68,9 @@ export async function snapshotBalancesAll(deps: BalanceLoopDeps = LIVE_DEPS): Pr
       continue;
     }
     try {
-      const { scan } = await deps.record(user.id, league, cred.account, resolved.rates, cred);
+      const account = cred.account;
+      // each read is this user's own cookie answering trade2 — a 403 marks it expired (CredBanner)
+      const { scan } = await withCredStatus(user.id, cred, () => deps.record(user.id, league, account, resolved.rates, cred));
       result.read++;
       console.log(
         `[balance] ${user.name}: ${scan.divine}d ${scan.exalted}ex ${scan.chaos}c (${scan.tabs.length} tabs, ${scan.unpriced} unpriced, rates ${resolved.source})`,
