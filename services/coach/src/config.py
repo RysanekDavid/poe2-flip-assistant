@@ -53,6 +53,11 @@ class Settings(BaseSettings):
         default=Path("src/data/poe2/entities.json.gz"),
         validation_alias="POE2_ENTITY_CATALOG",
     )
+    # Curated farm strategies (the web app's Farm › Strategies files), read by find_farm_strategies.
+    configured_strategies_dir: Path = Field(
+        default=Path("src/data/poe2/strategies"),
+        validation_alias="POE2_STRATEGIES_DIR",
+    )
     configured_patch_coverage_path: Path = Field(
         default=Path("src/data/poe2/patch-coverage.json"),
         validation_alias="POE2_PATCH_COVERAGE",
@@ -130,6 +135,11 @@ class Settings(BaseSettings):
     def entity_catalog_path(self) -> Path:
         """Resolve the committed entity catalog from the repository root."""
         return _app_path(self.configured_entity_catalog_path)
+
+    @property
+    def strategies_dir(self) -> Path:
+        """Resolve the committed strategy KB directory from the repository root."""
+        return _app_path(self.configured_strategies_dir)
 
     @property
     def patch_coverage_path(self) -> Path:

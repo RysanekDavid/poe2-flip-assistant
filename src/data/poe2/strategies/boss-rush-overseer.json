@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "id": "boss-rush-overseer",
+  "title": "Map boss rush with Overseer tablets",
+  "summary": "Make more Map Bosses Powerful and more rare packs into bosses, then stack Map Boss rarity, quantity and waystone mods from Overseer tablets and the atlas tree.",
+  "mechanics": [
+    "map_boss"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "build_needs": "Kills Powerful Map Bosses quickly in T15–T16 maps.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "waystone-16",
+        "name": "Waystone (Tier 16)"
+      },
+      "role": "primary",
+      "why": "Pathkeepers and the 'of Pathways' Overseer mod raise waystone drops from Map Bosses.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Pathkeepers",
+          "https://poe2db.tw/us/Overseer_Tablet"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "waystone-15",
+        "name": "Waystone (Tier 15)"
+      },
+      "role": "secondary",
+      "why": "Same sources as Tier 16; keeps the map loop sustained.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Pathkeepers",
+          "https://poe2db.tw/us/Overseer_Tablet"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "hilda",
+    "nodes": [
+      {
+        "name": "Mighty Prey",
+        "tier": 1,
+        "effect": "25% chance to upgrade Map Bosses to Powerful Map Bosses",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Ancient Inscriptions",
+        "tier": 3,
+        "effect": "8% increased effect of Explicit Modifiers on Tablets for each type of Tablet affecting Map area",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Patient Battue",
+        "tier": 4,
+        "effect": "25% chance 1 Rare Monster is replaced by a random Map Boss; 5% chance 3 additional Rare Monsters are replaced by a random Map Boss",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": "Jado T1 In The Wrong Hands: Powerful Map Bosses drop an additional unique item.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas"
+      ],
+      "note": "Our synthesis from the node texts: more (and more Powerful) Map Bosses per map. Not measured."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Fit for a King",
+      "tree": "Atlas",
+      "effect": "20% increased Rarity of Items dropped by Map Bosses",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Fit_for_a_King",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Fit_for_a_King"
+        ]
+      }
+    },
+    {
+      "name": "Hard-Won Treasures",
+      "tree": "Atlas",
+      "effect": "15% increased Quantity of Items dropped by Map Bosses (requires completing the Matriarch Halls)",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Hard-Won_Treasures",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Hard-Won_Treasures"
+        ]
+      }
+    },
+    {
+      "name": "Pathkeepers",
+      "tree": "Atlas",
+      "effect": "15% increased Quantity of Waystones dropped by Map Bosses",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Pathkeepers",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Pathkeepers"
+        ]
+      }
+    },
+    {
+      "name": "Eons of Domination",
+      "tree": "Atlas",
+      "effect": "Overseer Precursor Tablets can drop from Powerful Map Bosses",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Eons_of_Domination",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Eons_of_Domination"
+        ]
+      }
+    },
+    {
+      "name": "Valuable Paths",
+      "tree": "Atlas",
+      "effect": "50% increased Rarity of Waystones found; 10% increased Quantity of Waystones dropped by Map Bosses",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Valuable_Paths",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Valuable_Paths"
+        ]
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Overseer Tablet",
+      "unique": null,
+      "count": null,
+      "mods": [
+        {
+          "text": "(35–60)% increased Rarity of Items dropped by Map Bosses",
+          "trade_stat_id": "explicit.stat_4255069232",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "(13–20)% increased Quantity of Items dropped by Map Bosses",
+          "trade_stat_id": "explicit.stat_3119172063",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "(18–30)% increased Quantity of Waystones dropped by Map Bosses",
+          "trade_stat_id": "explicit.stat_1457896329",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "Overseer Tablet",
+      "unique": "Cruel Hegemony",
+      "count": null,
+      "mods": [
+        {
+          "text": "Map Bosses have an additional Modifier",
+          "trade_stat_id": "explicit.stat_1458461453",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "item_rarity",
+      "waystone_drop_chance"
+    ],
+    "notes": "Item rarity first; waystone drop chance keeps the loop going.",
+    "claim": {
+      "v": "uv",
+      "src": [
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Editorial. poe2db does not say whether the map's item rarity total adds to what the Map Boss drops."
+    }
+  },
+  "steps": [
+    "Allocate Fit for a King, Hard-Won Treasures, Pathkeepers and Eons of Domination.",
+    "Set Hilda: Mighty Prey, Ancient Inscriptions, Patient Battue.",
+    "Slot an Overseer Tablet with Map Boss rarity ('of Treasure') first, quantity ('of Hoards') second.",
+    "Rush to the boss; keep Overseer tablets that Powerful Map Bosses drop for the next maps."
+  ],
+  "risks": [
+    "Cruel Hegemony makes every Map Boss harder (one more modifier) with no stated reward.",
+    "Map Boss loot beyond waystones is random; the basket prices only the waystones."
+  ],
+  "measured": null
+}

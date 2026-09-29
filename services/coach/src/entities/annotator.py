@@ -26,7 +26,7 @@ _MASK = re.compile(
     r"|`[^`\n]+`"
     r"|\[[^\]\n]+\]\([^)\s]+\)"
     r"|https?://[^\s<]+"
-    r"|\[[MLKWD][0-9a-f]{12}\]",
+    r"|\[[MLKWDS][0-9a-f]{12}\]",
     re.DOTALL | re.IGNORECASE,
 )
 # Number-anchored shorthands only: bare "div"/"Divine"/"Exalted" are ordinary words in answers

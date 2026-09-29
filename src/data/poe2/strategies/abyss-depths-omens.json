@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "id": "abyss-depths-omens",
+  "title": "Abyss: Depths, bones and omens",
+  "summary": "Push Abysses into Abyssal Depths with Depths-chance tablets and notables, make waystone mods apply down there with Close to the Surface, and sell the desecration currency and abyssal omens.",
+  "mechanics": [
+    "abyss"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "build_needs": "Clears Abyss pits whose monsters steal modifiers, and the Abyssal Depths below.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "omen-of-light",
+        "name": "Omen of Light"
+      },
+      "role": "primary",
+      "why": "Listed among Abyss items; Vile Treasures can raise Omen finds.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Abyss",
+          "https://poe2db.tw/us/Vile_Treasures"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "omen-of-abyssal-echoes",
+        "name": "Omen of Abyssal Echoes"
+      },
+      "role": "secondary",
+      "why": "Listed among Abyss items.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Abyss"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "omen-of-putrefaction",
+        "name": "Omen of Putrefaction"
+      },
+      "role": "secondary",
+      "why": "Listed among Abyss items.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Abyss"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "ancient-collarbone",
+        "name": "Ancient Collarbone"
+      },
+      "role": "secondary",
+      "why": "Abyss desecration currency; Rotting Bones raises the chance of Ancient Desecrated Currency.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Abyss",
+          "https://poe2db.tw/us/Rotting_Bones"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "preserved-cranium",
+        "name": "Preserved Cranium"
+      },
+      "role": "lottery",
+      "why": "Abyss desecration currency for Rare Jewels.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Abyss"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "doryani",
+    "nodes": [
+      {
+        "name": "Evolutionary Pressure",
+        "tier": 1,
+        "effect": "1% increased Rarity of Items Dropped by Monsters, 2% increased Effectiveness of Monsters and 3% increased chance of Monster Modifiers on Rare Monsters, each per Explicit Modifier on the Map",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Improved Calibration",
+        "tier": 2,
+        "effect": "Waystones have 25% more effect of Prefix Modifiers or 25% more effect of Suffix Modifiers when opening Maps",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": null,
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://poe2db.tw/us/Close_to_the_Surface"
+      ],
+      "note": "Owner's notes pick Doryani for Abyss. Our reading: with Close to the Surface, waystone mods (which Improved Calibration strengthens) also apply in Abyssal Depths. Not measured."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Close to the Surface",
+      "tree": "Abyss",
+      "effect": "Explicit Modifiers on your Waystones apply to Abyssal Depths in the Map area; Abyss Tablets also grant Abyssal Depths 25% increased chance for Abyssal and for Lichborn Modifiers, and 4% increased Pack Size",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Close_to_the_Surface",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Close_to_the_Surface"
+        ]
+      }
+    },
+    {
+      "name": "Vile Treasures",
+      "tree": "Abyss",
+      "effect": "50% increased chance to find Abyssal Items — choose Abyssal Eyes, Omens or Lineage Supports. Take Omens.",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Vile_Treasures",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Vile_Treasures"
+        ]
+      }
+    },
+    {
+      "name": "Depths Chance",
+      "tree": "Abyss",
+      "effect": "Abysses have 10% increased chance to lead to an Abyssal Depths (a small node the tree repeats)",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Depths_Chance",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Depths_Chance"
+        ]
+      }
+    },
+    {
+      "name": "Unholy Influence",
+      "tree": "Abyss",
+      "effect": "100% increased chance for Abyssal monsters to have Abyssal Modifiers and 100% for Lichborn Modifiers",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Unholy_Influence",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Unholy_Influence"
+        ]
+      }
+    },
+    {
+      "name": "Rotting Bones",
+      "tree": "Abyss",
+      "effect": "25% increased chance to find Ancient Desecrated Currency",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Rotting_Bones",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Rotting_Bones"
+        ]
+      }
+    },
+    {
+      "name": "Abyssal Ire",
+      "tree": "Abyss",
+      "effect": "25% chance for Abyssal Depths in Level 78+ Areas to contain a Boss; 25% chance for an Ulaman pit near the Map Boss to have the Incubator Queen",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Abyssal_Ire",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Abyssal_Ire"
+        ]
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Abyss Tablet",
+      "unique": null,
+      "count": null,
+      "mods": [
+        {
+          "text": "Abysses in Map have (10–20)% increased chance to lead to an Abyssal Depths",
+          "trade_stat_id": "explicit.stat_2722831300",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Abyss_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "(20–30)% increased chance for Abyssal monsters in Map to have Abyssal Modifiers",
+          "trade_stat_id": "explicit.stat_2789248444",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Abyss_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Monsters have (10–15)% increased Effectiveness",
+          "trade_stat_id": "explicit.stat_2065500219",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Abyss_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Map has (25–35)% increased number of Rare Monsters",
+          "trade_stat_id": "explicit.stat_3793155082",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Abyss_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Abyss Pits in Map are twice as likely to have Rewards",
+          "trade_stat_id": "explicit.stat_4256531808",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Abyss_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "monster_rarity",
+      "monster_effectiveness",
+      "item_rarity"
+    ],
+    "notes": "Owner's order. Close to the Surface makes these waystone mods apply inside Abyssal Depths as well.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Waystones",
+        "https://poe2db.tw/us/Close_to_the_Surface"
+      ],
+      "note": "Owner's run notes plus the Close to the Surface text; not measured."
+    }
+  },
+  "steps": [
+    "Allocate Close to the Surface, Vile Treasures (Omens), Rotting Bones and the Depths Chance nodes.",
+    "Set Doryani: Evolutionary Pressure and Improved Calibration.",
+    "Slot an Abyss Tablet with Depths chance and Abyssal-modifier chance; effectiveness and rare-monster mods second.",
+    "Close every pit; the final Abyss can open an Abyssal Depths — always take it."
+  ],
+  "risks": [
+    "0.5.5: the 'of Champions' Abyss tablet mod now spawns 2–3 extra rares (was 1–2) — harder pits.",
+    "No source gives omen or bone drop rates; the basket prices single items only.",
+    "0.5.5 added Large Abyssal Ravines, whose maps always contain Abysses."
+  ],
+  "measured": null
+}

@@ -9,7 +9,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMe
 from src.entities.turn import ToolOutput
 from src.schemas import EvidenceSource, TurnUsage
 
-_CITATION = re.compile(r"\[([MLKWD][0-9a-f]{12})\]")
+_CITATION = re.compile(r"\[([MLKWDS][0-9a-f]{12})\]")
 
 
 def final_answer(messages: Sequence[BaseMessage]) -> str:
