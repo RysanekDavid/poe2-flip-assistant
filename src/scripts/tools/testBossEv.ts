@@ -317,7 +317,7 @@ function testCuratedEvaluates(): void {
   const rows = buildFarmBoard([], bosses, 0);
   const payload = {
     computedLeague: "L", mechanics: [], bosses: rows, details: bosses, dataAsOf: file.dataAsOf, patch: file.patch,
-    patchWarning: null, rates: null, pricesFetchedAt: null, scoutAgeHours: null, speed: [],
+    patchWarning: null, rates: null, pricesFetchedAt: null, scoutAgeHours: null,
   };
   farmResponseSchema.parse(payload);
   assert.equal(rows.length, file.bosses.length, "one board row per curated boss");

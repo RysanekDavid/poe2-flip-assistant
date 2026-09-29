@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Flame } from "lucide-react";
 import { compact } from "../../lib/format";
 import type { MechanicRow } from "../../lib/farmContract";
@@ -49,17 +49,21 @@ interface ChipProps {
   m: MechanicRow;
   exPerDiv: number | null;
   open: boolean;
+  editorId: string;
   onToggle: () => void;
+  buttonRef: (el: HTMLButtonElement | null) => void;
 }
 
 /** One mechanic: art, name, 7d basket move, and the viewer's Div/h once both their inputs exist. */
-function MechanicChip({ m, exPerDiv, open, onToggle }: ChipProps) {
+function MechanicChip({ m, exPerDiv, open, editorId, onToggle, buttonRef }: ChipProps) {
   return (
     <Tooltip tip={driversTip(m, exPerDiv)} side="bottom">
       <button
+        ref={buttonRef}
         type="button"
         onClick={onToggle}
         aria-expanded={open}
+        aria-controls={open ? editorId : undefined}
         className={`flex h-10 items-center gap-2 rounded-md border bg-neutral-900/60 px-2.5 hover:border-neutral-500 ${open ? "border-amber-400/70" : "border-line"}`}
       >
         <ItemArt src={m.icon} size={6} />
@@ -86,24 +90,46 @@ interface Props {
 export function MechanicStrip({ mechanics, exPerDiv, onSpeedSaved }: Props) {
   const [all, setAll] = useState(false);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const chips = useRef(new Map<string, HTMLButtonElement>());
+  const editorId = useId();
   if (mechanics.length === 0) {
     return <p className="text-sm text-neutral-400">No mechanic heat yet — it appears after the first price poll.</p>;
   }
   const shown = all ? mechanics : mechanics.slice(0, TOP);
-  const open = mechanics.find((m) => m.category === openKey) ?? null;
+  // an editor whose chip is not on screen (collapsed to top six, or gone cold) is closed with it
+  const open = shown.find((m) => m.category === openKey) ?? null;
+  const close = (): void => {
+    if (openKey) chips.current.get(openKey)?.focus();
+    setOpenKey(null);
+  };
+  const toggleAll = (): void => {
+    if (all && openKey && !mechanics.slice(0, TOP).some((m) => m.category === openKey)) setOpenKey(null);
+    setAll((v) => !v);
+  };
   return (
     <section data-tour="farm" aria-label="Mechanics by 7-day basket heat" className="grid gap-2">
       <div className="flex flex-wrap items-center gap-2">
         {shown.map((m) => (
-          <MechanicChip key={m.category} m={m} exPerDiv={exPerDiv} open={m.category === openKey} onToggle={() => setOpenKey((k) => (k === m.category ? null : m.category))} />
+          <MechanicChip
+            key={m.category}
+            m={m}
+            exPerDiv={exPerDiv}
+            open={m.category === open?.category}
+            editorId={editorId}
+            onToggle={() => setOpenKey((k) => (k === m.category ? null : m.category))}
+            buttonRef={(el) => {
+              if (el) chips.current.set(m.category, el);
+              else chips.current.delete(m.category);
+            }}
+          />
         ))}
         {mechanics.length > TOP && (
-          <button type="button" onClick={() => setAll((v) => !v)} className="rounded px-1 text-sm text-neutral-400 hover:text-neutral-100">
+          <button type="button" onClick={toggleAll} className="rounded px-1 text-sm text-neutral-400 hover:text-neutral-100">
             {all ? `top ${TOP}` : `all ${mechanics.length}`}
           </button>
         )}
       </div>
-      {open && <MechanicSpeedEditor key={open.category} m={open} exPerDiv={exPerDiv} onSaved={onSpeedSaved} onClose={() => setOpenKey(null)} />}
+      {open && <MechanicSpeedEditor key={open.category} id={editorId} m={open} exPerDiv={exPerDiv} onSaved={onSpeedSaved} onClose={close} />}
     </section>
   );
 }

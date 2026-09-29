@@ -85,7 +85,7 @@ export type BossRow = z.infer<typeof bossRowSchema>;
 
 export type FarmBoardRow = MechanicRow | BossRow;
 
-/** One saved pace, as GET /api/farm lists it and PUT /api/farm/speed returns it. */
+/** One saved pace, as PUT /api/farm/speed returns it (GET /api/farm folds them into the rows). */
 export const speedEntrySchema = z.object({
   kind: farmKindSchema,
   key: z.string(),
@@ -99,6 +99,8 @@ export type SpeedEntry = z.infer<typeof speedEntrySchema>;
 
 // A day is far past any real clear; the cap only stops a typo from reading as a pace.
 export const MAX_MINUTES_PER_RUN = 24 * 60;
+// Far above any real map's yield; only stops a typo (an extra zero or two) from reading as one.
+export const MAX_DIV_PER_RUN = 10_000;
 
 /**
  * PUT /api/farm/speed body: a full replacement of the viewer's pace on one row. A boss takes no
@@ -109,7 +111,7 @@ export const speedPutSchema = z
     kind: farmKindSchema,
     key: z.string().trim().min(1).max(64),
     minutesPerRun: z.number().finite().positive().max(MAX_MINUTES_PER_RUN),
-    divPerRun: z.number().finite().nonnegative().nullable().optional(),
+    divPerRun: z.number().finite().nonnegative().max(MAX_DIV_PER_RUN).nullable().optional(),
   })
   .strict()
   .refine((b) => b.kind === "mechanic" || b.divPerRun == null, {
@@ -152,7 +154,5 @@ export const farmResponseSchema = z.object({
   dataAsOf: z.string(),
   patch: z.string(),
   patchWarning: z.object({ level: z.enum(["obsolete", "recheck"]), text: z.string() }).nullable(),
-  /** Every pace the viewer saved, including keys not on today's board (a mechanic that went cold). */
-  speed: z.array(speedEntrySchema),
 });
 export type FarmResponse = z.infer<typeof farmResponseSchema>;

@@ -80,6 +80,25 @@ export function compareDivPerHour(a: BossRow, b: BossRow, dir: "asc" | "desc"): 
   return dir === "desc" ? b.divPerHour - a.divPerHour : a.divPerHour - b.divPerHour;
 }
 
+export type BossOrder = { key: "board" } | { key: "divh"; dir: "asc" | "desc" };
+
+/**
+ * Display order of the boss table. `frozen` is the id order on screen when a pace input took focus:
+ * while it is set, a save-triggered reload must not move rows under the cursor (moving a focused
+ * row blurs its input and commits a half-typed value), so rows keep that order — a row that was
+ * not on screen goes last — and the live sort applies again once focus leaves the inputs.
+ */
+export function orderBosses(rows: readonly BossRow[], order: BossOrder, frozen: readonly string[] | null): BossRow[] {
+  if (frozen) {
+    const pos = new Map(frozen.map((id, i) => [id, i]));
+    const at = (r: BossRow): number => pos.get(r.id) ?? frozen.length;
+    return [...rows].sort((a, b) => at(a) - at(b));
+  }
+  if (order.key === "board") return [...rows];
+  const { dir } = order;
+  return [...rows].sort((a, b) => compareDivPerHour(a, b, dir));
+}
+
 export type SpeedDraft = { ok: true; value: number | null } | { ok: false };
 
 /**

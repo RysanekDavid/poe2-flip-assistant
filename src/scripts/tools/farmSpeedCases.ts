@@ -5,10 +5,10 @@ import assert from "node:assert/strict";
 import type Database from "better-sqlite3";
 import { buildFarmBoard, isBossRow, isMechanicRow, type MechanicInput } from "../../core/farm/farmBoard";
 import { isCuratedBossId, loadFarmBoard } from "../../core/farm/farmLoad";
-import { applySpeeds, compareDivPerHour, divPerHour, mechanicDivPerHour, parseSpeedDraft } from "../../core/farm/farmSpeed";
+import { applySpeeds, compareDivPerHour, divPerHour, mechanicDivPerHour, orderBosses, parseSpeedDraft } from "../../core/farm/farmSpeed";
 import type { Tier } from "../../core/tools/bossEv/schema";
 import { deleteFarmSpeed, listFarmSpeeds, saveFarmSpeed } from "../../db/farmSpeedQueries";
-import { farmResponseSchema, MAX_MINUTES_PER_RUN, speedDeleteSchema, speedErrorText, speedPutSchema, type SpeedEntry } from "../../lib/farmContract";
+import { farmResponseSchema, MAX_DIV_PER_RUN, MAX_MINUTES_PER_RUN, speedDeleteSchema, speedErrorText, speedPutSchema, type BossRow, type SpeedEntry } from "../../lib/farmContract";
 import { rank, view, type Inputs } from "./farmBoardCases";
 import { insertUser } from "./toolsTestKit";
 
@@ -68,10 +68,27 @@ function testApplySpeeds(tier: Tier, inputs: Inputs): void {
     const sorted = [...mine.bosses].sort((a, b) => compareDivPerHour(a, b, dir)).map((b) => b.id);
     assert.equal(sorted[0], "rich", `${dir}: rows with a Div/h lead; unknown and unpaced trail`);
   }
+  testOrdering(mine.bosses);
   farmResponseSchema.parse({
     computedLeague: "L", ...mine, details, rates: null, pricesFetchedAt: null, scoutAgeHours: null, dataAsOf: "2026-09-29",
-    patch: "0.5.5", patchWarning: null, speed: speeds,
+    patch: "0.5.5", patchWarning: null,
   });
+}
+
+/** The boss table's order: board / Div/h sort, and frozen while a pace input has focus. */
+function testOrdering(bosses: BossRow[]): void {
+  const ids = (rows: BossRow[]): string[] => rows.map((b) => b.id);
+  const board = ids(bosses);
+  assert.deepEqual(ids(orderBosses(bosses, { key: "board" }, null)), board, "board order = the server's");
+  const byDivH = ids(orderBosses(bosses, { key: "divh", dir: "desc" }, null));
+  assert.equal(byDivH[0], "rich");
+  // a save lands while an input is focused: the reload would re-sort — the frozen order must win
+  const frozen = ["poor", "partial", "rich"];
+  const faster = bosses.map((b) => (b.id === "poor" ? { ...b, yourMinutes: 1, divPerHour: 999, divPerHourBound: b.netBound } : b));
+  assert.deepEqual(ids(orderBosses(faster, { key: "divh", dir: "desc" }, frozen)), frozen, "rows never move under a focused input");
+  assert.equal(ids(orderBosses(faster, { key: "divh", dir: "desc" }, null))[0], "rich", "the sort applies again once focus leaves");
+  assert.deepEqual(ids(orderBosses(bosses, { key: "board" }, ["partial"])), ["partial", ...board.filter((id) => id !== "partial")], "rows not on screen when frozen go last, in their order");
+  assert.notEqual(orderBosses(bosses, { key: "board" }, null), bosses, "never sorts the caller's array in place");
 }
 
 function testPutValidation(): void {
@@ -85,6 +102,9 @@ function testPutValidation(): void {
   assert.equal(ok({ kind: "boss", key: "xesha", minutesPerRun: "5" }), false, "string minutes");
   assert.equal(ok({ kind: "boss", key: "xesha", minutesPerRun: 4, divPerRun: 1 }), false, "a boss takes no Div/run");
   assert.equal(ok({ kind: "mechanic", key: "Abyss", minutesPerRun: 4, divPerRun: -1 }), false, "negative Div/map");
+  assert.equal(ok({ kind: "mechanic", key: "Abyss", minutesPerRun: 4, divPerRun: MAX_DIV_PER_RUN + 1 }), false, "Div/map typo cap");
+  assert.equal(ok({ kind: "mechanic", key: "Abyss", minutesPerRun: 4, divPerRun: Number.POSITIVE_INFINITY }), false, "non-finite Div/map");
+  assert.equal(ok({ kind: "boss", key: "xesha", minutesPerRun: Number.NaN }), false, "NaN minutes");
   assert.equal(ok({ kind: "mechanic", key: "  ", minutesPerRun: 4 }), false, "blank key");
   assert.equal(ok({ kind: "map", key: "Abyss", minutesPerRun: 4 }), false, "unknown kind");
   assert.equal(ok({ kind: "boss", key: "xesha", minutesPerRun: 4, userId: 2 }), false, "strict: no smuggled user id");
@@ -124,8 +144,8 @@ export function runFarmSpeedDbCases(db: Database.Database, nowMs: number): void 
   const board = loadFarmBoard("L", nowMs);
   assert.equal(board.computedLeague, "L");
   assert.ok(board.bosses.length > 0 && board.bosses.every((b) => b.divPerHour === null), "loadFarmBoard is unpersonalised");
-  const speed = listFarmSpeeds(alice);
-  farmResponseSchema.parse({ ...applySpeeds(board, speed), speed });
+  const mine = farmResponseSchema.parse(applySpeeds(board, listFarmSpeeds(alice)));
+  assert.equal(mine.mechanics.length, board.mechanics.length);
   const firstBoss = board.bosses[0];
   assert.ok(firstBoss && isCuratedBossId(firstBoss.id) && !isCuratedBossId("not-a-boss"), "PUT only accepts curated boss ids");
 }

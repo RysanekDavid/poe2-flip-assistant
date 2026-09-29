@@ -18,8 +18,7 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const speed = listFarmSpeeds(user.id);
-  const body: FarmResponse = { ...applySpeeds(loadFarmBoard(leagueForUser(user.id), Date.now()), speed), speed };
+  const body: FarmResponse = applySpeeds(loadFarmBoard(leagueForUser(user.id), Date.now()), listFarmSpeeds(user.id));
   // validated on the way out: a drift between the engine and the contract fails here, not in the browser
   return NextResponse.json(farmResponseSchema.parse(body), { headers: { "Cache-Control": "no-store" } });
 }

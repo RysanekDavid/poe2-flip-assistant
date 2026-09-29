@@ -86,7 +86,7 @@ function testBoard(tier: Tier, inputs: Inputs): void {
   assert.equal(bossRows[0]!.confidence, "unverified", "EV carried by an unverified range line → weakest label");
   farmResponseSchema.parse({
     computedLeague: "L", mechanics: rows.filter(isMechanicRow), bosses: bossRows, details: [rich, poor, partial], rates: null,
-    pricesFetchedAt: null, scoutAgeHours: null, dataAsOf: "2026-09-29", patch: "0.5.5", patchWarning: null, speed: [],
+    pricesFetchedAt: null, scoutAgeHours: null, dataAsOf: "2026-09-29", patch: "0.5.5", patchWarning: null,
   });
 }
 

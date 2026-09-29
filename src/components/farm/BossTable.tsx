@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { compareDivPerHour } from "../../core/farm/farmSpeed";
+import { useState, type FocusEvent } from "react";
+import { orderBosses, type BossOrder } from "../../core/farm/farmSpeed";
 import { fmtDiv } from "../../core/tools/bossEv/headline";
 import { compact } from "../../lib/format";
 import { MAX_MINUTES_PER_RUN, type BossRow } from "../../lib/farmContract";
-import { DataTable, type Column, type SortDir } from "../ui/DataTable";
+import { DataTable, type Column, type TableSort } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
 import { PriceChip } from "../ui/PriceChip";
-import { deleteSpeed, putSpeed, useSpeedSave } from "./farmSpeedApi";
+import { deleteSpeed, putSpeed, useRowSaves, type RowSaves } from "./farmSpeedApi";
 import { ConfidenceChip, fmtDivHour, fmtOneIn, fmtPct, TONE_CLASS, UnpricedChip } from "./farmView";
 import { SpeedInput } from "./SpeedInput";
 
@@ -104,14 +104,14 @@ function DivHourCell({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null }) {
 
 type SaveMinutes = (bossId: string, minutes: number | null) => void;
 
-function speedColumns(exPerDiv: number | null, save: SaveMinutes): Column<BossRow>[] {
+function speedColumns(exPerDiv: number | null, save: SaveMinutes, status: RowSaves["status"]): Column<BossRow>[] {
   return [
     {
       key: "pace",
       header: "Your pace",
       tip: "your minutes per kill — the whole cycle, from using the entry to loot picked up. Enter or click away saves, empty clears. Private to you.",
       cell: (r) => (
-        <SpeedInput key={String(r.yourMinutes)} value={r.yourMinutes} onCommit={(m) => save(r.id, m)} label={`Your minutes per ${r.name} kill`} unit="min" max={MAX_MINUTES_PER_RUN} />
+        <SpeedInput value={r.yourMinutes} onCommit={(m) => save(r.id, m)} label={`Your minutes per ${r.name} kill`} unit="min" max={MAX_MINUTES_PER_RUN} save={status(r.id)} />
       ),
     },
     {
@@ -125,17 +125,29 @@ function speedColumns(exPerDiv: number | null, save: SaveMinutes): Column<BossRo
   ];
 }
 
-function columns(exPerDiv: number | null): Column<BossRow>[] {
+/** The row's own keyboard target: the row itself stays a plain row because it holds an input. */
+function BossNameCell({ r, selected, onSelect }: { r: BossRow; selected: boolean; onSelect: (id: string) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(r.id)}
+      aria-pressed={selected}
+      aria-label={`${r.name} — show loot table`}
+      title={r.mechanic}
+      className="flex items-center gap-2 rounded text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400"
+    >
+      <ItemArt src={r.icon} size={6} />
+      <span className="font-medium text-neutral-100">{r.name}</span>
+    </button>
+  );
+}
+
+function columns(exPerDiv: number | null, selectedId: string | null, onSelect: (id: string) => void): Column<BossRow>[] {
   return [
     {
       key: "boss",
       header: "Boss",
-      cell: (r) => (
-        <span className="flex items-center gap-2" title={r.mechanic}>
-          <ItemArt src={r.icon} size={6} />
-          <span className="font-medium text-neutral-100">{r.name}</span>
-        </span>
-      ),
+      cell: (r) => <BossNameCell r={r} selected={r.id === selectedId} onSelect={onSelect} />,
     },
     { key: "entry", header: "Entry", align: "right", tip: "cheapest of buying the key or crafting it, at today's exchange prices", cell: (r) => <EntryCell r={r} exPerDiv={exPerDiv} /> },
     { key: "floor", header: "Floor", align: "right", tip: "priced loot that lands on most kills: guaranteed drops plus drops at 1 in 10 or better", cell: (r) => <SumCell div={r.floorDiv} exPerDiv={exPerDiv} none="no priced drop lands on most kills" /> },
@@ -166,38 +178,69 @@ interface Props {
   onSpeedSaved: () => void;
 }
 
-const BOARD = "board";
-
 /** Board order (the server's net ranking) until "Your Div/h" is clicked: desc → asc → board again. */
 function useDivHourSort() {
-  const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: BOARD, dir: "desc" });
+  const [order, setOrder] = useState<BossOrder>({ key: "board" });
   const onSort = (key: string): void => {
     if (key !== "divh") throw new Error(`Farm bosses: unknown sort column ${key}`);
-    setSort((s) => (s.key !== "divh" ? { key, dir: "desc" } : s.dir === "desc" ? { key, dir: "asc" } : { key: BOARD, dir: "desc" }));
+    setOrder((o) => (o.key !== "divh" ? { key, dir: "desc" } : o.dir === "desc" ? { key, dir: "asc" } : { key: "board" }));
   };
-  const order = (rows: BossRow[]): BossRow[] => (sort.key === "divh" ? [...rows].sort((a, b) => compareDivPerHour(a, b, sort.dir)) : rows);
-  return { sort: { ...sort, onSort }, order };
+  const sort: TableSort = { key: order.key, dir: order.key === "divh" ? order.dir : "desc", onSort };
+  return { order, sort };
 }
 
-/** Pinnacle bosses by net per kill (or by the viewer's Div/hour); a row opens its loot table below. */
+const isInput = (t: EventTarget | null): boolean => t instanceof HTMLInputElement;
+
+/**
+ * Freeze the row order while any pace input has focus (orderBosses): a save reloads the board, and
+ * a re-sort then would move the row being typed in. Tabbing input → input keeps the freeze.
+ */
+function useFocusFreeze() {
+  const [frozen, setFrozen] = useState<readonly string[] | null>(null);
+  const handlers = (shownIds: readonly string[]) => ({
+    onFocus: (e: FocusEvent<HTMLDivElement>): void => {
+      if (isInput(e.target)) setFrozen((f) => f ?? shownIds);
+    },
+    onBlur: (e: FocusEvent<HTMLDivElement>): void => {
+      const next = e.relatedTarget;
+      if (!(isInput(next) && next instanceof Node && e.currentTarget.contains(next))) setFrozen(null);
+    },
+  });
+  return { frozen, handlers };
+}
+
+function SaveFailures({ failures, bosses }: { failures: RowSaves["failures"]; bosses: readonly BossRow[] }) {
+  if (failures.length === 0) return null;
+  const name = (id: string): string => bosses.find((b) => b.id === id)?.name ?? id;
+  return (
+    <p role="alert" className="text-sm text-bad">
+      Pace not saved — {failures.map((f) => `${name(f.rowKey)}: ${f.error}`).join(" · ")}
+    </p>
+  );
+}
+
+/** Pinnacle bosses by net per kill (or by the viewer's Div/hour); a boss name opens its loot table below. */
 export function BossTable({ bosses, selectedId, onSelect, exPerDiv, onSpeedSaved }: Props) {
-  const { sort, order } = useDivHourSort();
+  const { order, sort } = useDivHourSort();
   // inputs stay enabled while a save is in flight: disabling them would steal focus from the next field
-  const { error, run } = useSpeedSave(onSpeedSaved);
+  const saves = useRowSaves(onSpeedSaved);
   const save: SaveMinutes = (bossId, minutes) =>
-    run(() => (minutes == null ? deleteSpeed({ kind: "boss", key: bossId }) : putSpeed({ kind: "boss", key: bossId, minutesPerRun: minutes })));
-  const base = columns(exPerDiv);
+    saves.run(bossId, () => (minutes == null ? deleteSpeed({ kind: "boss", key: bossId }) : putSpeed({ kind: "boss", key: bossId, minutesPerRun: minutes })));
+  const freeze = useFocusFreeze();
+  const rows = orderBosses(bosses, order, freeze.frozen);
+  const base = columns(exPerDiv, selectedId, onSelect);
   const afterNet = base.findIndex((c) => c.key === "net") + 1;
   return (
-    <div className="grid gap-1.5">
-      {error && <p role="alert" className="text-sm text-bad">Pace not saved — {error}</p>}
+    <div className="grid gap-1.5" {...freeze.handlers(rows.map((r) => r.id))}>
+      <SaveFailures failures={saves.failures} bosses={bosses} />
       <DataTable
-        columns={[...base.slice(0, afterNet), ...speedColumns(exPerDiv, save), ...base.slice(afterNet)]}
-        rows={order(bosses)}
+        columns={[...base.slice(0, afterNet), ...speedColumns(exPerDiv, save, saves.status), ...base.slice(afterNet)]}
+        rows={rows}
         rowKey={(r) => r.id}
         onRowClick={(r) => onSelect(r.id)}
         selectedKey={selectedId ?? undefined}
         sort={sort}
+        interactiveCells
         emptyState={<EmptyState icon={null} sentence="No boss data — the curated loot tables did not load." />}
       />
     </div>

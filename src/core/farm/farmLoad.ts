@@ -16,8 +16,8 @@ const NINJA_IDS = referencedNinjaIds(BOSS_LOOT);
 const COVERAGE_PATCH = patchCoverageSchema.parse(patchCoverageRaw).game_data_patch;
 const BOSS_IDS: ReadonlySet<string> = new Set(BOSS_LOOT.bosses.map((b) => b.id));
 
-/** The farm board as every viewer of `league` sees it — no per-user pace applied (speed is empty). */
-export type FarmBoardLoad = Omit<FarmResponse, "speed">;
+/** The farm board as every viewer of `league` sees it — no per-user pace applied (every pace field null). */
+export type FarmBoardLoad = FarmResponse;
 
 /** A curated boss id — the only keys a boss pace may be saved under. */
 export const isCuratedBossId = (id: string): boolean => BOSS_IDS.has(id);
