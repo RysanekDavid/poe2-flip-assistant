@@ -77,7 +77,7 @@ function AskCell({ r }: { r: DemandRow }) {
         </span>
       )}
       {r.trust === "thin" && (
-        <span className="ml-1 text-neutral-600" title="few listings/data points — low confidence">
+        <span className="ml-1 text-neutral-500" title="few listings/data points — low confidence">
           ~
         </span>
       )}
@@ -112,7 +112,7 @@ function DemandRowView({ r }: { r: DemandRow }) {
   );
 }
 
-/** Sortable demand table; the parent owns filtering and sort state. */
+/** Sortable demand table; the parent owns filtering, sort state and the empty state. */
 export function DemandTable({ rows, sortKey, sortDir, onSort }: {
   rows: DemandRow[];
   sortKey: SortKey;
@@ -143,13 +143,6 @@ export function DemandTable({ rows, sortKey, sortDir, onSort }: {
           {rows.map((r) => (
             <DemandRowView key={r.id} r={r} />
           ))}
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan={COLUMNS.length + 1} className="py-3 text-center text-neutral-500">
-                nothing matches
-              </td>
-            </tr>
-          )}
         </tbody>
       </table>
     </div>
