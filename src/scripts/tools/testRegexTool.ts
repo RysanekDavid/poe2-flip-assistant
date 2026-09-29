@@ -18,6 +18,8 @@ import {
 import { SearchParseError, explainSearch, parseSearch } from "../../core/tools/regex/explain";
 import { emptyPoolSelection, thresholdKey } from "../../lib/tools/regexPoolContract";
 import { assertPanelExport, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
+import { testExplainJob, testPresetsPerTab, testShareRoundTrip, testVendorCompose, testWorkerRunner } from "./testRegexUi";
+import { testRegexUiLinks } from "./testRegexUiLinks";
 
 function testSchemaOrder(): void {
   const ddl = applicationSchemaSql();
@@ -258,7 +260,21 @@ testCoverAndSelect();
 testChunking();
 testParseAndExplain();
 testTrashUncovered();
+testPresetsPerTab(insertUser(db, "regex-erin"));
+testShareRoundTrip();
+testExplainJob();
+testVendorCompose();
+testRegexUiLinks();
 assertPanelExport("src/components/tools/regex/RegexTool.tsx", "RegexTool", "src/components/shell/tabs/RegexTab.tsx");
-console.log(
-  "ALL PASS — regex_presets schema + round-trip, namespace, collision-safe fragments, cover, chunking, parser/explain, panel wiring",
-);
+// the worker runner is promise-based; CommonJS tsx has no top-level await
+testWorkerRunner()
+  .then(() =>
+    console.log(
+      "ALL PASS — regex_presets schema + round-trip, namespace, collision-safe fragments, cover, chunking, parser/explain, " +
+        "presets per tab, share links, worker deadline, explain job + budget, vendor compose, trade link, ranges, session mirror, panel wiring",
+    ),
+  )
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exit(1);
+  });

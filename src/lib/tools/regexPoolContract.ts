@@ -1,6 +1,6 @@
 /*
  * Contract for the Regex tool's client-side tabs (Waystone, Tablet, Relic, Jewel, Vendor): the
- * per-tab selection a panel edits, stores in a preset and shares via `#regex=…`, plus the enums
+ * per-tab selection a panel edits, stores in a preset and shares via `?tab=regex&tool=<tab>&s=…`, plus the enums
  * of what the composer reports back. Shared by UI, presets and tests so none of them can drift.
  * Price stays in regexContract.ts (server-built from live prices).
  */
@@ -139,10 +139,14 @@ export function emptyPoolSelection<T extends PoolTabSelection["tab"]>(tab: T): E
 export const PoolWarningSchema = z.object({ code: z.enum(POOL_WARNING_CODES), label: z.string(), detail: z.string() });
 export type PoolWarning = z.infer<typeof PoolWarningSchema>;
 
-/* ---- share links: #regex=<base64url(JSON)> ---- */
+/*
+ * ---- share links: ?tab=regex&tool=<tab>&s=<base64url(JSON)> ----
+ * A query param, not a #fragment: the shell router already owns ?tab & ?tool, so a shared link
+ * lands on the right sub-tab before the selection is decoded (see regexShareUrl.ts).
+ */
 
-export const SHARE_HASH_KEY = "regex";
-/** A share link is a URL fragment; past this it no longer fits comfortably in a chat message. */
+export const SHARE_PARAM = "s";
+/** A share code rides in the URL; past this it no longer fits comfortably in a chat message. */
 export const SHARE_MAX_CHARS = 6000;
 const SHARE_VERSION = 1;
 const ShareEnvelopeSchema = z.object({ v: z.literal(SHARE_VERSION), s: TabSelectionSchema });
@@ -162,7 +166,7 @@ function fromBase64Url(encoded: string): string {
   return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
 
-/** Selection → URL-fragment payload (without the `#regex=` prefix). Throws when it would be too long. */
+/** Selection → share code (the value of the `s` query param). Throws when it would be too long. */
 export function encodeShare(selection: TabSelection): string {
   const code = toBase64Url(JSON.stringify({ v: SHARE_VERSION, s: TabSelectionSchema.parse(selection) }));
   if (code.length > SHARE_MAX_CHARS) throw new Error(`share code is ${code.length} chars — over the ${SHARE_MAX_CHARS}-char limit`);

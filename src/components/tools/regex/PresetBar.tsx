@@ -8,8 +8,10 @@ import {
   PresetSavedSchema,
   requestRegexApi,
   type Preset,
-  type PricePresetParams,
+  type PresetParams,
 } from "../../../lib/tools/regexContract";
+import type { RegexTab } from "../../../lib/tools/regexPoolContract";
+import { describePreset, presetsForTab } from "./presetView";
 
 const PRESETS_URL = "/api/tools/regex/presets";
 
@@ -29,7 +31,7 @@ function usePresets() {
       .catch((e: unknown) => setError(`loading presets failed: ${describe(e)}`));
   }, []);
   useEffect(reload, [reload]);
-  const save = (name: string, params: PricePresetParams): Promise<boolean> =>
+  const save = (name: string, params: PresetParams): Promise<boolean> =>
     requestRegexApi(PRESETS_URL, { method: "POST", body: { name, params } }, PresetSavedSchema)
       .then(() => {
         reload();
@@ -46,28 +48,25 @@ function usePresets() {
   return { presets, error, save, remove };
 }
 
-function PresetChip({ preset, onLoad, onDelete }: { preset: Preset; onLoad: (p: PricePresetParams) => void; onDelete: () => void }) {
-  const params = preset.params?.tab === "price" ? preset.params : null;
-  const title = params
-    ? `${params.mode === "keep" ? "keep ≥" : "trash <"} ${params.minDiv} Div · ${params.categories.length} categories${params.includeUniques ? " + uniques" : ""} · saved in ${preset.league}`
-    : `cannot load: ${preset.invalid ?? "unknown"}`;
+function PresetChip({ preset, onLoad, onDelete }: { preset: Preset; onLoad: (p: PresetParams) => void; onDelete: () => void }) {
+  const params = preset.params;
+  const title = params ? `${describePreset(params)} · saved in ${preset.league}` : `cannot load: ${preset.invalid ?? "unknown"}`;
   return (
-    <span className={`inline-flex items-center rounded-md border text-xs ${params ? "border-neutral-700 text-neutral-300" : "border-bad/50 text-bad"}`}>
-      <button type="button" disabled={!params} onClick={() => params && onLoad(params)} title={title} className="px-2 py-1 hover:bg-neutral-800 disabled:cursor-not-allowed">
+    <span className={`inline-flex items-center rounded-md border text-xs ${params ? "border-neutral-700 text-neutral-200" : "border-bad/50 text-bad"}`}>
+      <button type="button" disabled={!params} onClick={() => params && onLoad(params)} title={title} className="h-7 px-2.5 hover:bg-neutral-800 disabled:cursor-not-allowed">
         {preset.name}
       </button>
-      <button type="button" onClick={onDelete} title={`delete preset "${preset.name}"`} className="border-l border-neutral-700 px-1 py-1 text-neutral-600 hover:text-bad">
-        <X className="h-3 w-3" />
+      <button type="button" onClick={onDelete} aria-label={`delete preset "${preset.name}"`} className="h-7 border-l border-neutral-700 px-1.5 text-neutral-400 hover:text-bad">
+        <X aria-hidden className="h-3.5 w-3.5" />
       </button>
     </span>
   );
 }
 
-/** Saved selections. A preset stores parameters only — the string is rebuilt from live prices. */
-export function PresetBar({ params, onLoad }: { params: PricePresetParams; onLoad: (p: PricePresetParams) => void }) {
+/** Saved selections for one sub-tab. A preset stores parameters only; strings are rebuilt on load. */
+export function PresetBar({ tab, params, onLoad }: { tab: RegexTab; params: PresetParams; onLoad: (p: PresetParams) => void }) {
   const { presets: all, error, save, remove } = usePresets();
-  // other tabs' presets belong to their own panels; unparseable rows stay visible so they can be deleted
-  const presets = all.filter((p) => p.params === null || p.params.tab === "price");
+  const presets = presetsForTab(all, tab);
   const [name, setName] = useState("");
   const submit = () => {
     const trimmed = name.trim();
@@ -75,21 +74,23 @@ export function PresetBar({ params, onLoad }: { params: PricePresetParams; onLoa
     void save(trimmed, params).then((ok) => ok && setName(""));
   };
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5" aria-label="presets">
+      <span className="text-xs text-neutral-400">Presets</span>
       {presets.map((p) => (
         <PresetChip key={p.id} preset={p} onLoad={onLoad} onDelete={() => void remove(p)} />
       ))}
-      <span className="inline-flex items-center rounded-md border border-dashed border-neutral-700">
+      <span className="inline-flex items-center rounded-md border border-dashed border-neutral-700 focus-within:border-solid focus-within:border-amber-400/60 focus-within:ring-1 focus-within:ring-amber-400/40">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
           placeholder="save as…"
+          aria-label="preset name"
           maxLength={60}
-          className="w-28 bg-transparent px-2 py-1 text-xs text-neutral-200 outline-none placeholder:text-neutral-600"
+          className="h-7 w-28 bg-transparent px-2 text-xs text-neutral-200 outline-none placeholder:text-neutral-500"
         />
-        <button type="button" onClick={submit} title="save the current selection (same name overwrites)" className="px-1.5 py-1 text-neutral-500 hover:text-neutral-200">
-          <BookmarkPlus className="h-3.5 w-3.5" />
+        <button type="button" onClick={submit} aria-label="save preset" title="save the current selection (same name overwrites)" className="h-7 px-1.5 text-neutral-400 hover:text-neutral-100">
+          <BookmarkPlus aria-hidden className="h-4 w-4" />
         </button>
       </span>
       {error && <span className="text-xs text-bad">{error}</span>}

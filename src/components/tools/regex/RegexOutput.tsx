@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Check, Copy, SearchCode } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { fmtSmart } from "../../../lib/format";
 import { CELL, ROW_BASE, SCROLL_BOX, THEAD_STICKY, categoryColor } from "../../../lib/tableStyle";
 import type {
@@ -52,66 +52,14 @@ export function DataAgeStrip({ dataAsOf, league, namespaceSize }: { dataAsOf: Da
   const ninja = age(dataAsOf.ninja, now);
   const uniques = age(dataAsOf.uniques, now);
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+    <div className="flex flex-wrap items-center gap-1.5 text-xs">
       <span className="text-neutral-500" title="league these prices come from">{league}</span>
       <AgeChip name="ninja" iso={dataAsOf.ninja} now={now} stale={(ninja.mins ?? 0) >= NINJA_STALE_MIN} title="poe.ninja exchange prices" />
       <AgeChip name="uniques" iso={dataAsOf.uniques} now={now} stale={(uniques.mins ?? 0) >= UNIQUES_STALE_MIN} title="poe2scout unique prices (refreshed by balance scans, ~6h)" />
       <AgeChip name="trade2 ref" iso={dataAsOf.tradeMeta} now={now} stale={false} title="trade2 names, bases and mod texts used for collisions (24h cache)" />
-      <span className="text-neutral-600" title="item names, uniques, bases and mod lines every fragment was checked against">
+      <span className="text-neutral-400" title="item names, uniques, bases and mod lines every fragment was checked against">
         {namespaceSize.toLocaleString("en-US")} lines checked
       </span>
-    </div>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      })
-      .catch((e: unknown) => console.error("[tools/regex] copying the search string failed", e));
-  };
-  return (
-    <button
-      type="button"
-      onClick={copy}
-      title="copy to clipboard, paste into the stash search"
-      className="inline-flex items-center gap-1 rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
-    >
-      {copied ? <Check className="h-3.5 w-3.5 text-good" /> : <Copy className="h-3.5 w-3.5" />}
-      {copied ? "copied" : "copy"}
-    </button>
-  );
-}
-
-function ChunkCard({ chunk, index, maxChars, onExplain }: {
-  chunk: RegexChunkView;
-  index: number;
-  maxChars: number;
-  onExplain: (text: string) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/20 bg-neutral-950/70 px-3 py-2">
-      <span className="text-xs tabular-nums text-neutral-600">#{index + 1}</span>
-      <code className="min-w-0 flex-1 break-all font-mono text-sm text-amber-200" title={`covers: ${chunk.covers.join(", ")}`}>
-        {chunk.text}
-      </code>
-      <span className="text-xs tabular-nums text-neutral-500" title="characters used / limit">
-        {chunk.chars}/{maxChars}
-      </span>
-      <button
-        type="button"
-        onClick={() => onExplain(chunk.text)}
-        title="show what this string matches"
-        className="rounded p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
-      >
-        <SearchCode className="h-4 w-4" />
-      </button>
-      <CopyButton text={chunk.text} />
     </div>
   );
 }
@@ -132,7 +80,7 @@ function CoveredRow({ row }: { row: CoveredView }) {
         <span className="flex items-center gap-2">
           <MatIcon icon={row.icon} size={6} />
           <span className="text-neutral-100">{row.name}</span>
-          <span className={`rounded px-1.5 text-[10px] ${tone}`}>{row.kind === "unique" ? "Unique" : row.category}</span>
+          <span className={`rounded px-1.5 text-xs ${tone}`}>{row.kind === "unique" ? "Unique" : row.category}</span>
         </span>
       </td>
       <ValueCell div={row.valueDiv} perUnit={row.perUnit} />
@@ -141,7 +89,7 @@ function CoveredRow({ row }: { row: CoveredView }) {
         {row.verify && (
           <span
             title={row.collisions.length > 0 ? `also matches: ${row.collisions.join(" · ")}` : "escaped full name — check the in-game search accepts it"}
-            className="ml-2 inline-flex items-center gap-1 rounded bg-warn/15 px-1.5 font-sans text-[10px] font-semibold text-warn"
+            className="ml-2 inline-flex items-center gap-1 rounded bg-warn/15 px-1.5 font-sans text-xs font-semibold text-warn"
           >
             <AlertTriangle className="h-3 w-3" /> verify
           </span>
@@ -197,30 +145,11 @@ function UncoveredList({ rows, mode }: { rows: UncoveredView[]; mode: RegexMode 
   );
 }
 
-export function RegexOutput({ result, maxChars, onExplain }: {
-  result: BuildResponse;
-  maxChars: number;
-  onExplain: (text: string) => void;
-}) {
-  if (result.reason !== null) {
-    return <div className="rounded-md border border-neutral-800 px-3 py-2 text-sm text-neutral-500">Nothing to search for: {result.reason}.</div>;
-  }
+/** Price tab detail under the pinned strings: what is covered, and what no string reaches. */
+export function RegexOutput({ result }: { result: BuildResponse }) {
+  if (result.reason !== null) return null;
   return (
     <div className="flex flex-col gap-3">
-      {result.warnings.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {result.warnings.map((w) => (
-            <span key={w.code} title={w.detail} className="inline-flex items-center gap-1 rounded bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn">
-              <AlertTriangle className="h-3.5 w-3.5" /> {w.label}
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="flex flex-col gap-1.5">
-        {result.chunks.map((c, i) => (
-          <ChunkCard key={c.text} chunk={c} index={i} maxChars={maxChars} onExplain={onExplain} />
-        ))}
-      </div>
       <UncoveredList rows={result.uncovered} mode={result.mode} />
       <CoveredTable rows={result.covered} />
     </div>

@@ -51,7 +51,7 @@ export const TABS: readonly TabMeta[] = [
       { id: "sell", label: "Sell" },
     ],
   },
-  { id: "regex", label: "Regex", hint: "stash-search regex by price", openTools: true },
+  { id: "regex", label: "Regex", hint: "stash search: waystones · tablets · relics · jewels · vendor · price", openTools: true },
   { id: "alerts", label: "Alerts", hint: "alert feed · sound, popup & Discord routing" },
   {
     id: "settings",

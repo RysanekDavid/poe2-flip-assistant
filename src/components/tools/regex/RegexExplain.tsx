@@ -71,7 +71,7 @@ function TermRow({ term }: { term: ExplainTerm }) {
           {term.negated ? "excludes" : "matches"} {total} item/base names
         </span>
         {term.counts.stat > 0 && (
-          <span className="rounded bg-warn/15 px-1.5 text-[10px] font-semibold text-warn" title="mod lines this term also hits — items with these mods light up too">
+          <span className="rounded bg-warn/15 px-1.5 text-xs font-semibold text-warn" title="mod lines this term also hits — items with these mods light up too">
             +{term.counts.stat} mod lines
           </span>
         )}
@@ -108,15 +108,15 @@ export function RegexExplain({ text, onText }: { text: string; onText: (t: strin
           onChange={(e) => onText(e.target.value)}
           placeholder='explain a search string, e.g. "!rune|ess" …'
           spellCheck={false}
-          className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-neutral-100 placeholder:font-sans placeholder:text-neutral-600"
+          className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-neutral-100 placeholder:font-sans placeholder:text-neutral-500"
         />
         <span
-          className="rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] uppercase text-neutral-500"
+          className="rounded border border-neutral-700 px-1.5 py-0.5 text-xs uppercase text-neutral-500"
           title="Alternatives are matched as plain text. The in-game box also accepts regex syntax (. * [ ] …), which this explainer does not evaluate — a string using it may light up more than shown."
         >
           literal · regex syntax not evaluated
         </span>
-        {loading && <span className="text-xs text-neutral-600">…</span>}
+        {loading && <span className="text-xs text-neutral-500">…</span>}
       </div>
       {error && <ErrorWithCaret text={text} error={error} />}
       {result && !error && <ExplainResult result={result} />}
