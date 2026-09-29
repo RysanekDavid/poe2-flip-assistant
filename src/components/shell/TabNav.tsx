@@ -9,17 +9,8 @@ import { TAB_ICONS } from "./tabIcons";
 import { useTabRoute } from "./useTabRoute";
 
 function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
-  const icon = TAB_ICONS[id];
   const dim = active ? "opacity-100" : "opacity-60 group-hover:opacity-90";
-  if (icon.kind === "art") {
-    return <Image src={icon.src} alt="" className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "exchange"} />;
-  }
-  const { Icon } = icon;
-  return (
-    <span className="flex h-7 w-7 items-center justify-center">
-      <Icon aria-hidden className={`h-5 w-5 transition-opacity ${active ? "text-amber-300" : "text-neutral-400"} ${dim}`} />
-    </span>
-  );
+  return <Image src={TAB_ICONS[id]} alt="" className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "exchange"} />;
 }
 
 /** Plain left-click goes through go() (dedupes history); modified clicks keep open-in-new-tab. */
