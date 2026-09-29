@@ -52,11 +52,13 @@ export interface TradeCred {
   poesessid: string; // the caller's session cookie
   contact?: string; // identifying email for the User-Agent
   account?: string; // account name (own-stash / own-listing reads)
+  /** stored = the user's own saved cookie; env = the owner's .env fallback. Only a stored cookie's health is recorded. */
+  source?: "stored" | "env";
 }
 
 /** Fall back to the .env.local owner cred when no per-user cred is supplied (local single-tenant mode). */
 function configCred(): TradeCred {
-  return { poesessid: config.poesessid, contact: config.poeContact, account: config.poeAccount };
+  return { poesessid: config.poesessid, contact: config.poeContact, account: config.poeAccount, source: "env" };
 }
 
 function authHeaders(cred: TradeCred): Record<string, string> {

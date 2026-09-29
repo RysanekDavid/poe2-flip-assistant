@@ -79,7 +79,7 @@ export async function POST(req: Request): Promise<Response> {
   if (cred && cred.account) {
     try {
       const account = cred.account;
-      otherDiv = (await withCredStatus(user.id, () => readCurrencyFromTrade(account, rates, cred))).otherDiv;
+      otherDiv = (await withCredStatus(user.id, cred, () => readCurrencyFromTrade(account, rates, cred))).otherDiv;
     } catch (e) {
       // shared trade2 budget busy → 503 + Retry-After so the UI can say "retry in N s"
       if (e instanceof TradeRateLimitedError) return tradeErrorResponse(e);

@@ -51,7 +51,7 @@ export async function POST(): Promise<Response> {
   try {
     const warning = await refreshUniquesWarning();
     const account = cred.account;
-    const { snapshot, scan } = await withCredStatus(user.id, () => recordTradeBalance(user.id, league, account, resolved.rates, cred));
+    const { snapshot, scan } = await withCredStatus(user.id, cred, () => recordTradeBalance(user.id, league, account, resolved.rates, cred));
     // parsed: drops the per-item rows (up to 100 listings with mods) the panel never reads
     return NextResponse.json(readResponseSchema.parse({ snapshot, scan, warning, computedLeague: league }));
   } catch (e) {

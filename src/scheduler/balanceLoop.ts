@@ -70,7 +70,7 @@ export async function snapshotBalancesAll(deps: BalanceLoopDeps = LIVE_DEPS): Pr
     try {
       const account = cred.account;
       // each read is this user's own cookie answering trade2 — a 403 marks it expired (CredBanner)
-      const { scan } = await withCredStatus(user.id, () => deps.record(user.id, league, account, resolved.rates, cred));
+      const { scan } = await withCredStatus(user.id, cred, () => deps.record(user.id, league, account, resolved.rates, cred));
       result.read++;
       console.log(
         `[balance] ${user.name}: ${scan.divine}d ${scan.exalted}ex ${scan.chaos}c (${scan.tabs.length} tabs, ${scan.unpriced} unpriced, rates ${resolved.source})`,
