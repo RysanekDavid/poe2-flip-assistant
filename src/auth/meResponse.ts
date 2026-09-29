@@ -10,7 +10,9 @@ import { clearSessionCookie } from "./sessionCookie";
  */
 export function meResponse(token: string | undefined): Response {
   const user = resolveSessionUser(token);
-  const res = NextResponse.json({ user: user ? { id: user.id, name: user.name, role: user.role } : null });
+  const res = NextResponse.json({
+    user: user ? { id: user.id, name: user.name, role: user.role, nav_mode: user.nav_mode } : null,
+  });
   if (token && !user) clearSessionCookie(res);
   return res;
 }

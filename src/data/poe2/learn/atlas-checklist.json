@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "patch": { "verified_against": "0.5.5", "stamped_at": "2026-09-29" },
+  "route_source": "Fubgun's 0.5.5 atlas route (2026-09-03), checked against poe2db, the 0.5.5 patch notes, Game8 and timesaver.gg",
+  "steps": [
+    {
+      "id": "reforge-waystones-up",
+      "title": "Climb waystone tiers with the Reforging Bench",
+      "detail": "Combine 3 waystones of one tier into 1 of the next tier at the Reforging Bench. Doryani in your hideout sells waystones one tier below your best completed tier — feed them in.",
+      "warnings": [],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://maxroll.gg/poe2/resources/reforging-bench-guide",
+          "https://timesaver.gg/blog/poe2-waystone-farming-guide",
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
+        ],
+        "note": "Maxroll: '3x Waystones of the same Tier become 1x Waystone of the next Tier'. Timesaver: Doryani sells up to 10 Tier 1 waystones, or one tier below your highest completed tier. Fubgun reforges T1 up to at least T3."
+      }
+    },
+    {
+      "id": "boss-rush-maps",
+      "title": "Rush map bosses, run maps magic",
+      "detail": "Early maps are for unlocking, not profit: go straight to the boss, kill it, leave. Run waystones magic; use Alchemy only on higher tiers when you need sustain.",
+      "warnings": [
+        "Don't slot Breach, Delirium, Ritual, Expedition or Abyss tablets until you can actually run that mechanic — save or sell them."
+      ],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/",
+          "https://www.iggm.com/news/poe-2-0-5-5-atlas-progression-guide-how-to-complete-passive-tree-avoid-traps",
+          "https://www.poecurrency.com/news/poe-2-0-5-5-forbidden-rites-event-league-endgame-strategy-fast-atlas-unlocks-high-profit-farming"
+        ],
+        "note": "Three guides agree on boss-rushing. The tablet warning is Fubgun's alone ('Tablets are not worth slotting before you have league mechanic access'); no source gives a mechanical reason, so treat it as single-source."
+      }
+    },
+    {
+      "id": "first-precursor-tower",
+      "title": "Complete a Precursor Tower to reveal the Fortress",
+      "detail": "Run the nearby Precursor Tower map and activate its Beacon. It drops a Precursor Tablet, reveals the Atlas around it, and reveals the Precursor Fortress, where most Atlas points come from.",
+      "warnings": [],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://game8.co/games/Path-of-Exile-2/archives/602195",
+          "https://domistae.github.io/poe2-leveling/poe2_endgame_guide.html",
+          "https://poe2db.tw/us/Overseer_Tablet"
+        ],
+        "note": "Game8: 'Complete it to activate the Precursor Beacon and reveal the Fortress'. Tablets go into the Map Device one map at a time (poe2db: 'Can be used in a personal Map Device'); older advice to slot tablets into Towers is outdated."
+      }
+    },
+    {
+      "id": "fortress-ancient-gateway",
+      "title": "Clear Fortress maps and open the Ancient Gateway",
+      "detail": "Each Fortress map you complete gives an Atlas point — after the boss, activate the Precursor Relay or the map won't count. Pull the four levers to open the Ancient Gateway, then push the Eastern and Western Gateways (T6+).",
+      "warnings": [],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://game8.co/games/Path-of-Exile-2/archives/603859",
+          "https://domistae.github.io/poe2-leveling/poe2_endgame_guide.html",
+          "https://poe2db.tw/us/Atlas_passive_skill"
+        ],
+        "note": "poe2db: 'Atlas Skill Points: Complete maps within Precursor Fortress'. Game8: the relay is needed to complete a map; East/West sections are T6+. domistae gives slightly different tier gates (T6/T11/T14)."
+      }
+    },
+    {
+      "id": "spend-points-skip-traps",
+      "title": "Spend Atlas points — skip Man Trap and Survival of the Fittest",
+      "detail": "Spend points as you earn them. Man Trap and Survival of the Fittest unlock after an Eastern or Western Gateway; leave both off while you progress.",
+      "warnings": [
+        "Man Trap: Fubgun reports its essence Rogue Exiles often spawn outside the essence area, which wastes time.",
+        "Survival of the Fittest (Desert maps): merges extra rares into one stronger rare — fewer rares, fewer Abyss omens."
+      ],
+      "strategy_ids": [],
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://poe2db.tw/us/Atlas_passive_skill",
+          "https://poe2db.tw/us/Survival_of_the_Fittest",
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/",
+          "https://www.iggm.com/news/poe-2-0-5-5-atlas-progression-guide-how-to-complete-passive-tree-avoid-traps",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "Node texts are primary (poe2db): Man Trap '10% chance for Essence Monsters to be Rogue Exiles'; Survival of the Fittest turns extra-rare packs in Desert maps into 'a single Rare Monster with doubled Effectiveness'. The 'avoid' advice is Fubgun's; IGGM repeats it, likely from the same video. 0.5.5 fixed a Survival of the Fittest drop bug; the merge itself is by design."
+      }
+    },
+    {
+      "id": "enigma-chambers",
+      "title": "Clear the Western and Eastern Enigma Chambers",
+      "detail": "Run both Enigma Chambers inside the Fortress (T10+ waystones). Each gives a quest Crisis Fragment; with the one the quest already gave you, that is the key set for the Arbiter of Ash.",
+      "warnings": [],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://game8.co/games/Path-of-Exile-2/archives/603859",
+          "https://timesaver.gg/blog/poe2-arbiter-of-ash-guide",
+          "https://domistae.github.io/poe2-leveling/poe2_endgame_guide.html"
+        ],
+        "note": "Game8: T10+, and the Monolith requires Crisis Fragments. Timesaver: three fragment types (Ancient/Faded/Weathered). domistae: the quest hands out one for the first kill. The three agree once combined."
+      }
+    },
+    {
+      "id": "arbiter-of-ash",
+      "title": "Kill the Arbiter of Ash at the Burning Monolith",
+      "detail": "Place the Crisis Fragments in the Burning Monolith door and kill the Arbiter of Ash. This opens the Fortress centre and the path to the Origin Tower.",
+      "warnings": ["0.5.5: he resists Fire and takes extra Cold damage — fire builds hit him less."],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://www.pathofexile.com/forum/view-thread/4000864",
+          "https://poe2db.tw/us/Ancient_Crisis_Fragment",
+          "https://timesaver.gg/blog/poe2-arbiter-of-ash-guide",
+          "https://game8.co/games/Path-of-Exile-2/archives/602195"
+        ],
+        "note": "The resistance change is in the 0.5.5 patch notes and the fragment text reads 'Can be placed in a door in The Burning Monolith' (primary); the unlock order comes from two guides."
+      }
+    },
+    {
+      "id": "matriarch-patriarch-halls",
+      "title": "Beat one Matriarch Hall and one Patriarch Hall",
+      "detail": "These are the 'halls': T15 maps near the Origin Tower. Their bosses drop the Origin Cradle and the Origin Spark — the two parts of the Arbiter of Divinity key.",
+      "warnings": ["T15 waystones only, with limited attempts — bring a build that can kill the boss."],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://game8.co/games/Path-of-Exile-2/archives/603859",
+          "https://game8.co/games/Path-of-Exile-2/archives/602195",
+          "https://timesaver.gg/blog/poe2-arbiter-of-divinity-guide"
+        ],
+        "note": "Sources disagree on which hall boss drops the Spark and which the Cradle, so the step does not pair them."
+      }
+    },
+    {
+      "id": "forge-origin-core",
+      "title": "Forge the Origin Core at the Precursor Reactor",
+      "detail": "Take the Origin Spark and Origin Cradle to the Precursor Reactor at the base of the Origin Tower to forge the Origin Core, then carry it to the top of the tower.",
+      "warnings": [],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vp",
+        "src": ["https://poe2db.tw/us/Origin_Core", "https://game8.co/games/Path-of-Exile-2/archives/602195"],
+        "note": "poe2db: made from 1 Origin Spark + 1 Origin Cradle; take it 'to the apex of the Tower of Origins'. A quest version and a tradeable Pinnacle Key version exist."
+      }
+    },
+    {
+      "id": "arbiter-of-divinity-quest",
+      "title": "Kill the quest Arbiter of Divinity",
+      "detail": "Use the quest Origin Core to fight the Arbiter of Divinity. It finishes the story step, but since 0.5.5 it completes no Fortress section by itself.",
+      "warnings": ["0.5.5: resists Lightning and takes extra Fire damage."],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://www.pathofexile.com/forum/view-thread/4000864",
+          "https://timesaver.gg/blog/poe2-atlas-points-arbiter-of-divinity-0-5-5"
+        ],
+        "note": "0.5.5 patch notes: 'Defeating the Arbiter of Divinity using the quest version of the Origin Core no longer allows the completion of a section'."
+      }
+    },
+    {
+      "id": "arbiter-of-divinity-full",
+      "title": "Kill a non-quest Arbiter of Divinity to finish the Fortress",
+      "detail": "Run another Matriarch Hall and Patriarch Hall (or buy an Origin Core) and kill the Arbiter again with the non-quest core. That one kill completes the whole Precursor Fortress and its Atlas points.",
+      "warnings": ["The quest kill unlocks no points — only a kill with a non-quest Origin Core does."],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://www.pathofexile.com/forum/view-thread/4000864",
+          "https://timesaver.gg/blog/poe2-atlas-points-arbiter-of-divinity-0-5-5",
+          "https://poe2db.tw/us/Origin_Core"
+        ],
+        "note": "0.5.5 patch notes: a non-quest Origin Core kill 'now completes the entire Precursor Fortress'. poe2db lists the tradeable Origin Core."
+      }
+    },
+    {
+      "id": "doryani-science",
+      "title": "Doryani: cleanse three Corrupted Nexuses",
+      "detail": "Clear the Corrupted Nexus towers in the red-root corrupted regions. The first unlocks Doryani's master tree; after the third, find and kill the Immured Fury to finish his questline.",
+      "warnings": [],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://game8.co/games/Path-of-Exile-2/archives/603582",
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/",
+          "https://poe2db.tw/us/Masters_of_the_Atlas"
+        ],
+        "note": "Game8 (search snippet): 3 fixed Nexus locations; the Immured Fury spawns on the third cleansed region. In 0.5.5 Corrupted Nexus maps are retriable and the Immured Fury cannot be bypassed (patch notes)."
+      }
+    },
+    {
+      "id": "jado-spycraft",
+      "title": "Jado: defeat the four Deadly Map Bosses",
+      "detail": "Killing your first Deadly Map Boss starts Jado's Spycraft. Beat all four (Estazunti's Vault, The Jade Isles, Sacred Reservoir, Derelict Mansion) to unlock his strongbox and unique nodes.",
+      "warnings": [],
+      "strategy_ids": [],
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://game8.co/games/Path-of-Exile-2/archives/603213",
+          "https://www.poecurrency.com/news/poe-2-0-5-5-forbidden-rites-event-league-endgame-strategy-fast-atlas-unlocks-high-profit-farming",
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
+        ],
+        "note": "Game8 (updated 2026-06-06): 'Defeat 4 Deadly Map Bosses in Any Order'. Other guides call these Anomaly maps; one search snippet spells two names differently (Derelict Manor, Sealed Reservoir)."
+      }
+    },
+    {
+      "id": "hilda-hunting",
+      "title": "Hilda: hunt the Great Beasts",
+      "detail": "Talk to Hilda at her campsite west of the Atlas start and kill the Great Beast map bosses she marks. Finishing the hunts unlocks her rare-monster and boss nodes; the first hunt is worth doing early.",
+      "warnings": [],
+      "strategy_ids": [],
+      "claim": {
+        "v": "cf",
+        "src": [
+          "https://game8.co/games/Path-of-Exile-2/archives/603208",
+          "https://domistae.github.io/poe2-leveling/poe2_endgame_guide.html",
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
+        ],
+        "note": "Game8 says 4 Great Beasts; Fubgun says Hilda reveals three map bosses (possibly 1 + 3). We follow Game8 and leave the count out of the step. domistae: the first contract already gives a 25% chance to upgrade a normal map boss."
+      }
+    }
+  ]
+}

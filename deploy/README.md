@@ -107,6 +107,10 @@ unset DEMO_PASSWORD
 The script refuses a password on the command line, refuses an echoed TTY, never prints the
 generated application API key, and does not require POESESSID. Shared market and Craft data work;
 user-specific Wealth, positions and alerts begin empty.
+New accounts start in **Beginner** nav (Learn, Farm strategies, Price check, Alerts, Settings);
+append `--advanced` (e.g. `addUser.ts demo member --advanced`) for an experienced trader. Accounts
+that existed before the nav-mode migration keep the full Advanced nav, and every user can switch
+under Settings › Mode.
 After the owner login works, clear `OWNER_PASSWORD` from `.env.local`; it is needed only to seed an
 empty database.
 
