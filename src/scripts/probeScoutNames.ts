@@ -6,7 +6,7 @@
 import { fetchScout, fetchScoutLineage } from "../api/scoutClient";
 import { getDefaultLeague } from "../core/leagueState";
 import { loadBossLoot } from "../core/tools/bossEv/curated";
-import { scoutKey } from "../core/tools/bossEv/scoutKey";
+import { scoutKey } from "../lib/scoutKey";
 
 type Status = "priced" | "listed at 0" | "spelling differs" | "not listed";
 

@@ -2,7 +2,8 @@ import type { PricedItem } from "../../api/types";
 import type { BossRow, FarmBoardRow, MechanicRow } from "../../lib/farmContract";
 import type { BossView, TierResult } from "../../lib/tools/bossEvContract";
 import type { FarmRank } from "../farmAdvisor";
-import { breakEvenHeadline, weakest } from "../tools/bossEv/headline";
+import { weakest } from "../tools/bossEv/confidence";
+import { breakEvenHeadline } from "../tools/bossEv/headline";
 
 /*
  * "What to farm now", pure: the mechanic heat ranking (farmAdvisor.rankFarms, unchanged — the Coach
@@ -86,14 +87,38 @@ export function netGroup(r: BossRow): 0 | 1 | 2 {
   return r.netBound === "lower" ? 1 : 2;
 }
 
-/** Within a group a net carried by confirmed data outranks a bigger one resting on a single guide. */
+/** Nets within 10% of the band's best are "about the same" — only there does confidence reorder rows. */
+export const NET_BAND = 0.1;
+
 const confirmedFirst = (r: BossRow): number => (r.confidence === "confirmed" ? 0 : 1);
 
-const byNet = (a: BossRow, b: BossRow): number => netGroup(a) - netGroup(b) || confirmedFirst(a) - confirmedFirst(b) || b.netDiv - a.netDiv;
+const sameBand = (head: BossRow, r: BossRow): boolean => Math.abs(head.netDiv - r.netDiv) <= NET_BAND * Math.max(Math.abs(head.netDiv), Math.abs(r.netDiv));
 
-/** Mechanics (already heat-ordered by rankFarms) first, then bosses by net group, confidence, net per kill. */
+/**
+ * One bound group by net, highest first; within a band of near-equal nets a confirmed row leads a
+ * single-source one. Value decides: a confirmed +0.05 never outranks a single-source +40.
+ */
+export function orderByNet(rows: readonly BossRow[]): BossRow[] {
+  const sorted = [...rows].sort((a, b) => b.netDiv - a.netDiv);
+  const out: BossRow[] = [];
+  let band: BossRow[] = [];
+  const flush = (): void => {
+    out.push(...band.sort((a, b) => confirmedFirst(a) - confirmedFirst(b) || b.netDiv - a.netDiv));
+    band = [];
+  };
+  for (const r of sorted) {
+    if (band.length > 0 && !sameBand(band[0]!, r)) flush();
+    band.push(r);
+  }
+  flush();
+  return out;
+}
+
+/** Mechanics (already heat-ordered by rankFarms) first, then bosses by bound group (netGroup), then net. */
 export function buildFarmBoard(mechanics: readonly MechanicInput[], bosses: readonly BossView[], exPerDiv: number): FarmBoardRow[] {
-  return [...mechanics.map(mechanicRow), ...bosses.map((b) => bossRow(b, exPerDiv)).sort(byNet)];
+  const rows = bosses.map((b) => bossRow(b, exPerDiv));
+  const groups = ([0, 1, 2] as const).map((g) => orderByNet(rows.filter((r) => netGroup(r) === g)));
+  return [...mechanics.map(mechanicRow), ...groups.flat()];
 }
 
 export const isMechanicRow = (r: FarmBoardRow): r is MechanicRow => r.kind === "mechanic";

@@ -5,19 +5,21 @@ import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { withCredStatus } from "../../../../auth/credStatus";
 import { recordTradeBalance } from "../../../../core/balanceRead";
-import { refreshUniqueValues } from "../../../../core/valuation";
+import { refreshProblem, refreshUniqueValues } from "../../../../core/valuation";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Daily-guarded unique-price refresh. A scout outage must not block the read (currency still
- *  counts), but it must be visible: stale unique prices undervalue showcase gear. */
+/** 6h-guarded unique-price refresh. The poller's scout-values loop owns this cache; this call is
+ *  resilience for a dead or lagging poller (a no-op while the cache is fresh). A scout outage must
+ *  not block the read (currency still counts), but it must be visible: stale unique prices
+ *  undervalue showcase gear. */
 async function refreshUniquesWarning(): Promise<string | null> {
   try {
-    await refreshUniqueValues();
-    return null;
+    const r = await refreshUniqueValues();
+    return refreshProblem(r);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.warn(`[balance/read] unique-price refresh failed: ${message}`);

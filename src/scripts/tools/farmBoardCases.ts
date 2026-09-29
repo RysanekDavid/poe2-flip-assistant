@@ -105,11 +105,14 @@ function testConfidenceAndUnmodelled(tier: Tier, inputs: Inputs): void {
   const r = single.tiers[0]!;
   assert.deepEqual([r.pLosingRun, r.losingRunConfidence], [0, "single-source"], "a 0% resting on one guide's guaranteed drop says so");
   assert.deepEqual(r.floorDrops.map((d) => [d.name, d.evDiv]), [["G", 3]], "the floor lists the drops it sums");
-  const rows = buildFarmBoard([], [single, confirmed], 400).filter(isBossRow);
-  assert.deepEqual(rows.map((x) => x.id), ["confirmed", "single"], "a confirmed exact net outranks a bigger single-source one");
+  const order = (views: BossView[]): string[] => buildFarmBoard([], views, 400).filter(isBossRow).map((x) => x.id);
+  assert.deepEqual(order([confirmed, single]), ["single", "confirmed"], "value decides: a single-source +2.5 outranks a confirmed +0.5");
+  const near = view("near", { ...sure, loot: [{ ...G, confidence: "single-source" }] }, inputs({ g: 1.02 }));
+  assert.deepEqual(order([near, confirmed]), ["confirmed", "near"], "nets within 10%: confirmed breaks the tie");
   const stronghold = view("stronghold", { ...sure, unmodelledEntry: { label: "N× Waystone", note: "maps" } }, inputs());
   const row = buildFarmBoard([], [stronghold], 400).filter(isBossRow)[0]!;
   assert.deepEqual([row.netBound, netGroup(row), row.unmodelledEntry?.label], ["upper", 2, "N× Waystone"], "an unmodelled entry cost makes net an upper bound, ranked last");
+  assert.equal(row.pLosingRun, null, "an unmodelled entry cost leaves P(lose) unknowable, never 0% or 100%");
   assert.match(row.headline.text, /^upper bound — entry leaves out N× Waystone/, "no 'guaranteed loot covers entry' verdict on a partial entry");
 }
 

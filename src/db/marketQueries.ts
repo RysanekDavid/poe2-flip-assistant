@@ -222,6 +222,24 @@ function scoutValues(league: string, sources: readonly ScoutValueSource[]): Map<
   return m;
 }
 
+/**
+ * Replace one league's rows of one scout source with `rows`, in one transaction: a name scout no
+ * longer lists (or that moved to the other source) disappears instead of lingering as a stale
+ * value. Callers drop names another source already holds first — the table is keyed by name.
+ */
+export function replaceScoutValues(league: string, source: ScoutValueSource, rows: ReadonlyArray<{ nameKey: string; div: number }>): void {
+  const db = getDb();
+  const clear = db.prepare("DELETE FROM item_values WHERE league = ? AND source = ?");
+  const insert = db.prepare(
+    `INSERT INTO item_values (league, name_key, value_div, source, updated_at)
+     VALUES (@league, @nameKey, @div, @source, CURRENT_TIMESTAMP)`,
+  );
+  db.transaction(() => {
+    clear.run(league, source);
+    for (const r of rows) insert.run({ league, nameKey: r.nameKey, div: r.div, source });
+  })();
+}
+
 /** Priced poe2scout UNIQUES only — what "unique" readers (the regex namespace) may show. */
 export const uniqueValueMap = (league: string): Map<string, number> => scoutValues(league, [SCOUT_UNIQUE_SOURCE]);
 

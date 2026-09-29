@@ -4,7 +4,7 @@ import type { AccountCurrency } from "../api/accountScan";
 import type { TradeCred } from "../api/tradeClient";
 import type { recordTradeBalance } from "../core/balanceRead";
 import { getDb } from "../db/database";
-import { listHeartbeats } from "../db/heartbeatQueries";
+import { deleteHeartbeat, listHeartbeats } from "../db/heartbeatQueries";
 import type { BalanceSnapshot } from "../db/queries";
 import type { UserPublic } from "../db/userQueries";
 import { balanceProblem, snapshotBalancesAll, type BalanceLoopDeps } from "../scheduler/balanceLoop";
@@ -42,7 +42,6 @@ function deps(calls: unknown[][], overrides: Partial<BalanceLoopDeps>): BalanceL
     credFor: (u) => (u.id === 3 ? null : cred(`${u.name}#1`)),
     rates: (league) => (league === "Rise" ? { rates: RATES, source: "cx", fetchedAt: null } : null),
     record,
-    refreshUniques: async () => 7,
     ...overrides,
   };
 }
@@ -62,11 +61,8 @@ export async function testBalanceLoop(): Promise<void> {
 
   await assert.rejects(snapshotBalancesAll(deps([], { rates: () => null })), /no exchange rates available for Rise/, "no rates → loud failure");
 
-  const uniquesDown = await snapshotBalancesAll(deps([], { refreshUniques: async () => Promise.reject(new Error("scout 502")) }));
-  assert.equal(uniquesDown.read, 1, "a unique-price outage does not block the currency read");
-  const hb = listHeartbeats().find((h) => h.name === "unique-values");
-  assert.equal(hb?.last_error, "scout 502", "…but it is recorded on its own heartbeat");
-  console.log("PASS  balance auto-read: web path (resolveRates + recordTradeBalance), uniques failure recorded");
+  assert.ok(!listHeartbeats().some((h) => h.name === "unique-values"), "the balance loop no longer refreshes unique prices (the scout-values loop owns them)");
+  console.log("PASS  balance auto-read: web path (resolveRates + recordTradeBalance), no unique refresh of its own");
   await testScoutValuesLoop();
 }
 
@@ -78,19 +74,23 @@ async function testScoutValuesLoop(): Promise<void> {
     leagues: () => ["Rise", "Old"],
     uniques: async (l) => {
       calls.push(`u:${l}`);
-      return 3;
+      return { written: 3, collided: [] };
     },
     lineage: async (l) => {
       calls.push(`g:${l}`);
       if (l === "Rise") throw new Error("lineage 502");
-      return 2;
+      return { written: 2, collided: ["tul's stillness"] };
     },
   });
   assert.deepEqual(calls, ["u:Rise", "g:Rise", "u:Old", "g:Old"], "every polled league, uniques then lineage");
-  assert.deepEqual([result.written, result.failed], [8, ["lineage-values/Rise: lineage 502"]], "one failure does not stop the others");
+  const collision = "lineage-values/Old: skipped 1 name(s) the other scout list holds: tul's stillness";
+  assert.deepEqual([result.written, result.failed], [8, ["lineage-values/Rise: lineage 502", collision]], "one failure does not stop the others");
   const hb = (name: string, league: string) => listHeartbeats().find((h) => h.name === name && h.league === league);
   assert.equal(hb("lineage-values", "Rise")?.last_error, "lineage 502", "the lineage outage is red on its own row");
   assert.equal(hb("unique-values", "Rise")?.last_error, null, "…never masked by (or masking) fresh uniques");
-  assert.ok(hb("lineage-values", "Old")?.last_ok_at, "the other league's lineage refresh still ran");
+  assert.match(hb("lineage-values", "Old")?.last_error ?? "", /skipped 1 name.*tul's stillness/, "a collision is written but red, naming the skipped name");
+  getDb().prepare("INSERT INTO subsystem_heartbeat (name, league, runs) VALUES ('unique-values', '', 1)").run();
+  assert.equal(deleteHeartbeat("unique-values", ""), 1, "the legacy global unique-values row can be dropped once");
+  assert.equal(deleteHeartbeat("unique-values", ""), 0);
   console.log("PASS  scout value refresh: per-league unique + lineage heartbeats, failures isolated and recorded");
 }

@@ -8,6 +8,7 @@ import { fetchTradeMeta } from "../../../api/tradeMeta";
 import {
   latestFetchedAt,
   latestItemValuesUpdatedAt,
+  SCOUT_UNIQUE_SOURCE,
   latestSnapshots,
   uniqueValueMap,
 } from "../../../db/marketQueries";
@@ -28,7 +29,7 @@ export async function loadRegexNamespace(league: string): Promise<LoadedNamespac
   const meta = await fetchTradeMeta();
   const dataAsOf: DataAsOf = {
     ninja: sqliteUtcToIso(latestFetchedAt(league)),
-    uniques: sqliteUtcToIso(latestItemValuesUpdatedAt(league)),
+    uniques: sqliteUtcToIso(latestItemValuesUpdatedAt(league, SCOUT_UNIQUE_SOURCE)),
     tradeMeta: new Date(meta.at).toISOString(),
   };
   // uniques only: lineage-gem rows share item_values but must never be offered as a "Unique"

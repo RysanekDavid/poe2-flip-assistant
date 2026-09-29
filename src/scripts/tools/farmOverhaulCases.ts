@@ -11,7 +11,7 @@ import { bossEv, evaluateBosses } from "../../core/tools/bossEv/ev";
 import { floorOf } from "../../core/tools/bossEv/metrics";
 import { priceLookup, resolvePrice, type PriceInputs } from "../../core/tools/bossEv/pricing";
 import { entryBreakdown, entryLabel, evConfidenceText, floorFallback, floorTitle, loseCaveats, sortLoot } from "../../core/tools/bossEv/rowText";
-import { scoutKey } from "../../core/tools/bossEv/scoutKey";
+import { scoutKey } from "../../lib/scoutKey";
 import { parseBossLoot, type BossLootFile, type Tier } from "../../core/tools/bossEv/schema";
 import type { LootLineView } from "../../lib/tools/bossEvContract";
 

@@ -74,7 +74,11 @@ export function FloorCell({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null
 /** P(losing kill), starred with its caveats: a 0% resting on one guide's "guaranteed" is not a promise. */
 export function LoseCell({ r }: { r: BossRow }) {
   if (r.pLosingRun == null) {
-    const why = r.entryComplete ? "no drop that could cover the entry has a sourced rate" : "entry partly unpriced — cannot tell what a kill must cover";
+    const why = r.unmodelledEntry
+      ? `the entry leaves out ${r.unmodelledEntry.label} — cannot tell what a kill must cover`
+      : r.entryComplete
+        ? "no drop that could cover the entry has a sourced rate"
+        : "entry partly unpriced — cannot tell what a kill must cover";
     return (
       <span className="text-neutral-500" title={why}>
         —

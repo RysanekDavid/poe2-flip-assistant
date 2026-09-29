@@ -48,8 +48,6 @@ export function fmtDiv(div: number, exPerDiv: number, signed = false): string {
   return signed ? `+${body}` : body;
 }
 
-export { weakest };
-
 /** A decisive tone survives only when the deciding rates are all confirmed. */
 export function capTone(tone: Tone, deciding: readonly Confidence[]): Tone {
   if ((tone === "good" || tone === "bad") && weakest(deciding) !== "confirmed") return "warn";

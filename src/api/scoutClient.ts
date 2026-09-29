@@ -27,7 +27,7 @@ export interface ScoutItem {
   name: string; // unique name, e.g. "Igniferis"
   type: string; // base type, e.g. "Crimson Amulet"
   category: string; // CategoryApiId: accessory | armour | weapon | flask | jewel | ...
-  priceExalt: number; // CurrentPrice, in Exalted (scout base currency)
+  priceExalt: number; // CurrentPrice, in Exalted (scout base currency); 0 = listed, no current price
   icon: string | null;
 }
 
@@ -181,13 +181,14 @@ export async function fetchScout(league: string = getDefaultLeague()): Promise<{
   // ?perPage=2000 was silently ignored.
   const raw = await get(`/${REALM}/Leagues/${encodeURIComponent(league)}/Items`, ScoutItemsSchema);
   const items: ScoutItem[] = raw
-    .filter((r) => r.CurrentPrice != null && r.Name != null)
+    .filter((r) => r.Name != null)
     .map((r) => ({
       id: r.ItemId,
       name: r.Name!,
       type: r.Type ?? "",
       category: r.CategoryApiId,
-      priceExalt: r.CurrentPrice!,
+      // null = listed without a current price; the same 0 the lineage list uses ("listed at 0")
+      priceExalt: r.CurrentPrice ?? 0,
       icon: r.IconUrl ?? null,
     }));
 

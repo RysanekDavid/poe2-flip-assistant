@@ -12,7 +12,7 @@ import {
 import { timestampAgeMs } from "../../../lib/sqliteTime";
 import type { PoolRange, ResolvedPrice } from "../../../lib/tools/bossEvContract";
 import { lootNinjaIds, type BossLootFile, type PriceRef } from "./schema";
-import { scoutKey } from "./scoutKey";
+import { scoutKey } from "../../../lib/scoutKey";
 
 /** One exchange item as the latest poe.ninja snapshot has it. */
 export interface NinjaQuote {
@@ -168,6 +168,13 @@ export function loadPriceInputs(
 }
 
 /** Re-key an item_values map (lowercased names) by scoutKey, so curated spellings still match. */
-function byScoutKey(values: ReadonlyMap<string, number>): Map<string, number> {
-  return new Map([...values].map(([k, v]) => [scoutKey(k), v]));
+export function byScoutKey(values: ReadonlyMap<string, number>): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const [k, v] of values) {
+    const key = scoutKey(k);
+    // two stored names folding onto one key would price a drop from whichever came last
+    if (out.has(key)) throw new Error(`poe2scout names collide after normalising: "${k}" and another row both read as "${key}"`);
+    out.set(key, v);
+  }
+  return out;
 }

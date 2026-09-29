@@ -148,7 +148,8 @@ export function bossEv(tier: Tier, prices: PriceLookup, art: BossArt): TierResul
   const evDiv = sum(loot.map((l) => l.evDiv));
   const entryComplete = entryLines.every((l) => l.costDiv != null);
   const unpriced = loot.filter((l) => l.price == null);
-  const losing = losingRunOf(loot, entryDiv, guaranteedDiv, entryComplete);
+  // an unmodelled entry cost (a Stronghold's waystones) leaves the threshold unknown, exactly like an unpriced line
+  const losing = losingRunOf(loot, entryDiv, guaranteedDiv, entryComplete && tier.unmodelledEntry == null);
   const partial: Omit<TierResult, "varianceNote"> = {
     tierId: tier.id,
     label: tier.label,

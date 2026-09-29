@@ -3,9 +3,9 @@
 import assert from "node:assert/strict";
 import { CATEGORIES } from "../../api/types";
 import { evaluateBosses } from "../../core/tools/bossEv/ev";
-import { loadPriceInputs, priceLookup, referencedNinjaIds } from "../../core/tools/bossEv/pricing";
+import { byScoutKey, loadPriceInputs, priceLookup, referencedNinjaIds } from "../../core/tools/bossEv/pricing";
 import type { Boss, BossLootFile, EntryLine, LootLine, Rate } from "../../core/tools/bossEv/schema";
-import { assertDisjoint, lineageRows } from "../../core/valuation";
+import { lineageRows, refreshProblem, storeScoutRows } from "../../core/valuation";
 import { SCOUT_LINEAGE_SOURCE, SCOUT_UNIQUE_SOURCE, scoutKeysOf, scoutValueMap, uniqueValueMap, upsertItemValues } from "../../db/marketQueries";
 
 const AUDIT_DAY = "2026-09-29";
@@ -109,6 +109,26 @@ function testCategoryCoverage(file: BossLootFile): void {
   }
 }
 
+/**
+ * A name scout moves from its uniques list to the lineage list: the lineage refresh skips only that
+ * name (reported, never fatal), the next uniques refresh drops it (replace semantics), and the next
+ * lineage refresh then writes it.
+ */
+function testNameMovesBetweenLists(): void {
+  const league = "MOVE";
+  const row = (name: string, source: typeof SCOUT_UNIQUE_SOURCE | typeof SCOUT_LINEAGE_SOURCE) => ({ nameKey: name.toLowerCase(), div: 1, source });
+  storeScoutRows(league, SCOUT_UNIQUE_SOURCE, [row("Moved’s Gem", SCOUT_UNIQUE_SOURCE), row("Stays", SCOUT_UNIQUE_SOURCE)]);
+  const lineage = [row("Moved's Gem", SCOUT_LINEAGE_SOURCE), row("Other Gem", SCOUT_LINEAGE_SOURCE)];
+  const first = storeScoutRows(league, SCOUT_LINEAGE_SOURCE, lineage);
+  assert.deepEqual(first, { written: 1, collided: ["moved's gem"] }, "only the colliding name is skipped (compared by scoutKey), the rest is written");
+  assert.match(refreshProblem(first) ?? "", /skipped 1 name.*moved's gem/, "…and named on a red heartbeat");
+  storeScoutRows(league, SCOUT_UNIQUE_SOURCE, [row("Stays", SCOUT_UNIQUE_SOURCE)]);
+  assert.deepEqual([...scoutKeysOf(league, SCOUT_UNIQUE_SOURCE)], ["stays"], "replace semantics: a name scout stopped listing leaves the uniques rows");
+  assert.deepEqual(storeScoutRows(league, SCOUT_LINEAGE_SOURCE, lineage), { written: 2, collided: [] }, "the moved name is written as lineage on the next refresh");
+  assert.equal(refreshProblem({ written: 2, collided: [] }), null);
+  assert.throws(() => byScoutKey(new Map([["moved's gem", 1], ["moved’s gem", 2]])), /collide after normalising/, "two rows folding onto one key fail loudly");
+}
+
 // A gem scout lists at 0 ("no current price") and one it does not list at all: both must stay unpriced.
 const ZERO_GEM = "Uul-Netol's Embrace";
 const ABSENT_GEM = "Tul's Stillness";
@@ -131,10 +151,10 @@ export function runLineagePricingCase(file: BossLootFile): void {
   assert.ok(rows.every((r) => r.source === SCOUT_LINEAGE_SOURCE), "lineage rows are tagged apart from uniques");
   assert.equal(rows.find((r) => r.nameKey === ZERO_GEM.toLowerCase())?.div, 0, "a 0 ex gem is stored as 'listed at 0', which readers skip");
   assert.throws(() => lineageRows([], 0), /positive ex\/div/, "no rate, no conversion");
-  const clash = new Set([rows[0]!.nameKey]);
-  assert.throws(() => assertDisjoint(rows, clash, SCOUT_UNIQUE_SOURCE), /collide/, "a name in both lists must not overwrite silently");
-  assert.doesNotThrow(() => assertDisjoint(rows, scoutKeysOf(league, SCOUT_UNIQUE_SOURCE), SCOUT_UNIQUE_SOURCE), "curated gem names do not collide with uniques");
-  upsertItemValues(league, rows);
+  assert.throws(() => lineageRows([{ name: "X", priceExalt: -1 }], 538), /negative/, "a negative scout price is a shape change, not a value");
+  assert.deepEqual(lineageRows([{ name: "Dup", priceExalt: 0 }, { name: "dup", priceExalt: 538 }], 538), [{ nameKey: "dup", div: 1, source: SCOUT_LINEAGE_SOURCE }], "a name listed twice keeps its priced row");
+  assert.deepEqual(storeScoutRows(league, SCOUT_LINEAGE_SOURCE, rows).collided, [], "curated gem names do not collide with uniques");
+  testNameMovesBetweenLists();
   assert.ok(!uniqueValueMap(league).has(rows[0]!.nameKey), "unique readers (the regex tool) never see lineage rows");
   assert.ok(!scoutValueMap(league).has(ZERO_GEM.toLowerCase()), "a 0 row is never read as a value");
   const bosses = evaluateBosses(file, priceLookup(loadPriceInputs(league, referencedNinjaIds(file))), new Map());
