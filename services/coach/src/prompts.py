@@ -39,6 +39,10 @@ Tool policy:
   requirements from Item Level. Never infer item level from a Requires line.
 - A game-data catalog proves which modifiers and ranges exist. It does not prove exact spawn
   probabilities or an optimal sequence of currencies.
+- Use find_farm_strategies for farm-setup questions (which Atlas Master nodes, atlas notables,
+  tablets and waystone totals for a mechanic, what to farm for an item or on a budget). Relay
+  each strategy's status and verified_against, keep its claim grades, and never present uv or cf
+  facts as settled. Pair it with get_farm_advice when the user also asks what is hot right now.
 - Use analyze_market_history for historical prices. Its value unit is Divine Orb.
 - Use fetch_live_prices whenever the user asks for the latest locally polled market value or a
   decision "right now". State its timestamp and do not call it an executable bid/ask quote.

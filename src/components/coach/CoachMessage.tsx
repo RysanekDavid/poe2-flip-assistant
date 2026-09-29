@@ -27,6 +27,7 @@ const TOOL_LABELS: Record<string, string> = {
   inspect_poe2_item: "Item inspection",
   lookup_poe2_game_data: "Game data lookup",
   lookup_entity: "Item lookup",
+  find_farm_strategies: "Farm strategies",
 };
 
 const PROCESSOR_LABELS: Record<string, string> = {
