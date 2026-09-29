@@ -106,6 +106,8 @@ snapshots) → `scout` (≤24h old); the header strip names the source and its a
 
 ## Verification
 
+Contributor and agent conventions, and the full CI test list, are in [AGENTS.md](AGENTS.md).
+
 ```bash
 npm run lint
 npm run typecheck
