@@ -125,7 +125,7 @@ def _detail_row(strategy: FarmStrategy, league: str) -> dict[str, object]:
             {
                 "type": t.type if t.unique is None else f"{t.unique} ({t.type})",
                 "count": t.count,
-                "mods": [f"{m.text} [{m.claim.v}]" for m in t.mods],
+                "mods": [f"{m.text} ({m.side}) [{m.claim.v}]" for m in t.mods],
             }
             for t in strategy.tablets
         ],

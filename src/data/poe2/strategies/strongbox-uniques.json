@@ -89,6 +89,17 @@
             "https://poe2db.tw/us/Masters_of_the_Atlas"
           ]
         }
+      },
+      {
+        "name": "Keen Appraisal",
+        "tier": 4,
+        "effect": "50% increased Exceptional Items found",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
       }
     ],
     "alt": "Doryani T3 Mechanical Guardians: non-unique strongboxes are guarded by a dormant Construct and have 2% increased Item Quantity per Modifier.",
@@ -97,7 +108,7 @@
       "src": [
         "https://poe2db.tw/us/Masters_of_the_Atlas"
       ],
-      "note": "All three nodes name strongboxes directly (poe2db); the combination is our synthesis. Not measured."
+      "note": "All three nodes name strongboxes directly (poe2db); the combination is our synthesis. Not measured. T4 Keen Appraisal is our pick: the only Jado T4 node that adds general loot on any map (Untold Histories adds lineage)."
     }
   },
   "atlas_passives": [
@@ -165,6 +176,21 @@
           "https://poe2db.tw/us/An_Appropriate_Vault"
         ]
       }
+    },
+    {
+      "name": "Ghastly Relics",
+      "tree": "Abyss",
+      "effect": "Large Abyssal Chests from Abyss Pits are instead an Abyssal Strongbox",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Ghastly_Relics",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Ghastly_Relics",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "Only on maps with Abysses; see the Abyss strategy. 0.5.5 extended it to all Large Abyssal Chests from Pits."
+      }
     }
   ],
   "tablets": [
@@ -175,7 +201,22 @@
       "mods": [
         {
           "text": "Map contains (1–2) additional Strongboxes",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3240183538",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Compartments' (Overseer only). trade2 files the exact text 'Map contains # additional Strongboxes' under 3240183538, so the search uses it; that id's area wording ('Area contains an additional Strongbox') and RePoE's stat names would pair the ids the other way round."
+          }
+        },
+        {
+          "text": "Map has (70–100)% increased chance to contain Strongboxes",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_4279535856",
           "claim": {
             "v": "vp",
             "src": [
@@ -185,14 +226,18 @@
           }
         },
         {
-          "text": "Map has (70–100)% increased chance to contain Strongboxes",
-          "trade_stat_id": "explicit.stat_4279535856",
+          "text": "Map contains an additional Strongbox",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_3040603554",
           "claim": {
             "v": "vp",
             "src": [
               "https://poe2db.tw/us/Overseer_Tablet",
+              "https://poe2db.tw/us/Irradiated_Tablet",
+              "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
-            ]
+            ],
+            "note": "Suffix 'of the Antiquarian'; rolls on any tablet base. trade2 files the exact text 'Map contains an additional Strongbox' under 3040603554, so the search uses it; that id's area wording ('Areas with Powerful Map Bosses…') and RePoE's stat names would pair the ids the other way round."
           }
         }
       ]
@@ -212,9 +257,9 @@
     }
   },
   "steps": [
-    "Set Jado: Trove Seekers, Mysterious Gifts, Stolen Relics.",
+    "Set Jado: Trove Seekers, Mysterious Gifts, Stolen Relics, Keen Appraisal.",
     "Allocate The Chosen Path and Overlord's Influence on Strongboxes, then Hidden Compartments.",
-    "Slot an Overseer Tablet with additional strongboxes or strongbox chance.",
+    "Slot an Overseer Tablet with additional strongboxes or strongbox chance; the 'of the Antiquarian' strongbox and the chance mod also roll on any tablet.",
     "Open every strongbox; use Cryptic Keys to reopen the good ones."
   ],
   "risks": [

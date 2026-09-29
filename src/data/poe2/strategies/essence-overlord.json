@@ -128,7 +128,7 @@
         "https://poe2db.tw/us/Masters_of_the_Atlas",
         "https://poe2db.tw/us/Overlords_Domain"
       ],
-      "note": "Our synthesis: Overlord's Domain only adds content where the Map Boss is Powerful; Mighty Prey upgrades bosses and Claimed Territories can double the Domain's content. Not measured."
+      "note": "Our synthesis: Overlord's Domain only adds content where the Map Boss is Powerful; Mighty Prey upgrades bosses and Claimed Territories can double the Domain's content. Not measured. T2 is a free pick: no Hilda T2 node touches Essences."
     }
   },
   "atlas_passives": [
@@ -231,18 +231,36 @@
       "count": null,
       "mods": [
         {
-          "text": "Map contains (1–2) additional Essences",
+          "text": "Map contains an additional Essence",
+          "side": "prefix",
           "trade_stat_id": null,
           "claim": {
             "v": "vp",
             "src": [
-              "https://poe2db.tw/us/Overseer_Tablet"
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://poe2db.tw/us/Irradiated_Tablet",
+              "https://repoe-fork.github.io/poe2/"
             ],
-            "note": "No search button: trade2 lists two stats reading 'Map contains an additional Essence' (395808938, 2162684861) and which one this suffix uses is unconfirmed."
+            "note": "Prefix 'Crystallised'; rolls on any tablet base. No search button: trade2 files this exact text under both 395808938 and 2162684861."
+          }
+        },
+        {
+          "text": "Map contains (1–2) additional Essences",
+          "side": "suffix",
+          "trade_stat_id": null,
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Crystals' (Overseer only). No search button: trade2 has no 'Map contains # additional Essences' text, and 395808938 and 2162684861 both read 'Map contains an additional Essence'."
           }
         },
         {
           "text": "Map has (70–100)% increased chance to contain Essences",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_1825943485",
           "claim": {
             "v": "vp",
@@ -271,14 +289,15 @@
   },
   "steps": [
     "Allocate The Chosen Path and Overlord's Domain, both on Essences.",
-    "Set Hilda: Mighty Prey, Ancient Inscriptions, Claimed Territories.",
-    "Slot an Overseer Tablet rolled with 'of Crystals' or 'of the Essence'.",
+    "Set Hilda: Mighty Prey, Ancient Inscriptions, Claimed Territories; T2 is a free pick.",
+    "Slot an Overseer Tablet rolled with the 'Crystallised' prefix and 'of Crystals' or 'of the Essence'.",
     "Kill the map boss and open every essence monster; sell Greater and Perfect essences on the Currency Exchange."
   ],
   "risks": [
     "Overlord's Domain adds nothing where the Map Boss is not Powerful.",
-    "'of Crystals' has no pinned trade stat, so it has no search button.",
-    "The basket shows unit prices only; how many Perfect essences a map yields is unknown."
+    "'Crystallised' and 'of Crystals' have no pinned trade stat, so they have no search button.",
+    "The basket shows unit prices only; how many Perfect essences a map yields is unknown.",
+    "Whether 'of Crystals' needs a Powerful Map Boss is unverified (RePoE names its stat maps_with_powerful_bosses_additional_essence_+)."
   ],
   "measured": null
 }

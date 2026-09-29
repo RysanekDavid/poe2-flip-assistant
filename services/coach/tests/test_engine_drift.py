@@ -255,6 +255,7 @@ def test_strategy_enums_and_claim_rules_match_typescript() -> None:
     assert _ts_string_tuple(schema, "MECHANICS") == get_args(strategy_models.Mechanic)
     assert _ts_string_tuple(schema, "BUDGET_TIERS") == strategy_models.BUDGET_ORDER
     assert _ts_string_tuple(schema, "MASTERS") == get_args(strategy_models.Master)
+    assert _ts_string_tuple(schema, "MOD_SIDES") == get_args(strategy_models.ModSide)
     assert _ts_string_tuple(schema, "WAYSTONE_TOTALS") == get_args(strategy_models.WaystoneTotal)
     assert "/^explicit\\.stat_\\d+$/" in schema
     assert strategy_models.TRADE_STAT_ID_PATTERN == r"^explicit\.stat_\d+$"
