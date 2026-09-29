@@ -189,8 +189,11 @@ export type NearMiss = z.infer<typeof NearMissSchema>;
 import { RECIPES as CORE_RECIPES } from "./craftRecipeData";
 import { RECIPES_2 } from "./craftRecipeData2";
 import { RECIPES_3 } from "./craftRecipeData3";
+import { RECIPES_4 } from "./craftRecipeData4";
+import { RECIPES_5 } from "./craftRecipeData5";
 
 /** All curated recipes — the original batch (craftRecipeData), the creator-video batch
- *  (craftRecipeData2) and the Potent-liquid jewels (craftRecipeData3), split across data files to
+ *  (craftRecipeData2), the Potent-liquid jewels (craftRecipeData3) and the 2026-09-30 expansion
+ *  (craftRecipeData4 armour/weapons, craftRecipeData5 jewellery/jewel), split across data files to
  *  respect the 500-line cap. */
-export const RECIPES: CraftRecipe[] = [...CORE_RECIPES, ...RECIPES_2, ...RECIPES_3];
+export const RECIPES: CraftRecipe[] = [...CORE_RECIPES, ...RECIPES_2, ...RECIPES_3, ...RECIPES_4, ...RECIPES_5];

@@ -1,4 +1,5 @@
 import { recipeProvenanceSchema, type RecipeProvenance, type RecipeSource } from "./craftProvenance/schema";
+import { COMPILATION, EXPANSION_PROVENANCE } from "./craftProvenanceData2";
 
 /**
  * Structured provenance for every curated recipe, migrated from the free-text `source` strings the
@@ -175,6 +176,13 @@ const DATA: Record<string, RecipeProvenance> = {
     extraEntityRefs: [],
     kbRuleRefs: ["§2", "§5", "§6"],
   },
+  // single compilation source for the quiver itself; the putrefaction mechanics are our own test (KB §9)
+  quiver_putrefaction: {
+    ...PUTREFACTION_BOOTS,
+    sources: [COMPILATION, OWN_TEST],
+    hitRateBasis: { basis: "unknown", n: null, note: "Curated ~1-in-3 estimate carried over from the boots/body slot machine; the compilation quotes a 2–12 div range, not a rate." },
+  },
+  ...EXPANSION_PROVENANCE,
 };
 
 /** Validated once at import: a malformed entry is a data bug and must stop the process. */

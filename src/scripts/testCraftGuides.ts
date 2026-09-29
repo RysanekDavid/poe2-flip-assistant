@@ -112,7 +112,14 @@ const recipe = (key: string): CraftRecipe => {
   const clean = putrefaction.filter((r) => r.result.corrupted !== true).map((r) => r.key);
   ok("putrefaction result legs are corrupted comparables", putrefaction.length > 0 && clean.length === 0, clean.join(","));
   // KB §2: a fracture recipe sells a fractured mod — its result must search the fractured stat
-  const fractureResults = ["amulet_fracture_plus3", "gloves_projectile_plus2", "ring_fractured_t1res", "jewel_fractured_5mod"].filter(
+  const fractureResults = [
+    "amulet_fracture_plus3",
+    "gloves_projectile_plus2",
+    "ring_fractured_t1res",
+    "jewel_fractured_5mod",
+    "jewel_timelost_fractured_radius",
+    "amulet_plus3_spirit_chaos",
+  ].filter(
     (k) => !recipe(k).result.stats.some((s) => s.group === "fractured" && s.tier !== 2),
   );
   ok("fracture recipes value a FRACTURED defining mod", fractureResults.length === 0, fractureResults.join(","));
@@ -138,9 +145,27 @@ const recipe = (key: string): CraftRecipe => {
   ok("5-mod jewel results require 3 suffixes as a tier-1 stat", threeSuffix.length === 0, threeSuffix.join(","));
 }
 
+// --- 2026-09-30 expansion: KB-open and single-source mechanics carry a visible badge ---
+{
+  const magicEssences = new Set<string>([MATS.greaterEssenceEnhancement.id, MATS.greaterEssenceAbrasion.id]);
+  const expansion = ["helmet_tiara_es", "armour_vile_robe_spirit", "armour_vile_robe_es", "crossbow_sovereign_ballista"];
+  const essenceSteps = expansion.flatMap((k) => allSteps(recipe(k)).filter((s) => (s.mats ?? []).some((m) => magicEssences.has(m.id))));
+  ok("KB §7: magic-base essence steps are flagged (keeps the magic mods?)", essenceSteps.length === 4 && essenceSteps.every((s) => /KB §7/.test(s.unverified ?? "")));
+  const sovereign = allSteps(recipe("crossbow_sovereign_ballista")).find((s) => uses(s, MATS.omenTheSovereign.id));
+  ok("the 'guaranteed ballista' claim is flagged against RePoE's two Ulaman prefixes", /TWO Ulaman/.test(sovereign?.unverified ?? ""));
+  const plus4 = allSteps(recipe("amulet_plus4_breach_quality")).filter((s) => (s.mats ?? []).length > 0);
+  ok("every +4 quality-tech step is flagged unverified", plus4.length > 0 && plus4.every((s) => !!s.unverified));
+  // omen text: Crystallisation acts on the next "Perfect or Corrupted Essence" — a Greater one would ignore it
+  const crystal = ["ring_breach_mana_stacker", "amulet_plus3_spirit_chaos"].flatMap((k) =>
+    allSteps(recipe(k)).filter((s) => uses(s, MATS.omenDextralCrystallisation.id)),
+  );
+  const unpaired = crystal.filter((s) => !(s.mats ?? []).some((m) => m.group === "essence" && m.label.startsWith("Perfect")));
+  ok("expansion Crystallisation steps pair with a Perfect essence", crystal.length === 2 && unpaired.length === 0, `${crystal.length} steps`);
+}
+
 // --- data integrity survives the edits ---
 {
-  ok("16 curated recipes", RECIPES.length === 16, String(RECIPES.length));
+  ok("25 curated recipes", RECIPES.length === 25, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));
