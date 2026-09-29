@@ -2,7 +2,8 @@ import { fetchDemand } from "../../api/scoutClient";
 import type { PricedItem } from "../../api/types";
 import { config } from "../../config/env";
 import { recentStashReads, type StashRead } from "../../db/balanceItemQueries";
-import { getRepriceRun, listingComps, repriceNextAt } from "../../db/listingCompsQueries";
+import { listingComps } from "../../db/listingCompsQueries";
+import { repriceState } from "../../db/repriceRunQueries";
 import { itemValuesAgeHours, latestFetchedAt, latestSnapshots, uniqueValueMap } from "../../db/marketQueries";
 import { timestampAgeMs } from "../../lib/sqliteTime";
 import type { ListingComp, RepriceStatus, SellResponse, SoldSince } from "../../lib/wealthContract";
@@ -60,10 +61,9 @@ function soldLine(reads: readonly StashRead[], rates: ExchangeRates): SoldSince 
 }
 
 function repriceStatus(userId: number, latest: StashRead | undefined, rates: ExchangeRates, nowMs: number): RepriceStatus {
-  const run = getRepriceRun(userId);
-  const nextAt = repriceNextAt(run, nowMs);
+  const { run, phase, nextAt } = repriceState(userId, nowMs);
   const candidates = latest == null ? 0 : pickRepriceCandidates(latest.items, rates, nowMs).length;
-  const state = run == null ? "idle" : run.finished_at == null ? "queued" : run.error != null ? "failed" : "done";
+  const state = phase === "none" ? "idle" : phase;
   return {
     state, requestedAt: run?.requested_at ?? null, finishedAt: run?.finished_at ?? null, checked: run?.checked ?? 0,
     error: run?.error ?? null, nextAt: nextAt?.toISOString() ?? null, candidates,

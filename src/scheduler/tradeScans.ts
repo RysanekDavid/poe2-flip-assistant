@@ -3,7 +3,7 @@ import { scanAutoSnipes, type ScanReport } from "../core/autoSnipe";
 import { withHeartbeat } from "../core/heartbeat";
 import { saveSnipeFailure } from "../db/snipeReportQueries";
 import { consumeScanRequests } from "../db/scanRequestQueries";
-import { finishRepriceRun } from "../db/listingCompsQueries";
+import { finishRepriceRun, markRepriceStarted } from "../db/repriceRunQueries";
 import { repriceForUser, type RepriceUserResult } from "../core/wealth/repriceRun";
 
 /**
@@ -54,15 +54,30 @@ function drainAutoSnipe(ownerCredNow: () => TradeCred | null): void {
   saveSnipeFailure(msg); // the UI is waiting on this scan — give it the reason
 }
 
-/** Users one after another: each run is ≤ 8 searches on the shared limiter, never in parallel. */
-async function repriceUsers(userIds: readonly number[], credFor: (userId: number) => TradeCred | null): Promise<RepriceUserResult[]> {
+/** The user's panel is waiting on this run — record why. A user deleted mid-run has no row left. */
+function recordRunFailure(userId: number, error: string): void {
+  try {
+    finishRepriceRun(userId, { checked: 0, searches: 0, error });
+  } catch (e: unknown) {
+    console.error(`[reprice] user ${userId}: could not record the failure (${error}): ${errText(e)}`);
+  }
+}
+
+/**
+ * Users one after another: each run is ≤ 8 searches on the shared limiter, never in parallel.
+ * One user's failure (even a deleted user) never stops the rest.
+ */
+export async function repriceUsers(
+  userIds: readonly number[],
+  credFor: (userId: number) => TradeCred | null,
+  run: typeof repriceForUser = repriceForUser,
+): Promise<RepriceUserResult[]> {
   const results: RepriceUserResult[] = [];
   for (const userId of userIds) {
     try {
-      results.push(await repriceForUser(userId, credFor(userId)));
+      results.push(await run(userId, credFor(userId)));
     } catch (e: unknown) {
-      // the user's panel is waiting on this run — record why instead of leaving it "queued"
-      finishRepriceRun(userId, { checked: 0, searches: 0, error: errText(e) });
+      recordRunFailure(userId, errText(e));
       results.push({ userId, candidates: 0, checked: 0, searches: 0, fetches: 0, error: errText(e) });
     }
   }
@@ -79,6 +94,8 @@ export function drainReprice(credFor: (userId: number) => TradeCred | null): voi
   if (repriceRunning) return; // stays queued for the next drain
   const userIds = consumeScanRequests("reprice");
   if (userIds.length === 0) return;
+  // synchronously, before the first await: a user waiting behind another reads "running", not "lost"
+  markRepriceStarted(userIds);
   repriceRunning = true;
   withHeartbeat("reprice", "", () => repriceUsers(userIds, credFor), { problem: repriceProblem })
     .then((rs) => {

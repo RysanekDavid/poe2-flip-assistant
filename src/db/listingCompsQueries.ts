@@ -3,10 +3,9 @@ import { getDb } from "./database";
 import type { ListingComp } from "../lib/wealthContract";
 
 /**
- * listing_comps (trade2 comparables of a user's own listings) and reprice_runs (the per-user
- * cooldown + last-run status). Written only by the poller's reprice drain; read by the Sell route.
+ * listing_comps: trade2 comparables of a user's own listings. Written only by the poller's reprice
+ * drain; read by the Sell route. The per-user run status/cooldown lives in repriceRunQueries.
  */
-export const REPRICE_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 
 const compRowSchema = z.object({
   listing_id: z.string(),
@@ -76,47 +75,4 @@ export function pruneListingComps(userId: number, league: string, keepListingIds
     }
   })();
   return removed;
-}
-
-const runSchema = z.object({
-  requested_at: z.string(),
-  finished_at: z.string().nullable(),
-  checked: z.number().int(),
-  searches: z.number().int(),
-  error: z.string().nullable(),
-});
-export type RepriceRun = z.infer<typeof runSchema>;
-
-export function getRepriceRun(userId: number): RepriceRun | null {
-  const row = getDb().prepare("SELECT requested_at, finished_at, checked, searches, error FROM reprice_runs WHERE user_id = ?").get(userId);
-  return row === undefined ? null : runSchema.parse(row);
-}
-
-/**
- * When the next check may be requested, or null if now. A run that failed before spending a
- * single search (budget busy, no candidates' search reached trade2) does not hold the cooldown.
- */
-export function repriceNextAt(run: RepriceRun | null, nowMs: number): Date | null {
-  if (run == null) return null;
-  if (run.finished_at != null && run.error != null && run.searches === 0) return null;
-  const next = Date.parse(run.requested_at) + REPRICE_COOLDOWN_MS;
-  if (!Number.isFinite(next)) throw new Error(`reprice_runs.requested_at unparseable: ${run.requested_at}`);
-  return next > nowMs ? new Date(next) : null;
-}
-
-/** Start a run: stamps the cooldown and clears the previous outcome. */
-export function markRepriceRequested(userId: number, at: Date): void {
-  getDb()
-    .prepare(
-      `INSERT INTO reprice_runs (user_id, requested_at, finished_at, checked, searches, error) VALUES (?, ?, NULL, 0, 0, NULL)
-       ON CONFLICT(user_id) DO UPDATE SET requested_at = excluded.requested_at, finished_at = NULL, checked = 0, searches = 0, error = NULL`,
-    )
-    .run(userId, at.toISOString());
-}
-
-export function finishRepriceRun(userId: number, r: { checked: number; searches: number; error: string | null }, at: Date = new Date()): void {
-  const res = getDb()
-    .prepare("UPDATE reprice_runs SET finished_at = ?, checked = ?, searches = ?, error = ? WHERE user_id = ?")
-    .run(at.toISOString(), r.checked, r.searches, r.error == null ? null : r.error.slice(0, 300), userId);
-  if (res.changes !== 1) throw new Error(`finishRepriceRun: no reprice run for user ${userId}`);
 }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "../../../../auth/session";
 import { setUserPoe, getUserPoeStatus } from "../../../../db/userQueries";
 import { getCredStatus, resetCredStatus } from "../../../../db/credStatusQueries";
+import { liftRepriceCooldown } from "../../../../db/repriceRunQueries";
 import { poeSettingsResponseSchema, type PoeSettingsResponse } from "../../../../lib/poeSettingsContract";
 
 export const runtime = "nodejs";
@@ -36,7 +37,8 @@ const Body = z.object({
 /**
  * POST /api/settings/poe { poesessid, contact?, account?, disconnect? } → store (encrypted).
  * Empty poesessid KEEPS the stored secret (the field is write-only and always blank in the UI);
- * only disconnect=true clears it. A new or removed cookie resets credStatus to unknown.
+ * only disconnect=true clears it. A new or removed cookie resets credStatus to unknown; a new one
+ * also lifts a finished reprice check's cooldown.
  */
 export async function POST(req: Request): Promise<Response> {
   const user = await getCurrentUser();
@@ -48,5 +50,7 @@ export async function POST(req: Request): Promise<Response> {
   const { poesessid, contact, account, disconnect } = parsed.data;
   setUserPoe(user.id, disconnect ? null : poesessid, contact, account);
   if (disconnect || poesessid !== "") resetCredStatus(user.id);
+  // a new cookie deserves a fresh reprice check — the last one may have died on the old cookie's 403
+  if (!disconnect && poesessid !== "") liftRepriceCooldown(user.id);
   return NextResponse.json(settingsBody(user.id));
 }

@@ -45,9 +45,11 @@ CREATE INDEX IF NOT EXISTS idx_listing_comps_user ON listing_comps(user_id, leag
 -- One row per user: when a reprice check was last requested (the 6h cooldown) and how the last
 -- run ended, so the Sell panel can say "queued", "checked 5 at 19:40" or the failure. searches =
 -- trade2 searches the run spent (a run that failed before spending any does not hold the cooldown).
+-- started_at = when the poller took the request, so a request lost with a restart is told apart.
 CREATE TABLE IF NOT EXISTS reprice_runs (
   user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   requested_at TEXT NOT NULL,
+  started_at TEXT,
   finished_at TEXT,
   checked INTEGER NOT NULL DEFAULT 0,
   searches INTEGER NOT NULL DEFAULT 0,

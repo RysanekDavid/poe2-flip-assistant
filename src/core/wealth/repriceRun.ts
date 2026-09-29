@@ -1,7 +1,8 @@
 import { searchListingsLinked, type TradeCred } from "../../api/tradeClient";
 import { withCredStatus } from "../../auth/credStatus";
 import { latestStashItems } from "../../db/balanceItemQueries";
-import { finishRepriceRun, pruneListingComps, upsertListingComp } from "../../db/listingCompsQueries";
+import { pruneListingComps, upsertListingComp } from "../../db/listingCompsQueries";
+import { finishRepriceRun } from "../../db/repriceRunQueries";
 import { getDefaultLeague } from "../leagueState";
 import { resolveRates } from "../rates";
 import { pickRepriceCandidates, repriceQuery, runRepriceScan, REPRICE_COMPARABLES, type RepriceDeps } from "./repriceScan";
@@ -23,7 +24,7 @@ export interface RepriceUserResult {
 function liveDeps(userId: number, league: string): RepriceDeps {
   return {
     // wrapped per request: each search is this user's cookie answering trade2 (ok / expired)
-    search: (q, cred) => withCredStatus(userId, () => searchListingsLinked(q, REPRICE_COMPARABLES, cred)),
+    search: (q, cred) => withCredStatus(userId, cred, () => searchListingsLinked(q, REPRICE_COMPARABLES, cred)),
     queryFor: repriceQuery,
     writeComp: (c) => upsertListingComp(userId, league, c),
   };

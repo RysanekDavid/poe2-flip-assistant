@@ -6,8 +6,7 @@ import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
 import { pickRepriceCandidates, REPRICE_MIN_ASK_DIV } from "../../../../core/wealth/repriceScan";
 import { latestStashItems } from "../../../../db/balanceItemQueries";
-import { getRepriceRun, markRepriceRequested, repriceNextAt, REPRICE_COOLDOWN_MS } from "../../../../db/listingCompsQueries";
-import { requestScan } from "../../../../db/scanRequestQueries";
+import { enqueueReprice, repriceState, REPRICE_COOLDOWN_MS } from "../../../../db/repriceRunQueries";
 import { repriceResponseSchema } from "../../../../lib/wealthContract";
 
 export const runtime = "nodejs";
@@ -44,7 +43,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!cred) return NextResponse.json({ error: "connect your POESESSID in Settings first" }, { status: 400 });
 
   const now = new Date();
-  const nextAt = repriceNextAt(getRepriceRun(user.id), now.getTime());
+  const { nextAt } = repriceState(user.id, now.getTime());
   if (nextAt) {
     return NextResponse.json({ error: `checked recently — next check at ${nextAt.toISOString()}`, nextAt: nextAt.toISOString() }, { status: 409 });
   }
@@ -58,7 +57,6 @@ export async function POST(req: Request): Promise<Response> {
       { status: 409 },
     );
   }
-  markRepriceRequested(user.id, now);
-  requestScan("reprice", user.id);
+  enqueueReprice(user.id, now);
   return NextResponse.json(repriceResponseSchema.parse({ queued: true, nextAt: new Date(now.getTime() + REPRICE_COOLDOWN_MS).toISOString() }));
 }
