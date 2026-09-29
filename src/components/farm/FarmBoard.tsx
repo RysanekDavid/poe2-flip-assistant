@@ -50,9 +50,11 @@ function useSelection(details: readonly BossView[], firstRowId: string | null) {
 }
 
 const LEGEND =
-  "Mechanics: basket heat (7d momentum × value × liquidity) of what each activity drops — it is not Div/hour. " +
+  "Mechanics: basket heat (7d momentum × value × liquidity) of what each activity drops — heat alone is not Div/hour; " +
+  "click a chip and enter your minutes and Div per map for your own. " +
   "Bosses: entry at the cheaper of buy or craft; floor = priced loot on most kills, chase = rarer drops; " +
-  "rates are community samples at best, so every verdict resting on one stays amber. Unpriced drops are left out, never counted as 0.";
+  "enter your minutes per kill for your Div/hour (net per kill × kills per hour, keeping the net's ≥ / ≤). " +
+  "Rates are community samples at best, so every verdict resting on one stays amber. Unpriced drops are left out, never counted as 0.";
 
 const minutesSince = (stamp: string | null): number | null => (stamp == null ? null : timestampAgeMs(stamp) / 60_000);
 
@@ -95,7 +97,7 @@ export function FarmBoard() {
     <section className="grid gap-3">
       <PageHeader
         title="What to farm now"
-        purpose="Mechanic baskets by 7d heat, pinnacle bosses by net per kill."
+        purpose="Mechanic baskets by 7d heat, pinnacle bosses by net per kill — and your Div/hour at your own pace."
         legend={LEGEND}
         action={
           <Button variant="ghost" size="sm" onClick={reload} aria-label="Refresh farm data">
@@ -109,8 +111,8 @@ export function FarmBoard() {
         <>
           <DataLine data={data} />
           <PatchWarning warning={data.patchWarning} />
-          <MechanicStrip mechanics={data.mechanics} />
-          <BossTable bosses={data.bosses} selectedId={selected?.id ?? null} onSelect={select} exPerDiv={exPerDiv} />
+          <MechanicStrip mechanics={data.mechanics} exPerDiv={exPerDiv} onSpeedSaved={reload} />
+          <BossTable bosses={data.bosses} selectedId={selected?.id ?? null} onSelect={select} exPerDiv={exPerDiv} onSpeedSaved={reload} />
           {selected && <BossDetail boss={selected} tier={tierOf(selected)} onTier={(id) => setTier(selected.id, id)} exPerDiv={exPerDiv ?? 0} />}
         </>
       )}
