@@ -88,7 +88,7 @@ export function PatchesBoard() {
       {!first && !error && <p className="text-sm text-neutral-400">Loading patch notes…</p>}
       {first &&
         patches.map((patch, index) => (
-          <PatchCard key={patch.threadId} patch={patch} canResummarize={first.canResummarize} defaultOpen={index < OPEN_BY_DEFAULT} onChanged={reload} />
+          <PatchCard key={patch.threadId} patch={patch} newest={index === 0} canResummarize={first.canResummarize} defaultOpen={index < OPEN_BY_DEFAULT} onChanged={reload} />
         ))}
       {hasOlder && (
         <div className="flex justify-center">

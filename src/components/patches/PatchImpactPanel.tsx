@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, LineChart } from "lucide-react";
 import { assertOk, describeError } from "../../lib/clientWarn";
 import {
@@ -24,20 +24,30 @@ import { Sparkline } from "../ui/Sparkline";
 
 type ImpactState = { kind: "idle" } | { kind: "loading" } | { kind: "error"; message: string } | { kind: "ready"; impact: PatchImpactResponse };
 
-/** Fetched only when opened: each open reads a week of snapshots per named item. */
-function useImpact(threadId: number) {
+/**
+ * Fetched when the patch card opens (it mounts this panel only then), so the collapsed summary line
+ * can show the affected items' art. The route memoizes 15 min, so re-opening a card is cheap.
+ */
+function useImpact(threadId: number): ImpactState {
   const [state, setState] = useState<ImpactState>({ kind: "idle" });
-  const load = (): void => {
+  useEffect(() => {
+    let alive = true;
     setState({ kind: "loading" });
     const url = `/api/patches/${threadId}/impact`;
     fetch(url, { cache: "no-store" })
-      .then(async (r) => setState({ kind: "ready", impact: patchImpactResponseSchema.parse(await assertOk(r, url).json()) }))
+      .then(async (r) => {
+        const impact = patchImpactResponseSchema.parse(await assertOk(r, url).json());
+        if (alive) setState({ kind: "ready", impact });
+      })
       .catch((e: unknown) => {
         console.error("[patches] impact failed", e);
-        setState({ kind: "error", message: describeError(e) });
+        if (alive) setState({ kind: "error", message: describeError(e) });
       });
-  };
-  return { state, load };
+    return () => {
+      alive = false;
+    };
+  }, [threadId]);
+  return state;
 }
 
 const SOURCE_TIP: Record<PatchTextSource, string> = {
@@ -70,6 +80,35 @@ function PctCell({ pct, due, note }: { pct: number | null; due: boolean; note?: 
   }
   const tone = pct > 0.05 ? "text-emerald-400" : pct < -0.05 ? "text-red-300" : "text-neutral-300";
   return <span className={`tabular-nums ${tone}`} title={note}>{fmtPct(pct)}</span>;
+}
+
+const latestPct = (item: ImpactItem): number | null => item.points.d7.pct ?? item.points.h72.pct ?? item.points.h24.pct;
+
+/** Collapsed line: the most-moved items' art plus a count, so a market-touching patch shows it at a glance. */
+function ImpactSummary({ state }: { state: ImpactState }) {
+  if (state.kind === "loading" || state.kind === "idle") return <span className="text-neutral-500">…</span>;
+  if (state.kind === "error") return <span className="text-amber-300">unavailable</span>;
+  const { items, categories } = state.impact;
+  if (items.length === 0) {
+    return <span className="text-neutral-500">{categories.length > 0 ? `${categories.length} item ${categories.length === 1 ? "family" : "families"}` : "no tracked item named"}</span>;
+  }
+  const up = items.filter((i) => (latestPct(i) ?? 0) > 0.05).length;
+  const down = items.filter((i) => (latestPct(i) ?? 0) < -0.05).length;
+  const art = items.filter((i) => i.icon !== null).slice(0, 5);
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="flex" title={art.map((i) => i.name).join(", ")}>
+        {art.map((i) => (
+          <span key={i.itemId} className="-ml-1 rounded-full bg-neutral-950 ring-1 ring-neutral-800 first:ml-0">
+            <ItemArt src={i.icon} size={5} />
+          </span>
+        ))}
+      </span>
+      <span className="tabular-nums text-neutral-400">
+        {items.length} {items.length === 1 ? "item" : "items"} · {up} up, {down} down
+      </span>
+    </span>
+  );
 }
 
 function trendPoints(item: ImpactItem): number[] {
@@ -197,16 +236,15 @@ function ImpactView({ impact }: { impact: PatchImpactResponse }) {
 
 export function PatchImpactPanel({ threadId }: { threadId: number }) {
   const [open, setOpen] = useState(false);
-  const { state, load } = useImpact(threadId);
-  const toggle = (): void => {
-    if (!open && state.kind !== "ready" && state.kind !== "loading") load();
-    setOpen((o) => !o);
-  };
+  const state = useImpact(threadId);
   return (
     <div className="border-t border-line pt-2">
-      <button type="button" onClick={toggle} aria-expanded={open} className="flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-200">
-        <ChevronDown aria-hidden className={`h-3.5 w-3.5 transition-transform ${open ? "" : "-rotate-90"}`} />
-        Price impact
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-400 hover:text-neutral-200">
+        <span className="inline-flex items-center gap-1">
+          <ChevronDown aria-hidden className={`h-3.5 w-3.5 transition-transform ${open ? "" : "-rotate-90"}`} />
+          Price impact
+        </span>
+        {!open && <ImpactSummary state={state} />}
       </button>
       {open && (
         <div className="mt-2">
