@@ -8,17 +8,15 @@ import { listRegexPresets, saveRegexPreset } from "../../db/regexPresetQueries";
 import { VendorDataSchema, RegexPoolSchema, type RegexPool } from "../../core/tools/regex/pools/schema";
 import { composeVendor } from "../../core/tools/regex/vendorCompose";
 import { compileSearch, matchesItem } from "../../core/tools/regex/searchEmulator";
-import { buildRegexTradeLink, indexStats, TRADE_CATEGORY } from "../../core/tools/regex/tradeLink";
 import { PresetParamsSchema, type PresetParams } from "../../lib/tools/regexContract";
 import { REGEX_TABS, emptyPoolSelection, encodeShare, thresholdKey, type TabSelection, type WaystoneSelection } from "../../lib/tools/regexPoolContract";
 import { readShare, shareUrl } from "../../lib/tools/regexShareUrl";
 import { PASTED_ITEM_KEY, runExplainJob } from "../../lib/tools/regexExplainJob";
-import { tradeLinkRequest } from "../../lib/tools/regexTradeContract";
 import { TimedWorker, type Timers, type WorkerPort } from "../../lib/tools/regexWorkerRunner";
 import { presetsForTab } from "../../components/tools/regex/presetView";
 import { emptyVendorSelection, setModState, setThreshold } from "../../components/tools/regex/selectionOps";
 
-const loadPool = (tab: string): RegexPool => RegexPoolSchema.parse(JSON.parse(readFileSync(join(process.cwd(), `src/data/poe2/regex/${tab}.json`), "utf8")));
+export const loadPool = (tab: string): RegexPool => RegexPoolSchema.parse(JSON.parse(readFileSync(join(process.cwd(), `src/data/poe2/regex/${tab}.json`), "utf8")));
 
 /** A waystone selection like the owner's check: 3 wanted (one with a threshold), 2 avoided, T14–16. */
 export function sampleWaystone(pool: RegexPool): WaystoneSelection {
@@ -232,28 +230,4 @@ export function testVendorCompose(): void {
   assert.ok(!matchesItem(lv, ["Requires: Level 75", "Sockets: S S"]), "a level above the range stays dark");
   assert.ok(levels.warnings.some((w) => w.code === "verify-in-game"), "unverified spellings are flagged");
   assert.equal(composeVendor(data, emptyVendorSelection(), { maxChars: 250 }).chunks.length, 0, "an empty vendor selection makes no string");
-}
-
-export function testTradeLink(): void {
-  const pool = loadPool("waystone");
-  const sel = sampleWaystone(pool);
-  const req = tradeLinkRequest(pool, sel);
-  assert.deepEqual(req.tier, { min: 14, max: 16 });
-  const [first, second] = req.lines;
-  assert.ok(first && second && first.state === "want" && first.min === 20, "the threshold rides along on its line");
-  const stats = indexStats([
-    { id: "explicit.stat_1", text: first.template, group: "explicit" },
-    { id: "implicit.stat_1", text: first.template, group: "implicit" },
-    { id: "explicit.stat_2", text: second.template.toUpperCase(), group: "explicit" },
-  ]);
-  const link = buildRegexTradeLink(stats, "Runes of Aldur", req);
-  const url = new URL(link.url);
-  assert.ok(url.pathname.endsWith(`/${encodeURIComponent("Runes of Aldur")}`) || url.pathname.endsWith("/Runes%20of%20Aldur"));
-  const q = JSON.parse(url.searchParams.get("q") ?? "{}") as { query: { filters: Record<string, { filters: Record<string, unknown> }>; stats: Array<{ type: string; filters: Array<{ id: string }> }> } };
-  assert.deepEqual(q.query.filters.type_filters?.filters.category, { option: TRADE_CATEGORY.waystone });
-  assert.deepEqual(q.query.filters.map_filters?.filters.map_tier, { min: 14, max: 16 });
-  assert.deepEqual(q.query.stats.map((g) => g.type), ["count"], "any mode = count group; no avoid line matched");
-  assert.deepEqual(q.query.stats[0]?.filters.map((f) => f.id), ["explicit.stat_1", "explicit.stat_2"], "explicit wins, text match ignores case");
-  assert.equal(link.matched, 2);
-  assert.equal(link.unmatched.length, req.lines.length - 2, "every line without a trade2 stat is reported");
 }
