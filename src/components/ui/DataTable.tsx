@@ -40,6 +40,15 @@ interface DataTableProps<T> {
 
 const ALIGN_CLASS: Record<ColumnAlign, string> = { left: "text-left", right: "text-right", center: "text-center" };
 
+const INTERACTIVE = "a, button, input, select, textarea, [role=switch], [role=button], [tabindex]";
+
+/** A click on a cell's own control (watch toggle, link, tooltip trigger) is not a row click. */
+function fromInnerControl(target: EventTarget, row: HTMLElement): boolean {
+  if (!(target instanceof Element)) return false;
+  const hit = target.closest(INTERACTIVE);
+  return hit !== null && hit !== row && row.contains(hit);
+}
+
 function HeaderCell<T>({ col, sort }: { col: Column<T>; sort?: TableSort }) {
   const align = col.align ?? "left";
   const active = sort?.key === col.key;
@@ -61,7 +70,7 @@ function HeaderCell<T>({ col, sort }: { col: Column<T>; sort?: TableSort }) {
       className={`sticky top-[var(--shell-h,0px)] z-10 whitespace-nowrap border-b border-line bg-neutral-950 px-2 py-2 text-xs font-medium text-neutral-400 ${ALIGN_CLASS[align]}`}
     >
       <span className={`inline-flex items-center gap-1 ${align === "right" ? "flex-row-reverse" : ""}`}>
-        {col.tip && <InfoTip tip={col.tip} label={`About ${col.header}`} />}
+        {col.tip && <InfoTip tip={col.tip} label={`About ${col.header}`} side="bottom" />}
         {label}
       </span>
     </th>
@@ -96,7 +105,13 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, s
               tabIndex={onRowClick ? 0 : undefined}
               role={onRowClick ? "button" : undefined}
               aria-pressed={onRowClick ? selected : undefined}
-              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              onClick={
+                onRowClick
+                  ? (e) => {
+                      if (!fromInnerControl(e.target, e.currentTarget)) onRowClick(row);
+                    }
+                  : undefined
+              }
               onKeyDown={onRowClick ? (e) => onKey(e, row) : undefined}
               className={`h-9 ${onRowClick ? "cursor-pointer hover:bg-neutral-800/50" : ""} ${selected ? "bg-amber-400/10" : ""}`}
             >

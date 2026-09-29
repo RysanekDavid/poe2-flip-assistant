@@ -20,22 +20,25 @@ type DescribedProps = { "aria-describedby"?: string };
 
 const FOCUSABLE_TAGS = new Set(["a", "button", "input", "select", "textarea"]);
 
-/** Focusable host elements and components (Button, Toggle…) take aria-describedby directly. */
-function isFocusableElement(node: ReactNode): node is ReactElement<DescribedProps> {
-  if (!isValidElement(node)) return false;
-  return typeof node.type !== "string" || FOCUSABLE_TAGS.has(node.type);
+/**
+ * Only a focusable HOST element takes aria-describedby directly. Components and Fragments are
+ * opaque (props may never reach a focusable node), so they get the focusable wrapper instead.
+ */
+function isFocusableHost(node: ReactNode): node is ReactElement<DescribedProps> {
+  if (!isValidElement<{ tabIndex?: unknown }>(node) || typeof node.type !== "string") return false;
+  return FOCUSABLE_TAGS.has(node.type) || typeof node.props.tabIndex === "number";
 }
 
 /**
  * Hover + keyboard-focus tooltip without a positioning library. The bubble stays in the DOM (only
- * visually hidden) so aria-describedby always resolves for screen readers. A focusable child (or a
- * component, assumed to render one) receives aria-describedby itself; plain text or spans get a
- * focusable wrapper so keyboard users can still reach the tip.
+ * visually hidden) so aria-describedby always resolves for screen readers. A focusable host child
+ * (<button>, <a>, tabIndex set) receives aria-describedby itself; anything else gets a focusable
+ * wrapper so keyboard users can still reach the tip. Pass host elements to avoid a double tab stop.
  */
 export function Tooltip({ tip, children, side = "top" }: TooltipProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
-  const trigger = isFocusableElement(children) ? (
+  const trigger = isFocusableHost(children) ? (
     cloneElement(children, { "aria-describedby": id })
   ) : (
     <span tabIndex={0} aria-describedby={id} className="cursor-help">

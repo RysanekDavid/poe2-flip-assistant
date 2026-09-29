@@ -13,9 +13,18 @@
     @apply bg-bg text-fg;
   }
 
-  /* One visible keyboard focus style app-wide; mouse clicks stay ring-free via :focus-visible. */
+  /*
+   * One visible keyboard focus style app-wide; mouse clicks stay clean via :focus-visible. An
+   * outline, not a box-shadow ring: shadows do not paint on table rows.
+   */
   *:focus-visible {
-    @apply outline-none ring-2 ring-amber-400/60;
+    outline: 2px solid rgb(251 191 36 / 0.6);
+    outline-offset: 1px;
+  }
+
+  /* Inset on rows so the table edge and neighbouring rows cannot clip it. */
+  tr:focus-visible {
+    outline-offset: -2px;
   }
 
   /* Prices line up column-wise without every table remembering to ask for it. */

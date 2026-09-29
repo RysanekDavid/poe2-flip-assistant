@@ -25,9 +25,10 @@ interface ItemArtProps {
  * which next/image would need a remotePatterns entry per CDN for.
  */
 export function ItemArt({ src, size, alt = "" }: ItemArtProps) {
-  const [broken, setBroken] = useState(false);
+  // Keyed by src so a recycled row that gets new art retries instead of staying a grey box.
+  const [brokenSrc, setBrokenSrc] = useState<string | null>(null);
   const box = SIZE_CLASS[size];
-  if (!src || broken) {
+  if (!src || brokenSrc === src) {
     return alt ? (
       <span role="img" aria-label={alt} className={`inline-block shrink-0 rounded bg-neutral-800 ${box}`} />
     ) : (
@@ -39,7 +40,7 @@ export function ItemArt({ src, size, alt = "" }: ItemArtProps) {
       src={src}
       alt={alt}
       loading="lazy"
-      onError={() => setBroken(true)}
+      onError={() => setBrokenSrc(src)}
       className={`inline-block shrink-0 object-contain ${box}`}
     />
   );

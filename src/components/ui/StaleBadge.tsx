@@ -1,5 +1,7 @@
 /** Compact age for chips: 42 → "42m", 300 → "5h", 102240 → "71d". */
 export function fmtAgeMin(ageMin: number): string {
+  // NaN/Infinity come from an unparseable timestamp; show "—" rather than "NaNd".
+  if (!Number.isFinite(ageMin)) return "—";
   const m = Math.max(0, Math.round(ageMin));
   if (m < 60) return `${m}m`;
   const h = Math.round(m / 60);
