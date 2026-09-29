@@ -30,11 +30,23 @@ function fmtEta(h: number): string {
   return h < 1 ? "<1h to fill" : `~${Math.round(h)}h to fill`;
 }
 
+/** A stack total after the gold fee; at or under zero the order loses money, which "—" would hide. */
+function NetRow({ label, div, ex, title }: { label: string; div: number | null; ex: number | null; title: string }) {
+  if (div != null && div <= 0) {
+    return (
+      <span className="text-sm text-bad" title={title}>
+        {label}: fee ≥ proceeds — don&apos;t post
+      </span>
+    );
+  }
+  return <Row label={label} div={div} ex={ex} title={title} />;
+}
+
 function ExchangeRows({ hint, ex }: { hint: Hint; ex: number | null }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-      <Row label="now, after fee" div={hint.cxFastTotalDiv} ex={ex} title="whole stack at the fast exchange price, minus the gold fee we could price" />
-      <Row label="patient" div={hint.cxPatientTotalDiv} ex={ex} title="whole stack at the patient exchange price, minus the fee" />
+      <NetRow label="now, after fee" div={hint.cxFastTotalDiv} ex={ex} title="whole stack at the fast exchange price, minus the gold fee we could price" />
+      <NetRow label="patient" div={hint.cxPatientTotalDiv} ex={ex} title="whole stack at the patient exchange price, minus the fee" />
       {hint.feeTotalDiv == null ? (
         <span className="text-xs text-neutral-400" title="the gold fee could not be priced — it is unknown, not zero">fee unknown</span>
       ) : (

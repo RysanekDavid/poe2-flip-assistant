@@ -38,7 +38,9 @@ function Provenance({ r }: { r: PriceCheckResponse }) {
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <Chip title="where this value came from">{SOURCE_TEXT[source]}</Chip>
       {ageMin != null && <StaleBadge ageMin={ageMin} warnAfterMin={STALE_AFTER_MIN[source]} />}
-      {samples != null && <Chip title="prices behind this value">{`${samples} samples`}</Chip>}
+      {samples != null && samples > 0 && (
+        <Chip title="prices behind this value">{source === "scout" ? `${samples} price-log points` : `${samples} samples`}</Chip>
+      )}
     </span>
   );
 }
