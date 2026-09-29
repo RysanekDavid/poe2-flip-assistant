@@ -17,6 +17,15 @@ export const craftMovesRequestSchema = z.object({
 });
 export type CraftMovesRequest = z.infer<typeof craftMovesRequestSchema>;
 
+/**
+ * POST /api/tools/craft-moves/value. `targetLine` (a move card's aimed-at mod, as the catalog words
+ * it) values the OUTCOME instead: the pasted item plus that one mod, at its lowest roll.
+ */
+export const craftValueRequestSchema = craftMovesRequestSchema.extend({
+  targetLine: z.string().trim().min(1).max(300, "target mod line is over 300 characters").optional(),
+});
+export type CraftValueRequest = z.infer<typeof craftValueRequestSchema>;
+
 const sideSchema = z.enum(["prefix", "suffix"]);
 
 export const affixSchema = z.object({
@@ -122,11 +131,24 @@ export const bookValueSchema = z.object({
 
 export const oddsLinkSchema = z.object({ label: z.string(), url: z.string().url() });
 
+/** One "next best move" card (core/tools/craftmoves/rank.ts): deterministic order, never odds. */
+export const rankedMoveSchema = z.object({
+  move: pricedMoveSchema,
+  /** 1 = fills an open slot on the aimed side, 2 = adds a random mod, 3 = frees a slot. */
+  tier: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  /** The not-yet-present family worth aiming at with this move; null for removals. */
+  targetFamily: familyGateSchema.nullable(),
+  why: z.string(),
+});
+export type RankedMoveView = z.infer<typeof rankedMoveSchema>;
+
 export const craftMovesResponseSchema = z.object({
   league: z.string(),
   state: itemStateSchema,
   locked: z.string().nullable(),
   moves: z.array(pricedMoveSchema),
+  /** Top three of `moves` for the cards; empty when the item is locked or nothing qualifies. */
+  ranked: z.array(rankedMoveSchema).max(3),
   blocked: z.array(blockedMoveSchema),
   gates: z.array(familyGateSchema),
   patch: z.object({ rules: z.string(), data: z.string(), repoe: z.string(), reverifyAfter: z.string() }),
@@ -147,6 +169,8 @@ export const craftValueResponseSchema = z.object({
   total: z.number().int(),
   searchUrl: z.string(),
   searchedStats: z.number().int(),
+  /** The synthetic mod line that was added before searching, when an outcome was valued. */
+  targetLine: z.string().nullable(),
 });
 export type CraftValueResponse = z.infer<typeof craftValueResponseSchema>;
 

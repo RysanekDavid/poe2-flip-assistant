@@ -18,7 +18,8 @@ import { itemText, RING, ringDesecratedSuffix, ringLines, renderFamily } from ".
 import { assertPanelExport } from "./toolsTestKit";
 import { runJewelAndTagCases } from "./craftMovesJewelCases";
 import { KB6_FACTS, testKbLiquids } from "./craftMovesKbLiquids";
-import { SAMPLE_ITEM } from "../../components/tools/craftmoves/craftMovesClient";
+import { SAMPLE_ITEM } from "../../components/craft/moves/craftMovesClient";
+import { runRankCases } from "./craftMovesRankCases";
 
 const KB_PATH = join(process.cwd(), "docs", "research", KB);
 const kbText = readFileSync(KB_PATH, "utf8").replace(/\r/g, "");
@@ -226,7 +227,8 @@ testRuleProvenance();
 testPricing();
 testParserMarker();
 testContract(cat);
-assertPanelExport("src/components/tools/craftmoves/CraftMovesTool.tsx", "CraftMovesTool", "src/components/shell/tabs/CraftTab.tsx");
+runRankCases(cat);
+assertPanelExport("src/components/craft/moves/CraftMovesTool.tsx", "CraftMovesTool", "src/components/shell/tabs/CraftTab.tsx");
 assert.deepEqual(parseTabRoute("craft", "moves"), { tab: "craft", tool: "moves", rejected: [] });
 for (const bad of ["hunt", "craft-moves", "", "MOVES"]) {
   const route = parseTabRoute("craft", bad);
@@ -235,5 +237,6 @@ for (const bad of ["hunt", "craft-moves", "", "MOVES"]) {
 }
 console.log(
   `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB §3 gate rows, ${KB6_FACTS.length} KB §6 facts, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/advanced), jewels/liquids/catalysed/headers/markers, ` +
-    `${ALL_RULES.length} rules with provenance, null-not-zero pricing, desecrated marker, contract, panel wiring`,
+    `${ALL_RULES.length} rules with provenance, null-not-zero pricing, desecrated marker, contract, ` +
+    "next-best-move cards (Sinistral first on an open prefix, Whittling never top-3, corrupted → none, variants collapse), outcome text, share link, panel wiring",
 );
