@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Loader2, MessageSquare, Send, SlidersHorizontal, Trash2, TriangleAlert } from "lucide-react";
+import { Check, Loader2, MessageSquare, RefreshCw, Send, SlidersHorizontal, Trash2, TriangleAlert } from "lucide-react";
 import { fetchNotifySettings, postNotifySettings, type NotifySettings } from "../../lib/notifySettings";
 import { NotifyPrefsTable } from "./NotifyPrefsTable";
 import { announceAlertsChanged } from "./AlertsContext";
@@ -89,6 +89,44 @@ function DiscordBlock({ view, busy, run }: { view: NotifySettings; busy: boolean
         <input type="checkbox" checked={view.digest} disabled={busy} onChange={(e) => void run({ action: "digest", enabled: e.target.checked })} />
         Daily digest
       </label>
+      <LiveBoardControls view={view} busy={busy} run={run} />
+    </div>
+  );
+}
+
+/** Opt-in live board: one Discord message, edited in place every interval, plus an on-demand refresh. */
+function LiveBoardControls({ view, busy, run }: { view: NotifySettings; busy: boolean; run: Run }) {
+  const board = view.board;
+  const noHook = view.webhook.state !== "set";
+  const every = board.intervalMin === 60 ? "hourly" : `every ${board.intervalMin} min`;
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <label
+        className="flex items-center gap-2 text-sm text-neutral-300"
+        title={noHook ? "save a Discord webhook first" : "top exchange loops, best bosses + hot mechanics and net worth — one message kept up to date instead of new pings"}
+      >
+        <input
+          type="checkbox"
+          checked={board.enabled}
+          disabled={busy || (noHook && !board.enabled)}
+          onChange={(e) => void run({ action: "board", enabled: e.target.checked }, e.target.checked ? "live board on — it appears within a minute" : "live board off")}
+        />
+        Live board — one message, edited {every}
+      </label>
+      {board.enabled && (
+        <>
+          <button
+            disabled={busy || noHook}
+            onClick={() => void run({ action: "boardNow" }, "board refresh queued — Discord updates within a minute")}
+            className={`${BTN} border-neutral-700 hover:border-sky-500`}
+          >
+            <RefreshCw className="h-4 w-4" /> Refresh now
+          </button>
+          <span className="text-xs text-neutral-500" title={board.posted ? "the next update edits the existing message" : "the next update posts a new message"}>
+            updated: <span className="text-neutral-300">{ago(board.updatedAt)}</span>
+          </span>
+        </>
+      )}
     </div>
   );
 }
