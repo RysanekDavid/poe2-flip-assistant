@@ -41,7 +41,6 @@ export const RECIPES: CraftRecipe[] = [
     heroIcon:
       "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvSmV3ZWxzL1NwZWNpYWxFbWVyYWxkSmV3ZWwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/9acdb9443b/SpecialEmeraldJewel.png",
     label: "Time-Lost jewel · +1 suffix push",
-    source: "crafting chat (Contempt → +1 suffix → cranium → annul → chaos prefixes)",
     base: {
       label: "Sapphire · caster suffix",
       type: "Time-Lost Sapphire",
@@ -86,7 +85,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "bow_amanamu",
     domain: "weapon",
     label: "Bow · phys crit + Amanamu AS",
-    source: "Fubgun bow craft (Seeking → Liege jawbone → echoes unveil → greater exalt)",
     base: {
       label: "%phys bow base (Obliterator/Warmonger)",
       category: "weapon.bow",
@@ -127,7 +125,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "ring_catalysing_exalt",
     domain: "jewellery",
     label: "Ring · Tul's catalysed exalt",
-    source: "XTheFarmerX ring craft (Tul's 20% → catalysing + greater exaltation → collarbone)",
     base: {
       label: "Magic ring · T1 flat fire/lightning",
       category: "accessory.ring",
@@ -169,14 +166,19 @@ export const RECIPES: CraftRecipe[] = [
     key: "amulet_fracture_plus3",
     domain: "jewellery",
     label: "Amulet · fracture the +3",
-    source: "XTheFarmerX amulet craft (opulence → collarbone block → Fracturing Orb 1-in-3)",
+    // The base is MAGIC, not rare (fixed 2026-09-29). S11 transcript (docs/kb/sources/transcripts/
+    // 11-…amulet-craft-guide-fu.txt, intermediate section): "the start for this is going to be pretty
+    // much the same. You are going to use a perfect AUG if you have an open prefix … We're going to
+    // greater opulence guarantee the rarity". Greater Essence of Opulence "Upgrades a Magic item to a
+    // Rare item" (entity catalog) and Augmentation needs a magic item (KB §1), so both steps only work
+    // on a magic base; the mod count then matches the 1-in-3: +3, aug roll, rarity, desecrated blocker.
     base: {
-      label: "Rare amulet · +3 spell skills",
+      label: "Magic amulet · +3 spell skills",
       type: "Stellar Amulet",
-      rarity: "rare",
+      rarity: "magic",
       ilvlMin: 75,
       stats: [{ text: "# to Level of all Spell Skills", min: 3 }],
-      note: "Base already rolled the +3 (that's what you're fracturing). Stellar/gold bases sell best; open prefix worth ~1 div premium.",
+      note: "Magic base that already rolled the +3 (that's what you're fracturing). Stellar/gold bases sell best; an open prefix is worth ~1 div premium.",
     },
     result: {
       label: "Fractured +3 amulet",
@@ -190,7 +192,7 @@ export const RECIPES: CraftRecipe[] = [
       note: "Valued from instant-buyout comparables with a FRACTURED +3 Spell Skills (trade2 searches the fractured stat itself), plus 40+ life when enough are listed (else the fractured +3 alone).",
     },
     materials: [
-      { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Only on open-prefix bases — and Augmentation needs a MAGIC item (KB §1); unverified on this rare base." },
+      { material: MATS.perfectAug, qtyPerAttempt: 1, note: "Only on open-prefix bases (the magic base's second affix, KB §1). Skip it when the prefix is taken." },
       { material: MATS.greaterEssenceOpulence, qtyPerAttempt: 1, note: "Guaranteed T1 rarity." },
       // KB §2 (poe2-crafting-knowledge.md): fracture needs ≥4 mods; desecrated counts, can't be fractured
       { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 1, note: "Prefix desecration — the blocker: counts toward the 4-mod minimum but can't be fractured." },
@@ -209,7 +211,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "focus_rathpith_gamble",
     domain: "weapon",
     label: "Rathpith Globe · cultivation gamble",
-    source: "Blood Mage showcase video (double-mana “wrath pit”) + KB economy-meta research",
     base: {
       label: "Rathpith Globe (corrupted)",
       name: "Rathpith Globe",
@@ -247,7 +248,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "boots_putrefaction",
     domain: "armour",
     label: "Boots · putrefaction ES (caster)",
-    source: "XTheFarmerX putrefaction craft (scraps+sockets FIRST → omen+rib → reveal discipline)",
     base: {
       label: "Cheap rare ES boots (not desecrated)",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
@@ -280,7 +280,6 @@ export const RECIPES: CraftRecipe[] = [
     key: "boots_putrefaction_ev",
     domain: "armour",
     label: "Boots · putrefaction EV (attack)",
-    source: "XTheFarmerX putrefaction craft — evasion variant for the attack meta",
     base: {
       label: "Cheap rare evasion boots (not desecrated)",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask

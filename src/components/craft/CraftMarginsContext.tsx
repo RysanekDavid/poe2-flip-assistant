@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { RecipeView } from "./craftView";
+import type { AuditStatus } from "../../core/craftProvenance/schema";
 
 /** The /api/craft/margins payload every Craft-tab panel renders from. */
 export interface MarginsResp {
@@ -11,6 +12,7 @@ export interface MarginsResp {
   canRefresh: boolean;
   exaltPerDivine: number | null;
   icons: Record<string, string>;
+  audit: AuditStatus; // is the committed recipe audit built from the game data the app runs on
   recipes: RecipeView[];
   rank: { picks: string[]; nearMisses: string[]; unpriced: string[] }; // recipe keys, best first (craftRank)
   error?: string;

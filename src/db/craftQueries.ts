@@ -287,3 +287,40 @@ export function craftPnlByRecipe(userId: number): RecipePnl[] {
     )
     .all(userId) as RecipePnl[];
 }
+
+export interface CraftAttemptSampleRow {
+  recipeKey: string;
+  userId: number;
+  outcome: "hit" | "brick";
+  costDiv: number;
+  createdAt: string;
+}
+
+/**
+ * Every closed attempt (hit or brick) of EVERY user — the raw calibration sample; the pooling rules
+ * (per-user cap, cost and patch cutoffs) live in craftProvenance/calibration.ts. Unlike
+ * craftPnlByRecipe this ignores sale prices: a kept, unsold hit is still a hit.
+ */
+export function craftAttemptSampleRows(): CraftAttemptSampleRow[] {
+  return getDb()
+    .prepare(
+      `SELECT recipe_key AS recipeKey, user_id AS userId, outcome, base_cost_div + mats_cost_div AS costDiv, created_at AS createdAt
+       FROM craft_attempts WHERE outcome IN ('hit', 'brick')`,
+    )
+    .all() as CraftAttemptSampleRow[];
+}
+
+/** When a patch thread with this version went live (published, else first seen); null if unknown. */
+export function officialPatchSeenAt(version: string): string | null {
+  const row = getDb()
+    .prepare("SELECT COALESCE(published_at, first_seen_at) AS at FROM official_patch WHERE lower(version_text) = ? ORDER BY source_order LIMIT 1")
+    .get(version.toLowerCase()) as { at: string } | undefined;
+  return row?.at ?? null;
+}
+
+/** Official patch threads with a valid body — the candidates a recipe can go stale on. */
+export function officialPatchVersions(): Array<{ threadId: number; versionText: string; title: string }> {
+  return getDb()
+    .prepare("SELECT thread_id AS threadId, version_text AS versionText, title FROM official_patch WHERE body_valid = 1 ORDER BY source_order")
+    .all() as Array<{ threadId: number; versionText: string; title: string }>;
+}

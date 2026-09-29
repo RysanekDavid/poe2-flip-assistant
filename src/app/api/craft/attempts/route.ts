@@ -16,6 +16,9 @@ import { priceMaterials } from "../../../../core/craftLegPricing";
 import { prefillCosts } from "../../../../core/craftPrefill";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
+import { provenanceFor } from "../../../../core/craftProvenanceData";
+import { effectiveHitRate } from "../../../../core/craftProvenance/calibration";
+import { calibrationStats } from "../../../../core/craftProvenance/samples";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,6 +68,17 @@ function recipeIcons(league: string): Record<string, string> {
   return icons;
 }
 
+/** Curated vs measured hit rate per recipe; the measured sample pools every user's closed attempts. */
+function hitRates(): Record<string, { model: number; measured: number | null; n: number; effective: number }> {
+  const stats = calibrationStats(RECIPES);
+  return Object.fromEntries(
+    RECIPES.map((r) => {
+      const { model, measured, n, effective } = effectiveHitRate(r, provenanceFor(r.key), stats.get(r.key));
+      return [r.key, { model, measured, n, effective }];
+    }),
+  );
+}
+
 /** GET /api/craft/attempts → the caller's attempt log + per-recipe P&L aggregates. */
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
@@ -75,7 +89,7 @@ export async function GET(): Promise<Response> {
     attempts: listCraftAttempts(user.id),
     byRecipe: craftPnlByRecipe(user.id),
     labels: Object.fromEntries(RECIPES.map((r) => [r.key, r.label])),
-    hitRates: Object.fromEntries(RECIPES.map((r) => [r.key, r.hitRate])),
+    hitRates: hitRates(),
     icons: recipeIcons(league),
     computedLeague: league,
     exaltPerDivine: resolveRates(league)?.rates.exaltPerDivine ?? null,

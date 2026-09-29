@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { CraftMaterial } from "./craftMaterials";
 import type { Rarity } from "../lib/tradeLink";
+import { HIT_RATE_BASES } from "./craftProvenance/schema";
 
 /**
  * Curated craft recipes ranked by live EV per attempt:
@@ -98,11 +99,11 @@ export interface CraftRecipe {
   label: string;
   domain: CraftDomain;
   heroIcon?: string; // static poecdn art override for the recipe card (else live comparable art)
-  source: string; // where the method came from (guide/creator), for provenance
+  // where the method came from lives in craftProvenanceData.ts (provenanceFor(key))
   base: RecipeLegSpec;
   result: RecipeLegSpec;
   materials: RecipeMaterialLine[];
-  hitRate: number; // 0..1 probability an attempt yields the sellable result — shown in the UI
+  hitRate: number; // 0..1 curated probability of a sellable result; calibration.ts shrinks logged attempts toward it ((hits + 20·hitRate) ÷ (n + 20))
   guide: CraftGuide;
 }
 
@@ -177,6 +178,10 @@ export const RecipeMarginReportSchema = z.object({
   valuation: z.enum(["legacy-cheapest", "floor-percentile", "comparable-result"]).default("legacy-cheapest"),
   returnFlagged: z.boolean().default(false), // hitRate × result > RETURN_FLAG_MULTIPLE × cost — verify the result leg
   nearMiss: NearMissSchema.nullable().default(null),
+  // What `hitRate` rested on at scan time (calibration.ts), so the card never pairs this scan's rate
+  // with a later basis. Rows written before provenance parse as an unlabeled estimate.
+  hitRateBasis: z.enum(HIT_RATE_BASES).default("unknown"),
+  hitRateN: z.number().nonnegative().default(0), // pooled closed attempts behind a measured rate
 });
 export type RecipeMarginReport = z.infer<typeof RecipeMarginReportSchema>;
 export type NearMiss = z.infer<typeof NearMissSchema>;

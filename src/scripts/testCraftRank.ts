@@ -43,7 +43,7 @@ function toInput(c: Case): RankInput {
   const report: RecipeMarginReport = {
     key: c.key, status: c.status, base: priced ? LEG : null, result: priced ? LEG : null, materials: [], materialsDiv: 0,
     hitRate: 0.3, evDiv: c.evDiv, marginPct: c.marginPct, error: priced ? null : "leg failed", valuation: "comparable-result",
-    returnFlagged: false, nearMiss,
+    returnFlagged: false, nearMiss, hitRateBasis: "unknown", hitRateN: 0,
   };
   return { key: c.key, report, gate: { ok: c.gateOk, reasons: c.gateOk ? [] : ["gated"] }, scannedAt: c.scannedAt };
 }

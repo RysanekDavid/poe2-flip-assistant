@@ -9,6 +9,8 @@ import { MaterialsTable } from "./MaterialsTable";
 import { NearMissLine } from "./NearMissLine";
 import { evLabel, priceLabel, type RecipeView } from "./craftView";
 import { GateNote } from "./GateNote";
+import { basisWord, pct, recipeHitRate } from "./ProvenanceChips";
+import { SourcesList } from "./SourcesList";
 import { RETURN_FLAG_MULTIPLE } from "../../core/craftValuation";
 
 /** How a leg's number was derived — a percentile of floor-passing asks or a comparable median,
@@ -67,6 +69,25 @@ function LegBlock({ title, leg, note, ex }: { title: string; leg: LegReport | nu
         </p>
       </div>
     </div>
+  );
+}
+
+/**
+ * The market gate for a recipe whose result found no usable comparables: with the base and
+ * materials priced, say what a hit would have to sell for instead of showing no number at all.
+ */
+function UnpricedBreakEven({ r, ex }: { r: RecipeView; ex: number | null }) {
+  const rep = r.report;
+  const hit = recipeHitRate(r);
+  if (!rep?.base || rep.nearMiss || rep.result || !(hit.effective > 0)) return null;
+  const cost = rep.base.priceDiv + rep.materialsDiv;
+  return (
+    <p className="rounded-md border border-neutral-800 bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">
+      result unpriced — a hit must sell for ≥ <span className="tabular-nums text-neutral-200">{priceLabel(cost / hit.effective, ex)}</span>{" "}
+      <span className="text-neutral-500">
+        (cost {priceLabel(cost, ex)} ÷ hit {pct(hit.effective)} {basisWord(hit)})
+      </span>
+    </p>
   );
 }
 
@@ -132,7 +153,7 @@ export function MarginBreakdown({ r, ex, icons, intervalMin }: { r: RecipeView; 
       {rep?.status === "ok" && rep.base && rep.result && (
         <p className="rounded-md bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">
           <span className="text-neutral-500">EV = </span>
-          hit {(rep.hitRate * 100).toFixed(0)}% × {priceLabel(rep.result.priceDiv, ex)}
+          hit {pct(rep.hitRate)} ({basisWord(recipeHitRate(r))}) × {priceLabel(rep.result.priceDiv, ex)}
           {rep.returnFlagged && (
             <span className="text-amber-500" title={`hit × result is over ${RETURN_FLAG_MULTIPLE}× the attempt cost — plausible for cheap bases, but open the result search and check the asks are real`}>
               {" "}(&gt;{RETURN_FLAG_MULTIPLE}× cost — verify)
@@ -145,12 +166,14 @@ export function MarginBreakdown({ r, ex, icons, intervalMin }: { r: RecipeView; 
           <span className="text-neutral-500"> / attempt</span>
         </p>
       )}
-      {rep?.nearMiss && rep.result && <NearMissLine nm={rep.nearMiss} result={rep.result} gate={r.gate} ex={ex} />}
+      {rep?.nearMiss && rep.result && <NearMissLine nm={rep.nearMiss} result={rep.result} gate={r.gate} ex={ex} basis={basisWord(recipeHitRate(r))} />}
+      <UnpricedBreakEven r={r} ex={ex} />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <LegBlock title={`Base — ${r.baseSpec.label}`} leg={rep?.base ?? null} note={r.baseSpec.note} ex={ex} />
         <LegBlock title={`Result — ${r.resultSpec.label}`} leg={rep?.result ?? null} note={r.resultSpec.note} ex={ex} />
       </div>
+      <SourcesList p={r.provenance} />
     </div>
   );
 }

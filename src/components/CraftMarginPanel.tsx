@@ -124,6 +124,12 @@ export function CraftMarginPanel() {
       <FilterChips filter={filter} onFilter={setFilter} counts={counts} />
       {notice && <p className="mb-3 text-sm text-sky-400">{notice}</p>}
       {(error ?? actionErr) && <p role="alert" className="mb-3 text-sm text-bad">error: {error ?? actionErr}</p>}
+      {data && !data.audit.current && (
+        <p role="alert" className="mb-3 rounded-md border border-amber-400/40 bg-amber-950/20 px-3 py-2 text-sm text-amber-300">
+          Recipe audit built on a different game-data snapshot ({data.audit.gameDataPatch}, RePoE {data.audit.repoeVersion}) — legality and stale
+          badges may be wrong until someone re-runs craft:audit-recipes.
+        </p>
+      )}
       <div className="space-y-2">
         {recipes.map((r) => (
           <RecipeRow

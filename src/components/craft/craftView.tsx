@@ -4,6 +4,7 @@
 // components instead of hand-duplicating them (which drifts from the engine).
 import type { CraftDomain, CraftGuide, RecipeMarginReport } from "../../core/craftRecipes";
 import type { RankGate } from "../../core/craftValuation";
+import type { ProvenanceView } from "../../core/craftProvenance/schema";
 
 /** The margins-route response row: static recipe meta + the latest live report + EV history. */
 export interface RecipeView {
@@ -11,9 +12,9 @@ export interface RecipeView {
   label: string;
   domain: CraftDomain;
   heroIcon: string | null;
-  source: string;
   guide: CraftGuide;
-  hitRate: number;
+  // sources, verified patch, staleness, step legality and the hit rate the EV uses (calibrated)
+  provenance: ProvenanceView;
   baseSpec: { label: string; note: string };
   resultSpec: { label: string; note: string };
   materialSpecs: Array<{ id: string; label: string; group: string; qty: number; note: string | null }>;

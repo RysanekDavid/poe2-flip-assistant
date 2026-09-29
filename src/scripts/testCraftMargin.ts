@@ -38,7 +38,6 @@ const ok = (name: string, cond: boolean, extra = "") => {
     key: "t",
     label: "t",
     domain: "jewel",
-    source: "t",
     base: { label: "b", stats: [], note: "" },
     result: { label: "r", stats: [], note: "" },
     materials: [
@@ -168,7 +167,7 @@ const ok = (name: string, cond: boolean, extra = "") => {
 
 // --- no exchange rates: the tick fails TRANSIENTLY before spending a trade2 search ---
 async function noRatesIsTransient(): Promise<void> {
-  const ctx = { idx: buildStatIndex([]), rates: null, cred: { poesessid: "" }, currencyDiv: new Map<string, number>() };
+  const ctx = { idx: buildStatIndex([]), rates: null, cred: { poesessid: "" }, currencyDiv: new Map<string, number>(), attemptStats: new Map() };
   // rates are checked BEFORE the base leg, so no search is spent (with an empty POESESSID a base
   // search would fail with a POESESSID error instead)
   const bare: CraftRecipe = { ...RECIPES[0]!, materials: [] };
@@ -184,7 +183,7 @@ async function noRatesIsTransient(): Promise<void> {
 {
   const shell: RecipeMarginReport = {
     key: "t", status: "ok", base: null, result: null, materials: [], materialsDiv: 1, hitRate: 0.3, evDiv: 0, marginPct: 0,
-    error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null,
+    error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null, hitRateBasis: "unknown", hitRateN: 0,
   };
   const leg = (over: Partial<LegReport>): LegReport => ({
     priceDiv: 10, samples: 10, total: 30, searchUrl: "u", outliersDropped: 0, unresolvedStats: [], icon: null, floorDiv: null,

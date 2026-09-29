@@ -1,0 +1,14 @@
+{
+  "note": "YouTube oEmbed (https://www.youtube.com/oembed?url=<video url>&format=json) fields title, author_name, author_url, fetched 2026-09-29 for the craft recipe provenance (src/core/craftProvenanceData.ts). Upload dates are not part of oEmbed; the provenance dates come from search-index listings (datePrecision: listing).",
+  "fetched_on": "2026-09-29",
+  "videos": [
+    { "tag": "S4", "url": "https://www.youtube.com/watch?v=NK-Oat_OtgQ", "title": "How to Craft The Best Jewels in The Game (5 mods) - Path of Exile 2", "author_name": "Fubgun", "author_url": "https://www.youtube.com/@Fubgun" },
+    { "tag": "S5", "url": "https://www.youtube.com/watch?v=xu5UpEE8UP8", "title": "How To Craft The Best Gloves in The Game, +2 Projectiles (Ice Shot/Twisters) - PoE2 0.5", "author_name": "Fubgun", "author_url": "https://www.youtube.com/@Fubgun" },
+    { "tag": "S8", "url": "https://www.youtube.com/watch?v=SlwiQGb5l4U", "title": "How To Craft Your Mid Budget and High End BiS Wands For STUPIDLY CHEAP!", "author_name": "XTheFarmerX", "author_url": "https://www.youtube.com/@XTheFarmerX_POE2" },
+    { "tag": "S9", "url": "https://www.youtube.com/watch?v=ZEXG6K_7Nyg", "title": "Easy Bow/Spear/Quarterstaff Craft | Step By Step Crafting Guidey", "author_name": "XTheFarmerX", "author_url": "https://www.youtube.com/@XTheFarmerX_POE2" },
+    { "tag": "S10", "url": "https://www.youtube.com/watch?v=Gdc5I2BmBGY", "title": "Stupidly Easy Putrefaction \"Craft\" For BiS League Start Gear in POE2!", "author_name": "XTheFarmerX", "author_url": "https://www.youtube.com/@XTheFarmerX_POE2" },
+    { "tag": "S11", "url": "https://youtu.be/J7PxG6k6gts", "title": "Beginner, Intermediate, and Expert Level Amulet Craft Guide | Full Amulet Crafting Tutorial", "author_name": "XTheFarmerX", "author_url": "https://www.youtube.com/@XTheFarmerX_POE2" },
+    { "tag": "S20", "url": "https://youtu.be/o0Q975G2s2g", "title": "NAUČ SE CRAFTIT NEJLEPŠÍ JEWELY V POE 2", "author_name": "Pavel na Netu", "author_url": "https://www.youtube.com/@PavelnaNetu" },
+    { "tag": "S21", "url": "https://www.youtube.com/watch?v=TWgmQuiLeHA", "title": "Attack ring craft PERFECTED! PoE 2 - 0.5", "author_name": "Keyson", "author_url": "https://www.youtube.com/@Keyson77" }
+  ]
+}

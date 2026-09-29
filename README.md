@@ -17,7 +17,11 @@ It never buys, sells, whispers, clicks, or controls the game.
 - **Alerts:** one feed for snipes (full item card, whisper, trade link), craft margins, spreads
   and league news, with per-type ticker / sound / desktop-popup / Discord routing.
 - **Craft:** sixteen curated recipes with observed comparables, modelled EV, interactive steps,
-  and manual attempt/P&L tracking.
+  and manual attempt/P&L tracking. Each recipe shows its sources (creator, date, link), the patch
+  it was verified on, a stale badge when newer patch notes or a RePoE refresh touch an item it
+  uses, per-step legality (floors, rarity, ilvl gates, omen pairing), and a hit rate that shrinks
+  logged attempts toward the curated estimate ((hits + 20·model) ÷ (n + 20), pooled from 2+
+  players with no player over half the sample).
 - **Wealth:** opt-in read-only valuation of a user's public stash tabs.
 - **Learn (new players):** "What is this?" item lookup (catalog text, live price, sell route,
   pick-up rule of thumb), a claim-graded currency primer and an atlas progression checklist with
@@ -115,7 +119,10 @@ npm run build
 COACH_DISABLE_DOTENV=1 uv --cache-dir services/coach/.uv-cache --directory services/coach run pytest
 ```
 
-Additional domain tests are exposed in `package.json`. Product smoke tests and the separate
+Additional domain tests are exposed in `package.json`. After editing recipe data or refreshing
+game data (`sync:poe2-data` + `sync:entities`), run `npm run craft:audit-recipes` and commit
+`src/data/poe2/craft/recipe-audit.json`; `npm run test:craft-provenance` fails until it matches.
+Product smoke tests and the separate
 certification benchmark are different artifacts: the public certification eval repository is
 [poe2-flip-coach-certification](https://github.com/RysanekDavid/poe2-flip-coach-certification).
 Its frozen results must not be presented as an evaluation of this integrated product.

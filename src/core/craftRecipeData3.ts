@@ -34,7 +34,6 @@ export const RECIPES_3: CraftRecipe[] = [
     key: "jewel_liquid_5mod_budget",
     domain: "jewel",
     label: "Sapphire · Contempt 5-mod (budget)",
-    source: "Pavel CZ jewel craft [S20] budget path + 5-mod jewel guide [S4] (Contempt → Dextral cranium → Sinistral annul → exalt → Ferocity)",
     base: {
       label: "Rare Sapphire · 2 caster suffixes + 1 prefix",
       // honest price ~10–30 ex [S20]: under the default 0.05 Div floor at league rates, but asks
@@ -88,7 +87,6 @@ export const RECIPES_3: CraftRecipe[] = [
     key: "jewel_fractured_5mod",
     domain: "jewel",
     label: "Sapphire · fractured 5-mod (high-end)",
-    source: "Pavel CZ jewel craft [S20] high-end path + 5-mod jewel guide [S4] (cranium blocker → fracture → Contempt → desecrate → Ferocity → divine)",
     base: {
       label: "Rare Sapphire · 20% Crit Spell Damage, 3 mods",
       type: "Sapphire",

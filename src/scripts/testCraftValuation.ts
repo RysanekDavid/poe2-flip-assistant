@@ -47,6 +47,7 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
   return {
     key: "t", status: "ok", base: leg({ priceDiv: 2 }), result: leg({ priceDiv: 40 }), materials: [], materialsDiv: 1,
     hitRate: 0.3, evDiv: 9, marginPct: 300, error: null, valuation: "comparable-result", returnFlagged: false, nearMiss: null,
+    hitRateBasis: "unknown", hitRateN: 0,
     ...over,
   };
 }

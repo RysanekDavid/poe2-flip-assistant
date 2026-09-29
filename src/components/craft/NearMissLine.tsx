@@ -30,10 +30,10 @@ const pct = (x: number): string => `${(x * 100).toFixed(0)}%`;
 
 /**
  * Distance to profit for one recipe: attempt cost, what a hit sells for (comparable median and
- * p25–p75 band), the hit rate that breaks even vs the curated one, and what a hit would need to
+ * p25–p75 band), the hit rate that breaks even vs the one the EV uses, and what a hit would need to
  * sell for. Blocking reasons say why it is not a top pick even when EV is positive.
  */
-export function NearMissLine({ nm, result, gate, ex }: { nm: NearMiss; result: LegReport; gate: RankGate; ex: number | null }) {
+export function NearMissLine({ nm, result, gate, ex, basis }: { nm: NearMiss; result: LegReport; gate: RankGate; ex: number | null; basis: string }) {
   const blocking = [...gate.reasons, ...(nm.evDiv <= 0 ? ["EV not positive"] : [])];
   return (
     <div className="rounded-md border border-neutral-800 bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">
@@ -51,14 +51,14 @@ export function NearMissLine({ nm, result, gate, ex }: { nm: NearMiss; result: L
         </span>
         <span title="cost ÷ comparable median — the hit rate at which an attempt breaks even">
           break-even hit <span className={`tabular-nums ${nm.hitRateGap > 0 ? "text-bad" : "text-emerald-400"}`}>{pct(nm.breakEvenHitRate)}</span>{" "}
-          vs model {pct(nm.modelHitRate)}
+          vs {basis} {pct(nm.modelHitRate)}
         </span>
         {nm.gapDiv > 0 && (
           <span title="how much EV per attempt is missing at today's prices">
             gap <span className="tabular-nums text-bad">{priceLabel(nm.gapDiv, ex)}</span>
           </span>
         )}
-        <span title="cost ÷ model hit rate — what a hit must sell for to break even">
+        <span title="cost ÷ hit rate — what a hit must sell for to break even">
           a hit must sell ≥ <span className="tabular-nums text-neutral-200">{priceLabel(nm.resultNeededDiv, ex)}</span>
         </span>
         <span title="EV if every hit sells at the band's low end (p25)">pessimistic EV {evLabel(nm.evLowDiv, ex)}</span>
