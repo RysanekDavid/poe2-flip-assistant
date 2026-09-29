@@ -176,6 +176,7 @@
       "mods": [
         {
           "text": "Map contains an additional Summoning Circle",
+          "side": "prefix",
           "trade_stat_id": "explicit.stat_2839545956",
           "claim": {
             "v": "vp",
@@ -190,6 +191,7 @@
         },
         {
           "text": "Map has (70–100)% increased chance to contain a Summoning Circle",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_267210597",
           "claim": {
             "v": "vp",
@@ -204,6 +206,7 @@
         },
         {
           "text": "Unique Monsters have 1 additional Rare Modifier",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3371085671",
           "claim": {
             "v": "vp",
@@ -240,7 +243,7 @@
     "Run the Corrupted Nexus with a waystone of at least 4 modifiers; clearing it turns the surrounding corrupted maps Cleansed.",
     "Set Doryani: Evolutionary Pressure, Improved Calibration, Volatile Connection; T4 is a free pick.",
     "Allocate Hidden Scars and From Distances Untold; take Summoning Circles on The Chosen Path and Overlord's Domain.",
-    "Run each Cleansed map with a tablet carrying the Summoning Circle prefix, Summoning Circle chance or the extra Rare Modifier on Unique Monsters. They roll on any base; an Overseer Tablet also feeds Lord of the Runes.",
+    "Run each Cleansed map with a tablet carrying the Summoning Circle prefix and one suffix (Summoning Circle chance or the extra Rare Modifier on Unique Monsters). They roll on any base; an Overseer Tablet also feeds Lord of the Runes.",
     "Kill every Cleansed pack and every Summoning Circle boss."
   ],
   "risks": [

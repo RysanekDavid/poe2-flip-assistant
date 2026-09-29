@@ -232,6 +232,7 @@
       "mods": [
         {
           "text": "Map contains an additional Essence",
+          "side": "prefix",
           "trade_stat_id": null,
           "claim": {
             "v": "vp",
@@ -240,11 +241,12 @@
               "https://poe2db.tw/us/Irradiated_Tablet",
               "https://repoe-fork.github.io/poe2/"
             ],
-            "note": "Prefix 'Crystallised'; rolls on any tablet base. No search button: trade2 lists this text under 395808938 and 2162684861."
+            "note": "Prefix 'Crystallised'; rolls on any tablet base. No search button: trade2 files this exact text under both 395808938 and 2162684861."
           }
         },
         {
           "text": "Map contains (1–2) additional Essences",
+          "side": "suffix",
           "trade_stat_id": null,
           "claim": {
             "v": "vp",
@@ -253,11 +255,12 @@
               "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
             ],
-            "note": "Suffix 'of Crystals' (Overseer only). No search button: trade2 lists 'Map contains an additional Essence' under 395808938 and 2162684861; RePoE's stat for this suffix is maps_with_powerful_bosses_additional_essence_+, whose area text 'Areas with Powerful Map Bosses…' sits on 2162684861 — likely, unconfirmed."
+            "note": "Suffix 'of Crystals' (Overseer only). No search button: trade2 has no 'Map contains # additional Essences' text, and 395808938 and 2162684861 both read 'Map contains an additional Essence'."
           }
         },
         {
           "text": "Map has (70–100)% increased chance to contain Essences",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_1825943485",
           "claim": {
             "v": "vp",
@@ -293,7 +296,8 @@
   "risks": [
     "Overlord's Domain adds nothing where the Map Boss is not Powerful.",
     "'Crystallised' and 'of Crystals' have no pinned trade stat, so they have no search button.",
-    "The basket shows unit prices only; how many Perfect essences a map yields is unknown."
+    "The basket shows unit prices only; how many Perfect essences a map yields is unknown.",
+    "Whether 'of Crystals' needs a Powerful Map Boss is unverified (RePoE names its stat maps_with_powerful_bosses_additional_essence_+)."
   ],
   "measured": null
 }

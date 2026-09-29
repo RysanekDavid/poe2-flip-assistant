@@ -38,6 +38,8 @@ export const WAYSTONE_TOTALS = ["item_rarity", "pack_size", "monster_rarity", "m
 export const YIELD_ROLES = ["primary", "secondary", "lottery"] as const;
 export const PASSIVE_PRIORITIES = ["core", "recommended", "optional"] as const;
 export const STRATEGY_STATUSES = ["draft", "reviewed", "stale"] as const;
+/** A magic tablet takes one prefix and one suffix, so players plan by side; a unique tablet's mods are fixed. */
+export const MOD_SIDES = ["prefix", "suffix", "unique"] as const;
 
 export const STRATEGY_ID_PATTERN = ENTITY_ID_PATTERN;
 /** Only explicit tablet stats: a pseudo or implicit id would search for the wrong thing. */
@@ -95,6 +97,7 @@ export const atlasPassiveSchema = z
 export const tabletModSchema = z
   .object({
     text: nonEmpty,
+    side: z.enum(MOD_SIDES),
     trade_stat_id: z.string().regex(TRADE_STAT_ID_PATTERN).nullable(),
     claim: claimSchema,
   })

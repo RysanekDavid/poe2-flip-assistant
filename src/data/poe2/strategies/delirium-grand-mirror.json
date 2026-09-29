@@ -235,6 +235,7 @@
       "mods": [
         {
           "text": "Delirium Fog in Map spawns (15–30)% increased Fracturing Mirrors",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_551040294",
           "claim": {
             "v": "vp",
@@ -246,6 +247,7 @@
         },
         {
           "text": "Delirium Encounters in Map are (15–30)% more likely to spawn Unique Bosses",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3962960008",
           "claim": {
             "v": "vp",
@@ -257,6 +259,7 @@
         },
         {
           "text": "(15–30)% increased Stack size of Simulacrum Splinters found in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3836551197",
           "claim": {
             "v": "vp",
@@ -268,6 +271,7 @@
         },
         {
           "text": "Delirium Monsters in Map have (15–30)% increased Pack Size",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3465791711",
           "claim": {
             "v": "vp",
@@ -281,6 +285,7 @@
         },
         {
           "text": "Delirium Fog in Map dissipates (20–30)% slower",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3350944114",
           "claim": {
             "v": "vp",
@@ -294,6 +299,7 @@
         },
         {
           "text": "Delirium Fog in Map lasts (6–12) additional seconds before dissipating",
+          "side": "suffix",
           "trade_stat_id": null,
           "claim": {
             "v": "vp",
@@ -302,6 +308,20 @@
               "https://repoe-fork.github.io/poe2/"
             ],
             "note": "Suffix 'of Eternity'; optional. No search button: trade2 lists two stats with this text (3226351972, 1174954559)."
+          }
+        },
+        {
+          "text": "Delirium Fog in Map spawns (12–26)% increased Mirror Shards",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_900933517",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Delirium_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Shattering'; optional."
           }
         }
       ]
@@ -326,7 +346,7 @@
     "Allocate Recurring Nightmares, 'Is this about me... or you?' and the Fracturing Mirror / Liquid Emotion notables.",
     "Set Hilda: Breeding Season, Ancient Inscriptions, Patient Battue; T2 is a free pick.",
     "Use a Grand Mirror: its fog spreads to 10 maps (0.5.5).",
-    "Run the fogged maps with a Delirium Tablet (Fracturing Mirrors, unique bosses, splinter stacks).",
+    "Run the fogged maps with a Delirium Tablet; pick one suffix (Fracturing Mirrors, unique bosses, splinter stacks or Mirror Shards).",
     "Sell Simulacrum Splinters in stacks, or run the Simulacrum."
   ],
   "risks": [

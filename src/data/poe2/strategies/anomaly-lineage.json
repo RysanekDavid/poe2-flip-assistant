@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "anomaly-lineage",
   "title": "Anomaly maps: Jade Isles lineage supports",
-  "summary": "Reveal the Jade Isles anomaly and farm its boss for Karui lineage supports; Memories of the Karui adds a 15% extra-lineage chance. Owner's routine: two unique Irradiated tablets plus an Overseer on the first run, three Overseers after.",
+  "summary": "Reveal the Jade Isles anomaly and farm its boss for Karui lineage supports; Memories of the Karui adds a 15% extra-lineage chance, and Forest Mastery adds lineage chance on runs with a Forest-roll Mastered Domain. Owner's routine: two unique Irradiated tablets plus an Overseer on the first run.",
   "mechanics": [
     "anomaly",
     "map_boss"
@@ -159,6 +159,51 @@
       }
     },
     {
+      "name": "Memories of the Vaal",
+      "tree": "Atlas",
+      "effect": "15% chance for the Sealed Vault Boss to drop an extra Anomaly Map Lineage Support (level 75+ areas)",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Memories_of_the_Vaal",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Memories_of_the_Vaal",
+          "https://poe2db.tw/us/Lineage_Supports"
+        ],
+        "note": "Another anomaly boss, not the Jade Isles."
+      }
+    },
+    {
+      "name": "Memories of the Maraketh",
+      "tree": "Atlas",
+      "effect": "15% chance for the Sacred Reservoir Boss to drop an extra Anomaly Map Lineage Support (level 75+ areas)",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Memories_of_the_Maraketh",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Memories_of_the_Maraketh",
+          "https://poe2db.tw/us/Lineage_Supports"
+        ],
+        "note": "Another anomaly boss, not the Jade Isles."
+      }
+    },
+    {
+      "name": "Memories of the Ezomytes",
+      "tree": "Atlas",
+      "effect": "15% chance for the Derelict Mansion Boss to drop an extra Anomaly Map Lineage Support (level 75+ areas)",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Memories_of_the_Ezomytes",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Memories_of_the_Ezomytes",
+          "https://poe2db.tw/us/Lineage_Supports"
+        ],
+        "note": "Another anomaly boss, not the Jade Isles."
+      }
+    },
+    {
       "name": "Forest Mastery",
       "tree": "Atlas",
       "effect": "Select a bonus within Forest Areas: 50% increased chance to find Uncut Gems / 50% increased chance to find Lineage Supports / 15% increased Rare Monsters (level 75+ areas, requires completing the Burning Monolith). Take Lineage Supports.",
@@ -209,6 +254,7 @@
       "mods": [
         {
           "text": "If Map was not previously Irradiated, completing Map adds Irradiation instead",
+          "side": "unique",
           "trade_stat_id": "explicit.stat_2371108370",
           "claim": {
             "v": "vp",
@@ -228,6 +274,7 @@
       "mods": [
         {
           "text": "Map also counts as a Forest Map",
+          "side": "unique",
           "trade_stat_id": "explicit.stat_864099561",
           "claim": {
             "v": "vp",
@@ -237,7 +284,7 @@
               "https://www.pathofexile.com/api/trade2/data/stats",
               "https://poe2db.tw/us/The_Jade_Isles"
             ],
-            "note": "Rolls one of six biome lines (Water, Mountain, Grass, Forest, Swamp, Desert); the Jade Isles is already Water, so take the Forest roll for Forest Mastery's lineage option. First run only (1 use)."
+            "note": "Rolls one of six biome lines (Water, Mountain, Grass, Forest, Swamp, Desert); the Jade Isles is already Water, so take the Forest roll for Forest Mastery's lineage option. 1 use: one per run."
           }
         }
       ]
@@ -249,6 +296,7 @@
       "mods": [
         {
           "text": "(35–60)% increased Rarity of Items dropped by Map Bosses",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_4255069232",
           "claim": {
             "v": "vp",
@@ -261,6 +309,7 @@
         },
         {
           "text": "(13–20)% increased Quantity of Items dropped by Map Bosses",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3119172063",
           "claim": {
             "v": "vp",
@@ -290,15 +339,16 @@
   "steps": [
     "Set Jado: Trove Seekers, Unforeseen Threats, Partial Translations, Untold Histories; allocate Memories of the Karui and Forest Mastery (Lineage Supports).",
     "Reveal The Jade Isles (Eye of the Storm): activate a Karui Beacon in a nearby map to lift the Maelstrom.",
-    "First run: Visions of Paradise + Mastered Domain (Forest roll) + one Overseer Tablet (Map Boss rarity first, then quantity).",
-    "Later runs: three Overseer Tablets with Map Boss rarity and quantity.",
+    "First run: Visions of Paradise + Mastered Domain (Forest roll) + one Overseer Tablet (one suffix: Map Boss rarity, else quantity).",
+    "Buy a Mastered Domain with the Forest roll for each run (1 use) to keep Forest Mastery active; otherwise it does nothing after the first run.",
     "Kill Manoki, the Chosen; sell the lineage supports (unpriced ones show a dash, not 0)."
   ],
   "risks": [
     "Anomaly bosses are Deadly (poe2db Anomaly Map).",
     "poe2db does not say whether Map Boss tablet mods apply to the anomaly boss; the owner's runs rely on it — verify on your own kills.",
     "The drop list is a community-wiki section, not datamined; which lineage drops is random among the four.",
-    "Forest Mastery applies only on Forest-counted runs (the one Mastered Domain run). poe2db doesn't say whether it raises the anomaly boss's lineage drop."
+    "Forest Mastery applies only on runs with a Forest-roll Mastered Domain. poe2db doesn't say whether it raises the anomaly boss's lineage drop.",
+    "Whether Mastered Domain's irradiation counts as 'previously Irradiated' for Visions of Paradise is untested."
   ],
   "measured": null
 }

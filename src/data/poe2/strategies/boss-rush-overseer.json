@@ -176,6 +176,7 @@
       "mods": [
         {
           "text": "(35–60)% increased Rarity of Items dropped by Map Bosses",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_4255069232",
           "claim": {
             "v": "vp",
@@ -187,6 +188,7 @@
         },
         {
           "text": "(13–20)% increased Quantity of Items dropped by Map Bosses",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3119172063",
           "claim": {
             "v": "vp",
@@ -198,6 +200,7 @@
         },
         {
           "text": "(18–30)% increased Quantity of Waystones dropped by Map Bosses",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_1457896329",
           "claim": {
             "v": "vp",
@@ -215,14 +218,16 @@
       "count": null,
       "mods": [
         {
-          "text": "Map Bosses have an additional Modifier",
+          "text": "Map Bosses have 1 additional Modifier",
+          "side": "unique",
           "trade_stat_id": "explicit.stat_1458461453",
           "claim": {
             "v": "vp",
             "src": [
-              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://poe2db.tw/us/Cruel_Hegemony",
               "https://www.pathofexile.com/api/trade2/data/stats"
-            ]
+            ],
+            "note": "In-game text from the item data poe2db embeds; poe2db's rendered line reads 'Modifiers'."
           }
         }
       ]
@@ -245,7 +250,7 @@
   "steps": [
     "Allocate Fit for a King, Hard-Won Treasures, Pathkeepers and Eons of Domination.",
     "Set Hilda: Mighty Prey, Ancient Inscriptions, Patient Battue; T2 is a free pick.",
-    "Slot an Overseer Tablet with Map Boss rarity ('of Treasure') first, quantity ('of Hoards') second.",
+    "Slot an Overseer Tablet; pick one suffix: Map Boss rarity ('of Treasure') first, else quantity ('of Hoards').",
     "Rush to the boss; keep Overseer tablets that Powerful Map Bosses drop for the next maps."
   ],
   "risks": [

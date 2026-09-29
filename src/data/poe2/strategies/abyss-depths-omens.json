@@ -157,7 +157,8 @@
         "v": "vp",
         "src": [
           "https://poe2db.tw/us/Vile_Treasures"
-        ]
+        ],
+        "note": "Its Lineage Supports option is the pick for a lineage farm instead of omens."
       }
     },
     {
@@ -262,6 +263,7 @@
       "mods": [
         {
           "text": "Abysses in Map have (10–20)% increased chance to lead to an Abyssal Depths",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_2722831300",
           "claim": {
             "v": "vp",
@@ -273,6 +275,7 @@
         },
         {
           "text": "(20–30)% increased chance for Abyssal monsters in Map to have Abyssal Modifiers",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_2789248444",
           "claim": {
             "v": "vp",
@@ -284,6 +287,7 @@
         },
         {
           "text": "Monsters have (10–15)% increased Effectiveness",
+          "side": "prefix",
           "trade_stat_id": "explicit.stat_2065500219",
           "claim": {
             "v": "vp",
@@ -295,6 +299,7 @@
         },
         {
           "text": "Map has (25–35)% increased number of Rare Monsters",
+          "side": "prefix",
           "trade_stat_id": "explicit.stat_3793155082",
           "claim": {
             "v": "vp",
@@ -306,6 +311,7 @@
         },
         {
           "text": "Abyss Pits in Map are twice as likely to have Rewards",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_4256531808",
           "claim": {
             "v": "vp",
@@ -317,6 +323,7 @@
         },
         {
           "text": "(20–30)% increased chance for Desecrated Currency from Abysses in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_1710200734",
           "claim": {
             "v": "vp",
@@ -330,6 +337,7 @@
         },
         {
           "text": "Map has (20–40)% chance to contain four additional Abysses",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_2890355696",
           "claim": {
             "v": "vp",
@@ -343,6 +351,7 @@
         },
         {
           "text": "Map contains an additional Abyss",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_1070816711",
           "claim": {
             "v": "vp",
@@ -376,7 +385,7 @@
   "steps": [
     "Allocate Close to the Surface, Vile Treasures (Omens), Rotting Bones and the Depths Chance nodes; then Ghastly Relics, Dark Depths and From Below for more pits and strongboxes.",
     "Set Doryani: Evolutionary Pressure and Improved Calibration; T3 and T4 are free picks.",
-    "Slot an Abyss Tablet with Depths chance and Abyssal-modifier chance; Desecrated Currency chance, effectiveness and rare-monster mods second.",
+    "Slot an Abyss Tablet with one suffix (Depths chance, Abyssal-modifier chance or Desecrated Currency chance) and one prefix (monster effectiveness or rare monsters).",
     "Close every pit; the final Abyss can open an Abyssal Depths — always take it."
   ],
   "risks": [

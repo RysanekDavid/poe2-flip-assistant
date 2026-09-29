@@ -97,7 +97,43 @@ for (const [id, counts] of Object.entries(grades)) console.log(`INFO  ${id}: ${J
 console.log("PASS  evidence floor: master + tablets carry vp/vs claims; every uv/cf claim and stat-less mod has a note");
 
 // --- tablet art: per base / unique, never one picture for all ---
-const tabletPool = JSON.parse(readFileSync("src/data/poe2/regex/tablet.json", "utf8")) as { bases: string[] };
+interface PoolMod {
+  side: "prefix" | "suffix";
+  lines: Array<{ template: string }>;
+  tiers: Array<{ bands: string[]; lines: Array<{ line: number; ranges: Array<{ min: number; max: number }> }> }>;
+}
+const tabletPool = JSON.parse(readFileSync("src/data/poe2/regex/tablet.json", "utf8")) as {
+  bases: string[];
+  baseBands: Record<string, string[]>;
+  mods: PoolMod[];
+};
+
+// --- tablet mods: exact 0.5.5b pool text, the pool's side, and a band the base can roll ---
+const poolText = new Map<string, { side: string; bands: string[] }>();
+for (const m of tabletPool.mods) {
+  for (const tier of m.tiers) {
+    const text = m.lines
+      .map((line, i) => (tier.lines.find((l) => l.line === i)?.ranges ?? []).reduce((out, r) => out.replace("#", r.min === r.max ? `${r.min}` : `(${r.min}–${r.max})`), line.template))
+      .join(" / ");
+    poolText.set(text, { side: m.side, bands: tier.bands });
+  }
+}
+for (const s of strategies) {
+  for (const t of s.tablets) {
+    for (const mod of t.mods) {
+      if (t.unique !== null) {
+        assert.equal(mod.side, "unique", `${s.id}: a unique tablet's mod is side "unique"`);
+        continue;
+      }
+      const pool = poolText.get(mod.text);
+      assert.ok(pool, `${s.id}: "${mod.text}" is not a 0.5.5b tablet pool text`);
+      assert.equal(mod.side, pool.side, `${s.id}: "${mod.text}" is a ${pool.side}`);
+      const bands = tabletPool.baseBands[t.type] ?? [];
+      assert.ok(bands.some((b) => pool.bands.includes(b)), `${s.id}: "${mod.text}" cannot roll on ${t.type}`);
+    }
+  }
+}
+console.log("PASS  tablet mods: exact 0.5.5b pool text, pool side (prefix/suffix), rollable on the tablet's base; unique mods marked unique");
 assert.deepEqual(Object.keys(TABLET_BASE_ART).sort(), [...tabletPool.bases].sort(), "art for every tablet base in the RePoE pool");
 for (const file of [...Object.values(TABLET_BASE_ART), ...Object.values(TABLET_UNIQUE_ART)]) {
   assert.ok(existsSync(join("src/assets/items", file)), `self-hosted tablet art ${file} exists`);

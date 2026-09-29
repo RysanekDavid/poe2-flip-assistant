@@ -192,6 +192,7 @@
       "mods": [
         {
           "text": "(15–25)% increased Quantity of Expedition Logbooks dropped by Runic Monsters in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_1083387327",
           "claim": {
             "v": "vp",
@@ -203,6 +204,7 @@
         },
         {
           "text": "The first (1–2) unearthed Runic Monsters will be Rare Monsters in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3963944561",
           "claim": {
             "v": "vp",
@@ -215,6 +217,7 @@
         },
         {
           "text": "(15–25)% increased Expedition Monster Rarity in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_2905096233",
           "claim": {
             "v": "vp",
@@ -226,6 +229,7 @@
         },
         {
           "text": "Expeditions contain (1–2) Additional Bosses encased in ice in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_1183698646",
           "claim": {
             "v": "vp",
@@ -238,6 +242,7 @@
         },
         {
           "text": "Expeditions have +(30–40)% Surpassing chance to contain an additional Verisium Remnant",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3653794255",
           "claim": {
             "v": "vp",
@@ -249,6 +254,7 @@
         },
         {
           "text": "Verisium Remnants have +(25–35)% chance to add an additional Runic Modifier in Map",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_3871299443",
           "claim": {
             "v": "vp",
@@ -262,6 +268,7 @@
         },
         {
           "text": "Map contains (15–25)% increased number of Runic Monster Markers",
+          "side": "suffix",
           "trade_stat_id": "explicit.stat_1640965354",
           "claim": {
             "v": "vp",
@@ -271,6 +278,35 @@
               "https://www.pathofexile.com/api/trade2/data/stats"
             ],
             "note": "Suffix 'of Runes'; optional."
+          }
+        },
+        {
+          "text": "Expeditions contain (1–2) Additional Verisium Sentries in Map",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_1109460697",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Expedition_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats",
+              "https://www.pathofexile.com/forum/view-thread/4000864"
+            ],
+            "note": "Suffix 'of Sentinels'. 0.5.5: 'Monsters can now have Runic Modifiers added to them by multiple Verisium Sentries'. trade2 words this stat for one Sentry; the search matches any roll."
+          }
+        },
+        {
+          "text": "Expeditions have +(30–40)% Surpassing chance to Duplicate Runic Monsters in Map",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_779964546",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Expedition_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Twins'; optional."
           }
         }
       ]

@@ -26,6 +26,7 @@ Mechanic = Literal[
 ]
 BudgetTier = Literal["league_start", "mid", "high"]
 Master = Literal["jado", "doryani", "hilda", "any"]
+ModSide = Literal["prefix", "suffix", "unique"]
 WaystoneTotal = Literal[
     "item_rarity", "pack_size", "monster_rarity", "monster_effectiveness", "waystone_drop_chance"
 ]
@@ -122,6 +123,7 @@ class TabletMod(_Strict):
     """One tablet modifier and its trade2 stat id, when pinned."""
 
     text: Text
+    side: ModSide
     trade_stat_id: str | None = Field(pattern=TRADE_STAT_ID_PATTERN)
     claim: Claim
 

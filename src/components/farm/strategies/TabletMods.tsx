@@ -11,6 +11,8 @@ import { tabletArtSrc } from "./tabletArtImages";
 function ModRow({ mod, base }: { mod: TabletView["mods"][number]; base: string }) {
   return (
     <li className="flex items-start gap-2 py-0.5 text-sm text-neutral-300">
+      {/* A magic tablet holds one prefix and one suffix; a unique's mods are fixed, so no tag. */}
+      {mod.side !== "unique" && <span className="mt-0.5 w-12 shrink-0 text-xs text-neutral-400">{mod.side}</span>}
       <span className="min-w-0 flex-1">
         {showsBadge(mod.claim) ? (
           <>
