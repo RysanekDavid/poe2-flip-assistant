@@ -16,7 +16,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
 
 from src.config import Settings
-from src.errors import ContractViolation
+from src.errors import ContractViolation, ProviderIncomplete
 
 PROMPT_VERSION = "1"
 #: Characters of patch text sent to the model; the largest league-launch notes exceed it.
@@ -278,7 +278,8 @@ def _raise_if_incomplete(body: str) -> None:
         return
     details = payload.get("incomplete_details")
     reason = details.get("reason") if isinstance(details, dict) else None
-    raise ContractViolation(f"Patch summary was incomplete (reason={reason or 'unknown'})")
+    # Output length varies run to run, so this is retryable — unlike a refusal or schema mismatch.
+    raise ProviderIncomplete(f"Patch summary was incomplete (reason={reason or 'unknown'})")
 
 
 def _refused(response: object) -> bool:

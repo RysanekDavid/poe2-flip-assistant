@@ -7,7 +7,7 @@ from typing import Literal, NoReturn
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError
 
-from src.errors import ContractViolation, PublicCoachError
+from src.errors import ContractViolation, ProviderIncomplete, PublicCoachError
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -20,6 +20,17 @@ def raise_provider_failure(error: Exception, request_id: str, started: float) ->
     """
     if isinstance(error, TimeoutError | APITimeoutError | APIConnectionError):
         raise_timeout(error, request_id, started)
+    if isinstance(error, ProviderIncomplete):
+        log_request_timing(request_id, started, "provider_incomplete")
+        _log_redacted_failure("Model stopped before completing", request_id, error)
+        raise PublicCoachError(
+            "provider_incomplete",
+            "The model stopped before finishing. Try again later.",
+            503,
+            request_id,
+            True,
+            False,
+        ) from error
     if isinstance(error, BadRequestError):
         log_request_timing(request_id, started, "provider_error")
         raise_bad_request(error, request_id)

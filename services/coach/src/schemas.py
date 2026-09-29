@@ -102,6 +102,7 @@ class CoachErrorDetail(BaseModel):
         "tool_source_unavailable",
         "provider_timeout",
         "provider_rejected",
+        "provider_incomplete",
         "request_rejected",
         "contract_violation",
         "rate_limited",

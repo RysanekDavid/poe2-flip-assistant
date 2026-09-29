@@ -16,7 +16,7 @@ from pydantic import SecretStr, ValidationError
 
 from src.api import create_app
 from src.config import Settings
-from src.errors import ContractViolation
+from src.errors import ContractViolation, ProviderIncomplete
 from src.patch_summary import (
     BULLET_MAX_CHARS,
     MAX_BULLETS,
@@ -173,6 +173,17 @@ def test_provider_timeout_maps_to_the_public_error() -> None:
     assert response.json()["error"]["code"] == "provider_timeout"
 
 
+def test_incomplete_output_is_a_retryable_envelope() -> None:
+    summarizer = FakeSummarizer(ProviderIncomplete("incomplete (reason=max_output_tokens)"))
+    with _client(summarizer) as client:
+        response = client.post(ROUTE, json=PAYLOAD, headers=_headers())
+
+    assert response.status_code == 503
+    error = response.json()["error"]
+    assert error["code"] == "provider_incomplete"
+    assert error["retryable"] is True
+
+
 def test_schema_mismatch_maps_to_contract_violation() -> None:
     summarizer = FakeSummarizer(ContractViolation("Patch summary did not match its schema"))
     with _client(summarizer) as client:
@@ -180,6 +191,7 @@ def test_schema_mismatch_maps_to_contract_violation() -> None:
 
     assert response.status_code == 502
     assert response.json()["error"]["code"] == "contract_violation"
+    assert response.json()["error"]["retryable"] is False
 
 
 def test_build_input_truncates_and_neutralizes_forged_delimiters() -> None:
@@ -320,17 +332,20 @@ def _schema_error() -> ValidationError:
     raise AssertionError("truncated JSON unexpectedly validated")
 
 
+def test_cut_off_output_is_incomplete_not_a_schema_error() -> None:
+    # A cut-off response is named as such even though its truncated JSON would not parse.
+    raw = FakeRaw(
+        {"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"}},
+        _schema_error(),
+    )
+    request = PatchSummaryRequest.model_validate(PAYLOAD)
+    with pytest.raises(ProviderIncomplete, match=re.escape("reason=max_output_tokens")):
+        asyncio.run(summarize_patch(_settings(), request, lambda _settings: FakeClient(raw)))
+
+
 @pytest.mark.parametrize(
     ("raw", "message"),
     [
-        # A cut-off response is named as such even though its JSON would not parse.
-        (
-            FakeRaw(
-                {"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"}},
-                _schema_error(),
-            ),
-            "incomplete (reason=max_output_tokens)",
-        ),
         (FakeRaw({"status": "completed"}, _schema_error()), "did not match its schema"),
         (
             FakeRaw(
