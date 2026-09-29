@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Loader2, MessageSquare, Send, SlidersHorizontal, Trash2, TriangleAlert } from "lucide-react";
+import { Check, Loader2, MessageSquare, RefreshCw, Send, SlidersHorizontal, Trash2, TriangleAlert } from "lucide-react";
 import { fetchNotifySettings, postNotifySettings, type NotifySettings } from "../../lib/notifySettings";
+import { Button } from "../ui/Button";
 import { NotifyPrefsTable } from "./NotifyPrefsTable";
 import { announceAlertsChanged } from "./AlertsContext";
 
@@ -32,7 +33,8 @@ function DeliveryStatus({ view }: { view: NotifySettings }) {
   );
 }
 
-type Run = (body: unknown, done?: string) => Promise<boolean>;
+/** `done` is the success note — fixed, or derived from the fresh view (e.g. whether a refresh was queued). */
+type Run = (body: unknown, done?: string | ((view: NotifySettings) => string)) => Promise<boolean>;
 
 function WebhookForm({ view, busy, run }: { view: NotifySettings; busy: boolean; run: Run }) {
   const [url, setUrl] = useState("");
@@ -89,6 +91,45 @@ function DiscordBlock({ view, busy, run }: { view: NotifySettings; busy: boolean
         <input type="checkbox" checked={view.digest} disabled={busy} onChange={(e) => void run({ action: "digest", enabled: e.target.checked })} />
         Daily digest
       </label>
+      <LiveBoardControls view={view} busy={busy} run={run} />
+    </div>
+  );
+}
+
+/** Opt-in live board: one Discord message, edited in place every interval, plus an on-demand refresh. */
+function LiveBoardControls({ view, busy, run }: { view: NotifySettings; busy: boolean; run: Run }) {
+  const board = view.board;
+  const noHook = view.webhook.state !== "set";
+  const every = board.intervalMin === 60 ? "hourly" : `every ${board.intervalMin} min`;
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <label
+        className="flex items-center gap-2 text-sm text-neutral-300"
+        title={noHook ? "save a Discord webhook first" : "top exchange loops, best bosses + hot mechanics and net worth — one message kept up to date instead of new pings"}
+      >
+        <input
+          type="checkbox"
+          checked={board.enabled}
+          disabled={busy || (noHook && !board.enabled)}
+          onChange={(e) => void run({ action: "board", enabled: e.target.checked }, e.target.checked ? "live board on — it appears within a minute" : "live board off")}
+        />
+        Live board — one message, edited {every}
+      </label>
+      {board.enabled && (
+        <>
+          <Button
+            size="sm"
+            disabled={busy || noHook}
+            onClick={() => void run({ action: "boardNow" }, (v) => (v.boardQueued ? "board refresh queued — updates within a minute" : "an update is already queued"))}
+            className="hover:border-amber-400/70 hover:text-amber-200"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh now
+          </Button>
+          <span className="text-xs text-neutral-500" title={board.posted ? "the next update edits the existing message" : "the next update posts a new message"}>
+            updated: <span className="text-neutral-300">{ago(board.updatedAt)}</span>
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -114,7 +155,7 @@ function useNotifySettings() {
     return postNotifySettings(body)
       .then((v) => {
         setView(v);
-        if (done) setInfo(done);
+        if (done) setInfo(typeof done === "string" ? done : done(v));
         announceAlertsChanged(); // the feed reads ticker/sound/popup routing from the same table
         return true;
       })

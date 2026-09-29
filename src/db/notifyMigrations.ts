@@ -47,7 +47,7 @@ const TABLES_SQL = `
   CREATE TABLE IF NOT EXISTS notify_queue (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    kind TEXT NOT NULL DEFAULT 'alert',          -- 'alert' | 'digest'
+    kind TEXT NOT NULL DEFAULT 'alert',          -- 'alert' | 'digest' | 'board'
     alert_id INTEGER REFERENCES alerts(id) ON DELETE CASCADE, -- set for kind='alert'
     payload_json TEXT,                           -- prebuilt embeds for kind='digest'
     status TEXT NOT NULL DEFAULT 'pending',      -- 'pending' | 'sent' | 'failed'

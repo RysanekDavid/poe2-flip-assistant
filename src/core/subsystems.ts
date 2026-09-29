@@ -18,6 +18,7 @@ export const SUBSYSTEM_NAMES = [
   "league-watch",
   "scan-drain",
   "reprice",
+  "snipe-outcomes",
 ] as const;
 export type SubsystemName = (typeof SUBSYSTEM_NAMES)[number];
 
@@ -34,17 +35,22 @@ export interface SubsystemSpec {
 /** The slice of config the registry reads — injectable so tests can flip loops on and off. */
 export type SubsystemConfig = Pick<
   typeof config,
-  "pollIntervalMin" | "autoSnipe" | "craftMargin" | "balanceIntervalMin" | "patchNotes"
+  "pollIntervalMin" | "autoSnipe" | "craftMargin" | "balanceIntervalMin" | "patchNotes" | "snipeOutcomes"
 >;
 
 /** Mirrors the league watcher's fixed 6h check; kept here so the registry has no poller import. */
 const LEAGUE_WATCH_SEC = 6 * 60 * 60;
 const SCAN_DRAIN_SEC = 20;
+/** Snipe-outcome checker cadence; the poller schedules with this same constant. */
+export const SNIPE_OUTCOMES_INTERVAL_MIN = 30;
+const SNIPE_OUTCOMES_SEC = SNIPE_OUTCOMES_INTERVAL_MIN * 60;
 
 /** Cadences come from the same config the poller schedules with, so they cannot drift apart. */
 export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemName, SubsystemSpec> {
   const cycle = cfg.pollIntervalMin * 60;
   const balance = cfg.balanceIntervalMin > 0 ? cfg.balanceIntervalMin * 60 : null;
+  // re-checks alerted snipes, so it only runs while the scanner that makes them does
+  const outcomes = cfg.snipeOutcomes.enabled && cfg.autoSnipe.enabled;
   return {
     "ninja-sweep": { label: "poe.ninja sweep", hint: "Fetch + store every ninja category for a polled league, then evaluate watchlist alerts.", perLeague: true, expectedSec: cycle, enabled: true },
     "cx-rates": { label: "Exchange rates", hint: "GGG currency-exchange digest → Div/Ex/Chaos rates (only fetched when stored rates are stale).", perLeague: false, expectedSec: cycle, enabled: true },
@@ -59,6 +65,7 @@ export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemN
     "patch-summary": { label: "Patch summaries", hint: "Queued patch threads summarized by Coach (AI), then announced once as a PATCH alert. Red = Coach unreachable or rejecting; jobs back off and retry.", perLeague: false, expectedSec: cfg.patchNotes.intervalMin * 60, enabled: cfg.patchNotes.enabled },
     "league-watch": { label: "League watcher", hint: "poe.ninja proposes, poe2scout confirms a new challenge league.", perLeague: false, expectedSec: LEAGUE_WATCH_SEC, enabled: true },
     "scan-drain": { label: "Manual scan queue", hint: "Runs auto-snipe scans the web queued, on the poller's trade2 limiter.", perLeague: false, expectedSec: SCAN_DRAIN_SEC, enabled: true },
+    "snipe-outcomes": { label: "Snipe outcomes", hint: `Re-checks alerted snipe listings ~2 h and ~24 h later (gone vs still listed) under the owner's POESESSID; ≤${cfg.snipeOutcomes.maxFetchesPerRun} fetches + ≤${cfg.snipeOutcomes.maxSearchesPerRun} re-searches per run. Red while every fetched listing reads gone and the fetch method is still unverified.`, perLeague: false, expectedSec: SNIPE_OUTCOMES_SEC, enabled: outcomes },
     reprice: { label: "Reprice checks", hint: "Wealth › Sell: trade2 comparables for a user's own stale listings (on demand, ≤8 searches per user per 6h).", perLeague: false, expectedSec: null, enabled: true },
   };
 }

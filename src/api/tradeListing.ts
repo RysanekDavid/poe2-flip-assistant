@@ -215,6 +215,37 @@ export function parseFetchResponse(body: unknown): Listing[] {
   return parsed.data.result.map(parseListing).filter((l): l is Listing => l != null);
 }
 
+/**
+ * A fetch body → one state per REQUESTED id, in request order: the Listing when trade2 still
+ * serves it, null when its slot came back null (no longer listed). parseFetchResponse drops the
+ * nulls, which is exactly the signal an outcome check needs, so this keeps them.
+ *
+ * Matched by entry id, not by position, so a reordered answer cannot pin one listing's state on
+ * another. Anything that does not account for every requested id exactly once (a wrong length,
+ * an entry for an id we did not ask for, more nulls than missing ids) is a contract break: throw.
+ */
+export function parseFetchStates(body: unknown, ids: readonly string[]): Array<Listing | null> {
+  const parsed = FetchResponseSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new Error(`trade2 fetch response has an unexpected shape: ${parsed.error.issues[0]?.message ?? "invalid"}`);
+  }
+  const entries = parsed.data.result;
+  if (entries.length !== ids.length) {
+    throw new Error(`trade2 fetch answered ${entries.length} entries for ${ids.length} requested ids`);
+  }
+  const byId = new Map<string, Listing>();
+  for (const entry of entries) {
+    const listing = parseListing(entry);
+    if (listing == null) continue;
+    if (!ids.includes(listing.listingId)) throw new Error(`trade2 fetch returned unrequested listing "${listing.listingId}"`);
+    if (byId.has(listing.listingId)) throw new Error(`trade2 fetch returned listing "${listing.listingId}" twice`);
+    byId.set(listing.listingId, listing);
+  }
+  // entries.length === ids.length and every served id is distinct + requested, so the null slots
+  // are exactly the ids missing from byId
+  return ids.map((id) => byId.get(id) ?? null);
+}
+
 /** Buyable right now: seller online (in-person trade) or an instant-buyout Merchant listing. */
 export const isBuyable = (l: Listing): boolean => l.online || l.instantBuyout;
 

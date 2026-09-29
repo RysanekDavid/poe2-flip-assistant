@@ -27,3 +27,18 @@ export class TradeAuthError extends Error {
     this.name = "TradeAuthError";
   }
 }
+
+/**
+ * A trade2 answer outside 2xx that is not one of the typed cases (403 auth, budget wait). Carries
+ * the status so a caller can tell "this query id is no longer served" (400/404) from a transient
+ * failure; `status` is null when no response arrived at all (timeout, connection reset).
+ */
+export class TradeHttpError extends Error {
+  readonly status: number | null;
+
+  constructor(message: string, status: number | null) {
+    super(message);
+    this.name = "TradeHttpError";
+    this.status = status;
+  }
+}

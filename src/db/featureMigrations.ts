@@ -15,9 +15,32 @@ import type Database from "better-sqlite3";
 export function ensureFeatureTables(conn: Database.Database): void {
   conn.exec(USER_TABLES_SQL);
   conn.exec(MARKET_TABLES_SQL);
+  // a DB whose snipe_outcomes predates the checker gets the checker's columns added in place
+  addMissingColumns(conn, "snipe_outcomes", SNIPE_OUTCOME_CHECK_COLUMNS);
   conn.exec(LEAGUE_START_SQL);
   ensureBoardColumns(conn);
 }
+
+/**
+ * snipe_outcomes columns the outcome checker (core/snipeOutcomes) writes beyond Wave 0's table:
+ * the raw ask each check saw (formatted from the listing's own currency, not a later rate), which
+ * method observed it, the stored re-search query and the retry counter. One list feeds both the
+ * CREATE TABLE and the in-place upgrade, so the two paths cannot drift.
+ */
+export const SNIPE_OUTCOME_CHECK_COLUMNS: ReadonlyArray<readonly [string, string]> = [
+  ["check_2h_ask_amount", "REAL CHECK (check_2h_ask_amount IS NULL OR check_2h_ask_amount > 0)"],
+  ["check_2h_ask_currency", "TEXT"],
+  ["check_2h_method", "TEXT CHECK (check_2h_method IS NULL OR check_2h_method IN ('fetch', 'search'))"],
+  ["check_24h_ask_amount", "REAL CHECK (check_24h_ask_amount IS NULL OR check_24h_ask_amount > 0)"],
+  ["check_24h_ask_currency", "TEXT"],
+  ["check_24h_method", "TEXT CHECK (check_24h_method IS NULL OR check_24h_method IN ('fetch', 'search'))"],
+  // JSON TradeQuery (seller account + base) for the re-search fallback; NULL = seller unknown
+  ["recheck_query", "TEXT"],
+  // failed attempts at the pending checkpoint; the second failure settles it as 'error'
+  ["attempts", "INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0)"],
+];
+
+const checkColumnsSql = SNIPE_OUTCOME_CHECK_COLUMNS.map(([name, def]) => `${name} ${def},`).join("\n    ");
 
 const USER_TABLES_SQL = `
   -- The player's own clear speed per boss / mechanic, so the farm board can show Div per hour.
@@ -72,9 +95,20 @@ const MARKET_TABLES_SQL = `
     check_24h TEXT CHECK (check_24h IS NULL OR check_24h IN ('listed', 'gone', 'error')),
     check_24h_at INTEGER,
     check_24h_ask_div REAL,
+    ${checkColumnsSql}
     last_error TEXT
   ) WITHOUT ROWID;
   CREATE INDEX IF NOT EXISTS idx_snipe_outcomes_alerted ON snipe_outcomes(alerted_at);
+
+  -- Whether plan A (re-fetch against the search id that found a listing) has been shown to tell
+  -- gone from listed. A cross-check re-search moves it: verified when it agrees with the fetch,
+  -- broken when it finds a listing the fetch called gone (then every check re-searches). One row.
+  CREATE TABLE IF NOT EXISTS snipe_outcome_meta (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    fetch_method TEXT NOT NULL DEFAULT 'unverified' CHECK (fetch_method IN ('unverified', 'verified', 'broken')),
+    changed_at INTEGER,
+    evidence TEXT
+  ) WITHOUT ROWID;
 `;
 
 const LEAGUE_START_SQL = `
@@ -118,11 +152,20 @@ export const NOTIFY_BOARD_COLUMNS: ReadonlyArray<readonly [string, string]> = [
 ];
 
 function ensureBoardColumns(conn: Database.Database): void {
-  const existing = new Set(
-    (conn.prepare("PRAGMA table_info(notify_settings)").all() as Array<{ name: string }>).map((r) => r.name),
-  );
-  if (existing.size === 0) throw new Error("ensureFeatureTables: notify_settings missing — ensureNotifySchema must run first");
-  for (const [name, def] of NOTIFY_BOARD_COLUMNS) {
-    if (!existing.has(name)) conn.exec(`ALTER TABLE notify_settings ADD COLUMN ${name} ${def}`);
+  addMissingColumns(conn, "notify_settings", NOTIFY_BOARD_COLUMNS);
+}
+
+/** Add the columns a table lacks. A missing table is a wiring bug (wrong migration order): throw. */
+function addMissingColumns(conn: Database.Database, table: string, cols: ReadonlyArray<readonly [string, string]>): void {
+  const existing = new Set((conn.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map((r) => r.name));
+  if (existing.size === 0) {
+    throw new Error(
+      table === "notify_settings"
+        ? "ensureFeatureTables: notify_settings missing — ensureNotifySchema must run first"
+        : `ensureFeatureTables: ${table} missing`,
+    );
+  }
+  for (const [name, def] of cols) {
+    if (!existing.has(name)) conn.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${def}`);
   }
 }
