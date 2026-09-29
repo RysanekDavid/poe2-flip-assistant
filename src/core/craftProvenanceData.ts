@@ -132,9 +132,9 @@ const DATA: Record<string, RecipeProvenance> = {
     patchVerified: "0.5.5b",
     status: "draft",
     sources: [S11],
-    hitRateBasis: { basis: "unknown", n: null, note: "Curated estimate; the repeat-desecrate Spirit loop contradicts KB §5 (one desecrated mod per item) and is unverified." },
+    hitRateBasis: { basis: "unknown", n: null, note: "Curated estimate: S11's Spirit chaos hunt runs until it lands (T1 ~200–300 chaos, T2 in ~30); the finishing slams swing the sale." },
     extraEntityRefs: [],
-    kbRuleRefs: ["§4", "§5", "§8"],
+    kbRuleRefs: ["§1", "§4", "§5", "§8"],
   },
   quarterstaff_desecrate_crit: {
     patchVerified: "0.5.5b",

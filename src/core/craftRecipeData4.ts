@@ -145,7 +145,7 @@ export const RECIPES_4: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 81, // Damage with Bow Skills T1 (51–59%) is modifier level 81 on quivers (RePoE)
       stats: [],
-      note: "Cheapest rare ilvl 81+ quiver, not corrupted and not desecrated (eyeball). Mods are wiped; the implicit stays — Primed (attack speed) or Visceral (crit) bases sell best.",
+      note: "Cheapest rare ilvl 81+ quiver — prefer a 6-mod rare (same 1–2 ex), since the sources disagree on whether the omen needs 6 mods. Not corrupted and not desecrated (eyeball). Mods are wiped; the implicit stays — Primed (attack speed) or Visceral (crit) bases sell best.",
     },
     result: {
       label: "Corrupted rare quiver · Bow Skill damage",
@@ -168,8 +168,11 @@ export const RECIPES_4: CraftRecipe[] = [
     guide: GUIDES_4.quiver_putrefaction!,
   },
 
-  // 5) Sovereign ballista crossbow. hitRate 0.4: essence + exalts complete every time; the gate is the
-  //    Ulaman prefix reveal, where RePoE lists TWO candidates on crossbows (ballista, lightning pen).
+  // 5) Sovereign ballista crossbow. hitRate 0.6: essence + exalts complete every time; the gate is the
+  //    Ulaman prefix reveal. RePoE lists only TWO Ulaman prefixes a crossbow can roll (ballista, lightning
+  //    pen), so if the reveal's three options are all Ulaman (as the sources imply) the ballista is almost
+  //    always offered (~0.9); if only one option is forced, it is closer to a coin flip plus the Echoes
+  //    reroll. 0.6 weights the two readings — the three-Ulaman-options behaviour is unverified.
   {
     key: "crossbow_sovereign_ballista",
     domain: "weapon",
@@ -202,7 +205,7 @@ export const RECIPES_4: CraftRecipe[] = [
       { material: MATS.whetstone, qtyPerAttempt: 10, note: "~10 whetstones to 20% quality (more pdps on the tooltip) — our estimate, the sources name no count." },
       { material: MATS.artificers, qtyPerAttempt: 2, note: "Sockets for Greater Iron Runes (runes not tracked)." },
     ],
-    hitRate: 0.4,
+    hitRate: 0.6,
     guide: GUIDES_4.crossbow_sovereign_ballista!,
   },
 ];

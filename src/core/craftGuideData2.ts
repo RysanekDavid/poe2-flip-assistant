@@ -193,21 +193,17 @@ export const GUIDES_2: Record<string, CraftGuide> = {
   amulet_giga_spirit: {
     goal: "Rare amulet: Spirit (T1/T2) + global Armour/Evasion/ES + Fire/Elemental Res + a rarity/life filler. ~70 div in → ~180 div sale.",
     shopping:
-      "Gold or Solar amulet, kept MAGIC rarity — Spirit can only be added while Magic, so sequence it before any Rare upgrade. ilvl 75+.",
+      "RARE Gold or Solar amulet, ilvl 75+ (in the video, the fractured +3 from the intermediate craft). Spirit is an ordinary amulet prefix (RePoE IncreasedSpirit1–5, top +47–50 at level 54), so Chaos Orbs can roll it on the rare.",
     marketCheck: "The Spirit hunt dominates the cost (T1 ~200-300 chaos of attempts). Price finished Spirit amulets first — Spirit gates aura/Arctic Armour thresholds, so demand is deep.",
     phases: [
       {
         title: "Hunt the Spirit",
         steps: [
           {
-            do: "Desecrate (Collarbone bone) repeatedly on the MAGIC amulet until Spirit lands.",
-            why: "T2 fallback landed in ~30 attempts; T1 costs far more. Keep an Abyssal Echoes to reroll a dead reveal set.",
-            mats: [MATS.preservedCollarbone, MATS.omenAbyssalEchoes],
-            warning: "Spirit only adds while MAGIC — do NOT Regal to Rare before it lands, it forecloses Spirit permanently.",
+            do: "Chaos Orbs on the rare amulet until Spirit lands.",
+            why: "Each Chaos Orb removes one random mod and adds one (KB §1). S11: T1 'will cost you probably like two or 300' chaos; the T2 fallback landed in ~30. Corrected 2026-09-30 — the old 'Magic only, repeated desecration' reading contradicted the video and RePoE.",
+            mats: [MATS.chaos],
             check: "Amulet carries a Spirit prefix.",
-            // KB §5: max ONE desecrated mod per item; RePoE bone text: bones desecrate RARE items
-            unverified:
-              "Contradicts KB §5 (one desecrated mod per item) and the bone text (desecrates a RARE item) — a repeat-desecrate loop on a magic amulet is unconfirmed; hit rate and the 30-bone cost are unverified.",
           },
         ],
       },
@@ -216,7 +212,7 @@ export const GUIDES_2: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Omen of Dextral Exaltation → guaranteed suffix, then Omen of Dextral Crystallisation + Perfect Essence of Enhancement.",
-            why: "Spirit blocks further Magic-only additions once Rare — this converts a suffix into a 'global Armour/Evasion/ES' prefix as the workaround.",
+            why: "Converts a suffix into a 'global Armour/Evasion/ES' prefix — the creator's route once the Spirit is in (his reason, 'we can't add spirit anymore because it's not a magic item', is unverified).",
             mats: [MATS.omenDextralExaltation, MATS.omenDextralCrystallisation, MATS.perfectEssenceEnhancement],
           },
         ],
@@ -231,7 +227,8 @@ export const GUIDES_2: Record<string, CraftGuide> = {
           },
           {
             do: "Fill the last slot via more desecration (High Life/ES/Evasion/Rarity), then catalyse cosmetically before listing.",
-            why: "Amulets don't display a quality tag — cosmetic Catalysts only inflate the numbers buyers filter on.",
+            why: "One Preserved Collarbone with an Omen of Abyssal Echoes ('100% worth it here', S11). Amulets don't display a quality tag — cosmetic Catalysts only inflate the numbers buyers filter on.",
+            mats: [MATS.preservedCollarbone, MATS.omenAbyssalEchoes],
           },
         ],
       },

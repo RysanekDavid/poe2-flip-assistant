@@ -133,24 +133,24 @@ export const RECIPES_2: CraftRecipe[] = [
     guide: GUIDES_2.wand_alloy_crystallisation!,
   },
 
-  // 4) Grind Spirit via desecration on a MAGIC amulet, convert a suffix to global defence, catalyse res.
+  // 4) Chaos-spam Spirit on a RARE amulet, convert a suffix to global defence, catalyse res.
   //    hitRate 0.4: the Spirit hunt is a grind-until-hit (so a completed craft almost always carries
   //    Spirit), but T1-vs-T2 Spirit and the finishing slams swing whether it clears the comparable.
-  //    UNVERIFIED: the repeat-desecrate loop contradicts KB §5 (one desecrated mod per item) and the
-  //    RePoE bone text (desecrates a RARE item) — hitRate 0.4 and the 30-bone / 15-echo budget are
-  //    unconfirmed; the guide step carries an `unverified` badge.
+  //    Corrected 2026-09-30: the S11 transcript chaos-spams the Spirit (Chaos Orbs work on rares only),
+  //    and RePoE lists IncreasedSpirit1-5 as ordinary amulet prefixes — the old "Magic only, repeated
+  //    desecration" reading was wrong (docs/kb/creator-videos.md adversarial log).
   {
     key: "amulet_giga_spirit",
     domain: "jewellery",
     label: "Amulet · giga Spirit",
     base: {
-      label: "Magic Gold/Solar amulet",
+      label: "Rare Gold/Solar amulet",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       type: "Solar Amulet",
-      rarity: "magic",
+      rarity: "rare",
       ilvlMin: 75,
       stats: [],
-      note: "Gold or Solar amulet kept MAGIC — Spirit only adds while Magic, so sequence it before any Rare upgrade. ilvl 75+.",
+      note: "RARE Gold or Solar amulet, ilvl 75+ — Chaos Orbs roll the Spirit on the rare (S11). In the video it is the fractured +3 from the intermediate craft.",
     },
     result: {
       label: "Rare amulet · +30 Spirit",
@@ -165,15 +165,16 @@ export const RECIPES_2: CraftRecipe[] = [
       note: "Valued from instant-buyout comparables: +30 Spirit with the Enhancement global-defence convert and 30%+ fire res when enough are listed (else Spirit alone). ~70 div in → ~180 div sale in the source session.",
     },
     materials: [
-      { material: MATS.preservedCollarbone, qtyPerAttempt: 30, note: "UNVERIFIED loop (KB §5: one desecrated mod per item): Spirit hunt by repeated desecration (T2 ~30 attempts; T1 far more). Dominates the craft cost." },
-      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 15, note: "Reroll dead reveal sets during the hunt (~half the attempts)." },
+      { material: MATS.chaos, qtyPerAttempt: 150, note: "Spirit hunt: S11 puts T1 at ~200–300 chaos and landed T2 in ~30; ~150 is our blended estimate. Dominates the craft cost." },
       { material: MATS.omenDextralExaltation, qtyPerAttempt: 1, note: "Force a guaranteed suffix to convert." },
       { material: MATS.omenDextralCrystallisation, qtyPerAttempt: 1, note: "Pairs with Perfect Essence of Enhancement." },
-      { material: MATS.perfectEssenceEnhancement, qtyPerAttempt: 1, note: "Converts the suffix into a global Armour/Evasion/ES prefix (Spirit blocks Magic-only adds once Rare)." },
+      { material: MATS.perfectEssenceEnhancement, qtyPerAttempt: 1, note: "Converts the suffix into a global Armour/Evasion/ES prefix." },
       { material: MATS.xophsCatalyst, qtyPerAttempt: 20, note: "Fire catalyst (never Cold) — biases the Fire/Elemental Res slam. Esh's (lightning) is the alternative." },
       { material: MATS.omenCatalysingExaltation, qtyPerAttempt: 1 },
       { material: MATS.omenGreaterExaltation, qtyPerAttempt: 1 },
       { material: MATS.perfectExalted, qtyPerAttempt: 1, note: "Fire/Elemental Res slam." },
+      { material: MATS.preservedCollarbone, qtyPerAttempt: 1, note: "Fills the last slot (high Life/ES/Evasion/Rarity)." },
+      { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "S11: '100% worth it here' on the final reveal." },
     ],
     hitRate: 0.4,
     guide: GUIDES_2.amulet_giga_spirit!,

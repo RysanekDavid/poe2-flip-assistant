@@ -12,15 +12,17 @@ import type { CraftGuide } from "./craftRecipes";
 const PRE_05_SOURCE =
   "The only step-by-step write-up (p2pah) is dated 2026-03-28 and names no patch; the 0.5.5 videos by SaVeQ and WesDesu cover the craft, but we have not reviewed their content.";
 const RADIUS_FRACTURE =
-  "Single secondary source (the Codex summary of Scorpius). RePoE lists 'Upgrades Radius to Large' as an ordinary spawnable prefix (JewelRadiusLargeSize), but an unfetched Reddit snippet says the radius can't be fractured; KB §6 also leaves the rare Time-Lost affix cap open. Fracturing with an UNREVEALED blocker is what the source does — KB §2 confirms a desecrated mod counts, not that an unrevealed one behaves the same.";
+  "Single secondary source (the Codex summary of Scorpius). RePoE lists 'Upgrades Radius to Large' as an ordinary spawnable prefix (JewelRadiusLargeSize), but an unfetched Reddit snippet says the radius can't be fractured; KB §6 also leaves the rare Time-Lost affix cap open. The source does not say whether the blocker was revealed; leaving it unrevealed is our choice — KB §2 confirms a desecrated mod counts, not that an unrevealed one behaves the same.";
 const COMPILATION_ONLY = "Only the community compilation gives this step (the Mobalytics snippet stops at the essence).";
 const QUALITY_PLUS4 =
-  "KB conflict K4: that catalyst quality scales a '+N to Level of all Spell Skills' mod, and that ~34% turns +3 into +4, is claimed by the compilation only; the Forge of Exiles write-up of the same craft never states it. Test on one cheap amulet before spending.";
+  "KB conflict K4: that catalyst quality scales a '+N to Level of all Spell Skills' mod, and that ~34% turns +3 into +4, is claimed by the compilation; Forge's title claims +4 but shows no tooltip. K4 stays open — test on one cheap amulet before spending.";
+const BREACH_CRYSTAL =
+  "Essence of the Breach is a CORRUPTED essence (RePoE CurrencyCorruptedEssenceBreach) and Crystallisation omens act on a 'Perfect or Corrupted Essence' (item text), so the pairing should hold; the compilation's AMULET_004 does it, but no second source confirms it on this craft.";
 const TWO_COLLARBONES = "The compilation desecrates twice; KB §5 allows ONE desecrated mod per item, so the second bone's outcome is unknown.";
 
 export const GUIDES_5: Record<string, CraftGuide> = {
   ring_breach_mana_stacker: {
-    goal: "Breach Ring for mana stackers: fractured rarity + T1 flat mana + (4–6)% maximum mana + desecrated minion damage + two resistances. 20–40 div in → 200+ div (p2pah).",
+    goal: "Breach Ring for mana stackers: fractured rarity + T1 flat mana + (4–6)% maximum mana + desecrated minion damage + two resistances. 20–40 div in; p2pah values the three core prefixes at '30+ divines to several hundred' and finished rings at 200+ div.",
     shopping:
       "Rare Breach Ring, ilvl 75+ (T1 flat mana +165–179 is modifier level 75; RePoE), with a FRACTURED rarity SUFFIX (~5–10 div). The Breach Ring's '+20% to Maximum Quality' implicit is what allows 40% catalyst quality (KB §8).",
     marketCheck: "Price finished mana-stacker Breach Rings first. Budget ~300 chaos for the T1 mana alone, plus two Catalysing slams with 40% quality each.",
@@ -53,10 +55,10 @@ export const GUIDES_5: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Omen of Sinistral Necromancy + Omen of the Liege active, slam a Preserved Collarbone, reveal at the Well of Souls.",
-            why: "Sinistral = the last prefix; the Liege 'will guarantee a random Amanamu modifier' on jewellery (item text). RePoE's Amanamu ring prefixes are minion damage, Remnant effect and Ignite magnitude. Necromancy + Liege + bone is a documented triple (KB §4).",
+            why: "Sinistral = the last prefix; the Liege 'will guarantee a random Amanamu modifier' on jewellery (item text). RePoE's Amanamu ring prefixes are minion damage, Remnant effect and Ignite magnitude. Necromancy + Liege + bone is a documented triple (KB §4); p2pah: 'In-game, this interaction yields three Amunamu options'.",
             mats: [MATS.omenSinistralNecromancy, MATS.omenTheLiege, MATS.preservedCollarbone],
             pick: ["Minions deal (15–25)% increased Damage if you've Hit Recently"],
-            warning: "p2pah warns off Omen of the Blackblooded here — that forces Kurgal, not Amanamu.",
+            warning: "Not Omen of the Blackblooded: it forces a Kurgal mod, not Amanamu (item text, https://poe2db.tw/us/Omen_of_the_Blackblooded).",
             unverified: PRE_05_SOURCE,
           },
           {
@@ -193,11 +195,11 @@ export const GUIDES_5: Record<string, CraftGuide> = {
         title: "Breach quality cap",
         steps: [
           {
-            do: "Omen of Dextral Exaltation + Exalted Orb (a throwaway suffix), then Essence of the Breach.",
-            why: "Essence of the Breach 'Removes a random modifier and augments a Rare item with a new guaranteed modifier' (item text): '+20% to Maximum Quality', a prefix (RePoE EssenceBreach). The throwaway suffix dilutes which mod it removes.",
-            mats: [MATS.omenDextralExaltation, MATS.exalted, MATS.essenceOfTheBreach],
-            warning: "The removal is random — it can take the +3 itself.",
-            unverified: QUALITY_PLUS4,
+            do: "Omen of Sinistral Exaltation + Exalted Orb (a throwaway PREFIX), then Omen of Sinistral Crystallisation + Essence of the Breach.",
+            why: "Essence of the Breach 'Removes a random modifier and augments a Rare item with a new guaranteed modifier' (item text): '+20% to Maximum Quality', a prefix (RePoE EssenceBreach). With Sinistral Crystallisation it removes only a prefix, so the +3 (a suffix on amulets, RePoE) is safe and the throwaway goes. Forge of Exiles writes 'Perfect Essence of the Breach'; only 'Essence of the Breach' exists in the game data.",
+            mats: [MATS.omenSinistralExaltation, MATS.exalted, MATS.omenSinistralCrystallisation, MATS.essenceOfTheBreach],
+            warning: "Without the Sinistral omen the removal is random — it can take the +3 itself.",
+            unverified: BREACH_CRYSTAL,
           },
           {
             do: "Sibilant (caster) Catalysts to ~34% quality.",

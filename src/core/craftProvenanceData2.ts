@@ -13,8 +13,8 @@ import type { RecipeProvenance, RecipeSource } from "./craftProvenance/schema";
  * and every step that rests on the ring write-up alone carries an `unverified` badge.
  *
  * Tiers: "primary" = the creator's own video; "secondary" = a write-up of someone's craft (the
- * compilation, Exile Codex, Forge of Exiles, POECurrency, p2pah, Mobalytics). Exile Codex pages only
- * print a "Last updated" date, which is not a publication date, so theirs are null.
+ * compilation, Exile Codex, Forge of Exiles, POECurrency, p2pah, Mobalytics). Exile Codex pages print
+ * only a "Last updated" date; that printed date is used (precision exact, read from the page).
  */
 
 function guide(title: string, url: string, creator: string | null, date: string | null, datePrecision: RecipeSource["datePrecision"]): RecipeSource {
@@ -41,21 +41,22 @@ const FORGE_HELMET = guide(
   "2026-07-21",
   "exact",
 );
+// a VARIANT path (Greater Essence of Opulence + Ancient Rib), listed for comparison — not support for this recipe
 const POECURRENCY_HELMET = guide(
-  "Path of Exile 2 Patch 0.5.0 Helmet Crafting Strategy | From White Bases to High-Value Helmets",
+  "Variant (Opulence + Ancient Rib path): Path of Exile 2 Patch 0.5.0 Helmet Crafting Strategy | From White Bases to High-Value Helmets",
   "https://www.poecurrency.com/news/poe-2-patch-0-5-0-helmet-crafting-strategy-from-white-bases-to-high-value-helmets",
   null,
   "2026-08-12",
   "exact",
 );
-const CODEX_BARCZI = guide("Easy Energy Shield Crafting For Profit | PoE 2 0.5", "https://exile.codex-wiki.com/guides/easy-energy-shield-crafting-for-profit-poe-2-0-5", null, null, null);
+const CODEX_BARCZI = guide("Easy Energy Shield Crafting For Profit | PoE 2 0.5", "https://exile.codex-wiki.com/guides/easy-energy-shield-crafting-for-profit-poe-2-0-5", null, "2026-06-06", "exact");
 const BARCZI = video("Easy Energy Shield Crafting For Profit | PoE 2 0.5", "https://www.youtube.com/watch?v=T5Yt4Sa1jDA", "Barczi POE2", null);
 const CODEX_POEGUY = guide(
   "[PoE 2] Endgame Crossbow Crafting Guide - for POEGuy's Warbringer Mortar Cannon Build.",
   "https://exile.codex-wiki.com/builds/poe-2-endgame-crossbow-crafting-guide-for-poeguys",
   null,
-  null,
-  null,
+  "2026-06-04",
+  "exact",
 );
 const POEGUY = video("[PoE 2] Endgame Crossbow Crafting Guide - for POEGuy's Warbringer Mortar Cannon Build.", "https://www.youtube.com/watch?v=dbgOKCI5tOk", "POEGuy", null);
 const P2PAH_RING = guide(
@@ -72,7 +73,13 @@ const WESDESU = video(
   "WesDesu",
   "2026-09-14",
 );
-const CODEX_SCORPIUS = guide("POE2 Time-Lost Jewels | Complete Crafting Breakdown", "https://exile.codex-wiki.com/builds/poe2-time-lost-jewels-complete-crafting-breakdown", null, null, null);
+const CODEX_SCORPIUS = guide(
+  "POE2 Time-Lost Jewels | Complete Crafting Breakdown",
+  "https://exile.codex-wiki.com/builds/poe2-time-lost-jewels-complete-crafting-breakdown",
+  null,
+  "2026-06-24",
+  "exact",
+);
 const SCORPIUS = video("POE2 Time-Lost Jewels | Complete Crafting Breakdown", "https://www.youtube.com/watch?v=W4RuaAJYoZc", "Scorpius", null);
 // Fetch returned 403; the step list is the search snippet, the date a search listing.
 const MOBALYTICS_LA = guide("0.5 Fubgun Lightning Arrow Deadeye - PoE 2 Ranger Build Guide", "https://mobalytics.gg/poe-2/builds/lightning-arrow-farmer-fubgun", null, "2026-06-18", "listing");
@@ -111,7 +118,7 @@ export const EXPANSION_PROVENANCE: Record<string, RecipeProvenance> = {
     patchVerified: "0.5.5b",
     status: "draft",
     sources: [COMPILATION, CODEX_POEGUY, POEGUY],
-    hitRateBasis: { basis: "unknown", n: null, note: `${NO_ODDS} The reveal is the gate: the sources call the ballista guaranteed, RePoE lists two Ulaman crossbow prefixes.` },
+    hitRateBasis: { basis: "unknown", n: null, note: `${NO_ODDS} The reveal is the gate. Sovereign + Sinistral should show three Ulaman options and RePoE has only two Ulaman crossbow prefixes, so the ballista is almost always offered — unverified, so 0.6 rather than ~0.9.` },
     extraEntityRefs: [],
     kbRuleRefs: ["§1", "§4", "§5", "§7"],
   },

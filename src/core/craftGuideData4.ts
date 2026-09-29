@@ -8,13 +8,16 @@ import type { CraftGuide, GuidePhase } from "./craftRecipes";
  * are the entity catalog's game text; sources are listed in craftProvenanceData2.ts.
  */
 
+// KB §7 (verified-secondary, 2026-09-30): a Greater essence keeps the magic item's mods, like a Regal.
+const ESSENCE_KEEPS = "The magic mods stay, like a Regal Orb (KB §7).";
+
 // Shown as visible badges: each is a KB-open or single-source claim the craft leans on.
-const ESSENCE_KEEPS =
-  "KB §7: whether a Lesser/regular/Greater essence keeps the magic item's own mods is not in the item text. Every source keeps the headline mod through this step — test it on one cheap base first.";
 const DEXTRAL_GREATER =
   "Dextral Exaltation + Greater Exaltation on one exalt = two suffixes is KB §4 medium confidence (a 2-1 vote); the Tools rule for the pair is unverified.";
 const BALLISTA_POOL =
-  "The compilation and the Codex summary say this guarantees the Ballista Totem. RePoE lists TWO Ulaman prefixes a crossbow can roll (AbyssModCrossbowUlamanPrefixMaximumRangedAttackTotems and AbyssModGenWeaponUlamanPrefixLightningPenetration), and Sovereign + Necromancy stacking mirrors the Liege triple in KB §4 rather than a verified rule.";
+  "The compilation and the Codex summary say this guarantees the Ballista Totem. RePoE lists TWO Ulaman prefixes a crossbow can roll (AbyssModCrossbowUlamanPrefixMaximumRangedAttackTotems and AbyssModGenWeaponUlamanPrefixLightningPenetration). If the reveal shows three Ulaman options, as the sources imply, the ballista is almost always among them — but neither the three-Ulaman-options behaviour nor Sovereign + Necromancy stacking (the Liege triple in KB §4) is verified.";
+const PUTREFY_COUNT =
+  "Mod count conflict: the compilation wants the quiver pre-filled to 6 mods; the omen text says 'up to 6 Unrevealed modifiers', and docs/kb/creator-videos.md (S10) says all 3 prefixes + 3 suffixes regardless of the starting count. A 6-mod base costs the same, so buy one.";
 const VAAL_NO_BRICK =
   "The compilation says the helmet 'CANNOT brick' under Vaal Infusers; the infuser's item text says it can corrupt the item, and the KB has no corruption outcome table (KB §10).";
 
@@ -42,10 +45,9 @@ function robeOpeningPhases(headlineLabel: string): GuidePhase[] {
       steps: [
         {
           do: "Greater Essence of Enhancement on the magic robe.",
-          why: "Upgrades it to rare with '(68–79)% increased Armour, Evasion and Energy Shield' (poe2db). On a pure-ES robe the local %ES tier with exactly that range is modifier level 54 (RePoE).",
+          why: `Upgrades it to rare with '(68–79)% increased Armour, Evasion and Energy Shield' (poe2db). On a pure-ES robe the local %ES tier with exactly that range is modifier level 54 (RePoE). ${ESSENCE_KEEPS}`,
           mats: [MATS.greaterEssenceEnhancement],
           check: `Rare robe: ${headlineLabel} + (68–79)% ES.`,
-          unverified: ESSENCE_KEEPS,
         },
       ],
     },
@@ -140,10 +142,9 @@ export const GUIDES_4: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Greater Essence of Enhancement.",
-            why: "Upgrades the Tiara to rare and adds '(68–79)% increased Armour, Evasion and Energy Shield' (poe2db) — on a pure-ES Tiara the local %ES tier with that range is modifier level 54 (RePoE).",
+            why: `Upgrades the Tiara to rare and adds '(68–79)% increased Armour, Evasion and Energy Shield' (poe2db) — on a pure-ES Tiara the local %ES tier with that range is modifier level 54 (RePoE). ${ESSENCE_KEEPS}`,
             mats: [MATS.greaterEssenceEnhancement],
             check: "Rare: T1 flat ES + (68–79)% ES, one prefix still open.",
-            unverified: ESSENCE_KEEPS,
           },
         ],
       },
@@ -157,7 +158,8 @@ export const GUIDES_4: Record<string, CraftGuide> = {
             pick: [
               "(39–42)% increased Energy Shield + (42–49) to maximum Life — the hybrid T1, modifier level 78",
               "(39–42)% increased Energy Shield + (33–39) to maximum Mana",
-              "+(150–174) to maximum Life",
+              // the helmet's desecrated-only mods are all suffixes, so a Sinistral reveal draws from the normal prefix pool
+              "+(150–174) to maximum Life (normal-pool prefix, modifier level 65)",
             ],
           },
           {
@@ -195,7 +197,7 @@ export const GUIDES_4: Record<string, CraftGuide> = {
   quiver_putrefaction: {
     goal: "Corrupted 6-mod rare quiver: Damage with Bow Skills + bow-attack suffixes. 1–2 ex base → 2–12 div per the compilation.",
     shopping:
-      "Cheapest RARE quiver, ilvl 81+ — Damage with Bow Skills' T1 (51–59%) is modifier level 81 (RePoE). The compilation names 'Citadel or Prime Quiver'; neither exists in the 0.5.5b base list — the closest is Primed Quiver ((7–10)% increased Attack Speed implicit). Visceral (crit chance) and Penetrating (pierce) are the other endgame implicits. Not corrupted, not desecrated.",
+      "Cheapest RARE quiver, ilvl 81+ — Damage with Bow Skills' T1 (51–59%) is modifier level 81 (RePoE). The compilation names 'Citadel or Prime Quiver'; neither exists in the 0.5.5b base list — the closest is Primed Quiver ((7–10)% increased Attack Speed implicit). Visceral (crit chance) and Penetrating (pierce) are the other endgame implicits. Prefer a 6-mod rare (same 1–2 ex). Not corrupted, not desecrated.",
     marketCheck: "~4 ex omen + ~1 ex Jawbone + a 1–2 ex base per try (compilation). Price corrupted quivers with 43%+ bow damage first.",
     phases: [
       {
@@ -205,8 +207,10 @@ export const GUIDES_4: Record<string, CraftGuide> = {
             do: "Omen of Putrefaction active, slam a Preserved Jawbone.",
             why: "The omen's next desecration 'will replace all modifiers on the item creating an item with up to 6 Unrevealed modifiers and Corrupting the item'; a Jawbone 'Desecrates a Rare Weapon or Quiver' (item text).",
             mats: [MATS.omenPutrefaction, MATS.preservedJawbone],
-            warning: "It corrupts. Quality goes on BEFORE. Quivers take no sockets anyway (the Artificer's Orb targets martial weapons, wands, staves and armour).",
+            warning:
+              "It corrupts. No quality or socket step: no quality currency in the game data names quivers (Armourer's Scrap = armour, Whetstone = martial weapon, catalysts = rings/amulets/jewels) and the Artificer's Orb targets martial weapons, wands, staves and armour.",
             check: "Item corrupted, all mods unrevealed.",
+            unverified: PUTREFY_COUNT,
           },
         ],
       },
@@ -219,7 +223,7 @@ export const GUIDES_4: Record<string, CraftGuide> = {
             pick: [
               "prefix: (51–59)% increased Damage with Bow Skills — T1, modifier level 81",
               "prefix: flat Physical or Lightning damage to Attacks",
-              "prefix: 'Increases and Reductions to Projectile Speed also apply to Damage with Bows' (Ulaman)",
+              "prefix: 'Increases and Reductions to Projectile Speed also apply to Damage with Bows' (Ulaman, RePoE AbyssModQuiverUlamanPrefixIncreasesToProjectileSpeedApplyToDamage)",
               "suffix: +(41–60)% Surpassing chance to fire an additional Arrow — modifier level 80",
               "suffix: Critical Damage Bonus / Critical Hit Chance for Attacks",
               "suffix: Attack Speed",
@@ -248,10 +252,9 @@ export const GUIDES_4: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Greater Essence of Abrasion.",
-            why: "Upgrades to rare and adds 'Adds (23—35) to (39—59) Physical Damage' on two-handers (poe2db) — RePoE's level-60 flat-phys tier.",
+            why: `Upgrades to rare and adds 'Adds (23—35) to (39—59) Physical Damage' on two-handers (poe2db) — RePoE's level-60 flat-phys tier. ${ESSENCE_KEEPS}`,
             mats: [MATS.greaterEssenceAbrasion],
             check: "Rare: %phys + flat phys, one prefix open.",
-            unverified: ESSENCE_KEEPS,
           },
         ],
       },

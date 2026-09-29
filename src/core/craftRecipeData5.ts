@@ -35,7 +35,7 @@ export const RECIPES_5: CraftRecipe[] = [
         { text: "#% increased maximum Mana", min: 4, tier: 1 },
         { text: "Minions deal #% increased Damage if you've Hit Recently", group: "desecrated", tier: 2 },
       ],
-      note: "Valued from instant-buyout comparables: Breach Ring with T1 flat mana (165+) and the essence's 4–6% maximum mana, plus the desecrated Amanamu minion-damage prefix when enough are listed. p2pah puts finished rings at 200+ div.",
+      note: "Valued from instant-buyout comparables: Breach Ring with T1 flat mana (165+) and the essence's 4–6% maximum mana, plus the desecrated Amanamu minion-damage prefix when enough are listed. p2pah: the three core prefixes are worth '30+ divines to several hundred', finished rings 200+ div.",
     },
     materials: [
       { material: MATS.annul, qtyPerAttempt: 2.5, note: "Strip to the fractured rarity + one mod before the chaos phase, plus ~0.5 for a missed resistance slam." },
@@ -157,9 +157,10 @@ export const RECIPES_5: CraftRecipe[] = [
       note: "Valued from instant-buyout comparables showing +4 Spell Skills (the natural top tier is +3, RePoE). The compilation claims 70–300 div; nothing here is confirmed in game.",
     },
     materials: [
-      { material: MATS.omenDextralExaltation, qtyPerAttempt: 1 },
-      { material: MATS.exalted, qtyPerAttempt: 1, note: "Adds a suffix before the Breach essence removes a random mod." },
-      { material: MATS.essenceOfTheBreach, qtyPerAttempt: 1, note: "Removes a random mod and adds '+20% to Maximum Quality' (RePoE EssenceBreach, a prefix)." },
+      { material: MATS.omenSinistralExaltation, qtyPerAttempt: 1 },
+      { material: MATS.exalted, qtyPerAttempt: 1, note: "A throwaway PREFIX for the Breach essence to eat." },
+      { material: MATS.omenSinistralCrystallisation, qtyPerAttempt: 1, note: "The Corrupted Breach essence then removes only a prefix — the +3 suffix is safe (compilation AMULET_004)." },
+      { material: MATS.essenceOfTheBreach, qtyPerAttempt: 1, note: "Adds '+20% to Maximum Quality' (RePoE EssenceBreach, a prefix). Forge's 'Perfect Essence of the Breach' doesn't exist." },
       { material: MATS.sibilantCatalyst, qtyPerAttempt: 34, note: "Caster quality to ~34% (cap 40% with the Breach mod); RePoE tags the +Spell Skills mod caster + gem." },
       { material: MATS.preservedCollarbone, qtyPerAttempt: 2, note: "The compilation's 'Collarbone twice' — conflicts with one desecrated mod per item (KB §5)." },
       { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1 },
