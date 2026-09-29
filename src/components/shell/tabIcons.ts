@@ -1,4 +1,5 @@
 import type { StaticImageData } from "next/image";
+import { ScrollText, Search, type LucideIcon } from "lucide-react";
 import iconExchange from "../../assets/Currency_exchange.png";
 import iconMarket from "../../assets/Web_market.png";
 import iconCraft from "../../assets/Craft.png";
@@ -8,22 +9,23 @@ import iconSettings from "../../assets/settings.png";
 // The gold lantern logo stands in until the owner supplies dedicated Alerts art.
 import iconAlerts from "../../assets/logo/logo_gold_bg.png";
 import iconWaystone from "../../assets/items/waystone.png";
-// Scroll of Wisdom identifies items — the closest in-game metaphor for "search my stash".
-import iconScrollOfWisdom from "../../assets/items/scroll-of-wisdom.png";
-// Expedition Logbook: a written log — the in-game object closest to a change log.
-import iconLogbook from "../../assets/items/expedition-logbook.png";
 import type { TabId } from "./tabRegistry";
 
+/** Tab art, or a lucide glyph where no in-game object fits (swap to `art` once owner PNGs exist). */
+export type TabIcon = { kind: "art"; src: StaticImageData } | { kind: "glyph"; Icon: LucideIcon };
+
+const art = (src: StaticImageData): TabIcon => ({ kind: "art", src });
+
 // Kept apart from tabRegistry.ts so node test scripts never import PNGs.
-export const TAB_ICONS: Record<TabId, StaticImageData> = {
-  exchange: iconExchange,
-  market: iconMarket,
-  farm: iconWaystone,
-  craft: iconCraft,
-  wealth: iconWealth,
-  regex: iconScrollOfWisdom,
-  patches: iconLogbook,
-  alerts: iconAlerts,
-  settings: iconSettings,
-  coach: iconCoach,
+export const TAB_ICONS: Record<TabId, TabIcon> = {
+  exchange: art(iconExchange),
+  market: art(iconMarket),
+  farm: art(iconWaystone),
+  craft: art(iconCraft),
+  wealth: art(iconWealth),
+  regex: { kind: "glyph", Icon: Search },
+  patches: { kind: "glyph", Icon: ScrollText },
+  alerts: art(iconAlerts),
+  settings: art(iconSettings),
+  coach: art(iconCoach),
 };

@@ -1,15 +1,10 @@
 "use client";
 
-import { Hourglass, Sparkles, TriangleAlert } from "lucide-react";
+import { Hourglass, TriangleAlert } from "lucide-react";
 import { groupLabel, type PatchSummaryState } from "../../lib/patchesContract";
 import type { PatchSummary } from "../../sources/patchNotes/summaryContract";
 import { EmptyState } from "../ui/EmptyState";
-
-function summarizedOn(stamp: string | null): string {
-  if (stamp == null) return "";
-  const date = new Date(stamp);
-  return Number.isNaN(date.getTime()) ? "" : ` · ${date.toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
-}
+import { InfoTip } from "../ui/Tooltip";
 
 function SummaryBody({ data }: { data: PatchSummary }) {
   return (
@@ -18,8 +13,8 @@ function SummaryBody({ data }: { data: PatchSummary }) {
         {data.hotfix && <span className="mr-2 rounded bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-300">hotfix</span>}
         {data.tldr}
       </p>
-      <div className="rounded-md border-l-2 border-amber-400/70 bg-amber-400/5 px-3 py-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Trading impact</p>
+      <div>
+        <p className="text-xs text-neutral-500">Trading impact</p>
         <p className="text-sm text-neutral-200">{data.trading_impact}</p>
       </div>
       {data.groups.length > 0 && (
@@ -40,17 +35,22 @@ function SummaryBody({ data }: { data: PatchSummary }) {
   );
 }
 
-function Footer({ summary }: { summary: PatchSummaryState }) {
-  const updating = summary.status === "pending" ? " · updating for an edited thread" : "";
-  const stale = summary.status === "failed" ? " · latest edit could not be summarized" : "";
+/** Provenance lives in the tooltip; model/prompt stay in the API for debugging, not on screen. */
+function summaryTip(summary: PatchSummaryState): string {
+  const notes = [
+    "AI-generated from the official forum thread — verify anything important in-game.",
+    summary.truncated ? "Covers only the first part of very long notes." : "",
+    summary.status === "pending" ? "Updating for an edited thread." : "",
+    summary.status === "failed" ? "The latest edit could not be summarized." : "",
+  ];
+  return notes.filter((note) => note !== "").join(" ");
+}
+
+function SummaryHeading({ summary }: { summary: PatchSummaryState }) {
   return (
-    <p className="flex flex-wrap items-center gap-1 text-xs text-neutral-400">
-      <Sparkles className="h-3 w-3 text-amber-300" aria-hidden />
-      AI summary · {summary.model ?? "unknown model"} · prompt v{summary.promptVersion ?? "?"}
-      {summarizedOn(summary.summarizedAt)}
-      {summary.truncated && " · from the first part of very long notes"}
-      {updating}
-      {stale}
+    <p className="flex items-center gap-1 text-xs text-neutral-500">
+      AI summary
+      <InfoTip tip={summaryTip(summary)} label="About the AI summary" align="start" />
     </p>
   );
 }
@@ -65,9 +65,9 @@ export function PatchSummaryView({ summary }: { summary: PatchSummaryState | nul
   }
   if (summary.data) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-1">
+        <SummaryHeading summary={summary} />
         <SummaryBody data={summary.data} />
-        <Footer summary={summary} />
       </div>
     );
   }

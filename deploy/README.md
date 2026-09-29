@@ -271,8 +271,8 @@ curl -sS http://127.0.0.1:8000/health
 - **Rate limits are partly per-IP** — all users share this box's trade2 budget. The limiter
   (1 request at a time, `TRADE_MIN_REQUEST_MS` floor, default 6s) keeps it safe; keep the
   AUTOSNIPE interval conservative.
-- **Desktop notifications** (node-notifier) are a no-op on a headless server; users get alerts
-  in the web UI (Alerts tab, browser notifications, Discord). That's expected.
+- **Popups** are per-user browser notifications (Alerts tab switches); the server never shows
+  OS toasts. Other channels: the Alerts feed and Discord.
 - **Coach rate limit:** requests arrive from the authenticated Next.js proxy, so the Python limit
   is a global spend cap for the box, not a separate limit per browser user.
 - **Backups:** `deploy.sh` uses SQLite's consistent `.backup` operation for the product DB, which

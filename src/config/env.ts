@@ -209,7 +209,19 @@ export const config = {
   minVolume: num("MIN_VOLUME", 50), // below this = illiquid (orders won't fill fast)
   flips: { maxMidDiv: pos("FLIP_MAX_MID_DIV", 500) }, // above = whale tier (Mirror): nobody flips it, so it never ranks
   alertCooldownMin: num("ALERT_COOLDOWN_MIN", 60), // same item+type alerts at most once per this window
-  desktopNotify: (process.env.DESKTOP_NOTIFY ?? "true").toLowerCase() !== "false", // OS toast per alert (tests turn it off)
+  // A condition that keeps holding (spread still open, craft still profitable) used to re-alert
+  // every cooldown — ~24/day per item. Past the cooldown it now re-alerts only when the value rose
+  // by risePct over the last alerted value, or once quietHours have passed since that alert.
+  alertRefire: {
+    risePct: pos("ALERT_REFIRE_RISE_PCT", 50, 1000),
+    quietHours: pos("ALERT_REFIRE_QUIET_HOURS", 24, 24 * 14),
+  },
+  // Alert feed retention, pruned each poll per user; unseen alerts younger than unseenKeepDays
+  // survive even a shorter retention so nothing unread vanishes the week it arrived.
+  alertRetention: {
+    days: pos("ALERT_RETENTION_DAYS", 30, 365),
+    unseenKeepDays: pos("ALERT_UNSEEN_KEEP_DAYS", 7, 365),
+  },
   manualStaleHours: num("MANUAL_STALE_HOURS", 6), // real Ange prices expire (→ estimate) after this many hours
   thresholds: {
     spreadPct: num("ALERT_SPREAD_PCT", 15),

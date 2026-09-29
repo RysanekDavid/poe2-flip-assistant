@@ -16,6 +16,7 @@ const targets = {
   notify: "src/scripts/testNotify.ts",
   "notify-drain": "src/scripts/testNotifyDrain.ts",
   "alert-center": "src/scripts/testAlertCenter.ts",
+  "alert-noise": "src/scripts/testAlertNoise.ts",
   "patch-summary": "src/scripts/testPatchSummary.ts",
   rates: "src/scripts/testRates.ts",
   "snipe-db": "src/scripts/testSnipeDb.ts",
@@ -37,7 +38,6 @@ if (!target || !(target in targets)) {
 process.env.APP_DISABLE_DOTENV = "1";
 process.env.OWNER_PASSWORD = "test-only-owner-password";
 process.env.AUTH_SECRET = "test-only-auth-secret";
-process.env.DESKTOP_NOTIFY = "false";
 process.env.DB_PATH = resolve("data", `tmp-${target}-test.db`);
 
 import(pathToFileURL(resolve(targets[target])).href).catch((error: unknown) => {

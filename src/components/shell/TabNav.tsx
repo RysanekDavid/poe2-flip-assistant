@@ -10,7 +10,12 @@ import { useTabRoute } from "./useTabRoute";
 
 function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
   const dim = active ? "opacity-100" : "opacity-60 group-hover:opacity-90";
-  return <Image src={TAB_ICONS[id]} alt="" className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "exchange"} />;
+  const icon = TAB_ICONS[id];
+  if (icon.kind === "glyph") {
+    // Gold tint so a line glyph sits beside the metal-and-gold tab art instead of reading as UI chrome.
+    return <icon.Icon aria-hidden strokeWidth={1.75} className={`h-7 w-7 shrink-0 p-0.5 text-amber-200/80 transition-opacity ${dim}`} />;
+  }
+  return <Image src={icon.src} alt="" className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "exchange"} />;
 }
 
 /** Plain left-click goes through go() (dedupes history); modified clicks keep open-in-new-tab. */
