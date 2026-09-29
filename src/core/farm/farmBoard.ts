@@ -20,8 +20,11 @@ export function mechanicIcons(ranks: readonly FarmRank[], items: readonly Priced
   return new Map(ranks.map((r) => [r.category, r.drivers.map((d) => iconByName.get(d.item)).find((i) => i != null) ?? null]));
 }
 
+// The board is the same for every viewer; farmSpeed.applySpeeds fills these in per viewer.
+const NO_SPEED = { yourMinutes: null, divPerHour: null, divPerHourBound: null } as const;
+
 function mechanicRow(m: MechanicInput): MechanicRow {
-  return { kind: "mechanic", ...m };
+  return { kind: "mechanic", ...m, ...NO_SPEED, yourDivPerRun: null };
 }
 
 /** The tier a row summarises: the first, which is the only one every current boss has. */
@@ -62,6 +65,7 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
     confidence: weakest(carrying),
     unpriced: t.unpriced,
     unpricedLineage: t.unpricedLineage,
+    ...NO_SPEED,
   };
 }
 

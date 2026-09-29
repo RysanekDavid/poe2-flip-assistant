@@ -1,15 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Flame } from "lucide-react";
 import { compact } from "../../lib/format";
 import type { MechanicRow } from "../../lib/farmContract";
+import { fmtDiv } from "../../core/tools/bossEv/headline";
 import { ItemArt } from "../ui/ItemArt";
 import { Tooltip } from "../ui/Tooltip";
+import { fmtDivHour } from "./farmView";
+import { MechanicSpeedEditor } from "./MechanicSpeedEditor";
 
 const TOP = 6;
 
-function driversTip(m: MechanicRow) {
+function paceLine(m: MechanicRow, exPerDiv: number | null) {
+  if (m.divPerHour != null && m.yourMinutes != null && m.yourDivPerRun != null) {
+    return (
+      <span className="text-accent">
+        your Div/h {fmtDivHour(m.divPerHour, exPerDiv)} = {fmtDiv(m.yourDivPerRun, exPerDiv ?? 0)} per map × 60 ÷ {m.yourMinutes} min per map
+      </span>
+    );
+  }
+  const missing = m.yourMinutes == null ? "your minutes and Div per map" : "your Div per map";
+  return <span className="text-neutral-400">Click to enter {missing} — the market cannot know what your maps yield, so Div/hour needs your own numbers.</span>;
+}
+
+function driversTip(m: MechanicRow, exPerDiv: number | null) {
   return (
     <span className="grid gap-0.5">
       <span className="font-medium text-neutral-100">{m.hint || m.label}</span>
@@ -25,15 +40,32 @@ function driversTip(m: MechanicRow) {
       <span className="text-neutral-400">
         {m.itemCount} items · basket {compact(m.basketValueDiv)} div
       </span>
+      {paceLine(m, exPerDiv)}
     </span>
   );
 }
 
-/** One mechanic: art, name, 7d basket move. A flame marks HOT; direction (not heat) sets the colour. */
-function MechanicChip({ m }: { m: MechanicRow }) {
+interface ChipProps {
+  m: MechanicRow;
+  exPerDiv: number | null;
+  open: boolean;
+  editorId: string;
+  onToggle: () => void;
+  buttonRef: (el: HTMLButtonElement | null) => void;
+}
+
+/** One mechanic: art, name, 7d basket move, and the viewer's Div/h once both their inputs exist. */
+function MechanicChip({ m, exPerDiv, open, editorId, onToggle, buttonRef }: ChipProps) {
   return (
-    <Tooltip tip={driversTip(m)} side="bottom">
-      <span className="flex h-10 items-center gap-2 rounded-md border border-line bg-neutral-900/60 px-2.5">
+    <Tooltip tip={driversTip(m, exPerDiv)} side="bottom">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={open ? editorId : undefined}
+        className={`flex h-10 items-center gap-2 rounded-md border bg-neutral-900/60 px-2.5 hover:border-neutral-500 ${open ? "border-amber-400/70" : "border-line"}`}
+      >
         <ItemArt src={m.icon} size={6} />
         <span className="text-sm font-medium text-neutral-100">{m.label}</span>
         {m.signal === "HOT" && <Flame aria-label="hot" className="h-4 w-4 text-amber-400" />}
@@ -41,28 +73,63 @@ function MechanicChip({ m }: { m: MechanicRow }) {
           {m.wAvgChange7d >= 0 ? "+" : ""}
           {m.wAvgChange7d.toFixed(0)}%
         </span>
-      </span>
+        {m.divPerHour != null && <span className="border-l border-line pl-2 text-sm font-semibold tabular-nums text-accent">{fmtDivHour(m.divPerHour, exPerDiv)}</span>}
+      </button>
     </Tooltip>
   );
 }
 
-/** Mechanic baskets by 7d heat — the top six as art chips, the rest behind one toggle. */
-export function MechanicStrip({ mechanics }: { mechanics: MechanicRow[] }) {
+interface Props {
+  mechanics: MechanicRow[];
+  exPerDiv: number | null;
+  /** After a pace is saved or cleared: reload, so Div/hour comes from the server. */
+  onSpeedSaved: () => void;
+}
+
+/** Mechanic baskets by 7d heat — the top six as art chips, the rest behind one toggle; a chip opens its pace editor. */
+export function MechanicStrip({ mechanics, exPerDiv, onSpeedSaved }: Props) {
   const [all, setAll] = useState(false);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const chips = useRef(new Map<string, HTMLButtonElement>());
+  const editorId = useId();
   if (mechanics.length === 0) {
     return <p className="text-sm text-neutral-400">No mechanic heat yet — it appears after the first price poll.</p>;
   }
   const shown = all ? mechanics : mechanics.slice(0, TOP);
+  // an editor whose chip is not on screen (collapsed to top six, or gone cold) is closed with it
+  const open = shown.find((m) => m.category === openKey) ?? null;
+  const close = (): void => {
+    if (openKey) chips.current.get(openKey)?.focus();
+    setOpenKey(null);
+  };
+  const toggleAll = (): void => {
+    if (all && openKey && !mechanics.slice(0, TOP).some((m) => m.category === openKey)) setOpenKey(null);
+    setAll((v) => !v);
+  };
   return (
-    <section data-tour="farm" aria-label="Mechanics by 7-day basket heat" className="flex flex-wrap items-center gap-2">
-      {shown.map((m) => (
-        <MechanicChip key={m.category} m={m} />
-      ))}
-      {mechanics.length > TOP && (
-        <button type="button" onClick={() => setAll((v) => !v)} className="rounded px-1 text-sm text-neutral-400 hover:text-neutral-100">
-          {all ? `top ${TOP}` : `all ${mechanics.length}`}
-        </button>
-      )}
+    <section data-tour="farm" aria-label="Mechanics by 7-day basket heat" className="grid gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {shown.map((m) => (
+          <MechanicChip
+            key={m.category}
+            m={m}
+            exPerDiv={exPerDiv}
+            open={m.category === open?.category}
+            editorId={editorId}
+            onToggle={() => setOpenKey((k) => (k === m.category ? null : m.category))}
+            buttonRef={(el) => {
+              if (el) chips.current.set(m.category, el);
+              else chips.current.delete(m.category);
+            }}
+          />
+        ))}
+        {mechanics.length > TOP && (
+          <button type="button" onClick={toggleAll} className="rounded px-1 text-sm text-neutral-400 hover:text-neutral-100">
+            {all ? `top ${TOP}` : `all ${mechanics.length}`}
+          </button>
+        )}
+      </div>
+      {open && <MechanicSpeedEditor key={open.category} id={editorId} m={open} exPerDiv={exPerDiv} onSaved={onSpeedSaved} onClose={close} />}
     </section>
   );
 }

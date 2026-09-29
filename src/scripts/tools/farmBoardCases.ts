@@ -11,7 +11,7 @@ import type { Tier } from "../../core/tools/bossEv/schema";
 import { farmResponseSchema } from "../../lib/farmContract";
 import type { BossView } from "../../lib/tools/bossEvContract";
 
-type Inputs = (overrides?: Partial<Record<string, number>>) => PriceInputs;
+export type Inputs = (overrides?: Partial<Record<string, number>>) => PriceInputs;
 
 const close = (actual: number | null, expected: number, what: string): void =>
   assert.ok(actual != null && Math.abs(actual - expected) < 1e-9, `${what}: expected ${expected}, got ${actual}`);
@@ -47,12 +47,12 @@ function testMetrics(tier: Tier, inputs: Inputs): void {
   assert.equal(noChase.chaseDiv, 0);
 }
 
-const rank = (category: string, change: number, driver: string): FarmRank => ({
+export const rank = (category: string, change: number, driver: string): FarmRank => ({
   category, label: category, hint: "", signal: change >= 30 ? "HOT" : "COLD", wAvgChange7d: change, basketValueDiv: 1, itemCount: 1,
   drivers: [{ item: driver, change7d: change, valueDiv: 1, volume: 100 }],
 });
 
-function view(id: string, tier: Tier, inputs: PriceInputs): BossView {
+export function view(id: string, tier: Tier, inputs: PriceInputs): BossView {
   return { id, name: id, mechanic: "M", accessChain: "x", icon: null, sources: [], tiers: [bossEv(tier, priceLookup(inputs))] };
 }
 
