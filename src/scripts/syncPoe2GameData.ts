@@ -207,7 +207,7 @@ async function fetchWithRetry(url: string): Promise<Response> {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       const response = await fetch(url, {
-        headers: { "User-Agent": "poe2-flip-assistant-data-sync/1.0" },
+        headers: { "User-Agent": "poe2-coach-data-sync/1.0" },
         signal: AbortSignal.timeout(120_000),
       });
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);

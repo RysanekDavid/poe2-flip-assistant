@@ -1,6 +1,6 @@
-# PoE2 Flip Assistant
+# PoE2 Coach
 
-PoE2 Flip Assistant helps endgame Path of Exile 2 players decide whether to investigate a
+PoE2 Coach helps endgame Path of Exile 2 players decide whether to investigate a
 market flip, a curated craft, or a farming basket. It combines observed market data, manual
 trade comparables, deterministic item inspection, and an evidence-linked read-only Coach.
 It never buys, sells, whispers, clicks, or controls the game.

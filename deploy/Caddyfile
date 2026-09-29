@@ -1,4 +1,4 @@
-# Caddy reverse proxy for PoE2 Flip Assistant.
+# Caddy reverse proxy for PoE2 Coach.
 # Caddy terminates TLS and proxies to the Next.js server on 127.0.0.1:3000.
 #
 # SITE_ADDRESS must be a public DNS name. Caddy's default Automatic HTTPS obtains and renews a

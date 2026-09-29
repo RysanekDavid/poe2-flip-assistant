@@ -1,1 +1,1 @@
-"""PoE2 Flip Coach backend package."""
+"""PoE2 Coach backend package."""

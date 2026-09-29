@@ -1,4 +1,4 @@
-# PoE2 Flip Assistant — obsolete historical bootstrap spec
+# PoE2 Coach (formerly PoE2 Flip Assistant) — obsolete historical bootstrap spec
 
 > **STOP — read [`AGENTS.md`](AGENTS.md) first.** It is the current contract for agents: stack,
 > commands (including every CI test), architecture map, conventions, deploy notes and the KB claim

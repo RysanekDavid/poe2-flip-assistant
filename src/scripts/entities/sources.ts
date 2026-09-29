@@ -13,7 +13,7 @@ const TRADE_STATIC_URL = "https://www.pathofexile.com/api/trade2/data/static";
 // Unique art and base types do not depend on the league; Standard lists every unique scout has seen.
 const SCOUT_UNIQUES_URL = "https://api.poe2scout.com/poe2/Leagues/Standard/Items";
 // Honest, descriptive agent: no browser spoofing and no personal contact in a committed file.
-const USER_AGENT = "poe2-flip-assistant-entity-sync/1.0 (read-only static data)";
+const USER_AGENT = "poe2-coach-entity-sync/1.0 (read-only static data)";
 
 export const tradeStaticSchema = z.object({
   result: z.array(

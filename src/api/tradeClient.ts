@@ -68,7 +68,7 @@ function authHeaders(cred: TradeCred): Record<string, string> {
   const contact = cred.contact ? ` (${cred.contact})` : "";
   return {
     "Content-Type": "application/json",
-    "User-Agent": `poe2-flip-assistant/0.1 read-only price-check${contact}`,
+    "User-Agent": `poe2-coach/0.1 read-only price-check${contact}`,
     Cookie: `POESESSID=${cred.poesessid}`,
   };
 }

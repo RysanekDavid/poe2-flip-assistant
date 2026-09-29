@@ -101,7 +101,7 @@ let cache: { at: number; league: string; rates: ScoutRates; items: ScoutItem[] }
  * blocking blind. Verified live: api.poe2scout.com answers 200 to this UA (2026-09-26).
  */
 const SCOUT_CONTACT = config.dataSourceContact;
-const SCOUT_USER_AGENT = `poe2-flip-assistant/1.0${SCOUT_CONTACT ? ` (contact: ${SCOUT_CONTACT})` : ""}`;
+const SCOUT_USER_AGENT = `poe2-coach/1.0${SCOUT_CONTACT ? ` (contact: ${SCOUT_CONTACT})` : ""}`;
 
 async function get<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   let raw: unknown;

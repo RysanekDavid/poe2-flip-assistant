@@ -75,7 +75,7 @@ export function DesktopNotifyControl({ perm, request }: { perm: NotifyPermission
   const test = (): void => {
     playChime();
     if (perm === "granted") {
-      new Notification("PoE2 Flip — test", { body: "Desktop popups work. Snipes will look like this.", tag: "poe2flip-test" });
+      new Notification("PoE2 Coach — test", { body: "Desktop popups work. Snipes will look like this.", tag: "poe2flip-test" });
     }
   };
   return (

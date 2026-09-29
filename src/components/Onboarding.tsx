@@ -108,7 +108,7 @@ function Welcome({ name, mode, onDismiss, onTour }: WelcomeProps) {
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold">Welcome, {name} 👋</h2>
-            <p className="text-sm text-neutral-500">PoE2 Flip Assistant — quick orientation</p>
+            <p className="text-sm text-neutral-500">PoE2 Coach — quick orientation</p>
           </div>
           <button onClick={onDismiss} aria-label="Close" className="text-neutral-500 hover:text-neutral-200">
             <X className="h-5 w-5" />

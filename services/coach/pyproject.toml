@@ -1,5 +1,5 @@
 [project]
-name = "poe2-flip-coach"
+name = "poe2-coach"
 version = "0.1.0"
 description = "Internal LangGraph coach for the PoE2 trading application."
 requires-python = ">=3.13"

@@ -25,7 +25,7 @@ export async function testNinjaUserAgent(): Promise<void> {
   assert.equal(calls.length, 1);
   const headers = (calls[0]?.cfg?.headers ?? {}) as Record<string, unknown>;
   assert.equal(headers["User-Agent"], NINJA_USER_AGENT);
-  assert.match(NINJA_USER_AGENT, /^poe2-flip-assistant\/1\.0( \(contact: .+\))?$/);
+  assert.match(NINJA_USER_AGENT, /^poe2-coach\/1\.0(\(contact: .+\))?$/);
   if (config.dataSourceContact) assert.ok(NINJA_USER_AGENT.includes(config.dataSourceContact), "contact included when configured");
   // Cloudflare edge rule: the same-site Referer stays exactly as before, only the UA changed.
   assert.equal(headers.Referer, "https://poe.ninja/poe2/economy/uatestleague/currency", "league-specific same-site Referer kept");

@@ -1,5 +1,5 @@
 [Unit]
-Description=PoE2 Flip Assistant - monthly SQLite WAL checkpoint + VACUUM
+Description=PoE2 Coach - monthly SQLite WAL checkpoint + VACUUM
 # Runs beside the live web + poller: waits up to --wait seconds for the write lock and exits
 # non-zero (unit failed, visible in systemctl --failed) instead of skipping when it can't get it.
 
