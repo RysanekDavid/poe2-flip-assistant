@@ -6,27 +6,29 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { TAB_IDS, TABS } from "../../components/shell/tabRegistry";
+import type { BossArt } from "../../core/tools/bossEv/art";
 import { bossEv, evaluateBosses, jackpotOf } from "../../core/tools/bossEv/ev";
 import { breakEvenHeadline, capTone, fmtDiv, oneIn } from "../../core/tools/bossEv/headline";
 import { loadPriceInputs, priceLookup, referencedNinjaIds, resolvePrice, type PriceInputs } from "../../core/tools/bossEv/pricing";
+import { rawBossLoot } from "../../core/tools/bossEv/curated";
 import { comparePatch, parseBossLoot, patchWarning, type Tier } from "../../core/tools/bossEv/schema";
 import { insertSnapshots } from "../../db/marketQueries";
 import { getDb } from "../../db/database";
 import { buildFarmBoard } from "../../core/farm/farmBoard";
 import { farmResponseSchema } from "../../lib/farmContract";
 import { patchCoverageSchema } from "../../sources/patchNotes/contracts";
-import { runCuratedCases, runLineageUnpricedCase } from "./bossLootCases";
+import { runCuratedCases, runLineagePricingCase } from "./bossLootCases";
 import { runFarmBoardCases } from "./farmBoardCases";
+import { runFarmOverhaulCases } from "./farmOverhaulCases";
 import { runFarmSpeedCases, runFarmSpeedDbCases } from "./farmSpeedCases";
 import { assertPanelExport, freshToolsDb } from "./toolsTestKit";
 
 const NOW = Date.parse("2026-09-28T12:00:00Z");
+const ART: BossArt = new Map();
 const close = (actual: number, expected: number, what: string): void =>
   assert.ok(Math.abs(actual - expected) < 1e-9, `${what}: expected ${expected}, got ${actual}`);
 
-function readCurated(): unknown {
-  return JSON.parse(readFileSync(join(process.cwd(), "src/data/poe2/bosses/boss-loot.json"), "utf8")) as unknown;
-}
+const readCurated = (): Record<string, unknown> => rawBossLoot();
 
 function testCuratedFile(): void {
   const file = parseBossLoot(readCurated());
@@ -56,13 +58,14 @@ function testCuratedFile(): void {
     assert.ok(ids.has(id), `referenced ninja ids include ${id}`);
   }
   runCuratedCases(file);
+  runFarmOverhaulCases(file);
 }
 
 /** Mutate a fresh copy of the curated file and expect the strict parse to reject it. */
 function rejects(what: string, mutate: (raw: { bosses: Array<Record<string, unknown> & { tiers: Array<{ loot: Array<Record<string, unknown>> }> }> } & Record<string, unknown>) => void): void {
   const raw = readCurated() as Parameters<typeof mutate>[0];
   mutate(raw);
-  assert.throws(() => parseBossLoot(raw), /boss-loot\.json invalid/, what);
+  assert.throws(() => parseBossLoot(raw), /boss loot tables invalid/, what);
 }
 
 function firstLoot(raw: Parameters<Parameters<typeof rejects>[1]>[0]): Record<string, unknown> {
@@ -124,7 +127,7 @@ const SRC = { title: "synthetic", url: "https://example.com/s", accessed: "2026-
 function syntheticInputs(overrides: Partial<Record<string, number>> = {}): PriceInputs {
   const base: Record<string, number> = { a: 1, b: 5, c: 1, g: 1, p: 10, r: 40, u: 100, ...overrides };
   const ninja = new Map(Object.entries(base).map(([id, div]) => [id, { div, name: id.toUpperCase(), icon: null, ageHours: 0.5, volume: div * 10 }]));
-  return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, nowMs: NOW };
+  return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), nowMs: NOW };
 }
 
 const TIER: Tier = {
@@ -146,7 +149,7 @@ const TIER: Tier = {
 };
 
 function testSyntheticTier(): void {
-  const r = bossEv(TIER, priceLookup(syntheticInputs()));
+  const r = bossEv(TIER, priceLookup(syntheticInputs()), ART);
   // Entry: 2×A = 2 bought; B buys at 5 but crafts from 2×C = 2 → craft wins.
   const [a, b] = r.entryLines;
   assert.ok(a && b);
@@ -173,7 +176,7 @@ function testSyntheticTier(): void {
 }
 
 function testBreakEvenAndJackpot(): void {
-  const r = bossEv(TIER, priceLookup(syntheticInputs()));
+  const r = bossEv(TIER, priceLookup(syntheticInputs()), ART);
   assert.deepEqual(r.breakEven.map((b) => b.name), ["U", "R", "P", "M"], "chase (priciest) first, guaranteed excluded");
   const chase = r.breakEven[0];
   assert.ok(chase);
@@ -190,22 +193,22 @@ function testBreakEvenAndJackpot(): void {
   assert.equal(sure.p, 1, "a guaranteed drop worth the entry makes the jackpot certain");
   assert.deepEqual(jackpotOf(r.loot, 0).items, [], "no entry cost → no jackpot threshold");
 
-  const covered = bossEv({ ...TIER, entry: [{ itemId: "a", qty: 0.5 }] }, priceLookup(syntheticInputs()));
+  const covered = bossEv({ ...TIER, entry: [{ itemId: "a", qty: 0.5 }] }, priceLookup(syntheticInputs()), ART);
   assert.ok(covered.breakEven.every((b) => b.pStarNet === 0), "guaranteed loot already covers the entry");
 }
 
 function testEntryEdgeCases(): void {
-  const cheapBuy = bossEv(TIER, priceLookup(syntheticInputs({ b: 1.5 })));
+  const cheapBuy = bossEv(TIER, priceLookup(syntheticInputs({ b: 1.5 })), ART);
   assert.deepEqual([cheapBuy.entryLines[1]?.route, cheapBuy.entryLines[1]?.costDiv], ["buy", 1.5], "buy wins when cheaper");
 
   const noPart = syntheticInputs();
   (noPart.ninja as Map<string, unknown>).delete("c");
-  const partless = bossEv(TIER, priceLookup(noPart));
+  const partless = bossEv(TIER, priceLookup(noPart), ART);
   assert.deepEqual([partless.entryLines[1]?.craftDiv, partless.entryLines[1]?.route], [null, "buy"], "unpriced recipe part → no craft route");
 
   const missing = syntheticInputs();
   (missing.ninja as Map<string, unknown>).delete("a");
-  const incomplete = bossEv(TIER, priceLookup(missing));
+  const incomplete = bossEv(TIER, priceLookup(missing), ART);
   assert.equal(incomplete.entryComplete, false);
   assert.equal(incomplete.entryLines[0]?.costDiv, null);
   assert.equal(incomplete.entryLines[0]?.name, "a", "unpriced entry falls back to its id");
@@ -271,7 +274,7 @@ const loot = (name: string, itemId: string, rate: LootSpec["rate"], confidence: 
 });
 /** Entry 4 (as TIER), guaranteed G worth 1 unless replaced. */
 const headlineOf = (lines: LootSpec[], prices: Partial<Record<string, number>> = {}, entry: Tier["entry"] = TIER.entry) =>
-  breakEvenHeadline(bossEv({ ...TIER, entry, loot: lines }, priceLookup(syntheticInputs(prices))), 400);
+  breakEvenHeadline(bossEv({ ...TIER, entry, loot: lines }, priceLookup(syntheticInputs(prices)), ART), 400);
 
 function testHeadlines(): void {
   const G = loot("G", "g", { kind: "guaranteed" }, "confirmed");
@@ -312,8 +315,8 @@ function testHeadlines(): void {
 
 function testCuratedEvaluates(): void {
   const file = parseBossLoot(readCurated());
-  const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, nowMs: NOW };
-  const bosses = evaluateBosses(file, priceLookup(empty));
+  const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), nowMs: NOW };
+  const bosses = evaluateBosses(file, priceLookup(empty), ART);
   const rows = buildFarmBoard([], bosses, 0);
   const payload = {
     computedLeague: "L", mechanics: [], bosses: rows, details: bosses, dataAsOf: file.dataAsOf, patch: file.patch,
@@ -338,7 +341,7 @@ testEntryEdgeCases();
 testPricing();
 testDbPricing();
 runFarmSpeedDbCases(getDb(), NOW);
-runLineageUnpricedCase(parseBossLoot(readCurated()));
+runLineagePricingCase(parseBossLoot(readCurated()));
 testPatchWarning();
 testHeadlines();
 testCuratedEvaluates();
@@ -348,7 +351,8 @@ assertPanelExport("src/components/farm/FarmBoard.tsx", "FarmBoard", "src/compone
 assert.deepEqual(TABS.map((t) => t.id), [...TAB_IDS], "tab nav order must match TAB_IDS, each id once");
 assert.equal(new Set(TABS.map((t) => t.label)).size, TABS.length, "tab labels must be distinct");
 console.log(
-  "ALL PASS — boss-loot strict schema + dated sources + ninja category coverage, 2026-09-29 audit corrections, lineage gems unpriced, " +
+  "ALL PASS — boss-loot strict schema + dated sources + ninja category coverage, 2026-09-29 audit corrections, lineage gems priced from scout's lineage list (0 / absent → unpriced), " +
+    "curated poecdn art, omen-pool range, floor fallback + EV confidence wording, loot sort, Tul & Esh + Uhtred rows, " +
     "synthetic EV (guaranteed/point/range/unknown/unpriced/manual), floor/chase/P(lose)/liquidity metrics, farm board order + contract, " +
     "farm Div/hour by own pace (bounds, nulls, PUT validation, per-user rows, loadFarmBoard), " +
     "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, panel wiring",

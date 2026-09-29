@@ -2,21 +2,64 @@
 
 import { ExternalLink } from "lucide-react";
 import { fmtDiv, fmtRate } from "../../core/tools/bossEv/headline";
+import { sortLoot } from "../../core/tools/bossEv/rowText";
 import type { LootLineView } from "../../lib/tools/bossEvContract";
 import { DataTable, type Column } from "../ui/DataTable";
+import { ItemArt } from "../ui/ItemArt";
 import { PriceChip } from "../ui/PriceChip";
-import { ConfidenceChip } from "./farmView";
+import { artSrc } from "./farmArt";
+import { CONFIDENCE_HINT, LineageBadge } from "./farmView";
+
+function DropCell({ line }: { line: LootLineView }) {
+  return (
+    <span className="flex items-center gap-2">
+      <ItemArt src={artSrc(line.icon)} size={8} />
+      <span className="text-neutral-100">{line.name}</span>
+      {line.lineage && <LineageBadge />}
+    </span>
+  );
+}
+
+/** A pool pick: its cheapest member (what EV counts), with the spread and coverage in the title. */
+function PoolPrice({ line, exPerDiv }: { line: LootLineView; exPerDiv: number | null }) {
+  const pool = line.pool;
+  if (!pool) return null;
+  const rate = exPerDiv ?? 0;
+  const missing = pool.unpricedMembers.length > 0 ? `\nnot on poe.ninja: ${pool.unpricedMembers.join(", ")}` : "";
+  const title = `at least one random pick, weights unpublished — EV and floor count one, at the cheapest member\nmin ${fmtDiv(pool.minDiv, rate)} · median ${fmtDiv(pool.medianDiv, rate)} · max ${fmtDiv(pool.maxDiv, rate)}\n${pool.priced} of ${pool.total} members priced${missing}`;
+  return (
+    <span className="inline-flex items-center gap-1 text-sm tabular-nums text-neutral-100" title={title}>
+      {fmtDiv(pool.minDiv, rate)} – {fmtDiv(pool.maxDiv, rate)}
+    </span>
+  );
+}
 
 function PriceCell({ line, exPerDiv }: { line: LootLineView; exPerDiv: number | null }) {
+  if (line.pool) return <PoolPrice line={line} exPerDiv={exPerDiv} />;
   if (!line.price) {
-    const why = line.unpricedReason ?? "no market price found";
     return (
-      <span className="text-neutral-400" title={`${why} — left out of EV, never counted as 0`}>
-        {line.lineage ? "unpriced · lineage gem" : "unpriced"}
+      <span className="text-sm text-neutral-400" title={`${line.unpricedReason ?? "no market price"} — left out of EV, never counted as 0`}>
+        unpriced
       </span>
     );
   }
   return <PriceChip div={line.price.div} exPerDiv={exPerDiv} source={line.price.source} ageMin={line.price.ageHours == null ? undefined : line.price.ageHours * 60} />;
+}
+
+/** The sourced rate, or a rarity label when no number is published; both sources and confidence on hover. */
+function RateCell({ line }: { line: LootLineView }) {
+  const unknown = line.rate.kind === "unknown";
+  const text = unknown && line.rarity ? line.rarity.label : fmtRate(line.rate);
+  const weak = line.confidence === "conflicting" || line.confidence === "unverified";
+  const rateLine = unknown ? "no published rate" : `per-kill rate as ${line.source.title} states it`;
+  const rarityLine = line.rarity ? `\n${line.rarity.source.title} labels it "${line.rarity.label}"` : "";
+  const title = `${rateLine}${rarityLine}\n${CONFIDENCE_HINT[line.confidence]}`;
+  return (
+    <span className={`text-sm tabular-nums ${unknown ? "text-neutral-400" : "text-neutral-200"}`} title={title}>
+      {text}
+      {weak && <span className="text-amber-300"> ?</span>}
+    </span>
+  );
 }
 
 function evText(line: LootLineView, exPerDiv: number): { text: string; title: string } {
@@ -27,17 +70,13 @@ function evText(line: LootLineView, exPerDiv: number): { text: string; title: st
   return { text: "—", title: line.price == null ? "no price — excluded from EV" : "no known rate — excluded from EV" };
 }
 
+const host = (url: string): string => new URL(url).hostname.replace(/^www\./, "");
+
 function columns(exPerDiv: number | null): Column<LootLineView>[] {
   return [
-    { key: "name", header: "Drop", cell: (l) => <span className="text-neutral-100">{l.name}</span> },
-    { key: "price", header: "Price", align: "right", tip: "poe.ninja for exchange items, poe2scout (cheapest listing, any roll) for uniques", cell: (l) => <PriceCell line={l} exPerDiv={exPerDiv} /> },
-    {
-      key: "rate",
-      header: "Rate",
-      align: "right",
-      tip: "per-kill drop rate as the cited source states it",
-      cell: (l) => <span className={`tabular-nums ${l.rate.kind === "unknown" ? "text-neutral-500" : "text-neutral-200"}`}>{fmtRate(l.rate)}</span>,
-    },
+    { key: "name", header: "Drop", cell: (l) => <DropCell line={l} /> },
+    { key: "price", header: "Price", align: "right", tip: "poe.ninja for exchange items, poe2scout for uniques and lineage gems; unpriced drops are left out of EV, never counted as 0", cell: (l) => <PriceCell line={l} exPerDiv={exPerDiv} /> },
+    { key: "rate", header: "Rate", align: "right", tip: "per-kill drop rate as the cited source states it, or its rarity label when it gives no number. ? = sources disagree or the rate is unverified", cell: (l) => <RateCell line={l} /> },
     {
       key: "ev",
       header: "EV / kill",
@@ -51,21 +90,20 @@ function columns(exPerDiv: number | null): Column<LootLineView>[] {
         );
       },
     },
-    { key: "conf", header: "Confidence", cell: (l) => <ConfidenceChip confidence={l.confidence} /> },
     {
       key: "src",
       header: "Source",
       cell: (l) => (
-        <a href={l.source.url} target="_blank" rel="noreferrer" title={l.source.title} className="inline-flex items-center gap-1 text-xs text-sky-400 hover:underline">
+        <a href={l.source.url} target="_blank" rel="noreferrer" title={`${l.source.title} — checked ${l.source.accessed}`} className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-100">
           <ExternalLink aria-hidden className="h-3 w-3" />
-          checked {l.source.accessed}
+          {host(l.source.url)}
         </a>
       ),
     },
   ];
 }
 
-/** Every drop of one tier: price with source + age, sourced rate, EV share, confidence, citation. */
+/** Every drop of one tier with art, price, rate or rarity, EV share and citation — by EV, unrated below. */
 export function LootTable({ loot, exPerDiv }: { loot: LootLineView[]; exPerDiv: number | null }) {
-  return <DataTable columns={columns(exPerDiv)} rows={loot} rowKey={(l) => l.name} emptyState={<p className="text-sm text-neutral-400">No drops listed.</p>} />;
+  return <DataTable columns={columns(exPerDiv)} rows={sortLoot(loot)} rowKey={(l) => l.name} emptyState={<p className="text-sm text-neutral-400">No drops listed.</p>} />;
 }

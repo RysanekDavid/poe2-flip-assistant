@@ -1,0 +1,72 @@
+{
+  "ninjaCategories": {
+    "ravens-reflection": "Fragments",
+    "raven-touched-shard": "SoulCores",
+    "simulacrum": "Fragments",
+    "simulacrum-splinter": "Fragments",
+    "tangmazus-reliquary-key": "Fragments"
+  },
+  "bosses": [
+    {
+      "id": "tangmazu",
+      "name": "Tangmazu, the Raven Trickster",
+      "mechanic": "Delirium",
+      "accessChain": "Clear wave 7 of a Simulacrum for a Raven's Reflection, then place it in the mirror at the Withered Willow; one Reflection is consumed per attempt. Every kill drops exactly one of six cheap uniques (Farm of Exile, modelled from 234 kills). Tangmazu's Reliquary Key drops from the Simulacrum, not from Tangmazu — see the Simulacrum row.",
+      "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5RGVsaXJpdW0iLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/1a87e735c6/TwilightOrderReliquaryKeyDelirium.png",
+      "sources": [
+        {"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},
+        {"title":"Dads of Exile — Tangmazu","url":"https://dadsofexile.com/tangmazu","accessed":"2026-09-28"},
+        {"title":"timesaver.gg — Reliquary keys guide","url":"https://timesaver.gg/blog/poe2-reliquary-keys-guide","accessed":"2026-09-29"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "Raven's Reflection",
+          "entry": [{"itemId":"ravens-reflection","qty":1,"icon":"asset:ravens-reflection"}],
+          "loot": [
+            {"name":"Raven-Touched Shard","priceRef":{"kind":"ninja","itemId":"raven-touched-shard"},"rate":{"kind":"range","lo":0.02,"hi":0.025},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"}},
+            {"name":"Trickster's Shard","priceRef":{"kind":"scout","name":"Trickster's Shard"},"rate":{"kind":"point","p":0.043},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"},"lineage":true},
+            {"name":"Tangmazu's Thurible","priceRef":{"kind":"scout","name":"Tangmazu's Thurible"},"rate":{"kind":"point","p":0.035},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"},"lineage":true},
+            {"name":"Veilpiercer","priceRef":{"kind":"scout","name":"Veilpiercer"},"rate":{"kind":"point","p":0.35},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"},"rarity":{"label":"Common","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Sadist's Mercy","priceRef":{"kind":"scout","name":"Sadist's Mercy"},"rate":{"kind":"point","p":0.3},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"}},
+            {"name":"The Auspex","priceRef":{"kind":"scout","name":"The Auspex"},"rate":{"kind":"point","p":0.17},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"}},
+            {"name":"Horror's Flight","priceRef":{"kind":"scout","name":"Horror's Flight"},"rate":{"kind":"point","p":0.1},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"}},
+            {"name":"The Raven's Flock","priceRef":{"kind":"scout","name":"The Raven's Flock"},"rate":{"kind":"point","p":0.05},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"}},
+            {"name":"Split Personality","priceRef":{"kind":"scout","name":"Split Personality"},"rate":{"kind":"point","p":0.03},"confidence":"single-source","source":{"title":"Farm of Exile — The Raven Trickster (0.5.5; rates modelled from a 234-kill 0.5.0 sample)","url":"https://farmofexile.com/poe2/article/the-raven-trickster","accessed":"2026-09-29"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "simulacrum",
+      "name": "Simulacrum",
+      "mechanic": "Delirium",
+      "accessChain": "Open a Simulacrum (or assemble one from 300 Simulacrum Splinters) and clear its waves; wave 7 guarantees a Raven's Reflection (sometimes two — counted as one), the entry to Tangmazu. Kosis, the wave-7 boss, can drop the uniques below and Tangmazu's Reliquary Key; no rates are published. The other waves' loot is not counted.",
+      "sources": [
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},
+        {"title":"timesaver.gg — Reliquary keys guide","url":"https://timesaver.gg/blog/poe2-reliquary-keys-guide","accessed":"2026-09-29"},
+        {"title":"Game8 — List of All Vault Keys (ties Tangmazu's key to the Simulacrum bosses)","url":"https://game8.co/games/Path-of-Exile-2/archives/507837","accessed":"2026-09-29"},
+        {"title":"poe2db — Kosis, The Revelation (unique list)","url":"https://poe2db.tw/us/Kosis%2C_The_Revelation","accessed":"2026-09-29"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "Simulacrum",
+          "entry": [{"itemId":"simulacrum","qty":1,"craftFrom":[{"itemId":"simulacrum-splinter","qty":300}],"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9EZWxpcml1bUZyYWdtZW50Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/9298d81279/DeliriumFragment.png"}],
+          "loot": [
+            {"name":"Raven's Reflection","priceRef":{"kind":"ninja","itemId":"ravens-reflection"},"rate":{"kind":"guaranteed"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}},
+            {"name":"Tangmazu's Reliquary Key","priceRef":{"kind":"ninja","itemId":"tangmazus-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — Reliquary keys guide","url":"https://timesaver.gg/blog/poe2-reliquary-keys-guide","accessed":"2026-09-29"},"rarity":{"label":"Extremely Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Assailum","priceRef":{"kind":"scout","name":"Assailum"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Kosis, The Revelation (unique list)","url":"https://poe2db.tw/us/Kosis%2C_The_Revelation","accessed":"2026-09-29"},"rarity":{"label":"Common","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Perfidy","priceRef":{"kind":"scout","name":"Perfidy"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Kosis, The Revelation (unique list)","url":"https://poe2db.tw/us/Kosis%2C_The_Revelation","accessed":"2026-09-29"},"rarity":{"label":"Common","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Melting Maelstrom","priceRef":{"kind":"scout","name":"Melting Maelstrom"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Kosis, The Revelation (unique list)","url":"https://poe2db.tw/us/Kosis%2C_The_Revelation","accessed":"2026-09-29"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Collapsing Horizon","priceRef":{"kind":"scout","name":"Collapsing Horizon"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Kosis, The Revelation (unique list)","url":"https://poe2db.tw/us/Kosis%2C_The_Revelation","accessed":"2026-09-29"},"rarity":{"label":"Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Strugglescream","priceRef":{"kind":"scout","name":"Strugglescream"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Kosis, The Revelation (unique list)","url":"https://poe2db.tw/us/Kosis%2C_The_Revelation","accessed":"2026-09-29"},"rarity":{"label":"Very Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Megalomaniac","priceRef":{"kind":"scout","name":"Megalomaniac"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Kosis, The Revelation (unique list)","url":"https://poe2db.tw/us/Kosis%2C_The_Revelation","accessed":"2026-09-29"},"rarity":{"label":"Very Rare (2-mod) · Extremely Rare (3-mod)","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Voices","priceRef":{"kind":"scout","name":"Voices"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},"rarity":{"label":"Extremely Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}}
+          ]
+        }
+      ]
+    }
+  ]
+}

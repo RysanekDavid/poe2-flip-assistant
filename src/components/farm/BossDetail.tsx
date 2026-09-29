@@ -8,6 +8,7 @@ import { Panel } from "../ui/Panel";
 import { PriceChip } from "../ui/PriceChip";
 import { InfoTip } from "../ui/Tooltip";
 import { TONE_CLASS } from "./farmView";
+import { artSrc } from "./farmArt";
 import { LootTable } from "./LootTable";
 
 function RouteCost({ label, div, chosen, title, exPerDiv }: { label: string; div: number | null; chosen: boolean; title: string; exPerDiv: number }) {
@@ -23,7 +24,7 @@ function EntryRow({ line, exPerDiv }: { line: EntryLineView; exPerDiv: number })
   const recipe = line.craftParts.map((p) => `${p.qty}× ${p.name}${p.price ? "" : " (unpriced)"}`).join(" + ");
   return (
     <li className="flex flex-wrap items-center gap-2 text-sm">
-      <ItemArt src={line.icon} size={6} />
+      <ItemArt src={artSrc(line.icon)} size={6} />
       <span className="text-neutral-100">
         {line.qty.toLocaleString("en-US")}× {line.name}
       </span>
@@ -45,7 +46,8 @@ function Metrics({ tier, exPerDiv }: { tier: TierResult; exPerDiv: number }) {
   const j = tier.jackpot;
   const evLower = tier.loot.some((l) => l.evDiv == null);
   // entry partly unpriced → net overstated; drops left out of EV → net understated; both → unknown
-  const netPrefix = !tier.entryComplete ? (evLower ? "? " : "≤ ") : evLower ? "≥ " : "";
+  const entryFull = tier.entryComplete && tier.unmodelledEntry == null;
+  const netPrefix = !entryFull ? (evLower ? "? " : "≤ ") : evLower ? "≥ " : "";
   return (
     <div className="grid gap-1">
       <p className={`text-base font-semibold ${TONE_CLASS[head.tone]}`} title={head.title}>
@@ -53,7 +55,7 @@ function Metrics({ tier, exPerDiv }: { tier: TierResult; exPerDiv: number }) {
       </p>
       <p className="flex flex-wrap gap-x-4 text-sm text-neutral-400">
         <span title="priced drops with a sourced rate, range rates at their low end">EV {evLower ? "≥ " : ""}{fmtDiv(tier.evDiv, exPerDiv)}</span>
-        <span>entry {tier.entryComplete ? "" : "≥ "}{fmtDiv(tier.entryDiv, exPerDiv)}</span>
+        <span>entry {entryFull ? "" : "≥ "}{fmtDiv(tier.entryDiv, exPerDiv)}</span>
         <span title="≥ lower bound (drops without a rate or price are left out) · ≤ upper bound (entry partly unpriced)">
           net {netPrefix}
           {fmtDiv(tier.netDiv, exPerDiv, true)}
@@ -99,7 +101,7 @@ export function BossDetail({ boss, tier, onTier, exPerDiv }: Props) {
     <Panel>
       <div className="grid gap-3">
         <header className="flex flex-wrap items-center gap-3">
-          <ItemArt src={boss.icon} size={8} />
+          <ItemArt src={artSrc(boss.icon)} size={8} />
           <div className="min-w-0">
             <h3 className="text-lg font-semibold text-neutral-100">{boss.name}</h3>
             <p className="flex items-center gap-1.5 text-sm text-neutral-400">
@@ -115,6 +117,11 @@ export function BossDetail({ boss, tier, onTier, exPerDiv }: Props) {
           {tier.entryLines.map((line) => (
             <EntryRow key={line.itemId} line={line} exPerDiv={exPerDiv} />
           ))}
+          {tier.unmodelledEntry && (
+            <li className="flex flex-wrap items-center gap-2 text-sm text-neutral-400" title={tier.unmodelledEntry.note}>
+              <ItemArt src={artSrc(tier.unmodelledEntry.icon ?? null)} size={6} />+ {tier.unmodelledEntry.label} — not modelled, so net is an upper bound
+            </li>
+          )}
         </ul>
         <LootTable loot={tier.loot} exPerDiv={exPerDiv > 0 ? exPerDiv : null} />
         <footer className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-400">

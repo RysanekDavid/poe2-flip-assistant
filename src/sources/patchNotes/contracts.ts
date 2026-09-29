@@ -33,7 +33,7 @@ export const patchDocumentSchema = z.object({
 });
 
 /**
- * One grammar for every hand-edited PoE2 patch version (patch-coverage.json, boss-loot.json): three
+ * One grammar for every hand-edited PoE2 patch version (patch-coverage.json, the boss loot tables): three
  * or more numeric parts plus an optional lowercase hotfix letter — 0.5.4, 0.5.4d, 0.5.4.1. It is
  * the shape the forum-title parser extracts, so a coverage bump copied from a patch thread fits.
  */

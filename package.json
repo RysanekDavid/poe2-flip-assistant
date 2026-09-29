@@ -16,6 +16,7 @@
     "probe:cx-depth": "tsx src/scripts/probeCxDepth.ts",
     "league:backfill": "tsx src/scripts/backfillLeagueStart.ts",
     "probe:fetch-stale": "tsx src/scripts/probeFetchStale.ts",
+    "probe:scout-names": "tsx src/scripts/probeScoutNames.ts",
     "test:coach": "tsx src/scripts/testCoach.ts && tsx src/scripts/testCoachHistory.ts && tsx src/scripts/testKbManifest.ts && tsx src/scripts/runWithTestEnv.ts entity-catalog && tsx src/scripts/testCoachEntities.ts && tsx src/scripts/testClaim.ts",
     "test:middleware": "tsx src/scripts/testMiddleware.ts",
     "test:demo-user": "tsx src/scripts/testAddUser.ts",

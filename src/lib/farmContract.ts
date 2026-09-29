@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { confidenceSchema } from "../core/tools/bossEv/schema";
-import { bossViewSchema } from "./tools/bossEvContract";
+import { confidenceSchema, unmodelledEntrySchema } from "../core/tools/bossEv/schema";
+import { bossViewSchema, floorDropSchema } from "./tools/bossEvContract";
 
 /**
  * GET /api/farm — the Farm tab's one payload: mechanic baskets ranked by 7d heat, pinnacle bosses
@@ -54,6 +54,16 @@ export type MechanicRow = z.infer<typeof mechanicRowSchema>;
 
 export const toneSchema = z.enum(["good", "warn", "bad", "neutral", "muted"]);
 
+/** One consumed entry item as the row shows it: art, "1× Breachlord Sac", its cost (null = unpriced). */
+export const entryChipSchema = z.object({
+  name: z.string(),
+  qty: z.number(),
+  icon: z.string().nullable(),
+  costDiv: z.number().nullable(),
+  route: z.enum(["buy", "craft"]).nullable(),
+});
+export type EntryChip = z.infer<typeof entryChipSchema>;
+
 export const bossRowSchema = z.object({
   kind: z.literal("boss"),
   id: z.string(),
@@ -63,8 +73,12 @@ export const bossRowSchema = z.object({
   tierId: z.string(),
   entryDiv: z.number(),
   entryComplete: z.boolean(),
+  entry: z.array(entryChipSchema).min(1),
+  /** A real entry cost the tool cannot price — the net is then an upper bound. */
+  unmodelledEntry: unmodelledEntrySchema.nullable(),
   entryVolume: z.number().nullable(),
   floorDiv: z.number(),
+  floorDrops: z.array(floorDropSchema),
   chaseDiv: z.number(),
   /** Conservative EV − entry over the priced, rated drops only. */
   netDiv: z.number(),
@@ -74,11 +88,14 @@ export const bossRowSchema = z.object({
   chaseOneIn: z.number().nullable(),
   pLosingRun: z.number().nullable(),
   losingRunUnknownRates: z.number().int(),
+  losingRunConfidence: confidenceSchema.nullable(),
   headline: z.object({ text: z.string(), tone: toneSchema, title: z.string() }),
   /** Weakest confidence among the lines that carry the EV; "unverified" when none has a rate. */
   confidence: confidenceSchema,
   unpriced: z.array(z.string()),
   unpricedLineage: z.number().int(),
+  /** Drops with no published rate — EV leaves them out, so it is a lower bound. */
+  unknownRate: z.number().int(),
   ...speedFields,
 });
 export type BossRow = z.infer<typeof bossRowSchema>;

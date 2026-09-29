@@ -14,11 +14,15 @@ copy it exactly).
 
 | File | Used for | Source |
 |------|----------|--------|
-| `items/waystone.png` | Farm tab, Regex › Waystone | Waystone (Tier 15): P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9FbmRnYW1lTWFwcy9FbmRnYW1lTWFwMTUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/36fdc2dffa/EndgameMap15.png` (URL from `api/trade2/data/static` entry `waystone-15`) |
+| `items/waystone.png` | Farm tab + Tul & Esh unmodelled waystones, Regex › Waystone | Waystone (Tier 15): P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9FbmRnYW1lTWFwcy9FbmRnYW1lTWFwMTUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/36fdc2dffa/EndgameMap15.png` (URL from `api/trade2/data/static` entry `waystone-15`) |
 | `items/precursor-tablet.png` | Regex › Tablet | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvUHJlY3Vyc29yVGFibGV0cy9QcmVjdXJzb3JUYWJsZXRNYXN0ZXJlZERvbWFpbiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/b9d8f1bd46/PrecursorTabletMasteredDomain.png` |
 | `items/coffer-relic.png` | Regex › Relic | Coffer Relic: `https://cdn.poe2db.tw/image/Art/2DItems/Relics/RelicBase2x2.webp` (from poe2db.tw/us/Coffer_Relic; webp → png, margin trimmed) |
 | `items/emerald-jewel.png` | Regex › Jewel | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvSmV3ZWxzL1NwZWNpYWxFbWVyYWxkSmV3ZWwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/9acdb9443b/SpecialEmeraldJewel.png` |
 | `items/gold.png` | Regex › Vendor | Gold: `https://cdn.poe2db.tw/image/Art/2DItems/Currency/Ruthless/CoinPileTier2.webp` (from poe2db.tw/us/Gold; webp → png, margin trimmed) |
+| `items/ravens-reflection.png` | Farm › Tangmazu entry, Simulacrum drop | Raven's Reflection: `https://cdn.poe2db.tw/image/Art/2DItems/Maps/TangamazuKey.webp` (no poecdn URL: ninja `image` is null, absent from trade2 data/static; webp → png, margin trimmed, squared) |
+| `items/shattered-triskelion.png` | Farm › Olroth drop | Shattered Triskelion: `https://cdn.poe2db.tw/image/Art/2DItems/QuestItems/DamagedKalguuranTriskellion.webp` (same reason and treatment, downscaled to 128 px) |
+| `items/the-triskelion-reforged.png` | Farm › Aberration entry | The Triskelion Reforged: `https://cdn.poe2db.tw/image/Art/2DItems/QuestItems/KalguuranTriskellion.webp` (same reason and treatment, downscaled to 128 px) |
+| `items/djinn-barya.png` | Farm › Zarokh entry + drop | Djinn Barya: `https://cdn.poe2db.tw/image/Art/2DItems/Currency/Sanctum/BalbalaCoin1.webp` (not on ninja or trade2 data/static; same treatment) |
 | `items/divine-orb.png` | Regex › Price | P + `WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png` |
 | `leagues/runes-of-aldur.png` | League picker | banner emblem cut from `https://web.poecdn.com/public/news/2026-05-11/RunesLogin.png` |
 | `leagues/forbidden-rites.png` | League picker | banner emblem cut from `https://web.poecdn.com/public/news/2026-08-31/ForbiddenRitesLoginScreen.png` |

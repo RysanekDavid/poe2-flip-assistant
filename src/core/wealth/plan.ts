@@ -35,7 +35,7 @@ export interface PlanContext {
   ninjaByName: ReadonlyMap<string, PricedItem>;
   /** Exchange stats per ninja item id (cxItemMarkets view); empty when there is no fresh history. */
   cxByItemId: ReadonlyMap<string, CxItemStats>;
-  /** poe2scout unique value (Div per unit) per lowercased name. */
+  /** poe2scout value (Div per unit) per lowercased name: uniques and lineage support gems (priced rows only). */
   uniqueDiv: ReadonlyMap<string, number>;
   /** Fair value (Div per unit) from your own listing's trade2 comparables, per lowercased name. */
   compDiv: ReadonlyMap<string, number>;

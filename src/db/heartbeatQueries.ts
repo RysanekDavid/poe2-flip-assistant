@@ -58,3 +58,8 @@ export function listHeartbeats(db: Database.Database = getDb()): HeartbeatRow[] 
     .all();
   return z.array(HeartbeatRowSchema).parse(rows);
 }
+
+/** Drop one heartbeat row (a loop that moved to per-league rows leaves its global row behind). Returns rows deleted. */
+export function deleteHeartbeat(name: string, league: string, db: Database.Database = getDb()): number {
+  return db.prepare("DELETE FROM subsystem_heartbeat WHERE name = ? AND league = ?").run(name, league).changes;
+}

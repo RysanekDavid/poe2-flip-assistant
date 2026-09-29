@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { CATEGORIES } from "../../../api/types";
 import { PATCH_VERSION_RE } from "../../../sources/patchNotes/contracts";
+import { localArtId } from "./localArt";
 
 /*
- * Curated pinnacle-boss data (src/data/poe2/bosses/boss-loot.json). Every schema is .strict() so a
+ * Curated pinnacle-boss data (src/data/poe2/bosses/loot/*.json, assembled by curated.ts). Every schema is .strict() so a
  * typo'd key in the hand-edited file fails loudly instead of silently dropping a loot line.
  * Plain zod only (no node/DB imports): the client contract re-uses these schemas.
  */
@@ -24,15 +25,30 @@ export const sourceSchema = z
   .strict();
 export type Source = z.infer<typeof sourceSchema>;
 
-export const confidenceSchema = z.enum(["confirmed", "single-source", "unverified"]);
+/** `conflicting`: two sources give different rates for the same drop — neither is trusted over the other. */
+export const confidenceSchema = z.enum(["confirmed", "single-source", "conflicting", "unverified"]);
 export type Confidence = z.infer<typeof confidenceSchema>;
 
 /**
- * Where a loot line's price comes from. `unpriced` exists for lines no market can value — e.g. a
- * random pick from a 17-omen pool — so they stay visible (and counted) instead of being dropped.
+ * Hand-set art: a poecdn URL (the Caddy CSP img-src allows *.poecdn.com) or an "asset:<id>" token
+ * for the few items with no official URL (localArt.ts). Used where poe.ninja has no image or does
+ * not list the item at all.
+ */
+export const artUrlSchema = z
+  .string()
+  .refine((s) => /^https:\/\/web\.poecdn\.com\/gen\/image\//.test(s) || localArtId(s) != null, "expected a web.poecdn.com/gen/image URL or a known asset: token");
+
+const poolMemberSchema = z.object({ itemId: z.string().min(1), name: z.string().min(1) }).strict();
+
+/**
+ * Where a loot line's price comes from. `pool` is one random pick from a set of exchange items with
+ * unpublished weights (the King's omen): it prices as a min/median/max range, and every single
+ * number shown uses the minimum. `unpriced` exists for lines no market can value, so they stay
+ * visible (and counted) instead of being dropped.
  */
 export const priceRefSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("ninja"), itemId: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal("pool"), members: z.array(poolMemberSchema).min(2) }).strict(),
   z.object({ kind: z.literal("scout"), name: z.string().min(1) }).strict(),
   z.object({ kind: z.literal("manual"), div: z.number().positive(), asOf: isoDay }).strict(),
   z.object({ kind: z.literal("unpriced"), reason: z.string().min(1) }).strict(),
@@ -50,6 +66,9 @@ export const rateSchema = z
   .refine((r) => r.kind !== "range" || r.lo <= r.hi, "range lo must be ≤ hi");
 export type Rate = z.infer<typeof rateSchema>;
 
+export const rarityLabelSchema = z.object({ label: z.string().min(1), source: sourceSchema }).strict();
+export type RarityLabel = z.infer<typeof rarityLabelSchema>;
+
 export const lootLineSchema = z
   .object({
     name: z.string().min(1),
@@ -57,8 +76,13 @@ export const lootLineSchema = z
     rate: rateSchema,
     confidence: confidenceSchema,
     source: sourceSchema,
-    /** A Lineage support gem: poe2scout rarely lists them, so the board counts them apart when unpriced. */
+    /** A Lineage support gem, priced from poe2scout's lineage list (not its uniques list). */
     lineage: z.literal(true).optional(),
+    /**
+     * A qualitative rarity label ("Very Rare") verbatim from its own source, which may differ from
+     * the rate's — shown where no numeric rate exists, and beside one that it contradicts.
+     */
+    rarity: rarityLabelSchema.optional(),
   })
   .strict();
 export type LootLine = z.infer<typeof lootLineSchema>;
@@ -73,15 +97,26 @@ export const entryLineSchema = z
     name: z.string().min(1).optional(),
     qty: z.number().positive(),
     craftFrom: z.array(craftPartSchema).min(1).optional(),
+    /** Hand-set art for an entry poe.ninja shows without an image (or does not list). */
+    icon: artUrlSchema.optional(),
   })
   .strict();
 export type EntryLine = z.infer<typeof entryLineSchema>;
+
+/**
+ * A cost an attempt really has but the tool cannot price (e.g. the waystones for every map of a
+ * Breach Stronghold, count unverified). Its presence makes the entry a lower bound and the net an
+ * upper bound — never a quiet omission.
+ */
+export const unmodelledEntrySchema = z.object({ label: z.string().min(1), note: z.string().min(1), icon: artUrlSchema.optional() }).strict();
+export type UnmodelledEntry = z.infer<typeof unmodelledEntrySchema>;
 
 export const tierSchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
     label: z.string().min(1),
     entry: z.array(entryLineSchema).min(1),
+    unmodelledEntry: unmodelledEntrySchema.optional(),
     loot: z.array(lootLineSchema).min(1),
   })
   .strict();
@@ -93,11 +128,22 @@ export const bossSchema = z
     name: z.string().min(1),
     mechanic: z.string().min(1),
     accessChain: z.string().min(1),
+    /** Hand-set boss art; without it the row shows its first entry item's art. */
+    icon: artUrlSchema.optional(),
     sources: z.array(sourceSchema).min(1),
     tiers: z.array(tierSchema).min(1),
   })
   .strict();
 export type Boss = z.infer<typeof bossSchema>;
+
+/** Exchange ids a tier's loot prices from poe.ninja: plain ninja lines and every pool member. */
+export function lootNinjaIds(loot: readonly LootLine[]): string[] {
+  return loot.flatMap((l) => {
+    if (l.priceRef.kind === "ninja") return [l.priceRef.itemId];
+    if (l.priceRef.kind === "pool") return l.priceRef.members.map((m) => m.itemId);
+    return [];
+  });
+}
 
 const NINJA_TYPES: readonly string[] = CATEGORIES.map((c) => c.type);
 /** A poe.ninja exchange type the poller fetches, or null for an item ninja does not list at all. */
@@ -126,7 +172,7 @@ function checkNinjaCategories(file: { ninjaCategories: Record<string, string | n
         need(line.itemId, boss.id, false);
         for (const part of line.craftFrom ?? []) need(part.itemId, boss.id, true);
       }
-      for (const loot of tier.loot) if (loot.priceRef.kind === "ninja") need(loot.priceRef.itemId, boss.id, true);
+      for (const id of lootNinjaIds(tier.loot)) need(id, boss.id, true);
     }
   }
   for (const id of declared.keys()) {
@@ -162,7 +208,7 @@ export function parseBossLoot(raw: unknown): BossLootFile {
   const parsed = bossLootFileSchema.safeParse(raw);
   if (!parsed.success) {
     const issues = parsed.error.issues.slice(0, 5).map((i) => `${i.path.join(".")}: ${i.message}`);
-    throw new Error(`boss-loot.json invalid — ${issues.join("; ")}`);
+    throw new Error(`boss loot tables invalid — ${issues.join("; ")}`);
   }
   return parsed.data;
 }

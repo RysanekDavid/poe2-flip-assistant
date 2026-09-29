@@ -217,28 +217,78 @@ export function upsertItemValues(
   tx(rows);
 }
 
-/** name(lowercased) → unit Div value in one league, from the valuation cache. */
-export function uniqueValueMap(league: string): Map<string, number> {
+/** item_values source tags: poe2scout uniques, and lineage gems (a scout currency category). */
+export const SCOUT_UNIQUE_SOURCE = "scout";
+export const SCOUT_LINEAGE_SOURCE = "scout-lineage";
+export type ScoutValueSource = typeof SCOUT_UNIQUE_SOURCE | typeof SCOUT_LINEAGE_SOURCE;
+
+/**
+ * name(lowercased) → unit Div value, priced rows only (value 0 = "listed, no current price" is kept
+ * for coverage reporting but never read as a value). No `sources` = uniques and lineage gems.
+ */
+function scoutValues(league: string, sources: readonly ScoutValueSource[]): Map<string, number> {
   const m = new Map<string, number>();
+  const marks = sources.map(() => "?").join(", ");
   for (const r of getDb()
-    .prepare("SELECT name_key, value_div FROM item_values WHERE league = ?")
-    .all(league) as Array<{ name_key: string; value_div: number }>) {
+    .prepare(`SELECT name_key, value_div FROM item_values WHERE league = ? AND value_div > 0 AND source IN (${marks})`)
+    .all(league, ...sources) as Array<{ name_key: string; value_div: number }>) {
     m.set(r.name_key, r.value_div);
   }
   return m;
 }
 
-/** Raw sqlite UTC stamp of this league's newest valuation-cache row, or null if empty. */
-export function latestItemValuesUpdatedAt(league: string): string | null {
-  const row = getDb()
-    .prepare("SELECT MAX(updated_at) AS mx FROM item_values WHERE league = ?")
-    .get(league) as { mx: string | null };
+/**
+ * Replace one league's rows of one scout source with `rows`, in one transaction: a name scout no
+ * longer lists (or that moved to the other source) disappears instead of lingering as a stale
+ * value. Callers drop names another source already holds first — the table is keyed by name.
+ */
+export function replaceScoutValues(league: string, source: ScoutValueSource, rows: ReadonlyArray<{ nameKey: string; div: number }>): void {
+  const db = getDb();
+  const clear = db.prepare("DELETE FROM item_values WHERE league = ? AND source = ?");
+  const insert = db.prepare(
+    `INSERT INTO item_values (league, name_key, value_div, source, updated_at)
+     VALUES (@league, @nameKey, @div, @source, CURRENT_TIMESTAMP)`,
+  );
+  db.transaction(() => {
+    clear.run(league, source);
+    for (const r of rows) insert.run({ league, nameKey: r.nameKey, div: r.div, source });
+  })();
+}
+
+/** Priced poe2scout UNIQUES only — what "unique" readers (the regex namespace) may show. */
+export const uniqueValueMap = (league: string): Map<string, number> => scoutValues(league, [SCOUT_UNIQUE_SOURCE]);
+
+/** Priced lineage support gems only. */
+export const lineageValueMap = (league: string): Map<string, number> => scoutValues(league, [SCOUT_LINEAGE_SOURCE]);
+
+/** Every priced poe2scout item (uniques + lineage gems) — for valuing a stash, where both occur. */
+export const scoutValueMap = (league: string): Map<string, number> => scoutValues(league, [SCOUT_UNIQUE_SOURCE, SCOUT_LINEAGE_SOURCE]);
+
+/** Names poe2scout lists at 0 (no current price) — "listed at 0", as opposed to not listed at all. */
+export function scoutZeroKeys(league: string): Set<string> {
+  const rows = getDb().prepare("SELECT name_key FROM item_values WHERE league = ? AND value_div = 0").all(league) as Array<{ name_key: string }>;
+  return new Set(rows.map((r) => r.name_key));
+}
+
+/** Every stored key of one source, priced or not — for the uniques/lineage collision check. */
+export function scoutKeysOf(league: string, source: ScoutValueSource): Set<string> {
+  const rows = getDb().prepare("SELECT name_key FROM item_values WHERE league = ? AND source = ?").all(league, source) as Array<{ name_key: string }>;
+  return new Set(rows.map((r) => r.name_key));
+}
+
+/** Raw sqlite UTC stamp of this league's newest valuation-cache row (of one source, if given), or null. */
+export function latestItemValuesUpdatedAt(league: string, source?: ScoutValueSource): string | null {
+  const row = (
+    source == null
+      ? getDb().prepare("SELECT MAX(updated_at) AS mx FROM item_values WHERE league = ?").get(league)
+      : getDb().prepare("SELECT MAX(updated_at) AS mx FROM item_values WHERE league = ? AND source = ?").get(league, source)
+  ) as { mx: string | null };
   return row.mx ?? null;
 }
 
-/** Hours since this league's valuation cache was last refreshed, or null if empty. */
-export function itemValuesAgeHours(league: string): number | null {
-  const mx = latestItemValuesUpdatedAt(league);
+/** Hours since this league's valuation cache (or one source of it) was last refreshed, or null if empty. */
+export function itemValuesAgeHours(league: string, source?: ScoutValueSource): number | null {
+  const mx = latestItemValuesUpdatedAt(league, source);
   return mx == null ? null : timestampAgeMs(mx) / 3600_000;
 }
 
