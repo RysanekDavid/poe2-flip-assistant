@@ -8,7 +8,7 @@ import type { PricedItem } from "../api/types";
 import { signSession } from "../auth/auth";
 import { meResponse } from "../auth/meResponse";
 import { config } from "../config/env";
-import { TAB_IDS, tabMeta } from "../components/shell/tabRegistry";
+import { TAB_IDS, TABS, parseTabRoute, tabMeta } from "../components/shell/tabRegistry";
 import { tourStepsFor } from "../components/onboardingTour";
 import { entityById } from "../core/entities/load";
 import { ATLAS_CHECKLIST, CURRENCY_PRIMER, primerCards } from "../core/learn/data";
@@ -21,7 +21,8 @@ import { createUser, getUserById, type UserRow } from "../db/userQueries";
 import { CLAIM_VERDICTS, type ClaimVerdict } from "../lib/claim";
 import { entitySearchResponseSchema, isWorthPickingUp, primerResponseSchema, progressResponseSchema } from "../lib/learnContract";
 import { currentData, entitySearchUrl, type Remote } from "../lib/learnSearch";
-import { BEGINNER_TABS, BEGINNER_TOOLS, defaultTabFor, parseModeRoute, visibleTabs, visibleTools } from "../lib/navMode";
+import { BEGINNER_TABS, BEGINNER_TOOLS, defaultTabFor, parseModeRoute, subTabsFor, visibleTabs, visibleTools } from "../lib/navMode";
+import { REGEX_TABS } from "../lib/tools/regexPoolContract";
 import { scoutKey } from "../lib/scoutKey";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
@@ -106,6 +107,25 @@ function testVisibility(): void {
   assert.equal(defaultTabFor("beginner"), "learn");
   assert.equal(defaultTabFor("advanced"), "exchange");
   pass("visibleTabs / visibleTools / defaultTabFor");
+}
+
+/** The shell's sub-tab bar: hidden below two visible tools, and Regex switches through it too. */
+function testSubTabs(): void {
+  assert.equal(subTabsFor("beginner", "farm"), null, "a beginner's Farm has one tool — no bar");
+  assert.equal(subTabsFor("beginner", "market"), null);
+  assert.equal(subTabsFor("advanced", "alerts"), null, "no tools, no bar");
+  assert.equal(subTabsFor("advanced", "coach"), null);
+  assert.deepEqual(subTabsFor("advanced", "farm")?.map((t) => t.id), ["board", "strategies"]);
+  assert.deepEqual(subTabsFor("beginner", "learn")?.map((t) => t.id), ["what", "currency", "atlas"]);
+  assert.deepEqual(subTabsFor("beginner", "settings")?.map((t) => t.id), ["account", "notify", "mode", "system"], "Settings anchors");
+  assert.deepEqual(subTabsFor("advanced", "regex")?.map((t) => t.id), [...REGEX_TABS], "registry regex tools = REGEX_TABS, in order");
+  assert.deepEqual(parseTabRoute("regex", null), { tab: "regex", tool: "waystone", rejected: [] });
+  assert.deepEqual(parseTabRoute("regex", "jewel"), { tab: "regex", tool: "jewel", rejected: [] });
+  assert.deepEqual(parseTabRoute("regex", "maps3d"), { tab: "regex", tool: "waystone", rejected: ["tool=maps3d"] }, "an unknown regex tool is rewritten");
+  assert.deepEqual(parseTabRoute("alerts", "x"), { tab: "alerts", tool: null, rejected: ["tool=x"] }, "a tab without tools rejects every tool");
+  assert.deepEqual(parseTabRoute("settings", "notify"), { tab: "settings", tool: "notify", rejected: [] }, "tool=notify deep link");
+  for (const t of TABS) for (const tool of t.tools ?? []) assert.ok(tool.hint.trim().length > 0, `${t.id} › ${tool.id} has a hint`);
+  pass("sub-tab bar: hidden under 2 tools, regex tools = REGEX_TABS, unknown tools rewritten, every tool hinted");
 }
 
 function testModeRoutes(): void {
@@ -233,6 +253,7 @@ async function main(): Promise<void> {
   const other = await createUser("learner-two", "learner-password-2", "member");
   await testNavModeRoute(user);
   testVisibility();
+  testSubTabs();
   testModeRoutes();
   const grades = testDataRefs();
   await testLookup(user);

@@ -56,6 +56,12 @@ export function visibleTools(mode: NavMode, tab: TabId): readonly ToolMeta[] | u
   return kept;
 }
 
+/** The sub-tab bar's tools: null when the mode leaves fewer than two, since one tool needs no switcher. */
+export function subTabsFor(mode: NavMode, tab: TabId): readonly ToolMeta[] | null {
+  const tools = visibleTools(mode, tab);
+  return tools && tools.length >= 2 ? tools : null;
+}
+
 export function defaultTabFor(mode: NavMode): TabId {
   return mode === "beginner" ? "learn" : DEFAULT_TAB;
 }

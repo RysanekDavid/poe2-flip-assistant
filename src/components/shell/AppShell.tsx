@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { TopBar } from "../TopBar";
 import { Onboarding } from "../Onboarding";
@@ -11,6 +11,7 @@ import { AlertsProvider } from "../alerts/AlertsContext";
 import { AlertsTab } from "../alerts/AlertsTab";
 import { CoachPanel } from "../coach/CoachPanel";
 import { TabNav } from "./TabNav";
+import { SubTabBar, subTabId, subTabPanelId, useSubTabs } from "./SubTabBar";
 import { CredBanner } from "./CredBanner";
 import { NavModeProvider, useNavMode } from "./NavModeProvider";
 import { useTabRoute } from "./useTabRoute";
@@ -92,6 +93,17 @@ function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
   }
 }
 
+/** With a sub-tab bar on screen, the page is its tabpanel; without one it needs no wrapper. */
+function ToolPanel({ children }: { children: ReactNode }) {
+  const { tab, tool, tools } = useSubTabs();
+  if (!tools || tool === null) return <>{children}</>;
+  return (
+    <div role="tabpanel" id={subTabPanelId(tab)} aria-labelledby={subTabId(tab, tool)} className="space-y-4">
+      {children}
+    </div>
+  );
+}
+
 /** The dashboard. NavModeProvider sits outside everything else: the nav mode decides which tabs exist. */
 export function AppShell() {
   return (
@@ -130,8 +142,13 @@ function ShellBody() {
             <TopBar />
           </div>
           <TabNav />
+          <SubTabBar />
         </header>
-        {tab !== "coach" && <ActiveTab tab={tab} />}
+        {tab !== "coach" && (
+          <ToolPanel>
+            <ActiveTab tab={tab} />
+          </ToolPanel>
+        )}
         <CoachPanel active={tab === "coach"} />
       </main>
     </AlertsProvider>
