@@ -4,8 +4,11 @@ import assert from "node:assert/strict";
 import { config } from "../config/env";
 import { getDb } from "../db/database";
 import { migratePatchSummaries } from "../db/patchSummaryMigrations";
+import { patchesQuerySchema, patchesResponseSchema } from "../lib/patchesContract";
+import { toPatchListItem } from "../lib/patchesView";
 import {
   ANNOUNCE_MAX_AGE_MS,
+  listPatches,
   requestResummary,
   shouldAnnounceFirstBody,
   upsertSummaryJob,
@@ -264,6 +267,31 @@ function testMessageAndEmbed(): void {
   assert.ok(!embed.fields.some((f) => f.name === "Trade"), "a forum link is not a trade link");
 }
 
+async function testListContract(): Promise<void> {
+  resetTables();
+  indexPatches();
+  storeBody(RECENT, ["Fixed a crash."]);
+  storeBody(OLD, ["Old fix."]);
+  await drainPatchSummaries({ db, fetchImpl: coachOk, now: () => NOW });
+  db.prepare("UPDATE patch_summary SET status = 'failed', last_error = 'Coach patch summary HTTP 503' WHERE thread_id = ?").run(OLD);
+  const page = listPatches(2, null, db);
+  assert.deepEqual(page.map((p) => p.threadId), [LATER, RECENT], "newest first");
+  assert.deepEqual(listPatches(5, RECENT, db).map((p) => p.threadId), [OLD], "?before pages to older threads");
+  const items = listPatches(5, null, db).map((row) => toPatchListItem(row, false));
+  const body = patchesResponseSchema.parse({ patches: items, nextBefore: null, canResummarize: false });
+  assert.equal(body.patches[0]?.summary, null, "a thread without a body has no summary job");
+  assert.equal(body.patches[1]?.summary?.data?.tldr, SUMMARY.tldr);
+  assert.equal(body.patches[2]?.summary?.error, null, "members never see Coach error detail");
+  const ownerView = toPatchListItem(listPatches(1, RECENT, db)[0]!, true);
+  assert.equal(ownerView.summary?.error, "Coach patch summary HTTP 503");
+  db.prepare("UPDATE patch_summary SET summary_json = '{\"tldr\":1}' WHERE thread_id = ?").run(RECENT);
+  const broken = toPatchListItem(listPatches(1, LATER, db)[0]!, true);
+  assert.equal(broken.summary?.data, null);
+  assert.match(broken.summary?.error ?? "", /no longer matches/, "a broken stored summary is reported, not hidden");
+  assert.equal(patchesQuerySchema.safeParse({ limit: "51" }).success, false);
+  assert.equal(patchesQuerySchema.parse({}).limit, 20);
+}
+
 function testRequestClipping(): void {
   const { body, clipped } = buildSummaryRequest({ threadId: 1, versionText: "0.5.5", title: "T", headings: ["", "H"], listItems: ["x".repeat(3_000)] });
   assert.equal(clipped, true);
@@ -280,6 +308,7 @@ async function main(): Promise<void> {
   testBackfillIsQuietAndIdempotent();
   testMessageAndEmbed();
   testRequestClipping();
+  await testListContract();
   console.log("patch-summary tests passed");
 }
 
