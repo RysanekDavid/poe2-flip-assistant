@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { roundPrice } from "../lib/format";
 import { assertOk, describeError, warnOnFailure } from "../lib/clientWarn";
-import { EmptySection } from "./ui/EmptySection";
+import { History } from "lucide-react";
+import { EmptyState } from "./ui/EmptyState";
 
 interface Flip {
   id: number;
@@ -78,9 +79,10 @@ export function FlipLog() {
 
   if (flips.length === 0) {
     return (
-      <EmptySection
+      <EmptyState
+        icon={<History className="h-5 w-5" />}
         title="Flip History"
-        hint={error ? `could not load flips — ${error}` : "no flips logged — set qty + prices in a Flip Plan and hit “log flip”; P&L and win-rate build here"}
+        sentence={error ? `could not load flips — ${error}` : "no flips logged — set qty + prices in a Flip Plan and hit “log flip”; P&L and win-rate build here"}
       />
     );
   }
