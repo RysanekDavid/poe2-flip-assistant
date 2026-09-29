@@ -8,12 +8,15 @@ type Db = Database.Database;
  * One row per official patch thread: the summary job the poller drains through the Coach, and
  * the stored result. The Coach never writes here. `announce` decides whether the terminal state
  * fans out a PATCH alert; `announced_at` makes that fan-out happen exactly once.
+ *
+ * 'waiting' (input_sha256 '') marks a thread the index discovered as news before its body was
+ * fetched; the body turns it into 'pending' and it keeps announce = 1.
  */
 const TABLE_SQL = `
   CREATE TABLE IF NOT EXISTS patch_summary (
     thread_id INTEGER PRIMARY KEY REFERENCES official_patch(thread_id),
     input_sha256 TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('pending', 'done', 'failed')),
+    status TEXT NOT NULL CHECK (status IN ('waiting', 'pending', 'done', 'failed')),
     attempts INTEGER NOT NULL DEFAULT 0,
     next_attempt_at TEXT,
     last_error TEXT,

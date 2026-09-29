@@ -4,6 +4,7 @@ import { sanitizeHeartbeatError } from "../../core/heartbeat";
 import { getDb } from "../../db/database";
 import {
   dueSummaryJobs,
+  leaseSummaryJob,
   markAnnounced,
   markSummaryDone,
   markSummaryRetry,
@@ -26,6 +27,8 @@ import {
 const OWNER_ID = 1;
 const BATCH = 5;
 const TIMEOUT_MS = 120_000;
+// Longer than one call's deadline, so a live claim never expires under its own drainer.
+const LEASE_MS = 5 * 60_000;
 export const MAX_SUMMARY_ATTEMPTS = 8;
 const BASE_BACKOFF_MS = 30 * 60_000;
 const MAX_BACKOFF_MS = 6 * 3600_000;
@@ -55,6 +58,26 @@ export function drainProblem(result: DrainResult): string | null {
   return result.errors.length === 0 ? null : `${result.errors.length} summary attempt(s) failed: ${result.errors.join("; ")}`;
 }
 
+/**
+ * A failed attempt that says whether trying again can help. Transient trouble (timeouts, rate
+ * limits, 5xx, an unreachable Coach) backs off; a deterministic one (no model key, a rejected or
+ * schema-breaking request, a missing proxy secret) fails the job at once so the patch is still
+ * announced — as "summary unavailable" — instead of sitting silent for a day of retries.
+ */
+export class SummaryFailure extends Error {
+  public constructor(message: string, public readonly retryable: boolean) {
+    super(message);
+    this.name = "SummaryFailure";
+  }
+}
+
+/** Anything not classified (a fetch network error, an abort on our deadline) is transient. */
+function isRetryable(error: unknown): boolean {
+  return error instanceof SummaryFailure ? error.retryable : true;
+}
+
+const transientStatus = (status: number): boolean => status === 429 || status >= 500;
+
 /** Summarize up to five due patches through the Coach, then announce whatever became terminal. */
 export async function drainPatchSummaries(options: DrainOptions = {}): Promise<DrainResult> {
   const db = options.db ?? getDb();
@@ -62,19 +85,11 @@ export async function drainPatchSummaries(options: DrainOptions = {}): Promise<D
   const fetchImpl = options.fetchImpl ?? fetch;
   const result: DrainResult = { summarized: 0, retried: 0, failed: 0, announced: 0, errors: [] };
   for (const job of dueSummaryJobs(BATCH, new Date(now()).toISOString(), db)) {
+    const leaseUntil = new Date(now() + LEASE_MS).toISOString();
+    // Another drainer (poller vs patch:summarize) claimed it between the query and here.
+    if (!leaseSummaryJob(job.threadId, job.inputSha256, new Date(now()).toISOString(), leaseUntil, db)) continue;
     try {
-      const response = await requestSummary(job, fetchImpl);
-      const stored = markSummaryDone({
-        threadId: job.threadId,
-        inputSha256: job.inputSha256,
-        model: response.model,
-        promptVersion: response.prompt_version,
-        truncated: response.truncated || response.clipped,
-        summaryJson: JSON.stringify(response.summary),
-        usage: response.usage,
-        at: new Date(now()).toISOString(),
-      }, db);
-      if (stored) result.summarized += 1;
+      storeSummary(job, await requestSummary(job, fetchImpl), now(), db, result);
     } catch (error: unknown) {
       recordFailure(job, error, now(), db, result);
     }
@@ -83,15 +98,44 @@ export async function drainPatchSummaries(options: DrainOptions = {}): Promise<D
   return result;
 }
 
+function storeSummary(
+  job: DueSummaryJob,
+  response: CoachPatchSummaryResponse & { clipped: boolean },
+  nowMs: number,
+  db: Database.Database,
+  result: DrainResult,
+): void {
+  const stored = markSummaryDone({
+    threadId: job.threadId,
+    inputSha256: job.inputSha256,
+    model: response.model,
+    promptVersion: response.prompt_version,
+    truncated: response.truncated || response.clipped,
+    summaryJson: JSON.stringify(response.summary),
+    usage: response.usage,
+    at: new Date(nowMs).toISOString(),
+  }, db);
+  if (stored) result.summarized += 1;
+  else console.warn(`[patch-summary] thread ${job.threadId}: dropped a summary of superseded text (the thread changed during the call)`);
+}
+
 function recordFailure(job: DueSummaryJob, error: unknown, nowMs: number, db: Database.Database, result: DrainResult): void {
   const attempts = job.attempts + 1;
   const message = sanitizeHeartbeatError(error);
-  const terminal = attempts >= MAX_SUMMARY_ATTEMPTS;
+  const terminal = !isRetryable(error) || attempts >= MAX_SUMMARY_ATTEMPTS;
   const nextAt = terminal ? null : new Date(nowMs + summaryBackoffMs(attempts)).toISOString();
   markSummaryRetry(job.threadId, job.inputSha256, attempts, nextAt, message, db);
   if (terminal) result.failed += 1;
   else result.retried += 1;
-  result.errors.push(`thread ${job.threadId} attempt ${attempts}: ${message}`);
+  result.errors.push(`thread ${job.threadId} attempt ${attempts}${terminal ? " (final)" : ""}: ${message}`);
+}
+
+function actorToken(): string {
+  try {
+    return deriveCoachActorToken(OWNER_ID, config.coach.proxySecret);
+  } catch (error: unknown) {
+    throw new SummaryFailure(`Coach identity unavailable: ${error instanceof Error ? error.message : String(error)}`, false);
+  }
 }
 
 async function requestSummary(
@@ -102,25 +146,24 @@ async function requestSummary(
   const { body, clipped } = buildSummaryRequest(job);
   const response = await fetchImpl(coachEndpoint(config.coach.apiUrl, "/internal/patch-summary"), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Coach-Request-Id": requestId,
-      "X-Coach-Actor": deriveCoachActorToken(OWNER_ID, config.coach.proxySecret),
-    },
+    headers: { "Content-Type": "application/json", "X-Coach-Request-Id": requestId, "X-Coach-Actor": actorToken() },
     body: JSON.stringify(body),
     cache: "no-store",
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   const payload: unknown = await response.json().catch((error: unknown) => {
-    throw new Error(`Coach patch summary returned HTTP ${response.status} without JSON: ${String(error)}`);
+    throw new SummaryFailure(`Coach patch summary returned HTTP ${response.status} without JSON: ${String(error)}`, transientStatus(response.status));
   });
   if (!response.ok) {
     const detail = parseCoachUpstreamError(payload, requestId);
-    throw new Error(`Coach patch summary HTTP ${response.status}${detail ? ` ${detail.code}: ${detail.message}` : " (invalid error body)"}`);
+    const text = `Coach patch summary HTTP ${response.status}${detail ? ` ${detail.code}: ${detail.message}` : " (invalid error body)"}`;
+    throw new SummaryFailure(text, detail ? detail.retryable : transientStatus(response.status));
   }
   const parsed = coachPatchSummaryResponseSchema.safeParse(payload);
-  if (!parsed.success) throw new Error(`Coach patch summary broke its contract: ${parsed.error.issues[0]?.message ?? "invalid"}`);
-  if (parsed.data.request_id !== requestId) throw new Error("Coach patch summary answered a different request id");
+  if (!parsed.success) {
+    throw new SummaryFailure(`Coach patch summary broke its contract: ${parsed.error.issues[0]?.message ?? "invalid"}`, false);
+  }
+  if (parsed.data.request_id !== requestId) throw new SummaryFailure("Coach patch summary answered a different request id", false);
   return { ...parsed.data, clipped };
 }
 

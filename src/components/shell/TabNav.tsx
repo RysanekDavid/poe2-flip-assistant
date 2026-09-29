@@ -5,17 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { AlertsTabBadge } from "../alerts/AlertsTab";
 import { TABS, defaultToolOf, tabMeta, tabRouteHref, type TabId, type TabMeta } from "./tabRegistry";
-import { TAB_ICONS, isTabArt } from "./tabIcons";
+import { TAB_ICONS } from "./tabIcons";
 import { useTabRoute } from "./useTabRoute";
 
 function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
   const dim = active ? "opacity-100" : "opacity-60 group-hover:opacity-90";
-  const icon = TAB_ICONS[id];
-  if (!isTabArt(icon)) {
-    const Glyph = icon;
-    return <Glyph aria-hidden className={`h-7 w-7 text-amber-200 transition-opacity ${dim}`} />;
-  }
-  return <Image src={icon} alt="" className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "exchange"} />;
+  return <Image src={TAB_ICONS[id]} alt="" className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "exchange"} />;
 }
 
 /** Plain left-click goes through go() (dedupes history); modified clicks keep open-in-new-tab. */

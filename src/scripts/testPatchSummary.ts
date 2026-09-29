@@ -6,13 +6,7 @@ import { getDb } from "../db/database";
 import { migratePatchSummaries } from "../db/patchSummaryMigrations";
 import { patchesQuerySchema, patchesResponseSchema } from "../lib/patchesContract";
 import { toPatchListItem } from "../lib/patchesView";
-import {
-  ANNOUNCE_MAX_AGE_MS,
-  listPatches,
-  requestResummary,
-  shouldAnnounceFirstBody,
-  upsertSummaryJob,
-} from "../db/patchSummaryQueries";
+import { listPatches, requestResummary, upsertSummaryJob } from "../db/patchSummaryQueries";
 import { insertSourceSnapshot, updateOfficialPatchBody, upsertIndexPatches } from "../db/sourceQueries";
 import { alertEmbed, type NotifyAlert } from "../core/notify/discordMessage";
 import { PATCH_ALERT_MAX_CHARS, PATCH_SUMMARY_UNAVAILABLE, patchAlertMessage } from "../sources/patchNotes/patchAlert";
@@ -28,6 +22,9 @@ if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
 }
 
 const db = getDb();
+// The temp DB outlives runs; rebuild the table from today's DDL so a stale test copy never masks it.
+db.exec("DROP TABLE IF EXISTS patch_summary");
+migratePatchSummaries(db);
 const NOW = Date.now();
 const RECENT = 4_100_001;
 const OLD = 4_000_001;
@@ -64,11 +61,13 @@ const coachOk: FakeFetch = async (_input, init) =>
     usage: { input_tokens: 100, output_tokens: 50, total_tokens: 150 },
   });
 
-const coachDown: FakeFetch = async (_input, init) =>
+const coachError = (status: number, code: string, message: string, retryable: boolean): FakeFetch => async (_input, init) =>
   Response.json(
-    { error: { code: "internal", message: "Coach is not configured.", request_id: requestIdOf(init), retryable: false, reset_conversation: false } },
-    { status: 503 },
+    { error: { code, message, request_id: requestIdOf(init), retryable, reset_conversation: false } },
+    { status },
   );
+const coachNotConfigured = coachError(503, "internal", "Coach is not configured.", false);
+const coachTimeout = coachError(504, "provider_timeout", "Coach timed out while checking its sources.", true);
 
 function resetTables(): void {
   db.pragma("foreign_keys = OFF");
@@ -76,6 +75,7 @@ function resetTables(): void {
     DELETE FROM notify_queue; DELETE FROM alerts; DELETE FROM patch_summary; DELETE FROM evidence_link;
     DELETE FROM pending_patch_effect; DELETE FROM official_patch; DELETE FROM source_snapshot;
   `);
+  db.prepare("UPDATE source_sync_state SET last_success_at = NULL WHERE source_id = ?").run(PATCH_SOURCE_ID);
   db.pragma("foreign_keys = ON");
   db.prepare("INSERT OR IGNORE INTO users (id, name, password_hash, api_key, role) VALUES (2, 'patch-member', 'x', 'pk_patch_2', 'member')").run();
   db.prepare("UPDATE users SET discord_webhook_enc = NULL").run();
@@ -94,21 +94,21 @@ function snapshot(kind: "index" | "thread", externalId: string): number {
   }, db);
 }
 
+/** OLD is indexed by the first (quiet) sync; RECENT and LATER are discovered by a later one. */
 function indexPatches(): void {
-  const entry = (threadId: number, publishedAt: string) => ({
-    threadId, title: `Patch ${threadId}`, versionText: "0.5.5c", publishedAt, publishedText: "today",
+  // Forum dates carry no timezone, so real rows have published_at NULL — the rule must not need it.
+  const entry = (threadId: number) => ({
+    threadId, title: `Patch ${threadId}`, versionText: "0.5.5c", publishedAt: null, publishedText: "Sep 18, 2026",
     sourceUrl: `https://www.pathofexile.com/forum/view-thread/${threadId}`,
   });
-  upsertIndexPatches([
-    entry(LATER, new Date(NOW - 3_600_000).toISOString()),
-    entry(RECENT, new Date(NOW - 3_600_000).toISOString()),
-    entry(OLD, "2026-01-01T00:00:00.000Z"),
-  ], snapshot("index", "2212"), 0, db);
+  upsertIndexPatches([entry(OLD)], snapshot("index", "2212"), 0, db);
+  db.prepare("UPDATE source_sync_state SET last_success_at = ? WHERE source_id = ?").run(new Date(NOW).toISOString(), PATCH_SOURCE_ID);
+  upsertIndexPatches([entry(LATER), entry(RECENT), entry(OLD)], snapshot("index", "2212"), 0, db);
 }
 
 function storeBody(threadId: number, items: string[]): void {
   const document: PatchDocument = { threadId, title: `Patch ${threadId}`, headings: ["Bug Fixes"], listItems: items, bodyText: items.join("\n") };
-  updateOfficialPatchBody(document, snapshot("thread", String(threadId)), db, NOW);
+  updateOfficialPatchBody(document, snapshot("thread", String(threadId)), db);
 }
 
 interface JobRow { status: string; attempts: number; announce: number; announced_at: string | null; input_sha256: string; summary_json: string | null; next_attempt_at: string | null }
@@ -117,22 +117,17 @@ const job = (threadId: number): JobRow | undefined =>
 const patchAlerts = (): Array<{ user_id: number; league: string | null; item_id: string; item_name: string; message: string; link: string }> =>
   db.prepare("SELECT user_id, league, item_id, item_name, message, link FROM alerts WHERE type = 'PATCH' ORDER BY user_id").all() as ReturnType<typeof patchAlerts>;
 
-function testAnnounceRule(): void {
-  const recent = new Date(NOW - 3_600_000).toISOString();
-  assert.equal(shouldAnnounceFirstBody(null, recent, NOW), true, "a fresh first body announces");
-  assert.equal(shouldAnnounceFirstBody(7, recent, NOW), false, "an edited body never announces");
-  assert.equal(shouldAnnounceFirstBody(null, null, NOW), false, "an undated first body stays quiet");
-  assert.equal(shouldAnnounceFirstBody(null, new Date(NOW - ANNOUNCE_MAX_AGE_MS - 1).toISOString(), NOW), false);
-}
-
 function testEnqueueRules(): void {
   resetTables();
   indexPatches();
+  assert.equal(job(OLD), undefined, "the first sync's threads are not news");
+  assert.equal(job(LATER)?.status, "waiting", "a discovered thread waits for its body");
+  assert.equal(job(LATER)?.announce, 1);
   storeBody(RECENT, ["Fixed a crash."]);
   storeBody(OLD, ["Old fix."]);
   assert.equal(job(RECENT)?.status, "pending");
-  assert.equal(job(RECENT)?.announce, 1, "a recent first body announces");
-  assert.equal(job(OLD)?.announce, 0, "an old patch's first body stays quiet");
+  assert.equal(job(RECENT)?.announce, 1, "a thread discovered after a prior sync announces");
+  assert.equal(job(OLD)?.announce, 0, "a thread from the first sync stays quiet");
   assert.equal(job(RECENT)?.input_sha256, patchSummaryInputSha256(`Patch ${RECENT}`, ["Bug Fixes"], ["Fixed a crash."]));
 
   db.prepare("UPDATE patch_summary SET status = 'done', attempts = 3, summary_json = '{}' WHERE thread_id = ?").run(RECENT);
@@ -180,13 +175,17 @@ async function testDrainAndAnnounceOnce(): Promise<void> {
   assert.equal(patchAlerts().length, 2);
 }
 
+const requeue = (threadId: number): void => {
+  db.prepare("UPDATE patch_summary SET status = 'pending', next_attempt_at = NULL WHERE thread_id = ?").run(threadId);
+};
+
 async function testRetryBackoffAndFailure(): Promise<void> {
   resetTables();
   indexPatches();
   storeBody(LATER, ["Changed Chaos Orb."]);
-  const retry = await drainPatchSummaries({ db, fetchImpl: coachDown, now: () => NOW });
-  assert.equal(retry.retried, 1);
-  assert.match(retry.errors[0] ?? "", /HTTP 503 internal: Coach is not configured/);
+  const retry = await drainPatchSummaries({ db, fetchImpl: coachTimeout, now: () => NOW });
+  assert.equal(retry.retried, 1, "a retryable Coach error backs off");
+  assert.match(retry.errors[0] ?? "", /HTTP 504 provider_timeout/);
   const pending = job(LATER);
   assert.equal(pending?.status, "pending");
   assert.equal(pending?.attempts, 1);
@@ -194,14 +193,62 @@ async function testRetryBackoffAndFailure(): Promise<void> {
   const early = await drainPatchSummaries({ db, fetchImpl: coachOk, now: () => NOW + 60_000 });
   assert.equal(early.summarized, 0, "backoff is honoured");
 
+  for (const transient of [
+    (async () => { throw new TypeError("fetch failed"); }) satisfies FakeFetch,
+    (async () => new Response("<html>bad gateway</html>", { status: 502 })) satisfies FakeFetch,
+  ]) {
+    requeue(LATER);
+    assert.equal((await drainPatchSummaries({ db, fetchImpl: transient, now: () => NOW })).retried, 1, "network and 5xx-without-JSON retry");
+  }
+
   db.prepare("UPDATE patch_summary SET attempts = ?, next_attempt_at = NULL WHERE thread_id = ?").run(MAX_SUMMARY_ATTEMPTS - 1, LATER);
-  const failed = await drainPatchSummaries({ db, fetchImpl: coachDown, now: () => NOW });
-  assert.equal(failed.failed, 1);
-  assert.equal(failed.announced, 1, "a failed summary still announces the patch");
+  const exhausted = await drainPatchSummaries({ db, fetchImpl: coachTimeout, now: () => NOW });
+  assert.equal(exhausted.failed, 1, "retryable errors still stop after the last attempt");
+  assert.equal(exhausted.announced, 1, "a failed summary still announces the patch");
   assert.equal(job(LATER)?.status, "failed");
   assert.equal(patchAlerts()[0]?.message, PATCH_SUMMARY_UNAVAILABLE);
   assert.equal(summaryBackoffMs(1), 30 * 60_000);
   assert.equal(summaryBackoffMs(20), 6 * 3600_000);
+}
+
+async function testNonRetryableFailsAtOnce(): Promise<void> {
+  resetTables();
+  indexPatches();
+  storeBody(RECENT, ["Fixed a crash."]);
+  const cases: Array<[string, FakeFetch]> = [
+    ["not configured", coachNotConfigured],
+    ["provider rejected", coachError(502, "provider_rejected", "The model provider rejected this request.", false)],
+    ["contract violation", coachError(502, "contract_violation", "Coach could not complete this answer safely.", false)],
+    ["422 without an error body", async () => Response.json({ detail: "invalid" }, { status: 422 })],
+  ];
+  for (const [name, fetchImpl] of cases) {
+    requeue(RECENT);
+    db.prepare("UPDATE patch_summary SET attempts = 0, announced_at = NULL WHERE thread_id = ?").run(RECENT);
+    const result = await drainPatchSummaries({ db, fetchImpl, now: () => NOW });
+    assert.equal(result.failed, 1, `${name}: fails on the first attempt`);
+    assert.equal(job(RECENT)?.attempts, 1, name);
+  }
+  assert.equal(patchAlerts()[0]?.message, PATCH_SUMMARY_UNAVAILABLE, "announced as unavailable");
+}
+
+async function testLeasePreventsDoubleCalls(): Promise<void> {
+  resetTables();
+  indexPatches();
+  storeBody(RECENT, ["Fixed a crash."]);
+  storeBody(OLD, ["Old fix."]);
+  let calls = 0;
+  const slow: FakeFetch = async (input, init) => {
+    calls += 1;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    return coachOk(input, init);
+  };
+  // The poller and `patch:summarize` draining at the same moment.
+  const [a, b] = await Promise.all([
+    drainPatchSummaries({ db, fetchImpl: slow, now: () => NOW }),
+    drainPatchSummaries({ db, fetchImpl: slow, now: () => NOW }),
+  ]);
+  assert.equal(calls, 2, "each job reaches the Coach once");
+  assert.equal(a.summarized + b.summarized, 2);
 }
 
 async function testContractAndStaleResults(): Promise<void> {
@@ -211,14 +258,16 @@ async function testContractAndStaleResults(): Promise<void> {
   const wrongId: FakeFetch = async (input, init) => coachOk(input, { ...init, headers: { "X-Coach-Request-Id": "b".repeat(24) } });
   const mismatch = await drainPatchSummaries({ db, fetchImpl: wrongId, now: () => NOW });
   assert.match(mismatch.errors[0] ?? "", /different request id/);
-  db.prepare("UPDATE patch_summary SET next_attempt_at = NULL WHERE thread_id = ?").run(OLD);
+  assert.equal(mismatch.failed, 1, "a request-id mismatch is a defect, not a transient");
+  requeue(OLD);
   const broken: FakeFetch = async (_input, init) => Response.json({ request_id: requestIdOf(init), summary: { tldr: 1 } });
   const invalid = await drainPatchSummaries({ db, fetchImpl: broken, now: () => NOW });
   assert.match(invalid.errors[0] ?? "", /broke its contract/);
+  assert.equal(invalid.failed, 1);
 
-  db.prepare("UPDATE patch_summary SET next_attempt_at = NULL WHERE thread_id = ?").run(OLD);
+  requeue(OLD);
   const editedMidCall: FakeFetch = async (input, init) => {
-    upsertSummaryJob(OLD, "f".repeat(64), false, db); // the body changed while the Coach worked
+    upsertSummaryJob(OLD, "f".repeat(64), db); // the body changed while the Coach worked
     return coachOk(input, init);
   };
   const stale = await drainPatchSummaries({ db, fetchImpl: editedMidCall, now: () => NOW });
@@ -300,10 +349,11 @@ function testRequestClipping(): void {
 }
 
 async function main(): Promise<void> {
-  testAnnounceRule();
   testEnqueueRules();
   await testDrainAndAnnounceOnce();
   await testRetryBackoffAndFailure();
+  await testNonRetryableFailsAtOnce();
+  await testLeasePreventsDoubleCalls();
   await testContractAndStaleResults();
   testBackfillIsQuietAndIdempotent();
   testMessageAndEmbed();

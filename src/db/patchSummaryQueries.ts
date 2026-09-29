@@ -2,42 +2,44 @@ import type Database from "better-sqlite3";
 import { getDb } from "./database";
 import { parseStoredList } from "./patchSummaryMigrations";
 import { patchSummaryInputSha256, type StoredPatchText } from "../sources/patchNotes/summaryInput";
-import type { PatchSummaryUsage } from "../sources/patchNotes/summaryContract";
+import type { PatchSummaryUsage, SummaryStatus } from "../sources/patchNotes/summaryContract";
+import { PATCH_SOURCE_ID } from "../sources/patchNotes/contracts";
 
 type Db = Database.Database;
 
-export type SummaryStatus = "pending" | "done" | "failed";
-
 /**
- * A first-ever body announces only when the patch itself is recent. A fresh database, a parser fix
- * that finally reads an old thread, or a re-indexed forum all produce "first bodies" of patches
- * the players already know about — those must not post to Discord.
+ * A thread is news only when an index sync DISCOVERS it and an earlier sync already succeeded.
+ * The first sync of a fresh database (or after a forum switch, which clears last_success_at)
+ * discovers every listed thread at once, and those must not post to Discord. Forum dates carry no
+ * timezone (published_at is NULL in practice), so discovery, not publication date, is the signal.
+ * Runs inside upsertIndexPatches' transaction, before this sync records its own success.
  */
-export const ANNOUNCE_MAX_AGE_MS = 3 * 24 * 3600_000;
-
-export function shouldAnnounceFirstBody(
-  bodySnapshotId: number | null,
-  publishedAt: string | null,
-  nowMs: number,
-): boolean {
-  if (bodySnapshotId != null) return false; // an edit or a re-fetch, never news
-  if (publishedAt == null) return false; // no date means no proof it is new: stay quiet
-  const published = Date.parse(publishedAt);
-  return Number.isFinite(published) && nowMs - published <= ANNOUNCE_MAX_AGE_MS;
+export function markDiscoveredAsNews(threadIds: readonly number[], db: Db = getDb()): number {
+  if (threadIds.length === 0) return 0;
+  const prior = db.prepare(
+    "SELECT last_success_at AS lastSuccessAt FROM source_sync_state WHERE source_id = ?",
+  ).get(PATCH_SOURCE_ID) as { lastSuccessAt: string | null } | undefined;
+  if (prior?.lastSuccessAt == null) return 0;
+  const insert = db.prepare(`
+    INSERT INTO patch_summary (thread_id, input_sha256, status, announce) VALUES (?, '', 'waiting', 1)
+    ON CONFLICT(thread_id) DO NOTHING
+  `);
+  return threadIds.reduce((n, id) => n + insert.run(id).changes, 0);
 }
 
 /**
  * Queue a summary for this exact text. Unchanged text is a no-op, so re-fetches never spend a
- * model call; changed text resets the job to pending (keeping the previous summary visible and
- * the original announce decision — an edit never announces again).
+ * model call; changed text (or a 'waiting' row's first body) resets the job to pending, keeping
+ * the previous summary visible and the announce decision made at discovery — only a thread
+ * discovered as news ever announces, and an edit never announces again.
  */
-export function upsertSummaryJob(threadId: number, inputSha256: string, announce: boolean, db: Db = getDb()): void {
+export function upsertSummaryJob(threadId: number, inputSha256: string, db: Db = getDb()): void {
   db.prepare(`
-    INSERT INTO patch_summary (thread_id, input_sha256, status, announce) VALUES (?, ?, 'pending', ?)
+    INSERT INTO patch_summary (thread_id, input_sha256, status, announce) VALUES (?, ?, 'pending', 0)
     ON CONFLICT(thread_id) DO UPDATE SET input_sha256 = excluded.input_sha256, status = 'pending',
       attempts = 0, next_attempt_at = NULL, last_error = NULL, updated_at = CURRENT_TIMESTAMP
     WHERE patch_summary.input_sha256 <> excluded.input_sha256
-  `).run(threadId, inputSha256, announce ? 1 : 0);
+  `).run(threadId, inputSha256);
 }
 
 export interface DueSummaryJob extends StoredPatchText {
@@ -63,6 +65,25 @@ export function dueSummaryJobs(limit: number, nowIso: string, db: Db = getDb()):
     headings: parseStoredList(headingsJson, "headings_json", row.threadId),
     listItems: parseStoredList(listItemsJson, "list_items_json", row.threadId),
   }));
+}
+
+/**
+ * Claim a due job before calling the Coach by pushing its next attempt past the call deadline.
+ * Only one claimant gets changes = 1, so the poller and `patch:summarize` never pay for the same
+ * summary twice; a crash mid-call just lets the lease expire and the job become due again.
+ */
+export function leaseSummaryJob(
+  threadId: number,
+  inputSha256: string,
+  nowIso: string,
+  leaseUntilIso: string,
+  db: Db = getDb(),
+): boolean {
+  return db.prepare(`
+    UPDATE patch_summary SET next_attempt_at = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE thread_id = ? AND input_sha256 = ? AND status = 'pending'
+      AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
+  `).run(leaseUntilIso, threadId, inputSha256, nowIso).changes === 1;
 }
 
 export interface SummaryResult {
@@ -166,6 +187,7 @@ export function resetAllSummaries(db: Db = getDb()): number {
   return db.prepare(`
     UPDATE patch_summary SET status = 'pending', attempts = 0, next_attempt_at = NULL,
       last_error = NULL, updated_at = CURRENT_TIMESTAMP
+    WHERE status <> 'waiting'
   `).run().changes;
 }
 
@@ -193,7 +215,8 @@ type RawListRow = Omit<PatchListRow, "bodyValid" | "truncated"> & { bodyValid: n
 const LIST_SELECT = `
   SELECT p.thread_id AS threadId, p.source_order AS sourceOrder, p.title, p.version_text AS versionText,
     p.published_at AS publishedAt, p.published_text AS publishedText, p.source_url AS sourceUrl,
-    p.body_valid AS bodyValid, e.disposition, s.status AS summaryStatus, s.model,
+    p.body_valid AS bodyValid, e.disposition,
+    CASE WHEN s.status = 'waiting' THEN NULL ELSE s.status END AS summaryStatus, s.model,
     s.prompt_version AS promptVersion, s.summarized_at AS summarizedAt, s.truncated,
     s.summary_json AS summaryJson, s.last_error AS lastError
   FROM official_patch p
