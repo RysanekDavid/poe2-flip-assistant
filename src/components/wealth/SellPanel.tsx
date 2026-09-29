@@ -12,7 +12,7 @@ import { SellTable } from "./SellTable";
 import { useSell } from "./useSell";
 
 const clock = (stamp: string): string =>
-  new Date(parseSqliteTimestamp(stamp)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  new Date(parseSqliteTimestamp(stamp)).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
 /** "3 gone since last read" — sold, or delisted/moved private; trade2 can't tell which. */
 function SoldLine({ data }: { data: SellResponse }) {
@@ -38,7 +38,7 @@ function repriceText(r: RepriceStatus): string {
 function RepriceAction({ r, requesting, error, onRequest }: { r: RepriceStatus; requesting: boolean; error: string | null; onRequest: () => void }) {
   const searches = Math.min(8, r.candidates);
   const blocked = r.nextAt != null || r.candidates === 0 || r.state === "queued";
-  const next = r.nextAt == null ? null : `next check ${new Date(r.nextAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  const next = r.nextAt == null ? null : `next check ${clock(r.nextAt)}`;
   return (
     <span className="flex flex-wrap items-center gap-2">
       <span className={r.state === "failed" ? "text-amber-300" : "text-neutral-400"}>{repriceText(r)}</span>

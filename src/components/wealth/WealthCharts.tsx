@@ -43,8 +43,8 @@ export function ValueChart({ points, height, label, empty }: {
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={points}>
         <CartesianGrid stroke="#262626" />
-        <XAxis dataKey="t" tick={{ fill: "#737373", fontSize: 11 }} />
-        <YAxis tick={{ fill: "#737373", fontSize: 11 }} width={44} domain={["auto", "auto"]} />
+        <XAxis dataKey="t" tick={{ fill: "#737373", fontSize: 12 }} />
+        <YAxis tick={{ fill: "#737373", fontSize: 12 }} width={44} domain={["auto", "auto"]} />
         <Tooltip contentStyle={{ background: "#171717", border: "1px solid #404040" }} formatter={(v: number) => [`${fmt(v)} Div`, label]} />
         <Line type="linear" dataKey="value" stroke="#22c55e" dot={false} strokeWidth={2} />
       </LineChart>

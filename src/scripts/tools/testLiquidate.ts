@@ -130,6 +130,7 @@ function testSellVerdict(): void {
   const listNew = v(byName("Headhunter"));
   assert.deepEqual(listNew, { verdict: "list", targetDiv: 40, reason: "list at 40 div (fair)" });
   assert.equal(v(byName("Headhunter"), { askDiv: 46 }).verdict, "list", "46 ≤ 40 × 1.15 → keep listing");
+  assert.deepEqual(v(byName("Headhunter"), { askDiv: 11 }), { verdict: "list", targetDiv: 40, reason: "yours 11 div is 73% under 40 div fair" }, "an under-fair ask is flagged, never called fair");
   const over = v(byName("Headhunter"), { askDiv: 46.1 });
   assert.deepEqual([over.verdict, over.targetDiv, over.reason], ["reprice", 40, "yours 46.1 div is 15% over 40 div fair"]);
   const stuck = v(byName("Mageblood"), { askDiv: 5, comp: comp(3.2, 3.1) });

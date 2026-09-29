@@ -48,6 +48,10 @@ function tradeVerdict(fairDiv: number, v: VerdictInput): Verdict {
         : `yours ${d(askDiv)} is ${Math.round((askDiv / fairDiv - 1) * 100)}% over ${d(fairDiv)} fair`;
     return { verdict: "reprice", targetDiv: fairDiv, reason };
   }
+  // Under fair stays "list": a low ask sells, and the fair value (poe2scout daily, ninja) is not
+  // trusted enough to tell you to raise it — but the gap is shown, never described as "fair".
+  const underPct = Math.round((1 - askDiv / fairDiv) * 100);
+  if (underPct > 15) return { verdict: "list", targetDiv: fairDiv, reason: `yours ${d(askDiv)} is ${underPct}% under ${d(fairDiv)} fair` };
   return { verdict: "list", targetDiv: fairDiv, reason: `listed at ${d(askDiv)} — within 15% of ${d(fairDiv)} fair` };
 }
 

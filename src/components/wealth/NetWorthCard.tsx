@@ -53,8 +53,9 @@ function GearLine({ s }: { s: Snapshot }) {
 /** "19:40", or "Tue 19:40" once the session started on another day. */
 function clockOf(sqliteStamp: string): string {
   const at = new Date(parseSqliteTimestamp(sqliteStamp));
-  const time = at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  return at.toDateString() === new Date().toDateString() ? time : `${at.toLocaleDateString([], { weekday: "short" })} ${time}`;
+  // en-GB: English UI with a 24h clock, whatever the browser's own locale
+  const time = at.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return at.toDateString() === new Date().toDateString() ? time : `${at.toLocaleDateString("en-GB", { weekday: "short" })} ${time}`;
 }
 
 /** Change since the session's first read — same source only, like the % deltas. */
