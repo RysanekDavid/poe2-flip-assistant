@@ -8,6 +8,7 @@ are never scanned.
 
 import re
 from collections.abc import Iterable
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from src.entities.turn import TurnEvidence
 
 MAX_ENTITIES = 20
 MAX_MENTIONS = 8
+MAX_UNLINKED = 40
 
 # Same spans the client parser renders as code, links and citations (markdownParser.ts).
 _MASK = re.compile(
@@ -29,10 +31,14 @@ _MASK = re.compile(
 )
 # Number-anchored shorthands only: bare "div"/"Divine"/"Exalted" are ordinary words in answers
 # ("Trial of Chaos", "divine damage"), a number in front makes them a price.
-_NUMBER = r"\d[\d,]*(?:\.\d+)?\s?"
+# A range ("3-4 div", "3–4 div") is one price: the chip covers the whole range once.
+_AMOUNT = r"\d[\d,]*(?:\.\d+)?"
+_NUMBER = rf"{_AMOUNT}(?:\s?[-–]\s?{_AMOUNT})?\s?"
 _DIVINE_SHORTHAND = rf"(?i:{_NUMBER}(?:divines?|divs?)(?!\s+orbs?\b))"
 _EXALTED_SHORTHAND = rf"(?i:{_NUMBER}(?:exalts?|ex))"
 _END = ""
+_LEFT = r"(?<![\w'’-])"
+_RIGHT = r"(?![\w-])"
 
 
 def mask(text: str) -> str:
@@ -84,12 +90,14 @@ def trie_regex(surfaces: Iterable[str], *, fold: bool) -> str:
 
 
 def _surfaces(catalog: EntityCatalog) -> tuple[list[str], list[str]]:
-    """Split surfaces: multi-word ones match in any case, single words only exactly.
+    """Split surfaces into (any case, exact case).
 
-    "Opportunity" is a unique, "opportunity" is prose.
+    Multi-word item names are unambiguous in any case. Single words and every unique name are
+    only matched exactly: "Opportunity" and "Sacred Flame" are uniques, "opportunity" and
+    "sacred flame" are prose.
     """
-    multi: list[str] = []
-    single: list[str] = []
+    folded: list[str] = []
+    exact: list[str] = []
     for row in catalog.rows:
         for surface in (row.name, *row.aliases):
             forms = [
@@ -97,8 +105,18 @@ def _surfaces(catalog: EntityCatalog) -> tuple[list[str], list[str]]:
                 *(p for p in plural_forms(surface) if catalog.surfaces.get(normalize(p)) == row.id),
             ]
             for form in forms:
-                (multi if " " in form.strip() else single).append(form)
-    return multi, single
+                exact_case = row.kind == "unique" or " " not in form.strip()
+                (exact if exact_case else folded).append(form)
+    return folded, exact
+
+
+@dataclass(frozen=True)
+class Hit:
+    """One selected, non-overlapping match in the (masked) answer."""
+
+    start: int
+    end: int
+    row: EntityRow
 
 
 class EntityMatcher:
@@ -108,22 +126,36 @@ class EntityMatcher:
         self.catalog = catalog
         self._divine = _required(catalog, "Divine Orb")
         self._exalted = _required(catalog, "Exalted Orb")
-        multi, single = _surfaces(catalog)
-        self.pattern = re.compile(
-            r"(?<![\w'’-])(?:"
-            rf"(?P<div>{_DIVINE_SHORTHAND})|(?P<ex>{_EXALTED_SHORTHAND})"
-            rf"|(?P<multi>(?i:{trie_regex(multi, fold=True)}))"
-            rf"|(?P<single>{trie_regex(single, fold=False)})"
-            r")(?![\w-])"
+        folded, exact = _surfaces(catalog)
+        shorthands = rf"(?P<div>{_DIVINE_SHORTHAND})|(?P<ex>{_EXALTED_SHORTHAND})"
+        self.patterns = (
+            re.compile(rf"{_LEFT}(?:{shorthands}|(?i:{trie_regex(folded, fold=True)})){_RIGHT}"),
+            re.compile(rf"{_LEFT}(?:{trie_regex(exact, fold=False)}){_RIGHT}"),
         )
 
     def entity_for(self, match: re.Match[str]) -> EntityRow | None:
         """Resolve one regex hit back to its catalog row."""
-        if match.group("div") is not None:
+        groups = match.groupdict()
+        if groups.get("div") is not None:
             return self._divine
-        if match.group("ex") is not None:
+        if groups.get("ex") is not None:
             return self._exalted
         return self.catalog.resolve(match.group(0))
+
+    def hits(self, masked: str) -> list[Hit]:
+        """Leftmost-longest across both case modes, so no shorter name chips inside a longer one."""
+        candidates = [
+            Hit(match.start(), match.end(), row)
+            for pattern in self.patterns
+            for match in pattern.finditer(masked)
+            if (row := self.entity_for(match)) is not None
+        ]
+        candidates.sort(key=lambda hit: (hit.start, hit.start - hit.end))
+        selected: list[Hit] = []
+        for hit in candidates:
+            if not selected or hit.start >= selected[-1].end:
+                selected.append(hit)
+        return selected
 
 
 def _required(catalog: EntityCatalog, name: str) -> EntityRow:
@@ -146,25 +178,46 @@ def _corroborated(row: EntityRow, evidence_text: str) -> bool:
     return row.name in evidence_text
 
 
-def annotate_answer(
-    answer: str, matcher: EntityMatcher, evidence: TurnEvidence
-) -> list[CoachEntity]:
+@dataclass(frozen=True)
+class Annotation:
+    """Linked entities plus the surfaces the client must leave plain.
+
+    `unlinked` holds matched text that has no chip: entities past MAX_ENTITIES and one-word
+    uniques no tool named. The client still matches them, so "Essence of the Body" never chips
+    inside an unlinked "Greater Essence of the Body" with the wrong card.
+    """
+
+    entities: list[CoachEntity]
+    unlinked: list[str]
+
+
+def _surface_text(answer: str, hit: Hit) -> str:
+    # The client joins paragraph lines with single spaces; mentions must survive that.
+    return re.sub(r"\s+", " ", answer[hit.start : hit.end])
+
+
+def annotate_answer(answer: str, matcher: EntityMatcher, evidence: TurnEvidence) -> Annotation:
     """Entities in first-mention order, then tool-named ones, capped at MAX_ENTITIES."""
     mentions: dict[str, list[str]] = {}
-    for match in matcher.pattern.finditer(mask(answer)):
-        row = matcher.entity_for(match)
-        if row is None or not _corroborated(row, evidence.text):
+    unlinked: list[str] = []
+    for hit in matcher.hits(mask(answer)):
+        surface = _surface_text(answer, hit)
+        if not _corroborated(hit.row, evidence.text):
+            unlinked.append(surface)
             continue
-        surface = answer[match.start() : match.end()]
-        found = mentions.setdefault(row.id, [])
-        if surface not in found and len(found) < MAX_MENTIONS:
+        found = mentions.setdefault(hit.row.id, [])
+        if surface not in found:
             found.append(surface)
     for entity_id in evidence.entity_ids:
         mentions.setdefault(entity_id, [])
-    return [
-        _coach_entity(matcher.catalog, entity_id, found, evidence)
-        for entity_id, found in list(mentions.items())[:MAX_ENTITIES]
+    ordered = list(mentions.items())
+    for _, found in ordered[MAX_ENTITIES:]:
+        unlinked.extend(found)
+    entities = [
+        _coach_entity(matcher.catalog, entity_id, found[:MAX_MENTIONS], evidence)
+        for entity_id, found in ordered[:MAX_ENTITIES]
     ]
+    return Annotation(entities=entities, unlinked=list(dict.fromkeys(unlinked))[:MAX_UNLINKED])
 
 
 def _coach_entity(

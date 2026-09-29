@@ -85,6 +85,7 @@ def test_chat_response_carries_annotated_entities(
         "price_div",
         "price_at",
     }
+    assert response.json()["unlinked_mentions"] == []
 
 
 def test_chat_start_up_fails_loudly_without_an_entity_catalog(

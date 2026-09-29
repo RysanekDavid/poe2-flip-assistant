@@ -316,7 +316,7 @@ def _completed_response(
         if not citations_are_valid(answer, sources):
             raise ContractViolation("Agent returned an ungrounded citation set")
         evidence = collect_turn_evidence(turn_tool_outputs(messages), matcher.catalog)
-        entities = annotate_answer(answer, matcher, evidence)
+        annotation = annotate_answer(answer, matcher, evidence)
         usage = turn_usage(messages, duration_ms=round((monotonic() - started) * 1000))
     except ContractViolation:
         raise
@@ -330,7 +330,8 @@ def _completed_response(
         processors_used=processors,
         sources=sources,
         usage=usage,
-        entities=entities,
+        entities=annotation.entities,
+        unlinked_mentions=annotation.unlinked,
     )
 
 

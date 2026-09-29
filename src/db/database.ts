@@ -127,6 +127,7 @@ function ensureAdditiveColumns(conn: Database.Database): void {
   // Entity chips of a Coach answer (catalog rows + live price at answer time), replayed with history.
   ensureColumns(conn, "coach_turns", [
     ["entities_json", "TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(entities_json) AND json_type(entities_json) = 'array')"],
+    ["unlinked_json", "TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(unlinked_json) AND json_type(unlinked_json) = 'array')"],
   ]);
   // Per-user trade2 credentials: encrypted POESESSID + identifying contact + account name.
   ensureColumns(conn, "users", [

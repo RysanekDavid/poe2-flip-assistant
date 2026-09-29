@@ -1,6 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { createPortal } from "react-dom";
 
 const CARD_WIDTH = 320;
@@ -48,37 +59,33 @@ function usePlacement(open: boolean, triggerRef: RefObject<HTMLElement | null>, 
   return position;
 }
 
-/** Hover opens with a short close grace; click/tap pins (touch has no hover); outside click or Escape closes. */
-function useHoverCardState(triggerRef: RefObject<HTMLElement | null>, cardRef: RefObject<HTMLElement | null>) {
-  const [hovered, setHovered] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancelClose = useCallback(() => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-  }, []);
-  const enter = useCallback(() => {
-    cancelClose();
-    setHovered(true);
-  }, [cancelClose]);
-  const leave = useCallback(() => {
-    cancelClose();
-    timer.current = setTimeout(() => setHovered(false), CLOSE_DELAY_MS);
-  }, [cancelClose]);
-  const close = useCallback(() => {
-    cancelClose();
-    setHovered(false);
-    setPinned(false);
-  }, [cancelClose]);
-  const open = hovered || pinned;
+
+type Refs = { trigger: RefObject<HTMLButtonElement | null>; card: RefObject<HTMLDivElement | null> };
+
+/** Close; `restore` hands focus back to the trigger (Escape, Tab out of the card, re-activation). */
+function useCloser(refs: Refs, cancelClose: () => void, setHovered: (v: boolean) => void, setPinned: (v: boolean) => void) {
+  return useCallback(
+    (restore: boolean) => {
+      cancelClose();
+      setHovered(false);
+      setPinned(false);
+      if (restore) refs.trigger.current?.focus();
+    },
+    [refs, cancelClose, setHovered, setPinned],
+  );
+}
+
+/** Outside pointer closes quietly; Escape closes and restores focus if it was on the trigger or in the card. */
+function useDismiss(open: boolean, refs: Refs, close: (restore: boolean) => void) {
   useEffect(() => {
     if (!open) return;
+    const inside = (node: Node | null): boolean =>
+      !!node && Boolean(refs.trigger.current?.contains(node) || refs.card.current?.contains(node));
     const onPointer = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (!triggerRef.current?.contains(target) && !cardRef.current?.contains(target)) close();
+      if (!inside(event.target as Node)) close(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
+      if (event.key === "Escape") close(inside(document.activeElement));
     };
     document.addEventListener("pointerdown", onPointer);
     document.addEventListener("keydown", onKey);
@@ -86,18 +93,72 @@ function useHoverCardState(triggerRef: RefObject<HTMLElement | null>, cardRef: R
       document.removeEventListener("pointerdown", onPointer);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, close, triggerRef, cardRef]);
+  }, [open, refs, close]);
+}
+
+/**
+ * Hover opens with a short close grace. Click/tap pins it (touch has no hover) and a second
+ * activation closes it. Keyboard activation also moves focus into the card so its link is
+ * reachable with Tab.
+ */
+function useHoverCardState(refs: Refs) {
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const [focusCard, setFocusCard] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelClose = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  }, []);
+  const close = useCloser(refs, cancelClose, setHovered, setPinned);
+  const open = hovered || pinned;
+  useDismiss(open, refs, close);
   useEffect(() => cancelClose, [cancelClose]);
-  return { open, enter, leave, togglePin: () => setPinned((value) => !value) };
+  useEffect(() => {
+    if (!focusCard || !open) return;
+    refs.card.current?.focus();
+    setFocusCard(false);
+  }, [focusCard, open, refs]);
+  return {
+    open,
+    close,
+    enter: () => {
+      cancelClose();
+      setHovered(true);
+    },
+    leave: () => {
+      cancelClose();
+      timer.current = setTimeout(() => setHovered(false), CLOSE_DELAY_MS);
+    },
+    // detail 0 = activated by Enter/Space, not a pointer.
+    activate: (keyboard: boolean) => {
+      if (pinned) return close(keyboard);
+      setPinned(true);
+      if (keyboard) setFocusCard(true);
+    },
+  };
+}
+
+/** Tab from the card's last stop, or Shift+Tab from its first, returns to the trigger and closes. */
+function trapExit(event: ReactKeyboardEvent<HTMLDivElement>, close: (restore: boolean) => void): void {
+  if (event.key !== "Tab") return;
+  const card = event.currentTarget;
+  const stops = [...card.querySelectorAll<HTMLElement>("a[href], button, [tabindex='0']")];
+  const last = stops.at(-1);
+  const leavingForward = !event.shiftKey && (document.activeElement === last || stops.length === 0);
+  const leavingBack = event.shiftKey && (document.activeElement === card || document.activeElement === stops[0]);
+  if (leavingForward || leavingBack) {
+    event.preventDefault();
+    close(true);
+  }
 }
 
 interface HoverCardProps {
   /** Inline trigger content; it is rendered inside a <button>, so keep it phrasing content. */
   trigger: ReactNode;
-  /** Accessible name of the card ("Divine Orb details"). */
-  label: string;
   triggerClassName: string;
-  children: ReactNode;
+  /** Card body; put `id={titleId}` on the element that names the card (aria-labelledby). */
+  children: (titleId: string) => ReactNode;
 }
 
 /**
@@ -105,11 +166,13 @@ interface HoverCardProps {
  * portalled with fixed positioning so a scroll or `overflow-hidden` ancestor (chat bubbles) never
  * clips it.
  */
-export function HoverCard({ trigger, label, triggerClassName, children }: HoverCardProps) {
+export function HoverCard({ trigger, triggerClassName, children }: HoverCardProps) {
   const id = useId();
+  const titleId = `${id}-title`;
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const state = useHoverCardState(triggerRef, cardRef);
+  const refs = useMemo<Refs>(() => ({ trigger: triggerRef, card: cardRef }), []);
+  const state = useHoverCardState(refs);
   const position = usePlacement(state.open, triggerRef, cardRef);
   return (
     <>
@@ -117,12 +180,11 @@ export function HoverCard({ trigger, label, triggerClassName, children }: HoverC
         ref={triggerRef}
         type="button"
         aria-expanded={state.open}
+        aria-haspopup="dialog"
         aria-controls={state.open ? id : undefined}
         onMouseEnter={state.enter}
         onMouseLeave={state.leave}
-        onFocus={state.enter}
-        onBlur={state.leave}
-        onClick={state.togglePin}
+        onClick={(event) => state.activate(event.detail === 0)}
         className={triggerClassName}
       >
         {trigger}
@@ -133,13 +195,15 @@ export function HoverCard({ trigger, label, triggerClassName, children }: HoverC
             ref={cardRef}
             id={id}
             role="dialog"
-            aria-label={label}
+            aria-labelledby={titleId}
+            tabIndex={-1}
             onMouseEnter={state.enter}
             onMouseLeave={state.leave}
+            onKeyDown={(event) => trapExit(event, state.close)}
             style={{ top: position?.top ?? -9999, left: position?.left ?? -9999, width: CARD_WIDTH }}
-            className="fixed z-50 rounded-lg border border-line bg-neutral-900 p-3 text-left text-sm font-normal normal-case not-italic tracking-normal text-neutral-200 shadow-xl shadow-black/40"
+            className="fixed z-50 rounded-lg border border-line bg-neutral-900 p-3 text-left text-sm font-normal normal-case not-italic tracking-normal text-neutral-200 shadow-xl shadow-black/40 outline-none"
           >
-            {children}
+            {children(titleId)}
           </div>,
           document.body,
         )}

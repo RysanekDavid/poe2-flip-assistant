@@ -98,7 +98,8 @@ art and base types. Each exchange item is joined to its RePoE base item by art p
 parameter in the poecdn URL equals `visual_identity.dds_file` without `Art/` and `.dds`. The build
 fails if any item does not resolve. The "what it does" text comes from `properties.description`,
 else the per-slot `augments` stats (runes, soul cores, idols), else lineage `support_text`, else
-implicit mods, else the directions line. Uniques have only flavour text. Aliases are a tiny
+implicit mods, else the in-game glossary entry for the item's class (waystones, wombgifts and
+reliquary keys carry no per-item text), else the directions line. Uniques have only flavour text. Aliases are a tiny
 curated list and are never a bare "Divine", "Chaos" or "Exalted".
 
 The file is stamped with the RePoE `artifact_sha256`, version and game-data patch, plus the sha256

@@ -29,13 +29,13 @@ function EntityPrice({ entity }: { entity: CoachEntity }) {
   );
 }
 
-export function EntityCard({ entity }: { entity: CoachEntity }) {
+export function EntityCard({ entity, titleId }: { entity: CoachEntity; titleId: string }) {
   return (
     <div>
       <div className="flex items-start gap-3">
         <ItemArt src={entity.icon_url} size={12} alt={entity.name} />
         <div className="min-w-0">
-          <div className="font-semibold text-neutral-50">{entity.name}</div>
+          <div id={titleId} className="font-semibold text-neutral-50">{entity.name}</div>
           <div className="text-xs uppercase tracking-wider text-neutral-400">{ENTITY_KIND_LABEL[entity.kind]}</div>
         </div>
       </div>
@@ -62,7 +62,6 @@ export function EntityCard({ entity }: { entity: CoachEntity }) {
 export function EntityChip({ entity, text }: { entity: CoachEntity; text: string }) {
   return (
     <HoverCard
-      label={`${entity.name} details`}
       triggerClassName={CHIP_CLASS}
       trigger={
         <>
@@ -73,7 +72,7 @@ export function EntityChip({ entity, text }: { entity: CoachEntity; text: string
         </>
       }
     >
-      <EntityCard entity={entity} />
+      {(titleId) => <EntityCard entity={entity} titleId={titleId} />}
     </HoverCard>
   );
 }

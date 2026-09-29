@@ -17,13 +17,18 @@ interface RenderContext {
 
 // Stable default: a fresh [] per render would defeat the memoized entity wrap.
 const NO_ENTITIES: CoachEntity[] = [];
+const NO_UNLINKED: string[] = [];
 
-export function CoachMarkdown({ content, sources, entities = NO_ENTITIES }: {
+export function CoachMarkdown({ content, sources, entities = NO_ENTITIES, unlinked = NO_UNLINKED }: {
   content: string;
   sources: CoachSource[];
   entities?: CoachEntity[];
+  unlinked?: string[];
 }) {
-  const blocks = useMemo(() => wrapEntityBlocks(parseCoachMarkdown(content), entities), [content, entities]);
+  const blocks = useMemo(
+    () => wrapEntityBlocks(parseCoachMarkdown(content), entities, unlinked),
+    [content, entities, unlinked],
+  );
   const context = useMemo(
     () => ({ sources, entities: new Map(entities.map((entity) => [entity.id, entity])) }),
     [sources, entities],

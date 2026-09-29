@@ -50,7 +50,9 @@ function AssistantMessage({ message }: { message: Message }) {
           <span className="text-xs uppercase tracking-[0.14em] text-neutral-500">evidence-linked answer</span>
         </div>
         <div className="overflow-hidden rounded-xl rounded-tl-sm border border-neutral-800 bg-gradient-to-br from-neutral-900/95 to-neutral-950/95 px-5 py-4 shadow-lg shadow-black/10">
-          <CoachMarkdown content={message.content} sources={message.sources} entities={message.entities} />
+          <CoachMarkdown content={message.content} sources={message.sources} entities={message.entities}
+            unlinked={message.unlinkedMentions}
+          />
           <Evidence
             processors={message.processorsUsed}
             tools={message.toolsUsed}

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { coachEntitySchema, coachSourceSchema } from "./coachContract";
+import { coachEntitySchema, coachSourceSchema, coachUnlinkedMentionsSchema } from "./coachContract";
 
 const uuidSchema = z.string().uuid();
 const isoDateSchema = z.string().datetime();
@@ -26,6 +26,7 @@ export const coachHistoryMessageSchema = z.object({
   processorsUsed: z.array(z.string().min(1)),
   sources: z.array(coachSourceSchema),
   entities: z.array(coachEntitySchema).max(20),
+  unlinkedMentions: coachUnlinkedMentionsSchema,
   createdAt: isoDateSchema,
 }).strict();
 

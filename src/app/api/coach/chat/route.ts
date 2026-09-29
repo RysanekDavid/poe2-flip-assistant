@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { z } from "zod";
 import { getCurrentUser } from "../../../../auth/session";
 import { config } from "../../../../config/env";
 import { leagueForUser } from "../../../../core/leagueUsers";
@@ -65,20 +66,7 @@ export async function POST(request: Request) {
         started.history,
         leagueForUser(user.id),
       );
-      const stored = completeCoachTurn(user.id, {
-        ...parsed.data,
-        answer: response.answer,
-        toolsUsed: response.tools_used,
-        processorsUsed: response.processors_used,
-        sources: response.sources,
-        // An older Coach (rollback window) sends no entities; the answer then renders without chips.
-        entities: response.entities ?? [],
-        usage: {
-          requestId: response.request_id,
-          usage: response.usage,
-          proxyDurationMs: Date.now() - startedMs,
-        },
-      });
+      const stored = persistTurn(user.id, parsed.data, response, startedMs);
       return NextResponse.json(browserTurn(stored, response.request_id, stored.ordinal, false));
     } catch (error: unknown) {
       releaseCoachTurn(user.id, parsed.data.conversationId, parsed.data.turnId);
@@ -87,6 +75,29 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     return coachFailure(error, requestId);
   }
+}
+
+function persistTurn(
+  userId: number,
+  request: z.infer<typeof coachBrowserRequestSchema>,
+  response: z.infer<typeof coachUpstreamResponseSchema>,
+  startedMs: number,
+): StoredCoachTurn {
+  return completeCoachTurn(userId, {
+    ...request,
+    answer: response.answer,
+    toolsUsed: response.tools_used,
+    processorsUsed: response.processors_used,
+    sources: response.sources,
+    // An older Coach (rollback window) sends no entities; the answer then renders without chips.
+    entities: response.entities ?? [],
+    unlinkedMentions: response.unlinked_mentions ?? [],
+    usage: {
+      requestId: response.request_id,
+      usage: response.usage,
+      proxyDurationMs: Date.now() - startedMs,
+    },
+  });
 }
 
 /** Log the failure at the right level and hand the browser the public-safe detail. */
@@ -206,6 +217,7 @@ function browserTurn(
     processorsUsed: turn.processorsUsed,
     sources: turn.sources,
     entities: turn.entities,
+    unlinkedMentions: turn.unlinkedMentions,
   };
 }
 

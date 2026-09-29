@@ -2,7 +2,9 @@
  * The RePoE sources the entity catalog reads, and how an item's "what it does" text is derived
  * from them. Game text lives in different sources per item family: currency/omens/essences carry
  * `properties.description`, runes/soul cores/idols carry per-slot stats in `augments`, lineage
- * supports carry `support_text` in `skill_gems`, reliquary keys carry implicit mods.
+ * supports carry `support_text` in `skill_gems`, named reliquary keys carry implicit mods, and
+ * families with no per-item text (waystones, wombgifts, plain reliquary keys) share the in-game
+ * keyword glossary entry for their class.
  */
 import { z } from "zod";
 import { cleanTemplate } from "../repoe/snapshot";
@@ -54,6 +56,7 @@ export const entityRepoeSchema = z.object({
     uniques: z.record(z.string(), uniqueSchema),
     flavour: z.record(z.string(), z.string()),
     mods: z.record(z.string(), z.object({ text: z.string().nullish() }).passthrough()),
+    keywords: z.record(z.string(), z.object({ definition: z.string(), term: z.string() }).passthrough()),
   }),
 });
 export type EntityRepoe = z.infer<typeof entityRepoeSchema>["sources"];
@@ -80,6 +83,26 @@ function implicitText(base: RepoeBaseItem, repoe: EntityRepoe): string | null {
   return lines.length > 0 ? lines.join(" · ") : null;
 }
 
+/**
+ * Item class → in-game glossary keyword whose definition explains every item of that class. The
+ * per-item keywords (BreachFruitCurrency, VaultKeyWorldDrop) exist but are empty in the game data.
+ */
+const CLASS_KEYWORD: Record<string, string> = {
+  Map: "Waystone",
+  BrequelFruit: "BreachWombgift",
+  VaultKey: "ReliquaryVault",
+};
+
+/** First paragraph of a glossary definition; a missing mapped keyword means the game data moved. */
+function classKeywordText(itemClass: string, repoe: EntityRepoe): string | null {
+  const keyword = CLASS_KEYWORD[itemClass];
+  if (keyword === undefined) return null;
+  const definition = repoe.keywords[keyword]?.definition.split(/\r?\n\s*\r?\n/)[0];
+  const text = gameText(definition);
+  if (text === null) throw new Error(`RePoE keyword ${keyword} (for item class ${itemClass}) has no definition`);
+  return text;
+}
+
 export interface ItemText {
   summary: string | null;
   directions: string | null;
@@ -92,7 +115,8 @@ export function itemText(repoeId: string, base: RepoeBaseItem, repoe: EntityRepo
     gameText(base.properties?.description) ??
     augmentText(repoe.augments[repoeId]) ??
     gameText(repoe.skill_gems[repoeId]?.support_text) ??
-    implicitText(base, repoe);
+    implicitText(base, repoe) ??
+    classKeywordText(base.item_class, repoe);
   if (summary !== null) return { summary, directions };
   // A fragment's only text is often "Bring this to …" — that IS what it does, so it becomes the summary.
   return { summary: directions, directions: null };

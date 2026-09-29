@@ -45,7 +45,10 @@ function testContract(): void {
     requestId: upstream.request_id, answer: "a", toolsUsed: [], processorsUsed: [], sources: [],
   };
   assert.throws(() => coachBrowserResponseSchema.parse(browser), "browser turns always carry entities");
-  assert.equal(coachBrowserResponseSchema.parse({ ...browser, entities: [] }).entities.length, 0);
+  assert.throws(() => coachBrowserResponseSchema.parse({ ...browser, entities: [] }), "and unlinked mentions");
+  assert.equal(coachBrowserResponseSchema.parse({ ...browser, entities: [], unlinkedMentions: [] }).entities.length, 0);
+  assert.equal(coachUpstreamResponseSchema.parse({ ...upstream, unlinked_mentions: ["Opportunity"] }).unlinked_mentions?.[0], "Opportunity");
+  assert.throws(() => coachUpstreamResponseSchema.parse({ ...upstream, unlinked_mentions: Array(41).fill("x") }), "unlinked cap 40");
   console.log("PASS  entity contract: poecdn icons, closed kinds, strict, ISO price time, optional upstream, cap 20");
 }
 
@@ -88,6 +91,26 @@ function testWrap(): void {
   console.log("PASS  entity wrap: overlap, plural, shorthand, exact case, boundaries, skip code/links/citations");
 }
 
+function testUnlinkedCapOverflow(): void {
+  // The Coach capped at 20 and dropped the Greater essence: its text arrives unlinked.
+  const essence = { id: "essence-of-the-body", name: "Essence of the Body", mentions: ["Essence of the Body"] };
+  const text = "Use Essence of the Body, then Greater Essence of the Body.";
+  const withoutUnlinked = buildEntityMatcher([essence]);
+  assert.ok(withoutUnlinked);
+  assert.deepEqual(
+    entityTexts(wrapEntityInlines(parseInline(text), withoutUnlinked)),
+    ["essence-of-the-body:Essence of the Body", "essence-of-the-body:Essence of the Body"],
+    "the bug: without unlinked surfaces the suffix chips with the wrong card",
+  );
+  const matcher = buildEntityMatcher([essence], ["Greater Essence of the Body"]);
+  assert.ok(matcher);
+  const nodes = wrapEntityInlines(parseInline(text), matcher);
+  assert.deepEqual(entityTexts(nodes), ["essence-of-the-body:Essence of the Body"]);
+  assert.deepEqual(nodes.at(-1), { kind: "text", value: ", then Greater Essence of the Body." });
+  assert.equal(buildEntityMatcher([], ["Opportunity"]), null, "unlinked alone wraps nothing");
+  console.log("PASS  unlinked surfaces block wrong-card suffix chips past the entity cap");
+}
+
 function testBlocks(): void {
   const blocks = wrapEntityBlocks(
     parseCoachMarkdown("## Divine Orb\n\n| Item | Price |\n| --- | --- |\n| Divine Orb | 3 div |\n\n```\nDivine Orb\n```\n\n- Exalted Orb"),
@@ -108,4 +131,5 @@ function testBlocks(): void {
 
 testContract();
 testWrap();
+testUnlinkedCapOverflow();
 testBlocks();

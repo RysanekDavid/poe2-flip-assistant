@@ -75,6 +75,7 @@ function testAtomicFirstTurn(): void {
   // Entity chips survive a history reload with the live price seen at answer time.
   assert.deepEqual(detail.messages[1]?.entities, [DIVINE_ENTITY]);
   assert.deepEqual(detail.messages[0]?.entities, []);
+  assert.deepEqual(detail.messages[1]?.unlinkedMentions, ["Greater Essence of the Body"]);
   assert.deepEqual(stored.entities, [DIVINE_ENTITY]);
   const replay = beginCoachTurn(1, pending, db);
   assert.equal(replay.kind, "replay");
@@ -241,6 +242,7 @@ function turnInput(
     processorsUsed: ["deterministic_item_inspection"],
     sources: [{ id: "K1", type: "knowledge", title: "Source", url: "https://example.com" }],
     entities: [DIVINE_ENTITY],
+    unlinkedMentions: ["Greater Essence of the Body"],
     nowMs,
     leaseMs,
     completedAt: new Date(nowMs).toISOString(),

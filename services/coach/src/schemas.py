@@ -95,6 +95,11 @@ class ChatResponse(BaseModel):
     usage: TurnUsage
     #: Catalog entities the answer mentions or this turn's tools named, for hoverable chips.
     entities: list[CoachEntity] = Field(default_factory=list, max_length=20)
+    #: Matched item text with no chip (past the entity cap, or an uncorroborated one-word unique);
+    #: the client matches it without wrapping so a shorter name never chips inside it.
+    unlinked_mentions: list[Annotated[str, StringConstraints(min_length=1, max_length=160)]] = (
+        Field(default_factory=list, max_length=40)
+    )
 
 
 class CoachErrorDetail(BaseModel):

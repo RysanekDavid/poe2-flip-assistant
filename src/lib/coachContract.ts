@@ -71,6 +71,8 @@ export const coachEntitySchema = z.object({
   price_at: z.string().datetime({ offset: true }).nullable(),
 }).strict();
 const coachEntitiesSchema = z.array(coachEntitySchema).max(20);
+/** Matched item text the Coach gave no chip (past the cap, uncorroborated one-word unique). */
+export const coachUnlinkedMentionsSchema = z.array(z.string().min(1).max(160)).max(40);
 
 export const coachBrowserRequestSchema = z.object({
   message: z.string().trim().min(1).max(8_000),
@@ -103,6 +105,7 @@ export const coachUpstreamResponseSchema = z.object({
   usage: coachTurnUsageSchema,
   // Optional: a Coach release older than this web release (rollback window) omits it.
   entities: coachEntitiesSchema.optional(),
+  unlinked_mentions: coachUnlinkedMentionsSchema.optional(),
 });
 
 export const coachBrowserResponseSchema = z.object({
@@ -116,6 +119,7 @@ export const coachBrowserResponseSchema = z.object({
   processorsUsed: z.array(z.string().min(1)),
   sources: z.array(coachSourceSchema),
   entities: coachEntitiesSchema,
+  unlinkedMentions: coachUnlinkedMentionsSchema,
 });
 
 export const coachHealthSchema = z.object({

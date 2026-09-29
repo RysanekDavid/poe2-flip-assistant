@@ -2,6 +2,8 @@
  * Turn the entity mentions the Coach returned into `entity` inline nodes. Pure and exact: only
  * the returned names and mention strings are wrapped, longest first, on word boundaries, and only
  * inside plain text (also inside bold/italic/strike) — never inside code, links or citations.
+ * Unlinked mentions (matched by the Coach but given no chip) join the alternation without
+ * wrapping, so "Essence of the Body" never chips inside an unlinked "Greater Essence of the Body".
  */
 import type { MarkdownBlock, MarkdownInline } from "./markdownParser";
 
@@ -13,20 +15,24 @@ export interface EntityRef {
 
 interface EntityMatcher {
   pattern: RegExp;
-  bySurface: Map<string, string>;
+  /** Surface → entity id, or null for an unlinked surface that must stay plain text. */
+  bySurface: Map<string, string | null>;
 }
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** null when there is nothing to wrap, so callers can skip the tree walk entirely. */
-export function buildEntityMatcher(refs: readonly EntityRef[]): EntityMatcher | null {
-  const bySurface = new Map<string, string>();
+export function buildEntityMatcher(refs: readonly EntityRef[], unlinked: readonly string[] = []): EntityMatcher | null {
+  const bySurface = new Map<string, string | null>();
   for (const ref of refs) {
     for (const surface of [ref.name, ...ref.mentions]) {
       if (surface.trim() !== "" && !bySurface.has(surface)) bySurface.set(surface, ref.id);
     }
   }
   if (bySurface.size === 0) return null;
+  for (const surface of unlinked) {
+    if (surface.trim() !== "" && !bySurface.has(surface)) bySurface.set(surface, null);
+  }
   // Longest first: "Greater Exalted Orb" must win over its suffix "Exalted Orb".
   const alternatives = [...bySurface.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp);
   const pattern = new RegExp(`(?<![\\p{L}\\p{N}_'’-])(?:${alternatives.join("|")})(?![\\p{L}\\p{N}_-])`, "gu");
@@ -39,7 +45,8 @@ function wrapText(value: string, matcher: EntityMatcher): MarkdownInline[] {
   for (const match of value.matchAll(matcher.pattern)) {
     const id = matcher.bySurface.get(match[0]);
     const index = match.index ?? 0;
-    if (id === undefined) continue;
+    // Unlinked: consumed by the alternation (so no shorter surface matches inside) but left as text.
+    if (id === undefined || id === null) continue;
     if (index > cursor) nodes.push({ kind: "text", value: value.slice(cursor, index) });
     nodes.push({ kind: "entity", id, text: match[0] });
     cursor = index + match[0].length;
@@ -77,7 +84,11 @@ function wrapBlock(block: MarkdownBlock, matcher: EntityMatcher): MarkdownBlock 
   }
 }
 
-export function wrapEntityBlocks(blocks: MarkdownBlock[], refs: readonly EntityRef[]): MarkdownBlock[] {
-  const matcher = buildEntityMatcher(refs);
+export function wrapEntityBlocks(
+  blocks: MarkdownBlock[],
+  refs: readonly EntityRef[],
+  unlinked: readonly string[] = [],
+): MarkdownBlock[] {
+  const matcher = buildEntityMatcher(refs, unlinked);
   return matcher === null ? blocks : blocks.map((block) => wrapBlock(block, matcher));
 }

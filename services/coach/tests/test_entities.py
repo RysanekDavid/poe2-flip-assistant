@@ -2,6 +2,7 @@
 
 import gzip
 import json
+import logging
 from pathlib import Path
 
 import pytest
@@ -28,11 +29,12 @@ def matcher() -> EntityMatcher:
 
 
 def _ids(answer: str, matcher: EntityMatcher, evidence: TurnEvidence | None = None) -> list[str]:
-    return [entity.id for entity in annotate_answer(answer, matcher, evidence or TurnEvidence())]
+    annotation = annotate_answer(answer, matcher, evidence or TurnEvidence())
+    return [entity.id for entity in annotation.entities]
 
 
 def _mentions(answer: str, matcher: EntityMatcher) -> dict[str, list[str]]:
-    return {e.id: e.mentions for e in annotate_answer(answer, matcher, TurnEvidence())}
+    return {e.id: e.mentions for e in annotate_answer(answer, matcher, TurnEvidence()).entities}
 
 
 def test_committed_catalog_has_the_known_entities(matcher: EntityMatcher) -> None:
@@ -126,7 +128,7 @@ def test_multi_word_unique_matches_without_corroboration(matcher: EntityMatcher)
 
 def test_cap_twenty_entities_in_mention_order(matcher: EntityMatcher) -> None:
     names = [row.name for row in matcher.catalog.rows if row.kind == "essence"][:25]
-    entities = annotate_answer(", ".join(names) + ".", matcher, TurnEvidence())
+    entities = annotate_answer(", ".join(names) + ".", matcher, TurnEvidence()).entities
     assert len(entities) == MAX_ENTITIES
     assert [e.name for e in entities] == names[:MAX_ENTITIES]
 
@@ -140,7 +142,7 @@ def test_tool_entities_and_live_prices_are_attached(matcher: EntityMatcher) -> N
     }
     outputs = [ToolOutput(name="fetch_live_prices", text=json.dumps(live))]
     evidence = collect_turn_evidence(outputs, matcher.catalog)
-    entities = annotate_answer("Buy Omen of Light now.", matcher, evidence)
+    entities = annotate_answer("Buy Omen of Light now.", matcher, evidence).entities
     assert [e.id for e in entities] == ["omen-of-light", "divine"]
     assert entities[0].price_div == 2.5
     assert entities[0].price_at == "2026-09-29T10:00:00Z"
@@ -159,3 +161,59 @@ def test_iso_utc_accepts_sqlite_and_iso_only() -> None:
     assert iso_utc("2026-09-29T10:00:00+00:00") == "2026-09-29T10:00:00+00:00"
     assert iso_utc("yesterday") is None
     assert iso_utc(None) is None
+
+
+def test_cap_overflow_reports_unlinked_surfaces(matcher: EntityMatcher) -> None:
+    """Past the cap the longer name must stay matchable, or its suffix chips with the wrong card."""
+    skip = {"Essence of the Body", "Greater Essence of the Body"}
+    others = [r.name for r in matcher.catalog.rows if r.kind == "essence" and r.name not in skip]
+    answer = ", ".join(others[:19]) + ", Essence of the Body, Greater Essence of the Body."
+    annotation = annotate_answer(answer, matcher, TurnEvidence())
+    ids = [entity.id for entity in annotation.entities]
+    assert len(ids) == MAX_ENTITIES
+    assert ids[-1] == "essence-of-the-body"
+    assert "greater-essence-of-the-body" not in ids
+    assert annotation.unlinked == ["Greater Essence of the Body"]
+
+
+def test_unique_names_match_exact_case_only(matcher: EntityMatcher) -> None:
+    prose = "A sacred flame, a blood price, a prism guardian stands against the darkness."
+    annotation = annotate_answer(prose, matcher, TurnEvidence())
+    assert annotation.entities == []
+    assert _ids("Equip Sacred Flame and Prism Guardian.", matcher) == [
+        "unique-sacred-flame",
+        "unique-prism-guardian",
+    ]
+
+
+def test_uncorroborated_one_word_unique_is_reported_unlinked(matcher: EntityMatcher) -> None:
+    annotation = annotate_answer("Headhunter is a belt.", matcher, TurnEvidence())
+    assert annotation.entities == []
+    assert annotation.unlinked == ["Headhunter"]
+
+
+def test_currency_ranges_chip_once(matcher: EntityMatcher) -> None:
+    mentions = _mentions("Expect 3-4 div, maybe 3–4 div, or 10 - 20 ex.", matcher)
+    assert mentions == {"divine": ["3-4 div", "3–4 div"], "exalted": ["10 - 20 ex"]}
+
+
+def test_mentions_normalise_whitespace(matcher: EntityMatcher) -> None:
+    assert _mentions("Use a Greater\nExalted  Orb.", matcher) == {
+        "greater-exalted-orb": ["Greater Exalted Orb"]
+    }
+
+
+def test_unusable_live_prices_log_once_per_turn(
+    matcher: EntityMatcher, caplog: pytest.LogCaptureFixture
+) -> None:
+    rows = [
+        {"item_name": name, "value_div": None, "fetched_at": "later"}
+        for name in ("Divine Orb", "Exalted Orb", "Omen of Light")
+    ]
+    outputs = [ToolOutput(name="fetch_live_prices", text=json.dumps({"items": rows}))]
+    with caplog.at_level(logging.WARNING, logger="uvicorn.error"):
+        evidence = collect_turn_evidence(outputs, matcher.catalog)
+    assert evidence.prices == {}
+    warnings = [r for r in caplog.records if "unusable_live_prices" in r.getMessage()]
+    assert len(warnings) == 1
+    assert "count=3" in warnings[0].getMessage()

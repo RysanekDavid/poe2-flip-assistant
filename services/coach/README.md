@@ -12,10 +12,13 @@ Python/LangGraph sidecar used only through the authenticated Next.js `/api/coach
   `entities` on the chat response, for the UI's hoverable chips. It matches longest-first on word
   boundaries: names and aliases, derived plurals ("Divine Orbs", "Omens of Light"), and only
   number-anchored shorthands ("3 div", "150 ex"). It never matches bare "Chaos", "Divine" or
-  "Exalted". Code, links and citations are skipped. One-word names match only in exact case, and
-  a one-word unique ("Opportunity") only when a tool of the same turn also named it. Items named
-  by this turn's market tools are added too, with the live Divine price when `fetch_live_prices`
-  returned one. The list is capped at 20.
+  "Exalted". Ranges ("3-4 div") chip once. Code, links and citations are skipped. One-word names
+  and every unique name match only in exact case ("sacred flame" is prose, "Sacred Flame" a
+  unique), and a one-word unique ("Opportunity") only when a tool of the same turn also named it.
+  Items named by this turn's market tools are added too, with the live Divine price when
+  `fetch_live_prices` returned one. The list is capped at 20; matched text with no chip (past the
+  cap, or an uncorroborated unique) is returned as `unlinked_mentions` so the client keeps it
+  plain instead of chipping a shorter name inside it.
 - Builds RAG only from the files listed in `docs/kb/manifest.json`, each stamped with the patch,
   league and date it was verified against. Every chunk and citation carries that stamp.
   `npm run kb:check` (CI) fails when a listed file is missing, edited after its stamp (content

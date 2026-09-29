@@ -10,6 +10,7 @@ export interface CoachMessage {
   processorsUsed: string[];
   sources: CoachSource[];
   entities: CoachEntity[];
+  unlinkedMentions: string[];
   createdAt: string;
 }
 
@@ -23,6 +24,7 @@ export function createPendingUser(turnId: string, content: string): CoachMessage
     processorsUsed: [],
     sources: [],
     entities: [],
+    unlinkedMentions: [],
     createdAt: new Date().toISOString(),
   };
 }
@@ -37,6 +39,7 @@ export function createCompletedAssistant(response: CoachBrowserResponse): CoachM
     processorsUsed: response.processorsUsed,
     sources: response.sources,
     entities: response.entities,
+    unlinkedMentions: response.unlinkedMentions,
     createdAt: new Date().toISOString(),
   };
 }

@@ -66,12 +66,10 @@ def _entity_id(payload: dict[str, object]) -> str | None:
     return None
 
 
-def _live_price(item: dict[str, object], entity_name: str) -> tuple[float, str] | None:
+def _live_price(item: dict[str, object]) -> tuple[float, str] | None:
     value, at = item.get("value_div"), iso_utc(item.get("fetched_at"))
     if isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0 and at:
         return float(value), at
-    # Visible, not fatal: the chip still renders, just without a price.
-    logger.warning("coach_entities live price unusable for %s: %r", entity_name, item)
     return None
 
 
@@ -79,6 +77,7 @@ def collect_turn_evidence(outputs: Sequence[ToolOutput], catalog: "EntityCatalog
     """Resolve item names from market tools and ids from lookup_entity; keep live prices."""
     ids: list[str] = []
     prices: dict[str, tuple[float, str]] = {}
+    unusable: list[str] = []
     for output in outputs:
         payload = _payload(output)
         if payload is None:
@@ -95,8 +94,15 @@ def collect_turn_evidence(outputs: Sequence[ToolOutput], catalog: "EntityCatalog
             if row.id not in ids:
                 ids.append(row.id)
             if output.name == "fetch_live_prices":
-                price = _live_price(item, row.name)
-                if price is not None:
+                price = _live_price(item)
+                if price is None:
+                    unusable.append(row.name)
+                else:
                     prices[row.id] = price
+    if unusable:
+        # Visible, not fatal: those chips render without a price. One line per turn, not per row.
+        logger.warning(
+            "coach_entities unusable_live_prices count=%d items=%s", len(unusable), unusable[:5]
+        )
     text = "\n".join(output.text for output in outputs)
     return TurnEvidence(text=text, entity_ids=tuple(ids), prices=prices)

@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS coach_turns (
   sources_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(sources_json) AND json_type(sources_json) = 'array'),
   -- Keep in sync with the ensureColumns entry in database.ts (databases created before the column).
   entities_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(entities_json) AND json_type(entities_json) = 'array'),
+  unlinked_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(unlinked_json) AND json_type(unlinked_json) = 'array'),
   completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, conversation_id, turn_id),
   UNIQUE (user_id, conversation_id, ordinal),
