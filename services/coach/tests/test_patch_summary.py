@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import hmac
 import json
+import re
 from types import SimpleNamespace
 
 import httpx
@@ -11,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 from openai import APITimeoutError
 from openai.lib._pydantic import to_strict_json_schema
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 
 from src.api import create_app
 from src.config import Settings
@@ -238,19 +239,32 @@ def test_system_prompt_treats_patch_text_as_untrusted() -> None:
     assert "No URLs" in SYSTEM_PROMPT
 
 
-class FakeResponses:
-    def __init__(self, response: object) -> None:
-        self.response = response
+class FakeRaw:
+    """Mimics the SDK raw wrapper: the HTTP body now, the structured parse on demand."""
+
+    def __init__(self, body: dict[str, object], parsed: object) -> None:
+        self.text = json.dumps(body)
+        self._parsed = parsed
+
+    def parse(self) -> object:
+        if isinstance(self._parsed, Exception):
+            raise self._parsed
+        return self._parsed
+
+
+class FakeRawResponses:
+    def __init__(self, raw: FakeRaw) -> None:
+        self.raw = raw
         self.calls: list[dict[str, object]] = []
 
-    async def parse(self, **kwargs: object) -> object:
+    async def parse(self, **kwargs: object) -> FakeRaw:
         self.calls.append(kwargs)
-        return self.response
+        return self.raw
 
 
 class FakeClient:
-    def __init__(self, response: object) -> None:
-        self.responses = FakeResponses(response)
+    def __init__(self, raw: FakeRaw) -> None:
+        self.responses = SimpleNamespace(with_raw_response=FakeRawResponses(raw))
 
     async def __aenter__(self) -> "FakeClient":
         return self
@@ -259,10 +273,22 @@ class FakeClient:
         return None
 
 
-def _parsed_response(status: str = "completed") -> object:
+USAGE = SimpleNamespace(input_tokens=100, output_tokens=40, total_tokens=140)
+
+
+def _message(*parts: SimpleNamespace) -> SimpleNamespace:
+    return SimpleNamespace(type="message", content=list(parts))
+
+
+def _parsed_response() -> FakeRaw:
     parsed = PatchSummaryModel.model_validate(SUMMARY.model_dump(exclude={"schema_version"}))
-    usage = SimpleNamespace(input_tokens=100, output_tokens=40, total_tokens=140)
-    return SimpleNamespace(status=status, output_parsed=parsed, usage=usage, model="gpt-5.4-mini-x")
+    response = SimpleNamespace(
+        output=[_message(SimpleNamespace(type="output_text"))],
+        output_parsed=parsed,
+        usage=USAGE,
+        model="gpt-5.4-mini-x",
+    )
+    return FakeRaw({"status": "completed"}, response)
 
 
 def test_summarize_patch_makes_one_tool_free_unstored_call() -> None:
@@ -271,8 +297,10 @@ def test_summarize_patch_makes_one_tool_free_unstored_call() -> None:
 
     outcome = asyncio.run(summarize_patch(_settings(), request, lambda _settings: client))
 
-    call = client.responses.calls[0]
-    assert len(client.responses.calls) == 1
+    calls = client.responses.with_raw_response.calls
+    call = calls[0]
+    assert len(calls) == 1
+    assert call["max_output_tokens"] == 16_000
     assert "tools" not in call
     assert call["store"] is False
     assert call["text_format"] is PatchSummaryModel
@@ -284,14 +312,48 @@ def test_summarize_patch_makes_one_tool_free_unstored_call() -> None:
     assert outcome.summary.groups[0].kind == "bugfix"
 
 
+def _schema_error() -> ValidationError:
+    try:
+        PatchSummaryModel.model_validate_json('{"tldr": "cut off')
+    except ValidationError as error:
+        return error
+    raise AssertionError("truncated JSON unexpectedly validated")
+
+
 @pytest.mark.parametrize(
-    "response",
+    ("raw", "message"),
     [
-        _parsed_response(status="incomplete"),
-        SimpleNamespace(status="completed", output_parsed=None, usage=None, model="m"),
+        # A cut-off response is named as such even though its JSON would not parse.
+        (
+            FakeRaw(
+                {"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"}},
+                _schema_error(),
+            ),
+            "incomplete (reason=max_output_tokens)",
+        ),
+        (FakeRaw({"status": "completed"}, _schema_error()), "did not match its schema"),
+        (
+            FakeRaw(
+                {"status": "completed"},
+                SimpleNamespace(
+                    output=[_message(SimpleNamespace(type="refusal"))],
+                    output_parsed=None,
+                    usage=USAGE,
+                    model="m",
+                ),
+            ),
+            "model refused",
+        ),
+        (
+            FakeRaw(
+                {"status": "completed"},
+                SimpleNamespace(output=[], output_parsed=None, usage=None, model="m"),
+            ),
+            "did not match its schema",
+        ),
     ],
 )
-def test_summarize_patch_fails_loudly_on_unusable_output(response: object) -> None:
+def test_summarize_patch_fails_loudly_on_unusable_output(raw: FakeRaw, message: str) -> None:
     request = PatchSummaryRequest.model_validate(PAYLOAD)
-    with pytest.raises(ContractViolation):
-        asyncio.run(summarize_patch(_settings(), request, lambda _settings: FakeClient(response)))
+    with pytest.raises(ContractViolation, match=re.escape(message)):
+        asyncio.run(summarize_patch(_settings(), request, lambda _settings: FakeClient(raw)))

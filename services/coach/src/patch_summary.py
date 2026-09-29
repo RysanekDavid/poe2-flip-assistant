@@ -6,13 +6,14 @@ as plain text. Nothing here reads or writes the application database — the pol
 """
 
 import asyncio
+import json
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Annotated, Literal, Protocol
 
 from openai import AsyncOpenAI
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
 
 from src.config import Settings
 from src.errors import ContractViolation
@@ -26,8 +27,9 @@ IMPACT_MAX_CHARS = 300
 REASON_MAX_CHARS = 240
 MAX_GROUPS = 6
 MAX_BULLETS = 6
-#: A summary of at most ~40 short lines never needs more; the cap stops a runaway generation.
-MAX_OUTPUT_TOKENS = 6_000
+#: Counts reasoning tokens too, so it is far above the ~2k a 6×6 summary needs; it only stops a
+#: runaway generation, and a hit is reported as "incomplete", never parsed.
+MAX_OUTPUT_TOKENS = 16_000
 
 _TRUNCATION_MARKER = "\n[... patch text truncated ...]"
 _DELIMITER = re.compile(r"<\s*/?\s*patch_notes\s*>", re.IGNORECASE)
@@ -152,10 +154,26 @@ class PatchSummaryOutcome:
     usage: PatchSummaryUsage
 
 
+class RawParsedResponse(Protocol):
+    """The SDK's raw-response wrapper: the HTTP body plus the deferred structured parse."""
+
+    @property
+    def text(self) -> str: ...
+
+    def parse(self) -> object: ...
+
+
+class RawResponses(Protocol):
+    """`client.responses.with_raw_response` as used here."""
+
+    async def parse(self, **kwargs: object) -> RawParsedResponse: ...
+
+
 class ResponsesResource(Protocol):
     """`client.responses` as used here."""
 
-    async def parse(self, **kwargs: object) -> object: ...
+    @property
+    def with_raw_response(self) -> RawResponses: ...
 
 
 class ResponsesClient(Protocol):
@@ -232,7 +250,9 @@ async def summarize_patch(
         asyncio.timeout(settings.patch_summary_timeout_seconds + 5),
         client_factory(settings) as client,
     ):
-        response = await client.responses.parse(
+        # The raw wrapper lets a cut-off response be named as such before its JSON is validated;
+        # plain parse() would only surface a ValidationError on the truncated text.
+        raw = await client.responses.with_raw_response.parse(
             model=settings.chat_model,
             instructions=SYSTEM_PROMPT,
             input=text,
@@ -241,12 +261,38 @@ async def summarize_patch(
             max_output_tokens=MAX_OUTPUT_TOKENS,
             store=False,
         )
+    _raise_if_incomplete(raw.text)
+    try:
+        response = raw.parse()
+    except ValidationError as error:
+        raise ContractViolation("Patch summary did not match its schema") from error
     return _outcome(response, settings, truncated)
 
 
+def _raise_if_incomplete(body: str) -> None:
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError as error:
+        raise ContractViolation("Patch summary response was not JSON") from error
+    if not isinstance(payload, dict) or payload.get("status") != "incomplete":
+        return
+    details = payload.get("incomplete_details")
+    reason = details.get("reason") if isinstance(details, dict) else None
+    raise ContractViolation(f"Patch summary was incomplete (reason={reason or 'unknown'})")
+
+
+def _refused(response: object) -> bool:
+    for item in getattr(response, "output", None) or []:
+        if getattr(item, "type", None) != "message":
+            continue
+        if any(getattr(part, "type", None) == "refusal" for part in item.content):
+            return True
+    return False
+
+
 def _outcome(response: object, settings: Settings, truncated: bool) -> PatchSummaryOutcome:
-    if getattr(response, "status", None) == "incomplete":
-        raise ContractViolation("Patch summary was cut off before completion")
+    if _refused(response):
+        raise ContractViolation("Patch summary model refused")
     parsed = getattr(response, "output_parsed", None)
     if not isinstance(parsed, PatchSummaryModel):
         raise ContractViolation("Patch summary did not match its schema")
