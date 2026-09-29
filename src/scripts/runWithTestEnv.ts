@@ -37,7 +37,6 @@ if (!target || !(target in targets)) {
 process.env.APP_DISABLE_DOTENV = "1";
 process.env.OWNER_PASSWORD = "test-only-owner-password";
 process.env.AUTH_SECRET = "test-only-auth-secret";
-process.env.DESKTOP_NOTIFY = "false";
 process.env.DB_PATH = resolve("data", `tmp-${target}-test.db`);
 
 import(pathToFileURL(resolve(targets[target])).href).catch((error: unknown) => {

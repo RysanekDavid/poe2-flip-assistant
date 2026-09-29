@@ -1,4 +1,3 @@
-import notifier from "node-notifier";
 import { insertAlert, hasRecentAlert, hasAlertEver } from "../db/alertQueries";
 import { config } from "../config/env";
 import { SnipeCardSchema, type SnipeCard } from "../lib/snipeCard";
@@ -15,7 +14,8 @@ export type AlertType =
   | "PATCH"; // official patch notes + AI summary — fired by the patch-summary worker, not this engine
 
 /**
- * Persist an alert and fire a desktop notification.
+ * Persist an alert. Popups are the browser's job (components/alerts/browserNotify), which honours
+ * each user's per-type popup switches — a server-side OS toast could not.
  *
  * `league` is the market the DETECTING pipeline ran in, passed by the caller — the multi-league
  * poller alerts per league, while the shared trade2 scanners (autosnipe, craft margins)
@@ -65,15 +65,4 @@ export function fireAlert(
     details: a.details == null ? null : JSON.stringify(SnipeCardSchema.parse(a.details)),
   });
 
-  if (!config.desktopNotify) return;
-  try {
-    // Callback form: on a headless box the backend fails ASYNCHRONOUSLY, and without a callback
-    // node-notifier surfaces that as an unhandled error (same fix as leagueAlerts).
-    notifier.notify({ title: `PoE2 Flip — ${a.type}`, message: `${a.itemName}: ${a.message}`, sound: true }, (err) => {
-      if (err) console.warn(`desktop notify failed: ${err.message}`);
-    });
-  } catch (err) {
-    // Notif backend missing (e.g. headless) — log, don't throw.
-    console.warn(`desktop notify failed: ${err instanceof Error ? err.message : err}`);
-  }
 }

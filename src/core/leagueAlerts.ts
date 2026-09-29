@@ -1,12 +1,10 @@
-import notifier from "node-notifier";
 import type Database from "better-sqlite3";
 import { getDb } from "../db/database";
-import { config } from "../config/env";
 
 /**
  * A league change is market-wide news, not a per-watchlist signal, so it lands in EVERY user's
  * alert feed. Repeats are prevented upstream by `league_state.alerted_league`, not by the
- * per-item cooldown alertEngine uses. Desktop notify is best-effort (headless servers have none).
+ * per-item cooldown alertEngine uses. Popups come from each user's browser, per their prefs.
  */
 export function fireLeagueAlert(
   league: string,
@@ -23,15 +21,5 @@ export function fireLeagueAlert(
   // Discord delivery is queued by the trg_alerts_notify trigger on each of these rows.
   for (const u of users) insert.run(u.id, league, league, message);
 
-  if (!config.desktopNotify) return users.length; // same switch as alertEngine (tests, headless)
-  try {
-    // Callback form: on a headless box the notify backend fails ASYNCHRONOUSLY, and without a
-    // callback node-notifier would surface that as an unhandled error instead of this warning.
-    notifier.notify({ title: "PoE2 Flip — LEAGUE", message, sound: true }, (err) => {
-      if (err) console.warn(`desktop notify failed: ${err.message}`);
-    });
-  } catch (err) {
-    console.warn(`desktop notify failed: ${err instanceof Error ? err.message : err}`);
-  }
   return users.length;
 }

@@ -209,7 +209,6 @@ export const config = {
   minVolume: num("MIN_VOLUME", 50), // below this = illiquid (orders won't fill fast)
   flips: { maxMidDiv: pos("FLIP_MAX_MID_DIV", 500) }, // above = whale tier (Mirror): nobody flips it, so it never ranks
   alertCooldownMin: num("ALERT_COOLDOWN_MIN", 60), // same item+type alerts at most once per this window
-  desktopNotify: (process.env.DESKTOP_NOTIFY ?? "true").toLowerCase() !== "false", // OS toast per alert (tests turn it off)
   manualStaleHours: num("MANUAL_STALE_HOURS", 6), // real Ange prices expire (→ estimate) after this many hours
   thresholds: {
     spreadPct: num("ALERT_SPREAD_PCT", 15),
