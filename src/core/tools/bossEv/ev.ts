@@ -6,6 +6,7 @@ import type {
   LootLineView,
   TierResult,
 } from "../../../lib/tools/bossEvContract";
+import { chaseOf, chaseOneInOf, entryVolumeOf, floorOf, losingRunOf } from "./metrics";
 import type { PriceLookup } from "./pricing";
 import type { BossLootFile, EntryLine, LootLine, Rate, Tier } from "./schema";
 
@@ -58,6 +59,7 @@ function entryLineView(line: EntryLine, prices: PriceLookup): EntryLineView {
     craftParts,
     costDiv: route === "buy" ? buyDiv : route === "craft" ? craftDiv : null,
     route,
+    volume: item?.volume ?? null,
   };
 }
 
@@ -76,6 +78,7 @@ function lootLineView(line: LootLine, prices: PriceLookup): LootLineView {
     evDiv: times(bounds.point),
     evLowDiv: times(bounds.lo),
     evHighDiv: times(bounds.hi),
+    lineage: line.lineage === true,
   };
 }
 
@@ -116,11 +119,14 @@ export function bossEv(tier: Tier, prices: PriceLookup): TierResult {
   const loot = tier.loot.map((line) => lootLineView(line, prices));
   const guaranteedDiv = sum(loot.map((l) => (l.rate.kind === "guaranteed" ? l.evDiv : null)));
   const evDiv = sum(loot.map((l) => l.evDiv));
+  const entryComplete = entryLines.every((l) => l.costDiv != null);
+  const unpriced = loot.filter((l) => l.price == null);
+  const losing = losingRunOf(loot, entryDiv, guaranteedDiv, entryComplete);
   const partial: Omit<TierResult, "varianceNote"> = {
     tierId: tier.id,
     label: tier.label,
     entryDiv,
-    entryComplete: entryLines.every((l) => l.costDiv != null),
+    entryComplete,
     entryLines,
     loot,
     guaranteedDiv,
@@ -131,8 +137,15 @@ export function bossEv(tier: Tier, prices: PriceLookup): TierResult {
     evPerDivSpent: entryDiv > 0 ? evDiv / entryDiv : null,
     jackpot: jackpotOf(loot, entryDiv),
     breakEven: breakEvenOf(loot, entryDiv, guaranteedDiv),
-    unpriced: loot.filter((l) => l.price == null).map((l) => l.name),
+    unpriced: unpriced.map((l) => l.name),
+    unpricedLineage: unpriced.filter((l) => l.lineage).length,
     unknownRate: loot.filter((l) => l.rate.kind === "unknown").map((l) => l.name),
+    floorDiv: floorOf(loot),
+    chaseDiv: chaseOf(loot),
+    chaseOneIn: chaseOneInOf(loot),
+    pLosingRun: losing.p,
+    losingRunUnknownRates: losing.unknownRates,
+    entryVolume: entryVolumeOf(entryLines),
   };
   return { ...partial, varianceNote: varianceNote(partial) };
 }

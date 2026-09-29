@@ -12,8 +12,11 @@ import { loadPriceInputs, priceLookup, referencedNinjaIds, resolvePrice, type Pr
 import { comparePatch, parseBossLoot, patchWarning, type Tier } from "../../core/tools/bossEv/schema";
 import { insertSnapshots } from "../../db/marketQueries";
 import { getDb } from "../../db/database";
-import { bossEvResponseSchema } from "../../lib/tools/bossEvContract";
+import { buildFarmBoard } from "../../core/farm/farmBoard";
+import { farmResponseSchema } from "../../lib/farmContract";
 import { patchCoverageSchema } from "../../sources/patchNotes/contracts";
+import { runCuratedCases, runLineageUnpricedCase } from "./bossLootCases";
+import { runFarmBoardCases } from "./farmBoardCases";
 import { assertPanelExport, freshToolsDb } from "./toolsTestKit";
 
 const NOW = Date.parse("2026-09-28T12:00:00Z");
@@ -31,7 +34,8 @@ function testCuratedFile(): void {
   const coverage = patchCoverageSchema.parse(realCoverage());
   assert.doesNotThrow(() => patchWarning(file.patch, coverage.game_data_patch, NOW), "real boss-loot + patch-coverage");
   assert.ok(file.bosses.length >= 5, "at least five sourced bosses");
-  const today = new Date(NOW).toISOString().slice(0, 10);
+  // the wall clock, not the synthetic NOW: "accessed in the future" is relative to when the test runs
+  const today = new Date().toISOString().slice(0, 10);
   for (const boss of file.bosses) {
     assert.ok(boss.sources.length > 0, `${boss.id} cites its access chain`);
     for (const s of boss.sources) assert.ok(!s.url.includes("poewiki.net/"), `${boss.id}: ${s.url} is the PoE1 wiki host`);
@@ -47,9 +51,10 @@ function testCuratedFile(): void {
     }
   }
   const ids = referencedNinjaIds(file);
-  for (const id of ["ravens-reflection", "an-audience-with-the-king", "kulemaks-invitation", "origin-spark", "raven-touched-shard"]) {
+  for (const id of ["ravens-reflection", "an-audience-with-the-king", "kulemaks-invitation", "origin-spark", "raven-touched-shard", "breachlord-sac", "carved-majesty"]) {
     assert.ok(ids.has(id), `referenced ninja ids include ${id}`);
   }
+  runCuratedCases(file);
 }
 
 /** Mutate a fresh copy of the curated file and expect the strict parse to reject it. */
@@ -95,13 +100,29 @@ function testStrictness(): void {
     assert.ok(first);
     raw.bosses.push(first);
   });
+  const cats = (raw: Record<string, unknown>): Record<string, unknown> => raw.ninjaCategories as Record<string, unknown>;
+  rejects("ninja id without a declared category", (raw) => {
+    delete cats(raw)["breachlord-sac"];
+  });
+  rejects("category the poller never fetches", (raw) => {
+    cats(raw)["breachlord-sac"] = "Uniques";
+  });
+  rejects("declared id nothing references", (raw) => {
+    cats(raw)["mirror-of-kalandra"] = "Currency";
+  });
+  rejects("loot priced from ninja but declared unlisted", (raw) => {
+    cats(raw)["raven-touched-shard"] = null;
+  });
+  rejects("lineage flag other than true", (raw) => {
+    firstLoot(raw).lineage = false;
+  });
 }
 
 const SRC = { title: "synthetic", url: "https://example.com/s", accessed: "2026-09-01" };
 
 function syntheticInputs(overrides: Partial<Record<string, number>> = {}): PriceInputs {
   const base: Record<string, number> = { a: 1, b: 5, c: 1, g: 1, p: 10, r: 40, u: 100, ...overrides };
-  const ninja = new Map(Object.entries(base).map(([id, div]) => [id, { div, name: id.toUpperCase(), icon: null, ageHours: 0.5 }]));
+  const ninja = new Map(Object.entries(base).map(([id, div]) => [id, { div, name: id.toUpperCase(), icon: null, ageHours: 0.5, volume: div * 10 }]));
   return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, nowMs: NOW };
 }
 
@@ -291,11 +312,13 @@ function testCuratedEvaluates(): void {
   const file = parseBossLoot(readCurated());
   const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, nowMs: NOW };
   const bosses = evaluateBosses(file, priceLookup(empty));
+  const rows = buildFarmBoard([], bosses, 0);
   const payload = {
-    computedLeague: "L", dataAsOf: file.dataAsOf, patch: file.patch, patchWarning: null,
-    rates: null, pricesFetchedAt: null, scoutAgeHours: null, bosses,
+    computedLeague: "L", mechanics: [], bosses: rows, details: bosses, dataAsOf: file.dataAsOf, patch: file.patch,
+    patchWarning: null, rates: null, pricesFetchedAt: null, scoutAgeHours: null,
   };
-  bossEvResponseSchema.parse(payload);
+  farmResponseSchema.parse(payload);
+  assert.equal(rows.length, file.bosses.length, "one board row per curated boss");
   for (const boss of bosses) {
     for (const tier of boss.tiers) {
       assert.equal(tier.entryComplete, false, `${boss.id}: nothing priced → entry incomplete`);
@@ -312,13 +335,16 @@ testBreakEvenAndJackpot();
 testEntryEdgeCases();
 testPricing();
 testDbPricing();
+runLineageUnpricedCase(parseBossLoot(readCurated()));
 testPatchWarning();
 testHeadlines();
 testCuratedEvaluates();
-assertPanelExport("src/components/tools/bossev/BossEvTool.tsx", "BossEvTool", "src/components/shell/tabs/FarmTab.tsx");
+runFarmBoardCases(TIER, syntheticInputs);
+assertPanelExport("src/components/farm/FarmBoard.tsx", "FarmBoard", "src/components/shell/tabs/FarmTab.tsx");
 assert.deepEqual(TABS.map((t) => t.id), [...TAB_IDS], "tab nav order must match TAB_IDS, each id once");
 assert.equal(new Set(TABS.map((t) => t.label)).size, TABS.length, "tab labels must be distinct");
 console.log(
-  "ALL PASS — boss-loot strict schema + dated sources, synthetic EV (guaranteed/point/range/unknown/unpriced/manual), " +
-    "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, contract, panel wiring",
+  "ALL PASS — boss-loot strict schema + dated sources + ninja category coverage, 2026-09-29 audit corrections, lineage gems unpriced, " +
+    "synthetic EV (guaranteed/point/range/unknown/unpriced/manual), floor/chase/P(lose)/liquidity metrics, farm board order + contract, " +
+    "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, panel wiring",
 );

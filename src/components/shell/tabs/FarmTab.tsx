@@ -1,22 +1,8 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { FarmAdvisor } from "../../FarmAdvisor";
-import { PanelLoading } from "../PanelLoading";
+import { FarmBoard } from "../../farm/FarmBoard";
 
-const BossEvTool = dynamic(() => import("../../tools/bossev/BossEvTool").then((m) => m.BossEvTool), {
-  loading: PanelLoading,
-});
-
-/*
- * Interim Farm tab: today's mechanic heat ranking and the Boss EV tool, unchanged, so nothing is
- * lost while the combined farm board (stream C) replaces both.
- */
+/** Farm tab: one board — mechanic heat strip, pinnacle boss table, selected boss detail. */
 export function FarmTab() {
-  return (
-    <>
-      <FarmAdvisor />
-      <BossEvTool />
-    </>
-  );
+  return <FarmBoard />;
 }
