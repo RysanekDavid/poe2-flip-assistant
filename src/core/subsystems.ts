@@ -7,6 +7,7 @@ export const SUBSYSTEM_NAMES = [
   "ninja-sweep",
   "cx-rates",
   "cx-history",
+  "cx-start-backfill",
   "prune",
   "autosnipe",
   "craft-margin",
@@ -35,7 +36,7 @@ export interface SubsystemSpec {
 /** The slice of config the registry reads — injectable so tests can flip loops on and off. */
 export type SubsystemConfig = Pick<
   typeof config,
-  "pollIntervalMin" | "autoSnipe" | "craftMargin" | "balanceIntervalMin" | "patchNotes" | "snipeOutcomes"
+  "pollIntervalMin" | "autoSnipe" | "craftMargin" | "balanceIntervalMin" | "patchNotes" | "snipeOutcomes" | "leagueStart"
 >;
 
 /** Mirrors the league watcher's fixed 6h check; kept here so the registry has no poller import. */
@@ -55,6 +56,7 @@ export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemN
     "ninja-sweep": { label: "poe.ninja sweep", hint: "Fetch + store every ninja category for a polled league, then evaluate watchlist alerts.", perLeague: true, expectedSec: cycle, enabled: true },
     "cx-rates": { label: "Exchange rates", hint: "GGG currency-exchange digest → Div/Ex/Chaos rates (only fetched when stored rates are stale).", perLeague: false, expectedSec: cycle, enabled: true },
     "cx-history": { label: "Exchange history", hint: "Backfill missing hours of GGG exchange history for Top Flips.", perLeague: false, expectedSec: cycle, enabled: true },
+    "cx-start-backfill": { label: "League-start curves", hint: `Dates each challenge league's start from GGG's exchange archive and folds its first ${cfg.leagueStart.days + 14} days (the ${cfg.leagueStart.days}-day window + a full 14-day follow-up; 6 sampled hours/day, ≤12 digests per cycle); the live league records as its days complete. A league that cannot be dated is reported once, then the row turns green again.`, perLeague: false, expectedSec: cycle, enabled: cfg.leagueStart.backfillEnabled },
     prune: { label: "Retention prune", hint: "Age out old snapshots, observations, craft EV history and exchange hours.", perLeague: false, expectedSec: cycle, enabled: true },
     autosnipe: { label: "Auto-snipe", hint: "Autonomous rare-snipe scan under the owner's POESESSID.", perLeague: false, expectedSec: cfg.autoSnipe.intervalMin * 60, enabled: cfg.autoSnipe.enabled },
     "craft-margin": { label: "Craft margin tick", hint: "Refresh the stalest craft recipe's EV from trade2.", perLeague: false, expectedSec: cfg.craftMargin.intervalMin * 60, enabled: cfg.craftMargin.enabled },

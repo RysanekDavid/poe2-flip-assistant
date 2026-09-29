@@ -13,6 +13,7 @@ import { PositionsPanel } from "../../PositionsPanel";
 import { FlipLog } from "../../FlipLog";
 import { EmptyState } from "../../ui/EmptyState";
 import { PageHeader } from "../../ui/PageHeader";
+import { LeagueStartPanel } from "../../exchange/LeagueStartPanel";
 
 /** In-game Currency Exchange: find a flip, plan it, track the position, log the result. */
 export function ExchangeTab() {
@@ -34,6 +35,8 @@ export function ExchangeTab() {
         legend={<TopFlipsLegend />}
       />
       <AlertTicker />
+      {/* first days of a league: what past league starts did next; one line otherwise */}
+      <LeagueStartPanel />
       <DiscoverTable selectedId={selected?.row.itemId} onSelect={selectItem} />
       <div id="flip-plan" className="scroll-mt-[var(--shell-h,0px)]">
         {selected ? (

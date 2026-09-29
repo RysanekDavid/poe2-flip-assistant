@@ -37,6 +37,7 @@ import {
 } from "./cxTestFixtures";
 import { runCxModelTests } from "./testCxMarkets";
 import { runAbsentLeagueTests, runCxOutcomeTests } from "./testCxOutcomes";
+import { runLeagueStartTests } from "./testLeagueStart";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -72,7 +73,8 @@ async function main(): Promise<void> {
   testRetention();
   runCxOutcomeTests(); // appends hours after H0 — keep last among the stored-history tests
   await runAbsentLeagueTests(NOW);
-  console.log("  ok — ingest, backfill, league view, retention, outcome loop, absent leagues");
+  await runLeagueStartTests(); // rewrites league_registry in this temp DB — keep last
+  console.log("  ok — ingest, backfill, league view, retention, outcome loop, absent leagues, league start");
 }
 
 function count(sql: string, ...args: unknown[]): number {
