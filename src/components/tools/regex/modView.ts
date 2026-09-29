@@ -1,6 +1,6 @@
 /*
- * View helpers for the mod list: display text, roll ranges and which composed token stands for a
- * mod. Pure (no React) so the list rows stay small.
+ * View helpers for the mod picker: display text, roll ranges and which composed token stands for a
+ * mod. Pure (no React) so the cards stay small and the node tests cover it.
  */
 import type { ComposedToken, PoolComposeResult } from "../../../core/tools/regex/poolCompose";
 import { modKey } from "../../../core/tools/regex/poolNamespace";
@@ -9,17 +9,43 @@ import { sampleLines } from "../../../core/tools/regex/poolSamples";
 
 export const modLabel = (mod: PoolMod): string => mod.lines.map((l) => l.template).join(" / ");
 
-/** "rolls 10–50" across every tier for the first number of each numeric line; "" for fixed text. */
-export function rollSummary(mod: PoolMod): string {
-  const parts = mod.lines.flatMap((line, i) => {
-    if (line.numeric.count === 0) return [];
-    const ranges = mod.tiers.flatMap((t) => t.lines.filter((l) => l.line === i).map((l) => l.ranges[0]).filter((r) => r !== undefined));
-    if (ranges.length === 0) return [];
-    const lo = Math.min(...ranges.map((r) => r.min));
-    const hi = Math.max(...ranges.map((r) => r.max));
-    return [lo === hi ? `${lo}` : `${lo}–${hi}`];
-  });
-  return parts.length > 0 ? `rolls ${parts.join(" / ")}` : "";
+const rangeText = (lo: number, hi: number): string => (lo === hi ? `${lo}` : `(${lo}–${hi})`);
+
+/**
+ * The mod text with each "#" replaced by its roll range across every tier (the widest span), so a
+ * card reads like the in-game tooltip: "Monsters have (80–300)% increased Critical Hit Chance".
+ */
+export function inlineRollText(mod: PoolMod): string {
+  return mod.lines
+    .map((line, i) => {
+      let slot = 0;
+      return line.template.replace(/#/g, () => {
+        const at = slot;
+        slot += 1;
+        const ranges = mod.tiers.flatMap((t) => t.lines.filter((l) => l.line === i).flatMap((l) => l.ranges.slice(at, at + 1)));
+        if (ranges.length === 0) return "#";
+        return rangeText(Math.min(...ranges.map((r) => r.min)), Math.max(...ranges.map((r) => r.max)));
+      });
+    })
+    .join(" / ");
+}
+
+/**
+ * Where the mod can spawn, only when that is narrower than the whole pool ("T11–15, T16"): a mod
+ * that rolls everywhere needs no note. Waystone band labels are shortened to the game's "T" form.
+ */
+export function bandSummary(mod: PoolMod, pool: RegexPool): string {
+  const own = new Set(mod.tiers.flatMap((t) => t.bands));
+  if (pool.bands.every((b) => own.has(b.id))) return "";
+  return pool.bands
+    .filter((b) => own.has(b.id))
+    .map((b) => b.label.replace(/^Tier /, "T"))
+    .join(", ");
+}
+
+/** Card sub-line: affix name · side · bands ("Destructive · prefix · T11–15, T16"). */
+export function modMeta(mod: PoolMod, pool: RegexPool): string {
+  return [mod.name, mod.side, bandSummary(mod, pool)].filter((s) => s.length > 0).join(" · ");
 }
 
 export interface ModTokenInfo {
@@ -50,7 +76,7 @@ export function tokenInfoByMod(pool: RegexPool, result: PoolComposeResult | null
 /** Groups in pool order with the mods that pass the text filter; empty groups are dropped. */
 export function filterGroups(pool: RegexPool, query: string): Array<{ id: string; label: string; mods: PoolMod[] }> {
   const q = query.trim().toLowerCase();
-  const hit = (m: PoolMod): boolean => q === "" || modLabel(m).toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+  const hit = (m: PoolMod): boolean => q === "" || modLabel(m).toLowerCase().includes(q) || inlineRollText(m).toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
   return pool.groups
     .map((g) => ({ id: g.id, label: g.label, mods: pool.mods.filter((m) => m.group === g.id && hit(m)) }))
     .filter((g) => g.mods.length > 0);
