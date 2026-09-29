@@ -8,6 +8,7 @@ import {
   type CraftValueResponse,
 } from "../../../lib/tools/craftMovesContract";
 import { Button } from "../../ui/Button";
+import { useCountdown } from "../../ui/useCountdown";
 import { postJson } from "./craftMovesClient";
 
 export type LiveState =
@@ -15,17 +16,6 @@ export type LiveState =
   | { kind: "loading" }
   | { kind: "done"; v: CraftValueResponse }
   | { kind: "error"; error: string; retryAt: number | null };
-
-/** Seconds until `retryAt`, ticking once a second while a 503 cool-down runs. */
-export function useCountdown(retryAt: number | null): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (retryAt == null) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [retryAt]);
-  return retryAt == null ? 0 : Math.max(0, Math.ceil((retryAt - now) / 1000));
-}
 
 /** One live comparable search (1 trade2 search + 1 fetch) for the item, or a move's outcome. */
 export async function fetchLiveValue(text: string, targetLine?: string): Promise<LiveState> {

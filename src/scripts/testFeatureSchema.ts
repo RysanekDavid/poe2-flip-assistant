@@ -7,7 +7,7 @@ import { rmSync } from "node:fs";
 import Database from "better-sqlite3";
 import { config, flag } from "../config/env";
 import { getDb, runMigrations } from "../db/database";
-import { ensureFeatureTables } from "../db/featureMigrations";
+import { ensureFeatureTables, SNIPE_OUTCOME_CHECK_COLUMNS } from "../db/featureMigrations";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -29,6 +29,7 @@ const db = getDb();
 testTablesCreated();
 testDoubleRunIdempotent();
 testLegacyNotifySettingsUpgrade();
+testLegacySnipeOutcomesUpgrade();
 testMissingNotifySettingsFailsLoudly();
 testFarmSpeedCascade();
 testChecks();
@@ -92,6 +93,32 @@ function testDoubleRunIdempotent(): void {
   ok("full migration chain re-runs without error", error === "", error);
   ok("full migration chain re-run changes nothing", schemaSnapshot(second) === before);
   second.close();
+}
+
+/** A DB whose snipe_outcomes is Wave 0's shape (no checker columns) with a tracked row. */
+function testLegacySnipeOutcomesUpgrade(): void {
+  const legacy = new Database(":memory:");
+  legacy.exec(`
+    CREATE TABLE users (id INTEGER PRIMARY KEY);
+    CREATE TABLE notify_settings (user_id INTEGER PRIMARY KEY);
+    CREATE TABLE snipe_outcomes (
+      listing_id TEXT PRIMARY KEY, league TEXT NOT NULL, profile TEXT NOT NULL, base_type TEXT NOT NULL,
+      item_name TEXT NOT NULL, ask_div REAL NOT NULL, value_div REAL NOT NULL, margin_pct REAL NOT NULL,
+      samples INTEGER NOT NULL, query_id TEXT, alerted_at INTEGER NOT NULL,
+      check_2h TEXT, check_2h_at INTEGER, check_2h_ask_div REAL,
+      check_24h TEXT, check_24h_at INTEGER, check_24h_ask_div REAL, last_error TEXT
+    ) WITHOUT ROWID;
+    INSERT INTO snipe_outcomes (listing_id, league, profile, base_type, item_name, ask_div, value_div, margin_pct, samples, query_id, alerted_at, check_2h)
+      VALUES ('old1', 'L', 'ring', 'Ruby Ring', 'x', 1, 2, 50, 5, 'q', 1, 'gone');
+  `);
+  ensureFeatureTables(legacy);
+  ensureFeatureTables(legacy);
+  const have = new Set(columns(legacy, "snipe_outcomes").map((c) => c.name));
+  ok("legacy snipe_outcomes gains every checker column", SNIPE_OUTCOME_CHECK_COLUMNS.every(([name]) => have.has(name)));
+  const r = legacy.prepare("SELECT check_2h, attempts, check_2h_method FROM snipe_outcomes WHERE listing_id = 'old1'").get() as Record<string, unknown>;
+  ok("legacy tracked row kept; attempts 0, method NULL", r.check_2h === "gone" && r.attempts === 0 && r.check_2h_method === null);
+  ok("legacy DB gets snipe_outcome_meta", legacy.prepare("SELECT 1 FROM sqlite_master WHERE name = 'snipe_outcome_meta'").get() != null);
+  legacy.close();
 }
 
 /** A DB from before the live board: notify_settings exists with a row, without the board columns. */
@@ -177,6 +204,16 @@ function testSnipeOutcomeChecks(CHECK: RegExp): void {
   const set = (column: "check_2h" | "check_24h", value: string) => () =>
     db.prepare(`UPDATE snipe_outcomes SET ${column} = ? WHERE listing_id = 'lst1'`).run(value);
   ok("check_2h 'sold' rejected (unobservable)", throws(set("check_2h", "sold"), CHECK));
+  const upd = (column: string, value: unknown) => () => db.prepare(`UPDATE snipe_outcomes SET ${column} = ? WHERE listing_id = 'lst1'`).run(value);
+  ok("check_2h_method outside fetch|search rejected", throws(upd("check_2h_method", "guess"), CHECK));
+  ok("check_24h_method 'search' accepted", !throws(upd("check_24h_method", "search"), /./));
+  ok("check_24h_ask_amount = 0 rejected (NULL, never 0)", throws(upd("check_24h_ask_amount", 0), CHECK));
+  ok("attempts negative rejected", throws(upd("attempts", -1), CHECK));
+  ok("attempts NULL rejected", throws(upd("attempts", null), /NOT NULL/i));
+  const meta = (id: number, state: string) => () => db.prepare("INSERT OR REPLACE INTO snipe_outcome_meta (id, fetch_method) VALUES (?, ?)").run(id, state);
+  ok("fetch method outside unverified|verified|broken rejected", throws(meta(1, "maybe"), CHECK));
+  ok("fetch method meta is a single row", throws(meta(2, "verified"), CHECK));
+  ok("fetch method 'broken' accepted", !throws(meta(1, "broken"), /./));
   ok("check_24h 'delisted' rejected", throws(set("check_24h", "delisted"), CHECK));
   for (const state of ["listed", "gone", "error"]) ok(`check_2h '${state}' accepted`, !throws(set("check_2h", state), /./));
 }
@@ -211,7 +248,7 @@ function testBoardColumns(): void {
 }
 
 function testConfig(): void {
-  ok("snipeOutcomes defaults", config.snipeOutcomes.enabled === true && config.snipeOutcomes.maxFetchesPerRun === 5);
+  ok("snipeOutcomes defaults", config.snipeOutcomes.enabled === true && config.snipeOutcomes.maxFetchesPerRun === 5 && config.snipeOutcomes.maxSearchesPerRun === 3);
   ok("leagueStart defaults", config.leagueStart.days === 14 && config.leagueStart.backfillEnabled === true);
   ok("discordBoard.intervalMin default 60", config.discordBoard.intervalMin === 60);
   ok("modPool.cacheHours default 24", config.modPool.cacheHours === 24);

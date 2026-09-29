@@ -97,6 +97,7 @@ const CFG: SubsystemConfig = {
   craftMargin: { ...config.craftMargin, enabled: true, intervalMin: 10 },
   balanceIntervalMin: 0,
   patchNotes: { ...config.patchNotes, enabled: true, intervalMin: 30 },
+  snipeOutcomes: { ...config.snipeOutcomes, enabled: true },
 };
 
 function testStaleDerivation(): void {

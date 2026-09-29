@@ -31,7 +31,15 @@ export interface TabMeta {
 
 export const TABS: readonly TabMeta[] = [
   { id: "exchange", label: "Exchange", hint: "in-game Currency Exchange flips" },
-  { id: "market", label: "Market", hint: "trade site · demand · snipes" },
+  {
+    id: "market",
+    label: "Market",
+    hint: "price check · trade site demand · snipes",
+    tools: [
+      { id: "price", label: "Price check" },
+      { id: "board", label: "Market board" },
+    ],
+  },
   { id: "farm", label: "Farm", hint: "what to farm now · pinnacle boss EV" },
   {
     id: "craft",

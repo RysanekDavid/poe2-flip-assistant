@@ -7,6 +7,7 @@ import { evaluateSnipe } from "../core/snipeGate";
 import type { StatOption } from "../api/tradeMeta";
 import type { Listing } from "../api/tradeListing";
 import type { ScoutRates } from "../api/scoutClient";
+import { runPriceCheckCases } from "./priceCheckCases";
 
 let fail = 0;
 const ok = (name: string, cond: boolean, extra = "") => {
@@ -119,5 +120,14 @@ ok("snipe fires at 5 div", cheap.pass, cheap.pass ? "" : cheap.detail);
 ok("no snipe at 9 div (10% under)", !judge(9).pass);
 ok("thin data blocks snipe", !judge(5, 1).pass);
 
-console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
-process.exit(fail === 0 ? 0 : 1);
+// 6. Market › Price check (paste → value → sell hint), async
+runPriceCheckCases(ok).then(
+  () => {
+    console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
+    process.exit(fail === 0 ? 0 : 1);
+  },
+  (e: unknown) => {
+    console.error("FAIL  price check cases threw", e);
+    process.exit(1);
+  },
+);

@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { ExternalLink, Loader2, Play, Radar, TriangleAlert } from "lucide-react";
+import { ExternalLink, Info, Loader2, Play, Radar, TriangleAlert } from "lucide-react";
 import { fetchSnipeScanStatus, findingCard, parseScanReport, type ParsedReport, type SnipeScanReport, type SnipeScanStatus } from "../lib/snipeScanContract";
 import { useVisiblePoll } from "../lib/useVisiblePoll";
+import { useSnipeOutcomes } from "../lib/useSnipeOutcomes";
+import { fetchMethodCaveat, GONE_MEANING, type ProfileOutcomeStats, type SnipeOutcomesResponse } from "../lib/snipeOutcomeContract";
 import { SnipeCardView, ageLabel } from "./alerts/SnipeCardView";
 import { Button } from "./ui/Button";
 import { EmptyState } from "./ui/EmptyState";
@@ -100,6 +102,52 @@ function Findings({ report, at }: { report: SnipeScanReport; at: string | null }
   );
 }
 
+const pctText = (p: number | null): string => (p == null ? "—" : `${Math.round(p)}%`);
+
+function hitRateHint(p: ProfileOutcomeStats): string {
+  const lines = [
+    `gone <2h: ${pctText(p.gone2hPct)} of ${p.checked2h} checked at 2 h`,
+    `gone <24h: ${pctText(p.gone24hPct)} · still listed at 24 h: ${pctText(p.listed24hPct)} (of ${p.decided24h})`,
+    p.medianMarginGonePct != null || p.medianMarginListedPct != null
+      ? `median alert margin: gone ${pctText(p.medianMarginGonePct)} vs still listed ${pctText(p.medianMarginListedPct)}`
+      : null,
+    p.errors > 0 ? `${p.errors} check(s) failed` : null,
+    GONE_MEANING,
+  ];
+  return lines.filter((l): l is string => l != null).join("\n");
+}
+
+/**
+ * Per-archetype hit rate of past alerts: how often the listing was gone within 2 h. Neutral until
+ * the fetch method is verified; once it is known to be broken its percentages are not shown at all.
+ */
+function HitRates({ data }: { data: SnipeOutcomesResponse }) {
+  const rows = data.profiles.filter((p) => p.checked2h > 0 || p.decided24h > 0);
+  if (rows.length === 0 && data.pending === 0) return null;
+  const caveat = fetchMethodCaveat(data.fetchMethod);
+  const rateTone = data.fetchMethod === "verified" ? "text-neutral-200" : "text-neutral-400";
+  const head = `alerts of the last ${data.windowDays} days in ${data.league}, re-checked 2 h and 24 h later\n${GONE_MEANING}${caveat ? `\n${caveat}` : ""}`;
+  return (
+    <p className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
+      <span className="flex items-center gap-1 font-medium text-neutral-300" title={head}>
+        Alert outcomes{data.fetchMethod === "unverified" && <span className="font-normal text-neutral-500"> · unverified method</span>}
+        <Info aria-hidden className="h-3.5 w-3.5 text-neutral-500" />
+      </span>
+      {data.fetchMethod === "broken" ? (
+        <span className="text-warn" title={caveat ?? ""}>hit rates hidden — the re-fetch method proved unreliable; checks now re-search</span>
+      ) : (
+        rows.map((p) => (
+          <span key={p.profile} title={`${hitRateHint(p)}${caveat ? `\n${caveat}` : ""}`}>
+            {p.label} <span className={`tabular-nums ${rateTone}`}>{pctText(p.gone2hPct)}</span> gone &lt;2h
+            <span className="text-neutral-500"> (n={p.checked2h})</span>
+          </span>
+        ))
+      )}
+      {data.pending > 0 && <span className="text-neutral-500">{data.pending} awaiting a check</span>}
+    </p>
+  );
+}
+
 /** Why Scan now is unavailable, or null when it can run. */
 function scanBlocker(status: SnipeScanStatus | null): string | null {
   if (!status) return "loading scanner status…";
@@ -118,6 +166,7 @@ function ScanBody({ status, parsed }: { status: SnipeScanStatus; parsed: ParsedR
 /** Market tab: the auto-snipe scanner's state, a manual scan, and what the last scan found. */
 export function AutoSnipeBar() {
   const { status, scanning, notice, scanNow } = useSnipeScanner();
+  const outcomes = useSnipeOutcomes();
   const parsed = parseScanReport(status?.lastReport);
   const blocker = scanBlocker(status);
   const banner = notice ?? parsed.error;
@@ -132,6 +181,8 @@ export function AutoSnipeBar() {
         </Button>
       </header>
       {banner && <p role="alert" className="mb-3 rounded border border-warn/40 bg-warn/10 px-2 py-1 text-sm text-warn">{banner}</p>}
+      {outcomes.data && <HitRates data={outcomes.data} />}
+      {outcomes.error && <p className="mb-3 text-xs text-warn">alert outcomes unavailable: {outcomes.error}</p>}
       {status && <ScanBody status={status} parsed={parsed} />}
     </section>
   );

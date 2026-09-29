@@ -13,6 +13,7 @@ import { feedPriceBook, newBookCounters, bookReference } from "../core/priceBook
 import { consumeScanRequests, isScanPending, requestScan } from "../db/scanRequestQueries";
 import { getSnipeFailure, getSnipeReport, saveSnipeFailure, saveSnipeReport } from "../db/snipeReportQueries";
 import { dropRetiredHunts } from "../db/retiredMigrations";
+import { snipeOutcomeTests } from "./testSnipeOutcomes";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -146,5 +147,13 @@ govA.observe("search", 429, { "retry-after": "90", "x-rate-limit-rules": "Ip", "
 ok("a 429 seen by one process blocks the other", govB.reserve("search") === 90_000, String(govB.reserve("search")));
 ok("fetch budget is separate from search", govB.reserve("fetch") === 0);
 
-console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
-process.exit(fail === 0 ? 0 : 1);
+// --- snipe outcome tracking (async: the checker runs against faked trade2 calls) ---
+snipeOutcomeTests(ok)
+  .then(() => {
+    console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
+    process.exit(fail === 0 ? 0 : 1);
+  })
+  .catch((e: unknown) => {
+    console.error("snipe outcome tests crashed:", e);
+    process.exit(1);
+  });
