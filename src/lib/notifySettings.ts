@@ -9,6 +9,13 @@ export const NotifySettingsSchema = z.object({
   }),
   prefs: z.array(PrefRowSchema),
   digest: z.boolean(),
+  /** Discord live board: one message edited in place every `intervalMin` (opt-in). */
+  board: z.object({
+    enabled: z.boolean(),
+    posted: z.boolean(), // a board message exists in the channel and will be edited
+    updatedAt: z.number().nullable(),
+    intervalMin: z.number().int().positive(),
+  }),
   status: z.object({
     pending: z.number(),
     lastSentAt: z.number().nullable(),
@@ -17,6 +24,7 @@ export const NotifySettingsSchema = z.object({
     lastErrorAt: z.number().nullable(),
   }),
   tested: z.boolean().optional(),
+  boardQueued: z.boolean().optional(),
 });
 export type NotifySettings = z.infer<typeof NotifySettingsSchema>;
 

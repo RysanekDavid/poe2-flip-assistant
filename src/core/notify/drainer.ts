@@ -1,19 +1,23 @@
 import type Database from "better-sqlite3";
 import { getDb } from "../../db/database";
 import {
+  clearBoardMessageId,
   dropPending,
   dueRows,
   dueUserIds,
+  getBoardSettings,
   lastAttemptAt,
   markFailed,
   markRetry,
   markSent,
   pruneQueue,
   readWebhook,
+  recordBoardDelivery,
   type QueueRow,
 } from "../../db/notifyQueries";
 import { alertBatchMessage, embedMessage, MAX_EMBEDS, QueuedPayloadSchema, type DiscordMessage } from "./discordMessage";
-import { axiosTransport, type DeliveryResult, type DiscordTransport } from "./discordTransport";
+import { axiosTransport, MessageIdSchema, type DeliveryResult, type DiscordTransport } from "./discordTransport";
+import { enqueueDueBoards, renderBoard } from "./boardData";
 import { enqueueDueDigests } from "./digest";
 import { redactWebhook } from "./webhookUrl";
 
@@ -30,6 +34,10 @@ import { redactWebhook } from "./webhookUrl";
  * that Discord accepted but whose response we never saw (timeout, poller crash between the POST
  * and markSent) is retried and shows up twice. A rare duplicate ping is the accepted cost; do not
  * "fix" it by dropping retries — that trades a duplicate for a silently lost snipe.
+ *
+ * The live board inherits the same at-least-once rule: a POST ?wait=true whose response is lost
+ * leaves an orphan board message in the channel (its id never stored) and the retry posts a second
+ * one, which is then the one edited. Edits themselves are idempotent — a repeated PATCH is harmless.
  */
 export const NOTIFY_POLICY = {
   windowMs: 30_000,
@@ -43,6 +51,8 @@ export interface DrainDeps {
   now: () => number;
   transport: DiscordTransport;
   db: Database.Database;
+  /** Renders one user's live board at send time (injectable: tests must not need market data). */
+  renderBoard: (userId: number, nowMs: number) => DiscordMessage;
 }
 
 export interface DrainSummary {
@@ -51,6 +61,7 @@ export interface DrainSummary {
   failed: number; // rows given up on
   throttled: number; // users skipped by the 30 s window
   digests: number; // digests queued this pass
+  boards: number; // live board updates queued this pass
 }
 
 /** Exponential backoff after the Nth failed attempt: 30 s, 60 s, 120 s … capped at 30 min. */
@@ -58,9 +69,9 @@ export function backoffMs(attempt: number): number {
   return Math.min(NOTIFY_POLICY.baseBackoffMs * 2 ** Math.max(0, attempt - 1), NOTIFY_POLICY.maxBackoffMs);
 }
 
-/** A batch is either one digest or a run of consecutive alert rows. */
+/** A batch is either one digest, one board update, or a run of consecutive alert rows. */
 function pickBatch(rows: QueueRow[]): QueueRow[] {
-  if (rows[0]?.kind === "digest") return [rows[0]];
+  if (rows[0]?.kind === "digest" || rows[0]?.kind === "board") return [rows[0]];
   const batch: QueueRow[] = [];
   for (const r of rows) {
     if (r.kind !== "alert" || batch.length === MAX_EMBEDS) break;
@@ -133,46 +144,123 @@ async function deliverForUser(userId: number, deps: DrainDeps, sum: DrainSummary
   }
   const batch = pickBatch(dueRows(userId, now, MAX_EMBEDS, deps.db));
   if (batch.length === 0) return;
-  const ids = batch.map((r) => r.queue_id);
   if (webhook.state === "unreadable") {
+    const ids = batch.map((r) => r.queue_id);
     markFailed(ids, now, "stored webhook cannot be decrypted (server key changed?) — paste it again in the Alerts tab", deps.db);
     sum.failed += ids.length;
     return;
   }
-  let message: DiscordMessage;
+  const first = batch[0];
+  if (first?.kind === "board") return deliverBoard(userId, webhook.url, first, now, deps, sum);
+  const message = tryBuild(userId, batch, now, () => buildMessage(batch), deps, sum);
+  if (message == null) return;
+  const result = await attempt(() => deps.transport.post(webhook.url, message));
+  applyResult(userId, batch, result, now, deps, sum);
+}
+
+/** A message that cannot be built never will be: fail its rows loudly instead of retrying. */
+function tryBuild(
+  userId: number,
+  batch: QueueRow[],
+  now: number,
+  build: () => DiscordMessage,
+  deps: DrainDeps,
+  sum: DrainSummary,
+): DiscordMessage | null {
   try {
-    message = buildMessage(batch);
+    return build();
   } catch (e) {
+    const ids = batch.map((r) => r.queue_id);
     const detail = redactWebhook(`could not build the Discord message: ${e instanceof Error ? e.message : String(e)}`);
     markFailed(ids, now, detail, deps.db);
     sum.failed += ids.length;
     console.error(`[notify] user ${userId}: ${detail}`);
-    return;
+    return null;
   }
-  // A throwing transport is still an attempt: recorded + backed off, so it cannot spin every tick.
-  const result = await deps.transport(webhook.url, message).catch(
+}
+
+/** A throwing transport is still an attempt: recorded + backed off, so it cannot spin every tick. */
+function attempt(send: () => Promise<DeliveryResult>): Promise<DeliveryResult> {
+  return send().catch(
     (e: unknown): DeliveryResult => ({
       kind: "failed",
       detail: redactWebhook(`transport error: ${e instanceof Error ? e.message : String(e)}`),
     }),
   );
-  applyResult(userId, batch, result, now, deps, sum);
+}
+
+/** The stored board message id, or null (post a new board) when none — or a corrupt one — is stored. */
+function boardMessageId(userId: number, db: Database.Database): string | null {
+  const stored = getBoardSettings(userId, db).messageId;
+  if (stored == null) return null;
+  if (MessageIdSchema.safeParse(stored).success) return stored;
+  console.error(`[notify] user ${userId}: stored board message id is not a Discord snowflake — posting a new board`);
+  clearBoardMessageId(userId, db);
+  return null;
+}
+
+/** Discord JSON error code for "Unknown Message" — the board message was deleted in the channel. */
+const UNKNOWN_MESSAGE = 10008;
+
+/**
+ * Store the delivered board's id — unless, during the await, the user switched webhooks (the id
+ * belongs to the old one and could never be edited through the new one) or switched the board off
+ * (recordBoardDelivery only writes while board = 1, so a toggle-off is never undone).
+ */
+function recordIfCurrent(userId: number, sentTo: string, id: string | null, now: number, db: Database.Database): void {
+  const current = readWebhook(userId, db);
+  if (current.state !== "set" || current.url !== sentTo) {
+    console.warn(`[notify] user ${userId}: webhook changed while the board was being sent — not storing its message id`);
+    return;
+  }
+  if (id == null) console.error(`[notify] user ${userId}: Discord accepted the board but returned no message id — the next update posts a new one`);
+  recordBoardDelivery(userId, id, now, db);
+}
+
+/**
+ * One board update: edit the stored message, or POST ?wait=true and keep the returned id.
+ *  - edit answered 404 / code 10008 (message deleted in Discord): forget the id and put the row
+ *    back, so the next pass (after the per-user window — still one request per pass) posts afresh;
+ *  - any other 4xx on an edit: forget the id too (a PATCH that failed once would fail every cycle)
+ *    and fail the row normally — the next interval POSTs a new board, or fails again loudly if the
+ *    webhook itself is gone (404 / code 10015).
+ */
+async function deliverBoard(userId: number, url: string, row: QueueRow, now: number, deps: DrainDeps, sum: DrainSummary): Promise<void> {
+  const message = tryBuild(userId, [row], now, () => deps.renderBoard(userId, now), deps, sum);
+  if (message == null) return;
+  const editId = boardMessageId(userId, deps.db);
+  const result = await attempt(() =>
+    editId != null ? deps.transport.edit(url, editId, message) : deps.transport.post(url, message, { wait: true }),
+  );
+  if (editId != null && result.kind === "rejected") {
+    clearBoardMessageId(userId, deps.db);
+    if (result.code === UNKNOWN_MESSAGE) {
+      markRetry(row.queue_id, now, now, result.detail, { counts: false, giveUp: false }, deps.db);
+      sum.retried++;
+      console.warn(`[notify] user ${userId}: board message gone (${result.detail}) — re-posting it`);
+      return;
+    }
+  }
+  if (result.kind === "ok") recordIfCurrent(userId, url, editId ?? result.messageId, now, deps.db);
+  applyResult(userId, [row], result, now, deps, sum);
 }
 
 let lastPruneAt = 0;
 
 /**
- * One drain pass: queue due digests, then send at most one message per user whose window is
- * open. Per-user failures are recorded on their rows and never abort other users.
+ * One drain pass: queue due digests and boards, then send at most one message per user whose
+ * window is open. Per-user failures are recorded on their rows and never abort other users.
  */
 export async function drainNotifications(overrides: Partial<DrainDeps> = {}): Promise<DrainSummary> {
   const deps: DrainDeps = {
     now: overrides.now ?? Date.now,
     transport: overrides.transport ?? axiosTransport(),
     db: overrides.db ?? getDb(),
+    renderBoard: overrides.renderBoard ?? renderBoard,
   };
-  const sum: DrainSummary = { sent: 0, retried: 0, failed: 0, throttled: 0, digests: 0 };
+  const sum: DrainSummary = { sent: 0, retried: 0, failed: 0, throttled: 0, digests: 0, boards: 0 };
   sum.digests = enqueueDueDigests(deps.now(), deps.db);
+  sum.boards = enqueueDueBoards(deps.now(), deps.db);
   for (const userId of dueUserIds(deps.now(), deps.db)) {
     await deliverForUser(userId, deps, sum);
   }

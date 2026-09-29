@@ -1,7 +1,8 @@
 /* Discord drainer contracts against a TEMP DB with a fake clock and fake transports (no network):
  * burst batching + the 30 s per-user window, 429 retry_after, exponential backoff and give-up,
  * permanent 4xx, the axios transport's response classification (fake adapter), the daily
- * digest, and that no webhook token ever reaches a log line or a stored error.
+ * digest, the live board (testNotifyBoard.ts), and that no webhook token ever reaches a log line
+ * or a stored error.
  * Run: npm run test:notify (runWithTestEnv.ts notify-drain). */
 import axios, { type AxiosAdapter } from "axios";
 import { config } from "../config/env";
@@ -12,6 +13,7 @@ import { backoffMs, drainNotifications, NOTIFY_POLICY } from "../core/notify/dra
 import { axiosTransport, classifyResponse, type DeliveryResult, type DiscordTransport } from "../core/notify/discordTransport";
 import type { DiscordMessage } from "../core/notify/discordMessage";
 import { digestPayload } from "../core/notify/digest";
+import { runBoardTests } from "./testNotifyBoard";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -39,12 +41,17 @@ for (const level of ["log", "warn", "error"] as const) {
 
 const db = getDb();
 const sent: DiscordMessage[] = [];
-const fakeTransport = (respond: () => DeliveryResult): DiscordTransport => async (url, message) => {
-  if (url !== URL) throw new Error("drainer posted to the wrong URL");
-  sent.push(message);
-  return respond();
-};
-const okTransport = fakeTransport(() => ({ kind: "ok" }));
+const fakeTransport = (respond: () => DeliveryResult): DiscordTransport => ({
+  post: async (url, message) => {
+    if (url !== URL) throw new Error("drainer posted to the wrong URL");
+    sent.push(message);
+    return respond();
+  },
+  edit: async () => {
+    throw new Error("alert/digest delivery must never edit a message");
+  },
+});
+const okTransport = fakeTransport(() => ({ kind: "ok", messageId: null }));
 const drain = (now: number, transport: DiscordTransport = okTransport) => drainNotifications({ now: () => now, transport, db });
 const alert = (i: number): void =>
   insertAlert(USER, "Runes of Aldur", { type: "SNIPE", itemId: `l-${i}-${Math.random()}`, itemName: `Item ${i}`, message: "m", value: 40, threshold: 35 });
@@ -81,6 +88,7 @@ async function main(): Promise<void> {
   await testAxiosTransport();
   await testDigest();
   await testReplaceKeepsQueue();
+  await runBoardTests({ db, ok, url: URL, token: TOKEN, user: USER, t0: T0 });
 }
 
 async function testBatching(): Promise<void> {
@@ -164,9 +172,10 @@ async function testRejected(): Promise<void> {
   // a throwing transport (e.g. a URL-bearing network error) is recorded, redacted, and backed off
   reset();
   alert(301);
-  await drain(T0 + 7_300_000, async () => {
+  const refused = async (): Promise<DeliveryResult> => {
     throw new Error(`connect ECONNREFUSED ${URL}`);
-  });
+  };
+  await drain(T0 + 7_300_000, { post: refused, edit: refused });
   const thrown = db.prepare("SELECT status, attempts, last_error FROM notify_queue").get() as { status: string; attempts: number; last_error: string };
   ok("throwing transport → retry with a redacted error", thrown.status === "pending" && thrown.attempts === 1 && !thrown.last_error.includes(TOKEN), thrown.last_error);
 }
@@ -183,7 +192,7 @@ async function testWebhookRemoved(): Promise<void> {
 async function testAxiosTransport(): Promise<void> {
   const via = (status: number, data: unknown, headers: Record<string, string> = {}): Promise<DeliveryResult> => {
     const adapter: AxiosAdapter = async (cfg) => ({ status, statusText: "", data, headers, config: cfg });
-    return axiosTransport(axios.create({ adapter }))(URL, { username: "t", embeds: [], allowed_mentions: { parse: [] } });
+    return axiosTransport(axios.create({ adapter })).post(URL, { username: "t", embeds: [], allowed_mentions: { parse: [] } });
   };
   ok("204 → ok", (await via(204, "")).kind === "ok");
   const body429 = await via(429, { retry_after: 2.5, global: false });
@@ -195,7 +204,7 @@ async function testAxiosTransport(): Promise<void> {
   const boom: AxiosAdapter = async () => {
     throw new Error(`getaddrinfo ENOTFOUND while calling ${URL}`);
   };
-  const net = await axiosTransport(axios.create({ adapter: boom }))(URL, { username: "t", embeds: [], allowed_mentions: { parse: [] } });
+  const net = await axiosTransport(axios.create({ adapter: boom })).post(URL, { username: "t", embeds: [], allowed_mentions: { parse: [] } });
   ok("network error → failed with the token redacted", net.kind === "failed" && !net.detail.includes(TOKEN), JSON.stringify(net));
 }
 
