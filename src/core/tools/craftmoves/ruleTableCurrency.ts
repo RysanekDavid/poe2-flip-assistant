@@ -9,9 +9,8 @@ const S1 = `${KB} §1`;
 const S2 = `${KB} §2`;
 const CC1 = `${KB_CURRENCY_CORE} §1`;
 const CC2 = `${KB_CURRENCY_CORE} §2`;
-/** The corrected Alchemy / Annulment / Divine targets: poe2db + entity-catalog item text (0.5.5b). */
+/** Alchemy / Annulment targets: entity-catalog item text (0.5.5b), quoted in both KBs. */
 const CC_TARGETS = `${KB_CURRENCY_CORE} §1, §5`;
-const TARGET_NOT_IN_KB = `the rarity target is quoted item text in ${CC1}, not in the verified ${KB}`;
 
 interface Tier {
   suffix: string;
@@ -179,9 +178,8 @@ const SINGLES: MoveRule[] = [
     materials: ["alch"],
     requires: "normal or magic item",
     effect: "normal or magic → rare with four random mods; a magic item's mods are discarded, not kept",
-    notes: [TARGET_NOT_IN_KB],
-    source: CC_TARGETS,
-    verified: false,
+    source: `${S1}; ${CC_TARGETS}`,
+    verified: true,
     check: alchemyCheck,
   },
   {
@@ -203,9 +201,9 @@ const SINGLES: MoveRule[] = [
     materials: ["annul"],
     requires: "magic or rare item with at least one mod",
     effect: "removes one random existing mod",
-    notes: [`Omen of Whittling does NOT work with Annulment (${KB} §4)`, TARGET_NOT_IN_KB],
-    source: CC_TARGETS,
-    verified: false,
+    notes: [`Omen of Whittling does NOT work with Annulment (${KB} §4)`],
+    source: `${S1}; ${CC_TARGETS}`,
+    verified: true,
     check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1)]) : null),
   },
   {

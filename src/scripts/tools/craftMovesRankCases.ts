@@ -84,6 +84,21 @@ function testEssenceCollapse(cat: CraftCatalog): void {
   assert.deepEqual(cards.map((c) => [c.move.id, c.tier]), [["essence", 1], ["essence-perfect", 3]], "magic-tier essences collapse onto the cheapest; Perfect stays its own card");
 }
 
+/**
+ * KB §1/§7 targets: a magic item's cards are an essence (tier 1, upgrades it with a guaranteed mod),
+ * Augmentation (tier 2) and Annulment (tier 3). Alchemy stays off a magic item's cards because it
+ * discards the mods (red warning); on a normal item it is the card, and no essence is.
+ */
+function testMagicAndNormalCards(cat: CraftCatalog): void {
+  const magic = classify(cat, itemText({ ...RING, rarity: "Magic", ilvl: 82, lines: renderFamily(cat, RING.itemClass, RING.base, "suffix", "FireResistance") }));
+  const cards = ranked(cat, magic);
+  assert.deepEqual(cards.map((c) => [c.move.id, c.tier]), [["essence", 1], ["aug", 2], ["annul", 3]], `magic ring cards: ${cards.map((c) => c.move.id).join(",")}`);
+  assert.match(cards[0]?.why ?? "", /writes the essence's mod/);
+  const normal = classify(cat, itemText({ ...RING, rarity: "Normal", ilvl: 82, lines: [] }));
+  const normalCards = ranked(cat, normal);
+  assert.deepEqual(normalCards.map((c) => c.move.id), ["alchemy"], `normal ring cards: ${normalCards.map((c) => c.move.id).join(",")}`);
+}
+
 function testLockedAndContract(cat: CraftCatalog): void {
   const corrupted = classify(cat, itemText({ ...RING, rarity: "Rare", ilvl: 82, lines: ringLines(cat, ["IncreasedLife"], ["FireResistance"]), extra: ["Corrupted"] }));
   const body = { league: "T", ...assembleMoves(corrupted, cat, new Map(), null), bookValue: null, bookError: null };
@@ -128,6 +143,7 @@ export function runRankCases(cat: CraftCatalog): void {
   testCheapestAndVariants(cat);
   testTierClassification();
   testEssenceCollapse(cat);
+  testMagicAndNormalCards(cat);
   testLockedAndContract(cat);
   testOutcomeText(cat);
   testShareLink();

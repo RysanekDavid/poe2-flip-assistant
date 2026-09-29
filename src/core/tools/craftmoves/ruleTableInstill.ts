@@ -19,21 +19,28 @@ const ESSENCE_NOTES = [
 ];
 
 /*
- * Targets per currency-core §4 (poe2db + entity-catalog item text, 0.5.5b; changed in 0.3.0): Lesser,
- * regular and Greater essences upgrade a MAGIC item to rare; Perfect, corrupted and Abyss/Breach
- * essences replace a mod on a RARE. No essence touches a normal item.
+ * Targets per KB §7 and currency-core §4 (entity-catalog item text, 0.5.5b; changed in 0.3.0):
+ * Lesser, regular and Greater essences upgrade a MAGIC item to rare; Perfect, corrupted and
+ * Abyss/Breach essences replace a mod on a RARE. No essence touches a normal item.
  */
 const CC4 = `${KB_CURRENCY_CORE} §4`;
+const JEWEL_ESSENCE = "the KB does not say which essences, if any, apply to jewels";
+
+function magicEssenceCheck(s: ItemState): Verdict {
+  if (!isMagic(s)) return null;
+  if (s.slots.crafted > 0) return { block: ONE_CRAFTED };
+  return { pass: true, unverifiedBecause: s.jewel ? JEWEL_ESSENCE : undefined };
+}
 
 const MAGIC_TO_RARE: Omit<MoveRule, "id" | "label"> = {
   family: "essence",
   materials: [ANY_ESSENCE],
   requires: "magic item",
   effect: "magic → rare, adding the essence's guaranteed mod (the item's one crafted mod)",
-  notes: [...ESSENCE_NOTES, `whether the magic item's own mods are kept is not in the item text (${CC4}, unverified)`],
-  source: `${CC4}; ${S7}`,
-  verified: false,
-  check: (s) => (isMagic(s) ? (s.slots.crafted > 0 ? { block: ONE_CRAFTED } : { pass: true }) : null),
+  notes: [...ESSENCE_NOTES, `whether the magic item's own mods are kept is not in the item text (${S7}, unverified)`],
+  source: `${S7}; ${CC4}`,
+  verified: true,
+  check: magicEssenceCheck,
 };
 
 const ESSENCES: MoveRule[] = [
@@ -61,7 +68,7 @@ const ESSENCES: MoveRule[] = [
 function perfectEssenceCheck(s: ItemState): Verdict {
   if (!isRare(s)) return null;
   const notes = s.slots.crafted > 0 ? [`replaces the existing crafted mod — one crafted slot per item (${S7})`] : [];
-  const unverifiedBecause = s.jewel ? "the KB does not say which essences, if any, apply to jewels" : undefined;
+  const unverifiedBecause = s.jewel ? JEWEL_ESSENCE : undefined;
   return all([needMods(s, 1)], { pass: true, notes, unverifiedBecause });
 }
 

@@ -1,5 +1,5 @@
 /* Pins the rarity each currency / omen / essence rule targets to the game's own item text: the
- * entity catalog's "left click a … item" directions (game data 0.5.5b) and the currency-core §1/§4
+ * entity catalog's "left click a … item" directions (game data 0.5.5b), the KB §1/§7 and currency-core §1/§4
  * quotes of it. A rule that drifts from the item text, or a KB edit that drops the quote, fails
  * here. Imported by testCraftMoves.ts and testCraftProvenance.ts. */
 import assert from "node:assert/strict";
@@ -12,7 +12,7 @@ import { classifyText, type ItemState } from "../../core/tools/craftmoves/classi
 import { rankMoves } from "../../core/tools/craftmoves/rank";
 import { priceMoves } from "../../core/tools/craftmoves/cost";
 import { tierGates } from "../../core/tools/craftmoves/gates";
-import { ALL_RULES, evaluateRules, KB_CURRENCY_CORE, legalMoves, type MoveRule } from "../../core/tools/craftmoves/rules";
+import { ALL_RULES, evaluateRules, KB, KB_CURRENCY_CORE, legalMoves, type MoveRule } from "../../core/tools/craftmoves/rules";
 import { itemText, RING, ringLines, renderFamily } from "./craftMovesFixtures";
 
 export const TARGET_RARITIES = ["normal", "magic", "rare"] as const;
@@ -28,6 +28,14 @@ export function targetRarities(directions: string | null): TargetRarity[] {
   return TARGET_RARITIES.filter((r) => named.includes(r));
 }
 
+/** Verbatim KB fragments (whitespace-normalised) behind the verified Alchemy / Annulment / essence rules. */
+const KB_FACTS: ReadonlyArray<{ section: "1" | "7"; text: string }> = [
+  { section: "1", text: '"Upgrades a Normal or Magic item to a Rare item with 4 random modifiers" / "Right click this item then left click a normal or magic item to apply it. Current modifiers are not retained." [verified-primary' },
+  { section: "1", text: '"Removes a random modifier from an item" / "Right click this item then left click on a magic or rare item to apply it." [verified-primary' },
+  { section: "7", text: '"Upgrades a Magic item to a Rare item, adding a guaranteed modifier" / "Right click this item then left click a Magic item to apply it."' },
+  { section: "7", text: "keeps the magic item's own mods is NOT in the item text [unverified]" },
+];
+
 /** Verbatim currency-core fragments (whitespace-normalised) behind the corrected targets. */
 const CC_FACTS: ReadonlyArray<{ section: "1" | "4"; text: string }> = [
   { section: "1", text: "left click a normal or magic item to apply it. Current modifiers are not retained." },
@@ -38,14 +46,23 @@ const CC_FACTS: ReadonlyArray<{ section: "1" | "4"; text: string }> = [
   { section: "4", text: "Removes a random modifier and augments a Rare item with a new guaranteed modifier … left click a Rare item to apply it." },
 ];
 
-function testKbFacts(): void {
-  const text = readFileSync(join(process.cwd(), KB_CURRENCY_CORE), "utf8").replace(/\r/g, "");
+function pinFacts(path: string, facts: ReadonlyArray<{ section: string; text: string }>): void {
+  const text = readFileSync(join(process.cwd(), path), "utf8").replace(/\r/g, "");
   const section = (n: string) => {
     const start = text.indexOf(`\n## ${n}. `);
-    assert.ok(start >= 0, `${KB_CURRENCY_CORE} lost its §${n} heading`);
+    assert.ok(start >= 0, `${path} lost its §${n} heading`);
     return text.slice(start, text.indexOf("\n## ", start + 1)).replace(/\s+/g, " ");
   };
-  for (const f of CC_FACTS) assert.ok(section(f.section).includes(f.text), `${KB_CURRENCY_CORE} §${f.section} no longer states: ${f.text}`);
+  for (const f of facts) assert.ok(section(f.section).includes(f.text), `${path} §${f.section} no longer states: ${f.text}`);
+}
+
+function testKbFacts(): void {
+  pinFacts(join("docs", "research", KB), KB_FACTS);
+  pinFacts(KB_CURRENCY_CORE, CC_FACTS);
+  for (const id of ["alchemy", "annul", "essence", "essence-greater"]) {
+    const r = ALL_RULES.find((x) => x.id === id);
+    assert.ok(r?.verified && r.source.startsWith(`${KB} §`), `${id} is verified against ${KB}: ${r?.source}`);
+  }
 }
 
 function fixtures(cat: CraftCatalog): Record<TargetRarity, ItemState> {
@@ -109,6 +126,9 @@ function testRarityMoves(cat: CraftCatalog): void {
   const magic = ids("magic");
   for (const want of ["annul", "alchemy", "essence", "essence-greater", "omen-dextral-annulment", "divine"]) assert.ok(magic.includes(want), `magic item offers ${want}: ${magic.join(",")}`);
   assert.ok(!magic.includes("essence-perfect"), "a Perfect Essence needs a rare");
+  const jewel = classifyText(itemText({ itemClass: "Jewels", rarity: "Magic", base: "Ruby", ilvl: 80, lines: [] }), cat)?.state;
+  const jewelEssence = jewel && legalMoves(jewel).find((m) => m.id === "essence-greater");
+  assert.ok(jewelEssence && !jewelEssence.verified, "the KB does not say essences apply to jewels: unverified there");
   const alch = legalMoves(items.magic).find((m) => m.id === "alchemy");
   assert.ok(alch?.warnings.some((w) => /throws the magic mods away/.test(w)), "Alchemy on a magic item warns that its mods are discarded");
 

@@ -7,6 +7,10 @@ a targeted per-recipe verification (2026-07-13) and a 105-agent deep-research sw
 0.5.0 changed currency floors, 0.5.1 hotfixed fracture bypasses mid-league; pre-0.5 sources
 actively contradict current values.
 
+**Corrections 2026-09-29 (partial):** the Orb of Alchemy and Orb of Annulment targets (§1) and the
+Lesser/regular/Greater essence target (§7) were added from datamined item text in the entity catalog `src/data/poe2/entities.json.gz` (game data 0.5.5b)
+and poe2db. The rest of the file is unchanged.
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -42,6 +46,15 @@ Sources: identical exception wording on all poe2wiki min-level currency pages; f
 - **Divine Orb** rerolls numeric values of ALL existing mods within their current tiers —
   cannot change tiers, cannot target a subset. (CONFIRMED; game8, mmojugg.)
 - **Orb of Augmentation family** works on MAGIC items with an open affix only.
+- **Orb of Alchemy** works on a NORMAL **or** MAGIC item and makes it rare with 4 random mods; a
+  magic item's own mods are discarded, not kept. Item text: "Upgrades a Normal or Magic item to a
+  Rare item with 4 random modifiers" / "Right click this item then left click a normal or magic
+  item to apply it. Current modifiers are not retained." [verified-primary — entity catalog `src/data/poe2/entities.json.gz` (game data 0.5.5b);
+  [poe2db Orb_of_Alchemy](https://poe2db.tw/us/Orb_of_Alchemy), accessed 2026-09-29]
+- **Orb of Annulment** removes one random mod from a MAGIC **or** RARE item. Item text: "Removes a
+  random modifier from an item" / "Right click this item then left click on a magic or rare item
+  to apply it." [verified-primary — entity catalog `src/data/poe2/entities.json.gz` (game data 0.5.5b);
+  [poe2db Orb_of_Annulment](https://poe2db.tw/us/Orb_of_Annulment), accessed 2026-09-29]
 
 ## 2. Fracturing Orb (CONFIRMED, unanimous)
 
@@ -193,6 +206,15 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
 - **Max ONE crafted (essence-guaranteed) mod per item** in 0.5.x — Greater then Perfect
   essence stacking is dead; Essences/Perfect Essences/Imbued Alloys all write the same slot
   (Perfect/Alloy remove-then-replace). Removable via Annulment/Chaos (list non-exhaustive).
+- **Targets:** Lesser, regular and Greater essences upgrade a MAGIC item to rare, adding their
+  guaranteed mod; no essence applies to a normal item. Item text on every one of them: "Upgrades a
+  Magic item to a Rare item, adding a guaranteed modifier" / "Right click this item then left
+  click a Magic item to apply it." Perfect essences and the Delirium, Horror, Hysteria, Insanity,
+  Abyss and Breach essences read "Removes a random modifier and augments a Rare item with a new
+  guaranteed modifier" / "… left click a Rare item to apply it." [verified-primary — entity catalog `src/data/poe2/entities.json.gz` (game data 0.5.5b),
+  all 82 essences; [poe2db Essence_of_the_Body](https://poe2db.tw/us/Essence_of_the_Body),
+  accessed 2026-09-29]. Whether a Lesser/regular/Greater essence keeps the magic item's own
+  mods is NOT in the item text [unverified].
 - Essence of **Insulation = FIRE resistance** (not generic/cold). Check each essence's actual
   mod before buying.
 - Greater Essence of Seeking: guaranteed crit, magnitude scales by base (martial weapon
