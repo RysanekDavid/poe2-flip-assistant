@@ -35,6 +35,20 @@ export function pos(key: string, fallback: number, max = Infinity): number {
   return n;
 }
 
+/**
+ * A boolean switch that accepts only "true" / "false" (any case). The older flags treat every
+ * other value as false, so a typo like AUTOSNIPE_ENABLED=ture silently disables a subsystem;
+ * new flags fail at boot instead.
+ */
+export function flag(key: string, fallback: boolean): boolean {
+  const v = process.env[key];
+  if (v == null || v === "") return fallback;
+  const lower = v.toLowerCase();
+  if (lower === "true") return true;
+  if (lower === "false") return false;
+  throw new Error(`Invalid configuration: ${key}="${v}" — must be true or false (default ${fallback}).`);
+}
+
 export const config = {
   league: process.env.LEAGUE_NAME ?? "Runes of Aldur",
   dbPath: process.env.DB_PATH ?? "./data/poe2flip.db",
@@ -166,6 +180,26 @@ export const config = {
     // band (market-making) edges stay off until that is verified.
     bandEdges: (process.env.CX_BAND_EDGES ?? "false").toLowerCase() === "true",
   },
+
+  // Snipe outcome tracker: re-fetches each alerted listing ~2 h and ~24 h later to learn whether
+  // it vanished or is still listed. Runs only when autoSnipe is on too (owner cred, same budget).
+  snipeOutcomes: {
+    enabled: flag("SNIPE_OUTCOMES_ENABLED", true),
+    // trade2 /fetch calls per 30-min run (≤10 ids each) — ≤10 fetches/h beside the scanners' budget
+    maxFetchesPerRun: pos("SNIPE_OUTCOMES_MAX_FETCHES", 5, 20),
+  },
+
+  // League-start price curves from GGG's public exchange digests of past leagues.
+  leagueStart: {
+    days: pos("LEAGUE_START_DAYS", 14, 60), // curve length; the panel shows while a league is younger than this
+    backfillEnabled: flag("LEAGUE_START_BACKFILL_ENABLED", true), // public CDN, ≤12 digests per poll cycle
+  },
+
+  // Discord live board: one per-user message edited in place (users opt in under Settings).
+  discordBoard: { intervalMin: pos("DISCORD_BOARD_INTERVAL_MIN", 60, 1440) },
+
+  // Mod pool live values ("items carrying this mod"), shared across users per league/base/stat/roll.
+  modPool: { cacheHours: pos("MOD_POOL_CACHE_HOURS", 24, 168) },
 
   buyExaltDiscount: num("BUY_EXALT_DISCOUNT", 0.92),
   sellChaosBonus: num("SELL_CHAOS_BONUS", 1.08),
