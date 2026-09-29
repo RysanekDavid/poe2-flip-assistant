@@ -5,11 +5,40 @@ import traceback
 from time import monotonic
 from typing import Literal, NoReturn
 
-from openai import APIStatusError, BadRequestError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError
 
-from src.errors import PublicCoachError
+from src.errors import ContractViolation, ProviderIncomplete, PublicCoachError
 
 logger = logging.getLogger("uvicorn.error")
+
+
+def raise_provider_failure(error: Exception, request_id: str, started: float) -> NoReturn:
+    """Translate any model-call failure into its stable public error.
+
+    Order matters: APITimeoutError subclasses APIConnectionError and BadRequestError subclasses
+    APIStatusError, so the narrower mapping must win.
+    """
+    if isinstance(error, TimeoutError | APITimeoutError | APIConnectionError):
+        raise_timeout(error, request_id, started)
+    if isinstance(error, ProviderIncomplete):
+        log_request_timing(request_id, started, "provider_incomplete")
+        _log_redacted_failure("Model stopped before completing", request_id, error)
+        raise PublicCoachError(
+            "provider_incomplete",
+            "The model stopped before finishing. Try again later.",
+            503,
+            request_id,
+            True,
+            False,
+        ) from error
+    if isinstance(error, BadRequestError):
+        log_request_timing(request_id, started, "provider_error")
+        raise_bad_request(error, request_id)
+    if isinstance(error, APIStatusError):
+        raise_provider_status(error, request_id, started)
+    if isinstance(error, ContractViolation):
+        raise_fatal(error, request_id, started, "contract_violation")
+    raise_fatal(error, request_id, started, "internal")
 
 
 def raise_timeout(error: BaseException, request_id: str, started: float) -> NoReturn:

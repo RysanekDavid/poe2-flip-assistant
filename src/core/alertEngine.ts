@@ -11,7 +11,8 @@ export type AlertType =
   | "TREND"
   | "SNIPE"
   | "CRAFT_MARGIN"
-  | "LEAGUE"; // new league detected / league switched — fired by leagueAlerts, not this engine
+  | "LEAGUE" // new league detected / league switched — fired by leagueAlerts, not this engine
+  | "PATCH"; // official patch notes + AI summary — fired by the patch-summary worker, not this engine
 
 /**
  * Persist an alert and fire a desktop notification.

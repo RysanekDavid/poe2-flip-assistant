@@ -54,7 +54,13 @@ function retireOtherForumPatches(db: Db): void {
     "DELETE FROM evidence_link WHERE entity_kind = 'official_patch' AND entity_id = ?",
   );
   const removePatch = db.prepare("DELETE FROM official_patch WHERE thread_id = ?");
+  // patch_summary is created after this migration on first boot, so it may not exist yet.
+  const hasSummaries = db.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'patch_summary'",
+  ).get() != null;
+  const removeSummary = hasSummaries ? db.prepare("DELETE FROM patch_summary WHERE thread_id = ?") : null;
   for (const { threadId } of rows) {
+    removeSummary?.run(threadId);
     removeReview.run(threadId);
     removeEvidence.run(String(threadId));
     removePatch.run(threadId);

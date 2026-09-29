@@ -10,6 +10,7 @@ import {
   sourceSnapshotCount,
 } from "../db/sourceQueries";
 import { migratePatchProvenance } from "../db/sourceMigrations";
+import { migratePatchSummaries } from "../db/patchSummaryMigrations";
 import {
   fetchPatchHtml,
   validatePatchUrl,
@@ -203,8 +204,10 @@ async function testWatcherStorageAndReview(): Promise<void> {
     const schema = readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8");
     db.exec(schema);
     migratePatchProvenance(db);
+    migratePatchSummaries(db);
     db.exec(schema);
     migratePatchProvenance(db);
+    migratePatchSummaries(db);
     const first = await syncPatchNotes({
       db,
       projectRoot: root,

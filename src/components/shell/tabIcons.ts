@@ -10,6 +10,8 @@ import iconAlerts from "../../assets/logo/logo_gold_bg.png";
 import iconWaystone from "../../assets/items/waystone.png";
 // Scroll of Wisdom identifies items — the closest in-game metaphor for "search my stash".
 import iconScrollOfWisdom from "../../assets/items/scroll-of-wisdom.png";
+// Expedition Logbook: a written log — the in-game object closest to a change log.
+import iconLogbook from "../../assets/items/expedition-logbook.png";
 import type { TabId } from "./tabRegistry";
 
 // Kept apart from tabRegistry.ts so node test scripts never import PNGs.
@@ -20,6 +22,7 @@ export const TAB_ICONS: Record<TabId, StaticImageData> = {
   craft: iconCraft,
   wealth: iconWealth,
   regex: iconScrollOfWisdom,
+  patches: iconLogbook,
   alerts: iconAlerts,
   settings: iconSettings,
   coach: iconCoach,

@@ -2,11 +2,16 @@
 
 import hashlib
 import hmac
+import logging
 import re
+import secrets
 
 from fastapi import Request
 
 from src.config import Settings
+from src.errors import PublicCoachError
+
+logger = logging.getLogger("uvicorn.error")
 
 REQUEST_ID_HEADER = "X-Coach-Request-Id"
 ACTOR_HEADER = "X-Coach-Actor"
@@ -49,3 +54,34 @@ def actor_id(request: Request, settings: Settings) -> str:
     if settings.production:
         raise InvalidProxyIdentity("Missing or invalid Coach actor identity")
     return "local-development-actor"
+
+
+def verified_request_id(request: Request, settings: Settings) -> str:
+    """Return the proxy correlation id or fail the request with a client-safe 403."""
+    try:
+        return request_id(request, settings)
+    except InvalidProxyIdentity as error:
+        correlation_id = secrets.token_hex(12)
+        logger.warning(
+            "coach_request request_id=%s outcome=request_id_error exception=%s",
+            correlation_id,
+            type(error).__name__,
+        )
+        raise PublicCoachError(
+            "internal", "Coach request authentication failed.", 403, correlation_id, False, False
+        ) from error
+
+
+def verified_actor_id(request: Request, settings: Settings, correlation_id: str) -> str:
+    """Return the verified actor key or fail the request with a client-safe 403."""
+    try:
+        return actor_id(request, settings)
+    except InvalidProxyIdentity as error:
+        logger.warning(
+            "coach_request request_id=%s outcome=proxy_auth_error exception=%s",
+            correlation_id,
+            type(error).__name__,
+        )
+        raise PublicCoachError(
+            "internal", "Coach proxy authentication failed.", 403, correlation_id, False, False
+        ) from error

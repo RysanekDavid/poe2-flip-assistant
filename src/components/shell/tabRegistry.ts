@@ -4,7 +4,7 @@ import { z } from "zod";
  * Plain data (no React, no image imports) so the URL router, the nav and the node test scripts all
  * read one list. Tab art lives in tabIcons.ts because tsx cannot import PNGs outside Next.
  */
-export const TAB_IDS = ["exchange", "market", "farm", "craft", "wealth", "regex", "alerts", "settings", "coach"] as const;
+export const TAB_IDS = ["exchange", "market", "farm", "craft", "wealth", "regex", "patches", "alerts", "settings", "coach"] as const;
 
 export const tabIdSchema = z.enum(TAB_IDS);
 export type TabId = z.infer<typeof tabIdSchema>;
@@ -52,6 +52,7 @@ export const TABS: readonly TabMeta[] = [
     ],
   },
   { id: "regex", label: "Regex", hint: "stash search: waystones · tablets · relics · jewels · vendor · price", openTools: true },
+  { id: "patches", label: "Patches", hint: "official patch notes · AI summary · what it means for trading" },
   { id: "alerts", label: "Alerts", hint: "alert feed · sound, popup & Discord routing" },
   {
     id: "settings",

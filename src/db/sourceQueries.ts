@@ -1,5 +1,7 @@
 import type Database from "better-sqlite3";
 import { getDb } from "./database";
+import { markDiscoveredAsNews, upsertSummaryJob } from "./patchSummaryQueries";
+import { patchSummaryInputSha256 } from "../sources/patchNotes/summaryInput";
 import {
   type ConditionalHeaders,
   type PatchDocument,
@@ -200,6 +202,7 @@ export function upsertIndexPatches(
       if (isNew) discovered.push(entry.threadId);
       if (entry.threadId > baselineThreadId) pending.run(entry.threadId);
     }
+    markDiscoveredAsNews(discovered, db);
     return discovered;
   });
   return run();
@@ -220,10 +223,10 @@ export function updateOfficialPatchBody(
 ): void {
   const apply = db.transaction(() => {
     const current = db.prepare(`
-      SELECT p.body_snapshot_id AS bodySnapshotId, s.content_sha256 AS contentHash
+      SELECT s.content_sha256 AS contentHash, p.title
       FROM official_patch p LEFT JOIN source_snapshot s ON s.id = p.body_snapshot_id
       WHERE p.thread_id = ?
-    `).get(document.threadId) as { bodySnapshotId: number | null; contentHash: string | null } | undefined;
+    `).get(document.threadId) as { contentHash: string | null; title: string } | undefined;
     if (!current) throw new Error(`official patch ${document.threadId} does not exist`);
     const next = db.prepare("SELECT content_sha256 AS contentHash FROM source_snapshot WHERE id = ?")
       .get(snapshotId) as { contentHash: string } | undefined;
@@ -239,6 +242,13 @@ export function updateOfficialPatchBody(
     if (current.contentHash != null && current.contentHash !== next.contentHash) {
       ensurePendingReview(document.threadId, db);
     }
+    // Same transaction as the body: a stored body can never miss its summary job. Whether it
+    // announces was decided when the index discovered the thread (markDiscoveredAsNews).
+    upsertSummaryJob(
+      document.threadId,
+      patchSummaryInputSha256(current.title, document.headings, document.listItems),
+      db,
+    );
     db.prepare(`
       INSERT INTO evidence_link (snapshot_id, entity_kind, entity_id, location_json)
       VALUES (?, 'official_patch', ?, ?)

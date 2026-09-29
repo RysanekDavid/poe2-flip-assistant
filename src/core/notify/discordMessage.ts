@@ -63,6 +63,7 @@ const COLORS: Record<string, number> = {
   TREND: 0xfcd34d,
   SPIKE: 0xeab308,
   LEAGUE: 0xfde68a,
+  PATCH: 0xfbbf24,
 };
 const NEUTRAL = 0x737373;
 
@@ -111,7 +112,8 @@ function alertFields(a: NotifyAlert, card: SnipeCard | null): DiscordEmbedField[
     fields.push({ name: "Whisper", value: `\`\`\`${truncate(a.whisper.replace(/`/g, "'"), 900)}\`\`\`` });
   }
   const link = safeLink(a.link);
-  if (link && link.length <= 900) {
+  // A PATCH link is the official forum thread, not a trade search; the embed title links to it.
+  if (link && link.length <= 900 && a.type !== "PATCH") {
     fields.push({ name: "Trade", value: `[open on the trade site](${link.replace(/\)/g, "%29")})` });
   }
   return fields;

@@ -20,6 +20,7 @@ import { FarmTab } from "./tabs/FarmTab";
 import { CraftTab } from "./tabs/CraftTab";
 import { WealthTab } from "./tabs/WealthTab";
 import { RegexTab } from "./tabs/RegexTab";
+import { PatchesTab } from "./tabs/PatchesTab";
 import { SettingsTab } from "./tabs/SettingsTab";
 
 /**
@@ -71,6 +72,8 @@ function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
       return <WealthTab />;
     case "regex":
       return <RegexTab />;
+    case "patches":
+      return <PatchesTab />;
     case "alerts":
       return <AlertsTab />;
     case "settings":

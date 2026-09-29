@@ -79,6 +79,11 @@ class Settings(BaseSettings):
     max_tool_iterations: int = Field(
         default=2, ge=1, le=2, validation_alias="COACH_MAX_TOOL_ROUNDS"
     )
+    # One structured summary of a whole patch thread. Capped so this deadline plus 5 s of cleanup
+    # stays under the poller's own 120 s abort: the Coach, not the caller, reports the timeout.
+    patch_summary_timeout_seconds: float = Field(
+        default=90.0, ge=10.0, le=110.0, validation_alias="PATCH_SUMMARY_TIMEOUT_SECONDS"
+    )
     chat_requests_per_minute: int = Field(
         default=20,
         ge=1,

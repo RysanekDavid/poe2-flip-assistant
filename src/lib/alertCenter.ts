@@ -88,9 +88,10 @@ export function unmutedUnseen(groups: readonly AlertGroup[]): number {
 }
 
 /**
- * Types that ask you to act now (buy the snipe, run the craft, place the flip). LEAGUE / TREND /
- * SPIKE are information: they stay in the feed but must not light up the bell — a league switch
- * already has its own banner, and counting it again on the bell was noise.
+ * Types that ask you to act now (buy the snipe, run the craft, place the flip). LEAGUE / PATCH /
+ * TREND / SPIKE are information: they stay in the feed but must not light up the bell — a league
+ * switch already has its own banner, and a patch has its own tab plus Discord; the bell stays a
+ * count of money you can make right now.
  */
 export const ACTIONABLE_ALERT_TYPES: readonly NotifyType[] = ["SNIPE", "CRAFT_MARGIN", "SPREAD"];
 

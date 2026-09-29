@@ -6,6 +6,7 @@ export const ALERT_TYPE_LABEL: Record<NotifyType, string> = {
   CRAFT_MARGIN: "Craft margin",
   SPREAD: "Exchange spread",
   LEAGUE: "League",
+  PATCH: "Patch notes",
   TREND: "Trend",
   SPIKE: "Spike",
 };
