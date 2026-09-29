@@ -125,3 +125,20 @@ until someone re-verifies it and bumps its `patchVerified` in `src/core/craftPro
 (which re-baselines) or passes `--rebaseline`. The file is stamped with the RePoE `artifact_sha256`,
 version and game-data patch; `test:craft-provenance` fails while the stamp or any content differs
 from a fresh run.
+
+## Curated data: strategy KB
+
+`strategies/<id>.json` is the hand-curated farm strategy knowledge base behind Farm › Strategies
+and the Coach's `find_farm_strategies` tool (schema: `src/core/strategies/schema.ts`, Python mirror
+`services/coach/src/strategies/models.py`). Each file is one strategy: Atlas Master nodes, atlas
+notables with their poe2db pages, tablet bases (trade2 names) with mods and trade2 stat ids,
+preferred waystone totals, the yield basket (entity-catalog ids) and steps/risks. Every fact carries
+a claim grade (`src/lib/claim.ts`): `vp` only for text checked against poe2db, trade2 data or patch
+notes; owner notes and our own picks are `syn`; unknowns are `uv` with a note. Never invent a rate,
+node, mod or source.
+
+The loader throws on any defect (id ≠ filename, unknown yield, a master node poe2db puts elsewhere);
+`npm run test:strategies` pins the evidence floor, and `npm run strategies:check` (network, not CI)
+resolves every stat id, tablet base and unique tablet against the live trade2 data catalog. Files
+stay `status: "draft"` until the owner reviews them; move `verified_against` only after re-checking
+the whole file against the new patch. The files are deliberately not in the Coach's RAG corpus.

@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "id": "strongbox-uniques",
+  "title": "Unique strongboxes with Jado",
+  "summary": "Jado's Trove Seekers doubles the chance for strongboxes to be unique and Stolen Relics adds the Twilight Reliquary Key box; Overseer tablets, The Chosen Path and Overlord's Influence add more strongboxes.",
+  "mechanics": [
+    "strongbox"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "league_start",
+    "build_needs": "Survives strongbox guard packs and their strongbox modifiers.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "twilight-reliquary-key",
+        "name": "Twilight Reliquary Key"
+      },
+      "role": "primary",
+      "why": "Stolen Relics: Unique Strongboxes may be the Legacy of the Order, which contains 1 additional Twilight Reliquary Key.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Masters_of_the_Atlas",
+          "https://poe2db.tw/us/Strongbox"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "cryptic-key",
+        "name": "Cryptic Key"
+      },
+      "role": "secondary",
+      "why": "Mysterious Gifts: Rare Strongbox Monsters have 5% chance to drop a Cryptic Key.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Masters_of_the_Atlas"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "jado",
+    "nodes": [
+      {
+        "name": "Trove Seekers",
+        "tier": 1,
+        "effect": "100% increased amount of Rare Chests; Strongboxes have 100% increased chance to be Unique",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Mysterious Gifts",
+        "tier": 2,
+        "effect": "Unique Monsters have 1% chance to drop a Cryptic Key; Rare Strongbox Monsters have 5% chance to drop a Cryptic Key",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Stolen Relics",
+        "tier": 3,
+        "effect": "Unique Strongboxes may be the Legacy of the Order, dropping a Twilight Reliquary Key",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": "Doryani T3 Mechanical Guardians: non-unique strongboxes are guarded by a dormant Construct and have 2% increased Item Quantity per Modifier.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas"
+      ],
+      "note": "All three nodes name strongboxes directly (poe2db); the combination is our synthesis. Not measured."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "The Chosen Path",
+      "tree": "Atlas",
+      "effect": "100% increased chance of a certain content type — take Strongboxes",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/The_Chosen_Path",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/The_Chosen_Path"
+        ]
+      }
+    },
+    {
+      "name": "Overlord's Influence",
+      "tree": "Atlas",
+      "effect": "Add additional content to areas with Powerful Map Bosses — options: an additional Strongbox, Shrine or Azmeri Spirit. Take Strongboxes.",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Overlords_Influence",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Overlords_Influence"
+        ]
+      }
+    },
+    {
+      "name": "Hidden Compartments",
+      "tree": "Atlas",
+      "effect": "Strongboxes have 15% chance to be openable twice",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Hidden_Compartments",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Hidden_Compartments"
+        ]
+      }
+    },
+    {
+      "name": "Intriguing Designs",
+      "tree": "Atlas",
+      "effect": "Strongboxes cannot be Basic Strongboxes",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Intriguing_Designs",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Intriguing_Designs"
+        ]
+      }
+    },
+    {
+      "name": "An Appropriate Vault",
+      "tree": "Atlas",
+      "effect": "Strongboxes have 2% increased Item Quantity per Modifier",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/An_Appropriate_Vault",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/An_Appropriate_Vault"
+        ]
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Overseer Tablet",
+      "unique": null,
+      "count": null,
+      "mods": [
+        {
+          "text": "Map contains (1–2) additional Strongboxes",
+          "trade_stat_id": "explicit.stat_3240183538",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Map has (70–100)% increased chance to contain Strongboxes",
+          "trade_stat_id": "explicit.stat_4279535856",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "item_rarity"
+    ],
+    "notes": "Strongbox contents are rolled by the box; map item rarity is an assumed, unmeasured bonus.",
+    "claim": {
+      "v": "uv",
+      "src": [
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Editorial; no source says waystone item rarity changes strongbox contents."
+    }
+  },
+  "steps": [
+    "Set Jado: Trove Seekers, Mysterious Gifts, Stolen Relics.",
+    "Allocate The Chosen Path and Overlord's Influence on Strongboxes, then Hidden Compartments.",
+    "Slot an Overseer Tablet with additional strongboxes or strongbox chance.",
+    "Open every strongbox; use Cryptic Keys to reopen the good ones."
+  ],
+  "risks": [
+    "Unique strongbox contents are random (for example Ixchel's Torment grants a corrupted unique); the basket prices only the keys.",
+    "Overlord's Influence adds content only where the Map Boss is Powerful."
+  ],
+  "measured": null
+}

@@ -13,6 +13,7 @@ from src.tools.market import analyze_market_history
 from src.tools.ninja import fetch_live_prices
 from src.tools.search import search_recent_poe2
 from src.tools.snipe import get_snipe_report
+from src.tools.strategies import build_strategy_tool
 
 
 def get_tools(settings: Settings) -> list[BaseTool]:
@@ -28,6 +29,7 @@ def get_tools(settings: Settings) -> list[BaseTool]:
         build_item_tool(settings.item_catalog_path),
         build_game_data_tool(settings.item_catalog_path),
         build_entity_tool(settings.entity_catalog_path),
+        build_strategy_tool(settings.strategies_dir, settings.entity_catalog_path),
     ]
     if settings.has_tavily_key:
         tools.append(search_recent_poe2)
@@ -45,6 +47,7 @@ __all__ = [
     "build_item_tool",
     "build_game_data_tool",
     "build_entity_tool",
+    "build_strategy_tool",
     "retrieve_knowledge",
     "search_recent_poe2",
 ]

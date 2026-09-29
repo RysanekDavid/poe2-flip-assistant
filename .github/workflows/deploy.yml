@@ -59,6 +59,7 @@ jobs:
       # Recipe provenance + the stamped recipe-audit.json (fails until craft:audit-recipes is re-run).
       - run: npm run test:craft-provenance
       - run: npm run test:tools
+      - run: npm run test:strategies
       - run: npm run test:learn
       - run: npm run test:demo-user
 

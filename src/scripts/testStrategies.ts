@@ -1,6 +1,211 @@
-/* Placeholder for `npm run test:strategies` (runs under runWithTestEnv for a temp DB: strategy JSON
- * parse, entity refs, claims, search URLs, filters, route); the strategy-KB stream replaces this file. It exists so the script slot resolves before
- * that stream lands and is not wired into CI. */
-export {};
+/*
+ * Strategy KB contract (npm run test:strategies, under runWithTestEnv for a TEMP DB):
+ *   - every committed src/data/poe2/strategies/*.json parses, its id is its filename, its yields
+ *     resolve in the entity catalog and its master nodes sit where poe2db puts them;
+ *   - evidence floor: each strategy's master section and tablets carry at least one primary or
+ *     2-source claim, and every unverified/conflicting claim says why in a note;
+ *   - the loader fails loudly on each defect class;
+ *   - views: yield prices (unpriced = null, never 0), trade2 search links per tablet mod;
+ *   - the page filters, and the route body against a seeded temp database.
+ */
+import assert from "node:assert/strict";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { PricedItem } from "../api/types";
+import {
+  EMPTY_FILTER,
+  evidenceTip,
+  filterStrategies,
+  leagueMismatch,
+  parseBudget,
+  presentMechanics,
+  showsBadge,
+  yieldNames,
+} from "../components/farm/strategies/strategiesView";
+import { config } from "../config/env";
+import { buildStrategyViews, loadStrategyBoard } from "../core/strategies/board";
+import { loadStrategies, readStrategies, STRATEGIES_DIR } from "../core/strategies/load";
+import { MASTER_NODES, masterNodeHome } from "../core/strategies/masters";
+import type { FarmStrategy } from "../core/strategies/schema";
+import { getDb } from "../db/database";
+import { insertSnapshots } from "../db/marketQueries";
+import type { Claim } from "../lib/claim";
+import { strategiesResponseSchema } from "../lib/strategiesContract";
 
-console.log("test:strategies: not implemented yet — the strategy KB stream fills src/scripts/testStrategies.ts");
+const EXPECTED_IDS = [
+  "abyss-depths-omens",
+  "anomaly-lineage",
+  "boss-rush-overseer",
+  "breach-hiveblood",
+  "delirium-grand-mirror",
+  "essence-overlord",
+  "expedition-grand",
+  "fracture-cleansed",
+  "ritual-omens",
+  "strongbox-uniques",
+];
+
+// --- committed data ---
+const strategies = loadStrategies();
+assert.deepEqual(strategies.map((s) => s.id), EXPECTED_IDS, "the ten strategies, ordered by id");
+assert.deepEqual(
+  readdirSync(STRATEGIES_DIR).filter((f) => f.endsWith(".json")).sort(),
+  EXPECTED_IDS.map((id) => `${id}.json`),
+  "ids are the filenames",
+);
+assert.equal(loadStrategies(), loadStrategies(), "parsed once per process");
+for (const s of strategies) {
+  assert.equal(s.status, "draft", `${s.id} stays draft until an owner review`);
+  assert.equal(s.patch.verified_against, "0.5.5", `${s.id} verified_against`);
+}
+console.log(`PASS  ${strategies.length} strategies parse; ids = filenames; draft, verified against 0.5.5`);
+
+const MASTER_TABLE_SIZE = Object.values(MASTER_NODES).flat(2).length;
+assert.equal(MASTER_TABLE_SIZE, 36, "3 masters × 4 tiers × 3 nodes");
+assert.deepEqual(masterNodeHome("Mysterious Gifts"), { master: "jado", tier: 2 });
+assert.equal(masterNodeHome("Hidden Scars"), null, "an atlas notable is not a master node");
+
+function claimsOf(value: unknown, out: Claim[] = []): Claim[] {
+  if (Array.isArray(value)) value.forEach((v) => claimsOf(v, out));
+  else if (value && typeof value === "object") {
+    for (const [key, v] of Object.entries(value)) {
+      if (key === "claim") out.push(v as Claim);
+      else claimsOf(v, out);
+    }
+  }
+  return out;
+}
+
+const settled = (claims: readonly Claim[]): boolean => claims.some((c) => c.v === "vp" || c.v === "vs");
+const grades: Record<string, Record<string, number>> = {};
+for (const s of strategies) {
+  assert.ok(settled(claimsOf(s.atlas_master)), `${s.id}: master section needs a vp/vs claim`);
+  if (s.tablets.length > 0) assert.ok(settled(claimsOf(s.tablets)), `${s.id}: tablets need a vp/vs claim`);
+  const all = claimsOf(s);
+  for (const c of all) {
+    if (c.v === "uv" || c.v === "cf") assert.ok(c.note, `${s.id}: every ${c.v} claim must say why in a note`);
+  }
+  grades[s.id] = all.reduce<Record<string, number>>((acc, c) => ({ ...acc, [c.v]: (acc[c.v] ?? 0) + 1 }), {});
+  const mods = s.tablets.flatMap((t) => t.mods);
+  for (const mod of mods) {
+    if (mod.trade_stat_id === null) assert.ok(mod.claim.note, `${s.id}: a mod without a stat id must say why`);
+  }
+}
+for (const [id, counts] of Object.entries(grades)) console.log(`INFO  ${id}: ${JSON.stringify(counts)}`);
+console.log("PASS  evidence floor: master + tablets carry vp/vs claims; every uv/cf claim and stat-less mod has a note");
+
+// --- the loader fails loudly on each defect class ---
+const SAMPLE = strategies.find((s) => s.id === "fracture-cleansed");
+if (!SAMPLE) throw new Error("fracture-cleansed sample missing");
+
+function rejects(label: string, file: string, mutate: (copy: FarmStrategy) => unknown, pattern: RegExp): void {
+  const dir = mkdtempSync(join(tmpdir(), "strategies-"));
+  try {
+    const copy = structuredClone(SAMPLE) as FarmStrategy;
+    writeFileSync(join(dir, file), JSON.stringify(mutate(copy) ?? copy));
+    assert.throws(() => readStrategies(dir), pattern, label);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+rejects("id ≠ filename", "other-name.json", () => undefined, /must equal the filename/);
+rejects("unknown yield", "fracture-cleansed.json", (c) => {
+  c.yields[0] = { ...c.yields[0]!, ref: { id: "no-such-item", name: "Nothing" } };
+}, /not in the entity catalog/);
+rejects("renamed yield", "fracture-cleansed.json", (c) => {
+  c.yields[0] = { ...c.yields[0]!, ref: { id: "fracturing-orb", name: "Fracture Orb" } };
+}, /is named "Fracturing Orb"/);
+rejects("node under the wrong tier", "fracture-cleansed.json", (c) => {
+  c.atlas_master.nodes[0] = { ...c.atlas_master.nodes[0]!, tier: 4 };
+}, /poe2db has doryani T1/);
+rejects("node of another master", "fracture-cleansed.json", (c) => {
+  c.atlas_master.master = "hilda";
+}, /poe2db has doryani/);
+rejects("'any' master with nodes", "fracture-cleansed.json", (c) => {
+  c.atlas_master.master = "any";
+}, /"any" master cannot list nodes/);
+rejects("pseudo stat id", "fracture-cleansed.json", (c) => {
+  c.tablets[0]!.mods[0]!.trade_stat_id = "pseudo.pseudo_total_life";
+}, /malformed/);
+rejects("vp claim without a source", "fracture-cleansed.json", (c) => {
+  c.yields[0]!.claim = { v: "vp", src: [] };
+}, /malformed/);
+rejects("unknown key", "fracture-cleansed.json", (c) => ({ ...c, extra: true }), /malformed/);
+rejects("five master nodes", "fracture-cleansed.json", (c) => {
+  c.atlas_master.nodes = [...c.atlas_master.nodes, ...c.atlas_master.nodes];
+}, /malformed/);
+assert.throws(() => readStrategies(mkdtempSync(join(tmpdir(), "strategies-empty-"))), /no strategy files/);
+console.log("PASS  loader rejects: id ≠ filename, unknown/renamed yield, misplaced node, 'any' with nodes, bad stat id, sourceless vp, extra key, >4 nodes, empty dir");
+
+// --- views: prices and search links ---
+const NOW = Date.parse("2026-09-29T12:00:00Z");
+const views = buildStrategyViews(strategies, "Forbidden Rites", new Map([["fracturing-orb", { div: 1.5, fetchedAt: "2026-09-29T11:30:00.000Z" }]]), NOW);
+const fracture = views.find((v) => v.id === "fracture-cleansed");
+assert.deepEqual(fracture?.yields[0]?.price, { div: 1.5, ageMin: 30, source: "ninja" }, "priced by exchange id, age in minutes");
+assert.ok(fracture?.yields[0]?.icon_url?.startsWith("https://web.poecdn.com/"), "yield art from the catalog");
+assert.equal(views.find((v) => v.id === "breach-hiveblood")?.yields[0]?.price, null, "unpriced yield is null, never 0");
+for (const view of views) {
+  for (const tablet of view.tablets) {
+    for (const mod of tablet.mods) {
+      if (mod.trade_stat_id === null) {
+        assert.equal(mod.search_url, null, `${view.id}: no stat id → no search`);
+        continue;
+      }
+      const url = new URL(mod.search_url ?? "");
+      assert.equal(url.origin + url.pathname, "https://www.pathofexile.com/trade2/search/poe2/Forbidden%20Rites");
+      const q = JSON.parse(url.searchParams.get("q") ?? "{}") as { query: { type?: string; name?: string; stats: Array<{ filters: Array<{ id: string }> }> } };
+      assert.equal(q.query.type, tablet.type, `${view.id}: search is scoped to the tablet base`);
+      assert.equal(q.query.name, tablet.unique ?? undefined, `${view.id}: a unique tablet searches by name`);
+      assert.deepEqual(q.query.stats[0]?.filters.map((f) => f.id), [mod.trade_stat_id]);
+    }
+  }
+}
+console.log("PASS  views: exchange price + age per yield (null when unpriced), trade2 search per tablet mod with a stat id");
+
+// --- page filters ---
+const byId = (list: readonly { id: string }[]): string[] => list.map((s) => s.id);
+assert.deepEqual(byId(filterStrategies(views, EMPTY_FILTER)), EXPECTED_IDS, "no filter keeps all");
+const breachOnly = filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["breach"]) });
+assert.deepEqual(byId(breachOnly), ["breach-hiveblood"]);
+const cheap = filterStrategies(views, { ...EMPTY_FILTER, budget: "league_start" });
+assert.ok(cheap.length > 0 && cheap.every((s) => s.budget.tier === "league_start"), "league_start keeps only league_start");
+const mid = filterStrategies(views, { ...EMPTY_FILTER, budget: "mid" });
+assert.ok(mid.every((s) => s.budget.tier !== "high") && mid.length > cheap.length, "a ceiling keeps cheaper tiers too");
+assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, yieldQuery: "  fracturing ORB " })), ["fracture-cleansed"]);
+assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, yieldQuery: "rakiatas" })), ["anomaly-lineage"], "apostrophe optional");
+assert.equal(filterStrategies(views, { mechanics: new Set(["breach"]), budget: "league_start", yieldQuery: "" }).length, 0, "filters AND together");
+assert.equal(parseBudget("mid"), "mid");
+assert.equal(parseBudget("cheap"), null, "unknown ?budget= is ignored, not an empty page");
+assert.equal(parseBudget(null), null);
+assert.ok(presentMechanics(views).includes("anomaly") && !presentMechanics([]).length);
+assert.ok(yieldNames(views).includes("Fracturing Orb"));
+assert.equal(showsBadge({ v: "vp", src: ["https://poe2db.tw/us/Hidden_Scars"] }), false, "primary facts stay unmarked");
+assert.equal(showsBadge({ v: "syn", src: [] }), true);
+assert.equal(
+  evidenceTip({ v: "vp", src: ["https://poe2db.tw/us/Hidden_Scars", "https://www.pathofexile.com/api/trade2/data/stats"], note: "Owner's pick." }),
+  "Checked against poe2db.tw/us/Hidden_Scars, pathofexile.com/api/trade2/data/stats. Owner's pick.",
+);
+assert.equal(leagueMismatch(["Forbidden Rites"], "Forbidden Rites"), null);
+assert.equal(leagueMismatch(["Forbidden Rites"], "Runes of Aldur"), "checked in Forbidden Rites, not in Runes of Aldur");
+console.log("PASS  filters: mechanics (any of), budget ceiling, yield search, ?budget= parsing; badges only off-primary, league mismatch chip");
+
+// --- route body over a seeded temp database ---
+if (!/tmp|temp|scratchpad/i.test(config.dbPath)) throw new Error(`refusing to seed ${config.dbPath}; run via npm run test:strategies`);
+for (const suffix of ["", "-wal", "-shm"]) rmSync(`${config.dbPath}${suffix}`, { force: true });
+const LEAGUE = "Strategy Test League";
+const seed = (itemId: string, baseValue: number): PricedItem => ({ itemId, itemName: itemId, category: "Currency", baseValue, volume: 50, change7d: null, spark7d: null, icon: null });
+insertSnapshots(LEAGUE, [seed("fracturing-orb", 0.8), seed("exalted", 0.004), seed("chaos", 0.02)]);
+getDb().prepare("UPDATE price_snapshots SET fetched_at = datetime('now', '-10 minutes') WHERE league = ?").run(LEAGUE);
+const body = strategiesResponseSchema.parse(loadStrategyBoard(LEAGUE, Date.now()));
+assert.equal(body.computedLeague, LEAGUE);
+assert.equal(body.strategies.length, EXPECTED_IDS.length, "the route returns every strategy; filtering is client-side");
+assert.ok(body.exPerDiv !== null && Math.abs(body.exPerDiv - 250) < 1e-9, "exalted per divine from the seeded ninja rates");
+assert.equal(body.strategies.find((s) => s.id === "fracture-cleansed")?.yields[0]?.price?.div, 0.8);
+const empty = strategiesResponseSchema.parse(loadStrategyBoard("League Without Data", Date.now()));
+assert.equal(empty.pricesFetchedAt, null);
+assert.ok(empty.strategies.every((s) => s.yields.every((y) => y.price === null)), "no data → every yield unpriced");
+const route = readFileSync("src/app/api/farm/strategies/route.ts", "utf8");
+assert.match(route, /getCurrentUser\(\)[\s\S]*status: 401[\s\S]*loadStrategyBoard\(leagueForUser\(user\.id\)/, "auth, then the viewer's league");
+assert.match(route, /strategiesResponseSchema\.parse\(body\)/, "validated on the way out");
+console.log("PASS  route body: seeded prices + rates, empty league unpriced, auth → viewer league → validated");

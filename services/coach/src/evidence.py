@@ -3,7 +3,7 @@
 import hashlib
 from typing import Literal
 
-EvidencePrefix = Literal["M", "L", "K", "W", "D"]
+EvidencePrefix = Literal["M", "L", "K", "W", "D", "S"]
 
 
 def evidence_id(prefix: EvidencePrefix, identity: str) -> str:

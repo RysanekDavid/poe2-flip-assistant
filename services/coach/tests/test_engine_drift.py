@@ -16,6 +16,7 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel
 
 from src.config import APP_ROOT, Settings
+from src.strategies import models as strategy_models
 from src.tools import craft_gate, farm_tables, flips, get_tools, snipe
 from src.tools.engine_common import age_minutes
 
@@ -213,3 +214,54 @@ def test_engine_tools_bind_strictly_without_exposing_the_league(
     assert set(schema["required"]) == set(schema["properties"])
     assert schema["properties"]["limit"]["type"] == "integer"
     assert "league" in tool.get_input_schema().model_fields
+
+
+_STRATEGY_OBJECTS = {
+    "entityRefSchema": strategy_models.EntityRef,
+    "yieldSchema": strategy_models.StrategyYield,
+    "masterNodeSchema": strategy_models.MasterNode,
+    "atlasMasterSchema": strategy_models.AtlasMaster,
+    "atlasPassiveSchema": strategy_models.AtlasPassive,
+    "tabletModSchema": strategy_models.TabletMod,
+    "tabletSchema": strategy_models.Tablet,
+    "waystoneSchema": strategy_models.Waystone,
+    "budgetSchema": strategy_models.Budget,
+    "patchStampSchema": strategy_models.PatchStamp,
+    "measuredSchema": strategy_models.Measured,
+    "farmStrategySchema": strategy_models.FarmStrategy,
+}
+
+
+def _zod_object_keys(source: str, name: str) -> set[str]:
+    match = re.search(rf"export const {name} = z\n  \.object\(\{{\n(.*?)\n  \}}\)", source, re.S)
+    assert match is not None, f"{name} not found as `z\\n  .object({{`"
+    return set(re.findall(r"^    (\w+):", match.group(1), re.MULTILINE))
+
+
+@pytest.mark.parametrize("name", sorted(_STRATEGY_OBJECTS))
+def test_strategy_models_match_the_zod_schema(name: str) -> None:
+    keys = _zod_object_keys(_ts("src/core/strategies/schema.ts"), name)
+    assert keys == set(_STRATEGY_OBJECTS[name].model_fields), name
+
+
+def _ts_string_tuple(source: str, name: str) -> tuple[str, ...]:
+    match = re.search(rf"export const {name} = \[([^\]]+)\] as const;", source)
+    assert match is not None, f"{name} not found"
+    return tuple(re.findall(r'"([^"]+)"', match.group(1)))
+
+
+def test_strategy_enums_and_claim_rules_match_typescript() -> None:
+    schema = _ts("src/core/strategies/schema.ts")
+    assert _ts_string_tuple(schema, "MECHANICS") == get_args(strategy_models.Mechanic)
+    assert _ts_string_tuple(schema, "BUDGET_TIERS") == strategy_models.BUDGET_ORDER
+    assert _ts_string_tuple(schema, "MASTERS") == get_args(strategy_models.Master)
+    assert _ts_string_tuple(schema, "WAYSTONE_TOTALS") == get_args(strategy_models.WaystoneTotal)
+    assert "/^explicit\\.stat_\\d+$/" in schema
+    assert strategy_models.TRADE_STAT_ID_PATTERN == r"^explicit\.stat_\d+$"
+    claim = _ts("src/lib/claim.ts")
+    assert _ts_string_tuple(claim, "CLAIM_VERDICTS") == get_args(strategy_models.ClaimVerdict)
+    rules = re.search(r"MIN_SOURCES: Record<ClaimVerdict, number> = \{([^}]+)\}", claim)
+    assert rules is not None
+    parsed = {k: int(v) for k, v in re.findall(r"(\w+): (\d+)", rules.group(1))}
+    assert parsed == strategy_models.MIN_SOURCES
+    assert set(strategy_models.Claim.model_fields) == {"v", "src", "note"}

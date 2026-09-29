@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "id": "fracture-cleansed",
+  "title": "Fracturing Orbs from Cleansed maps",
+  "summary": "Clear a Corrupted Nexus so the corrupted maps around it turn Cleansed, then run those with Hidden Scars and From Distances Untold: Cleansed monsters and modded Summoning Circle bosses can drop Fracturing Orbs.",
+  "mechanics": [
+    "corruption",
+    "map_boss"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "build_needs": "Beats the Corrupted Nexus boss and clears Cleansed maps, which add extra packs of Cleansed monsters.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "fracturing-orb",
+        "name": "Fracturing Orb"
+      },
+      "role": "primary",
+      "why": "Hidden Scars: Cleansed Monsters have a chance to drop Fracturing Orbs; From Distances Untold: modded Summoning Circle Bosses in Cleansed Areas have a 5% chance.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Hidden_Scars",
+          "https://poe2db.tw/us/From_Distances_Untold"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "doryani",
+    "nodes": [
+      {
+        "name": "Evolutionary Pressure",
+        "tier": 1,
+        "effect": "1% increased Rarity of Items Dropped by Monsters, 2% increased Effectiveness of Monsters and 3% increased chance of Monster Modifiers on Rare Monsters, each per Explicit Modifier on the Map",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Improved Calibration",
+        "tier": 2,
+        "effect": "Waystones have 25% more effect of Prefix Modifiers or 25% more effect of Suffix Modifiers when opening Maps",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Volatile Connection",
+        "tier": 3,
+        "effect": "15% chance areas are Cleansed or Corrupted",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": null,
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://poe2db.tw/us/Corrupted_Nexus"
+      ],
+      "note": "Owner's notes pick Doryani; poe2db's Corrupted Nexus page has Doryani reward Nexus clears. The node picks are our synthesis."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Hidden Scars",
+      "tree": "Atlas",
+      "effect": "Cleansed Monsters have a chance to drop Fracturing Orbs",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Hidden_Scars",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Hidden_Scars"
+        ]
+      }
+    },
+    {
+      "name": "From Distances Untold",
+      "tree": "Atlas",
+      "effect": "Summoning Circle Bosses with additional Monster Modifiers in Cleansed Areas have a 5% chance to drop a Fracturing Orb; Summoning Circle Bosses in Cleansed Areas have a 25% chance to have an additional Monster Modifier",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/From_Distances_Untold",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/From_Distances_Untold"
+        ]
+      }
+    },
+    {
+      "name": "Overlord's Domain",
+      "tree": "Atlas",
+      "effect": "Add additional content to areas with Powerful Map Bosses — take the Summoning Circle and Reactivation Runes option",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Overlords_Domain",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Overlords_Domain"
+        ]
+      }
+    },
+    {
+      "name": "The Chosen Path",
+      "tree": "Atlas",
+      "effect": "100% increased chance of a certain content type — take Summoning Circles",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/The_Chosen_Path",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/The_Chosen_Path"
+        ]
+      }
+    },
+    {
+      "name": "Lord of the Runes",
+      "tree": "Atlas",
+      "effect": "Overseer Tablets also provide 20% increased Effectiveness to Summoning Circle Bosses",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Lord_of_the_Runes",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Lord_of_the_Runes"
+        ]
+      }
+    },
+    {
+      "name": "Heart of Corruption",
+      "tree": "Atlas",
+      "effect": "Rare Monsters in Corrupted Nexuses have a 35% increased chance of Monster Modifiers",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Heart_of_Corruption",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Heart_of_Corruption"
+        ]
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Overseer Tablet",
+      "unique": null,
+      "count": null,
+      "mods": [
+        {
+          "text": "Map contains an additional Summoning Circle",
+          "trade_stat_id": "explicit.stat_2839545956",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Map has (70–100)% increased chance to contain a Summoning Circle",
+          "trade_stat_id": "explicit.stat_267210597",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        },
+        {
+          "text": "Unique Monsters have an additional Rare Modifier",
+          "trade_stat_id": "explicit.stat_3371085671",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "pack_size",
+      "monster_effectiveness",
+      "monster_rarity",
+      "item_rarity"
+    ],
+    "notes": "Owner's order. A Corrupted Nexus only opens with a waystone of 4+ modifiers.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Waystones",
+        "https://poe2db.tw/us/Corrupted_Nexus"
+      ],
+      "note": "Owner's run notes; the 4-modifier requirement is from poe2db's Corrupted Nexus page (community wiki section)."
+    }
+  },
+  "steps": [
+    "Run the Corrupted Nexus with a waystone of at least 4 modifiers; clearing it turns the surrounding corrupted maps Cleansed.",
+    "Allocate Hidden Scars and From Distances Untold; take Summoning Circles on The Chosen Path and Overlord's Domain.",
+    "Run each Cleansed map with an Overseer Tablet (additional Summoning Circle / Summoning Circle chance / an additional Rare Modifier on Unique Monsters).",
+    "Kill every Cleansed pack and every Summoning Circle boss."
+  ],
+  "risks": [
+    "Hidden Scars gives no rate ('a chance'), so orbs per map are unknown.",
+    "0.5.5: a failed Corrupted Nexus can be retried, and the Immured Fury must be killed to complete its map.",
+    "Some Cleansed modifiers add +1 Monster Level and many extra Cleansed packs."
+  ],
+  "measured": null
+}

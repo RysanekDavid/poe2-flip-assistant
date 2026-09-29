@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "id": "essence-overlord",
+  "title": "Essences via Overlord's Domain",
+  "summary": "Stack essence content on maps with a Powerful Map Boss: Overlord's Domain and The Chosen Path add essences, Overseer tablets add more, and Hilda's Mighty Prey makes Powerful bosses — which the Domain needs — more common.",
+  "mechanics": [
+    "essence",
+    "map_boss"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-29"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "league_start",
+    "build_needs": "Clears T15+ waystones and kills the map boss; no pinnacle damage needed.",
+    "claim": {
+      "v": "syn",
+      "src": [],
+      "note": "Editorial estimate from what the setup needs; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "perfect-essence-of-battle",
+        "name": "Perfect Essence of Battle"
+      },
+      "role": "primary",
+      "why": "One of the Crystalline Patterns groups; Flawless Patterns raises Perfect essence finds.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Crystalline_Patterns",
+          "https://poe2db.tw/us/Flawless_Patterns"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "perfect-essence-of-sorcery",
+        "name": "Perfect Essence of Sorcery"
+      },
+      "role": "primary",
+      "why": "One of the Crystalline Patterns groups; Flawless Patterns raises Perfect essence finds.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Crystalline_Patterns",
+          "https://poe2db.tw/us/Flawless_Patterns"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "perfect-essence-of-haste",
+        "name": "Perfect Essence of Haste"
+      },
+      "role": "secondary",
+      "why": "Crystalline Patterns can target the Haste/Alacrity group.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Crystalline_Patterns"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "perfect-essence-of-the-infinite",
+        "name": "Perfect Essence of the Infinite"
+      },
+      "role": "secondary",
+      "why": "Crystalline Patterns can target the Infinite group.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Crystalline_Patterns"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "hilda",
+    "nodes": [
+      {
+        "name": "Mighty Prey",
+        "tier": 1,
+        "effect": "25% chance to upgrade Map Bosses to Powerful Map Bosses",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Ancient Inscriptions",
+        "tier": 3,
+        "effect": "8% increased effect of Explicit Modifiers on Tablets for each type of Tablet affecting Map area",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Claimed Territories",
+        "tier": 4,
+        "effect": "Overlord's Influence and Overlord's Domain Atlas Passive Skills have 45% chance to add twice as much content",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": "Doryani T1 Archaic Corruption (new in 0.5.5): Monsters released from Essences become Corrupted — its value for this basket is untested.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://poe2db.tw/us/Overlords_Domain"
+      ],
+      "note": "Our synthesis: Overlord's Domain only adds content where the Map Boss is Powerful; Mighty Prey upgrades bosses and Claimed Territories can double the Domain's content. Not measured."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Overlord's Domain",
+      "tree": "Atlas",
+      "effect": "Add additional content to areas with Powerful Map Bosses — options: an additional Essence; a Summoning Circle and Reactivation Runes; an additional Rogue Exile. Take Essences.",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Overlords_Domain",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Overlords_Domain"
+        ]
+      }
+    },
+    {
+      "name": "The Chosen Path",
+      "tree": "Atlas",
+      "effect": "100% increased chance of a certain content type — options include Essences. Take Essences.",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/The_Chosen_Path",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/The_Chosen_Path"
+        ]
+      }
+    },
+    {
+      "name": "Inexplicable Alchemy",
+      "tree": "Atlas",
+      "effect": "Exalted Orbs may be used to add Essences to Essence Monsters, up to 1 additional Essence",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Inexplicable_Alchemy",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Inexplicable_Alchemy"
+        ]
+      }
+    },
+    {
+      "name": "Crystalline Overgrowth",
+      "tree": "Atlas",
+      "effect": "Essence Monsters have 15% chance to have an additional Essence",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Crystalline_Overgrowth",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Crystalline_Overgrowth"
+        ]
+      }
+    },
+    {
+      "name": "Flawless Patterns",
+      "tree": "Atlas",
+      "effect": "30% increased chance to find Perfect Essences",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Flawless_Patterns",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Flawless_Patterns"
+        ]
+      }
+    },
+    {
+      "name": "Crystalline Patterns",
+      "tree": "Atlas",
+      "effect": "100% increased chance to find certain Essence types — pick one Greater/Perfect group (Battle, Sorcery, Haste/Alacrity, Infinite, Seeking, Opulence, Command)",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Crystalline_Patterns",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Crystalline_Patterns"
+        ]
+      }
+    },
+    {
+      "name": "Intensifying Energies",
+      "tree": "Atlas",
+      "effect": "Essence Monsters have 10% Surpassing chance to have an additional Essence per Explicit Modifier on the Map",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Intensifying_Energies",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Intensifying_Energies"
+        ]
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Overseer Tablet",
+      "unique": null,
+      "count": null,
+      "mods": [
+        {
+          "text": "Map contains (1–2) additional Essences",
+          "trade_stat_id": null,
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet"
+            ],
+            "note": "No search button: trade2 lists two stats reading 'Map contains an additional Essence' (395808938, 2162684861) and which one this suffix uses is unconfirmed."
+          }
+        },
+        {
+          "text": "Map has (70–100)% increased chance to contain Essences",
+          "trade_stat_id": "explicit.stat_1825943485",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Overseer_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "item_rarity",
+      "monster_rarity"
+    ],
+    "notes": "No source ties waystone totals to essence drops; rarity totals pay off on the rest of the map.",
+    "claim": {
+      "v": "uv",
+      "src": [
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Editorial default. poe2db confirms 0.5 waystone mods bundle difficulty with these reward totals, not what they do for essences."
+    }
+  },
+  "steps": [
+    "Allocate The Chosen Path and Overlord's Domain, both on Essences.",
+    "Set Hilda: Mighty Prey, Ancient Inscriptions, Claimed Territories.",
+    "Slot an Overseer Tablet rolled with 'of Crystals' or 'of the Essence'.",
+    "Kill the map boss and open every essence monster; sell Greater and Perfect essences on the Currency Exchange."
+  ],
+  "risks": [
+    "Overlord's Domain adds nothing where the Map Boss is not Powerful.",
+    "'of Crystals' has no pinned trade stat, so it has no search button.",
+    "The basket shows unit prices only; how many Perfect essences a map yields is unknown."
+  ],
+  "measured": null
+}
