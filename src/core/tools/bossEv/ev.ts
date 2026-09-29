@@ -6,9 +6,10 @@ import type {
   LootLineView,
   TierResult,
 } from "../../../lib/tools/bossEvContract";
-import { chaseOf, chaseOneInOf, entryVolumeOf, floorOf, losingRunOf } from "./metrics";
+import { chaseOf, chaseOneInOf, entryVolumeOf, floorLinesOf, floorOf, losingRunOf } from "./metrics";
+import type { BossArt } from "./art";
 import type { PriceLookup } from "./pricing";
-import type { BossLootFile, EntryLine, LootLine, Rate, Tier } from "./schema";
+import type { BossLootFile, EntryLine, LootLine, PriceRef, Rate, Tier } from "./schema";
 
 /*
  * Boss expected value, pure. The honest headline is the BREAK-EVEN drop rate, not EV: a pinnacle's
@@ -51,7 +52,7 @@ function entryLineView(line: EntryLine, prices: PriceLookup): EntryLineView {
   return {
     itemId: line.itemId,
     name: item?.name ?? line.name ?? line.itemId,
-    icon: item?.icon ?? null,
+    icon: item?.icon ?? line.icon ?? null,
     qty: line.qty,
     unitPrice,
     buyDiv,
@@ -63,14 +64,40 @@ function entryLineView(line: EntryLine, prices: PriceLookup): EntryLineView {
   };
 }
 
-function lootLineView(line: LootLine, prices: PriceLookup): LootLineView {
+/** Why a line has no price, in the words of the market that failed to price it. */
+function unpricedReason(ref: PriceRef, prices: PriceLookup): string {
+  switch (ref.kind) {
+    case "unpriced":
+      return ref.reason;
+    case "ninja":
+      return "not listed on poe.ninja";
+    case "pool":
+      return "no pool member listed on poe.ninja";
+    case "scout":
+      // scout's 0 means "no current listing price", never "free"
+      return prices.scoutListedAtZero(ref.name) ? "listed by poe2scout at 0 (no current price)" : "not listed by poe2scout";
+    case "manual":
+      return "no market price found";
+  }
+}
+
+/** Live ninja art for an exchange line, else the curated art for its name. */
+function lootIcon(line: LootLine, prices: PriceLookup, art: BossArt): string | null {
+  const live = line.priceRef.kind === "ninja" ? prices.item(line.priceRef.itemId)?.icon : null;
+  return live ?? art.get(line.name) ?? null;
+}
+
+function lootLineView(line: LootLine, prices: PriceLookup, art: BossArt): LootLineView {
   const price = prices.price(line.priceRef);
   const bounds = rateBounds(line.rate);
   const times = (p: number | null): number | null => (price != null && p != null ? price.div * p : null);
   return {
     name: line.name,
+    icon: lootIcon(line, prices, art),
     priceKind: line.priceRef.kind,
-    unpricedReason: line.priceRef.kind === "unpriced" ? line.priceRef.reason : price == null ? "no market price found" : null,
+    pool: prices.pool(line.priceRef),
+    rarity: line.rarity ?? null,
+    unpricedReason: price == null ? unpricedReason(line.priceRef, prices) : null,
     price,
     rate: line.rate,
     confidence: line.confidence,
@@ -113,21 +140,23 @@ export function breakEvenOf(loot: readonly LootLineView[], entryDiv: number, gua
 }
 
 /** One tier's full evaluation against the current prices. */
-export function bossEv(tier: Tier, prices: PriceLookup): TierResult {
+export function bossEv(tier: Tier, prices: PriceLookup, art: BossArt): TierResult {
   const entryLines = tier.entry.map((line) => entryLineView(line, prices));
   const entryDiv = sum(entryLines.map((l) => l.costDiv));
-  const loot = tier.loot.map((line) => lootLineView(line, prices));
+  const loot = tier.loot.map((line) => lootLineView(line, prices, art));
   const guaranteedDiv = sum(loot.map((l) => (l.rate.kind === "guaranteed" ? l.evDiv : null)));
   const evDiv = sum(loot.map((l) => l.evDiv));
   const entryComplete = entryLines.every((l) => l.costDiv != null);
   const unpriced = loot.filter((l) => l.price == null);
-  const losing = losingRunOf(loot, entryDiv, guaranteedDiv, entryComplete);
+  // an unmodelled entry cost (a Stronghold's waystones) leaves the threshold unknown, exactly like an unpriced line
+  const losing = losingRunOf(loot, entryDiv, guaranteedDiv, entryComplete && tier.unmodelledEntry == null);
   const partial: Omit<TierResult, "varianceNote"> = {
     tierId: tier.id,
     label: tier.label,
     entryDiv,
     entryComplete,
     entryLines,
+    unmodelledEntry: tier.unmodelledEntry ?? null,
     loot,
     guaranteedDiv,
     evDiv,
@@ -141,10 +170,12 @@ export function bossEv(tier: Tier, prices: PriceLookup): TierResult {
     unpricedLineage: unpriced.filter((l) => l.lineage).length,
     unknownRate: loot.filter((l) => l.rate.kind === "unknown").map((l) => l.name),
     floorDiv: floorOf(loot),
+    floorDrops: floorLinesOf(loot).map((l) => ({ name: l.name, evDiv: l.evDiv ?? 0, rate: l.rate })),
     chaseDiv: chaseOf(loot),
     chaseOneIn: chaseOneInOf(loot),
     pLosingRun: losing.p,
     losingRunUnknownRates: losing.unknownRates,
+    losingRunConfidence: losing.confidence,
     entryVolume: entryVolumeOf(entryLines),
   };
   return { ...partial, varianceNote: varianceNote(partial) };
@@ -177,22 +208,23 @@ export function varianceNote(result: Omit<TierResult, "varianceNote">): string {
     parts.push(
       kills < 1.5
         ? "Most kills include a drop worth the entry (assumes independent rolls)."
-        : `A drop worth the entry lands about once per ${Math.round(kills)} kills (assumes independent rolls; an exclusive drop pool makes this optimistic).`,
+        : `A drop worth the entry lands about once per ${Math.round(kills)} kills (assumes independent rolls; when the drops are one-of-N per kill the real odds are a little better).`,
     );
   }
   if (result.unknownRate.length > 0) parts.push(`${result.unknownRate.length} drop(s) have no known rate and are left out of EV.`);
+  if (result.unmodelledEntry) parts.push(`The entry leaves out ${result.unmodelledEntry.label}, so net is an upper bound.`);
   return parts.join(" ");
 }
 
-export function evaluateBosses(file: BossLootFile, prices: PriceLookup): BossView[] {
+export function evaluateBosses(file: BossLootFile, prices: PriceLookup, art: BossArt): BossView[] {
   return file.bosses.map((boss) => {
-    const tiers = boss.tiers.map((tier) => bossEv(tier, prices));
+    const tiers = boss.tiers.map((tier) => bossEv(tier, prices, art));
     return {
       id: boss.id,
       name: boss.name,
       mechanic: boss.mechanic,
       accessChain: boss.accessChain,
-      icon: tiers[0]?.entryLines.find((l) => l.icon != null)?.icon ?? null,
+      icon: boss.icon ?? tiers[0]?.entryLines.find((l) => l.icon != null)?.icon ?? null,
       sources: boss.sources,
       tiers,
     };

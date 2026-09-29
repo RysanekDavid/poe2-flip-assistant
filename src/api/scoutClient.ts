@@ -27,7 +27,7 @@ export interface ScoutItem {
   name: string; // unique name, e.g. "Igniferis"
   type: string; // base type, e.g. "Crimson Amulet"
   category: string; // CategoryApiId: accessory | armour | weapon | flask | jewel | ...
-  priceExalt: number; // CurrentPrice, in Exalted (scout base currency)
+  priceExalt: number; // CurrentPrice, in Exalted (scout base currency); 0 = listed, no current price
   icon: string | null;
 }
 
@@ -162,34 +162,80 @@ export async function fetchScoutLeagues(): Promise<LeagueOption[]> {
   return parseScoutLeagues(rows);
 }
 
-/** Fetch league rates + the full priced-uniques list, cached. */
-export async function fetchScout(): Promise<{ rates: ScoutRates; items: ScoutItem[] }> {
-  const league = getDefaultLeague();
-  if (cache && cache.league === league && Date.now() - cache.at < CACHE_TTL_MS) return cache;
-
+/** One league's scout rates (a single small request); throws on a missing league or non-positive rates. */
+export async function fetchScoutRates(league: string): Promise<ScoutRates> {
   const leagues = await get(`/${REALM}/Leagues`, ScoutLeaguesSchema);
   const lg = pickLeague(leagues, league);
   if (!(lg.DivinePrice > 0) || !(lg.ChaosDivinePrice > 0)) {
     throw new Error(`poe2scout: bad rates for "${league}" (div ${lg.DivinePrice}, chaos ${lg.ChaosDivinePrice})`);
   }
-  const rates: ScoutRates = { exaltPerDivine: lg.DivinePrice, chaosPerDivine: lg.ChaosDivinePrice };
+  return { exaltPerDivine: lg.DivinePrice, chaosPerDivine: lg.ChaosDivinePrice };
+}
+
+/** Fetch `league`'s rates + the full priced-uniques list, cached per league. */
+export async function fetchScout(league: string = getDefaultLeague()): Promise<{ rates: ScoutRates; items: ScoutItem[] }> {
+  if (cache && cache.league === league && Date.now() - cache.at < CACHE_TTL_MS) return cache;
+  const rates = await fetchScoutRates(league);
 
   // /Items takes NO query params (openapi/v1.json) and returns the whole league list — the old
   // ?perPage=2000 was silently ignored.
   const raw = await get(`/${REALM}/Leagues/${encodeURIComponent(league)}/Items`, ScoutItemsSchema);
   const items: ScoutItem[] = raw
-    .filter((r) => r.CurrentPrice != null && r.Name != null)
+    .filter((r) => r.Name != null)
     .map((r) => ({
       id: r.ItemId,
       name: r.Name!,
       type: r.Type ?? "",
       category: r.CategoryApiId,
-      priceExalt: r.CurrentPrice!,
+      // null = listed without a current price; the same 0 the lineage list uses ("listed at 0")
+      priceExalt: r.CurrentPrice ?? 0,
       icon: r.IconUrl ?? null,
     }));
 
   cache = { at: Date.now(), league, rates, items };
   return cache;
+}
+
+// --- lineage support gems: a CURRENCY category, not a unique one, so /Items never lists them ---
+
+const CurrencyPageSchema = z
+  .object({
+    CurrentPage: z.number(),
+    Pages: z.number(),
+    Items: z.array(
+      z
+        .object({
+          ApiId: z.string(),
+          Text: z.string(),
+          CurrentPrice: z.number().nullish(),
+        })
+        .passthrough(),
+    ),
+  })
+  .passthrough();
+
+export interface ScoutLineageGem {
+  name: string;
+  /** Exalted, like /Items (checked 2026-09-29: Uul-Netol's Embrace 360k ex ≈ 669 div at 538 ex/div). 0 = listed without a current price. */
+  priceExalt: number;
+}
+
+// ~75 gems exist; a runaway page count means the endpoint changed shape, not that there are more gems
+const MAX_LINEAGE_PAGES = 5;
+
+/** Every lineage gem poe2scout lists in `league`; a null price comes back as 0 ("listed, no current price"). */
+export async function fetchScoutLineage(league: string): Promise<ScoutLineageGem[]> {
+  const lp = encodeURIComponent(league);
+  const gems: ScoutLineageGem[] = [];
+  for (let page = 1; page <= MAX_LINEAGE_PAGES; page += 1) {
+    const res = await get(`/${REALM}/Leagues/${lp}/Currencies/ByCategory?category=lineagesupportgems&page=${page}&perPage=100`, CurrencyPageSchema);
+    for (const i of res.Items) gems.push({ name: i.Text, priceExalt: i.CurrentPrice != null && i.CurrentPrice > 0 ? i.CurrentPrice : 0 });
+    if (page < res.Pages) continue;
+    // an empty category is a renamed/moved endpoint, not a league without lineage gems
+    if (gems.length === 0) throw new Error(`poe2scout lineage list for "${league}" is empty — category renamed?`);
+    return gems;
+  }
+  throw new Error(`poe2scout lineage list for "${league}" has more than ${MAX_LINEAGE_PAGES} pages — endpoint shape changed?`);
 }
 
 // --- demand board: richer per-item data (listings + price history) from ByCategory ---

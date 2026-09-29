@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { confidenceSchema, rateSchema, sourceSchema } from "../../core/tools/bossEv/schema";
+import { confidenceSchema, rarityLabelSchema, rateSchema, sourceSchema, unmodelledEntrySchema } from "../../core/tools/bossEv/schema";
 
 /**
  * Per-boss evaluation shapes (entry, loot, tier metrics). GET /api/farm (src/lib/farmContract.ts)
@@ -42,9 +42,28 @@ export const entryLineViewSchema = z.object({
 });
 export type EntryLineView = z.infer<typeof entryLineViewSchema>;
 
+/** A pool line's spread; single numbers (EV, floor) use minDiv. */
+export const poolRangeSchema = z.object({
+  minDiv: z.number(),
+  medianDiv: z.number(),
+  maxDiv: z.number(),
+  /** Members ninja prices, out of `total`. */
+  priced: z.number().int(),
+  total: z.number().int(),
+  unpricedMembers: z.array(z.string()),
+  /** Oldest priced member's age. */
+  ageHours: z.number().nullable(),
+});
+export type PoolRange = z.infer<typeof poolRangeSchema>;
+
 export const lootLineViewSchema = z.object({
   name: z.string(),
-  priceKind: z.enum(["ninja", "scout", "manual", "unpriced"]),
+  /** ninja art, else the curated poecdn art (boss-art.json); null when neither has one. */
+  icon: z.string().nullable(),
+  priceKind: z.enum(["ninja", "pool", "scout", "manual", "unpriced"]),
+  pool: poolRangeSchema.nullable(),
+  /** A qualitative rarity label with its own source, when one is curated. */
+  rarity: rarityLabelSchema.nullable(),
   /** Why the line has no price, when it has none. */
   unpricedReason: z.string().nullable(),
   price: resolvedPriceSchema.nullable(),
@@ -55,7 +74,7 @@ export const lootLineViewSchema = z.object({
   evDiv: z.number().nullable(),
   evLowDiv: z.number().nullable(),
   evHighDiv: z.number().nullable(),
-  /** A Lineage support gem (poe2scout rarely lists them). */
+  /** A Lineage support gem (priced from poe2scout's lineage list). */
   lineage: z.boolean(),
 });
 export type LootLineView = z.infer<typeof lootLineViewSchema>;
@@ -76,7 +95,7 @@ export const jackpotSchema = z.object({
   /** Items priced at or above the entry cost. */
   items: z.array(z.string()),
   /** P(at least one per kill), range lines at their low end — the conservative reading. Treats
-   *  drops as independent rolls, which overstates it when they share an exclusive pool. */
+   *  drops as independent rolls, which UNDERstates it when they share a one-of-N pool (Σp ≥ 1 − Π(1 − p)). */
   p: z.number(),
   /** Same with range lines at their high end. */
   pHigh: z.number(),
@@ -86,6 +105,9 @@ export const jackpotSchema = z.object({
 });
 export type Jackpot = z.infer<typeof jackpotSchema>;
 
+export const floorDropSchema = z.object({ name: z.string(), evDiv: z.number(), rate: rateSchema });
+export type FloorDrop = z.infer<typeof floorDropSchema>;
+
 export const tierResultSchema = z.object({
   tierId: z.string(),
   label: z.string(),
@@ -93,6 +115,8 @@ export const tierResultSchema = z.object({
   /** false when any entry line is unpriced — entryDiv is then a lower bound. */
   entryComplete: z.boolean(),
   entryLines: z.array(entryLineViewSchema),
+  /** A real cost of the attempt the tool cannot price; when set, net is an upper bound. */
+  unmodelledEntry: unmodelledEntrySchema.nullable(),
   loot: z.array(lootLineViewSchema),
   guaranteedDiv: z.number(),
   /** Conservative EV: range rates at their low end (so evDiv === evLowDiv). */
@@ -111,6 +135,8 @@ export const tierResultSchema = z.object({
   unknownRate: z.array(z.string()),
   /** Priced value that lands on most kills: guaranteed lines plus lines at least 1 in 10 (low end). */
   floorDiv: z.number(),
+  /** The priced lines floorDiv sums, for its tooltip. */
+  floorDrops: z.array(floorDropSchema),
   /** Priced EV from drops rarer than 1 in 10 (high end below 10%) — the lottery part. */
   chaseDiv: z.number(),
   /** 1 / Σp over the rare (< 1 in 10) lines with a known rate; null when none has one. */
@@ -123,6 +149,8 @@ export const tierResultSchema = z.object({
   pLosingRun: z.number().nullable(),
   /** Entry-covering lines whose rate is unknown — pLosingRun counts them as never dropping. */
   losingRunUnknownRates: z.number().int(),
+  /** Weakest confidence behind pLosingRun (a 0% from one guide's "guaranteed" is single-source). */
+  losingRunConfidence: confidenceSchema.nullable(),
   /** poe.ninja volume of the priciest entry item: can you actually buy in. */
   entryVolume: z.number().nullable(),
   varianceNote: z.string(),

@@ -1,0 +1,80 @@
+{
+  "ninjaCategories": {
+    "cowardly-fate": "Fragments",
+    "deadly-fate": "Fragments",
+    "victorious-fate": "Fragments",
+    "the-trialmasters-reliquary-key": "Fragments",
+    "djinn-barya": null,
+    "against-the-darkness": "Fragments",
+    "sandstorm-visage": "Fragments",
+    "temporalis": "Fragments",
+    "sekhemas-resolve": "Fragments",
+    "blessed-bonds": "Fragments"
+  },
+  "bosses": [
+    {
+      "id": "trialmaster",
+      "name": "The Trialmaster",
+      "mechanic": "Trial of Chaos",
+      "accessChain": "Run an Inscribed Ultimatum (area level 75+) and spend one Cowardly, one Deadly and one Victorious Fate at the door after the last trial; the Fates are consumed. Since 0.5.5 one Ultimatum can run 30 rooms and yield all three Fates, and the Trialmaster no longer drops Magic Inscribed Ultimatums. The Ultimatum itself is not on the exchange and is not priced here. No drop rates are published.",
+      "sources": [
+        {"title":"Maxroll — PoE2 Trial of Chaos resource","url":"https://maxroll.gg/poe2/resources/trial-of-chaos","accessed":"2026-09-28"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},
+        {"title":"timesaver.gg — PoE2 pinnacle bosses guide","url":"https://timesaver.gg/blog/poe2-pinnacle-bosses-guide","accessed":"2026-09-28"},
+        {"title":"Path of Exile 2 — 0.5.5 patch notes","url":"https://www.pathofexile.com/forum/view-thread/4000864","accessed":"2026-09-29"},
+        {"title":"poe2db — Victorious Fate","url":"https://poe2db.tw/us/Victorious_Fate","accessed":"2026-09-29"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "3 Fates",
+          "entry": [{"itemId":"cowardly-fate","qty":1,"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL1RyaWFsbWFzdGVyS2V5MSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/661ab60074/TrialmasterKey1.png"},{"itemId":"deadly-fate","qty":1,"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL1RyaWFsbWFzdGVyS2V5MiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/cccae44832/TrialmasterKey2.png"},{"itemId":"victorious-fate","qty":1,"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL1RyaWFsbWFzdGVyS2V5MyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/0270951a73/TrialmasterKey3.png"}],
+          "loot": [
+            {"name":"Glimpse of Chaos","priceRef":{"kind":"scout","name":"Glimpse of Chaos"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Common","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"Zerphi's Genesis","priceRef":{"kind":"scout","name":"Zerphi's Genesis"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Mahuxotl's Machination","priceRef":{"kind":"scout","name":"Mahuxotl's Machination"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Hateforge","priceRef":{"kind":"scout","name":"Hateforge"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"},"rarity":{"label":"Very Rare","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}}},
+            {"name":"The Adorned","priceRef":{"kind":"scout","name":"The Adorned"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-28"}},
+            {"name":"Ixchel's Torment","priceRef":{"kind":"scout","name":"Ixchel's Torment"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"poe2db — Ixchel's Torment (Lineage support, dropped by The Trialmaster)","url":"https://poe2db.tw/us/Ixchels_Torment","accessed":"2026-09-29"},"lineage":true},
+            {"name":"The Trialmaster's Reliquary Key","priceRef":{"kind":"ninja","itemId":"the-trialmasters-reliquary-key"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — PoE2 pinnacle bosses guide","url":"https://timesaver.gg/blog/poe2-pinnacle-bosses-guide","accessed":"2026-09-28"}}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zarokh",
+      "name": "Zarokh, the Temporal",
+      "mechanic": "Trial of the Sekhemas",
+      "accessChain": "Complete a four-trial Djinn Barya (area level 75+) to face Zarokh; the Barya is consumed. Barya are not on the currency exchange, so the entry cost is unpriced and every ratio against it is an upper bound. Which unique drops depends on the relics you slot; no rates are published. Zarokh's Reliquary Key comes in five variants, each named for the vault it opens; poe.ninja lists only some of them.",
+      "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5U2FuY3R1bTIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/a9e91de8f5/TwilightOrderReliquaryKeySanctum2.png",
+      "sources": [
+        {"title":"timesaver.gg — Zarokh guide","url":"https://timesaver.gg/blog/poe2-zarokh-guide","accessed":"2026-09-29"},
+        {"title":"poe2db — Zarokh, the Temporal","url":"https://poe2db.tw/us/Zarokh%2C_the_Temporal","accessed":"2026-09-29"},
+        {"title":"Game8 — Zarokh's Reliquary Key","url":"https://game8.co/games/Path-of-Exile-2/archives/512982","accessed":"2026-09-29"},
+        {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}
+      ],
+      "tiers": [
+        {
+          "id": "standard",
+          "label": "Djinn Barya",
+          "entry": [{"itemId":"djinn-barya","name":"Djinn Barya","qty":1,"icon":"asset:djinn-barya"}],
+          "loot": [
+            {"name":"Against the Darkness","priceRef":{"kind":"scout","name":"Against the Darkness"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}},
+            {"name":"Sandstorm Visage","priceRef":{"kind":"scout","name":"Sandstorm Visage"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}},
+            {"name":"Temporalis","priceRef":{"kind":"scout","name":"Temporalis"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}},
+            {"name":"Sekhema's Resolve","priceRef":{"kind":"scout","name":"Sekhema's Resolve"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}},
+            {"name":"Zarokh's Reliquary Key: Against the Darkness","priceRef":{"kind":"ninja","itemId":"against-the-darkness"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — Zarokh guide","url":"https://timesaver.gg/blog/poe2-zarokh-guide","accessed":"2026-09-29"}},
+            {"name":"Zarokh's Reliquary Key: Sandstorm Visage","priceRef":{"kind":"ninja","itemId":"sandstorm-visage"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — Zarokh guide","url":"https://timesaver.gg/blog/poe2-zarokh-guide","accessed":"2026-09-29"}},
+            {"name":"Zarokh's Reliquary Key: Temporalis","priceRef":{"kind":"ninja","itemId":"temporalis"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — Zarokh guide","url":"https://timesaver.gg/blog/poe2-zarokh-guide","accessed":"2026-09-29"}},
+            {"name":"Zarokh's Reliquary Key: Sekhema's Resolve","priceRef":{"kind":"ninja","itemId":"sekhemas-resolve"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — Zarokh guide","url":"https://timesaver.gg/blog/poe2-zarokh-guide","accessed":"2026-09-29"}},
+            {"name":"Zarokh's Reliquary Key: Blessed Bonds","priceRef":{"kind":"ninja","itemId":"blessed-bonds"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — Zarokh guide","url":"https://timesaver.gg/blog/poe2-zarokh-guide","accessed":"2026-09-29"}},
+            {"name":"Zarokh's Revolt","priceRef":{"kind":"scout","name":"Zarokh's Revolt"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Zarokh's Revolt (Lineage support, dropped by Zarokh)","url":"https://poe2db.tw/us/Zarokhs_Revolt","accessed":"2026-09-29"},"lineage":true},
+            {"name":"Zarokh's Refrain","priceRef":{"kind":"scout","name":"Zarokh's Refrain"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Zarokh's Refrain (Lineage support)","url":"https://poe2db.tw/us/Zarokhs_Refrain","accessed":"2026-09-29"},"lineage":true},
+            {"name":"Varashta's Blessing","priceRef":{"kind":"scout","name":"Varashta's Blessing"},"rate":{"kind":"unknown"},"confidence":"confirmed","source":{"title":"poe2db — Varashta's Blessing (Lineage support)","url":"https://poe2db.tw/us/Varashtas_Blessing","accessed":"2026-09-29"},"lineage":true},
+            {"name":"Extra Djinn Barya","priceRef":{"kind":"unpriced","reason":"Djinn Barya are not on the currency exchange"},"rate":{"kind":"unknown"},"confidence":"single-source","source":{"title":"timesaver.gg — Zarokh guide","url":"https://timesaver.gg/blog/poe2-zarokh-guide","accessed":"2026-09-29"}}
+          ]
+        }
+      ]
+    }
+  ]
+}

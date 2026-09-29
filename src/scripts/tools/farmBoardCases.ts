@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import type { PricedItem } from "../../api/types";
 import { buildFarmBoard, isBossRow, isMechanicRow, mechanicIcons, netGroup, type MechanicInput } from "../../core/farm/farmBoard";
 import type { FarmRank } from "../../core/farmAdvisor";
+import type { BossArt } from "../../core/tools/bossEv/art";
 import { bossEv } from "../../core/tools/bossEv/ev";
 import { priceLookup, type PriceInputs } from "../../core/tools/bossEv/pricing";
 import type { Tier } from "../../core/tools/bossEv/schema";
@@ -13,11 +14,13 @@ import type { BossView } from "../../lib/tools/bossEvContract";
 
 export type Inputs = (overrides?: Partial<Record<string, number>>) => PriceInputs;
 
+const ART: BossArt = new Map();
+
 const close = (actual: number | null, expected: number, what: string): void =>
   assert.ok(actual != null && Math.abs(actual - expected) < 1e-9, `${what}: expected ${expected}, got ${actual}`);
 
 function testMetrics(tier: Tier, inputs: Inputs): void {
-  const r = bossEv(tier, priceLookup(inputs()));
+  const r = bossEv(tier, priceLookup(inputs()), ART);
   // lo ≥ 1/10: G 1 (guaranteed) + P 10×0.1 + M 2×0.25; X and Pool are unpriced and add nothing.
   close(r.floorDiv, 2.5, "floor = guaranteed + common priced lines");
   close(r.chaseDiv, 40 * 0.01, "chase = rare lines at their low end (R 1–5%)");
@@ -26,23 +29,23 @@ function testMetrics(tier: Tier, inputs: Inputs): void {
   close(r.pLosingRun, 0.9 * 0.99, "P(lose) = Π(1 − p) over priced drops ≥ the uncovered entry");
   assert.equal(r.losingRunUnknownRates, 1, "U covers the entry but has no rate");
 
-  const covered = bossEv({ ...tier, entry: [{ itemId: "a", qty: 0.5 }] }, priceLookup(inputs()));
+  const covered = bossEv({ ...tier, entry: [{ itemId: "a", qty: 0.5 }] }, priceLookup(inputs()), ART);
   assert.equal(covered.pLosingRun, 0, "guaranteed loot ≥ entry → a kill never loses");
 
   const missing = inputs();
   (missing.ninja as Map<string, unknown>).delete("a");
-  assert.equal(bossEv(tier, priceLookup(missing)).pLosingRun, null, "partly unpriced entry → P(lose) unknowable, not optimistic");
+  assert.equal(bossEv(tier, priceLookup(missing), ART).pLosingRun, null, "partly unpriced entry → P(lose) unknowable, not optimistic");
 
-  const liquid = bossEv(tier, priceLookup(inputs({ b: 1.5 })));
+  const liquid = bossEv(tier, priceLookup(inputs({ b: 1.5 })), ART);
   assert.equal(liquid.entryVolume, 1 * 10, "volume of the priciest entry line (A: 2 div beats B bought at 1.5)");
   // Only U (unknown rate) could cover the entry: zero information, never a confident 100%.
-  const onlyUnknown = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "U") }, priceLookup(inputs()));
+  const onlyUnknown = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "U") }, priceLookup(inputs()), ART);
   assert.equal(onlyUnknown.pLosingRun, null, "no covering drop with a known rate → P(lose) unknown");
   assert.equal(onlyUnknown.losingRunUnknownRates, 1);
   // Every drop priced and rated, none worth the uncovered entry: a loss IS certain.
-  const cheap = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "M") }, priceLookup(inputs()));
+  const cheap = bossEv({ ...tier, loot: tier.loot.filter((l) => l.name === "G" || l.name === "M") }, priceLookup(inputs()), ART);
   assert.equal(cheap.pLosingRun, 1, "fully priced + rated and nothing covers → a genuine 100%");
-  const noChase = bossEv({ ...tier, loot: tier.loot.filter((l) => l.rate.kind !== "range") }, priceLookup(inputs()));
+  const noChase = bossEv({ ...tier, loot: tier.loot.filter((l) => l.rate.kind !== "range") }, priceLookup(inputs()), ART);
   assert.equal(noChase.chaseOneIn, null, "no known-rate rare line → no chase odds");
   assert.equal(noChase.chaseDiv, 0);
 }
@@ -53,7 +56,7 @@ export const rank = (category: string, change: number, driver: string): FarmRank
 });
 
 export function view(id: string, tier: Tier, inputs: PriceInputs): BossView {
-  return { id, name: id, mechanic: "M", accessChain: "x", icon: null, sources: [], tiers: [bossEv(tier, priceLookup(inputs))] };
+  return { id, name: id, mechanic: "M", accessChain: "x", icon: null, sources: [], tiers: [bossEv(tier, priceLookup(inputs), ART)] };
 }
 
 function testBoard(tier: Tier, inputs: Inputs): void {
@@ -90,7 +93,31 @@ function testBoard(tier: Tier, inputs: Inputs): void {
   });
 }
 
+/**
+ * Confidence-aware ranking, a guaranteed-only 0% P(lose) that inherits its data's confidence, the
+ * floor's drop list, and an unmodelled entry cost (a Stronghold's waystones) making net an upper bound.
+ */
+function testConfidenceAndUnmodelled(tier: Tier, inputs: Inputs): void {
+  const G = tier.loot.find((l) => l.name === "G")!;
+  const sure: Tier = { ...tier, entry: [{ itemId: "a", qty: 0.5 }], loot: [G] };
+  const single = view("single", { ...sure, loot: [{ ...G, confidence: "single-source" }] }, inputs({ g: 3 }));
+  const confirmed = view("confirmed", sure, inputs());
+  const r = single.tiers[0]!;
+  assert.deepEqual([r.pLosingRun, r.losingRunConfidence], [0, "single-source"], "a 0% resting on one guide's guaranteed drop says so");
+  assert.deepEqual(r.floorDrops.map((d) => [d.name, d.evDiv]), [["G", 3]], "the floor lists the drops it sums");
+  const order = (views: BossView[]): string[] => buildFarmBoard([], views, 400).filter(isBossRow).map((x) => x.id);
+  assert.deepEqual(order([confirmed, single]), ["single", "confirmed"], "value decides: a single-source +2.5 outranks a confirmed +0.5");
+  const near = view("near", { ...sure, loot: [{ ...G, confidence: "single-source" }] }, inputs({ g: 1.02 }));
+  assert.deepEqual(order([near, confirmed]), ["confirmed", "near"], "nets within 10%: confirmed breaks the tie");
+  const stronghold = view("stronghold", { ...sure, unmodelledEntry: { label: "N× Waystone", note: "maps" } }, inputs());
+  const row = buildFarmBoard([], [stronghold], 400).filter(isBossRow)[0]!;
+  assert.deepEqual([row.netBound, netGroup(row), row.unmodelledEntry?.label], ["upper", 2, "N× Waystone"], "an unmodelled entry cost makes net an upper bound, ranked last");
+  assert.equal(row.pLosingRun, null, "an unmodelled entry cost leaves P(lose) unknowable, never 0% or 100%");
+  assert.match(row.headline.text, /^upper bound — entry leaves out N× Waystone/, "no 'guaranteed loot covers entry' verdict on a partial entry");
+}
+
 export function runFarmBoardCases(tier: Tier, inputs: Inputs): void {
   testMetrics(tier, inputs);
   testBoard(tier, inputs);
+  testConfidenceAndUnmodelled(tier, inputs);
 }

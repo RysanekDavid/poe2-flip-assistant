@@ -2,7 +2,8 @@ import type { PricedItem } from "../../api/types";
 import type { BossRow, FarmBoardRow, MechanicRow } from "../../lib/farmContract";
 import type { BossView, TierResult } from "../../lib/tools/bossEvContract";
 import type { FarmRank } from "../farmAdvisor";
-import { breakEvenHeadline, weakest } from "../tools/bossEv/headline";
+import { weakest } from "../tools/bossEv/confidence";
+import { breakEvenHeadline } from "../tools/bossEv/headline";
 
 /*
  * "What to farm now", pure: the mechanic heat ranking (farmAdvisor.rankFarms, unchanged — the Coach
@@ -43,6 +44,8 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
   const t = defaultTier(boss);
   const carrying = t.loot.filter((l) => (l.evDiv ?? 0) > 0).map((l) => l.confidence);
   const uncountedDrops = t.loot.filter((l) => l.evDiv == null).length;
+  // an entry cost the tool cannot price understates the entry exactly like an unpriced line
+  const entryFull = t.entryComplete && t.unmodelledEntry == null;
   return {
     kind: "boss",
     id: boss.id,
@@ -52,19 +55,24 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
     tierId: t.tierId,
     entryDiv: t.entryDiv,
     entryComplete: t.entryComplete,
+    entry: t.entryLines.map((l) => ({ name: l.name, qty: l.qty, icon: l.icon, costDiv: l.costDiv, route: l.route })),
+    unmodelledEntry: t.unmodelledEntry,
     entryVolume: t.entryVolume,
     floorDiv: t.floorDiv,
+    floorDrops: t.floorDrops,
     chaseDiv: t.chaseDiv,
     netDiv: t.netDiv,
-    netBound: netBoundOf(t.entryComplete, uncountedDrops),
+    netBound: netBoundOf(entryFull, uncountedDrops),
     uncountedDrops,
     chaseOneIn: t.chaseOneIn,
     pLosingRun: t.pLosingRun,
     losingRunUnknownRates: t.losingRunUnknownRates,
+    losingRunConfidence: t.losingRunConfidence,
     headline: breakEvenHeadline(t, exPerDiv),
     confidence: weakest(carrying),
     unpriced: t.unpriced,
     unpricedLineage: t.unpricedLineage,
+    unknownRate: t.unknownRate.length,
     ...NO_SPEED,
   };
 }
@@ -72,18 +80,45 @@ function bossRow(boss: BossView, exPerDiv: number): BossRow {
 /**
  * 0 — a net we can stand behind: exact, or a lower bound that is already ≥ 0;
  * 1 — "rates unknown": a negative lower bound, the loss is NOT certain (unrated drops may cover it);
- * 2 — entry partly unpriced: the net is an upper bound or unknown.
+ * 2 — entry partly unpriced or not fully modelled: the net is an upper bound or unknown.
  */
 export function netGroup(r: BossRow): 0 | 1 | 2 {
   if (r.netBound === "exact" || (r.netBound === "lower" && r.netDiv >= 0)) return 0;
   return r.netBound === "lower" ? 1 : 2;
 }
 
-const byNet = (a: BossRow, b: BossRow): number => netGroup(a) - netGroup(b) || b.netDiv - a.netDiv;
+/** Nets within 10% of the band's best are "about the same" — only there does confidence reorder rows. */
+export const NET_BAND = 0.1;
 
-/** Mechanics (already heat-ordered by rankFarms) first, then bosses by net per kill (see netGroup). */
+const confirmedFirst = (r: BossRow): number => (r.confidence === "confirmed" ? 0 : 1);
+
+const sameBand = (head: BossRow, r: BossRow): boolean => Math.abs(head.netDiv - r.netDiv) <= NET_BAND * Math.max(Math.abs(head.netDiv), Math.abs(r.netDiv));
+
+/**
+ * One bound group by net, highest first; within a band of near-equal nets a confirmed row leads a
+ * single-source one. Value decides: a confirmed +0.05 never outranks a single-source +40.
+ */
+export function orderByNet(rows: readonly BossRow[]): BossRow[] {
+  const sorted = [...rows].sort((a, b) => b.netDiv - a.netDiv);
+  const out: BossRow[] = [];
+  let band: BossRow[] = [];
+  const flush = (): void => {
+    out.push(...band.sort((a, b) => confirmedFirst(a) - confirmedFirst(b) || b.netDiv - a.netDiv));
+    band = [];
+  };
+  for (const r of sorted) {
+    if (band.length > 0 && !sameBand(band[0]!, r)) flush();
+    band.push(r);
+  }
+  flush();
+  return out;
+}
+
+/** Mechanics (already heat-ordered by rankFarms) first, then bosses by bound group (netGroup), then net. */
 export function buildFarmBoard(mechanics: readonly MechanicInput[], bosses: readonly BossView[], exPerDiv: number): FarmBoardRow[] {
-  return [...mechanics.map(mechanicRow), ...bosses.map((b) => bossRow(b, exPerDiv)).sort(byNet)];
+  const rows = bosses.map((b) => bossRow(b, exPerDiv));
+  const groups = ([0, 1, 2] as const).map((g) => orderByNet(rows.filter((r) => netGroup(r) === g)));
+  return [...mechanics.map(mechanicRow), ...groups.flat()];
 }
 
 export const isMechanicRow = (r: FarmBoardRow): r is MechanicRow => r.kind === "mechanic";
