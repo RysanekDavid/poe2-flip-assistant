@@ -77,9 +77,12 @@ function useShareLink(tool: string | null, apply: (s: TabSelection) => void): [s
   const router = useRouter();
   const pathname = usePathname();
   const code = params.get(SHARE_PARAM);
+  // The raw ?tool=, not the resolved one: `?tab=regex&s=…` without a tool resolves to Waystone, and
+  // a tablet code must still open Tablet instead of reading as a mismatch.
+  const rawTool = params.get("tool");
   const [banner, setBanner] = useState<string | null>(null);
   useEffect(() => {
-    const read = readShare(tool, code);
+    const read = readShare(rawTool, code);
     if (read.kind === "none") return;
     if (read.kind === "error") {
       console.warn(`[tools/regex] share link rejected: ${read.message}`);
@@ -89,7 +92,7 @@ function useShareLink(tool: string | null, apply: (s: TabSelection) => void): [s
       setBanner(null);
     }
     router.replace(`${pathname}${tabRouteHref({ tab: "regex", tool: read.kind === "ok" ? read.selection.tab : tool })}`, { scroll: false });
-  }, [tool, code, apply, router, pathname]);
+  }, [tool, rawTool, code, apply, router, pathname]);
   return [banner, () => setBanner(null)];
 }
 

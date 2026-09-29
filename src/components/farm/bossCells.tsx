@@ -20,12 +20,13 @@ import { TONE_CLASS } from "./farmView";
 const THIN_ENTRY_VOLUME = 20;
 
 /** The row's own keyboard target: the row itself stays a plain row because it holds an input. */
-export function BossNameCell({ r, expanded, onToggle }: { r: BossRow; expanded: boolean; onToggle: (id: string) => void }) {
+export function BossNameCell({ r, expanded, detailId, onToggle }: { r: BossRow; expanded: boolean; detailId: string; onToggle: (id: string) => void }) {
   return (
     <button
       type="button"
       onClick={() => onToggle(r.id)}
       aria-expanded={expanded}
+      aria-controls={expanded ? detailId : undefined}
       title={`${r.name} — ${expanded ? "hide" : "show"} entry and drops`}
       className="flex items-center gap-2.5 rounded text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400"
     >

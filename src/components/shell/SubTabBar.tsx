@@ -15,11 +15,21 @@ import { useTabRoute } from "./useTabRoute";
 export const subTabId = (tab: TabId, tool: string): string => `${tab}-tab-${tool}`;
 export const subTabPanelId = (tab: TabId): string => `${tab}-subtab-panel`;
 
-/** The tools the bar shows for the current route, or null when it is hidden (fewer than two tools). */
-export function useSubTabs(): { tab: TabId; tool: string | null; tools: readonly ToolMeta[] | null } {
+interface SubTabs {
+  tab: TabId;
+  tool: string | null;
+  /** null = the bar is hidden (fewer than two tools this user can use). */
+  tools: readonly ToolMeta[] | null;
+  /** The route's tool has a sub-tab (false e.g. for a member deep-linked to the owner-only System). */
+  toolShown: boolean;
+}
+
+/** The tools the bar shows for the current route and viewer. */
+export function useSubTabs(): SubTabs {
   const { tab, tool } = useTabRoute();
-  const { mode } = useNavMode();
-  return { tab, tool, tools: subTabsFor(mode, tab) };
+  const { mode, me } = useNavMode();
+  const tools = subTabsFor(mode, tab, me.role);
+  return { tab, tool, tools, toolShown: tools?.some((t) => t.id === tool) ?? false };
 }
 
 function Crumb({ tab }: { tab: TabId }) {
@@ -48,24 +58,15 @@ function ToolGlyph({ tab, tool, active }: { tab: TabId; tool: string; active: bo
   );
 }
 
-function Count({ n, active }: { n: number; active: boolean }) {
-  return <span className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-amber-400/15 text-amber-200" : "bg-neutral-800 text-neutral-300"}`}>{n}</span>;
-}
-
 const isPlainClick = (e: MouseEvent): boolean => !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0);
-
-interface Props {
-  /** Optional per-tool counts; only numbers the shell already holds belong here (no extra polls). */
-  counts?: Partial<Record<string, number | null>>;
-}
 
 /**
  * The second row of the sticky header: a tab's tools as an underline strip on a full-width band,
  * so it reads as navigation, never as the bordered filter chips inside pages. Each tool is a URL;
  * arrows/Home/End move between tools (activation follows focus, as in the ARIA tabs pattern).
  */
-export function SubTabBar({ counts }: Props) {
-  const { tab, tool, tools } = useSubTabs();
+export function SubTabBar() {
+  const { tab, tool, tools, toolShown } = useSubTabs();
   const { go } = useTabRoute();
   const refs = useRef<Array<HTMLAnchorElement | null>>([]);
   if (!tools) return null;
@@ -87,7 +88,7 @@ export function SubTabBar({ counts }: Props) {
       role="tablist"
       aria-label={`${tabMeta(tab).label} tools`}
       onKeyDown={onKeyDown}
-      className="flex h-11 items-stretch overflow-x-auto whitespace-nowrap border-t border-line/70 bg-neutral-900/60 px-6"
+      className="flex h-11 items-stretch overflow-x-auto whitespace-nowrap border-t border-line/70 bg-neutral-900/60 px-4 md:px-6"
     >
       <Crumb tab={tab} />
       {tools.map((t, i) => (
@@ -96,7 +97,8 @@ export function SubTabBar({ counts }: Props) {
           tab={tab}
           meta={t}
           active={t.id === tool}
-          count={counts?.[t.id] ?? null}
+          // with no active sub-tab the first one keeps the tablist reachable by Tab
+          focusable={t.id === tool || (!toolShown && i === 0)}
           onGo={() => go(tab, t.id)}
           linkRef={(el) => {
             refs.current[i] = el;
@@ -111,13 +113,13 @@ interface ToolTabProps {
   tab: TabId;
   meta: ToolMeta;
   active: boolean;
-  count: number | null;
+  focusable: boolean;
   onGo: () => void;
   linkRef: (el: HTMLAnchorElement | null) => void;
 }
 
 /** One tool: a real link (open-in-new-tab works), a plain left click goes through go(). */
-function ToolTab({ tab, meta, active, count, onGo, linkRef }: ToolTabProps) {
+function ToolTab({ tab, meta, active, focusable, onGo, linkRef }: ToolTabProps) {
   return (
     <Link
       ref={linkRef}
@@ -125,7 +127,7 @@ function ToolTab({ tab, meta, active, count, onGo, linkRef }: ToolTabProps) {
       role="tab"
       aria-selected={active}
       aria-controls={active ? subTabPanelId(tab) : undefined}
-      tabIndex={active ? 0 : -1}
+      tabIndex={focusable ? 0 : -1}
       href={tabRouteHref({ tab, tool: meta.id })}
       scroll={false}
       prefetch={false}
@@ -141,7 +143,6 @@ function ToolTab({ tab, meta, active, count, onGo, linkRef }: ToolTabProps) {
     >
       <ToolGlyph tab={tab} tool={meta.id} active={active} />
       {meta.label}
-      {count != null && <Count n={count} active={active} />}
     </Link>
   );
 }

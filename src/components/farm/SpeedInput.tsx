@@ -83,7 +83,7 @@ export function SpeedInput({ value, onCommit, label, unit, placeholder = "—", 
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={onKey}
-        className={`h-7 w-14 rounded-md border bg-neutral-950 px-1.5 text-right text-xs tabular-nums text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-amber-400 ${failed ? "border-bad" : "border-neutral-700"}`}
+        className={`h-7 ${placeholder === "—" ? "w-14" : "w-16"} rounded-md border bg-neutral-950 px-1.5 text-right text-xs tabular-nums text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-amber-400 ${failed ? "border-bad" : "border-neutral-700"}`}
       />
       {unit && <span className="text-xs text-neutral-400">{unit}</span>}
       <Status id={statusId} invalid={!parsed.ok} max={max} allowZero={allowZero} save={save} />

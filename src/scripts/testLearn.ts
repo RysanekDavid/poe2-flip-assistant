@@ -9,6 +9,7 @@ import { signSession } from "../auth/auth";
 import { meResponse } from "../auth/meResponse";
 import { config } from "../config/env";
 import { TAB_IDS, TABS, parseTabRoute, tabMeta } from "../components/shell/tabRegistry";
+import { TOOL_ICON_KEYS } from "../components/shell/toolIconKeys";
 import { tourStepsFor } from "../components/onboardingTour";
 import { entityById } from "../core/entities/load";
 import { ATLAS_CHECKLIST, CURRENCY_PRIMER, primerCards } from "../core/learn/data";
@@ -109,23 +110,32 @@ function testVisibility(): void {
   pass("visibleTabs / visibleTools / defaultTabFor");
 }
 
-/** The shell's sub-tab bar: hidden below two visible tools, and Regex switches through it too. */
+/** The shell's sub-tab bar: hidden below two usable tools, and Regex switches through it too. */
 function testSubTabs(): void {
-  assert.equal(subTabsFor("beginner", "farm"), null, "a beginner's Farm has one tool — no bar");
-  assert.equal(subTabsFor("beginner", "market"), null);
-  assert.equal(subTabsFor("advanced", "alerts"), null, "no tools, no bar");
-  assert.equal(subTabsFor("advanced", "coach"), null);
-  assert.deepEqual(subTabsFor("advanced", "farm")?.map((t) => t.id), ["board", "strategies"]);
-  assert.deepEqual(subTabsFor("beginner", "learn")?.map((t) => t.id), ["what", "currency", "atlas"]);
-  assert.deepEqual(subTabsFor("beginner", "settings")?.map((t) => t.id), ["account", "notify", "mode", "system"], "Settings anchors");
-  assert.deepEqual(subTabsFor("advanced", "regex")?.map((t) => t.id), [...REGEX_TABS], "registry regex tools = REGEX_TABS, in order");
+  const ids = (mode: "beginner" | "advanced", tab: (typeof TAB_IDS)[number], role: "owner" | "member" = "owner") => subTabsFor(mode, tab, role)?.map((t) => t.id) ?? null;
+  assert.equal(ids("beginner", "farm"), null, "a beginner's Farm has one tool — no bar");
+  assert.equal(ids("beginner", "market"), null);
+  assert.equal(ids("advanced", "alerts"), null, "no tools, no bar");
+  assert.equal(ids("advanced", "coach"), null);
+  assert.deepEqual(ids("advanced", "farm"), ["board", "strategies"]);
+  assert.deepEqual(ids("beginner", "learn"), ["what", "currency", "atlas"]);
+  assert.deepEqual(ids("beginner", "settings"), ["account", "notify", "mode", "system"], "the owner's Settings anchors include System");
+  assert.deepEqual(ids("advanced", "settings", "member"), ["account", "notify", "mode"], "a member gets no System sub-tab (its panel is owner-only)");
+  assert.deepEqual(ids("beginner", "settings", "member"), ["account", "notify", "mode"]);
+  assert.deepEqual(parseTabRoute("settings", "system"), { tab: "settings", tool: "system", rejected: [] }, "tool=system still parses");
+  assert.deepEqual(parseModeRoute("beginner", "settings", "system"), { tab: "settings", tool: "system", rejected: [], hidden: [] });
+  assert.deepEqual(ids("advanced", "regex"), [...REGEX_TABS], "registry regex tools = REGEX_TABS, in order");
   assert.deepEqual(parseTabRoute("regex", null), { tab: "regex", tool: "waystone", rejected: [] });
   assert.deepEqual(parseTabRoute("regex", "jewel"), { tab: "regex", tool: "jewel", rejected: [] });
   assert.deepEqual(parseTabRoute("regex", "maps3d"), { tab: "regex", tool: "waystone", rejected: ["tool=maps3d"] }, "an unknown regex tool is rewritten");
   assert.deepEqual(parseTabRoute("alerts", "x"), { tab: "alerts", tool: null, rejected: ["tool=x"] }, "a tab without tools rejects every tool");
   assert.deepEqual(parseTabRoute("settings", "notify"), { tab: "settings", tool: "notify", rejected: [] }, "tool=notify deep link");
-  for (const t of TABS) for (const tool of t.tools ?? []) assert.ok(tool.hint.trim().length > 0, `${t.id} › ${tool.id} has a hint`);
-  pass("sub-tab bar: hidden under 2 tools, regex tools = REGEX_TABS, unknown tools rewritten, every tool hinted");
+  for (const t of TABS) {
+    const keys: readonly string[] = TOOL_ICON_KEYS[t.id];
+    assert.deepEqual([...keys].sort(), (t.tools ?? []).map((tool) => tool.id).sort(), `${t.id}: sub-tab icons exactly cover the registry tools`);
+    for (const tool of t.tools ?? []) assert.ok(tool.hint.trim().length > 0, `${t.id} › ${tool.id} has a hint`);
+  }
+  pass("sub-tab bar: hidden under 2 tools, owner-only System, regex tools = REGEX_TABS, unknown tools rewritten, every tool hinted + iconed");
 }
 
 function testModeRoutes(): void {

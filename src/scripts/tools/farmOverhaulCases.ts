@@ -156,7 +156,7 @@ function testCellText(): void {
   assert.throws(() => entrySummaryLabel([]), /at least one/);
   assert.equal(unmodelledShort("N× Waystone + Stronghold clear"), "Waystones");
   assert.equal(unmodelledShort("Stronghold clear"), "Stronghold clear");
-  assert.equal(entryBreakdown(chips, 2.4, false, 0),"1× Weathered Crisis Fragment — 2.4 div\n1× Djinn Barya — unpriced\ntotal ≥ 2.4 div (part of the entry is unpriced)");
+  assert.equal(entryBreakdown(chips, 2.4, false, 0), "1× Weathered Crisis Fragment — 2.4 div\n1× Djinn Barya — unpriced\ntotal ≥ 2.4 div (part of the entry is unpriced)");
   const sorted = sortLoot([
     view({ name: "unpriced" }),
     view({ name: "cheap-unrated", price: priced(1) }),

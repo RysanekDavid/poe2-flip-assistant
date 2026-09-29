@@ -110,7 +110,7 @@ export function FarmBoard() {
   const { expandedId, toggle, tierOf, setTier } = useExpansion();
   const exPerDiv = data?.rates?.exaltPerDivine ?? null;
   return (
-    <section className="grid gap-3">
+    <section className="grid grid-cols-1 gap-3">
       <PageHeader
         title="What to farm now"
         purpose="Mechanic baskets by 7d heat, pinnacle bosses by net per kill — and your Div/hour at your own pace."

@@ -9,6 +9,7 @@ import artJewel from "../../assets/items/emerald-jewel.png";
 import artGold from "../../assets/items/gold.png";
 import artDivine from "../../assets/items/divine-orb.png";
 import type { TabId } from "./tabRegistry";
+import type { ToolIconKey } from "./toolIconKeys";
 
 /** Sub-tab art as a URL (bundled PNG or poecdn), or a lucide glyph where no in-game object fits. */
 export type ToolIcon = { kind: "art"; src: string } | { kind: "glyph"; Icon: LucideIcon };
@@ -18,7 +19,12 @@ const glyph = (Icon: LucideIcon): ToolIcon => ({ kind: "glyph", Icon });
 
 // Kept apart from tabRegistry.ts so node test scripts never import PNGs. Vendor shows Gold (what an
 // NPC pays for gear); Price uses the Divine Orb, the unit every price in the app is quoted in.
-const TOOL_ICONS: Partial<Record<TabId, Record<string, ToolIcon>>> = {
+// Typed from TOOL_ICON_KEYS: a key missing here, or one not listed there, fails the typecheck.
+const TOOL_ICONS: { [T in TabId]: Record<ToolIconKey<T>, ToolIcon> } = {
+  exchange: {},
+  patches: {},
+  alerts: {},
+  coach: {},
   market: { price: glyph(Tag), board: art(artMarket.src) },
   farm: { board: art(artWaystone.src), strategies: art(artTablet.src) },
   craft: { recipes: art(CURRENCY_ART.ex), moves: glyph(ClipboardPaste), modpool: art(CURRENCY_ART.chaos) },
@@ -37,7 +43,8 @@ const TOOL_ICONS: Partial<Record<TabId, Record<string, ToolIcon>>> = {
 
 /** A registry tool without an icon is a drift between tabRegistry.ts and this map — fail loudly. */
 export function toolIcon(tab: TabId, tool: string): ToolIcon {
-  const icon = TOOL_ICONS[tab]?.[tool];
+  const icons: Partial<Record<string, ToolIcon>> = TOOL_ICONS[tab];
+  const icon = icons[tool];
   if (!icon) throw new Error(`toolIcons: no icon for ${tab} › ${tool}`);
   return icon;
 }

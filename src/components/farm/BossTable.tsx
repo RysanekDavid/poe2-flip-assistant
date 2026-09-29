@@ -4,7 +4,7 @@ import { useState, type FocusEvent, type ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { orderBosses, type BossOrder } from "../../core/farm/farmSpeed";
 import type { BossRow } from "../../lib/farmContract";
-import { DataTable, type Column, type TableSort } from "../ui/DataTable";
+import { DataTable, detailRowId, type Column, type TableSort } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
 import { BossNameCell, EntryCell, NetCell } from "./bossCells";
 import { PaceCell, RiskCell } from "./bossRiskPace";
@@ -23,12 +23,13 @@ interface ColumnCtx {
 // A 1% width shrinks an auto-layout column to its content, so Entry cost sits right beside Boss
 // and the slack goes to the numeric columns.
 const SHRINK = "1%";
+const DETAIL_PREFIX = "boss-detail";
 
 // Six columns so the board fits a 1280 px screen: floor/chase ride under Net, chase odds under
 // Risk, liquidity is a thin-market mark on Entry, and pace + Div/h share one cell.
 function columns({ exPerDiv, expandedId, onToggle, save, status }: ColumnCtx): Column<BossRow>[] {
   return [
-    { key: "boss", header: "Boss", width: SHRINK, cell: (r) => <BossNameCell r={r} expanded={r.id === expandedId} onToggle={onToggle} /> },
+    { key: "boss", header: "Boss", width: SHRINK, cell: (r) => <BossNameCell r={r} expanded={r.id === expandedId} detailId={detailRowId(DETAIL_PREFIX, r.id)} onToggle={onToggle} /> },
     {
       key: "entry",
       header: "Entry cost",
@@ -129,20 +130,25 @@ export function BossTable({ bosses, expandedId, onToggle, renderDetail, exPerDiv
   const freeze = useFocusFreeze();
   const rows = orderBosses(bosses, order, freeze.frozen);
   return (
-    <div className="grid gap-1.5" {...freeze.handlers(rows.map((r) => r.id))}>
+    <div className="grid min-w-0 grid-cols-1 gap-1.5" {...freeze.handlers(rows.map((r) => r.id))}>
       <SaveFailures failures={saves.failures} bosses={bosses} />
-      <DataTable
-        columns={columns({ exPerDiv, expandedId, onToggle, save, status: saves.status })}
-        rows={rows}
-        rowKey={(r) => r.id}
-        onRowClick={(r) => onToggle(r.id)}
-        expandedKey={expandedId ?? undefined}
-        renderExpanded={(r) => renderDetail(r.id)}
-        sort={sort}
-        interactiveCells
-        tall
-        emptyState={<EmptyState icon={null} sentence="No boss data — the curated loot tables did not load." />}
-      />
+      {/* phones scroll the six columns in their own box, where a shell-offset sticky head would float over
+          the rows, so it goes static there; from md up the page scrolls and the head stays sticky */}
+      <div className="min-w-0 max-md:overflow-x-auto max-md:[&_th]:static">
+        <DataTable
+          columns={columns({ exPerDiv, expandedId, onToggle, save, status: saves.status })}
+          rows={rows}
+          rowKey={(r) => r.id}
+          onRowClick={(r) => onToggle(r.id)}
+          expandedKey={expandedId ?? undefined}
+          detailIdPrefix={DETAIL_PREFIX}
+          renderExpanded={(r) => renderDetail(r.id)}
+          sort={sort}
+          interactiveCells
+          tall
+          emptyState={<EmptyState icon={null} sentence="No boss data — the curated loot tables did not load." />}
+        />
+      </div>
     </div>
   );
 }

@@ -95,8 +95,9 @@ function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
 
 /** With a sub-tab bar on screen, the page is its tabpanel; without one it needs no wrapper. */
 function ToolPanel({ children }: { children: ReactNode }) {
-  const { tab, tool, tools } = useSubTabs();
-  if (!tools || tool === null) return <>{children}</>;
+  const { tab, tool, toolShown } = useSubTabs();
+  // the panel is labelled by its sub-tab, so it needs one on screen
+  if (!toolShown || tool === null) return <>{children}</>;
   return (
     <div role="tabpanel" id={subTabPanelId(tab)} aria-labelledby={subTabId(tab, tool)} className="space-y-4">
       {children}
@@ -130,7 +131,7 @@ function ShellBody() {
         {/* POESESSID health: beginner mode hides the trade connection it would send them to */}
         {mode === "advanced" && <CredBanner />}
         <header ref={headerRef} className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-line bg-neutral-950/85 backdrop-blur">
-          <div className="flex items-center justify-between px-6 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 md:px-6">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <h1 className="text-xl font-bold">PoE2 Coach</h1>
               {/* league picker sits with the rates it controls — per account, switchable anytime */}
