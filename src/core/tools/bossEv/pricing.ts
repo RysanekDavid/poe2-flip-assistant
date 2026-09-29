@@ -1,3 +1,4 @@
+import type { PricedItem } from "../../../api/types";
 import { latestSnapshots, priceHistory, uniqueValueMap, itemValuesAgeHours } from "../../../db/marketQueries";
 import { timestampAgeMs } from "../../../lib/sqliteTime";
 import type { ResolvedPrice } from "../../../lib/tools/bossEvContract";
@@ -78,9 +79,15 @@ export function referencedNinjaIds(file: BossLootFile): Set<string> {
  * Read the league's market once. Only the referenced ids get a per-item age lookup (one indexed
  * query each, ~40 items) — the league-wide latestFetchedAt would call a delisted item fresh.
  */
-export function loadPriceInputs(league: string, ids: ReadonlySet<string>, nowMs: number = Date.now()): PriceInputs {
+export function loadPriceInputs(
+  league: string,
+  ids: ReadonlySet<string>,
+  nowMs: number = Date.now(),
+  // the farm route already read the league's latest snapshots for the mechanic heat — reuse them
+  snapshots: readonly PricedItem[] = latestSnapshots(league),
+): PriceInputs {
   const ninja = new Map<string, NinjaQuote>();
-  for (const row of latestSnapshots(league)) {
+  for (const row of snapshots) {
     if (!ids.has(row.itemId) || !(row.baseValue > 0)) continue;
     const newest = priceHistory(league, row.itemId, 1)[0];
     ninja.set(row.itemId, {

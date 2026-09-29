@@ -34,7 +34,7 @@ export async function GET(): Promise<Response> {
   const snapshots = latestSnapshots(league);
   const ranks = rankFarms(snapshots);
   const icons = mechanicIcons(ranks, snapshots);
-  const inputs = loadPriceInputs(league, NINJA_IDS, nowMs);
+  const inputs = loadPriceInputs(league, NINJA_IDS, nowMs, snapshots);
   const resolved = resolveRates(league, nowMs);
   const details = evaluateBosses(BOSS_LOOT, priceLookup(inputs));
   const rows = buildFarmBoard(
