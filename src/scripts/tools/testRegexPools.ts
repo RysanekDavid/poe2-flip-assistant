@@ -91,6 +91,7 @@ function testHeaders(): void {
       assert.ok(HEADER_VERIFICATION.includes(h.verified));
       if (h.kind === "property" || h.kind === "tier") assert.equal(slotCount(h.template), 1, `${tab}/${h.id} has one number`);
       if (h.verified === "corpus") assert.ok(corpusTemplates.has(h.template), `${tab}/${h.id} "${h.template}" is marked corpus but no corpus line reads so`);
+      assert.equal(h.kind === "class", h.verified === "clipboard-only", `${tab}/${h.id}: exactly the Item Class lines are clipboard-only`);
     }
   }
   const waystone = POOL_HEADERS.waystone;
@@ -102,7 +103,7 @@ function testHeaders(): void {
 /** With nothing else allowed, every mod still has a safe (non-fallback) token. */
 function testTokens(pool: RegexPool): void {
   const ns = buildPoolNamespace(pool, POOL_HEADERS[pool.tab]);
-  const unsafe = pool.mods.filter((m) => modToken(ns, m, new Set(), { anchors: false }).verify).map((m) => m.id);
+  const unsafe = pool.mods.filter((m) => modToken(ns, m, new Set(), { anchors: false, exclusive: true }).verify).map((m) => m.id);
   assert.deepEqual(unsafe, [], `${pool.tab}: mods without a safe token`);
 }
 

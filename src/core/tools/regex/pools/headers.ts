@@ -6,11 +6,13 @@
  *   corpus    — present in a real clipboard sample under src/scripts/tools/regexCorpus/
  *   poe2.re   — used verbatim by poe2.re's working search tokens
  *   unverified — best guess; the UI must show a "verify in-game" marker
+ *   clipboard-only — Ctrl+C output that the tooltip itself may not print (the "Item Class:" line);
+ *                    kept only so fragments stay off it, never offered or used as a filter
  * Header lines are on (nearly) every item of the tab, so no mod fragment may ever match them.
  */
 import type { PoolTab } from "./schema";
 
-export const HEADER_VERIFICATION = ["corpus", "poe2.re", "unverified"] as const;
+export const HEADER_VERIFICATION = ["corpus", "poe2.re", "unverified", "clipboard-only"] as const;
 export type HeaderVerification = (typeof HEADER_VERIFICATION)[number];
 
 export const HEADER_KINDS = ["class", "rarity", "tier", "property", "state", "boilerplate"] as const;
@@ -47,7 +49,7 @@ const COMMON_TAIL: readonly PoolHeader[] = [
 ];
 
 const WAYSTONE: readonly PoolHeader[] = [
-  { id: "class", template: "Item Class: Waystones", kind: "class", verified: "corpus", note: SIDEKICK_1276 },
+  { id: "class", template: "Item Class: Waystones", kind: "class", verified: "clipboard-only", note: `${SIDEKICK_1276}; not known to be tooltip text` },
   ...RARITY_HEADERS,
   { id: "tier", template: "Waystone (Tier #)", kind: "tier", verified: "corpus", note: `${SIDEKICK_1276}; poe2.re er 1[0-6]\\)` },
   { id: "revives", template: "Revives Available: #", kind: "property", verified: "corpus", note: SIDEKICK_1276 },
@@ -80,14 +82,14 @@ const WAYSTONE: readonly PoolHeader[] = [
 ];
 
 const TABLET: readonly PoolHeader[] = [
-  { id: "class", template: "Item Class: Tablet", kind: "class", verified: "unverified", note: "RePoE item class name" },
+  { id: "class", template: "Item Class: Tablet", kind: "class", verified: "clipboard-only", note: "RePoE item class name; not known to be tooltip text" },
   ...RARITY_HEADERS,
   { id: "uses", template: "Uses Remaining: #", kind: "property", verified: "unverified", note: "tablet charge line; spelling not seen in a paste yet" },
   ...COMMON_TAIL,
 ];
 
 const RELIC: readonly PoolHeader[] = [
-  { id: "class", template: "Item Class: Relics", kind: "class", verified: "unverified", note: "RePoE item class name" },
+  { id: "class", template: "Item Class: Relics", kind: "class", verified: "clipboard-only", note: "RePoE item class name; not known to be tooltip text" },
   ...RARITY_HEADERS,
   {
     id: "relicAltar",
@@ -99,7 +101,7 @@ const RELIC: readonly PoolHeader[] = [
 ];
 
 const JEWEL: readonly PoolHeader[] = [
-  { id: "class", template: "Item Class: Jewels", kind: "class", verified: "unverified", note: "RePoE item class name" },
+  { id: "class", template: "Item Class: Jewels", kind: "class", verified: "clipboard-only", note: "RePoE item class name; not known to be tooltip text" },
   ...RARITY_HEADERS,
   {
     id: "jewelSocket",
