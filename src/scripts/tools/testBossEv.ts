@@ -17,6 +17,7 @@ import { farmResponseSchema } from "../../lib/farmContract";
 import { patchCoverageSchema } from "../../sources/patchNotes/contracts";
 import { runCuratedCases, runLineageUnpricedCase } from "./bossLootCases";
 import { runFarmBoardCases } from "./farmBoardCases";
+import { runFarmSpeedCases, runFarmSpeedDbCases } from "./farmSpeedCases";
 import { assertPanelExport, freshToolsDb } from "./toolsTestKit";
 
 const NOW = Date.parse("2026-09-28T12:00:00Z");
@@ -316,7 +317,7 @@ function testCuratedEvaluates(): void {
   const rows = buildFarmBoard([], bosses, 0);
   const payload = {
     computedLeague: "L", mechanics: [], bosses: rows, details: bosses, dataAsOf: file.dataAsOf, patch: file.patch,
-    patchWarning: null, rates: null, pricesFetchedAt: null, scoutAgeHours: null,
+    patchWarning: null, rates: null, pricesFetchedAt: null, scoutAgeHours: null, speed: [],
   };
   farmResponseSchema.parse(payload);
   assert.equal(rows.length, file.bosses.length, "one board row per curated boss");
@@ -336,16 +337,19 @@ testBreakEvenAndJackpot();
 testEntryEdgeCases();
 testPricing();
 testDbPricing();
+runFarmSpeedDbCases(getDb(), NOW);
 runLineageUnpricedCase(parseBossLoot(readCurated()));
 testPatchWarning();
 testHeadlines();
 testCuratedEvaluates();
 runFarmBoardCases(TIER, syntheticInputs);
+runFarmSpeedCases(TIER, syntheticInputs);
 assertPanelExport("src/components/farm/FarmBoard.tsx", "FarmBoard", "src/components/shell/tabs/FarmTab.tsx");
 assert.deepEqual(TABS.map((t) => t.id), [...TAB_IDS], "tab nav order must match TAB_IDS, each id once");
 assert.equal(new Set(TABS.map((t) => t.label)).size, TABS.length, "tab labels must be distinct");
 console.log(
   "ALL PASS — boss-loot strict schema + dated sources + ninja category coverage, 2026-09-29 audit corrections, lineage gems unpriced, " +
     "synthetic EV (guaranteed/point/range/unknown/unpriced/manual), floor/chase/P(lose)/liquidity metrics, farm board order + contract, " +
+    "farm Div/hour by own pace (bounds, nulls, PUT validation, per-user rows, loadFarmBoard), " +
     "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, panel wiring",
 );
