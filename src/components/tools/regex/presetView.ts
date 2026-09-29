@@ -1,4 +1,4 @@
-/* Pure preset helpers for the PresetBar (kept out of the .tsx so the node tests can import them). */
+/* Pure preset helpers for the PresetMenu (kept out of the .tsx so the node tests can import them). */
 import type { Preset, PresetParams } from "../../../lib/tools/regexContract";
 import type { RegexTab } from "../../../lib/tools/regexPoolContract";
 

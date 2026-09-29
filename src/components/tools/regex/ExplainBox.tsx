@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { tooltipLines } from "../../../core/tools/regex/searchEmulator";
 import { PASTED_ITEM_KEY, type ExplainJob, type ExplainJobResult } from "../../../lib/tools/regexExplainJob";
-import { Panel } from "../../ui/Panel";
+import { DrawerSection } from "./BandTools";
 import { Tooltip } from "../../ui/Tooltip";
 import { useExplainWorker, type ExplainRun } from "./useExplainWorker";
 
@@ -116,7 +116,7 @@ export function ExplainBox({ search, onSearch, pasted, onPasted, samples }: {
   }, [search, pasted, samples]);
   const run = useExplainWorker(job);
   return (
-    <Panel title="Explain a search string">
+    <DrawerSection title="Check a string against an item">
       <div className="grid gap-3 lg:grid-cols-2">
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           Search string
@@ -127,9 +127,9 @@ export function ExplainBox({ search, onSearch, pasted, onPasted, samples }: {
           <textarea rows={2} value={pasted} spellCheck={false} maxLength={8000} onChange={(e) => onPasted(e.target.value)} placeholder="Item Class: Waystones…" className={TEXTAREA} />
         </label>
       </div>
-      <div className="mt-3">
+      <div className="mt-1">
         <RunView run={run} search={search} samples={samples} />
       </div>
-    </Panel>
+    </DrawerSection>
   );
 }

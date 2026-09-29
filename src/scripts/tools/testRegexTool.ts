@@ -20,6 +20,7 @@ import { emptyPoolSelection, thresholdKey } from "../../lib/tools/regexPoolContr
 import { assertPanelExport, columnsOf, freshToolsDb, insertUser } from "./toolsTestKit";
 import { testExplainJob, testPresetsPerTab, testShareRoundTrip, testVendorCompose, testWorkerRunner } from "./testRegexUi";
 import { testRegexUiLinks } from "./testRegexUiLinks";
+import { testRegexView } from "./testRegexView";
 
 function testSchemaOrder(): void {
   const ddl = applicationSchemaSql();
@@ -265,13 +266,15 @@ testShareRoundTrip();
 testExplainJob();
 testVendorCompose();
 testRegexUiLinks();
+testRegexView();
 assertPanelExport("src/components/tools/regex/RegexTool.tsx", "RegexTool", "src/components/shell/tabs/RegexTab.tsx");
 // the worker runner is promise-based; CommonJS tsx has no top-level await
 testWorkerRunner()
   .then(() =>
     console.log(
       "ALL PASS — regex_presets schema + round-trip, namespace, collision-safe fragments, cover, chunking, parser/explain, " +
-        "presets per tab, share links, worker deadline, explain job + budget, vendor compose, trade link, ranges, session mirror, panel wiring",
+        "presets per tab, share links, worker deadline, explain job + budget, vendor compose, trade link, ranges, session mirror, " +
+        "meaning sentence, inline rolls, brush toggle, panel wiring",
     ),
   )
   .catch((error: unknown) => {

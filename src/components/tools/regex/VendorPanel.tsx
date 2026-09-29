@@ -9,10 +9,12 @@ import type { PresetParams } from "../../../lib/tools/regexContract";
 import type { VendorSelection } from "../../../lib/tools/regexPoolContract";
 import { EmptyState } from "../../ui/EmptyState";
 import { PanelLoading } from "../../shell/PanelLoading";
+import { ExplainDrawer, ExplainToggle, SettingsMenu, useExplainDrawer } from "./BandTools";
 import { validMaxChars } from "./controls";
+import { describeVendor } from "./describe";
 import { ExplainBox } from "./ExplainBox";
-import { PresetBar } from "./PresetBar";
-import { ResetButton, ShareButton } from "./ResultActions";
+import { PresetMenu } from "./PresetMenu";
+import { ShareButton } from "./ResultActions";
 import { ResultBar } from "./ResultBar";
 import { emptyVendorSelection } from "./selectionOps";
 import { TokenTable } from "./TokenTable";
@@ -34,7 +36,7 @@ function useVendorCompose(data: VendorData, selection: VendorSelection, maxChars
   const settled = useDebounced(input, 100);
   const composed = useMemo(() => {
     const limit = validMaxChars(settled.maxChars);
-    if (limit === null) return { ok: false as const, message: "max chars is out of range — fix it in the filters column" };
+    if (limit === null) return { ok: false as const, message: "max characters is out of range — fix it under the gear icon" };
     try {
       return { ok: true as const, result: composeVendor(data, settled.selection, { maxChars: limit }) };
     } catch (error: unknown) {
@@ -47,17 +49,20 @@ function useVendorCompose(data: VendorData, selection: VendorSelection, maxChars
 
 function VendorWorkspace({ data, selection, onChange, maxChars, onMaxChars }: VendorPanelProps & { data: VendorData }) {
   const { composed, pending } = useVendorCompose(data, selection, maxChars);
-  const [explain, setExplain] = useState("");
   const [pasted, setPasted] = useState("");
   const result = composed.ok ? composed.result : null;
+  const drawer = useExplainDrawer(result?.chunks[0]?.text);
+  const sentence = useMemo(() => describeVendor(selection), [selection]);
   const loadPreset = (p: PresetParams) => {
     if (p.tab !== "vendor") throw new Error(`preset for ${p.tab} offered on the vendor tab`);
     onChange(p);
   };
-  const actions = (
+  const tools = (
     <>
+      <PresetMenu tab="vendor" params={selection} onLoad={loadPreset} />
       <ShareButton selection={selection} />
-      <ResetButton onReset={() => onChange(emptyVendorSelection())} />
+      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} />
+      <SettingsMenu maxChars={maxChars} onMaxChars={onMaxChars} />
     </>
   );
   return (
@@ -69,13 +74,15 @@ function VendorWorkspace({ data, selection, onChange, maxChars, onMaxChars }: Ve
         error={composed.ok ? null : composed.message}
         maxChars={maxChars}
         busy={pending}
-        actions={actions}
-        onExplain={setExplain}
+        sentence={sentence}
+        tools={tools}
+        onClear={() => onChange(emptyVendorSelection())}
       />
-      <PresetBar tab="vendor" params={selection} onLoad={loadPreset} />
-      <VendorControls classes={data.classes} selection={selection} onChange={onChange} maxChars={maxChars} onMaxChars={onMaxChars} />
-      <TokenTable tokens={result?.tokens ?? []} pool={null} headers={VENDOR_HEADERS} />
-      <ExplainBox search={explain} onSearch={setExplain} pasted={pasted} onPasted={setPasted} samples={NO_SAMPLES} />
+      <VendorControls classes={data.classes} selection={selection} onChange={onChange} />
+      <ExplainDrawer ref={drawer.ref} id={drawer.id} open={drawer.open} onClose={drawer.close}>
+        <TokenTable tokens={result?.tokens ?? []} pool={null} headers={VENDOR_HEADERS} />
+        <ExplainBox search={drawer.text} onSearch={drawer.setText} pasted={pasted} onPasted={setPasted} samples={NO_SAMPLES} />
+      </ExplainDrawer>
     </div>
   );
 }

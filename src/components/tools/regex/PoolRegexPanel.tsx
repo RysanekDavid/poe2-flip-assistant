@@ -10,15 +10,17 @@ import type { PresetParams } from "../../../lib/tools/regexContract";
 import { tradeLinkRequest } from "../../../lib/tools/regexTradeContract";
 import { EmptyState } from "../../ui/EmptyState";
 import { PanelLoading } from "../../shell/PanelLoading";
+import { ExplainDrawer, ExplainToggle, SettingsMenu, useExplainDrawer } from "./BandTools";
 import { validMaxChars } from "./controls";
-import { isPoolSelection, selectsAnything } from "./selectionOps";
+import { describeSelection } from "./describe";
 import { ExplainBox } from "./ExplainBox";
+import { FilterCards } from "./FilterCards";
+import { ModPicker } from "./ModPicker";
 import { explainSamples } from "./modView";
-import { PoolControls } from "./PoolControls";
-import { PoolModList } from "./PoolModList";
-import { PresetBar } from "./PresetBar";
-import { ResetButton, ShareButton, TradeLinkButton } from "./ResultActions";
+import { PresetMenu } from "./PresetMenu";
+import { ShareButton, TradeLinkButton } from "./ResultActions";
 import { ResultBar } from "./ResultBar";
+import { isPoolSelection, selectsAnything } from "./selectionOps";
 import { TokenTable } from "./TokenTable";
 import { useDebounced } from "./useDebounced";
 import { usePoolData } from "./usePoolData";
@@ -58,24 +60,26 @@ function useComposed(pool: RegexPool, selection: PoolTabSelection, maxChars: num
 
 function Workspace({ pool, selection, onChange, onUpdate, maxChars, onMaxChars }: PoolPanelProps & { pool: RegexPool }) {
   const { composed, pending } = useComposed(pool, selection, maxChars);
-  const [explain, setExplain] = useState("");
   const [pasted, setPasted] = useState("");
   const samples = useMemo(() => explainSamples(pool), [pool]);
   const update = useCallback((fn: (s: PoolTabSelection) => PoolTabSelection) => onUpdate(pool.tab, fn), [onUpdate, pool.tab]);
   const result = composed?.ok ? composed.result : null;
+  const drawer = useExplainDrawer(result?.chunks[0]?.text);
   const trade = useMemo(() => (selectsAnything(selection) ? tradeLinkRequest(pool, selection) : null), [pool, selection]);
+  const sentence = useMemo(() => describeSelection(selection, POOL_HEADERS[pool.tab], pool.bands), [selection, pool]);
   const reason = composed === null
-    ? validMaxChars(maxChars) === null ? "max chars is out of range — fix it in the filters column" : null
+    ? validMaxChars(maxChars) === null ? "max characters is out of range — fix it under the gear icon" : null
     : composed.ok ? composed.result.reason : null;
   const loadPreset = (p: PresetParams) => {
     if (!isPoolSelection(p) || p.tab !== selection.tab) throw new Error(`preset for ${p.tab} offered on the ${selection.tab} tab`);
     onChange(p);
   };
-  const actions = (
+  const tools = (
     <>
+      <PresetMenu tab={selection.tab} params={selection} onLoad={loadPreset} />
       <ShareButton selection={selection} />
-      <TradeLinkButton plan={trade} />
-      <ResetButton onReset={() => onChange(emptyPoolSelection(selection.tab))} />
+      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} />
+      <SettingsMenu maxChars={maxChars} onMaxChars={onMaxChars} />
     </>
   );
   return (
@@ -87,16 +91,17 @@ function Workspace({ pool, selection, onChange, onUpdate, maxChars, onMaxChars }
         error={composed?.ok === false ? `composer error: ${composed.message}` : null}
         maxChars={maxChars}
         busy={pending}
-        actions={actions}
-        onExplain={setExplain}
+        sentence={sentence}
+        tools={tools}
+        trade={<TradeLinkButton plan={trade} />}
+        onClear={() => onChange(emptyPoolSelection(selection.tab))}
       />
-      <PresetBar tab={selection.tab} params={selection} onLoad={loadPreset} />
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <PoolModList pool={pool} selection={selection} onUpdate={update} result={result} />
-        <PoolControls pool={pool} selection={selection} onChange={onChange} maxChars={maxChars} onMaxChars={onMaxChars} />
-      </div>
-      <TokenTable tokens={result?.tokens ?? []} pool={pool} headers={POOL_HEADERS[pool.tab]} />
-      <ExplainBox search={explain} onSearch={setExplain} pasted={pasted} onPasted={setPasted} samples={samples} />
+      <FilterCards pool={pool} selection={selection} onChange={onChange} />
+      <ModPicker pool={pool} selection={selection} onUpdate={update} result={result} />
+      <ExplainDrawer ref={drawer.ref} id={drawer.id} open={drawer.open} onClose={drawer.close}>
+        <TokenTable tokens={result?.tokens ?? []} pool={pool} headers={POOL_HEADERS[pool.tab]} />
+        <ExplainBox search={drawer.text} onSearch={drawer.setText} pasted={pasted} onPasted={setPasted} samples={samples} />
+      </ExplainDrawer>
     </div>
   );
 }

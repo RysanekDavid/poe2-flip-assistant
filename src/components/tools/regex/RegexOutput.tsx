@@ -99,7 +99,7 @@ function CoveredRow({ row }: { row: CoveredView }) {
   );
 }
 
-function CoveredTable({ rows }: { rows: CoveredView[] }) {
+export function CoveredTable({ rows }: { rows: CoveredView[] }) {
   if (rows.length === 0) return null;
   return (
     <div className={SCROLL_BOX}>
@@ -126,7 +126,7 @@ const UNCOVERED_HEADING: Record<RegexMode, string> = {
   trash: "Not in any string — WILL be highlighted as trash, pull these out by hand",
 };
 
-function UncoveredList({ rows, mode }: { rows: UncoveredView[]; mode: RegexMode }) {
+export function UncoveredList({ rows, mode }: { rows: UncoveredView[]; mode: RegexMode }) {
   if (rows.length === 0) return null;
   return (
     <div className="rounded-md border border-bad/30 bg-bad/[0.04] px-3 py-2 text-xs">
@@ -141,17 +141,6 @@ function UncoveredList({ rows, mode }: { rows: UncoveredView[]; mode: RegexMode 
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-/** Price tab detail under the pinned strings: what is covered, and what no string reaches. */
-export function RegexOutput({ result }: { result: BuildResponse }) {
-  if (result.reason !== null) return null;
-  return (
-    <div className="flex flex-col gap-3">
-      <UncoveredList rows={result.uncovered} mode={result.mode} />
-      <CoveredTable rows={result.covered} />
     </div>
   );
 }
