@@ -1,9 +1,10 @@
 /* Regex UI view logic, part 3 (run from testRegexTool.ts): the result band's meaning sentence,
  * mod-card text with inlined roll ranges and band notes, and the Avoid/Want brush toggle. */
 import assert from "node:assert/strict";
+import { composePool } from "../../core/tools/regex/poolCompose";
 import { POOL_HEADERS } from "../../core/tools/regex/pools/headers";
-import { emptyPoolSelection, thresholdKey } from "../../lib/tools/regexPoolContract";
-import { describePrice, describeSelection, describeVendor, sentenceText } from "../../components/tools/regex/describe";
+import { TABLET_TYPES, emptyPoolSelection, thresholdKey } from "../../lib/tools/regexPoolContract";
+import { criticalFirst, describePrice, describeSelection, describeVendor, sentenceText } from "../../components/tools/regex/describe";
 import { bandSummary, inlineRollText, modMeta } from "../../components/tools/regex/modView";
 import { emptyVendorSelection, setThreshold, toggleInBucket } from "../../components/tools/regex/selectionOps";
 import { loadPool, sampleWaystone } from "./testRegexUi";
@@ -45,7 +46,7 @@ function testBrush(): void {
 function testPoolSentence(): void {
   const pool = loadPool("waystone");
   const headers = POOL_HEADERS.waystone;
-  const say = (s: Parameters<typeof describeSelection>[0]) => sentenceText(describeSelection(s, headers, pool.bands));
+  const say = (s: Parameters<typeof describeSelection>[0]) => sentenceText(describeSelection(s, pool, headers, null));
   assert.match(say(emptyPoolSelection("waystone")), /^Nothing selected yet/, "an empty selection says so");
   const sample = sampleWaystone(pool);
   assert.equal(say(sample), "Lights waystones with any of 3 wanted mods and none of 2 avoided mods · tier 14–16 · 1 roll limit");
@@ -55,10 +56,50 @@ function testPoolSentence(): void {
   const filtersOnly = { ...emptyPoolSelection("waystone"), corrupted: "exclude" as const, rarity: ["rare" as const], props: { packSize: { min: 30, max: null } } };
   assert.equal(say(filtersOnly), "Lights every waystone · Rare only · not corrupted · Pack Size ≥ 30%");
   const tablet = loadPool("tablet");
-  const types = sentenceText(describeSelection({ ...emptyPoolSelection("tablet"), types: ["breach", "ritual"] }, POOL_HEADERS.tablet, tablet.bands));
+  const types = sentenceText(describeSelection({ ...emptyPoolSelection("tablet"), types: ["breach", "ritual"] }, tablet, POOL_HEADERS.tablet, null));
   assert.equal(types, "Lights every tablet · Breach or Ritual only", "tablet types read by their band labels");
-  const strong = describeSelection(sample, headers, pool.bands).filter((p) => typeof p !== "string");
+  const strong = describeSelection(sample, pool, headers, null).filter((p) => typeof p !== "string");
   assert.deepEqual(strong, [{ strong: "any" }, { strong: "none" }], "the band bolds the combining words");
+}
+
+/** The reviewer's reproduction: an avoid that also matches the wanted mod must not read as "lights". */
+function testMaskedSentence(): void {
+  const pool = loadPool("waystone");
+  let sel = toggleInBucket(emptyPoolSelection("waystone"), "MapAbyssalAdditionalPits", "avoid");
+  sel = toggleInBucket(sel, "MapAbyssalOverrun", "want");
+  const result = composePool(pool, POOL_HEADERS.waystone, sel, { maxChars: 250 });
+  assert.deepEqual(result.masked, ["MapAbyssalOverrun"], "fixture: the avoid part masks the wanted mod");
+  assert.ok(result.warnings.some((w) => w.code === "masked"), "fixture: the composer warns");
+  assert.equal(criticalFirst(result.warnings)[0]?.code, "masked", "the notes pill leads with the critical note");
+  assert.equal(
+    sentenceText(describeSelection(sel, pool, POOL_HEADERS.waystone, result)),
+    "Lights waystones with 1 wanted mod (1 can never light — see notes) and none of 1 avoided mod",
+  );
+  const uncovered = sentenceText(describeSelection(sel, pool, POOL_HEADERS.waystone, { masked: [], uncovered: ["MapAbyssalOverrun"] }));
+  assert.match(uncovered, /\(1 can never light — see notes\)/, "a mod no string fits is dead too");
+}
+
+/** The sentence mirrors the composer's guards: what the string ignores is not claimed as a filter. */
+function testSentenceGuards(): void {
+  const pool = loadPool("waystone");
+  const headers = POOL_HEADERS.waystone;
+  const say = (s: Parameters<typeof describeSelection>[0], p = pool) => sentenceText(describeSelection(s, p, s.tab === "tablet" ? POOL_HEADERS.tablet : headers, null));
+  const everyRarity = { ...emptyPoolSelection("waystone"), rarity: ["normal" as const, "magic" as const, "rare" as const, "unique" as const] };
+  assert.match(say(everyRarity), /^Nothing selected yet/, "all four rarities = no rarity filter");
+  const tablet = loadPool("tablet");
+  const allTypes = { ...emptyPoolSelection("tablet"), types: [...TABLET_TYPES] };
+  assert.match(say(allTypes, tablet), /^Nothing selected yet/, "every tablet type = any tablet");
+  const crit = "MapMonsterCritIncrease";
+  let sel = toggleInBucket(emptyPoolSelection("waystone"), crit, "want");
+  sel = setThreshold(setThreshold(sel, thresholdKey(crit, 0, 0), { min: 100, max: null }), thresholdKey(crit, 1, 0), { min: 20, max: null });
+  assert.match(say(sel), /· 1 roll limit$/, '"any" mode keeps one limit per mod');
+  assert.match(say({ ...sel, match: "all" }), /· 2 roll limits$/, '"all" mode keeps both');
+  const bogus = setThreshold(sel, thresholdKey(crit, 0, 5), { min: 1, max: null });
+  assert.match(say({ ...bogus, match: "all" }), /· 2 roll limits$/, "a limit on a number the mod lacks is ignored, as the composer does");
+  const unknown = toggleInBucket(sel, "NoSuchModAnymore", "want");
+  assert.equal(say({ ...unknown, thresholds: {} }), "Lights waystones with 1 wanted mod · 1 unknown mod ignored", "unknown ids are not counted as wanted");
+  const badProp = { ...emptyPoolSelection("waystone"), props: { tier: { min: 3, max: null } } };
+  assert.match(say(badProp), /^Nothing selected yet/, "a non-property header id is not described");
 }
 
 function testOtherSentences(): void {
@@ -76,5 +117,7 @@ export function testRegexView(): void {
   testInlineRolls();
   testBrush();
   testPoolSentence();
+  testMaskedSentence();
+  testSentenceGuards();
   testOtherSentences();
 }

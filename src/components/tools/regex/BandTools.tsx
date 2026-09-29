@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { forwardRef, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { SearchCode, Settings2, X } from "lucide-react";
 import { MaxCharsInput, validMaxChars } from "./controls";
 import { Popover, TOOL_BUTTON } from "./Popover";
@@ -20,9 +20,10 @@ export function SettingsMenu({ maxChars, onMaxChars }: { maxChars: number; onMax
 }
 
 /** Opens the explain drawer (how the string is built + test it against an item). */
-export function ExplainToggle({ open, onToggle, controls }: { open: boolean; onToggle: () => void; controls: string }) {
+export function ExplainToggle({ open, onToggle, controls, toggleRef }: { open: boolean; onToggle: () => void; controls: string; toggleRef: RefObject<HTMLButtonElement | null> }) {
   return (
     <button
+      ref={toggleRef}
       type="button"
       aria-label="explain the string"
       aria-expanded={open}
@@ -39,29 +40,37 @@ export function ExplainToggle({ open, onToggle, controls }: { open: boolean; onT
 
 /**
  * Drawer state for a panel: opening it pre-fills the explain box with the current string and
- * scrolls the drawer into view (it sits below the mod list, far from the band's button).
+ * scrolls the drawer into view (it sits below the mod list, far from the band's button). Focus
+ * follows: into the drawer on open, back to the Explain button on close, so keyboard users are
+ * never left on a control that just scrolled out of view.
  */
 export function useExplainDrawer(current: string | undefined) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const ref = useRef<HTMLElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const id = useId();
   const scrollPending = useRef(false);
   useEffect(() => {
     if (!open || !scrollPending.current) return;
     scrollPending.current = false;
+    ref.current?.focus({ preventScroll: true });
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [open]);
+  const close = () => {
+    setOpen(false);
+    toggleRef.current?.focus();
+  };
   const toggle = () => {
     if (open) {
-      setOpen(false);
+      close();
       return;
     }
     if (current) setText(current);
     scrollPending.current = true;
     setOpen(true);
   };
-  return { open, toggle, close: () => setOpen(false), ref, id, text, setText };
+  return { open, toggle, close, ref, toggleRef, id, text, setText };
 }
 
 /** One titled block inside the explain drawer. */
@@ -83,7 +92,18 @@ export const ExplainDrawer = forwardRef<HTMLElement, { id: string; open: boolean
   ref,
 ) {
   return (
-    <section ref={ref} id={id} aria-label="explain the search string" hidden={!open} className="scroll-mt-[calc(var(--shell-h,0px)+12rem)] rounded-lg border border-line bg-surface/60 p-4">
+    <section
+      ref={ref}
+      id={id}
+      tabIndex={-1}
+      aria-label="explain the search string"
+      hidden={!open}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      // clears the shell header and the pinned band, whose height ResultBar publishes
+      className="scroll-mt-[calc(var(--shell-h,0px)+var(--regex-band-h,0px)+1rem)] rounded-lg border border-line bg-surface/60 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+    >
       {open && (
         <>
           <header className="mb-3 flex items-center justify-between gap-2">

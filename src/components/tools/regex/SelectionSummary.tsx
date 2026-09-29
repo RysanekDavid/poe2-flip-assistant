@@ -22,7 +22,7 @@ interface SummaryProps {
 export function SelectionSummary({ mods, labelOf, onRemove }: SummaryProps) {
   const entries = Object.entries(mods);
   return (
-    <div className="flex flex-col gap-1.5" aria-label="selected mods">
+    <div role="group" className="flex flex-col gap-1.5" aria-label="selected mods">
       {BUCKETS.map((b) => {
         const ids = entries.filter(([, s]) => s === b.state).map(([id]) => id);
         return (

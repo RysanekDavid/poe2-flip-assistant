@@ -81,7 +81,7 @@ export function PriceRegexPanel({ params, onChange, maxChars, onMaxChars }: Pric
   const tools = (
     <>
       <PresetMenu tab="price" params={params} onLoad={loadPreset} />
-      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} />
+      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} toggleRef={drawer.toggleRef} />
       <SettingsMenu maxChars={maxChars} onMaxChars={onMaxChars} />
     </>
   );

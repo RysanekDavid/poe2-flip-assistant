@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Check, Copy, TriangleAlert } from "lucide-react";
 import { Tooltip } from "../../ui/Tooltip";
 import { writeClipboard } from "./clipboard";
-import type { SentencePart } from "./describe";
+import { CRITICAL_CODES, criticalFirst, type SentencePart } from "./describe";
 import { BIG_BUTTON, ResetButton } from "./ResultActions";
 
 export interface ResultString {
@@ -19,7 +19,7 @@ export interface ResultWarning {
 }
 
 /** Copies text; a refused clipboard (permissions, insecure origin) is shown, not swallowed. */
-function CopyButton({ text, name }: { text: string; name: string }) {
+function CopyButton({ text, which }: { text: string; which: number | null }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const empty = text.length === 0;
   const copy = () => {
@@ -33,9 +33,11 @@ function CopyButton({ text, name }: { text: string; name: string }) {
   };
   const tone = empty ? "cursor-not-allowed bg-amber-400/10 text-amber-200/70" : "bg-amber-400 text-neutral-950 hover:bg-amber-300";
   return (
-    <button type="button" onClick={copy} disabled={empty} aria-label={name} title="copy, then paste into the in-game stash search (Ctrl+F)" className={`${BIG_BUTTON} w-24 text-base font-semibold sm:w-36 ${tone}`}>
+    <button type="button" onClick={copy} disabled={empty} title="copy, then paste into the in-game stash search (Ctrl+F)" className={`${BIG_BUTTON} w-24 text-base font-semibold sm:w-36 ${tone}`}>
       {state === "copied" ? <Check aria-hidden className="h-5 w-5" /> : <Copy aria-hidden className="h-5 w-5" />}
-      {state === "copied" ? "Copied" : state === "failed" ? "Failed" : "Copy"}
+      {/* the visible label is the accessible name, so "Copied" / "Failed" is announced as it changes */}
+      <span aria-live="polite">{state === "copied" ? "Copied" : state === "failed" ? "Failed" : "Copy"}</span>
+      {which !== null && <span className="sr-only">string {which}</span>}
     </button>
   );
 }
@@ -54,7 +56,7 @@ function StringRow({ s, index, total }: { s: ResultString; index: number; total:
         {total > 1 && <span className="mr-2 select-none font-sans text-xs text-neutral-400">#{index + 1}</span>}
         {s.text}
       </code>
-      <CopyButton text={s.text} name={total > 1 ? `copy string ${index + 1}` : "copy search string"} />
+      <CopyButton text={s.text} which={total > 1 ? index + 1 : null} />
     </div>
   );
 }
@@ -75,22 +77,26 @@ function CharMeter({ used, max }: { used: number; max: number }) {
   );
 }
 
-/** Every composer note behind one pill: the details matter only when something looks off. */
+/** Every composer note behind one pill; it turns red and names the problem when one is critical. */
 function NotesPill({ warnings }: { warnings: readonly ResultWarning[] }) {
   if (warnings.length === 0) return null;
+  const sorted = criticalFirst(warnings);
+  const critical = sorted[0] && CRITICAL_CODES.has(sorted[0].code) ? sorted[0] : null;
   const tip = (
     <ul className="flex flex-col gap-1">
-      {warnings.map((w) => (
+      {sorted.map((w) => (
         <li key={w.code}>
-          <span className="font-semibold text-warn">{w.label}</span> — {w.detail}
+          <span className={`font-semibold ${CRITICAL_CODES.has(w.code) ? "text-bad" : "text-warn"}`}>{w.label}</span> — {w.detail}
         </li>
       ))}
     </ul>
   );
+  const more = critical ? warnings.length - 1 : warnings.length;
+  const label = critical ? `${critical.label}${more > 0 ? ` +${more}` : ""}` : `${warnings.length} ${warnings.length === 1 ? "note" : "notes"}`;
   return (
     <Tooltip tip={tip} side="bottom" align="end">
-      <span className="inline-flex shrink-0 items-center gap-1 rounded bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn">
-        <TriangleAlert aria-hidden className="h-3.5 w-3.5" /> {warnings.length} {warnings.length === 1 ? "note" : "notes"}
+      <span className={`inline-flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold ${critical ? "bg-bad/15 text-red-200" : "bg-warn/15 text-warn"}`}>
+        <TriangleAlert aria-hidden className="h-3.5 w-3.5" /> {label}
       </span>
     </Tooltip>
   );
@@ -102,6 +108,30 @@ function Sentence({ parts }: { parts: readonly SentencePart[] }) {
       {parts.map((p, i) => (typeof p === "string" ? <span key={i}>{p}</span> : <strong key={i} className="font-semibold text-neutral-200">{p.strong}</strong>))}
     </p>
   );
+}
+
+const BAND_HEIGHT_VAR = "--regex-band-h";
+
+/**
+ * Publishes the pinned band's height (0 while it is not sticky, i.e. on phones) so content that
+ * scrolls into view, like the explain drawer, can clear it however many strings it holds.
+ */
+function useBandHeightVar() {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const publish = () => root.style.setProperty(BAND_HEIGHT_VAR, getComputedStyle(el).position === "sticky" ? `${el.offsetHeight}px` : "0px");
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty(BAND_HEIGHT_VAR);
+    };
+  }, []);
+  return ref;
 }
 
 interface ResultBarProps {
@@ -130,8 +160,10 @@ interface ResultBarProps {
  */
 export function ResultBar({ strings, warnings, reason, error = null, maxChars, busy = false, sentence, tools, trade, onClear }: ResultBarProps) {
   const used = strings.reduce((n, s) => Math.max(n, s.chars), 0);
+  const ref = useBandHeightVar();
   return (
     <section
+      ref={ref}
       aria-label="search string"
       aria-busy={busy}
       className="z-30 flex flex-col gap-2.5 rounded-lg border border-line bg-neutral-950/95 p-3 shadow-lg backdrop-blur md:sticky md:top-[var(--shell-h,0px)]"
@@ -151,7 +183,7 @@ export function ResultBar({ strings, warnings, reason, error = null, maxChars, b
           ) : (
             <div className="flex gap-2">
               <p className={`${BOX} font-sans text-neutral-500`}>{reason ?? (error ? "No string until the problem above is fixed." : "building…")}</p>
-              <CopyButton text="" name="copy search string" />
+              <CopyButton text="" which={null} />
             </div>
           )}
         </div>

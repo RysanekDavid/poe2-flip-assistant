@@ -42,13 +42,13 @@ function Thresholds({ mod, thresholds, onThreshold }: Pick<ModCardProps, "mod" |
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 pb-2 text-xs text-neutral-400">
       roll
-      {slots.map(({ line, slot, template }) => {
+      {slots.map(({ line, slot, template }, i) => {
         const key = thresholdKey(mod.id, line, slot);
         const range = thresholds[key] ?? null;
         const name = slots.length > 1 ? `#${slot + 1} of "${template}"` : `"${template}"`;
         return (
           <span key={key} className="inline-flex items-center gap-1">
-            {slots.length > 1 && <span>#{slot + 1}</span>}
+            {slots.length > 1 && <span>#{i + 1}</span>}
             <RangeFields compact label={name} min={range?.min ?? null} max={range?.max ?? null} onCommit={(min, max) => onThreshold(key, rangeOf(min, max))} />
           </span>
         );

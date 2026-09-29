@@ -66,7 +66,7 @@ function Workspace({ pool, selection, onChange, onUpdate, maxChars, onMaxChars }
   const result = composed?.ok ? composed.result : null;
   const drawer = useExplainDrawer(result?.chunks[0]?.text);
   const trade = useMemo(() => (selectsAnything(selection) ? tradeLinkRequest(pool, selection) : null), [pool, selection]);
-  const sentence = useMemo(() => describeSelection(selection, POOL_HEADERS[pool.tab], pool.bands), [selection, pool]);
+  const sentence = useMemo(() => describeSelection(selection, pool, POOL_HEADERS[pool.tab], result), [selection, pool, result]);
   const reason = composed === null
     ? validMaxChars(maxChars) === null ? "max characters is out of range — fix it under the gear icon" : null
     : composed.ok ? composed.result.reason : null;
@@ -78,7 +78,7 @@ function Workspace({ pool, selection, onChange, onUpdate, maxChars, onMaxChars }
     <>
       <PresetMenu tab={selection.tab} params={selection} onLoad={loadPreset} />
       <ShareButton selection={selection} />
-      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} />
+      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} toggleRef={drawer.toggleRef} />
       <SettingsMenu maxChars={maxChars} onMaxChars={onMaxChars} />
     </>
   );

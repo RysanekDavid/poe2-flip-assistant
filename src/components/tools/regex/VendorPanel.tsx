@@ -61,7 +61,7 @@ function VendorWorkspace({ data, selection, onChange, maxChars, onMaxChars }: Ve
     <>
       <PresetMenu tab="vendor" params={selection} onLoad={loadPreset} />
       <ShareButton selection={selection} />
-      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} />
+      <ExplainToggle open={drawer.open} onToggle={drawer.toggle} controls={drawer.id} toggleRef={drawer.toggleRef} />
       <SettingsMenu maxChars={maxChars} onMaxChars={onMaxChars} />
     </>
   );

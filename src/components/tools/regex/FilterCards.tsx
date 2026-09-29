@@ -26,10 +26,10 @@ import { NumberField, RangeFields } from "./numberFields";
 import { Segmented, type SegmentOption } from "./Segmented";
 import { setProp, tierOf } from "./selectionOps";
 
-export const POOL_ART: Record<PoolTab, StaticImageData> = { waystone: artWaystone, tablet: artTablet, relic: artRelic, jewel: artJewel };
+const POOL_ART: Record<PoolTab, StaticImageData> = { waystone: artWaystone, tablet: artTablet, relic: artRelic, jewel: artJewel };
 const ITEM_TITLE: Record<PoolTab, string> = { waystone: "Waystone", tablet: "Tablet", relic: "Relic", jewel: "Jewel" };
 
-export const MATCH_OPTIONS: readonly SegmentOption<MatchMode>[] = [
+const MATCH_OPTIONS: readonly SegmentOption<MatchMode>[] = [
   { value: "any", label: "Any", title: "an item lights up when it has at least one wanted mod" },
   { value: "all", label: "All", title: "an item lights up only when it has every wanted mod" },
 ];

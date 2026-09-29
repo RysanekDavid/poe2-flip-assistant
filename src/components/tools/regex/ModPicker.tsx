@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import type { PoolComposeResult } from "../../../core/tools/regex/poolCompose";
 import type { PoolMod, PoolTab, RegexPool } from "../../../core/tools/regex/pools/schema";
@@ -39,19 +39,27 @@ interface PickerProps {
   result: PoolComposeResult | null;
 }
 
-/** A / W switch the brush while no text field has focus. */
-function useBrushKeys(setBrush: (b: ModState) => void): void {
+/**
+ * A / W switch the brush, but only while the picker has focus or the pointer is over it — a
+ * page-wide shortcut would hijack those letters everywhere else. Text fields, held keys and IME
+ * composition are left alone.
+ */
+function useBrushKeys(section: RefObject<HTMLElement | null>, setBrush: (b: ModState) => void): { onPointerEnter: () => void; onPointerLeave: () => void } {
+  const hovered = useRef(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || e.isComposing) return;
       const t = e.target;
       if (t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+      const within = hovered.current || (document.activeElement !== null && section.current?.contains(document.activeElement) === true);
+      if (!within) return;
       if (e.key === "a" || e.key === "A") setBrush("avoid");
       else if (e.key === "w" || e.key === "W") setBrush("want");
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [setBrush]);
+  }, [section, setBrush]);
+  return { onPointerEnter: () => (hovered.current = true), onPointerLeave: () => (hovered.current = false) };
 }
 
 interface GroupProps {
@@ -152,7 +160,8 @@ export function ModPicker({ pool, selection, onUpdate, result }: PickerProps) {
   const [brush, setBrush] = useState<ModState>(DEFAULT_BRUSH[pool.tab]);
   const [query, setQuery] = useState("");
   const [openOverride, setOpenOverride] = useState<Record<string, boolean>>({});
-  useBrushKeys(setBrush);
+  const sectionRef = useRef<HTMLElement>(null);
+  const pointer = useBrushKeys(sectionRef, setBrush);
   const views = useMemo(() => new Map(pool.mods.map((m): [string, ModView] => [m.id, { text: inlineRollText(m), meta: modMeta(m, pool) }])), [pool]);
   const groups = useMemo(() => filterGroups(pool, query), [pool, query]);
   const info = useMemo(() => tokenInfoByMod(pool, result), [pool, result]);
@@ -166,7 +175,7 @@ export function ModPicker({ pool, selection, onUpdate, result }: PickerProps) {
   const shown = groups.reduce((n, g) => n + g.mods.length, 0);
   const searching = query.trim() !== "";
   return (
-    <section aria-label="mods" className="flex min-w-0 flex-col gap-3 rounded-lg border border-line bg-surface/60 p-4">
+    <section ref={sectionRef} {...pointer} aria-label="mods" className="flex min-w-0 flex-col gap-3 rounded-lg border border-line bg-surface/60 p-4">
       <PickerHeader tab={pool.tab} count={pool.mods.length} brush={brush} onBrush={setBrush} />
       <SelectionSummary mods={selection.mods} labelOf={labelOf} onRemove={onRemove} />
       <ModSearch tab={pool.tab} query={query} onQuery={setQuery} shown={searching ? shown : null} />
