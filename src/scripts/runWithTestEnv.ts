@@ -10,6 +10,7 @@ const targets = {
   balance: "src/scripts/testBalanceLeague.ts",
   demand: "src/scripts/testDemandHeat.ts",
   db: "src/scripts/testDbCompact.ts",
+  "entity-catalog": "src/scripts/testEntityCatalog.ts",
   "features-schema": "src/scripts/testFeatureSchema.ts",
   flips: "src/scripts/testFlipModel.ts",
   market: "src/scripts/testMarketLeague.ts",

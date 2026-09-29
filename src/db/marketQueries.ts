@@ -131,6 +131,21 @@ export function latestSnapshots(league: string): PricedItem[] {
   }));
 }
 
+/** Latest stored Divine value + its SQLite UTC write time per item in one league. The time is the
+ *  last WRITE, and the insert dedupe skips flat repeats, so a quiet item can read up to ~55 min
+ *  older than the last poll — callers show it as an age, never as "live". */
+export function latestSnapshotPrices(league: string): Array<{ itemId: string; baseValue: number; fetchedAt: string }> {
+  return getDb()
+    .prepare(
+      `SELECT s.item_id AS itemId, s.chaos_equiv AS baseValue, s.fetched_at AS fetchedAt
+       FROM price_snapshots s
+       JOIN (
+         SELECT item_id, MAX(id) AS mx FROM price_snapshots WHERE league = ? GROUP BY item_id
+       ) m ON m.item_id = s.item_id AND m.mx = s.id`,
+    )
+    .all(league) as Array<{ itemId: string; baseValue: number; fetchedAt: string }>;
+}
+
 /** Price history for one item in one league, oldest→newest, limited. */
 export function priceHistory(
   league: string,
