@@ -14,6 +14,7 @@ import { dropRetiredHunts } from "./retiredMigrations";
 import { ensureCredColumns } from "./credMigrations";
 import { ensureWealthColumns } from "./wealthMigrations";
 import { ensureFeatureTables } from "./featureMigrations";
+import { ensureLearnTables } from "./learnMigrations";
 
 let db: Database.Database | null = null;
 
@@ -75,6 +76,7 @@ export function runMigrations(conn: Database.Database): void {
     ["popup", "INTEGER"],
   ]);
   dropRetiredHunts(conn); // after ensureNotifySchema: it also clears the retired types' notify_prefs
+  ensureLearnTables(conn); // references users(id)
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.
   conn.exec(`
@@ -142,6 +144,9 @@ function ensureAdditiveColumns(conn: Database.Database): void {
     // predate the column, so existing logins survive the deploy.
     ["session_version", "INTEGER NOT NULL DEFAULT 0"],
     ["discord_webhook_enc", "TEXT"], // AES-GCM token from secretbox (the webhook URL embeds a secret)
+    // Beginner/Advanced nav (lib/navMode). DEFAULT 'advanced' is what every pre-existing account
+    // means: they already use the full nav. createUser writes 'beginner' for new accounts explicitly.
+    ["nav_mode", "TEXT NOT NULL DEFAULT 'advanced' CHECK (nav_mode IN ('beginner', 'advanced'))"],
   ]);
 }
 

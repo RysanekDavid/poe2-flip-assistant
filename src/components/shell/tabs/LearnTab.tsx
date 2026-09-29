@@ -1,20 +1,42 @@
 "use client";
 
-import { BookOpen } from "lucide-react";
-import { EmptyState } from "../../ui/EmptyState";
+import { AtlasChecklist } from "../../learn/AtlasChecklist";
+import { CurrencyPrimer } from "../../learn/CurrencyPrimer";
+import { WhatIsThis } from "../../learn/WhatIsThis";
 import { PageHeader } from "../../ui/PageHeader";
 import { ToolChips } from "../ToolChips";
-import { tabMeta } from "../tabRegistry";
 import { useTabRoute } from "../useTabRoute";
 
-/** Learn tab shell: the route, nav and tool chips exist now; each tool's body lands in its own stream. */
+const VIEW = {
+  what: { title: "What is this?", purpose: "Find any item: what it does, what it is worth right now, and where to sell it." },
+  currency: { title: "Currency primer", purpose: "The currencies you will meet first: what each does, who uses it, and whether to pick it up." },
+  atlas: { title: "Atlas checklist", purpose: "The endgame unlock route, step by step — tick steps off as you go." },
+} as const;
+
+type LearnTool = keyof typeof VIEW;
+const isLearnTool = (tool: string | null): tool is LearnTool => tool !== null && tool in VIEW;
+
+function LearnBody({ tool }: { tool: LearnTool }) {
+  switch (tool) {
+    case "what":
+      return <WhatIsThis />;
+    case "currency":
+      return <CurrencyPrimer />;
+    case "atlas":
+      return <AtlasChecklist />;
+  }
+}
+
+/** Learn tab: the new-player home — item lookup, currency primer, atlas checklist. */
 export function LearnTab() {
   const { tool } = useTabRoute();
-  const label = tabMeta("learn").tools?.find((t) => t.id === tool)?.label ?? "Learn";
+  // The registry only admits these tools, so anything else is a registry/VIEW drift.
+  if (!isLearnTool(tool)) throw new Error(`LearnTab: no view for tool ${String(tool)}`);
+  const view = VIEW[tool];
   return (
-    <>
-      <PageHeader title="Learn" purpose="What an item is, which currency matters, and the atlas route step by step." action={<ToolChips tab="learn" />} />
-      <EmptyState icon={<BookOpen className="h-5 w-5" />} title={label} sentence="Coming soon — this guide is being written and verified." />
-    </>
+    <div className="space-y-4" data-tour="learn">
+      <PageHeader title={view.title} purpose={view.purpose} action={<ToolChips tab="learn" />} />
+      <LearnBody tool={tool} />
+    </div>
   );
 }

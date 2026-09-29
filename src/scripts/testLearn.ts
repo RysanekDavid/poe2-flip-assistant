@@ -1,6 +1,247 @@
-/* Placeholder for `npm run test:learn` (runs under runWithTestEnv for a temp DB: nav-mode migration +
- * route, visible tabs, Learn data refs, entity search, progress); the new-player stream replaces this
- * file. It exists so the script slot resolves before that stream lands and is not wired into CI. */
-export {};
+/* New-player mode + Learn tab against a TEMP DB. No network.
+ * Run: npm run test:learn (runWithTestEnv sets DB_PATH / OWNER_PASSWORD / AUTH_SECRET). */
+import assert from "node:assert/strict";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { dirname, join } from "node:path";
+import Database from "better-sqlite3";
+import type { PricedItem } from "../api/types";
+import { signSession } from "../auth/auth";
+import { meResponse } from "../auth/meResponse";
+import { config } from "../config/env";
+import { TAB_IDS, tabMeta } from "../components/shell/tabRegistry";
+import { tourStepsFor } from "../components/onboardingTour";
+import { entityById } from "../core/entities/load";
+import { ATLAS_CHECKLIST, CURRENCY_PRIMER, primerCards } from "../core/learn/data";
+import { entitiesGet, navModeGet, navModePost, primerGet, progressGet, progressPost } from "../core/learn/handlers";
+import { loadLookupPrices, lookupEntities, pickupHintOf, sellRouteOf } from "../core/learn/lookup";
+import { leagueForUser } from "../core/leagueUsers";
+import { getDb } from "../db/database";
+import { insertSnapshots, replaceScoutValues, SCOUT_UNIQUE_SOURCE } from "../db/marketQueries";
+import { createUser, getUserById, type UserRow } from "../db/userQueries";
+import { CLAIM_VERDICTS, type ClaimVerdict } from "../lib/claim";
+import { entitySearchResponseSchema, isWorthPickingUp, primerResponseSchema, progressResponseSchema } from "../lib/learnContract";
+import { currentData, entitySearchUrl, type Remote } from "../lib/learnSearch";
+import { BEGINNER_TABS, BEGINNER_TOOLS, defaultTabFor, parseModeRoute, visibleTabs, visibleTools } from "../lib/navMode";
+import { scoutKey } from "../lib/scoutKey";
 
-console.log("test:learn: not implemented yet — the new-player mode stream fills src/scripts/testLearn.ts");
+if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
+  console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
+  process.exit(1);
+}
+
+const pass = (what: string): void => console.log(`PASS  ${what}`);
+
+function resetDb(): void {
+  for (const suffix of ["", "-wal", "-shm"]) rmSync(`${config.dbPath}${suffix}`, { force: true });
+}
+
+/** A users table as it shipped before nav_mode, holding one account — then the real migrations run. */
+function seedLegacyUser(): void {
+  mkdirSync(dirname(config.dbPath), { recursive: true });
+  const legacy = new Database(config.dbPath);
+  legacy.exec(`CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL,
+    api_key TEXT UNIQUE NOT NULL, role TEXT NOT NULL DEFAULT 'member', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  legacy.prepare("INSERT INTO users (id, name, password_hash, api_key, role) VALUES (1, 'veteran', 'scrypt$x$y', 'pk_legacy', 'owner')").run();
+  legacy.close();
+}
+
+async function testMigration(): Promise<void> {
+  resetDb();
+  seedLegacyUser();
+  getDb();
+  assert.equal(getUserById(1)?.nav_mode, "advanced", "an account from before nav_mode keeps the full nav");
+  const fresh = await createUser("newbie", "newbie-password-1", "member");
+  assert.equal(fresh.nav_mode, "beginner", "a new account starts in beginner nav");
+  const trader = await createUser("trader", "trader-password-1", "member", { navMode: "advanced" });
+  assert.equal(trader.nav_mode, "advanced", "addUser --advanced");
+  assert.throws(() => getDb().prepare("UPDATE users SET nav_mode = 'expert' WHERE id = ?").run(fresh.id), /CHECK/, "DB rejects unknown modes");
+  const cols = getDb().prepare("PRAGMA table_info(learn_progress)").all() as Array<{ name: string }>;
+  assert.deepEqual(cols.map((c) => c.name), ["user_id", "step_id", "done_at"]);
+  const fks = getDb().prepare("PRAGMA foreign_key_list(learn_progress)").all() as Array<{ table: string; on_delete: string }>;
+  assert.ok(fks.length === 1 && fks[0]?.table === "users" && fks[0]?.on_delete === "CASCADE", "learn_progress → users ON DELETE CASCADE");
+  pass("migration: legacy user → advanced, createUser → beginner, --advanced, CHECK, learn_progress table");
+}
+
+function jsonRequest(url: string, body: unknown): Request {
+  return new Request(url, { method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body) });
+}
+
+async function testNavModeRoute(user: UserRow): Promise<void> {
+  const url = "http://127.0.0.1/api/settings/nav-mode";
+  assert.equal(navModeGet(null).status, 401);
+  assert.deepEqual(await navModeGet(user).json(), { nav_mode: "beginner" });
+  const switched = await navModePost(user, jsonRequest(url, { nav_mode: "advanced" }));
+  assert.equal(switched.status, 200);
+  assert.deepEqual(await switched.json(), { nav_mode: "advanced" });
+  const reloaded = getUserById(user.id);
+  assert.ok(reloaded);
+  assert.deepEqual(await navModeGet(reloaded).json(), { nav_mode: "advanced" }, "the switch persisted");
+  assert.deepEqual(await meResponse(signSession(user.id, 60_000)).json(), {
+    user: { id: user.id, name: user.name, role: user.role, nav_mode: "advanced" },
+  });
+  assert.equal((await navModePost(reloaded, jsonRequest(url, { nav_mode: "expert" }))).status, 400);
+  assert.equal((await navModePost(reloaded, jsonRequest(url, "{not json"))).status, 400);
+  assert.equal((await navModePost(null, jsonRequest(url, { nav_mode: "beginner" }))).status, 401);
+  await navModePost(reloaded, jsonRequest(url, { nav_mode: "beginner" }));
+  assert.equal(getUserById(user.id)?.nav_mode, "beginner", "and back");
+  pass("nav-mode route: GET/POST round-trip, /me carries nav_mode, 400 on bad body, 401 anonymous");
+}
+
+function testVisibility(): void {
+  const beginner = visibleTabs("beginner").map((t) => t.id);
+  assert.deepEqual(beginner, ["learn", "farm", "market", "alerts", "settings", "coach"]);
+  assert.deepEqual(visibleTabs("advanced").map((t) => t.id), [...TAB_IDS]);
+  for (const hidden of ["exchange", "craft", "wealth", "regex", "patches"] as const) assert.ok(!beginner.includes(hidden), `${hidden} hidden`);
+  for (const [tab, tools] of Object.entries(BEGINNER_TOOLS)) {
+    const known = tabMeta(tab as (typeof TAB_IDS)[number]).tools?.map((t) => t.id) ?? [];
+    for (const tool of tools ?? []) assert.ok(known.includes(tool), `beginner tool ${tab}/${tool} exists in the registry`);
+  }
+  for (const tab of BEGINNER_TABS) assert.ok(TAB_IDS.includes(tab));
+  assert.deepEqual(visibleTools("beginner", "farm")?.map((t) => t.id), ["strategies"]);
+  assert.deepEqual(visibleTools("beginner", "market")?.map((t) => t.id), ["price"]);
+  assert.deepEqual(visibleTools("beginner", "settings")?.map((t) => t.id), ["account", "notify", "mode", "system"]);
+  assert.deepEqual(visibleTools("advanced", "farm")?.map((t) => t.id), ["board", "strategies"]);
+  assert.equal(visibleTools("beginner", "alerts"), undefined);
+  assert.equal(defaultTabFor("beginner"), "learn");
+  assert.equal(defaultTabFor("advanced"), "exchange");
+  pass("visibleTabs / visibleTools / defaultTabFor");
+}
+
+function testModeRoutes(): void {
+  const route = (mode: "beginner" | "advanced", tab: string | null, tool: string | null) => parseModeRoute(mode, tab, tool);
+  assert.deepEqual(route("beginner", null, null), { tab: "learn", tool: "what", rejected: [], hidden: [] });
+  assert.deepEqual(route("beginner", "exchange", null), { tab: "learn", tool: "what", rejected: [], hidden: ["tab=exchange"] });
+  assert.deepEqual(route("beginner", "craft", "moves"), { tab: "learn", tool: "what", rejected: [], hidden: ["tab=craft"] });
+  assert.deepEqual(route("beginner", "farm", null), { tab: "farm", tool: "strategies", rejected: [], hidden: [] }, "hidden default tool is silent");
+  assert.deepEqual(route("beginner", "farm", "board"), { tab: "farm", tool: "strategies", rejected: [], hidden: ["tool=board"] });
+  assert.deepEqual(route("beginner", "market", "board"), { tab: "market", tool: "price", rejected: [], hidden: ["tool=board"] });
+  assert.deepEqual(route("beginner", "bogus", "x"), { tab: "learn", tool: "what", rejected: ["tab=bogus", "tool=x"], hidden: [] });
+  assert.deepEqual(route("beginner", "farm", "nope"), { tab: "farm", tool: "strategies", rejected: ["tool=nope"], hidden: [] });
+  assert.deepEqual(route("beginner", "coach", null), { tab: "coach", tool: null, rejected: [], hidden: [] }, "Coach in both modes");
+  assert.deepEqual(route("advanced", null, null), { tab: "exchange", tool: null, rejected: [], hidden: [] });
+  assert.deepEqual(route("advanced", "farm", null), { tab: "farm", tool: "board", rejected: [], hidden: [] });
+  assert.deepEqual(route("advanced", "learn", "atlas"), { tab: "learn", tool: "atlas", rejected: [], hidden: [] });
+  const beginnerTour = tourStepsFor("beginner").map((s) => s.element);
+  assert.ok(!beginnerTour.includes('[data-tour="farm"]') && !beginnerTour.includes('[data-tour="alerts"]'), "tour skips hidden tabs");
+  assert.ok(beginnerTour.includes('[data-tour="learn"]'));
+  assert.equal(tourStepsFor("advanced").length, 5);
+  pass("hidden-route redirect targets (tab, tool, unknown, Coach) + mode-filtered tour");
+}
+
+function testDataRefs(): Record<ClaimVerdict, number> {
+  const grades = Object.fromEntries(CLAIM_VERDICTS.map((v) => [v, 0])) as Record<ClaimVerdict, number>;
+  for (const entry of CURRENCY_PRIMER.entries) {
+    assert.ok(entityById(entry.entity_id), `primer entity ${entry.entity_id} is in the catalog`);
+    // One pickup rule: the curated "always" bucket is exactly the live lookup's "pick up" line.
+    assert.equal(entry.pickup === "always", isWorthPickingUp(entry.ref_ex), `primer ${entry.entity_id}: bucket ${entry.pickup} vs ${entry.ref_ex} Ex`);
+    assert.equal(entry.pickup === "always", pickupHintOf(entry.ref_ex, 1) === "pick_up");
+    grades[entry.claim.v] += 1;
+  }
+  for (const step of ATLAS_CHECKLIST.steps) {
+    for (const id of step.strategy_ids) {
+      assert.ok(existsSync(join(process.cwd(), "src", "data", "poe2", "strategies", `${id}.json`)), `atlas step ${step.id} → strategy ${id}`);
+    }
+    grades[step.claim.v] += 1;
+    for (const warning of step.warnings) if (warning.claim) grades[warning.claim.v] += 1;
+  }
+  const tablets = ATLAS_CHECKLIST.steps.find((s) => s.id === "boss-rush-maps")?.warnings[0];
+  assert.equal(tablets?.claim?.v, "ss", "the tablet warning is one creator's advice and says so");
+  assert.ok(ATLAS_CHECKLIST.steps.some((s) => s.warnings.some((w) => w.text.startsWith("Man Trap:"))), "poe2db spelling");
+  pass(`JSON refs resolve: ${CURRENCY_PRIMER.entries.length} primer entries, ${ATLAS_CHECKLIST.steps.length} atlas steps`);
+  return grades;
+}
+
+const seed = (itemId: string, baseValue: number): PricedItem => ({
+  itemId, itemName: itemId, category: "Currency", baseValue, volume: 100, change7d: null, spark7d: null, icon: null,
+});
+
+/** The typeahead only offers (and Enter only picks) results for the text currently in the box. */
+function testSearchFreshness(): void {
+  assert.equal(entitySearchUrl("  "), null);
+  const exUrl = entitySearchUrl(" exalted ");
+  assert.equal(exUrl, "/api/entities?q=exalted&limit=8");
+  const answered: Remote<string> = { kind: "ok", url: exUrl ?? "", data: "exalted rows" };
+  assert.equal(currentData(answered, exUrl), "exalted rows");
+  assert.equal(currentData(answered, entitySearchUrl("exalted orb")), null, "a debouncing newer query hides the stale rows");
+  assert.equal(currentData(answered, null), null);
+  assert.equal(currentData<string>({ kind: "loading" }, exUrl), null);
+}
+
+async function testLookup(user: UserRow): Promise<void> {
+  const league = leagueForUser(user.id);
+  // 1 div = 400 ex; transmute 0.0001 div = 0.04 ex.
+  insertSnapshots(league, [seed("exalted", 1 / 400), seed("chaos", 1 / 20), seed("transmute", 0.0001)]);
+  replaceScoutValues(league, SCOUT_UNIQUE_SOURCE, [{ nameKey: scoutKey("Headhunter"), div: 42 }]);
+  const prices = loadLookupPrices(league, Date.now());
+  assert.equal(prices.exPerDiv, 400);
+  const [exalted] = lookupEntities("exalted orb", 8, prices);
+  assert.equal(exalted?.id, "exalted");
+  assert.equal(exalted?.sell_route, "cx");
+  assert.equal(exalted?.price?.source, "ninja");
+  assert.equal(exalted?.pickup_hint, "pick_up", "exactly 1 ex is worth picking up");
+  assert.equal(lookupEntities("orb of transmutation", 1, prices)[0]?.pickup_hint, "low_value");
+  const headhunter = lookupEntities("headhunter", 1, prices)[0];
+  assert.deepEqual([headhunter?.sell_route, headhunter?.price?.div, headhunter?.price?.source, headhunter?.pickup_hint], ["trade", 42, "scout", "pick_up"]);
+  const mageblood = lookupEntities("mageblood", 1, prices)[0];
+  assert.deepEqual([mageblood?.price, mageblood?.pickup_hint], [null, "unknown"], "unpriced unique");
+  assert.equal(sellRouteOf({ kind: "other", exchange_id: null }), "unknown");
+  testSearchFreshness();
+  assert.equal(pickupHintOf(0.5, null), "unknown", "no rate, no verdict");
+
+  const get = (q: string) => entitiesGet(user, new URL(`http://127.0.0.1/api/entities?${q}`), Date.now());
+  const body = entitySearchResponseSchema.parse(await get("q=omen%20of%20wh&limit=8").json());
+  assert.equal(body.results[0]?.name, "Omen of Whittling");
+  assert.equal(body.ex_per_div, 400);
+  assert.equal(get("q=%20").status, 400);
+  assert.equal(get("q=exalted&limit=21").status, 400);
+  assert.equal(entitiesGet(null, new URL("http://127.0.0.1/api/entities?q=x"), Date.now()).status, 401);
+
+  const primer = primerResponseSchema.parse(await primerGet(user, Date.now()).json());
+  assert.equal(primer.cards.length, CURRENCY_PRIMER.entries.length);
+  assert.ok(primer.cards.every((c) => c.entity.summary !== null), "every primer card has catalog text");
+  assert.equal(primerCards(prices).length, CURRENCY_PRIMER.entries.length);
+  pass("entity search + price (ninja/scout) + sell route + pickup rule; /api/entities and /api/learn/primer contracts");
+}
+
+async function testProgress(user: UserRow, other: UserRow): Promise<void> {
+  const url = "http://127.0.0.1/api/learn/progress";
+  const step = ATLAS_CHECKLIST.steps[0]?.id;
+  assert.ok(step, "the checklist has steps");
+  const read = async (u: UserRow) => progressResponseSchema.parse(await progressGet(u).json());
+  assert.deepEqual((await read(user)).done, []);
+  const ticked = progressResponseSchema.parse(await (await progressPost(user, jsonRequest(url, { step_id: step, done: true }), 1_000)).json());
+  assert.deepEqual(ticked.done, [{ step_id: step, done_at: 1_000 }]);
+  await progressPost(user, jsonRequest(url, { step_id: step, done: true }), 9_000);
+  assert.deepEqual((await read(user)).done, [{ step_id: step, done_at: 1_000 }], "re-ticking keeps the first time");
+  assert.deepEqual((await read(other)).done, [], "progress is per user");
+  assert.equal((await progressPost(user, jsonRequest(url, { step_id: "no-such-step", done: true }), 1)).status, 400);
+  assert.equal((await progressPost(user, jsonRequest(url, { step_id: step }), 1)).status, 400);
+  assert.equal(progressGet(null).status, 401);
+  await progressPost(user, jsonRequest(url, { step_id: step, done: false }), 2_000);
+  assert.deepEqual((await read(user)).done, [], "unticked");
+  await progressPost(other, jsonRequest(url, { step_id: step, done: true }), 3_000);
+  getDb().prepare("DELETE FROM users WHERE id = ?").run(other.id);
+  const left = getDb().prepare("SELECT COUNT(*) AS n FROM learn_progress WHERE user_id = ?").get(other.id) as { n: number };
+  assert.equal(left.n, 0, "deleting a user cascades their progress");
+  pass("progress round-trip: tick, idempotent re-tick, untick, unknown step 400, per-user, cascade");
+}
+
+async function main(): Promise<void> {
+  await testMigration();
+  const user = await createUser("learner", "learner-password-1", "member");
+  const other = await createUser("learner-two", "learner-password-2", "member");
+  await testNavModeRoute(user);
+  testVisibility();
+  testModeRoutes();
+  const grades = testDataRefs();
+  await testLookup(user);
+  await testProgress(user, other);
+  console.log(`claim grades (primer + atlas): ${CLAIM_VERDICTS.map((v) => `${v} ${grades[v]}`).join(" · ")}`);
+  console.log("ALL PASS — nav mode, Learn data refs, entity lookup, atlas progress");
+}
+
+main().catch((error: unknown) => {
+  console.error(error);
+  process.exit(1);
+});

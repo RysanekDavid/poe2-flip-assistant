@@ -169,7 +169,8 @@ async function testMeClearsRevokedCookie(): Promise<void> {
   const user = await createUser("me-revoked", "me-password", "member");
   const token = signSession(user.id, 60_000);
   const live = meResponse(token);
-  assert.deepEqual(await live.json(), { user: { id: user.id, name: "me-revoked", role: "member" } });
+  // A freshly created account starts in beginner nav; the client gates the nav on this field.
+  assert.deepEqual(await live.json(), { user: { id: user.id, name: "me-revoked", role: "member", nav_mode: "beginner" } });
   assert.equal(live.headers.get("set-cookie"), null, "a valid session is left alone");
   bumpSessionVersion(user.id);
   const revoked = meResponse(token);

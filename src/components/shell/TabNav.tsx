@@ -4,7 +4,9 @@ import type { MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AlertsTabBadge } from "../alerts/AlertsTab";
-import { TABS, defaultToolOf, tabMeta, tabRouteHref, type TabId, type TabMeta } from "./tabRegistry";
+import { defaultToolFor, visibleTabs, type NavMode } from "../../lib/navMode";
+import { tabMeta, tabRouteHref, type TabId, type TabMeta } from "./tabRegistry";
+import { useNavMode } from "./NavModeProvider";
 import { TAB_ICONS } from "./tabIcons";
 import { useTabRoute } from "./useTabRoute";
 
@@ -27,10 +29,17 @@ function tabClickHandler(go: (tab: TabId) => void): (e: MouseEvent<HTMLAnchorEle
   };
 }
 
-function TabLink({ meta, active, onClick }: { meta: TabMeta; active: boolean; onClick: (e: MouseEvent<HTMLAnchorElement>, id: TabId) => void }) {
+interface TabLinkProps {
+  meta: TabMeta;
+  mode: NavMode;
+  active: boolean;
+  onClick: (e: MouseEvent<HTMLAnchorElement>, id: TabId) => void;
+}
+
+function TabLink({ meta, mode, active, onClick }: TabLinkProps) {
   return (
     <Link
-      href={tabRouteHref({ tab: meta.id, tool: defaultToolOf(meta.id) })}
+      href={tabRouteHref({ tab: meta.id, tool: defaultToolFor(mode, meta.id) })}
       scroll={false}
       prefetch={false}
       onClick={(e) => onClick(e, meta.id)}
@@ -47,16 +56,22 @@ function TabLink({ meta, active, onClick }: { meta: TabMeta; active: boolean; on
   );
 }
 
-/** Primary navigation. Coach sits apart on the right: it is a secondary helper, not a work area. */
+/**
+ * Primary navigation, filtered to the user's nav mode. Coach sits apart on the right in both modes:
+ * it is a secondary helper, not a work area.
+ */
 export function TabNav() {
   const { tab, go } = useTabRoute();
+  const { mode } = useNavMode();
   const onClick = tabClickHandler(go);
   const coach = tabMeta("coach");
   return (
     <nav aria-label="Sections" className="flex items-end gap-0.5 px-6" data-tour="tabs">
-      {TABS.filter((t) => t.id !== "coach").map((t) => (
-        <TabLink key={t.id} meta={t} active={tab === t.id} onClick={onClick} />
-      ))}
+      {visibleTabs(mode)
+        .filter((t) => t.id !== "coach")
+        .map((t) => (
+          <TabLink key={t.id} meta={t} mode={mode} active={tab === t.id} onClick={onClick} />
+        ))}
       <Link
         href={tabRouteHref({ tab: "coach", tool: null })}
         scroll={false}

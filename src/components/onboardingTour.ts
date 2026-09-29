@@ -1,12 +1,17 @@
 import type { Driver } from "driver.js";
+import { isTabVisible, visibleTools, type NavMode } from "../lib/navMode";
 import type { TabId } from "./shell/tabRegistry";
 
-interface TourStep {
+export interface TourStep {
   /** Tab the element lives on; null = part of the always-visible shell. */
   tab: TabId | null;
+  /** Tool of that tab the element lives on, when it is not the tab's default. */
+  tool?: string;
   element: string;
   title: string;
   description: string;
+  /** Replaces `description` in beginner mode, when the advanced text names hidden tabs. */
+  beginnerDescription?: string;
 }
 
 /*
@@ -20,9 +25,18 @@ export const TOUR_STEPS: readonly TourStep[] = [
     title: "Where things are",
     description:
       "Exchange = in-game Ange flips. Market = trade-site demand and snipes. Farm = what to run. Craft, Wealth and Regex are your tools. Every tab has its own link — bookmark or share it.",
+    beginnerDescription:
+      "Learn = what an item is and your atlas route. Farm = what to run at your budget. Market = what a drop is worth. More tools unlock under Settings › Mode.",
+  },
+  {
+    tab: "learn",
+    element: '[data-tour="learn"]',
+    title: "Start here",
+    description: "Type any item to see what it does, what it is worth right now and where to sell it. The currency primer and atlas checklist sit next to it.",
   },
   {
     tab: "farm",
+    tool: "board",
     element: '[data-tour="farm"]',
     title: "What to farm now",
     description: "In-game activities ranked by how hard their drop basket is pumping. HOT = grind it and sell into the spike.",
@@ -42,6 +56,16 @@ export const TOUR_STEPS: readonly TourStep[] = [
       "Market data is shared by everyone here, but your Wealth and Flip log are private to you. Reopen this guide anytime via 'Guide'.",
   },
 ];
+
+/** The steps a mode can show: a step on a hidden tab or tool would wait on an element that never renders. */
+export function tourStepsFor(mode: NavMode): TourStep[] {
+  return TOUR_STEPS.filter((s) => {
+    if (s.tab === null) return true;
+    if (!isTabVisible(mode, s.tab)) return false;
+    const tools = visibleTools(mode, s.tab);
+    return s.tool === undefined || tools === undefined || tools.some((t) => t.id === s.tool);
+  }).map((s) => (mode === "beginner" && s.beginnerDescription ? { ...s, description: s.beginnerDescription } : s));
+}
 
 const WAIT_MS = 4000;
 
@@ -65,12 +89,12 @@ function waitForElement(selector: string): Promise<void> {
  * highlight. A target that never renders ends the tour with a console error rather than pointing
  * at nothing.
  */
-export function stepTour(tour: Driver, delta: 1 | -1, go: (tab: TabId) => void): void {
+export function stepTour(tour: Driver, delta: 1 | -1, go: (tab: TabId, tool?: string) => void, steps: readonly TourStep[]): void {
   const index = (tour.getActiveIndex() ?? 0) + delta;
   if (index < 0) return;
-  const step = TOUR_STEPS[index];
+  const step = steps[index];
   if (!step) return tour.destroy();
-  if (step.tab) go(step.tab);
+  if (step.tab) go(step.tab, step.tool);
   // The user may close the tour while the tab renders; a closed tour must stay closed.
   waitForElement(step.element).then(
     () => {

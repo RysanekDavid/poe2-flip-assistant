@@ -1,13 +1,20 @@
 "use client";
 
+import { visibleTools } from "../../lib/navMode";
 import { tabMeta, type TabId } from "./tabRegistry";
+import { useNavMode } from "./NavModeProvider";
 import { useTabRoute } from "./useTabRoute";
 
-/** Sub-tool switcher for tabs with fixed tools (Craft, Wealth, Settings); each chip is a URL. */
+/**
+ * Sub-tool switcher for tabs with fixed tools (Craft, Wealth, Learn…); each chip is a URL. Only the
+ * tools the user's nav mode shows are offered, and a single remaining tool needs no switcher.
+ */
 export function ToolChips({ tab }: { tab: TabId }) {
   const { tool, go } = useTabRoute();
-  const tools = tabMeta(tab).tools;
+  const { mode } = useNavMode();
+  const tools = visibleTools(mode, tab);
   if (!tools) throw new Error(`ToolChips: tab ${tab} declares no tools`);
+  if (tools.length < 2) return null;
   return (
     <div role="group" aria-label={`${tabMeta(tab).label} tools`} className="flex flex-wrap gap-1.5">
       {tools.map((t) => {
