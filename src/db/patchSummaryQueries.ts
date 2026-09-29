@@ -31,13 +31,20 @@ export function markDiscoveredAsNews(threadIds: readonly number[], db: Db = getD
  * Queue a summary for this exact text. Unchanged text is a no-op, so re-fetches never spend a
  * model call; changed text (or a 'waiting' row's first body) resets the job to pending, keeping
  * the previous summary visible and the announce decision made at discovery — only a thread
- * discovered as news ever announces, and an edit never announces again.
+ * discovered as news ever announces, and an edit never announces again. A thread whose body took
+ * longer than WAITING_ANNOUNCE_DAYS to arrive (a parser drift fixed later) is old news by then.
  */
+export const WAITING_ANNOUNCE_DAYS = 3;
+
 export function upsertSummaryJob(threadId: number, inputSha256: string, db: Db = getDb()): void {
   db.prepare(`
     INSERT INTO patch_summary (thread_id, input_sha256, status, announce) VALUES (?, ?, 'pending', 0)
     ON CONFLICT(thread_id) DO UPDATE SET input_sha256 = excluded.input_sha256, status = 'pending',
-      attempts = 0, next_attempt_at = NULL, last_error = NULL, updated_at = CURRENT_TIMESTAMP
+      attempts = 0, next_attempt_at = NULL, last_error = NULL, updated_at = CURRENT_TIMESTAMP,
+      announce = CASE
+        WHEN patch_summary.status = 'waiting'
+          AND patch_summary.created_at < datetime('now', '-${WAITING_ANNOUNCE_DAYS} days') THEN 0
+        ELSE patch_summary.announce END
     WHERE patch_summary.input_sha256 <> excluded.input_sha256
   `).run(threadId, inputSha256);
 }

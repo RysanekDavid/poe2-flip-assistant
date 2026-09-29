@@ -29,6 +29,7 @@ const BATCH = 5;
 const TIMEOUT_MS = 120_000;
 // Longer than one call's deadline, so a live claim never expires under its own drainer.
 const LEASE_MS = 5 * 60_000;
+const HEALTH_TIMEOUT_MS = 10_000;
 export const MAX_SUMMARY_ATTEMPTS = 8;
 const BASE_BACKOFF_MS = 30 * 60_000;
 const MAX_BACKOFF_MS = 6 * 3600_000;
@@ -47,6 +48,8 @@ export interface DrainResult {
   failed: number;
   announced: number;
   errors: string[];
+  /** The drain was skipped because the Coach did not answer its health check. */
+  coachUnreachable: boolean;
 }
 
 /** 30m, 1h, 2h, 4h, then 6h — a Coach outage heals without hammering it. Pure. */
@@ -54,7 +57,9 @@ export function summaryBackoffMs(attempts: number): number {
   return Math.min(BASE_BACKOFF_MS * 2 ** Math.max(0, attempts - 1), MAX_BACKOFF_MS);
 }
 
+/** Heartbeat text: an unreachable Coach is red too, even though no attempt was spent. */
 export function drainProblem(result: DrainResult): string | null {
+  if (result.coachUnreachable) return "Coach unreachable; summaries skipped until it answers /health";
   return result.errors.length === 0 ? null : `${result.errors.length} summary attempt(s) failed: ${result.errors.join("; ")}`;
 }
 
@@ -77,14 +82,50 @@ function isRetryable(error: unknown): boolean {
 }
 
 const transientStatus = (status: number): boolean => status === 429 || status >= 500;
+/**
+ * Without a Coach error envelope, 401/403/404 mean something other than the Coach answered — a
+ * proxy in front of a Coach still starting, or a web build ahead of the Coach (route not there
+ * yet). That heals on the next deploy or restart, so it must not burn the job.
+ */
+const transientWithoutEnvelope = (status: number): boolean => transientStatus(status) || [401, 403, 404].includes(status);
+
+let coachDownLogged = false;
+
+/**
+ * True when the Coach answers at all (any HTTP status). An unreachable Coach — the web and poller
+ * restarting before it — skips the drain instead of spending attempts, logged once per outage.
+ */
+async function coachReachable(fetchImpl: FetchImpl): Promise<boolean> {
+  try {
+    await fetchImpl(coachEndpoint(config.coach.apiUrl, "/health"), {
+      method: "GET",
+      cache: "no-store",
+      signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
+    });
+    coachDownLogged = false;
+    return true;
+  } catch (error: unknown) {
+    if (!coachDownLogged) {
+      console.warn(`[patch-summary] Coach unreachable, summaries wait for it: ${sanitizeHeartbeatError(error)}`);
+      coachDownLogged = true;
+    }
+    return false;
+  }
+}
 
 /** Summarize up to five due patches through the Coach, then announce whatever became terminal. */
 export async function drainPatchSummaries(options: DrainOptions = {}): Promise<DrainResult> {
   const db = options.db ?? getDb();
   const now = options.now ?? Date.now;
   const fetchImpl = options.fetchImpl ?? fetch;
-  const result: DrainResult = { summarized: 0, retried: 0, failed: 0, announced: 0, errors: [] };
-  for (const job of dueSummaryJobs(BATCH, new Date(now()).toISOString(), db)) {
+  const result: DrainResult = { summarized: 0, retried: 0, failed: 0, announced: 0, errors: [], coachUnreachable: false };
+  const due = dueSummaryJobs(BATCH, new Date(now()).toISOString(), db);
+  if (due.length > 0 && !(await coachReachable(fetchImpl))) {
+    result.coachUnreachable = true;
+    result.announced = announcePatchSummaries(db, now);
+    return result;
+  }
+  for (const job of due) {
     const leaseUntil = new Date(now() + LEASE_MS).toISOString();
     // Another drainer (poller vs patch:summarize) claimed it between the query and here.
     if (!leaseSummaryJob(job.threadId, job.inputSha256, new Date(now()).toISOString(), leaseUntil, db)) continue;
@@ -152,12 +193,12 @@ async function requestSummary(
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   const payload: unknown = await response.json().catch((error: unknown) => {
-    throw new SummaryFailure(`Coach patch summary returned HTTP ${response.status} without JSON: ${String(error)}`, transientStatus(response.status));
+    throw new SummaryFailure(`Coach patch summary returned HTTP ${response.status} without JSON: ${String(error)}`, transientWithoutEnvelope(response.status));
   });
   if (!response.ok) {
     const detail = parseCoachUpstreamError(payload, requestId);
     const text = `Coach patch summary HTTP ${response.status}${detail ? ` ${detail.code}: ${detail.message}` : " (invalid error body)"}`;
-    throw new SummaryFailure(text, detail ? detail.retryable : transientStatus(response.status));
+    throw new SummaryFailure(text, detail ? detail.retryable : transientWithoutEnvelope(response.status));
   }
   const parsed = coachPatchSummaryResponseSchema.safeParse(payload);
   if (!parsed.success) {

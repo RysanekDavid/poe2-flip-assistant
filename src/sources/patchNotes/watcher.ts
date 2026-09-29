@@ -29,6 +29,8 @@ async function summarizeOnce(): Promise<void> {
   try {
     const result = await withHeartbeat("patch-summary", "", () => drainPatchSummaries(), { problem: drainProblem });
     const problem = drainProblem(result);
+    // An unreachable Coach is logged once per outage by the worker; the heartbeat stays red.
+    if (result.coachUnreachable) return;
     if (problem == null) console.log(`[patch-summary] ${drainSummary(result)}`);
     else console.error(`[patch-summary] ${problem} (${drainSummary(result)})`);
   } catch (error: unknown) {

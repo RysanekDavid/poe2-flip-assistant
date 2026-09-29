@@ -10,7 +10,7 @@ import { listPatches, requestResummary, upsertSummaryJob } from "../db/patchSumm
 import { insertSourceSnapshot, updateOfficialPatchBody, upsertIndexPatches } from "../db/sourceQueries";
 import { alertEmbed, type NotifyAlert } from "../core/notify/discordMessage";
 import { PATCH_ALERT_MAX_CHARS, PATCH_SUMMARY_UNAVAILABLE, patchAlertMessage } from "../sources/patchNotes/patchAlert";
-import { MAX_SUMMARY_ATTEMPTS, drainPatchSummaries, summaryBackoffMs } from "../sources/patchNotes/summaryWorker";
+import { MAX_SUMMARY_ATTEMPTS, drainPatchSummaries, drainProblem, summaryBackoffMs } from "../sources/patchNotes/summaryWorker";
 import { buildSummaryRequest, patchSummaryInputSha256 } from "../sources/patchNotes/summaryInput";
 import { PATCH_SOURCE_ID, type PatchDocument } from "../sources/patchNotes/contracts";
 import type { PatchSummary } from "../sources/patchNotes/summaryContract";
@@ -51,8 +51,10 @@ function requestIdOf(init: RequestInit): string {
   return id;
 }
 
-const coachOk: FakeFetch = async (_input, init) =>
-  Response.json({
+const healthy = (input: string): Response | null => (input.endsWith("/health") ? Response.json({ status: "ok" }) : null);
+
+const coachOk: FakeFetch = async (input, init) =>
+  healthy(input) ?? Response.json({
     request_id: requestIdOf(init),
     model: "gpt-test",
     prompt_version: "1",
@@ -61,8 +63,8 @@ const coachOk: FakeFetch = async (_input, init) =>
     usage: { input_tokens: 100, output_tokens: 50, total_tokens: 150 },
   });
 
-const coachError = (status: number, code: string, message: string, retryable: boolean): FakeFetch => async (_input, init) =>
-  Response.json(
+const coachError = (status: number, code: string, message: string, retryable: boolean): FakeFetch => async (input, init) =>
+  healthy(input) ?? Response.json(
     { error: { code, message, request_id: requestIdOf(init), retryable, reset_conversation: false } },
     { status },
   );
@@ -150,13 +152,14 @@ async function testDrainAndAnnounceOnce(): Promise<void> {
   storeBody(OLD, ["Old fix."]);
   const sent: unknown[] = [];
   const recording: FakeFetch = async (input, init) => {
+    if (input.endsWith("/health")) return Response.json({ status: "ok" });
     assert.match(input, /\/internal\/patch-summary$/);
     assert.match(new Headers(init.headers).get("X-Coach-Actor") ?? "", /^v1\./);
     sent.push(JSON.parse(String(init.body)));
     return coachOk(input, init);
   };
   const first = await drainPatchSummaries({ db, fetchImpl: recording, now: () => NOW });
-  assert.deepEqual(first, { summarized: 2, retried: 0, failed: 0, announced: 1, errors: [] });
+  assert.deepEqual(first, { summarized: 2, retried: 0, failed: 0, announced: 1, errors: [], coachUnreachable: false });
   assert.equal((sent[0] as { thread_id: number }).thread_id, RECENT, "newest patch first");
   const alerts = patchAlerts();
   assert.equal(alerts.length, 2, "one PATCH alert per user");
@@ -193,16 +196,25 @@ async function testRetryBackoffAndFailure(): Promise<void> {
   const early = await drainPatchSummaries({ db, fetchImpl: coachOk, now: () => NOW + 60_000 });
   assert.equal(early.summarized, 0, "backoff is honoured");
 
-  for (const transient of [
-    (async () => { throw new TypeError("fetch failed"); }) satisfies FakeFetch,
-    (async () => new Response("<html>bad gateway</html>", { status: 502 })) satisfies FakeFetch,
-  ]) {
+  const healthyThen = (fake: FakeFetch): FakeFetch => async (input, init) =>
+    (input.endsWith("/health") ? Response.json({ status: "ok" }) : fake(input, init));
+  const transients: Array<[string, FakeFetch]> = [
+    ["network error mid-call", healthyThen(async () => { throw new TypeError("fetch failed"); })],
+    ["502 without JSON", async () => new Response("<html>bad gateway</html>", { status: 502 })],
+    ["404 without envelope (web ahead of Coach)", async () => new Response("Not Found", { status: 404 })],
+    ["401 without envelope", async () => Response.json({ detail: "unauthorized" }, { status: 401 })],
+    ["403 without envelope", async () => new Response("Forbidden", { status: 403 })],
+    ["incomplete output", coachError(503, "provider_incomplete", "The model stopped before finishing. Try again later.", true)],
+  ];
+  for (const [name, transient] of transients) {
     requeue(LATER);
-    assert.equal((await drainPatchSummaries({ db, fetchImpl: transient, now: () => NOW })).retried, 1, "network and 5xx-without-JSON retry");
+    const result = await drainPatchSummaries({ db, fetchImpl: transient, now: () => NOW });
+    assert.equal(result.retried, 1, `${name}: backs off`);
   }
 
   db.prepare("UPDATE patch_summary SET attempts = ?, next_attempt_at = NULL WHERE thread_id = ?").run(MAX_SUMMARY_ATTEMPTS - 1, LATER);
-  const exhausted = await drainPatchSummaries({ db, fetchImpl: coachTimeout, now: () => NOW });
+  const incomplete = coachError(503, "provider_incomplete", "The model stopped before finishing. Try again later.", true);
+  const exhausted = await drainPatchSummaries({ db, fetchImpl: incomplete, now: () => NOW });
   assert.equal(exhausted.failed, 1, "retryable errors still stop after the last attempt");
   assert.equal(exhausted.announced, 1, "a failed summary still announces the patch");
   assert.equal(job(LATER)?.status, "failed");
@@ -238,6 +250,7 @@ async function testLeasePreventsDoubleCalls(): Promise<void> {
   storeBody(OLD, ["Old fix."]);
   let calls = 0;
   const slow: FakeFetch = async (input, init) => {
+    if (input.endsWith("/health")) return Response.json({ status: "ok" });
     calls += 1;
     await new Promise((resolve) => setTimeout(resolve, 20));
     return coachOk(input, init);
@@ -251,6 +264,50 @@ async function testLeasePreventsDoubleCalls(): Promise<void> {
   assert.equal(a.summarized + b.summarized, 2);
 }
 
+async function testUnreachableCoachSkipsTheDrain(): Promise<void> {
+  resetTables();
+  indexPatches();
+  storeBody(RECENT, ["Fixed a crash."]);
+  let posts = 0;
+  const down: FakeFetch = async (input) => {
+    if (!input.endsWith("/health")) posts += 1;
+    throw new TypeError("fetch failed: connect ECONNREFUSED 127.0.0.1:8000");
+  };
+  // Web and poller restarted before the Coach: nothing may be spent or failed.
+  for (let run = 0; run < 3; run += 1) {
+    const result = await drainPatchSummaries({ db, fetchImpl: down, now: () => NOW });
+    assert.equal(result.coachUnreachable, true);
+    assert.match(drainProblem(result) ?? "", /Coach unreachable/, "the heartbeat still turns red");
+  }
+  assert.equal(posts, 0, "no summary request while the Coach is down");
+  assert.equal(job(RECENT)?.status, "pending");
+  assert.equal(job(RECENT)?.attempts, 0, "no attempt is burned");
+  const back = await drainPatchSummaries({ db, fetchImpl: coachOk, now: () => NOW });
+  assert.equal(back.summarized, 1, "the drain resumes once the Coach answers");
+}
+
+function testStaleWaitingRowStaysQuiet(): void {
+  resetTables();
+  indexPatches();
+  assert.equal(job(LATER)?.status, "waiting");
+  // Discovered as news, but its body only parsed ten days later (e.g. a parser drift fixed).
+  db.prepare("UPDATE patch_summary SET created_at = datetime('now', '-10 days') WHERE thread_id = ?").run(LATER);
+  storeBody(LATER, ["Changed Chaos Orb."]);
+  assert.equal(job(LATER)?.status, "pending");
+  assert.equal(job(LATER)?.announce, 0, "old news never announces");
+  storeBody(RECENT, ["Fixed a crash."]);
+  assert.equal(job(RECENT)?.announce, 1, "a fresh waiting row keeps its announcement");
+}
+
+async function testStaleWaitingNeverAlerts(): Promise<void> {
+  testStaleWaitingRowStaysQuiet();
+  const drained = await drainPatchSummaries({ db, fetchImpl: coachOk, now: () => NOW });
+  assert.equal(drained.summarized, 2, "both are still summarized");
+  const alerted = new Set(patchAlerts().map((a) => a.item_id));
+  assert.equal(alerted.has(`patch:${LATER}`), false, "no PATCH alert for a body that arrived ten days late");
+  assert.equal(alerted.has(`patch:${RECENT}`), true);
+}
+
 async function testContractAndStaleResults(): Promise<void> {
   resetTables();
   indexPatches();
@@ -260,7 +317,7 @@ async function testContractAndStaleResults(): Promise<void> {
   assert.match(mismatch.errors[0] ?? "", /different request id/);
   assert.equal(mismatch.failed, 1, "a request-id mismatch is a defect, not a transient");
   requeue(OLD);
-  const broken: FakeFetch = async (_input, init) => Response.json({ request_id: requestIdOf(init), summary: { tldr: 1 } });
+  const broken: FakeFetch = async (input, init) => healthy(input) ?? Response.json({ request_id: requestIdOf(init), summary: { tldr: 1 } });
   const invalid = await drainPatchSummaries({ db, fetchImpl: broken, now: () => NOW });
   assert.match(invalid.errors[0] ?? "", /broke its contract/);
   assert.equal(invalid.failed, 1);
@@ -354,6 +411,8 @@ async function main(): Promise<void> {
   await testRetryBackoffAndFailure();
   await testNonRetryableFailsAtOnce();
   await testLeasePreventsDoubleCalls();
+  await testUnreachableCoachSkipsTheDrain();
+  await testStaleWaitingNeverAlerts();
   await testContractAndStaleResults();
   testBackfillIsQuietAndIdempotent();
   testMessageAndEmbed();
