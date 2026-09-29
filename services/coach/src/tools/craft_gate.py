@@ -44,6 +44,19 @@ RECIPES: dict[str, RecipeMeta] = {
     "ring_fractured_t1res": RecipeMeta("Ring · fractured flat + T1 res (high-end)", "jewellery"),
     "jewel_liquid_5mod_budget": RecipeMeta("Sapphire · Contempt 5-mod (budget)", "jewel"),
     "jewel_fractured_5mod": RecipeMeta("Sapphire · fractured 5-mod (high-end)", "jewel"),
+    "helmet_tiara_es": RecipeMeta("Helmet · Tiara ES essence + desecrated", "armour"),
+    "armour_vile_robe_spirit": RecipeMeta("Body Armour · Vile Robe Spirit essence", "armour"),
+    "armour_vile_robe_es": RecipeMeta("Body Armour · Vile Robe ES essence", "armour"),
+    "quiver_putrefaction": RecipeMeta("Quiver · putrefaction bow damage", "weapon"),
+    "crossbow_sovereign_ballista": RecipeMeta("Crossbow · Sovereign ballista", "weapon"),
+    "ring_breach_mana_stacker": RecipeMeta("Ring · Breach mana stacker", "jewellery"),
+    "jewel_timelost_fractured_radius": RecipeMeta(
+        "Time-Lost Sapphire · fractured Large radius", "jewel"
+    ),
+    "amulet_plus3_spirit_chaos": RecipeMeta("Amulet · fractured +3 + chaos Spirit", "jewellery"),
+    "amulet_plus4_breach_quality": RecipeMeta(
+        "Amulet · +4 Spell quality tech (unverified)", "jewellery"
+    ),
 }
 
 # craftValuation.ts gate constants.

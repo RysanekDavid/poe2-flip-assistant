@@ -40,7 +40,13 @@ def test_recipe_identity_matches_the_typescript_recipe_data() -> None:
         re.MULTILINE,
     )
     found: dict[str, tuple[str, str]] = {}
-    for name in ("craftRecipeData.ts", "craftRecipeData2.ts", "craftRecipeData3.ts"):
+    for name in (
+        "craftRecipeData.ts",
+        "craftRecipeData2.ts",
+        "craftRecipeData3.ts",
+        "craftRecipeData4.ts",
+        "craftRecipeData5.ts",
+    ):
         source = _ts(f"src/core/{name}")
         matches = pattern.findall(source)
         # Every recipe object must be parsed; a formatting change must not silently drop one.
