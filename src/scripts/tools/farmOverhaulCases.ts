@@ -10,7 +10,7 @@ import { rawBossLoot } from "../../core/tools/bossEv/curated";
 import { bossEv, evaluateBosses } from "../../core/tools/bossEv/ev";
 import { floorOf } from "../../core/tools/bossEv/metrics";
 import { priceLookup, resolvePrice, type PriceInputs } from "../../core/tools/bossEv/pricing";
-import { entryBreakdown, entryLabel, evConfidenceText, floorFallback, floorTitle, loseCaveats, sortLoot } from "../../core/tools/bossEv/rowText";
+import { entryBreakdown, entryLabel, entrySummaryLabel, evConfidenceText, floorFallback, floorTitle, loseCaveats, sortLoot, unmodelledShort } from "../../core/tools/bossEv/rowText";
 import { scoutKey } from "../../lib/scoutKey";
 import { parseBossLoot, type BossLootFile, type Tier } from "../../core/tools/bossEv/schema";
 import type { LootLineView } from "../../lib/tools/bossEvContract";
@@ -146,7 +146,17 @@ function testCellText(): void {
     { name: "Djinn Barya", qty: 1, icon: null, costDiv: null, route: null },
   ];
   assert.equal(entryLabel({ qty: 1, name: "Breachlord Sac" }), "1× Breachlord Sac");
-  assert.equal(entryBreakdown(chips, 2.4, false, 0), "1× Weathered Crisis Fragment — 2.4 div\n1× Djinn Barya — unpriced\ntotal ≥ 2.4 div (part of the entry is unpriced)");
+  const one = (name: string, qty = 1) => ({ name, qty });
+  assert.equal(entrySummaryLabel([one("An Audience with the King")]), "An Audience with the King", "one item: no 1× prefix");
+  assert.equal(entrySummaryLabel([one("Call of the Shadows", 5)]), "5× Call of the Shadows");
+  assert.equal(entrySummaryLabel(["Weathered", "Faded", "Ancient"].map((a) => one(`${a} Crisis Fragment`))), "3 Crisis Fragments");
+  assert.equal(entrySummaryLabel(["Cowardly", "Deadly", "Victorious"].map((a) => one(`${a} Fate`))), "3 Fates");
+  assert.equal(entrySummaryLabel([one("Expedition Logbook"), one("Olroth's Saga")]), "2 items", "no shared family → item count");
+  assert.equal(entrySummaryLabel([one("Expedition Logbook", 2), one("Olroth's Saga")]), "3 items", "units, not lines");
+  assert.throws(() => entrySummaryLabel([]), /at least one/);
+  assert.equal(unmodelledShort("N× Waystone + Stronghold clear"), "Waystones");
+  assert.equal(unmodelledShort("Stronghold clear"), "Stronghold clear");
+  assert.equal(entryBreakdown(chips, 2.4, false, 0),"1× Weathered Crisis Fragment — 2.4 div\n1× Djinn Barya — unpriced\ntotal ≥ 2.4 div (part of the entry is unpriced)");
   const sorted = sortLoot([
     view({ name: "unpriced" }),
     view({ name: "cheap-unrated", price: priced(1) }),

@@ -1,118 +1,78 @@
 "use client";
 
-import { useState, type FocusEvent } from "react";
+import { useState, type FocusEvent, type ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 import { orderBosses, type BossOrder } from "../../core/farm/farmSpeed";
-import { compact } from "../../lib/format";
-import { MAX_MINUTES_PER_RUN, type BossRow } from "../../lib/farmContract";
+import type { BossRow } from "../../lib/farmContract";
 import { DataTable, type Column, type TableSort } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
-import { ItemArt } from "../ui/ItemArt";
-import { PriceChip } from "../ui/PriceChip";
-import { BOUND_PREFIX, EntryCell, FloorCell, LoseCell, NetCell } from "./bossCells";
+import { BossNameCell, EntryCell, NetCell } from "./bossCells";
+import { PaceCell, RiskCell } from "./bossRiskPace";
 import { deleteSpeed, putSpeed, useRowSaves, type RowSaves } from "./farmSpeedApi";
-import { fmtDivHour, fmtOneIn } from "./farmView";
-import { artSrc } from "./farmArt";
-import { SpeedInput } from "./SpeedInput";
-
-/** A computed Divine sum where 0 means "nothing priced lands here", not a free item. */
-function SumCell({ div, exPerDiv, none }: { div: number; exPerDiv: number | null; none: string }) {
-  if (div > 0) return <PriceChip div={div} exPerDiv={exPerDiv} />;
-  return (
-    <span className="text-neutral-500" title={none}>
-      —
-    </span>
-  );
-}
-
-/** The viewer's net per hour; its bound follows the net's (a per-kill lower bound is a per-hour one). */
-function DivHourCell({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null }) {
-  if (r.yourMinutes == null) {
-    return (
-      <span className="text-neutral-500" title="enter your minutes per kill to see your Div/hour">
-        —
-      </span>
-    );
-  }
-  if (r.divPerHourBound === "unknown" || r.divPerHour == null) {
-    return (
-      <span className="text-neutral-400" title="net per kill unknown (entry partly unpriced and some drops unrated) — no honest Div/hour">
-        ?
-      </span>
-    );
-  }
-  const bound = r.divPerHourBound ?? "exact";
-  const unsure = bound === "lower" && r.divPerHour < 0;
-  const tone = unsure ? "text-neutral-300" : r.divPerHour < 0 ? "text-bad" : "text-accent";
-  const why = unsure ? "lower bound — unrated drops may cover it, not a sure loss" : bound === "upper" ? "upper bound — part of the entry is unpriced" : bound === "lower" ? "lower bound — some drops are left out" : "";
-  return (
-    <span className={`font-semibold tabular-nums ${tone}`} title={`net per kill × 60 ÷ ${r.yourMinutes} min${why ? ` — ${why}` : ""}`}>
-      {BOUND_PREFIX[bound]}
-      {fmtDivHour(r.divPerHour, exPerDiv, true)}
-    </span>
-  );
-}
 
 type SaveMinutes = (bossId: string, minutes: number | null) => void;
 
-function speedColumns(exPerDiv: number | null, save: SaveMinutes, status: RowSaves["status"]): Column<BossRow>[] {
+interface ColumnCtx {
+  exPerDiv: number | null;
+  expandedId: string | null;
+  onToggle: (id: string) => void;
+  save: SaveMinutes;
+  status: RowSaves["status"];
+}
+
+// A 1% width shrinks an auto-layout column to its content, so Entry cost sits right beside Boss
+// and the slack goes to the numeric columns.
+const SHRINK = "1%";
+
+// Six columns so the board fits a 1280 px screen: floor/chase ride under Net, chase odds under
+// Risk, liquidity is a thin-market mark on Entry, and pace + Div/h share one cell.
+function columns({ exPerDiv, expandedId, onToggle, save, status }: ColumnCtx): Column<BossRow>[] {
   return [
+    { key: "boss", header: "Boss", width: SHRINK, cell: (r) => <BossNameCell r={r} expanded={r.id === expandedId} onToggle={onToggle} /> },
     {
-      key: "pace",
-      header: "Your pace",
-      tip: "your minutes per kill — the whole cycle, from using the entry to loot picked up. Enter or click away saves, empty clears. Private to you.",
-      cell: (r) => (
-        <SpeedInput value={r.yourMinutes} onCommit={(m) => save(r.id, m)} label={`Your minutes per ${r.name} kill`} unit="min" max={MAX_MINUTES_PER_RUN} save={status(r.id)} />
-      ),
+      key: "entry",
+      header: "Entry cost",
+      width: SHRINK,
+      tip: "consumed per attempt — the cheaper of buying or crafting each item at today's prices. Hover for the breakdown; a drop mark = thin market, hard to buy in.",
+      cell: (r) => <EntryCell r={r} exPerDiv={exPerDiv} />,
+    },
+    {
+      key: "net",
+      header: "Net / kill",
+      align: "right",
+      tip: "expected loot − entry per kill over priced drops with a sourced rate. ≥ = lower bound (some drops have no rate — a negative one is not a sure loss); ≤ = upper bound (entry partly unpriced). Under it: floor = priced loot on most kills (guaranteed or 1 in 10 or better), chase = EV of rarer drops. Hover any number for its sources.",
+      cell: (r) => <NetCell r={r} exPerDiv={exPerDiv} />,
+    },
+    {
+      key: "risk",
+      header: "Risk",
+      align: "right",
+      tip: "chance one kill does not pay for its entry; dotted = a caveat (covering drops without a rate, data weaker than confirmed, or an entry cost not modelled) — hover it. Under it: kills per rare drop of any kind.",
+      cell: (r) => <RiskCell r={r} />,
     },
     {
       key: "divh",
       header: "Your Div/h",
       align: "right",
       sortable: true,
-      tip: "net per kill × 60 ÷ your minutes per kill. ≥ / ≤ carry the net's bound, ? = net unknown. Empty until you enter your pace.",
-      cell: (r) => <DivHourCell r={r} exPerDiv={exPerDiv} />,
+      tip: "type your minutes per kill (the whole cycle, entry to loot picked up; private to you): net per kill × 60 ÷ your minutes. ≥ / ≤ carry the net's bound, ? = net unknown.",
+      cell: (r) => <PaceCell r={r} exPerDiv={exPerDiv} onCommit={(m) => save(r.id, m)} save={status(r.id)} />,
     },
-  ];
-}
-
-/** The row's own keyboard target: the row itself stays a plain row because it holds an input. */
-function BossNameCell({ r, selected, onSelect }: { r: BossRow; selected: boolean; onSelect: (id: string) => void }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(r.id)}
-      aria-pressed={selected}
-      aria-label={`${r.name} — show loot table`}
-      title={r.mechanic}
-      className="flex items-center gap-2 rounded text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400"
-    >
-      <ItemArt src={artSrc(r.icon)} size={6} />
-      <span className="font-medium text-neutral-100">{r.name}</span>
-    </button>
-  );
-}
-
-function columns(exPerDiv: number | null, selectedId: string | null, onSelect: (id: string) => void): Column<BossRow>[] {
-  return [
     {
-      key: "boss",
-      header: "Boss",
-      cell: (r) => <BossNameCell r={r} selected={r.id === selectedId} onSelect={onSelect} />,
+      key: "open",
+      header: "",
+      width: "2rem",
+      cell: (r) => <ChevronRight aria-hidden className={`h-4 w-4 text-neutral-500 transition-transform ${r.id === expandedId ? "rotate-90" : ""}`} />,
     },
-    { key: "entry", header: "Entry", align: "right", tip: "what one attempt consumes, at the cheaper of buying or crafting each item at today's exchange prices — hover for the breakdown", cell: (r) => <EntryCell r={r} exPerDiv={exPerDiv} /> },
-    { key: "floor", header: "Floor", align: "right", tip: "priced loot that lands on most kills: guaranteed drops plus drops at 1 in 10 or better (a random pick from a pool counts at its cheapest member)", cell: (r) => <FloorCell r={r} exPerDiv={exPerDiv} /> },
-    { key: "chase", header: "Chase", align: "right", tip: "priced EV of drops rarer than 1 in 10 — the lottery part of a kill", cell: (r) => <SumCell div={r.chaseDiv} exPerDiv={exPerDiv} none="no priced rare drop with a sourced rate" /> },
-    { key: "net", header: "Net", align: "right", tip: "expected loot − entry per kill over priced drops with a sourced rate. ≥ = lower bound (some drops have no rate — a negative one is not a sure loss); ≤ = upper bound (entry partly unpriced). Hover a value for what EV leaves out and how its rates are sourced.", cell: (r) => <NetCell r={r} exPerDiv={exPerDiv} /> },
-    { key: "oneIn", header: "Chase odds", align: "right", tip: "kills per rare (< 1 in 10) drop of any kind, from the sourced rates", cell: (r) => (r.chaseOneIn == null ? <span className="text-neutral-500">—</span> : <span className="tabular-nums">{fmtOneIn(r.chaseOneIn)}</span>) },
-    { key: "lose", header: "P(lose)", align: "right", tip: "chance one kill does not pay for its entry; * = a caveat (covering drops without a rate, data weaker than confirmed, or an entry cost not modelled) — hover the value", cell: (r) => <LoseCell r={r} /> },
-    { key: "liq", header: "Liquidity", align: "right", tip: "poe.ninja traded volume of the priciest entry item — how easily you can buy in", cell: (r) => (r.entryVolume == null ? <span className="text-neutral-500">—</span> : <span className="tabular-nums">{compact(r.entryVolume)}</span>) },
   ];
 }
 
 interface Props {
   bosses: BossRow[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
+  /** The boss whose detail is open under its row; null = all closed. */
+  expandedId: string | null;
+  onToggle: (id: string) => void;
+  renderDetail: (bossId: string) => ReactNode;
   exPerDiv: number | null;
   /** After a pace is saved or cleared: reload, so Div/hour comes from the server. */
   onSpeedSaved: () => void;
@@ -159,8 +119,8 @@ function SaveFailures({ failures, bosses }: { failures: RowSaves["failures"]; bo
   );
 }
 
-/** Pinnacle bosses by net per kill (or by the viewer's Div/hour); a boss name opens its loot table below. */
-export function BossTable({ bosses, selectedId, onSelect, exPerDiv, onSpeedSaved }: Props) {
+/** Pinnacle bosses by net per kill (or by the viewer's Div/hour); a row opens its entry and drops under it. */
+export function BossTable({ bosses, expandedId, onToggle, renderDetail, exPerDiv, onSpeedSaved }: Props) {
   const { order, sort } = useDivHourSort();
   // inputs stay enabled while a save is in flight: disabling them would steal focus from the next field
   const saves = useRowSaves(onSpeedSaved);
@@ -168,19 +128,19 @@ export function BossTable({ bosses, selectedId, onSelect, exPerDiv, onSpeedSaved
     saves.run(bossId, () => (minutes == null ? deleteSpeed({ kind: "boss", key: bossId }) : putSpeed({ kind: "boss", key: bossId, minutesPerRun: minutes })));
   const freeze = useFocusFreeze();
   const rows = orderBosses(bosses, order, freeze.frozen);
-  const base = columns(exPerDiv, selectedId, onSelect);
-  const afterNet = base.findIndex((c) => c.key === "net") + 1;
   return (
     <div className="grid gap-1.5" {...freeze.handlers(rows.map((r) => r.id))}>
       <SaveFailures failures={saves.failures} bosses={bosses} />
       <DataTable
-        columns={[...base.slice(0, afterNet), ...speedColumns(exPerDiv, save, saves.status), ...base.slice(afterNet)]}
+        columns={columns({ exPerDiv, expandedId, onToggle, save, status: saves.status })}
         rows={rows}
         rowKey={(r) => r.id}
-        onRowClick={(r) => onSelect(r.id)}
-        selectedKey={selectedId ?? undefined}
+        onRowClick={(r) => onToggle(r.id)}
+        expandedKey={expandedId ?? undefined}
+        renderExpanded={(r) => renderDetail(r.id)}
         sort={sort}
         interactiveCells
+        tall
         emptyState={<EmptyState icon={null} sentence="No boss data — the curated loot tables did not load." />}
       />
     </div>

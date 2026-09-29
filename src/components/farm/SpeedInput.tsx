@@ -10,7 +10,10 @@ interface Props {
   /** Called only when the typed value parses AND differs from the saved one; null = cleared. */
   onCommit: (value: number | null) => void;
   label: string;
-  unit: string;
+  /** Shown after the field; omit it when the placeholder or the cell already names the unit. */
+  unit?: string;
+  /** Hint inside an empty field (default "—"). */
+  placeholder?: string;
   max: number;
   /** Div per map may be 0 (a dry map); minutes may not. */
   allowZero?: boolean;
@@ -46,7 +49,7 @@ function Status({ id, invalid, max, allowZero, save }: { id: string; invalid: bo
  * in the field, red, with a visible range, and is not sent. The field is never remounted by a
  * reload (that would drop focus); it re-reads `value` only while it is not being edited.
  */
-export function SpeedInput({ value, onCommit, label, unit, max, allowZero = false, title, save }: Props) {
+export function SpeedInput({ value, onCommit, label, unit, placeholder = "—", max, allowZero = false, title, save }: Props) {
   const [draft, setDraft] = useState(text(value));
   const focused = useRef(false);
   const statusId = useId();
@@ -73,7 +76,7 @@ export function SpeedInput({ value, onCommit, label, unit, max, allowZero = fals
         aria-describedby={failed ? statusId : undefined}
         title={parsed.ok ? title : `enter a number${allowZero ? "" : " above 0"}, at most ${max}`}
         value={draft}
-        placeholder="—"
+        placeholder={placeholder}
         onFocus={() => {
           focused.current = true;
         }}
@@ -82,7 +85,7 @@ export function SpeedInput({ value, onCommit, label, unit, max, allowZero = fals
         onKeyDown={onKey}
         className={`h-7 w-14 rounded-md border bg-neutral-950 px-1.5 text-right text-xs tabular-nums text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-amber-400 ${failed ? "border-bad" : "border-neutral-700"}`}
       />
-      <span className="text-xs text-neutral-400">{unit}</span>
+      {unit && <span className="text-xs text-neutral-400">{unit}</span>}
       <Status id={statusId} invalid={!parsed.ok} max={max} allowZero={allowZero} save={save} />
     </span>
   );
