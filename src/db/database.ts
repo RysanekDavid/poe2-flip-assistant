@@ -4,6 +4,7 @@ import { dirname } from "node:path";
 import { config } from "../config/env";
 import { hashPasswordSync, genApiKey } from "../auth/credentials";
 import { migratePatchProvenance } from "./sourceMigrations";
+import { migratePatchSummaries } from "./patchSummaryMigrations";
 import { migrateLeagueScope, seedLeagueRegistry } from "./leagueMigrations";
 import { ensureCxTables } from "./cxMigrations";
 import { CX_EDGE_DETAIL_COLUMNS } from "./cxEdgeDetail";
@@ -42,6 +43,7 @@ function runMigrations(conn: Database.Database): void {
   ensureCxTables(conn);
   ensureColumns(conn, "cx_edge_outcomes", CX_EDGE_DETAIL_COLUMNS);
   migratePatchProvenance(conn);
+  migratePatchSummaries(conn); // after provenance: it may retire official_patch rows first
 
   ensureAdditiveColumns(conn);
   ensureCredColumns(conn); // POESESSID health (auth/credStatus)

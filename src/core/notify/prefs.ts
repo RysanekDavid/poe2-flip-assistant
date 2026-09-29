@@ -4,7 +4,7 @@ import { z } from "zod";
  * Alert types a user can route. Pure module (no node imports) — the Alerts tab and the ticker
  * import it too.
  */
-export const NOTIFY_TYPES = ["SNIPE", "CRAFT_MARGIN", "SPREAD", "LEAGUE", "TREND", "SPIKE"] as const;
+export const NOTIFY_TYPES = ["SNIPE", "CRAFT_MARGIN", "SPREAD", "LEAGUE", "PATCH", "TREND", "SPIKE"] as const;
 export type NotifyType = (typeof NOTIFY_TYPES)[number];
 
 /** Delivery channels per alert type. `sound` and `popup` are the browser chime and desktop popup. */
@@ -24,6 +24,7 @@ const DEFAULTS: Record<NotifyType, ChannelPrefs> = {
   CRAFT_MARGIN: { ticker: true, sound: false, popup: false, discord: true },
   SPREAD: { ticker: true, sound: false, popup: false, discord: true },
   LEAGUE: { ticker: true, sound: false, popup: false, discord: true }, // rare and it invalidates every price on screen
+  PATCH: { ticker: true, sound: false, popup: false, discord: true }, // a few a week; balance/loot changes move prices
   TREND: { ticker: true, sound: false, popup: false, discord: false },
   SPIKE: { ticker: true, sound: false, popup: false, discord: false },
 };

@@ -71,9 +71,10 @@ export function hasAlertEver(userId: number, itemId: string, type: string): bool
  * only ever run in the app DEFAULT league on the owner's/user's creds. They are the user's own
  * watches — hiding them because the user is viewing another league would silently swallow a
  * snipe — so they show in every view, labeled with their league (`foreign_league`). LEAGUE news
- * ("a new league started") likewise matters most to someone still viewing the old one.
+ * ("a new league started") likewise matters most to someone still viewing the old one, and PATCH
+ * notes apply to every league at once.
  */
-export const EVERY_VIEW_ALERT_TYPES = ["LEAGUE", "SNIPE", "CRAFT_MARGIN"] as const;
+export const EVERY_VIEW_ALERT_TYPES = ["LEAGUE", "PATCH", "SNIPE", "CRAFT_MARGIN"] as const;
 
 export interface AlertFeedRow extends AlertRow {
   foreign_league: string | null; // the alert's league when it differs from the viewed one

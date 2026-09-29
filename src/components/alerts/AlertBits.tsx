@@ -15,6 +15,7 @@ export const TYPE_TONE: Record<string, string> = {
   SNIPE: "text-orange-400",
   CRAFT_MARGIN: "text-amber-400",
   LEAGUE: "text-amber-200",
+  PATCH: "text-amber-200",
 };
 
 export function typeTone(type: string): string {

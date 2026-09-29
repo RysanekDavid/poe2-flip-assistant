@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import Database from "better-sqlite3";
 import { migratePatchProvenance } from "../db/sourceMigrations";
+import { migratePatchSummaries } from "../db/patchSummaryMigrations";
 import type { HttpFetcher } from "../sources/patchNotes/client";
 import { catalogManifestSchema } from "../sources/patchNotes/contracts";
 
@@ -16,6 +17,7 @@ export function openPatchDb(): Database.Database {
   const db = new Database(":memory:");
   db.exec(readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8"));
   migratePatchProvenance(db);
+  migratePatchSummaries(db);
   return db;
 }
 

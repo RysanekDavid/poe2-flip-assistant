@@ -1,7 +1,40 @@
 import { config } from "../../config/env";
 import { patchSyncProblem, patchSyncSummary } from "./contracts";
 import { syncPatchNotes } from "./store";
+import { drainPatchSummaries, drainProblem, type DrainResult } from "./summaryWorker";
 import { withHeartbeat } from "../../core/heartbeat";
+
+const describe = (error: unknown): unknown => (error instanceof Error ? error.message : error);
+
+async function syncOnce(): Promise<void> {
+  try {
+    // syncPatchNotes keeps the threads that parsed and reports the rest in its result instead of
+    // throwing; the run still counts as red so a drifted thread cannot hide behind the good ones.
+    const result = await withHeartbeat("patch-notes", "", () => syncPatchNotes(), { problem: patchSyncProblem });
+    const problem = patchSyncProblem(result);
+    if (problem == null) console.log(`[patch-notes] ${patchSyncSummary(result)}`);
+    else console.error(`[patch-notes] ${problem} (${patchSyncSummary(result)})`);
+  } catch (error: unknown) {
+    console.error("[patch-notes] sync failed:", describe(error));
+  }
+}
+
+function drainSummary(result: DrainResult): string {
+  return `summarized ${result.summarized}, retrying ${result.retried}, failed ${result.failed}, announced ${result.announced}`;
+}
+
+// Runs after every sync, successful or not: queued retries and announcements must not wait on
+// the forum being reachable.
+async function summarizeOnce(): Promise<void> {
+  try {
+    const result = await withHeartbeat("patch-summary", "", () => drainPatchSummaries(), { problem: drainProblem });
+    const problem = drainProblem(result);
+    if (problem == null) console.log(`[patch-summary] ${drainSummary(result)}`);
+    else console.error(`[patch-summary] ${problem} (${drainSummary(result)})`);
+  } catch (error: unknown) {
+    console.error("[patch-summary] drain failed:", describe(error));
+  }
+}
 
 export function startPatchNotesWatcher(): (() => void) | null {
   if (!config.patchNotes.enabled) {
@@ -20,20 +53,8 @@ export function startPatchNotesWatcher(): (() => void) | null {
       return;
     }
     running = true;
-    // syncPatchNotes keeps the threads that parsed and reports the rest in its result instead of
-    // throwing; the run still counts as red so a drifted thread cannot hide behind the good ones.
-    withHeartbeat("patch-notes", "", () => syncPatchNotes(), { problem: patchSyncProblem })
-      .then((result) => {
-        const problem = patchSyncProblem(result);
-        if (problem == null) {
-          console.log(`[patch-notes] ${patchSyncSummary(result)}`);
-        } else {
-          console.error(`[patch-notes] ${problem} (${patchSyncSummary(result)})`);
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("[patch-notes] sync failed:", error instanceof Error ? error.message : error);
-      })
+    syncOnce()
+      .then(summarizeOnce)
       .finally(() => {
         running = false;
       });

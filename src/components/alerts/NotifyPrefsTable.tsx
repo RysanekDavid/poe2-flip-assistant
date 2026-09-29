@@ -12,6 +12,7 @@ const TYPE_HINT: Record<PrefRow["type"], string> = {
   CRAFT_MARGIN: "a craft recipe's expected value clears its margin",
   SPREAD: "a watched exchange flip clears your threshold",
   LEAGUE: "a new league started / the default league switched",
+  PATCH: "new official patch notes, with an AI summary of what changed",
   TREND: "a watched item's trend state changed",
   SPIKE: "a watched item is spiking",
 };
