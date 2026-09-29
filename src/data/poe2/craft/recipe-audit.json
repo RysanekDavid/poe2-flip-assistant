@@ -1026,6 +1026,7 @@
       "entityRefs": [
         "chaos",
         "eshs-catalyst",
+        "greater-exalted-orb",
         "omen-of-abyssal-echoes",
         "omen-of-catalysing-exaltation",
         "omen-of-dextral-crystallisation",
@@ -1040,6 +1041,7 @@
       "baselineDigests": {
         "chaos": "c0d7b88f7b2c5646",
         "eshs-catalyst": "05ce41f626bcacb9",
+        "greater-exalted-orb": "b1138c83a9985478",
         "omen-of-abyssal-echoes": "ade6ae704af55982",
         "omen-of-catalysing-exaltation": "a576a0c93afd6dd0",
         "omen-of-dextral-crystallisation": "eda8b98a53102fdb",
@@ -1076,9 +1078,21 @@
               "source": "entity catalog"
             },
             {
-              "kind": "pairing",
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Greater Exalted cannot roll tiers below modifier level 35; base ilvl 75+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
               "verdict": "unknown",
-              "detail": "Omen of Dextral Exaltation is not paired here as any rule expects (omen-dextral-exaltation, omen-dextral-greater-exaltation)",
+              "detail": "Greater Exalted needs a rare item; the item's rarity after earlier steps is not simulated",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Dextral Exaltation pairing matches verified rule omen-dextral-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             },
             {
@@ -1116,6 +1130,12 @@
               "verdict": "ok",
               "detail": "Omen of Catalysing Exaltation pairing matches verified rule omen-catalysing-exaltation",
               "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §8"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Dextral Exaltation pairing matches verified rule omen-dextral-exaltation",
+              "source": "poe2-crafting-knowledge.md §4"
             },
             {
               "kind": "pairing",

@@ -144,13 +144,15 @@ export const RECIPES_2: CraftRecipe[] = [
     domain: "jewellery",
     label: "Amulet · giga Spirit",
     base: {
-      label: "Rare Gold/Solar amulet",
+      label: "Rare Gold amulet",
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
-      type: "Solar Amulet",
+      // S11's giga base is a Gold amulet ("Oh, rarity implicit"); a Solar's +10–15 Spirit implicit would
+      // also blur which listings carry the explicit Spirit this craft sells
+      type: "Gold Amulet",
       rarity: "rare",
       ilvlMin: 75,
       stats: [],
-      note: "RARE Gold or Solar amulet, ilvl 75+ — Chaos Orbs roll the Spirit on the rare (S11). In the video it is the fractured +3 from the intermediate craft.",
+      note: "RARE Gold Amulet (rarity implicit), ilvl 75+ — Chaos Orbs roll the Spirit on the rare (S11). In the video it is the fractured +3 from the intermediate craft.",
     },
     result: {
       label: "Rare amulet · +30 Spirit",
@@ -166,7 +168,8 @@ export const RECIPES_2: CraftRecipe[] = [
     },
     materials: [
       { material: MATS.chaos, qtyPerAttempt: 150, note: "Spirit hunt: S11 puts T1 at ~200–300 chaos and landed T2 in ~30; ~150 is our blended estimate. Dominates the craft cost." },
-      { material: MATS.omenDextralExaltation, qtyPerAttempt: 1, note: "Force a guaranteed suffix to convert." },
+      { material: MATS.omenDextralExaltation, qtyPerAttempt: 2, note: "One forces the throwaway suffix the essence converts; one stacks with Catalysing + Greater Exaltation on the res slam (S11)." },
+      { material: MATS.greaterExalted, qtyPerAttempt: 1, note: "The throwaway-suffix slam under Dextral Exaltation (S11)." },
       { material: MATS.omenDextralCrystallisation, qtyPerAttempt: 1, note: "Pairs with Perfect Essence of Enhancement." },
       { material: MATS.perfectEssenceEnhancement, qtyPerAttempt: 1, note: "Converts the suffix into a global Armour/Evasion/ES prefix." },
       { material: MATS.xophsCatalyst, qtyPerAttempt: 20, note: "Fire catalyst (never Cold) — biases the Fire/Elemental Res slam. Esh's (lightning) is the alternative." },
