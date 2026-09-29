@@ -92,7 +92,7 @@ function ActivePanel({ d }: { d: LeagueStartResponse }) {
     </>
   );
   return (
-    <Panel title={`League start · day ${d.day ?? 0} of ${d.curveDays}`} right={right} collapsible>
+    <Panel title={`League start · day ${(d.day ?? 0) + 1} of ${d.curveDays}`} right={right} collapsible>
       {d.items.length === 0 ? (
         <p className="text-sm text-neutral-400">{d.note ?? "Nothing to say for today yet."}</p>
       ) : (

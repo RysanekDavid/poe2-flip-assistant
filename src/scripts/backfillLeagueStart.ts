@@ -6,8 +6,7 @@
  * Public GGG CDN, no credentials, same client, budget and 2 s request gap as the poller. Uses the
  * DB at DB_PATH (.env.local) — stop the poller first or both will fetch the same hours.
  */
-import { config } from "../config/env";
-import { leagueStartProblem, syncLeagueStart } from "../core/cx/leagueStart/backfill";
+import { foldDays, leagueStartProblem, syncLeagueStart } from "../core/cx/leagueStart/backfill";
 import { listStartMeta } from "../db/cxStartQueries";
 
 const DEFAULT_MAX_RUNS = 200;
@@ -23,7 +22,7 @@ function maxRuns(): number {
 function printProgress(): void {
   for (const m of listStartMeta()) {
     const start = new Date(m.startHour * 1000).toISOString();
-    console.log(`  ${m.league.padEnd(32)} start ${start}  days ${m.daysAvailable}/${config.leagueStart.days}`);
+    console.log(`  ${m.league.padEnd(32)} start ${start}  days ${m.daysAvailable}/${foldDays()}`);
   }
 }
 
@@ -31,10 +30,10 @@ async function main(): Promise<void> {
   const limit = maxRuns();
   for (let run = 1; run <= limit; run++) {
     const r = await syncLeagueStart();
-    const problem = leagueStartProblem(r);
     console.log(`run ${run}: ${r.fetched} digest(s), ${r.startsFound.length} start(s) dated, ${r.daysStored} day(s) folded`);
-    if (r.undated.length > 0) console.warn(`  undated: ${r.undated.join(", ")}`);
-    if (problem != null) throw new Error(problem);
+    for (const u of r.newlyUndated) console.warn(`  undated: ${u.league} — ${u.reason}`);
+    // failed digests back off for 30 min; a CLI waiting that out is the poller's job, so stop loudly
+    if (r.failed > 0 && r.daysStored === 0 && r.startsFound.length === 0) throw new Error(leagueStartProblem(r) ?? "digests failed");
     if (r.fetched === 0) break;
   }
   printProgress();

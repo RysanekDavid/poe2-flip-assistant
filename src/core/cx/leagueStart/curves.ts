@@ -4,9 +4,10 @@ import type { StartDayRow } from "../../../db/cxStartQueries";
  * League-start price curves → "where did this item go over the next 7/14 days, the last times a
  * league was this old?". Pure.
  *
- * ratioH(item, d) = median over past leagues of mid(min(d+H, last)) / mid(d), where `last` is that
- * league's last recorded day. A league contributes only when both days are recorded and neither
- * point is thin — a price seen in one sampled hour, or on a trickle of volume, is noise that one
+ * ratioH(item, d) = median over past leagues of mid(d+H) / mid(d). A league whose recorded days end
+ * before d+H does not contribute — a "next 14 days" figure is always a real 14-day move, never a
+ * shorter one clamped to the last recorded day (the backfill folds 14 days past the active window
+ * so it has them). A league contributes only when both days are recorded and neither point is thin — a price seen in one sampled hour, or on a trickle of volume, is noise that one
  * dumped stack can move by 5×.
  */
 
@@ -59,11 +60,11 @@ export function median(values: readonly number[]): number | null {
   return sorted.length % 2 === 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }
 
-/** One league's mid(min(d+H, last)) / mid(d), or null when it cannot say. */
+/** One league's mid(d+H) / mid(d), or null when it cannot say. */
 export function leagueRatio(curve: LeagueCurve, item: string, day: number, horizon: number): number | null {
   const last = curve.daysAvailable - 1;
   const target = Math.min(day + horizon, last);
-  if (target <= day) return null;
+  if (horizon <= 0 || target - day < horizon) return null;
   const byDay = curve.points.get(item);
   const from = byDay?.get(day);
   const to = byDay?.get(target);

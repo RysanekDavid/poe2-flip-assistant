@@ -62,6 +62,11 @@ export class DayFolder {
     }
   }
 
+  /** A sampled hour the archive had nothing for (or that kept failing): counted, contributes no prices. */
+  addMissing(hour: number): void {
+    this.sampled.push({ hour, markets: 0 });
+  }
+
   /** Base ids seen so far — names are resolved for these before storing. */
   items(): string[] {
     return [...this.obs.keys()];
