@@ -16,12 +16,12 @@ const DIVINE_ART =
  *  gone: rates + converter live in the header strip, holdings live in the Wealth tab.) */
 export function TopBar() {
   const [open, setOpen] = useState(false);
-  // badge = unseen alerts of unmuted types, from the page's single shared alert poll
-  const { unseen: unread } = useAlertCenter();
+  // badge = unseen alerts you can act on (snipe, craft margin, spread) — info types stay in the feed
+  const { actionable } = useAlertCenter();
 
   return (
     <div className="relative flex items-center gap-3">
-      <IconButton label="Alerts" square active={open} badge={unread} onClick={() => setOpen((o) => !o)}>
+      <IconButton label="Alerts" square active={open} badge={actionable} onClick={() => setOpen((o) => !o)}>
         <BellIcon className="h-5 w-5 text-amber-300" />
       </IconButton>
       <UserMenu />
@@ -69,7 +69,7 @@ function WealthChip() {
       {/* eslint-disable-next-line @next/next/no-img-element -- poecdn currency art */}
       <img src={DIVINE_ART} alt="Divine Orb" className="h-5 w-5 object-contain" />
       <span className="flex flex-col leading-tight">
-        <span className="text-[9px] font-medium uppercase tracking-wider text-amber-500/80">net worth</span>
+        <span className="text-xs font-medium uppercase tracking-wider text-amber-500/80">net worth</span>
         <span className="text-xs font-semibold tabular-nums text-amber-100">
           {Math.round(data.netWorthDiv).toLocaleString("en")}
           {chg != null && (
@@ -129,7 +129,7 @@ function UserMenu() {
   return (
     <div className="relative flex items-center gap-3 rounded-lg border border-neutral-800 px-3 py-1.5" data-tour="account">
       {/* fieldset-style legend sitting on the border */}
-      <span className="absolute -top-2 left-2.5 bg-neutral-950 px-1.5 text-[9px] font-medium uppercase tracking-widest text-neutral-500">
+      <span className="absolute -top-2 left-2.5 bg-neutral-950 px-1.5 text-xs font-medium uppercase tracking-widest text-neutral-500">
         profile
       </span>
       <WealthChip />
@@ -144,14 +144,14 @@ function UserMenu() {
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-guide"))}
           title="open the setup guide / tour"
-          className="inline-flex items-center gap-1 rounded border border-neutral-700 bg-neutral-800/40 px-2 py-0.5 text-[11px] font-medium text-neutral-300 transition hover:border-amber-400/60 hover:text-amber-200"
+          className="inline-flex items-center gap-1 rounded border border-neutral-700 bg-neutral-800/40 px-2 py-0.5 text-xs font-medium text-neutral-300 transition hover:border-amber-400/60 hover:text-amber-200"
         >
           <BookOpen className="h-3 w-3" /> Guide
         </button>
         <button
           onClick={logout}
           title="sign out"
-          className="inline-flex items-center gap-1 rounded border border-red-900/60 bg-red-950/30 px-2 py-0.5 text-[11px] font-medium text-red-300 transition hover:border-red-500/70 hover:bg-red-900/40 hover:text-red-200"
+          className="inline-flex items-center gap-1 rounded border border-red-900/60 bg-red-950/30 px-2 py-0.5 text-xs font-medium text-red-300 transition hover:border-red-500/70 hover:bg-red-900/40 hover:text-red-200"
         >
           <LogOut className="h-3 w-3" /> Sign out
         </button>
@@ -190,7 +190,7 @@ function IconButton({
     >
       {children}
       {badge != null && badge > 0 && (
-        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-bad px-1 text-[11px] font-semibold text-white">
+        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-bad px-1 text-xs font-semibold text-white">
           {badge}
         </span>
       )}

@@ -9,7 +9,7 @@ export function ComputedLeague({ league }: { league: string | null | undefined }
   if (!league) return null;
   return (
     <span
-      className="rounded bg-neutral-800/70 px-1.5 py-0.5 text-[11px] text-neutral-400"
+      className="rounded bg-neutral-800/70 px-1.5 py-0.5 text-xs text-neutral-400"
       title="prices on this panel come from this league's market, regardless of the league you are viewing"
     >
       computed in <span className="font-medium text-neutral-300">{league}</span>

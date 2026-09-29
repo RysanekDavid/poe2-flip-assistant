@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Bell, BellOff, Check, Copy } from "lucide-react";
 import type { Alert } from "../../lib/alertCenter";
 import { isNotifyType } from "../../core/notify/prefs";
+import { alertTypeLabel } from "../../lib/alertLabels";
 
 export const TYPE_TONE: Record<string, string> = {
   SPREAD: "text-good",
@@ -38,14 +39,14 @@ export function AlertActions({ alert }: { alert: Alert }) {
         <button
           onClick={() => copy(alert.whisper ?? "")}
           title="copy in-game whisper"
-          className="inline-flex items-center gap-0.5 rounded border border-neutral-700 px-1 py-0.5 text-[10px] text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+          className="inline-flex items-center gap-0.5 rounded border border-neutral-700 px-1 py-0.5 text-xs text-neutral-400 hover:border-orange-500 hover:text-orange-300"
         >
           {copied ? <Check className="h-3 w-3 text-good" /> : <Copy className="h-3 w-3" />}
           {copied ? "copied" : "whisper"}
         </button>
       )}
       {alert.link && (
-        <a href={alert.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-sky-400 hover:text-sky-300">
+        <a href={alert.link} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-400 hover:text-sky-300">
           open
         </a>
       )}
@@ -56,7 +57,7 @@ export function AlertActions({ alert }: { alert: Alert }) {
 export function LeagueTag({ league }: { league: string | null }) {
   if (!league) return null;
   return (
-    <span className="rounded bg-neutral-800 px-1 text-[10px] font-normal text-sky-300" title="found in this league, not the one you are viewing">
+    <span className="rounded bg-neutral-800 px-1 text-xs font-normal text-sky-300" title="found in this league, not the one you are viewing">
       {league}
     </span>
   );
@@ -65,11 +66,12 @@ export function LeagueTag({ league }: { league: string | null }) {
 /** Per-type mute toggle (ticker preference). Legacy types outside the routing table cannot be muted. */
 export function MuteToggle({ type, muted, onToggle }: { type: string; muted: boolean; onToggle: (muted: boolean) => void }) {
   if (!isNotifyType(type)) return null;
+  const name = alertTypeLabel(type);
   return (
     <button
       onClick={() => onToggle(!muted)}
-      title={muted ? `unmute ${type} — show it in the ticker and badge again` : `mute ${type} — hide it from the ticker and badge (sound, popup and Discord are set in the Alerts tab)`}
-      aria-label={muted ? `unmute ${type}` : `mute ${type}`}
+      title={muted ? `unmute ${name} — show it in the feed and badge again` : `mute ${name} — hide it from the feed and badge (sound, popup and Discord are set in the Alerts tab)`}
+      aria-label={muted ? `unmute ${name}` : `mute ${name}`}
       className="rounded p-0.5 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
     >
       {muted ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}

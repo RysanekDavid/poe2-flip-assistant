@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { NOTIFY_TYPES } from "../core/notify/prefs";
+import { NOTIFY_TYPES, type NotifyType } from "../core/notify/prefs";
 import { SnipeCardSchema } from "./snipeCard";
 
 /** /api/alerts payload. Parsed at the client boundary so a server shape change fails loudly. */
@@ -85,6 +85,19 @@ export function groupAlerts(alerts: readonly Alert[], counts: readonly AlertType
 /** Badge number: unseen alerts the user has not muted. */
 export function unmutedUnseen(groups: readonly AlertGroup[]): number {
   return groups.reduce((n, g) => n + (g.muted ? 0 : g.unseen), 0);
+}
+
+/**
+ * Types that ask you to act now (buy the snipe, run the craft, place the flip). LEAGUE / TREND /
+ * SPIKE are information: they stay in the feed but must not light up the bell — a league switch
+ * already has its own banner, and counting it again on the bell was noise.
+ */
+export const ACTIONABLE_ALERT_TYPES: readonly NotifyType[] = ["SNIPE", "CRAFT_MARGIN", "SPREAD"];
+
+/** Bell badge: unseen, unmuted alerts of actionable types only. */
+export function actionableUnseen(groups: readonly AlertGroup[]): number {
+  const actionable = new Set<string>(ACTIONABLE_ALERT_TYPES);
+  return groups.reduce((n, g) => n + (!g.muted && actionable.has(g.type) ? g.unseen : 0), 0);
 }
 
 /** The ticker's inline strip: newest `n` alerts of unmuted types. */

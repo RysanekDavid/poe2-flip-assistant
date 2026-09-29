@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { KeyRound, Loader2, Check, ShieldCheck, ShieldAlert, ExternalLink, Lock } from "lucide-react";
 import { LogoutEverywhere } from "./LogoutEverywhere";
+import { Button } from "./ui/Button";
 import { poeSettingsResponseSchema, type PoeSettingsResponse as PoeStatus } from "../lib/poeSettingsContract";
 
 const hhmm = (iso: string | null): string =>
@@ -102,7 +103,7 @@ export function SettingsPanel() {
       <div className="grid max-w-2xl gap-4">
         <label className="grid gap-1.5">
           <span className="text-sm font-medium text-neutral-400">
-            POESESSID {status?.connected && <span className="text-neutral-600">— a value is saved; leave blank to keep it</span>}
+            POESESSID {status?.connected && <span className="text-neutral-400">— a value is saved; leave blank to keep it</span>}
           </span>
           <input
             type="password"
@@ -114,48 +115,43 @@ export function SettingsPanel() {
           />
         </label>
 
+        {/* short placeholders: the column is half the page wide, the "why" sits under each label */}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1.5">
-            <span className="text-sm font-medium text-neutral-400">Contact email (optional)</span>
+            <span className="text-sm font-medium text-neutral-300">Contact email (optional)</span>
             <input
               type="email"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
-              placeholder="you@example.com — identifies the tool to GGG"
-              className="rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-200 outline-none focus:border-sky-500"
+              placeholder="you@example.com"
+              className="min-w-0 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-200 outline-none focus:border-sky-500"
             />
+            <span className="text-xs text-neutral-400">identifies this tool to GGG</span>
           </label>
           <label className="grid gap-1.5">
-            <span className="text-sm font-medium text-neutral-400">Account name (optional)</span>
+            <span className="text-sm font-medium text-neutral-300">Account name (optional)</span>
             <input
               type="text"
               value={account}
               onChange={(e) => setAccount(e.target.value)}
-              placeholder="Name#1234 — for reading your own stash"
-              className="rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-200 outline-none focus:border-sky-500"
+              placeholder="Name#1234"
+              className="min-w-0 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-200 outline-none focus:border-sky-500"
             />
+            <span className="text-xs text-neutral-400">needed to read your own stash</span>
           </label>
         </div>
 
-        {error && <p className="text-sm text-bad">{error}</p>}
+        {error && <p role="alert" className="text-sm text-bad">{error}</p>}
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => save(false)}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-40"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
-            {saved ? "saved" : "save"}
-          </button>
+          <Button variant="primary" onClick={() => void save(false)} disabled={saving}>
+            {saving ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : saved ? <Check aria-hidden className="h-4 w-4" /> : null}
+            {saved ? "Saved" : "Save"}
+          </Button>
           {status?.connected && (
-            <button
-              onClick={() => save(true)}
-              disabled={saving}
-              className="rounded-md border border-neutral-700 px-3 py-2 text-sm text-neutral-400 hover:border-bad hover:text-bad disabled:opacity-40"
-            >
-              disconnect
-            </button>
+            <Button variant="danger" onClick={() => void save(true)} disabled={saving}>
+              Disconnect
+            </Button>
           )}
         </div>
       </div>
@@ -180,7 +176,7 @@ export function SettingsPanel() {
             Copy the value of <span className="font-mono text-neutral-300">POESESSID</span> and paste it above.
           </li>
         </ol>
-        <p className="mt-2 text-xs text-neutral-600">
+        <p className="mt-2 text-xs text-neutral-400">
           Treat it like a password — it grants access to your account session. Logging out of the site invalidates it.
         </p>
       </details>
@@ -266,14 +262,10 @@ function ChangePassword() {
         </div>
         {error && <p className="text-sm text-bad">{error}</p>}
         <div>
-          <button
-            onClick={submit}
-            disabled={saving || !current || !next}
-            className="inline-flex items-center gap-2 rounded-md bg-neutral-700 px-4 py-2 text-sm font-medium text-white transition active:scale-[0.98] hover:bg-neutral-600 disabled:opacity-40"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <Check className="h-4 w-4" /> : null}
-            {done ? "changed" : "change password"}
-          </button>
+          <Button onClick={() => void submit()} disabled={saving || !current || !next}>
+            {saving ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : done ? <Check aria-hidden className="h-4 w-4" /> : null}
+            {done ? "Changed" : "Change password"}
+          </Button>
         </div>
       </div>
     </div>

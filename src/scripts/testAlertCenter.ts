@@ -5,7 +5,7 @@
 import { config } from "../config/env";
 import { getDb } from "../db/database";
 import { getAlertCounts, getAlertFeed, insertAlert, markVisibleSeen } from "../db/alertQueries";
-import { AlertCenterSchema, freshForNotify, groupAlerts, maxAlertId, tickerRecent, unmutedUnseen, type Alert } from "../lib/alertCenter";
+import { AlertCenterSchema, actionableUnseen, freshForNotify, groupAlerts, maxAlertId, tickerRecent, unmutedUnseen, type Alert } from "../lib/alertCenter";
 import { fireAlert } from "../core/alertEngine";
 import { browserPrefs } from "../db/notifyQueries";
 import { sampleSnipeCard } from "./snipeCardFixture";
@@ -47,6 +47,10 @@ function testGrouping(): void {
   ok("type without a server count falls back to its rows", groups.find((g) => g.type === "VOLUME")?.unseen === 1);
   ok("rows newest first inside a group", groups.find((g) => g.type === "TREND")?.alerts.map((a) => a.id).join(",") === "3,1");
   ok("badge ignores muted types", unmutedUnseen(groups) === 3, String(unmutedUnseen(groups)));
+  ok("bell counts actionable types only (VOLUME is not)", actionableUnseen(groups) === 2, String(actionableUnseen(groups)));
+  const league = groupAlerts([mk(6, "LEAGUE"), mk(7, "CRAFT_MARGIN")], [], []);
+  ok("a league switch never lights the bell; a craft margin does", actionableUnseen(league) === 1, String(actionableUnseen(league)));
+  ok("muted actionable types stay off the bell", actionableUnseen(groupAlerts([mk(8, "SNIPE")], [], ["SNIPE"])) === 0);
   ok("ticker strip skips muted types", tickerRecent(alerts, ["TREND"], 3).map((a) => a.id).join(",") === "5,4,2");
   ok("browser notify: only newer alerts of the enabled types", freshForNotify(alerts, 2, ["SPREAD", "VOLUME"]).map((a) => a.id).join(",") === "5,4");
   ok("browser notify: a type with the channel off never fires", freshForNotify(alerts, 0, ["SNIPE"]).map((a) => a.id).join(",") === "2");

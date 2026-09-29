@@ -49,7 +49,7 @@ function renderHeading(
   sources: CoachSource[],
 ): ReactNode {
   const content = renderInline(block.content, sources);
-  const className = "mb-2 mt-5 font-['Palatino_Linotype','Book_Antiqua',serif] font-semibold tracking-wide text-amber-100 first:mt-0";
+  const className = "mb-2 mt-5 font-semibold tracking-wide text-amber-100 first:mt-0";
   if (block.level === 1) return <h2 key={key} className={`${className} text-xl`}>{content}</h2>;
   if (block.level === 2) return <h3 key={key} className={`${className} text-lg`}>{content}</h3>;
   return <h4 key={key} className={`${className} text-base`}>{content}</h4>;
@@ -59,7 +59,7 @@ function CodeBlock({ block }: { block: Extract<MarkdownBlock, { kind: "code" }> 
   return (
     <div className="my-4 overflow-hidden rounded-lg border border-neutral-700/80 bg-neutral-950">
       {block.language && (
-        <div className="border-b border-neutral-800 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
+        <div className="border-b border-neutral-800 px-3 py-1 font-mono text-xs uppercase tracking-wider text-neutral-500">
           {block.language}
         </div>
       )}
@@ -77,7 +77,7 @@ function MarkdownTable({ block, sources }: {
   return (
     <div className="my-4 max-w-full overflow-x-auto rounded-lg border border-neutral-700/80">
       <table className="w-full min-w-[440px] border-collapse text-left text-sm">
-        <thead className="bg-neutral-950/80 text-[11px] uppercase tracking-wider text-neutral-400">
+        <thead className="bg-neutral-950/80 text-xs uppercase tracking-wider text-neutral-400">
           <tr>{block.headers.map((cell, index) => <th key={index} className="border-b border-neutral-700 px-3 py-2">{renderInline(cell, sources)}</th>)}</tr>
         </thead>
         <tbody className="divide-y divide-neutral-800/80">
@@ -119,7 +119,7 @@ function Citation({ id, sources }: { id: string; sources: CoachSource[] }) {
       onClick={(event) => {
         event.currentTarget.closest("article")?.querySelector("details")?.setAttribute("open", "");
       }}
-      className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-amber-500/35 bg-amber-950/35 px-1.5 align-middle text-[10px] font-semibold leading-none text-amber-300 hover:border-amber-400/60 hover:text-amber-100"
+      className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-amber-500/35 bg-amber-950/35 px-1.5 align-middle text-xs font-semibold leading-none text-amber-300 hover:border-amber-400/60 hover:text-amber-100"
     >
       {index >= 0 ? index + 1 : "?"}
     </a>

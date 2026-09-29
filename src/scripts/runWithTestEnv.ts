@@ -23,6 +23,7 @@ const targets = {
   "tools-boss-ev": "src/scripts/tools/testBossEv.ts",
   "tools-liquidate": "src/scripts/tools/testLiquidate.ts",
   "user-league": "src/scripts/testUserLeague.ts",
+  "watchlist-prices": "src/scripts/testWatchlistPrices.ts",
 } as const;
 type Target = keyof typeof targets;
 

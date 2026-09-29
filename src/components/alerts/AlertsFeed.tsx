@@ -6,6 +6,7 @@ import { useAlertCenter } from "./AlertsContext";
 import { AlertActions, LeagueTag, typeTone } from "./AlertBits";
 import { SnipeCardView, ageLabel } from "./SnipeCardView";
 import type { Alert, AlertGroup } from "../../lib/alertCenter";
+import { alertTypeLabel } from "../../lib/alertLabels";
 
 /** "ALL" or one alert type. Types are open-ended here: legacy rows (VOLUME, TREND_REVERSAL)
  *  still show up as groups, so the filter mirrors whatever types the feed actually holds. */
@@ -39,7 +40,7 @@ function FilterChip({ label, unseen, total, active, tone, onClick }: {
 function CompactRow({ a }: { a: Alert }) {
   return (
     <li className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md border px-3 py-1.5 text-sm ${a.seen === 0 ? "border-amber-500/30 bg-neutral-800/50" : "border-neutral-800/70 bg-neutral-900/40"}`}>
-      <span className={`w-24 shrink-0 text-xs font-semibold ${typeTone(a.type)}`}>{a.type}</span>
+      <span className={`w-28 shrink-0 text-xs font-semibold ${typeTone(a.type)}`}>{alertTypeLabel(a.type)}</span>
       <span className="font-medium text-neutral-100">{a.item_name ?? a.item_id}</span>
       <LeagueTag league={a.foreign_league} />
       {a.details_error && (
@@ -49,7 +50,7 @@ function CompactRow({ a }: { a: Alert }) {
       )}
       <span className="min-w-0 flex-1 truncate text-neutral-400" title={a.message}>{a.message}</span>
       <AlertActions alert={a} />
-      <time className="shrink-0 text-[11px] text-neutral-500" title={`${a.created_at} UTC`}>{ageLabel(a.created_at)}</time>
+      <time className="shrink-0 text-xs text-neutral-400" title={`${a.created_at} UTC`}>{ageLabel(a.created_at)}</time>
     </li>
   );
 }
@@ -69,7 +70,7 @@ function FeedList({ alerts, hidden }: { alerts: Alert[]; hidden: number }) {
           <CompactRow key={a.id} a={a} />
         ),
       )}
-      {hidden > 0 && <li className="px-2 text-[11px] text-neutral-600">+{hidden} older not shown (the newest 15 per type are kept here)</li>}
+      {hidden > 0 && <li className="px-2 text-xs text-neutral-500">+{hidden} older not shown (the newest 15 per type are kept here)</li>}
     </ul>
   );
 }
@@ -93,7 +94,7 @@ function MarkSeenButton({ filter, unseen, onClick }: { filter: Filter; unseen: n
     <button
       onClick={onClick}
       className="ml-auto inline-flex items-center gap-1 rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
-      title={all ? "mark every alert in this league view seen" : `mark every ${filter.type} alert seen`}
+      title={all ? "mark every alert in this league view seen" : `mark every ${alertTypeLabel(filter.type)} alert seen`}
     >
       <CheckCheck className="h-3.5 w-3.5" /> {all ? "mark all seen" : "mark seen"} ({unseen})
     </button>
@@ -129,7 +130,7 @@ export function AlertsFeed() {
         {groups.map((g) => (
           <FilterChip
             key={g.type}
-            label={g.type}
+            label={alertTypeLabel(g.type)}
             unseen={g.unseen}
             total={g.total}
             active={isActive(g.type)}

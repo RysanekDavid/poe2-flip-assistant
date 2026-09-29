@@ -8,30 +8,13 @@ import { FlameIcon, ArrowDownIcon } from "./ui/icons";
 import { Eye } from "lucide-react";
 import { EmptyState } from "./ui/EmptyState";
 import { Sparkline } from "./ui/Sparkline";
-import { EdgeBadge, edgeTooltip, type FlipEdgeInfo, type RankGate } from "./FlipEdge";
+import { EdgeBadge, edgeTooltip, type RankGate } from "./FlipEdge";
+import type { ExchangeRates } from "../core/priceEngine";
+import type { Candidate, FlipSelection } from "./flip/flipTypes";
 
-interface FlipRow extends FlipEdgeInfo {
-  itemId: string;
-  item: string;
-  category: string;
-  icon: string | null;
-  midDivine: number;
-  volume: number;
-  change7d: number | null;
-  spark: number[] | null;
-  buyExalt: number;
-  sellChaos: number;
-  buyDisp: Denom;
-  sellDisp: Denom;
-  marginPct: number;
-  mode: "REAL" | "RECO";
-  profitChaos: number;
-  throughputDivDay: number;
-  oscScore: number;
-  worthScore: number;
+/** A watched row: the shared flip row plus whether its saved Ange prices expired. */
+interface FlipRow extends Candidate {
   manualStale?: boolean;
-  risk: "PUMP" | "DECLINE" | null;
-  stable: boolean;
 }
 
 type SortKey = "item" | "midDivine" | "buyExalt" | "sellChaos" | "marginPct" | "change7d" | "volume" | "throughputDivDay" | "oscScore" | "worthScore";
@@ -61,10 +44,11 @@ export function SpreadTable({
   onSelect,
 }: {
   selectedId?: string;
-  onSelect?: (s: { id: string; name: string }) => void;
+  onSelect?: (s: FlipSelection) => void;
 }) {
   const [rows, setRows] = useState<FlipRow[]>([]);
   const [gate, setGate] = useState<RankGate | null>(null);
+  const [rates, setRates] = useState<ExchangeRates | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("worthScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [filter, setFilter] = useState("");
@@ -77,6 +61,7 @@ export function SpreadTable({
         .then((d) => {
           setRows(d.spreads ?? []);
           setGate(d.rankGate ?? null);
+          setRates(d.rates ?? null);
           setErr(null);
         })
         .catch((e) => setErr(String(e))),
@@ -171,7 +156,7 @@ export function SpreadTable({
             {shown.map((r) => (
               <tr
                 key={r.itemId}
-                onClick={() => onSelect?.({ id: r.itemId, name: r.item })}
+                onClick={() => onSelect?.({ row: r, rates })}
                 className={`cursor-pointer ${ROW_BASE} ${selectedId === r.itemId ? "!bg-sky-500/10 ring-1 ring-inset ring-sky-500/40" : ""}`}
               >
                 <td className={`${CELL} font-medium`}>
@@ -204,7 +189,7 @@ export function SpreadTable({
                 <td className={`${CELL} whitespace-nowrap text-right`}>
                   <span className="inline-flex items-center justify-end gap-1.5">
                     {r.spark && <Sparkline data={r.spark} />}
-                    <span className={`tabular-nums ${r.change7d == null ? "text-neutral-600" : r.change7d >= 0 ? "text-good" : "text-bad"}`}>
+                    <span className={`tabular-nums ${r.change7d == null ? "text-neutral-500" : r.change7d >= 0 ? "text-good" : "text-bad"}`}>
                       {r.change7d == null ? "—" : `${r.change7d >= 0 ? "+" : ""}${r.change7d.toFixed(0)}%`}
                     </span>
                   </span>

@@ -40,6 +40,18 @@ function downsampleSpark(spark: number[] | null): number[] | null {
   return Array.from({ length: SPARK_POINTS }, (_, i) => spark[Math.round(i * step)]!);
 }
 
+const BASE_IDS = new Set(["divine"]); // base unit — zero spread, not flippable vs itself
+
+/**
+ * Whether an item belongs in the market-wide flip list: liquid, priced, not the base unit. Whale
+ * tier (Mirror of Kalandra at thousands of Div, above FLIP_MAX_MID_DIV) never ranks — nobody flips
+ * it and a fat score there kills trust in the list — but a name search still finds it.
+ */
+export function isFlipCandidate(p: PricedItem, searching: boolean): boolean {
+  if (BASE_IDS.has(p.itemId) || p.volume < config.minVolume || !(p.baseValue > 0)) return false;
+  return searching || p.baseValue <= config.flips.maxMidDiv;
+}
+
 /** A manual observed price: an amount in a chosen currency. */
 export interface ManualPrice {
   amount: number;

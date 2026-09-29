@@ -22,7 +22,7 @@ export function CoachPanel({ active }: { active: boolean }) {
   useCoachScroll(active, scrollRef, session.messages.at(-1)?.id ?? null, session.isLoading);
 
   return (
-    <section className={`${active ? "flex" : "hidden"} h-[calc(100vh-225px)] min-h-[620px] flex-col overflow-hidden rounded-xl border border-neutral-800 bg-[radial-gradient(circle_at_top,rgba(120,83,22,0.08),transparent_38%)] font-['Segoe_UI_Variable','Segoe_UI',sans-serif] shadow-2xl shadow-black/20`}>
+    <section className={`${active ? "flex" : "hidden"} h-[calc(100vh-225px)] min-h-[620px] flex-col overflow-hidden rounded-xl border border-neutral-800 bg-[radial-gradient(circle_at_top,rgba(120,83,22,0.08),transparent_38%)] shadow-2xl shadow-black/20`}>
       <CoachHeader
         health={health}
         healthError={healthError}
@@ -131,8 +131,8 @@ function CoachHeader({ health, healthError, onReset }: {
           <Image src={iconCoach} alt="" className="h-8 w-8 object-contain" />
         </div>
         <div>
-          <h2 className="font-['Palatino_Linotype','Book_Antiqua',serif] text-lg font-semibold tracking-wide text-neutral-100">PoE2 Coach</h2>
-          <p className="text-[11px] text-neutral-500">
+          <h2 className="text-lg font-semibold tracking-wide text-neutral-100">PoE2 Coach</h2>
+          <p className="text-xs text-neutral-500">
             market · craft · evidence-linked knowledge base
             {health?.web_search_ready ? " · recent web" : ""}
           </p>
@@ -190,7 +190,7 @@ const STATUS_TONES = {
 function Status({ label, title, tone }: { label: string; title: string; tone: keyof typeof STATUS_TONES }) {
   const styles = STATUS_TONES[tone];
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] ${styles.wrapper}`} title={title}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${styles.wrapper}`} title={title}>
       <span className={`h-1.5 w-1.5 rounded-full ${styles.dot}`} />
       {label}
     </span>
