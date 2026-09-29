@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getWatchlist, addWatch, removeWatch, setManualPrices } from "../../../db/watchlistQueries";
+import { getWatchlist, addWatch, removeWatch, setManualPrices, manualAgeMs } from "../../../db/watchlistQueries";
 import { getCurrentUser } from "../../../auth/session";
+import { config } from "../../../config/env";
+import { WatchlistResponseSchema, type WatchlistResponse } from "../../../lib/watchlistContract";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,7 +11,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  return NextResponse.json({ watchlist: getWatchlist(user.id, false) });
+  const staleMs = config.manualStaleHours * 3600_000;
+  const watchlist = getWatchlist(user.id, false).map((w) => {
+    const ageMs = manualAgeMs(w.manual_set_at);
+    return { ...w, manual_stale: ageMs != null && ageMs > staleMs };
+  });
+  // Parse on the way out: a malformed row fails here with its field name, not in the flip card.
+  const body: WatchlistResponse = WatchlistResponseSchema.parse({ watchlist });
+  return NextResponse.json(body);
 }
 
 const AddBody = z.object({
