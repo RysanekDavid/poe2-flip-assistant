@@ -14,7 +14,8 @@ import { bookReference, feedPriceBook, newBookCounters, describeRefusals, type B
 import { evaluateSnipe } from "./snipeGate";
 import { scanRates } from "./scanRates";
 import { snipeAlertMessage } from "./snipeAlert";
-import { buildSnipeCard } from "./snipeCard";
+import { buildSnipeCard, listingTradeQuery } from "./snipeCard";
+import { recordSnipeOutcome } from "../db/snipeOutcomeQueries";
 import type { SnipeCard } from "../lib/snipeCard";
 import type { DivRates } from "./listingPrice";
 
@@ -90,6 +91,10 @@ interface ScanCtx {
   meter: TradeMeter; // counts only this scan's requests — other consumers on the shared limiter don't eat it
 }
 
+/** A candidate with its archetype's diagnostics and the id of the search that FOUND it — the id a
+ *  later /fetch of this listing must quote (the outcome checker re-fetches with it). */
+type PoolEntry = Candidate & { diag: ProfileDiag; queryId: string };
+
 // an archetype costs 1 search; a valuation up to 2 (distinctive + pseudo-only fallback)
 const hasBudget = (ctx: ScanCtx, searches: number): boolean => ctx.meter.search + searches <= config.autoSnipe.maxSearchesPerScan;
 
@@ -110,9 +115,9 @@ function diagNote(resolved: number, d: ProfileDiag): string {
 }
 
 /** Pull + record one archetype's newest listings and surface its most desirable candidates. */
-async function collectArchetype(profile: SnipeProfile, ctx: ScanCtx): Promise<{ candidates: Candidate[]; diag: ProfileDiag }> {
+async function collectArchetype(profile: SnipeProfile, ctx: ScanCtx): Promise<{ candidates: Candidate[]; diag: ProfileDiag; queryId: string }> {
   const { query, resolved } = profileToQuery(profile, ctx.idx);
-  const { total, listings } = await searchListings(query, config.autoSnipe.fetchPerArchetype, { indexed: "desc" }, ctx.cred);
+  const { total, listings, queryId } = await searchListings(query, config.autoSnipe.fetchPerArchetype, { indexed: "desc" }, ctx.cred);
   const { candidates, floorDiv, observations, diag: cd } = pickCandidates(profile, listings, ctx.rates, ctx.idx);
   for (const o of observations) feedPriceBook(ctx.league, o, ctx.report.book);
 
@@ -130,7 +135,7 @@ async function collectArchetype(profile: SnipeProfile, ctx: ScanCtx): Promise<{ 
     note: "",
   };
   diag.note = diagNote(resolved, diag);
-  return { candidates, diag };
+  return { candidates, diag, queryId };
 }
 
 function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
@@ -160,8 +165,34 @@ function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
   }
 }
 
+/** Start outcome tracking for an alerted snipe. A failure is reported, never allowed to lose the finding. */
+function trackOutcome(c: PoolEntry, finding: SnipeFinding, ctx: ScanCtx): void {
+  // the re-search fallback must find the seller's copy: without a known account it cannot
+  const recheck = listingTradeQuery(c.listing);
+  try {
+    recordSnipeOutcome({
+      listingId: finding.listingId,
+      league: ctx.league,
+      profile: finding.profile,
+      baseType: finding.baseType,
+      itemName: finding.itemName,
+      askDiv: finding.priceDiv,
+      valueDiv: finding.valueDiv,
+      marginPct: finding.marginPct,
+      samples: finding.samples,
+      queryId: c.queryId,
+      recheckQuery: recheck.account ? recheck : null,
+      alertedAt: Date.now(),
+    });
+  } catch (e) {
+    const error = `outcome tracking: ${e instanceof Error ? e.message : String(e)}`;
+    console.error(`[autosnipe] ${finding.listingId}: ${error}`);
+    ctx.report.errors.push({ profile: c.profile.key, error });
+  }
+}
+
 /** Confirm + alert a candidate as a snipe, or return null. Spends up to two comparable searches. */
-async function valueAndAlert(c: Candidate, ctx: ScanCtx): Promise<SnipeFinding | null> {
+async function valueAndAlert(c: PoolEntry, ctx: ScanCtx): Promise<SnipeFinding | null> {
   const { value, plan, searchUrl, broadened } = await valueListingLive(c.listing, ctx.idx, ctx.rates, ctx.cred);
   const verdict = evaluateSnipe({
     askDiv: c.div,
@@ -202,6 +233,7 @@ async function valueAndAlert(c: Candidate, ctx: ScanCtx): Promise<SnipeFinding |
     }),
   };
   alertEveryone(finding, ctx);
+  trackOutcome(c, finding, ctx);
   return finding;
 }
 
@@ -213,18 +245,18 @@ function knownFair(c: Candidate, ctx: ScanCtx): boolean {
   return c.div > ref.valueDiv * (1 - config.valuation.discountPct / 100);
 }
 
-async function collectPhase(profiles: SnipeProfile[], ctx: ScanCtx): Promise<Array<Candidate & { diag: ProfileDiag }>> {
-  const pool: Array<Candidate & { diag: ProfileDiag }> = [];
+async function collectPhase(profiles: SnipeProfile[], ctx: ScanCtx): Promise<PoolEntry[]> {
+  const pool: PoolEntry[] = [];
   for (const p of profiles) {
     if (!hasBudget(ctx, 1)) {
       ctx.report.errors.push({ profile: p.key, error: "search budget reached — archetype deferred to a later scan" });
       continue;
     }
     try {
-      const { candidates, diag } = await collectArchetype(p, ctx);
+      const { candidates, diag, queryId } = await collectArchetype(p, ctx);
       ctx.report.searched++;
       ctx.report.diags.push(diag);
-      for (const c of candidates) pool.push({ ...c, diag });
+      for (const c of candidates) pool.push({ ...c, diag, queryId });
     } catch (e) {
       ctx.report.errors.push({ profile: p.key, error: e instanceof Error ? e.message : String(e) });
     }
@@ -232,7 +264,7 @@ async function collectPhase(profiles: SnipeProfile[], ctx: ScanCtx): Promise<Arr
   return pool;
 }
 
-async function valuationPhase(pool: Array<Candidate & { diag: ProfileDiag }>, ctx: ScanCtx): Promise<void> {
+async function valuationPhase(pool: PoolEntry[], ctx: ScanCtx): Promise<void> {
   for (const c of rankCandidates(pool)) {
     if (ctx.report.valuations >= config.autoSnipe.maxValuations || !hasBudget(ctx, 2)) {
       if (!c.diag.note) c.diag.note = "valuation budget reached — candidate not valued this scan";

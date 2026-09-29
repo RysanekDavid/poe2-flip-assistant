@@ -15,6 +15,8 @@ import { getPolledLeagues } from "../core/leagueUsers";
 import { balanceProblem, snapshotBalancesAll } from "./balanceLoop";
 import { startNotifyDrainer } from "../core/notify/drainer";
 import { getUserById } from "../db/userQueries";
+import { runSnipeOutcomeChecks, snipeOutcomesProblem } from "../core/snipeOutcomes/run";
+import { SNIPE_OUTCOMES_INTERVAL_MIN } from "../core/subsystems";
 
 const OWNER_ID = 1; // seeded owner; the autosnipe + craft-margin scans run under the owner's cred
 
@@ -36,6 +38,7 @@ function start(): void {
 
   startTradeScans();
   startAutoSnipe(ownerCred);
+  startSnipeOutcomes(ownerCred);
   startCraftMargin(ownerCred);
   startBalanceLoop();
   startNotifyDrainer(); // Discord deliveries queued by the alerts trigger (core/notify)
@@ -91,6 +94,36 @@ function startAutoSnipe(ownerCred: TradeCred | null): void {
   } else if (config.autoSnipe.enabled) {
     console.warn("[autosnipe] AUTOSNIPE_ENABLED=true but owner POESESSID missing — scanner stays off");
   }
+}
+
+function startSnipeOutcomes(ownerCred: TradeCred | null): void {
+  // Re-checks what autosnipe alerted (~2 h and ~24 h later) — only meaningful while it alerts.
+  if (!config.snipeOutcomes.enabled || !config.autoSnipe.enabled) return;
+  if (!ownerCred) {
+    console.warn("[snipe-outcomes] enabled but owner POESESSID missing — checker stays off");
+    return;
+  }
+  console.log(`[snipe-outcomes] re-checking alerted snipes every ${SNIPE_OUTCOMES_INTERVAL_MIN}m (≤${config.snipeOutcomes.maxFetchesPerRun} fetches per run)`);
+  let checking = false;
+  cron.schedule(`*/${SNIPE_OUTCOMES_INTERVAL_MIN} * * * *`, () => {
+    if (checking) {
+      console.warn("[snipe-outcomes] run skipped — previous run still going");
+      return;
+    }
+    checking = true;
+    // resolved per run: the owner may have replaced (or removed) the cookie since the poller started
+    const run = () => {
+      const cred = credForUser({ id: OWNER_ID, role: "owner" });
+      if (!cred) throw new Error("owner has no POESESSID stored — cannot re-check snipes");
+      return runSnipeOutcomeChecks(cred);
+    };
+    withHeartbeat("snipe-outcomes", "", run, { problem: snipeOutcomesProblem })
+      .then((r) => console.log(`[snipe-outcomes] ${r.gone} gone, ${r.listed} listed, ${r.errors} error, ${r.retries} retry, ${r.deferred} deferred · ${r.meter.fetch} fetches, ${r.meter.search} searches · fetch method ${r.fetchMethod}`))
+      .catch((e) => console.error("[snipe-outcomes] run failed:", errText(e)))
+      .finally(() => {
+        checking = false;
+      });
+  });
 }
 
 function startCraftMargin(ownerCred: TradeCred | null): void {
