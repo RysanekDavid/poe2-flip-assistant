@@ -1,34 +1,13 @@
 "use client";
 
 import { compact, fmtSmart } from "../lib/format";
+import type { EdgeIssue, FlipEdgeInfo, PersistedNextHour, RankGate } from "../lib/discoverContract";
 
-type EdgeIssue = "thin" | "coarse" | "single-market" | "fee-unknown" | "implausible" | "sporadic";
+// The shapes come from the /api/discover contract; re-exported for the tables that render them.
+export type { FlipEdgeInfo, PersistedNextHour, RankGate };
 
 /** Every observed number here is an hour-old digest statistic, never a live order book. */
 const VERIFY = "verify in-game before trading — hourly digest, not a live order book";
-
-/** The observed-market fields a flip row carries (see core/flipModel FlipRow). */
-export interface FlipEdgeInfo {
-  source: "cx" | "estimated";
-  edgePct: number;
-  ranked: boolean;
-  edgeKind: "cross" | "band" | null;
-  edgeLatestPct: number | null;
-  edgeMedian24Pct: number | null;
-  band: { lowDiv: number; highDiv: number } | null;
-  persistence6: number | null;
-  persistence24: number | null;
-  liquidityTier: "safe" | "risky" | "thin";
-  slowerLegDivPerHour: number;
-  timeToSellHint: { sizeUnits: number; hours: number } | null;
-  feeGold: number | null;
-  feeDiv: number | null;
-  feeComplete: boolean;
-  legsHour: number | null;
-  cxIssue: EdgeIssue | null;
-  cxRawNetPct: number | null;
-  flowObserved: boolean;
-}
 
 /** Why an item that trades on the exchange still has no computable edge. */
 const ISSUE_TEXT: Record<EdgeIssue, string> = {
@@ -74,13 +53,6 @@ function estimatedTooltip(r: FlipEdgeInfo): string {
   return [`ESTIMATED — ${why}`, "legs + margin are a volume-based target, not an observed edge", ...flowLines(r)].join("\n");
 }
 
-/** The rank gate as the API reports it (core/cx/cxItemMarkets cxRankGate) — never hardcoded here. */
-export interface RankGate {
-  minHeldHours: number;
-  windowHours: number;
-  minSlowerDivPerHour: number;
-}
-
 function notRankedLine(gate: RankGate | null): string {
   if (gate == null) return "NOT RANKED — held too few hours or too little flow on the slower leg";
   return `NOT RANKED — needs ≥${gate.minHeldHours}/${gate.windowHours}h held and ≥${gate.minSlowerDivPerHour} Div/h on the slower leg`;
@@ -109,7 +81,7 @@ function persistTone(p: number): string {
   return "border-neutral-700 text-neutral-500";
 }
 
-const CHIP = "rounded border px-1 text-[10px]";
+const CHIP = "rounded border px-1 text-xs";
 
 /** Chip after an edge: hours of 6 it held (grey when unranked), "est." for heuristic rows, "n/a" for artefacts. */
 export function EdgeBadge({ row }: { row: FlipEdgeInfo }) {
@@ -118,7 +90,7 @@ export function EdgeBadge({ row }: { row: FlipEdgeInfo }) {
     return <span className={`${CHIP} border-neutral-700 text-neutral-500`}>est.</span>;
   }
   const p = row.persistence6 ?? 0;
-  const tone = row.ranked ? persistTone(p) : "border-neutral-800 text-neutral-600";
+  const tone = row.ranked ? persistTone(p) : "border-neutral-800 text-neutral-500";
   return <span className={`${CHIP} tabular-nums ${tone}`}>{p}/6h</span>;
 }
 
@@ -129,32 +101,6 @@ export function EdgeBadge({ row }: { row: FlipEdgeInfo }) {
 export function edgeSortTier(row: FlipEdgeInfo): number {
   if (!row.ranked) return 0;
   return row.source === "cx" ? 2 : 1;
-}
-
-function edgeTone(n: number): string {
-  return n >= 10 ? "text-good" : n >= 3 ? "text-warn" : n > 0 ? "text-neutral-300" : "text-bad";
-}
-
-/** Only a RANKED observed edge earns a colour; everything else reads neutral. */
-function cellTone(row: FlipEdgeInfo): string {
-  return row.source === "cx" && row.ranked ? edgeTone(row.edgePct) : "text-neutral-500";
-}
-
-/** Table cell content: the edge %, its source chip, and the full story on hover. */
-export function EdgeCell({ row, gate }: { row: FlipEdgeInfo; gate: RankGate | null }) {
-  return (
-    <span className="inline-flex items-center justify-end gap-1.5" title={edgeTooltip(row, gate)}>
-      <span className={`font-semibold tabular-nums ${cellTone(row)}`}>{pct(row.edgePct)}</span>
-      <EdgeBadge row={row} />
-    </span>
-  );
-}
-
-/** Published edges that still showed in the next hour's digest (core/cx/cxOutcomes). */
-export interface PersistedNextHour {
-  held: number;
-  checked: number;
-  days: number;
 }
 
 function persistedLine(p: PersistedNextHour | null): string {
@@ -183,7 +129,7 @@ export function MarketSourceBadge({
   if (newestHour == null || observed === 0) {
     return (
       <span
-        className="rounded border border-amber-900/50 bg-amber-950/20 px-1.5 py-0.5 text-[10px] text-amber-300"
+        className="rounded border border-amber-900/50 bg-amber-950/20 px-1.5 py-0.5 text-xs text-amber-300"
         title="No computable exchange edge — every row is a volume-based estimate, not an observed edge."
       >
         estimated · not executable
@@ -192,8 +138,8 @@ export function MarketSourceBadge({
   }
   return (
     <span
-      className="rounded border border-emerald-900/50 bg-emerald-950/20 px-1.5 py-0.5 text-[10px] text-emerald-300"
-      title={`Edges from GGG's hourly exchange digest (volume-weighted fills), last closed hour to ${clock(newestHour)} — ${VERIFY}. ${ranked} ranked of ${observed} observed edges; ${total - observed} row(s) without a computable exchange edge are marked "est.". ${persistedLine(persisted)}`}
+      className="rounded border border-emerald-900/50 bg-emerald-950/20 px-1.5 py-0.5 text-xs text-emerald-300"
+      title={`Edges from GGG's hourly exchange digest (volume-weighted fills), last closed hour to ${clock(newestHour)} — ${VERIFY}. ${ranked} ranked of ${observed} observed edges; ${total - observed} row(s) without a computable exchange edge are marked "~" (estimate). ${persistedLine(persisted)}`}
     >
       GGG exchange · {ranked} ranked · {observed} observed
     </span>

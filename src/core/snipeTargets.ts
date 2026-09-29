@@ -16,6 +16,7 @@ import type { DemandItem } from "../api/scoutClient";
 export interface SnipeTarget {
   name: string;
   type: string; // base type
+  icon: string | null; // poe2scout art — the same icon the demand board rows use
   valueDiv: number; // current market value
   quantity: number; // live listings (volume proxy)
   sellThrough: number; // avg share of listings gone per scrape (0..1) — resell-speed proxy
@@ -49,6 +50,7 @@ export function rankSnipeTargets(items: DemandItem[], exaltPerDivine: number): S
       return {
         name: it.name,
         type: it.type,
+        icon: it.icon,
         valueDiv,
         quantity: it.quantity,
         sellThrough: it.sellThrough,

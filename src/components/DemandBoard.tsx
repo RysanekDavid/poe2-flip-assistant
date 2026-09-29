@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, type ReactNode } from "react";
+import { Gem, SearchX } from "lucide-react";
 import { categoryColor } from "../lib/tableStyle";
 import { ComputedLeague } from "./ui/ComputedLeague";
+import { Button } from "./ui/Button";
+import { EmptyState } from "./ui/EmptyState";
+import { InfoTip } from "./ui/Tooltip";
 import { DemandTable, type DemandRow, type SortDir, type SortKey } from "./market/DemandTable";
 
 const NUMERIC: Set<SortKey> = new Set(["marketDivine", "quantity", "listedAvg", "sellThrough", "momentumPct", "heat"]);
@@ -112,16 +116,28 @@ function FilterBar({ f, set, cats, onRefresh }: { f: Filters; set: (p: Partial<F
   );
 }
 
-function Explainer() {
-  return (
-    <p className="mb-3 text-xs text-neutral-600">
-      Every tradeable unique, ranked. <b>Heat</b> = sell-through proxy (share of listings gone between scrapes) blended
-      with rising price. <b>cheapest ask</b> = poe2scout&apos;s lowest listed price (outlier-guarded), not a sale price —{" "}
-      <span className="text-warn">⚠</span> = headline was an outlier, showing recent median (verify on trade),{" "}
-      <span className="text-neutral-500">~</span> = thin data. Set <b>budget</b> to see only what you can afford. Click a
-      column to sort; <span className="text-good">open →</span> opens a live buyout search.
-    </p>
-  );
+const EXPLAINER =
+  "Every tradeable unique, ranked. Heat = sell-through proxy (share of listings gone between scrapes) blended with " +
+  "rising price. Cheapest ask = poe2scout's lowest listed price (outlier-guarded), not a sale price — ⚠ = the headline " +
+  "was an outlier, showing the recent median (verify on trade); ~ = thin data. Budget shows only what you can afford; " +
+  "open → starts a live buyout search.";
+
+/** A typed search, a budget or a picked category — "hide thin" is a default, not something typed. */
+const hasTypedFilter = (f: Filters): boolean => f.q.trim() !== "" || f.budget.trim() !== "" || f.cat !== "";
+
+function DemandBody({ rows, shown, f, clear, table }: { rows: DemandRow[]; shown: DemandRow[]; f: Filters; clear: () => void; table: ReactNode }) {
+  if (shown.length > 0) return <>{table}</>;
+  if (rows.length > 0 && hasTypedFilter(f)) {
+    return (
+      <EmptyState
+        icon={<SearchX className="h-5 w-5" />}
+        sentence="No unique matches your filter."
+        cta={<Button size="sm" onClick={clear}>Clear filters</Button>}
+      />
+    );
+  }
+  const sentence = rows.length > 0 ? "Every unique here has thin data — untick “hide thin” to see them." : "poe2scout has no unique listings for this league yet.";
+  return <EmptyState icon={<Gem className="h-5 w-5" />} sentence={sentence} />;
 }
 
 export function DemandBoard() {
@@ -141,19 +157,27 @@ export function DemandBoard() {
   };
 
   return (
-    <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-      <header className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <span className="flex items-baseline gap-2">
-          <h2 className="text-lg font-semibold">Market — unique flip targets</h2>
+    <section className="rounded-lg border border-line bg-neutral-900/50 p-4">
+      <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <span className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-neutral-100">Unique demand</h3>
+          <InfoTip tip={EXPLAINER} label="About unique demand" side="bottom" />
           <ComputedLeague league={league} />
         </span>
-        <span className="text-xs text-neutral-500">poe2scout · asks + listing history + momentum · {shown.length} shown</span>
+        <span className="text-xs text-neutral-400">poe2scout asks, listing history and momentum · {shown.length} shown</span>
       </header>
-      <Explainer />
       <FilterBar f={f} set={(p) => setF((prev) => ({ ...prev, ...p }))} cats={cats} onRefresh={load} />
-      {err && <p className="text-sm text-bad">error: {err}</p>}
-      {loading && <p className="text-sm text-neutral-500">loading poe2scout…</p>}
-      {!loading && !err && <DemandTable rows={shown} sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />}
+      {err && <p role="alert" className="text-sm text-bad">error: {err}</p>}
+      {loading && <p className="text-sm text-neutral-400">loading poe2scout…</p>}
+      {!loading && !err && (
+        <DemandBody
+          rows={rows}
+          shown={shown}
+          f={f}
+          clear={() => setF((prev) => ({ ...prev, q: "", cat: "", budget: "" }))}
+          table={<DemandTable rows={shown} sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />}
+        />
+      )}
     </section>
   );
 }

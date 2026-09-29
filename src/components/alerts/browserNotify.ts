@@ -1,6 +1,7 @@
 "use client";
 
 import { freshForNotify, maxAlertId, type Alert } from "../../lib/alertCenter";
+import { alertTypeLabel } from "../../lib/alertLabels";
 
 const LS_KEY = "lastAlertNotifiedId";
 
@@ -86,7 +87,7 @@ export interface BrowserChannels {
 }
 
 function popup(a: Alert): void {
-  new Notification(`PoE2 Flip — ${a.type}`, {
+  new Notification(`PoE2 Flip — ${alertTypeLabel(a.type)}`, {
     body: `${a.item_name ?? a.item_id}: ${a.message}${a.whisper ? "\n↳ whisper + trade link in the Alerts tab" : ""}`,
     tag: String(a.id),
   });

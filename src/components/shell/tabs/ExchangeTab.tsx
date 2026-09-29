@@ -4,28 +4,25 @@ import { useState } from "react";
 import { MousePointerClick } from "lucide-react";
 import { AlertTicker } from "../../AlertTicker";
 import { DiscoverTable } from "../../DiscoverTable";
+import { TopFlipsLegend } from "../../DiscoverColumns";
 import { SpreadTable } from "../../SpreadTable";
-import { FlipDetailCard } from "../../FlipDetailCard";
+import { FlipDetailCard } from "../../flip/FlipDetailCard";
+import type { FlipSelection } from "../../flip/flipTypes";
 import { PriceChart } from "../../PriceChart";
 import { PositionsPanel } from "../../PositionsPanel";
 import { FlipLog } from "../../FlipLog";
 import { EmptyState } from "../../ui/EmptyState";
 import { PageHeader } from "../../ui/PageHeader";
 
-interface Selected {
-  id: string;
-  name: string;
-}
-
 /** In-game Currency Exchange: find a flip, plan it, track the position, log the result. */
 export function ExchangeTab() {
-  const [selected, setSelected] = useState<Selected | null>(null);
+  const [selected, setSelected] = useState<FlipSelection | null>(null);
 
-  // Selecting from either table scrolls the shared plan + chart block into view.
-  const selectItem = (item: Selected) => {
-    setSelected(item);
+  // The plan opens below Top Flips; bring it into view without jumping when it already is.
+  const selectItem = (s: FlipSelection) => {
+    setSelected(s);
     requestAnimationFrame(() =>
-      document.getElementById("flip-detail")?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+      document.getElementById("flip-plan")?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
     );
   };
 
@@ -33,27 +30,29 @@ export function ExchangeTab() {
     <>
       <PageHeader
         title="Currency Exchange"
-        purpose="Flips on Ange's exchange right now — click a row for the flip plan and price chart."
+        purpose="Flips on Ange's exchange right now — click a row for its flip plan and price chart."
+        legend={<TopFlipsLegend />}
       />
-      {/* live alert strip — fires browser notifications when a watched spread/trend clears threshold */}
       <AlertTicker />
-      <DiscoverTable selectedId={selected?.id} onSelect={selectItem} />
-      <SpreadTable selectedId={selected?.id} onSelect={selectItem} />
-      {selected ? (
-        <div id="flip-detail" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <FlipDetailCard selectedId={selected.id} />
-          <PriceChart itemId={selected.id} itemName={selected.name} />
-        </div>
-      ) : (
-        <EmptyState
-          icon={<MousePointerClick className="h-5 w-5" />}
-          title="Flip Plan"
-          sentence="Click a row in Top Flips or the Watchlist — the plan, market compare and price chart open here."
-        />
-      )}
+      <DiscoverTable selectedId={selected?.row.itemId} onSelect={selectItem} />
+      <div id="flip-plan" className="scroll-mt-[var(--shell-h,0px)]">
+        {selected ? (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <FlipDetailCard selection={selected} />
+            <PriceChart itemId={selected.row.itemId} itemName={selected.row.item} exPerDiv={selected.rates?.exaltPerDivine ?? null} />
+          </div>
+        ) : (
+          <EmptyState
+            icon={<MousePointerClick className="h-5 w-5" />}
+            title="Flip plan"
+            sentence="Click a row in Top Flips or the watchlist — the plan, your Ange prices and the price chart open here."
+          />
+        )}
+      </div>
+      <SpreadTable selectedId={selected?.row.itemId} onSelect={selectItem} />
       {/* BUY now → SELL later loop: open positions mark-to-market until you close them */}
       <PositionsPanel />
-      {/* logged from the Flip Plan's "log flip" — this is the read-only ledger */}
+      {/* logged from the flip plan's "log flip" — this is the read-only ledger */}
       <FlipLog />
     </>
   );

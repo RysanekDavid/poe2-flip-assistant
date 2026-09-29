@@ -56,6 +56,16 @@ export function getWatchlistForLeague(userId: number, league: string): WatchItem
     .all(userId, league) as WatchItem[];
 }
 
+/**
+ * ON CONFLICT fragment for a row moving to another league (`excluded.league`): its manual Ange
+ * prices were observed in the OLD economy, so they are dropped rather than carried into a market
+ * where they never existed. Must run before `league` itself is overwritten (SQLite evaluates SET
+ * expressions against the pre-update row, so order is for the reader, not the engine).
+ */
+const CLEAR_FOREIGN_PRICES = ["manual_buy_exalt", "manual_sell_chaos", "manual_buy_ccy", "manual_sell_ccy", "manual_set_at"]
+  .map((c) => `${c} = CASE WHEN league = excluded.league COLLATE NOCASE THEN ${c} ELSE NULL END`)
+  .join(",\n         ");
+
 export function addWatch(
   userId: number,
   item: {
@@ -71,6 +81,7 @@ export function addWatch(
       `INSERT INTO watchlist (user_id, league, item_id, item_name, category, buy_threshold_pct, sell_threshold_pct)
        VALUES (@userId, @league, @itemId, @itemName, @category, @buy, @sell)
        ON CONFLICT(user_id, item_id) DO UPDATE SET
+         ${CLEAR_FOREIGN_PRICES},
          league = excluded.league,
          buy_threshold_pct = excluded.buy_threshold_pct,
          sell_threshold_pct = excluded.sell_threshold_pct,
@@ -108,4 +119,35 @@ export function setManualPrices(
        WHERE user_id = ? AND item_id = ?`,
     )
     .run(buyAmount, sellAmount, buyCcy, sellCcy, setAt, userId, itemId);
+}
+
+/** One side of a manual Ange quote. */
+export interface ManualQuote {
+  amount: number;
+  ccy: "DIVINE" | "EXALT" | "CHAOS";
+}
+
+/**
+ * Save Ange prices observed in `league`. A user has ONE watchlist row per item (unique on
+ * user_id + item_id), and that row may still be stamped with the league it was first watched in —
+ * so the row is (re)stamped to `league` and re-activated in the same transaction, keeping custom
+ * thresholds. Without that, prices seen in league B would land on a row the poller only evaluates
+ * against league A.
+ */
+export function setManualPricesInLeague(
+  userId: number,
+  league: string,
+  item: { itemId: string; itemName: string; category: string },
+  buy: ManualQuote,
+  sell: ManualQuote,
+): void {
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO watchlist (user_id, league, item_id, item_name, category)
+       VALUES (@userId, @league, @itemId, @itemName, @category)
+       ON CONFLICT(user_id, item_id) DO UPDATE SET league = excluded.league, active = 1`,
+    ).run({ userId, league, itemId: item.itemId, itemName: item.itemName, category: item.category });
+    setManualPrices(userId, item.itemId, buy.amount, buy.ccy, sell.amount, sell.ccy);
+  })();
 }

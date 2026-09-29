@@ -8,6 +8,7 @@ import { assertOk, describeError, warnOnFailure } from "../../lib/clientWarn";
 import { systemHealthSchema, type SystemHealth } from "../../lib/systemHealthContract";
 import { useVisiblePoll } from "../../lib/useVisiblePoll";
 import { HeartbeatTable } from "./HeartbeatTable";
+import { SnipeDiagTable } from "./SnipeDiagTable";
 import {
   STATUS_TONE,
   TONE_DOT,
@@ -56,7 +57,7 @@ function Chip({ label, tone, title, children }: { label: string; tone: Tone; tit
   return (
     <span title={title} className="inline-flex items-center gap-1.5 rounded border border-neutral-800 bg-neutral-950/50 px-2 py-1">
       <span className={`h-1.5 w-1.5 rounded-full ${TONE_DOT[tone]}`} />
-      <span className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</span>
+      <span className="text-xs uppercase tracking-wider text-neutral-400">{label}</span>
       <span className={`tabular-nums ${TONE_TEXT[tone]}`}>{children}</span>
     </span>
   );
@@ -140,12 +141,13 @@ export function SystemHealthPanel() {
       </header>
       {error && <p role="alert" className="mb-2 text-xs text-bad">system health unavailable — {error}</p>}
       {!data && !error && <p className="text-xs text-neutral-500">loading…</p>}
-      {data && (
-        <div className="grid gap-3">
-          <SummaryChips health={data} nowMs={nowMs} />
-          <HeartbeatTable rows={data.heartbeats} nowMs={nowMs} />
-        </div>
-      )}
+      <div className="grid gap-3">
+        {data && <SummaryChips health={data} nowMs={nowMs} />}
+        {data && <HeartbeatTable rows={data.heartbeats} nowMs={nowMs} />}
+        {/* mounted only once the owner-only health probe succeeded — members never fetch diagnostics
+            (the scan route strips them for members too) */}
+        {data && <SnipeDiagTable />}
+      </div>
     </section>
   );
 }

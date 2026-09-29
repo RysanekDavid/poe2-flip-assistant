@@ -6,17 +6,18 @@ import { RECIPES } from "../core/craftRecipes";
 const source = (...segments: string[]): string =>
   readFileSync(join(process.cwd(), ...segments), "utf8");
 
-const discover = source("src", "components", "DiscoverTable.tsx");
+// The estimated-row caveat lives once, in the Top Flips legend behind the Exchange page header.
+const discover = source("src", "components", "DiscoverColumns.tsx");
 const farm = source("src", "components", "farm", "FarmBoard.tsx");
 const craft = source("src", "components", "CraftTopPicks.tsx");
 const comparable = source("src", "components", "craft", "MarginBreakdown.tsx");
 const coach = source("src", "components", "coach", "CoachMessage.tsx");
 const composer = source("src", "components", "coach", "CoachComposer.tsx");
 
-assert.match(discover, /heuristic · not executable/);
+assert.match(discover, /heuristic estimate, not executable/);
 assert.match(farm, /basket heat .*not Div\/hour/);
-assert.match(craft, /modelled EV · curated hit rates · observed asks/);
-assert.match(comparable, /not a guaranteed sale/);
+assert.match(craft, /modelled EV · curated hit rates · instant-buyout asks, not sales/);
+assert.match(comparable, /asks, not sales/);
 // Exactly one verify-in-game notice: the composer footer, never repeated per message.
 assert.match(composer, /Read-only guidance · verify prices and item state in-game before acting/);
 assert.doesNotMatch(coach, /verify prices/i);

@@ -170,6 +170,7 @@ export const config = {
   buyExaltDiscount: num("BUY_EXALT_DISCOUNT", 0.92),
   sellChaosBonus: num("SELL_CHAOS_BONUS", 1.08),
   minVolume: num("MIN_VOLUME", 50), // below this = illiquid (orders won't fill fast)
+  flips: { maxMidDiv: pos("FLIP_MAX_MID_DIV", 500) }, // above = whale tier (Mirror): nobody flips it, so it never ranks
   alertCooldownMin: num("ALERT_COOLDOWN_MIN", 60), // same item+type alerts at most once per this window
   desktopNotify: (process.env.DESKTOP_NOTIFY ?? "true").toLowerCase() !== "false", // OS toast per alert (tests turn it off)
   manualStaleHours: num("MANUAL_STALE_HOURS", 6), // real Ange prices expire (→ estimate) after this many hours

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import type { PricedItem } from "../api/types";
 import { config } from "../config/env";
 import type { CxEdgeStats, CxItemStats } from "../core/cx/cxPersistence";
-import { scoreItem } from "../core/flipModel";
+import { isFlipCandidate, scoreItem } from "../core/flipModel";
 import type { ExchangeRates } from "../core/priceEngine";
 import { advanceTrend, advanceTrends, isTransition, trendAlertState } from "../core/trendAlerts";
 import type { TrendSignal } from "../core/trendDetector";
@@ -32,6 +32,7 @@ try {
   testThinFakeEdgeNeverOutranksALiquidOne();
   testGuardedMarketFallsBackWithItsReason();
   testManualModeKeepsItsMargin();
+  testWhaleTierNeverRanksButStaysSearchable();
   testTrendStateMachine();
   testTrendTransitionsAgainstTheDb();
   testEveryItemAdvancesNotOnlyWatchedOnes();
@@ -184,6 +185,17 @@ function testManualModeKeepsItsMargin(): void {
   assert.equal(row.edgePct, 8, "the market line shows the observed edge");
   assert.equal(row.source, "cx");
   assert.ok(near(row.throughputDivDay, 0.5 * 300 * SHARE * 24), "your own profit × the slower leg's fillable flow");
+}
+
+function testWhaleTierNeverRanksButStaysSearchable(): void {
+  const mirror = item({ itemId: "mirror", itemName: "Mirror of Kalandra", baseValue: 5343, volume: 900 });
+  const cap = config.flips.maxMidDiv;
+  assert.equal(isFlipCandidate(mirror, false), false, "a Mirror-priced item never ranks in Top Flips");
+  assert.equal(isFlipCandidate(mirror, true), true, "a name search still finds it");
+  assert.equal(isFlipCandidate(item({ baseValue: cap }), false), true, "the cap itself is inclusive");
+  assert.equal(isFlipCandidate(item({ itemId: "divine" }), true), false, "the base unit is never a flip");
+  assert.equal(isFlipCandidate(item({ volume: config.minVolume - 1 }), true), false, "illiquid stays out, search or not");
+  assert.equal(isFlipCandidate(item({ baseValue: 0 }), true), false, "unpriced stays out");
 }
 
 function signal(s: TrendSignal["signal"]): TrendSignal {
