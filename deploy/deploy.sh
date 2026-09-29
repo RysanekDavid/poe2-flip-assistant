@@ -271,12 +271,11 @@ if ! grep -Eq '^APP_ORIGIN=https://[A-Za-z0-9.-]+(:[0-9]+)?/?$' .env.local; then
   echo "APP_ORIGIN in $APP_DIR/.env.local must be https://host[:port] with no path, quotes or spaces" >&2
   exit 1
 fi
-patch_notes_enabled=$(awk -F= '$1 == "PATCH_NOTES_ENABLED" { value=substr($0, index($0, "=") + 1) } END { print value }' .env.local)
-if [[ -z "$patch_notes_enabled" || "${patch_notes_enabled,,}" == "true" ]]; then
-  if ! grep -Eq '^DATA_SOURCE_CONTACT=[^[:space:]].*$' .env.local; then
-    echo "DATA_SOURCE_CONTACT is required when PATCH_NOTES_ENABLED is true or omitted" >&2
-    exit 1
-  fi
+# Every trade2 data fetch (craft, snipe, mod pool) and the patch watcher refuse to run without an
+# operator contact, so a blank one would break them at runtime; fail here while the old release serves.
+if ! grep -Eq '^DATA_SOURCE_CONTACT=[^[:space:]].*$' .env.local; then
+  echo "DATA_SOURCE_CONTACT is required in $APP_DIR/.env.local (trade2 data and patch-note requests identify themselves with it)" >&2
+  exit 1
 fi
 # contract (default): deterministic, free Coach smoke. live: additionally one real, non-fatal
 # LLM turn that only logs latency. The process environment wins over .env.local.
