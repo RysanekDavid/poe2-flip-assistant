@@ -82,6 +82,10 @@ function RunView({ run, search, samples }: { run: ExplainRun; search: string; sa
       return <p className="text-sm text-bad">Explain failed: {run.message}</p>;
     case "done":
       if (!run.result.ok) return <ParseError search={search} message={run.result.error} position={run.result.position} />;
+      // Vendor has no mod pool to sample: the string parsed, and only a pasted item can say more
+      if (samples.length === 0 && !run.result.items.some((i) => i.key === PASTED_ITEM_KEY)) {
+        return <p className="text-sm text-good">Valid search string — paste an item (Ctrl+C in game) to test it.</p>;
+      }
       return (
         <div className="flex flex-col gap-2">
           <PastedVerdict items={run.result.items} />

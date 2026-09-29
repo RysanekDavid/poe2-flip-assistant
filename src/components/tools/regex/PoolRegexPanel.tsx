@@ -1,20 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TriangleAlert } from "lucide-react";
 import { composePool, type PoolComposeResult } from "../../../core/tools/regex/poolCompose";
 import { POOL_HEADERS } from "../../../core/tools/regex/pools/headers";
 import type { PoolTab, RegexPool } from "../../../core/tools/regex/pools/schema";
-import { sampleLines } from "../../../core/tools/regex/poolSamples";
 import { emptyPoolSelection, type PoolTabSelection } from "../../../lib/tools/regexPoolContract";
 import type { PresetParams } from "../../../lib/tools/regexContract";
 import { tradeLinkRequest } from "../../../lib/tools/regexTradeContract";
 import { EmptyState } from "../../ui/EmptyState";
 import { PanelLoading } from "../../shell/PanelLoading";
 import { validMaxChars } from "./controls";
-import { isPoolSelection } from "./selectionOps";
-import { ExplainBox, type ExplainSample } from "./ExplainBox";
-import { modLabel } from "./modView";
+import { isPoolSelection, selectsAnything } from "./selectionOps";
+import { ExplainBox } from "./ExplainBox";
+import { explainSamples } from "./modView";
 import { PoolControls } from "./PoolControls";
 import { PoolModList } from "./PoolModList";
 import { PresetBar } from "./PresetBar";
@@ -26,10 +25,14 @@ import { usePoolData } from "./usePoolData";
 
 const COMPOSE_DEBOUNCE_MS = 100;
 
+export type PoolUpdater = (tab: PoolTab, fn: (s: PoolTabSelection) => PoolTabSelection) => void;
+
 export interface PoolPanelProps {
   tab: PoolTab;
   selection: PoolTabSelection;
   onChange: (next: PoolTabSelection) => void;
+  /** Functional update (stable), so memoized mod rows only re-render when their own props change. */
+  onUpdate: PoolUpdater;
   maxChars: number;
   onMaxChars: (n: number) => void;
 }
@@ -53,26 +56,14 @@ function useComposed(pool: RegexPool, selection: PoolTabSelection, maxChars: num
   return { composed, pending: settled !== input };
 }
 
-/** One sample tooltip per mod (its highest tier at max rolls) for the explain box's per-term view. */
-function useSamples(pool: RegexPool): ExplainSample[] {
-  return useMemo(
-    () =>
-      pool.mods.map((m) => {
-        const top = m.tiers[m.tiers.length - 1];
-        return { key: m.id, label: modLabel(m), lines: top ? sampleLines(m, top, "max") : [] };
-      }),
-    [pool],
-  );
-}
-
-function Workspace({ pool, selection, onChange, maxChars, onMaxChars }: PoolPanelProps & { pool: RegexPool }) {
+function Workspace({ pool, selection, onChange, onUpdate, maxChars, onMaxChars }: PoolPanelProps & { pool: RegexPool }) {
   const { composed, pending } = useComposed(pool, selection, maxChars);
   const [explain, setExplain] = useState("");
   const [pasted, setPasted] = useState("");
-  const samples = useSamples(pool);
+  const samples = useMemo(() => explainSamples(pool), [pool]);
+  const update = useCallback((fn: (s: PoolTabSelection) => PoolTabSelection) => onUpdate(pool.tab, fn), [onUpdate, pool.tab]);
   const result = composed?.ok ? composed.result : null;
-  const hasMods = Object.keys(selection.mods).length > 0;
-  const trade = useMemo(() => (hasMods || (selection.tab === "waystone" && selection.tier) ? tradeLinkRequest(pool, selection) : null), [pool, selection, hasMods]);
+  const trade = useMemo(() => (selectsAnything(selection) ? tradeLinkRequest(pool, selection) : null), [pool, selection]);
   const reason = composed === null
     ? validMaxChars(maxChars) === null ? "max chars is out of range — fix it in the filters column" : null
     : composed.ok ? composed.result.reason : null;
@@ -83,16 +74,25 @@ function Workspace({ pool, selection, onChange, maxChars, onMaxChars }: PoolPane
   const actions = (
     <>
       <ShareButton selection={selection} />
-      <TradeLinkButton request={trade} />
+      <TradeLinkButton plan={trade} />
       <ResetButton onReset={() => onChange(emptyPoolSelection(selection.tab))} />
     </>
   );
   return (
     <div className="flex flex-col gap-4">
-      <ResultBar strings={result?.chunks ?? []} warnings={result?.warnings ?? []} reason={reason} error={composed?.ok === false ? `composer error: ${composed.message}` : null} maxChars={maxChars} busy={pending} actions={actions} onExplain={setExplain} />
+      <ResultBar
+        strings={result?.chunks ?? []}
+        warnings={result?.warnings ?? []}
+        reason={reason}
+        error={composed?.ok === false ? `composer error: ${composed.message}` : null}
+        maxChars={maxChars}
+        busy={pending}
+        actions={actions}
+        onExplain={setExplain}
+      />
       <PresetBar tab={selection.tab} params={selection} onLoad={loadPreset} />
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <PoolModList pool={pool} selection={selection} onChange={onChange} result={result} />
+        <PoolModList pool={pool} selection={selection} onUpdate={update} result={result} />
         <PoolControls pool={pool} selection={selection} onChange={onChange} maxChars={maxChars} onMaxChars={onMaxChars} />
       </div>
       <TokenTable tokens={result?.tokens ?? []} pool={pool} headers={POOL_HEADERS[pool.tab]} />

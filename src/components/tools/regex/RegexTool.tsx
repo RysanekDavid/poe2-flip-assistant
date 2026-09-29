@@ -1,49 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
-import {
-  REGEX_TABS,
-  SHARE_PARAM,
-  emptyPoolSelection,
-  type PoolTabSelection,
-  type RegexTab,
-  type TabSelection,
-  type VendorSelection,
-} from "../../../lib/tools/regexPoolContract";
+import type { PoolTab } from "../../../core/tools/regex/pools/schema";
+import { REGEX_TABS, SHARE_PARAM, emptyPoolSelection, type PoolTabSelection, type RegexTab, type TabSelection } from "../../../lib/tools/regexPoolContract";
 import type { PricePresetParams } from "../../../lib/tools/regexContract";
 import { readShare } from "../../../lib/tools/regexShareUrl";
 import { PageHeader } from "../../ui/PageHeader";
 import { useTabRoute } from "../../shell/useTabRoute";
 import { tabRouteHref } from "../../shell/tabRegistry";
-import { PoolRegexPanel } from "./PoolRegexPanel";
+import { PoolRegexPanel, type PoolUpdater } from "./PoolRegexPanel";
 import { DEFAULT_PRICE_PARAMS, PriceRegexPanel } from "./PriceRegexPanel";
 import { REGEX_TAB_INFO, RegexTabBar, tabButtonId, tabPanelId } from "./RegexTabBar";
 import { emptyVendorSelection } from "./selectionOps";
+import { SESSION_KEY, parseStoredState, type RegexToolState } from "./sessionState";
 import { useMaxChars } from "./useMaxChars";
 import { VendorPanel } from "./VendorPanel";
 
 const DEFAULT_TAB: RegexTab = "waystone";
 
-/** Every sub-tab keeps its own selection while the player flips between them. */
-interface Selections {
-  waystone: PoolTabSelection;
-  tablet: PoolTabSelection;
-  relic: PoolTabSelection;
-  jewel: PoolTabSelection;
-  vendor: VendorSelection;
-}
-
-const initialSelections = (): Selections => ({
+const initialState = (): RegexToolState => ({
   waystone: emptyPoolSelection("waystone"),
   tablet: emptyPoolSelection("tablet"),
   relic: emptyPoolSelection("relic"),
   jewel: emptyPoolSelection("jewel"),
   vendor: emptyVendorSelection(),
+  price: DEFAULT_PRICE_PARAMS,
 });
 
-function withSelection(prev: Selections, s: TabSelection): Selections {
+function withSelection(prev: RegexToolState, s: TabSelection): RegexToolState {
   switch (s.tab) {
     case "waystone":
       return { ...prev, waystone: s };
@@ -59,6 +45,32 @@ function withSelection(prev: Selections, s: TabSelection): Selections {
 }
 
 const isRegexTab = (tool: string | null): tool is RegexTab => tool !== null && (REGEX_TABS as readonly string[]).includes(tool);
+
+/** Restores the session mirror after mount (the server render has no storage), then keeps it current. */
+function useSessionMirror(state: RegexToolState, setState: Dispatch<SetStateAction<RegexToolState>>): void {
+  const restored = useRef(false);
+  useEffect(() => {
+    let raw: string | null = null;
+    try {
+      raw = sessionStorage.getItem(SESSION_KEY);
+    } catch (error: unknown) {
+      console.warn("[tools/regex] could not read the session selections", error);
+    }
+    const { patch, problems } = parseStoredState(raw);
+    if (problems.length > 0) console.warn(`[tools/regex] dropped stored selections: ${problems.join("; ")}`);
+    // queued before the share-link effect's update (declared earlier), so a shared selection still wins
+    setState((prev) => ({ ...prev, ...patch }));
+    restored.current = true;
+  }, [setState]);
+  useEffect(() => {
+    if (!restored.current) return;
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+    } catch (error: unknown) {
+      console.warn("[tools/regex] could not store the session selections", error);
+    }
+  }, [state]);
+}
 
 /** Applies a `?…&s=` share link once, then drops `s` from the URL so later edits are not shadowed by it. */
 function useShareLink(tool: string | null, apply: (s: TabSelection) => void): [string | null, () => void] {
@@ -95,24 +107,24 @@ function ShareBanner({ message, onDismiss }: { message: string; onDismiss: () =>
 
 interface ActiveProps {
   tab: RegexTab;
-  selections: Selections;
+  state: RegexToolState;
   onSelection: (s: TabSelection) => void;
-  price: PricePresetParams;
+  onUpdatePool: PoolUpdater;
   onPrice: (p: PricePresetParams) => void;
   maxChars: number;
   onMaxChars: (n: number) => void;
 }
 
-function ActivePanel({ tab, selections, onSelection, price, onPrice, maxChars, onMaxChars }: ActiveProps) {
+function ActivePanel({ tab, state, onSelection, onUpdatePool, onPrice, maxChars, onMaxChars }: ActiveProps) {
   const limits = { maxChars, onMaxChars };
   switch (tab) {
     case "price":
-      return <PriceRegexPanel params={price} onChange={onPrice} {...limits} />;
+      return <PriceRegexPanel params={state.price} onChange={onPrice} {...limits} />;
     case "vendor":
-      return <VendorPanel selection={selections.vendor} onChange={onSelection} {...limits} />;
+      return <VendorPanel selection={state.vendor} onChange={onSelection} {...limits} />;
     default:
       // keyed by tab: a pool panel's debounced state must never carry one tab's selection into another
-      return <PoolRegexPanel key={tab} tab={tab} selection={selections[tab]} onChange={onSelection} {...limits} />;
+      return <PoolRegexPanel key={tab} tab={tab} selection={state[tab]} onChange={onSelection} onUpdate={onUpdatePool} {...limits} />;
   }
 }
 
@@ -120,10 +132,12 @@ function ActivePanel({ tab, selections, onSelection, price, onPrice, maxChars, o
 export function RegexTool() {
   const { tool, go } = useTabRoute();
   const tab: RegexTab = isRegexTab(tool) ? tool : DEFAULT_TAB;
-  const [selections, setSelections] = useState<Selections>(initialSelections);
-  const [price, setPrice] = useState<PricePresetParams>(DEFAULT_PRICE_PARAMS);
+  const [state, setState] = useState<RegexToolState>(initialState);
   const [maxChars, setMaxChars] = useMaxChars();
-  const onSelection = useCallback((s: TabSelection) => setSelections((prev) => withSelection(prev, s)), []);
+  useSessionMirror(state, setState);
+  const onSelection = useCallback((s: TabSelection) => setState((prev) => withSelection(prev, s)), []);
+  const onUpdatePool = useCallback((t: PoolTab, fn: (s: PoolTabSelection) => PoolTabSelection) => setState((prev) => withSelection(prev, fn(prev[t]))), []);
+  const onPrice = useCallback((price: PricePresetParams) => setState((prev) => ({ ...prev, price })), []);
   const [banner, dismiss] = useShareLink(tool, onSelection);
   const unknownTool = tool !== null && !isRegexTab(tool) ? `There is no "${tool}" regex tool — showing ${REGEX_TAB_INFO[DEFAULT_TAB].label}.` : null;
   const notice = banner ?? unknownTool;
@@ -133,7 +147,7 @@ export function RegexTool() {
       <RegexTabBar active={tab} onSelect={(t) => go("regex", t)} />
       {notice && <ShareBanner message={notice} onDismiss={banner ? dismiss : () => go("regex", DEFAULT_TAB)} />}
       <div role="tabpanel" id={tabPanelId(tab)} aria-labelledby={tabButtonId(tab)}>
-        <ActivePanel tab={tab} selections={selections} onSelection={onSelection} price={price} onPrice={setPrice} maxChars={maxChars} onMaxChars={setMaxChars} />
+        <ActivePanel tab={tab} state={state} onSelection={onSelection} onUpdatePool={onUpdatePool} onPrice={onPrice} maxChars={maxChars} onMaxChars={setMaxChars} />
       </div>
     </section>
   );

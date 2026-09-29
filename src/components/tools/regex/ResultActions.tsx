@@ -7,7 +7,8 @@ import { Tooltip } from "../../ui/Tooltip";
 import { requestRegexApi } from "../../../lib/tools/regexContract";
 import type { TabSelection } from "../../../lib/tools/regexPoolContract";
 import { shareUrl } from "../../../lib/tools/regexShareUrl";
-import { TradeLinkResponseSchema, type TradeLinkRequest, type TradeLinkResponse } from "../../../lib/tools/regexTradeContract";
+import { TradeLinkResponseSchema, type TradeLinkPlan, type TradeLinkRequest, type TradeLinkResponse } from "../../../lib/tools/regexTradeContract";
+import { writeClipboard } from "./clipboard";
 
 const TRADE_DEBOUNCE_MS = 400;
 
@@ -22,8 +23,7 @@ export function ShareButton({ selection }: { selection: TabSelection }) {
       setNote({ ok: false, text: error instanceof Error ? error.message : String(error) });
       return;
     }
-    navigator.clipboard
-      .writeText(url)
+    writeClipboard(url)
       .then(() => setNote({ ok: true, text: "link copied" }))
       .catch((e: unknown) => {
         console.error("[tools/regex] copying the share link failed", e);
@@ -74,11 +74,21 @@ function useTradeLink(request: TradeLinkRequest | null): TradeState {
 const LINK_CLASS =
   "inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-3.5 text-sm font-medium text-neutral-200 hover:border-neutral-500 hover:text-neutral-100";
 
-/** "Search on trade": the selected mods as a trade2 search — reference data only, no search budget. */
-export function TradeLinkButton({ request }: { request: TradeLinkRequest | null }) {
-  const state = useTradeLink(request);
+function NotOnTrade({ items }: { items: readonly string[] }) {
+  if (items.length === 0) return null;
+  return (
+    <Tooltip tip={`The trade search ignores: ${items.join(" · ")}.`} side="bottom" align="end">
+      <span className="rounded bg-warn/15 px-1.5 py-0.5 text-xs font-semibold text-warn">{items.length} not on trade</span>
+    </Tooltip>
+  );
+}
+
+/** "Search on trade": the selection as a trade2 search — reference data only, no search budget. */
+export function TradeLinkButton({ plan }: { plan: TradeLinkPlan | null }) {
+  const state = useTradeLink(plan?.request ?? null);
+  const dropped = plan?.dropped ?? [];
   if (state.status !== "ready") {
-    const why = state.status === "error" ? state.message : state.status === "loading" ? "preparing the trade link…" : "mark a mod Want or Avoid first";
+    const why = state.status === "error" ? state.message : state.status === "loading" ? "preparing the trade link…" : "mark a mod or set a filter first";
     return (
       <span className="inline-flex items-center gap-1.5">
         <Button variant="secondary" size="md" disabled title={why}>
@@ -94,11 +104,7 @@ export function TradeLinkButton({ request }: { request: TradeLinkRequest | null 
       <a href={link.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASS} title={`trade2 search in ${link.league}, cheapest first`}>
         <ExternalLink aria-hidden className="h-4 w-4" /> Search on trade
       </a>
-      {link.unmatched.length > 0 && (
-        <Tooltip tip={`trade2 has no stat for: ${link.unmatched.join(" · ")} — the search ignores these lines.`} side="bottom">
-          <span className="rounded bg-warn/15 px-1.5 py-0.5 text-xs font-semibold text-warn">{link.unmatched.length} not on trade</span>
-        </Tooltip>
-      )}
+      <NotOnTrade items={[...dropped, ...link.unmatched]} />
     </span>
   );
 }

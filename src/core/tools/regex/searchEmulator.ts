@@ -101,10 +101,11 @@ export type SearchEvaluation =
  * (parse errors, patterns outside the dialect, oversized input) come back as `ok: false` with the
  * reason — the one place errors become data, because a worker must answer every message.
  */
-export function evaluateSearch(search: string, lines: readonly string[]): SearchEvaluation {
+export function evaluateSearch(search: string | CompiledSearch, lines: readonly string[]): SearchEvaluation {
   let compiled: CompiledSearch;
   try {
-    compiled = compileSearch(search);
+    // a pre-compiled search lets a batch (one string × every pool mod) pay the compile cost once
+    compiled = typeof search === "string" ? compileSearch(search) : search;
     assertTooltip(lines);
   } catch (error: unknown) {
     if (error instanceof SearchParseError || error instanceof SafeRegexError) return { ok: false, error: error.message, position: error.position };

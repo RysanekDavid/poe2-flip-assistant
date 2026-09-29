@@ -12,7 +12,7 @@ import { setModState, setThreshold, type ModChoice } from "./selectionOps";
 interface ListProps {
   pool: RegexPool;
   selection: PoolTabSelection;
-  onChange: (next: PoolTabSelection) => void;
+  onUpdate: (fn: (s: PoolTabSelection) => PoolTabSelection) => void;
   result: PoolComposeResult | null;
 }
 
@@ -67,14 +67,14 @@ function ModGroup({ label, mods, selection, info, masked, uncovered, onState, on
 }
 
 /** Left column: every mod of the pool, grouped, searchable, each with Want / Avoid / Ignore. */
-export function PoolModList({ pool, selection, onChange, result }: ListProps) {
+export function PoolModList({ pool, selection, onUpdate, result }: ListProps) {
   const [query, setQuery] = useState("");
   const groups = useMemo(() => filterGroups(pool, query), [pool, query]);
   const info = useMemo(() => tokenInfoByMod(pool, result), [pool, result]);
   const masked = useMemo(() => new Set(result?.masked ?? []), [result]);
   const uncovered = useMemo(() => new Set(result?.uncovered ?? []), [result]);
-  const onState = useCallback((id: string, c: ModChoice) => onChange(setModState(selection, id, c)), [onChange, selection]);
-  const onThreshold = useCallback((key: string, r: ValueRange | null) => onChange(setThreshold(selection, key, r)), [onChange, selection]);
+  const onState = useCallback((id: string, c: ModChoice) => onUpdate((s) => setModState(s, id, c)), [onUpdate]);
+  const onThreshold = useCallback((key: string, r: ValueRange | null) => onUpdate((s) => setThreshold(s, key, r)), [onUpdate]);
   const shown = groups.reduce((n, g) => n + g.mods.length, 0);
   return (
     <section aria-label="mods" className="min-w-0 rounded-lg border border-line bg-surface/60 p-4">

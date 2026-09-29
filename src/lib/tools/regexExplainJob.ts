@@ -4,7 +4,7 @@
  * so a malformed message fails loudly instead of rendering half an explanation.
  */
 import { z } from "zod";
-import { EMULATOR_MAX_LINES, SEARCH_MAX_CHARS, evaluateSearch } from "../../core/tools/regex/searchEmulator";
+import { EMULATOR_MAX_LINES, SEARCH_MAX_CHARS, compileSearch, evaluateSearch } from "../../core/tools/regex/searchEmulator";
 
 /** Big enough for the largest pool (jewel ~210 mods) plus a pasted item. */
 export const EXPLAIN_MAX_ITEMS = 400;
@@ -41,5 +41,7 @@ export function runExplainJob(raw: unknown): ExplainJobResult {
   const job = ExplainJobSchema.parse(raw);
   const probe = evaluateSearch(job.search, []);
   if (!probe.ok) return probe;
-  return { ok: true, items: job.items.map((item) => ({ key: item.key, evaluation: evaluateSearch(job.search, item.lines) })) };
+  // the probe proved it compiles; compile once more and reuse it for every item of the batch
+  const compiled = compileSearch(job.search);
+  return { ok: true, items: job.items.map((item) => ({ key: item.key, evaluation: evaluateSearch(compiled, item.lines) })) };
 }

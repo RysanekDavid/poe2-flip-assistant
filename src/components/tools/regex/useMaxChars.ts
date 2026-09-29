@@ -32,6 +32,8 @@ export function useMaxChars(): [number, (n: number) => void] {
   }, []);
   const set = useCallback((n: number): void => {
     setValue(n);
+    // an out-of-range value is mid-typing or a mistake: shown (red) in the field, never remembered
+    if (!RegexParamsSchema.shape.maxChars.safeParse(n).success) return;
     try {
       if (n === REGEX_MAX_CHARS_DEFAULT) localStorage.removeItem(MAX_CHARS_KEY);
       else localStorage.setItem(MAX_CHARS_KEY, String(n));

@@ -5,6 +5,7 @@
 import type { ComposedToken, PoolComposeResult } from "../../../core/tools/regex/poolCompose";
 import { modKey } from "../../../core/tools/regex/poolNamespace";
 import type { PoolMod, RegexPool } from "../../../core/tools/regex/pools/schema";
+import { sampleLines } from "../../../core/tools/regex/poolSamples";
 
 export const modLabel = (mod: PoolMod): string => mod.lines.map((l) => l.template).join(" / ");
 
@@ -53,4 +54,12 @@ export function filterGroups(pool: RegexPool, query: string): Array<{ id: string
   return pool.groups
     .map((g) => ({ id: g.id, label: g.label, mods: pool.mods.filter((m) => m.group === g.id && hit(m)) }))
     .filter((g) => g.mods.length > 0);
+}
+
+/** One sample tooltip per mod (its highest tier at max rolls) for the explain box's per-term view. */
+export function explainSamples(pool: RegexPool): Array<{ key: string; label: string; lines: string[] }> {
+  return pool.mods.map((m) => {
+    const top = m.tiers[m.tiers.length - 1];
+    return { key: m.id, label: modLabel(m), lines: top ? sampleLines(m, top, "max") : [] };
+  });
 }

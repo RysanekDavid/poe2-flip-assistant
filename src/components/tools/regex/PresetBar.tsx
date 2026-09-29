@@ -79,7 +79,7 @@ export function PresetBar({ tab, params, onLoad }: { tab: RegexTab; params: Pres
       {presets.map((p) => (
         <PresetChip key={p.id} preset={p} onLoad={onLoad} onDelete={() => void remove(p)} />
       ))}
-      <span className="inline-flex items-center rounded-md border border-dashed border-neutral-700">
+      <span className="inline-flex items-center rounded-md border border-dashed border-neutral-700 focus-within:border-solid focus-within:border-amber-400/60 focus-within:ring-1 focus-within:ring-amber-400/40">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}

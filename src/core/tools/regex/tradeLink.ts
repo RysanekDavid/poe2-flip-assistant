@@ -6,6 +6,7 @@
 import type { StatOption } from "../../../api/tradeMeta";
 import { buildTradeQuery } from "../../../lib/tradeLink";
 import type { TradeLinkLine, TradeLinkRequest } from "../../../lib/tools/regexTradeContract";
+import { POOL_HEADERS } from "./pools/headers";
 import type { PoolTab } from "./pools/schema";
 
 const TRADE2_SEARCH = "https://www.pathofexile.com/trade2/search/poe2";
@@ -68,6 +69,45 @@ export interface RegexTradeLink {
   unmatched: string[];
 }
 
+/*
+ * Waystone header properties → trade2 map_filters ids, from the same data/filters read as
+ * TRADE_CATEGORY ("Waystone IIR", "Monster Rarity", "Waystone Drop Chance", "Monster
+ * Effectiveness", "Waystone Packsize", "Waystone Revives"). Item Level is a type filter (ilvl).
+ */
+export const TRADE_MAP_FILTER: Readonly<Record<string, string>> = {
+  itemRarity: "map_iir",
+  monsterRarity: "map_rare_monsters",
+  waystoneDrop: "map_bonus",
+  monsterEffectiveness: "map_magic_monsters",
+  packSize: "map_packsize",
+  revives: "map_revives",
+};
+
+type Range = { min: number; max: number | null };
+const rangeJson = (r: Range) => ({ min: r.min, ...(r.max !== null ? { max: r.max } : {}) });
+
+/** Header properties → { typeFilters, mapFilters }, naming the ones trade2 has no filter for. */
+function propertyFilters(req: TradeLinkRequest, unmatched: string[]) {
+  const typeFilters: Record<string, unknown> = {};
+  const mapFilters: Record<string, unknown> = {};
+  if (req.tier) mapFilters.map_tier = { min: req.tier.min, max: req.tier.max };
+  for (const [id, range] of Object.entries(req.props)) {
+    const mapId = req.tab === "waystone" ? TRADE_MAP_FILTER[id] : undefined;
+    if (id === "itemLevel") typeFilters.ilvl = rangeJson(range);
+    else if (mapId) mapFilters[mapId] = rangeJson(range);
+    else unmatched.push(`${POOL_HEADERS[req.tab].find((h) => h.id === id)?.template ?? id} (property)`);
+  }
+  return { typeFilters, mapFilters };
+}
+
+/** Merges extra filter groups into buildTradeQuery's output (it has no map/ilvl-range fields). */
+function mergeFilters(query: Record<string, unknown>, typeFilters: Record<string, unknown>, mapFilters: Record<string, unknown>): void {
+  const filters = { ...((query.filters ?? {}) as Record<string, { filters: Record<string, unknown> }>) };
+  if (Object.keys(typeFilters).length > 0) filters.type_filters = { filters: { ...(filters.type_filters?.filters ?? {}), ...typeFilters } };
+  if (Object.keys(mapFilters).length > 0) filters.map_filters = { filters: mapFilters };
+  query.filters = filters;
+}
+
 /** Builds the trade2 URL for a request against the given trade2 stat list. */
 export function buildRegexTradeLink(stats: ReadonlyMap<string, StatOption>, league: string, req: TradeLinkRequest): RegexTradeLink {
   const want: StatFilterJson[] = [];
@@ -82,12 +122,9 @@ export function buildRegexTradeLink(stats: ReadonlyMap<string, StatOption>, leag
     (line.state === "want" ? want : avoid).push(filterOf(stat.id, line));
   }
   const corrupted = req.corrupted === "any" ? undefined : req.corrupted === "only";
-  const query = buildTradeQuery({ category: TRADE_CATEGORY[req.tab], corrupted });
-  if (req.tier) {
-    // map_filters is outside TradeQuery; id "map_tier" from the same data/filters read as TRADE_CATEGORY
-    const filters = (query.filters ?? {}) as Record<string, unknown>;
-    query.filters = { ...filters, map_filters: { filters: { map_tier: { min: req.tier.min, max: req.tier.max } } } };
-  }
+  const query = buildTradeQuery({ category: TRADE_CATEGORY[req.tab], corrupted, rarity: req.rarity ?? undefined, type: req.baseType ?? undefined });
+  const { typeFilters, mapFilters } = propertyFilters(req, unmatched);
+  mergeFilters(query, typeFilters, mapFilters);
   query.stats = statGroups(req, want, avoid);
   const payload = { query, sort: { price: "asc" } };
   const url = `${TRADE2_SEARCH}/${encodeURIComponent(league)}?q=${encodeURIComponent(JSON.stringify(payload))}`;

@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Check, Copy, SearchCode, TriangleAlert } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { Tooltip } from "../../ui/Tooltip";
+import { writeClipboard } from "./clipboard";
 
 export interface ResultString {
   text: string;
@@ -20,8 +21,7 @@ export interface ResultWarning {
 export function CopyButton({ text, label = "Copy", variant = "primary" }: { text: string; label?: string; variant?: "primary" | "secondary" }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
-    navigator.clipboard
-      .writeText(text)
+    writeClipboard(text)
       .then(() => setState("copied"))
       .catch((e: unknown) => {
         console.error("[tools/regex] clipboard write failed", e);

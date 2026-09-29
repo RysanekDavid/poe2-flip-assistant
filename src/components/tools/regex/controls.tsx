@@ -4,8 +4,7 @@ import type { ReactNode } from "react";
 import type { PoolHeader } from "../../../core/tools/regex/pools/headers";
 import { RARITIES, rarityHeaderId, type Rarity } from "../../../core/tools/regex/pools/headers";
 import { REGEX_MAX_CHARS_DEFAULT, REGEX_MAX_CHARS_MAX, REGEX_MAX_CHARS_MIN } from "../../../lib/tools/regexContract";
-import { Tooltip } from "../../ui/Tooltip";
-import { parseMin } from "./selectionOps";
+import { Tooltip, type TooltipAlign } from "../../ui/Tooltip";
 
 /** Pressed/unpressed chip for multi-select filters (tablet types, rarity, item classes). */
 export function ChipToggle({ on, onClick, children, title }: { on: boolean; onClick: () => void; children: ReactNode; title?: string }) {
@@ -25,11 +24,11 @@ export function ChipToggle({ on, onClick, children, title }: { on: boolean; onCl
 }
 
 /** Marks a header line whose spelling is not proven by a clipboard sample (headers.ts `verified`). */
-export function VerifyMarker({ header }: { header: PoolHeader | undefined }) {
+export function VerifyMarker({ header, align = "center" }: { header: PoolHeader | undefined; align?: TooltipAlign }) {
   if (!header || header.verified === "corpus") return null;
   const source = header.verified === "poe2.re" ? "Spelling taken from poe2.re's working strings, not our own paste." : "Spelling not yet seen in a clipboard paste.";
   return (
-    <Tooltip tip={`"${header.template}" — ${source}${header.note ? ` ${header.note}.` : ""} Check the string lights the right items in-game.`}>
+    <Tooltip tip={`"${header.template}" — ${source}${header.note ? ` ${header.note}.` : ""} Check the string lights the right items in-game.`} align={align}>
       <span className="rounded bg-warn/15 px-1.5 text-xs font-semibold text-warn">verify in-game</span>
     </Tooltip>
   );
@@ -48,29 +47,6 @@ export function Field({ label, children, extra }: { label: string; children: Rea
   );
 }
 
-export function NumberField({ label, value, onChange, min = 0, max, placeholder = "any" }: {
-  label: string;
-  value: number | null;
-  onChange: (v: number | null) => void;
-  min?: number;
-  max?: number;
-  placeholder?: string;
-}) {
-  return (
-    <input
-      type="number"
-      inputMode="numeric"
-      aria-label={label}
-      min={min}
-      max={max}
-      placeholder={placeholder}
-      value={value ?? ""}
-      onChange={(e) => onChange(parseMin(e.target.value))}
-      className="h-8 w-20 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-right text-sm tabular-nums text-neutral-100 placeholder:text-neutral-500"
-    />
-  );
-}
-
 const RARITY_LABEL: Record<Rarity, string> = { normal: "Normal", magic: "Magic", rare: "Rare", unique: "Unique" };
 
 /** Empty = any rarity; the headers tell which rarity lines still need an in-game check. */
@@ -78,7 +54,7 @@ export function RarityChips({ value, onChange, headers }: { value: readonly Rari
   const flagged = headers.find((h) => h.kind === "rarity" && h.verified !== "corpus" && value.some((r) => h.id === rarityHeaderId(r)));
   const toggle = (r: Rarity) => onChange(value.includes(r) ? value.filter((x) => x !== r) : RARITIES.filter((x) => x === r || value.includes(x)));
   return (
-    <Field label="Rarity" extra={<VerifyMarker header={flagged} />}>
+    <Field label="Rarity" extra={<VerifyMarker header={flagged} align="end" />}>
       <div className="flex flex-wrap gap-1.5">
         {RARITIES.map((r) => (
           <ChipToggle key={r} on={value.includes(r)} onClick={() => toggle(r)}>

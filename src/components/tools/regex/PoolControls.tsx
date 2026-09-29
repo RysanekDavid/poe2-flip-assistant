@@ -13,9 +13,10 @@ import {
   type TabletSelection,
   type WaystoneSelection,
 } from "../../../lib/tools/regexPoolContract";
-import { ChipToggle, Field, MaxCharsInput, NumberField, RarityChips, VerifyMarker } from "./controls";
+import { ChipToggle, Field, MaxCharsInput, RarityChips, VerifyMarker } from "./controls";
+import { NumberField, RangeFields } from "./numberFields";
 import { Segmented, type SegmentOption } from "./Segmented";
-import { setProp } from "./selectionOps";
+import { setProp, tierOf } from "./selectionOps";
 
 interface ControlsProps {
   pool: RegexPool;
@@ -38,22 +39,18 @@ const CORRUPTED: readonly SegmentOption<CorruptedFilter>[] = [
 
 export const MATCH_OPTIONS = MATCH;
 
+const TIER_BOUNDS = { lo: WAYSTONE_TIER_MIN, hi: WAYSTONE_TIER_MAX };
+
 function TierRange({ selection, onChange }: { selection: WaystoneSelection; onChange: (s: WaystoneSelection) => void }) {
-  const tier = selection.tier;
-  const clamp = (n: number | null, fallback: number) => Math.min(WAYSTONE_TIER_MAX, Math.max(WAYSTONE_TIER_MIN, n ?? fallback));
-  const set = (min: number | null, max: number | null) => {
-    if (min === null && max === null) return onChange({ ...selection, tier: null });
-    const lo = clamp(min, WAYSTONE_TIER_MIN);
-    const hi = Math.max(lo, clamp(max, WAYSTONE_TIER_MAX));
-    onChange({ ...selection, tier: { min: lo, max: hi } });
-  };
   return (
     <Field label="Waystone tier">
-      <span className="flex items-center gap-2 text-sm text-neutral-400">
-        <NumberField label="lowest tier" value={tier?.min ?? null} min={WAYSTONE_TIER_MIN} max={WAYSTONE_TIER_MAX} onChange={(v) => set(v, tier?.max ?? null)} />
-        to
-        <NumberField label="highest tier" value={tier?.max ?? null} min={WAYSTONE_TIER_MIN} max={WAYSTONE_TIER_MAX} onChange={(v) => set(tier?.min ?? null, v)} />
-      </span>
+      <RangeFields
+        label="waystone tier"
+        min={selection.tier?.min ?? null}
+        max={selection.tier?.max ?? null}
+        bounds={TIER_BOUNDS}
+        onCommit={(min, max) => onChange({ ...selection, tier: tierOf(min, max) })}
+      />
     </Field>
   );
 }
@@ -86,7 +83,7 @@ function PropertyMins({ headers, selection, onChange }: { headers: readonly Pool
           <span key={h.id} className="flex items-center gap-2 text-sm text-neutral-300">
             <NumberField label={h.template} value={selection.props[h.id]?.min ?? null} onChange={(v) => onChange(setProp(selection, h.id, v))} />
             <span className="min-w-0 flex-1 truncate" title={h.template}>{h.template.replace(/:? ?[+-]?#%?$/, "")}</span>
-            <VerifyMarker header={h} />
+            <VerifyMarker header={h} align="end" />
           </span>
         ))}
       </div>
@@ -106,7 +103,7 @@ export function PoolControls({ pool, selection, onChange, maxChars, onMaxChars }
       {selection.tab === "waystone" && <TierRange selection={selection} onChange={onChange} />}
       {selection.tab === "tablet" && <TabletTypes pool={pool} selection={selection} onChange={onChange} />}
       <RarityChips value={selection.rarity} onChange={(rarity) => onChange({ ...selection, rarity })} headers={headers} />
-      <Field label="Corrupted" extra={selection.corrupted !== "any" && <VerifyMarker header={corruptedHeader} />}>
+      <Field label="Corrupted" extra={selection.corrupted !== "any" && <VerifyMarker header={corruptedHeader} align="end" />}>
         <Segmented options={CORRUPTED} value={selection.corrupted} onChange={(corrupted) => onChange({ ...selection, corrupted })} label="corrupted items" />
       </Field>
       <PropertyMins headers={headers} selection={selection} onChange={onChange} />

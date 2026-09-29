@@ -3,10 +3,11 @@
 import type { ReactNode } from "react";
 import { VENDOR_HEADERS, type PoolHeader } from "../../../core/tools/regex/pools/headers";
 import { RESISTANCES, type ValueRange, type VendorSelection } from "../../../lib/tools/regexPoolContract";
-import { ChipToggle, Field, MaxCharsInput, NumberField, RarityChips, VerifyMarker } from "./controls";
+import { ChipToggle, Field, MaxCharsInput, RarityChips, VerifyMarker } from "./controls";
+import { NumberField, RangeFields } from "./numberFields";
 import { MATCH_OPTIONS } from "./PoolControls";
 import { Segmented } from "./Segmented";
-import { toRange } from "./selectionOps";
+import { rangeOf, type Bounds } from "./selectionOps";
 
 interface Props {
   classes: readonly string[];
@@ -20,10 +21,12 @@ const header = (id: string) => VENDOR_HEADERS.find((h) => h.id === id);
 // Class names are matched on the clipboard-only "Item Class:" line (buildVendorNamespace), which the tooltip may not print.
 const CLASS_LINE: PoolHeader = { id: "class", template: "Item Class: …", kind: "class", verified: "unverified", note: "the tooltip may not print the item class" };
 
-function MinRow({ label, value, onChange, extra }: { label: string; value: number | null; onChange: (v: number | null) => void; extra?: ReactNode }) {
+const SOCKET_BOUNDS = { lo: 1, hi: 6 };
+
+function MinRow({ label, value, onChange, extra, bounds }: { label: string; value: number | null; onChange: (v: number | null) => void; extra?: ReactNode; bounds?: Bounds }) {
   return (
     <span className="flex items-center gap-2 text-sm text-neutral-300">
-      <NumberField label={label} value={value} onChange={onChange} />
+      <NumberField label={label} value={value} onChange={onChange} bounds={bounds} />
       <span className="min-w-0 flex-1">{label}</span>
       {extra}
     </span>
@@ -33,9 +36,7 @@ function MinRow({ label, value, onChange, extra }: { label: string; value: numbe
 function RangeRow({ label, value, onChange, extra }: { label: string; value: ValueRange | null; onChange: (r: ValueRange | null) => void; extra?: ReactNode }) {
   return (
     <span className="flex items-center gap-2 text-sm text-neutral-300">
-      <NumberField label={`${label} from`} value={value?.min ?? null} onChange={(v) => onChange(toRange(v, value?.max ?? null))} />
-      to
-      <NumberField label={`${label} to`} value={value?.max ?? null} onChange={(v) => onChange(toRange(value?.min ?? null, v))} />
+      <RangeFields label={label} min={value?.min ?? null} max={value?.max ?? null} onCommit={(min, max) => onChange(rangeOf(min, max))} />
       <span className="min-w-0 flex-1">{label}</span>
       {extra}
     </span>
@@ -47,7 +48,7 @@ function Wanted({ selection: s, onChange }: Pick<Props, "selection" | "onChange"
   return (
     <Field label="Worth picking up">
       <div className="flex flex-col gap-1.5">
-        <MinRow label="% quality" value={s.quality} onChange={(quality) => onChange({ ...s, quality })} extra={<VerifyMarker header={header("quality")} />} />
+        <MinRow label="% quality" value={s.quality} onChange={(quality) => onChange({ ...s, quality })} extra={<VerifyMarker header={header("quality")} align="end" />} />
         <MinRow label="% movement speed" value={s.movementSpeed} onChange={(movementSpeed) => onChange({ ...s, movementSpeed })} />
         {RESISTANCES.map((r) => (
           <MinRow key={r} label={`% ${r} resistance`} value={s.resistances[r]} onChange={(v) => onChange({ ...s, resistances: { ...s.resistances, [r]: v } })} />
@@ -56,8 +57,9 @@ function Wanted({ selection: s, onChange }: Pick<Props, "selection" | "onChange"
         <MinRow
           label="sockets"
           value={s.sockets}
-          onChange={(v) => onChange({ ...s, sockets: v === null ? null : Math.min(6, Math.max(1, v)) })}
-          extra={<VerifyMarker header={header("sockets")} />}
+          bounds={SOCKET_BOUNDS}
+          onChange={(sockets) => onChange({ ...s, sockets })}
+          extra={<VerifyMarker header={header("sockets")} align="end" />}
         />
       </div>
     </Field>
@@ -68,7 +70,7 @@ function ClassChips({ classes, selection, onChange }: Pick<Props, "classes" | "s
   const toggle = (c: string) =>
     onChange({ ...selection, classes: selection.classes.includes(c) ? selection.classes.filter((x) => x !== c) : classes.filter((x) => x === c || selection.classes.includes(x)) });
   return (
-    <Field label="Item class" extra={selection.classes.length > 0 && <VerifyMarker header={CLASS_LINE} />}>
+    <Field label="Item class" extra={selection.classes.length > 0 && <VerifyMarker header={CLASS_LINE} align="end" />}>
       <div className="flex flex-wrap gap-1.5">
         {classes.map((c) => (
           <ChipToggle key={c} on={selection.classes.includes(c)} onClick={() => toggle(c)}>
@@ -95,7 +97,7 @@ export function VendorControls({ classes, selection, onChange, maxChars, onMaxCh
         <Field label="Levels">
           <div className="flex flex-col gap-1.5">
             <RangeRow label="item level" value={selection.itemLevel} onChange={(itemLevel) => onChange({ ...selection, itemLevel })} />
-            <RangeRow label="required level" value={selection.requiredLevel} onChange={(requiredLevel) => onChange({ ...selection, requiredLevel })} extra={<VerifyMarker header={header("requiredLevel")} />} />
+            <RangeRow label="required level" value={selection.requiredLevel} onChange={(requiredLevel) => onChange({ ...selection, requiredLevel })} extra={<VerifyMarker header={header("requiredLevel")} align="end" />} />
           </div>
         </Field>
         <ClassChips classes={classes} selection={selection} onChange={onChange} />
