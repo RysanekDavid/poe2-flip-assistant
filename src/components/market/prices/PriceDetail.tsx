@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { fmtDivOrEx } from "../../../lib/format";
+import { fmtDivOrEx, fmtDivOrExRange } from "../../../lib/format";
 import type { MarketPriceItem } from "../../../lib/marketPricesContract";
 import { timestampAgeMs } from "../../../lib/sqliteTime";
 import { PriceChart } from "../../PriceChart";
@@ -25,7 +25,7 @@ export function PriceDetail({ item, exPerDiv }: { item: MarketPriceItem; exPerDi
     <div className="grid gap-3 py-2">
       <div className="grid gap-2 rounded-md border border-line bg-neutral-900/40 px-3 py-2 sm:grid-cols-3 sm:gap-4">
         <Stat label="Exchange band" tip="Currency Exchange low–high over the last hour it traded; — = the exchange has no fresh market for it">
-          {band === null ? <span className="text-neutral-500">—</span> : `${div(band.low, exPerDiv)} – ${div(band.high, exPerDiv)}`}
+          {band === null ? <span className="text-neutral-500">—</span> : fmtDivOrExRange(band.low, band.high, exPerDiv ?? 0)}
         </Stat>
         <Stat label="poe.ninja value" tip="poe.ninja exchange value of one item">
           {item.valueDiv === null ? <span className="text-neutral-500">unpriced</span> : div(item.valueDiv, exPerDiv)}

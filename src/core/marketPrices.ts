@@ -1,7 +1,7 @@
 import type { CxMarketView } from "./cx/cxItemMarkets";
 import type { ResolvedRates } from "./rates";
-import type { LatestPriceRow } from "../db/marketPricesQueries";
-import { ECONOMY_CATEGORIES, economyCategory } from "../lib/economyCategories";
+import type { LatestPriceRow } from "../db/latestSnapshotQueries";
+import { ECONOMY_CATEGORIES, economyCategory, OTHER_CATEGORY } from "../lib/economyCategories";
 import type { MarketPriceCategory, MarketPriceItem, MarketPricesResponse } from "../lib/marketPricesContract";
 
 /**
@@ -32,14 +32,24 @@ function volumeOf(row: LatestPriceRow, cxUnits: number | null): Pick<MarketPrice
   return { volumePerHour: volume / value, volumeSource: "ninja" };
 }
 
+const warnedTypes = new Set<string>();
+
+/** A stored type with no label goes under Other, warned once per type per process (not per poll). */
+function railType(type: string): string {
+  if (economyCategory(type) !== null) return type;
+  if (!warnedTypes.has(type)) {
+    warnedTypes.add(type);
+    console.warn(`[market/prices] poe.ninja type "${type}" has no label in ECONOMY_CATEGORIES — listed under Other`);
+  }
+  return OTHER_CATEGORY.type;
+}
+
 function toItem(row: LatestPriceRow, cx: CxMarketView | null): MarketPriceItem {
-  // Throws on a type nobody labelled: the rail must never grow an unnamed bucket.
-  economyCategory(row.category);
   const stats = cx?.byItemId.get(row.itemId) ?? null;
   return {
     itemId: row.itemId,
     name: row.itemName,
-    category: row.category,
+    category: railType(row.category),
     icon: row.icon,
     valueDiv: positiveOrNull(row.baseValue),
     valueAt: row.fetchedAt,
@@ -52,9 +62,12 @@ function toItem(row: LatestPriceRow, cx: CxMarketView | null): MarketPriceItem {
   };
 }
 
-/** Every labelled category, with a count and art: the curated item's icon, else the priciest item's. */
+/**
+ * Every labelled category (empty ones too, so the rail never reshuffles), plus Other only while it
+ * holds something; each with a count and art: the curated item's icon, else the priciest item's.
+ */
 function categoriesOf(items: readonly MarketPriceItem[]): MarketPriceCategory[] {
-  return ECONOMY_CATEGORIES.map((c) => {
+  const listed = [...ECONOMY_CATEGORIES, OTHER_CATEGORY].map((c) => {
     const own = items.filter((i) => i.category === c.type);
     const curated = own.find((i) => i.itemId === c.iconItemId && i.icon !== null);
     const priciest = own
@@ -62,6 +75,7 @@ function categoriesOf(items: readonly MarketPriceItem[]): MarketPriceCategory[] 
       .reduce<MarketPriceItem | null>((best, i) => (best === null || (i.valueDiv ?? 0) > (best.valueDiv ?? 0) ? i : best), null);
     return { type: c.type, slug: c.slug, label: c.label, icon: (curated ?? priciest)?.icon ?? null, count: own.length };
   });
+  return listed.filter((c) => c.type !== OTHER_CATEGORY.type || c.count > 0);
 }
 
 /** SQLite UTC text sorts chronologically as a string. */

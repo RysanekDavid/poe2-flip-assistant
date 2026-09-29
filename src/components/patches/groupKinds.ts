@@ -18,7 +18,7 @@ export interface GroupKindStyle {
 // take the other existing tokens, dimmed, and the icons do the identifying.
 const STYLE: Record<SummaryKind, Omit<GroupKindStyle, "label">> = {
   economy: { icon: { kind: "art", src: CURRENCY_ART.div }, border: "border-l-good/60" },
-  crafting: { icon: { kind: "art", src: CURRENCY_ART.ex }, border: "border-l-warn/50" },
+  crafting: { icon: { kind: "art", src: CURRENCY_ART.ex }, border: "border-l-subtle" },
   loot: { icon: { kind: "art", src: artWaystone.src }, border: "border-l-info/50" },
   balance: { icon: { kind: "glyph", Icon: Scale }, border: "border-l-bad/50" },
   bugfix: { icon: { kind: "glyph", Icon: Bug }, border: "border-l-subtle" },

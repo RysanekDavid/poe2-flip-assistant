@@ -1,5 +1,5 @@
 import { deriveRates, type ExchangeRates } from "./priceEngine";
-import { latestPriceRows } from "../db/marketPricesQueries";
+import { latestPriceRows, type LatestPriceRow } from "../db/latestSnapshotQueries";
 import { latestRates, type CurrencyRateRow, type RateSource } from "../db/ratesQueries";
 // Zone-less SQLite stamps read as local time would be an hours-wide freshness bug in exactly the
 // check that decides whether a rate is still usable; the shared parser pins them to UTC.
@@ -80,7 +80,13 @@ function fromStoredSource(
  * did `deriveRates(latestSnapshots())` use this instead and surface `source`/`fetchedAt` so the
  * UI can say where a number came from and how old it is.
  */
-export function resolveRates(league: string, nowMs: number = Date.now()): ResolvedRates | null {
+export function resolveRates(
+  league: string,
+  nowMs: number = Date.now(),
+  // A caller that already holds this league's latest rows (the Prices route) passes them so the
+  // stale-digest fallback doesn't read the same rows a second time.
+  preRead?: readonly LatestPriceRow[],
+): ResolvedRates | null {
   const stored = latestRates(league);
 
   const cx = fromStoredSource(stored, "cx", CX_MAX_AGE_MS, nowMs);
@@ -89,7 +95,7 @@ export function resolveRates(league: string, nowMs: number = Date.now()): Resolv
   // The loose-scan read (two index seeks per item) instead of latestSnapshots + latestFetchedAt,
   // which each walked the league's whole 30-day history (~220 ms together at 400k rows) exactly
   // when the digest is stale. The newest per-item row time IS the league's newest snapshot time.
-  const latest = latestPriceRows(league);
+  const latest = preRead ?? latestPriceRows(league);
   const ninja = deriveRates(latest);
   const ninjaAt = ninja != null ? latest.reduce<string | null>((max, r) => (max === null || r.fetchedAt > max ? r.fetchedAt : max), null) : null;
   if (ninja != null && ninjaAt != null && timestampAgeMs(ninjaAt, nowMs) <= NINJA_MAX_AGE_MS) {

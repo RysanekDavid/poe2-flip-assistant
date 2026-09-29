@@ -1,4 +1,6 @@
+import { timestampAgeMs } from "../lib/sqliteTime";
 import { getDb } from "./database";
+import { latestPriceRows, latestPriceRowsFor } from "./latestSnapshotQueries";
 
 /**
  * Craft-margin persistence — kept out of queries.ts, which is already over the file-size cap.
@@ -140,16 +142,11 @@ export interface MaterialPrice {
  * priced in small currencies that the scout-rate path (div/ex/chaos) can't.
  */
 export function getCurrencyDivMap(league: string): Map<string, number> {
-  const rows = getDb()
-    .prepare(
-      `SELECT s.item_id AS id, s.chaos_equiv AS div
-       FROM price_snapshots s
-       JOIN (SELECT item_id, MAX(id) AS mx FROM price_snapshots
-             WHERE league = ? AND category = 'Currency' GROUP BY item_id) m
-         ON m.item_id = s.item_id AND m.mx = s.id`,
-    )
-    .all(league) as Array<{ id: string; div: number }>;
-  return new Map(rows.map((r) => [r.id, r.div]));
+  return new Map(
+    latestPriceRows(league)
+      .filter((r) => r.category === "Currency")
+      .map((r) => [r.itemId, r.baseValue]),
+  );
 }
 
 /**
@@ -158,41 +155,21 @@ export function getCurrencyDivMap(league: string): Map<string, number> {
  * from the map (the caller decides whether that's "missing-materials" or falls back to a manual price).
  */
 export function getMaterialPrices(league: string, ids: readonly string[]): Map<string, MaterialPrice> {
-  const out = new Map<string, MaterialPrice>();
-  if (ids.length === 0) return out;
-  const placeholders = ids.map(() => "?").join(",");
-  const rows = getDb()
-    .prepare(
-      `SELECT s.item_id AS itemId, s.item_name AS itemName, s.chaos_equiv AS priceDiv, s.icon AS icon,
-              (julianday('now') - julianday(s.fetched_at)) * 1440 AS ageMin,
-              sp.change_7d AS change7d, sp.spark_7d AS spark7dJson
-       FROM price_snapshots s
-       JOIN (SELECT item_id, MAX(id) AS mx FROM price_snapshots
-             WHERE league = ? AND item_id IN (${placeholders}) GROUP BY item_id) m
-         ON m.item_id = s.item_id AND m.mx = s.id
-       LEFT JOIN item_spark sp ON sp.item_id = s.item_id AND sp.league = s.league`,
-    )
-    .all(league, ...ids) as Array<{
-    itemId: string;
-    itemName: string;
-    priceDiv: number;
-    icon: string | null;
-    ageMin: number | null;
-    change7d: number | null;
-    spark7dJson: string | null;
-  }>;
-  for (const r of rows) {
-    out.set(r.itemId, {
-      itemId: r.itemId,
-      itemName: r.itemName,
-      priceDiv: r.priceDiv,
-      icon: r.icon,
-      change7d: r.change7d,
-      spark7d: r.spark7dJson ? (JSON.parse(r.spark7dJson) as number[]) : null,
-      ageMin: r.ageMin != null ? Math.round(r.ageMin) : null,
-    });
-  }
-  return out;
+  const nowMs = Date.now();
+  return new Map(
+    latestPriceRowsFor(league, ids).map((r) => [
+      r.itemId,
+      {
+        itemId: r.itemId,
+        itemName: r.itemName,
+        priceDiv: r.baseValue,
+        icon: r.icon,
+        change7d: r.change7d,
+        spark7d: r.spark7d,
+        ageMin: Math.round(timestampAgeMs(r.fetchedAt, nowMs) / 60_000),
+      },
+    ]),
+  );
 }
 
 // ---------------------------------------------------------------------------

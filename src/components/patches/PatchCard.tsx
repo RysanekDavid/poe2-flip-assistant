@@ -30,7 +30,7 @@ function publishedLabel(patch: PatchListItem): string {
 }
 
 /** The summary's own flag wins; otherwise a lettered version (0.5.5d) is a hotfix. */
-export function patchKindLabel(patch: PatchListItem): "Hotfix" | "Patch" {
+function patchKindLabel(patch: PatchListItem): "Hotfix" | "Patch" {
   const flagged = patch.summary?.data?.hotfix;
   if (flagged !== undefined) return flagged ? "Hotfix" : "Patch";
   return /^\d+\.\d+\.\d+[a-z]$/i.test(patch.versionText.trim()) ? "Hotfix" : "Patch";

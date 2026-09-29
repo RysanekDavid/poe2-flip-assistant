@@ -90,7 +90,7 @@ function TrendCell({ item }: { item: MarketPriceItem }) {
   return (
     <span className="inline-flex items-center justify-end gap-2" title={tip}>
       {item.spark7d && <Sparkline data={item.spark7d} width={72} height={20} className="max-sm:hidden" />}
-      <span className={`w-12 text-right text-sm tabular-nums ${changeTone(item.change7d)}`}>{item.change7d === null ? "—" : fmtChange(item.change7d)}</span>
+      <span className={`min-w-12 whitespace-nowrap text-right text-sm tabular-nums ${changeTone(item.change7d)}`}>{item.change7d === null ? "—" : fmtChange(item.change7d)}</span>
     </span>
   );
 }

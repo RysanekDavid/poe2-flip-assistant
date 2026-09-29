@@ -10,7 +10,9 @@ interface CategoryRailProps {
   /** Category type on screen; ignored while a search is active. */
   active: string;
   query: string;
-  /** Matches across every category, shown as the "All" pseudo-row while searching. */
+  /** Rows per category type under the active chips (Movers/Liquid), matching what a click shows. */
+  counts: ReadonlyMap<string, number>;
+  /** Matches across every category under the same chips, shown as the "All" row while searching. */
   matches: number;
   onSelect: (category: MarketPriceCategory) => void;
   onQuery: (query: string) => void;
@@ -60,7 +62,7 @@ function SearchBox({ query, onQuery }: Pick<CategoryRailProps, "query" | "onQuer
  * poe.ninja's left rail in our tokens: category art, label, count, a 2px amber bar on the active
  * row (the sub-tab underline's language). Below lg it becomes a horizontal strip over the table.
  */
-export function CategoryRail({ categories, active, query, matches, onSelect, onQuery }: CategoryRailProps) {
+export function CategoryRail({ categories, active, query, counts, matches, onSelect, onQuery }: CategoryRailProps) {
   const searching = query.trim() !== "";
   return (
     <nav aria-label="Item categories" className="grid min-w-0 content-start gap-2 lg:sticky lg:top-[calc(var(--shell-h,0px)+1rem)]">
@@ -83,7 +85,7 @@ export function CategoryRail({ categories, active, query, matches, onSelect, onQ
               <button type="button" onClick={() => onSelect(c)} aria-current={current ? "true" : undefined} className={`${ROW} ${current ? ROW_ACTIVE : ROW_IDLE}`}>
                 <ItemArt src={c.icon} size={6} />
                 <span className="flex-1 whitespace-nowrap">{c.label}</span>
-                <span className="text-xs tabular-nums text-neutral-500">{c.count}</span>
+                <span className="text-xs tabular-nums text-neutral-500">{counts.get(c.type) ?? 0}</span>
               </button>
             </li>
           );

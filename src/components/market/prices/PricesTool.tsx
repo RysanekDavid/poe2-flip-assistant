@@ -14,7 +14,7 @@ import { StaleBadge } from "../../ui/StaleBadge";
 import { CategoryRail } from "./CategoryRail";
 import { PriceDetail } from "./PriceDetail";
 import { PRICES_DETAIL_PREFIX, pricesColumns } from "./pricesColumns";
-import { DEFAULT_PRICE_SORT, LIQUID_PER_HOUR, MOVER_PCT, nextSort, PRICE_SORT_KEYS, visibleItems, type PriceSort, type PriceSortKey } from "./pricesView";
+import { DEFAULT_PRICE_SORT, LIQUID_PER_HOUR, MOVER_PCT, nextSort, PRICE_SORT_KEYS, railCounts, visibleItems, type PriceSort, type PriceSortKey } from "./pricesView";
 import { useMarketPrices, useWatched } from "./usePrices";
 
 const LEGEND =
@@ -134,14 +134,14 @@ function Body({ data }: { data: MarketPricesResponse }) {
     () => visibleItems(data.items, { category: category?.type ?? "", query, movers, liquid }, sort),
     [data.items, category, query, movers, liquid, sort],
   );
-  const matches = useMemo(() => (query.trim() === "" ? 0 : visibleItems(data.items, { category: "", query, movers: false, liquid: false }, sort).length), [data.items, query, sort]);
+  const counts = useMemo(() => railCounts(data.items, { query, movers, liquid }), [data.items, query, movers, liquid]);
   const onSort = (key: string): void => {
     if (!isSortKey(key)) throw new Error(`prices: column ${key} is not sortable`);
     setSort((s) => nextSort(s, key));
   };
   return (
     <div className="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)]">
-      <CategoryRail categories={data.categories} active={category?.type ?? ""} query={query} matches={matches} onSelect={(c) => selectCategory(c.slug)} onQuery={search} />
+      <CategoryRail categories={data.categories} active={category?.type ?? ""} query={query} counts={counts.byCategory} matches={counts.matches} onSelect={(c) => selectCategory(c.slug)} onQuery={search} />
       <div className="grid min-w-0 content-start gap-3">
         <div role="group" aria-label="Filters" className="flex flex-wrap items-center gap-1.5">
           <Chip on={movers} onClick={() => setMovers((v) => !v)} title={`7-day change of at least ±${MOVER_PCT}%`}>

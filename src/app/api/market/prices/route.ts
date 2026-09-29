@@ -4,7 +4,7 @@ import { loadCxMarketView } from "../../../../core/cx/cxItemMarkets";
 import { leagueForUser } from "../../../../core/leagueUsers";
 import { buildMarketPrices } from "../../../../core/marketPrices";
 import { resolveRates } from "../../../../core/rates";
-import { latestPriceRows } from "../../../../db/marketPricesQueries";
+import { latestPriceRows } from "../../../../db/latestSnapshotQueries";
 import { marketPricesResponseSchema } from "../../../../lib/marketPricesContract";
 
 export const runtime = "nodejs";
@@ -20,6 +20,6 @@ export async function GET(): Promise<Response> {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const league = leagueForUser(user.id);
   const rows = latestPriceRows(league);
-  const body = buildMarketPrices({ league, rows, cx: loadCxMarketView(league, rows), rates: resolveRates(league) });
+  const body = buildMarketPrices({ league, rows, cx: loadCxMarketView(league, rows), rates: resolveRates(league, Date.now(), rows) });
   return NextResponse.json(marketPricesResponseSchema.parse(body));
 }

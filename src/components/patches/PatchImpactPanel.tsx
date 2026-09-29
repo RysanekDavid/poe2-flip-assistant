@@ -68,6 +68,9 @@ function SourceChips({ sources }: { sources: readonly PatchTextSource[] }) {
   );
 }
 
+/** Moves inside ±1% are noise (poe.ninja rounding, one quiet hour): neither "up" nor "down". */
+const FLAT_PCT = 1;
+
 function fmtPct(pct: number): string {
   const sign = pct > 0 ? "+" : "";
   return `${sign}${pct.toLocaleString("en", { maximumFractionDigits: Math.abs(pct) >= 10 ? 0 : 1 })}%`;
@@ -78,7 +81,7 @@ function PctCell({ pct, due, note }: { pct: number | null; due: boolean; note?: 
     const why = due ? "No snapshot within ±3h of this horizon (or none before the patch)" : "This horizon has not been reached yet";
     return <span title={why} className="text-neutral-500">{due ? "—" : "…"}</span>;
   }
-  const tone = pct > 0.05 ? "text-emerald-400" : pct < -0.05 ? "text-red-300" : "text-neutral-300";
+  const tone = pct > FLAT_PCT ? "text-emerald-400" : pct < -FLAT_PCT ? "text-red-300" : "text-neutral-300";
   return <span className={`tabular-nums ${tone}`} title={note}>{fmtPct(pct)}</span>;
 }
 
@@ -92,8 +95,8 @@ function ImpactSummary({ state }: { state: ImpactState }) {
   if (items.length === 0) {
     return <span className="text-neutral-500">{categories.length > 0 ? `${categories.length} item ${categories.length === 1 ? "family" : "families"}` : "no tracked item named"}</span>;
   }
-  const up = items.filter((i) => (latestPct(i) ?? 0) > 0.05).length;
-  const down = items.filter((i) => (latestPct(i) ?? 0) < -0.05).length;
+  const up = items.filter((i) => (latestPct(i) ?? 0) > FLAT_PCT).length;
+  const down = items.filter((i) => (latestPct(i) ?? 0) < -FLAT_PCT).length;
   const art = items.filter((i) => i.icon !== null).slice(0, 5);
   return (
     <span className="inline-flex items-center gap-2">

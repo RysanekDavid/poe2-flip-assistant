@@ -3,6 +3,8 @@
  * URL slug and the item whose art stands for the category. Client-safe (no node imports): the
  * route builds the rail from it and the Prices tool parses `?cat=` against it.
  *
+ * Labels for types the poller no longer fetches stay here: their rows live out the 30-day retention.
+ *
  * Order follows poe.ninja's own economy rail, so a player moving between the two finds things in
  * the same place. ninja's taxonomy differs from the in-game labels (Breach = catalysts, Ritual =
  * omens, Abyss = abyssal bones, Delirium = liquid emotions).
@@ -13,8 +15,8 @@ export interface EconomyCategory {
   /** URL value of ?cat=. */
   slug: string;
   label: string;
-  /** ninja item id whose icon represents the category; the priciest item stands in when absent. */
-  iconItemId: string;
+  /** ninja item id whose icon represents the category; null (or absent from the data) → the priciest item's icon. */
+  iconItemId: string | null;
 }
 
 export const ECONOMY_CATEGORIES: readonly EconomyCategory[] = [
@@ -35,14 +37,18 @@ export const ECONOMY_CATEGORIES: readonly EconomyCategory[] = [
 
 export const DEFAULT_CATEGORY_SLUG = "currency";
 
-/** A stored category with no entry here is a new poller type nobody labelled — fail loudly. */
-export function economyCategory(type: string): EconomyCategory {
-  const found = ECONOMY_CATEGORIES.find((c) => c.type === type);
-  if (!found) throw new Error(`economyCategories: poe.ninja type "${type}" has no label — add it to ECONOMY_CATEGORIES`);
-  return found;
+/**
+ * Where a stored type nobody labelled lands: a new poller type, or a retired one whose label was
+ * dropped. One unnamed type must not take the whole overview down; the builder warns instead.
+ */
+export const OTHER_CATEGORY: EconomyCategory = { type: "Other", slug: "other", label: "Other", iconItemId: null };
+
+/** The label of a stored type, or null when nobody labelled it (the caller files it under Other). */
+export function economyCategory(type: string): EconomyCategory | null {
+  return ECONOMY_CATEGORIES.find((c) => c.type === type) ?? null;
 }
 
 /** `?cat=` → a category, or null when the slug is unknown (the caller warns and rewrites the URL). */
 export function categoryBySlug(slug: string): EconomyCategory | null {
-  return ECONOMY_CATEGORIES.find((c) => c.slug === slug) ?? null;
+  return [...ECONOMY_CATEGORIES, OTHER_CATEGORY].find((c) => c.slug === slug) ?? null;
 }

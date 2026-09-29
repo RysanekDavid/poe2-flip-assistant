@@ -11,7 +11,7 @@ export interface ExchangeRates {
 }
 
 /** Derive Exalt/Chaos-per-Divine from the priced item set (exalted/chaos lines). */
-export function deriveRates(items: Array<Pick<PricedItem, "itemId" | "baseValue">>): ExchangeRates | null {
+export function deriveRates(items: readonly Pick<PricedItem, "itemId" | "baseValue">[]): ExchangeRates | null {
   const ex = items.find((i) => i.itemId === "exalted")?.baseValue;
   const ch = items.find((i) => i.itemId === "chaos")?.baseValue;
   if (!ex || !ch || ex <= 0 || ch <= 0) return null;

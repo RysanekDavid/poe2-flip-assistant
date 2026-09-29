@@ -2,6 +2,7 @@ import { getDb } from "./database";
 import { config } from "../config/env";
 import type { PricedItem } from "../api/types";
 import { timestampAgeMs } from "../lib/sqliteTime";
+import { latestPriceRows, latestPriceRowsFor } from "./latestSnapshotQueries";
 
 /**
  * Market-table persistence — extracted from queries.ts (already over the file-size cap) when
@@ -18,16 +19,10 @@ import { timestampAgeMs } from "../lib/sqliteTime";
 
 /** Latest stored value + age per item, for the insert dedupe below. */
 function lastSnapshotPerItem(league: string): Map<string, { baseValue: number; ageMin: number }> {
-  const rows = getDb()
-    .prepare(
-      `SELECT s.item_id AS id, s.chaos_equiv AS baseValue,
-              (julianday('now') - julianday(s.fetched_at)) * 1440 AS ageMin
-       FROM price_snapshots s
-       JOIN (SELECT item_id, MAX(id) mx FROM price_snapshots WHERE league = ? GROUP BY item_id) m
-         ON m.item_id = s.item_id AND m.mx = s.id`,
-    )
-    .all(league) as Array<{ id: string; baseValue: number; ageMin: number }>;
-  return new Map(rows.map((r) => [r.id, { baseValue: r.baseValue, ageMin: r.ageMin }]));
+  const nowMs = Date.now();
+  return new Map(
+    latestPriceRows(league).map((r) => [r.itemId, { baseValue: r.baseValue, ageMin: timestampAgeMs(r.fetchedAt, nowMs) / 60_000 }]),
+  );
 }
 
 /** Bulk-insert a fetch's worth of snapshots for one league, skipping no-op repeats.
@@ -113,21 +108,17 @@ export function searchItems(
 
 /** Latest snapshot per item in one league (for current-price views). */
 export function latestSnapshots(league: string): PricedItem[] {
-  const rows = getDb()
-    .prepare(
-      `SELECT s.item_id AS itemId, s.item_name AS itemName, s.category,
-              s.chaos_equiv AS baseValue, s.volume, s.icon,
-              sp.change_7d AS change7d, sp.spark_7d AS spark7dJson
-       FROM price_snapshots s
-       JOIN (
-         SELECT item_id, MAX(id) AS mx FROM price_snapshots WHERE league = ? GROUP BY item_id
-       ) m ON m.item_id = s.item_id AND m.mx = s.id
-       LEFT JOIN item_spark sp ON sp.item_id = s.item_id AND sp.league = s.league`,
-    )
-    .all(league) as Array<Omit<PricedItem, "spark7d"> & { spark7dJson: string | null }>;
-  return rows.map(({ spark7dJson, ...r }) => ({
-    ...r,
-    spark7d: spark7dJson ? (JSON.parse(spark7dJson) as number[]) : null,
+  // PricedItem.volume is a number; the poller stores a missing ninja volume as 0, so a NULL column
+  // (never written today) reads the same way instead of leaking NaN into volume math.
+  return latestPriceRows(league).map((r) => ({
+    itemId: r.itemId,
+    itemName: r.itemName,
+    category: r.category,
+    baseValue: r.baseValue,
+    volume: r.volume ?? 0,
+    change7d: r.change7d,
+    spark7d: r.spark7d,
+    icon: r.icon,
   }));
 }
 
@@ -135,15 +126,7 @@ export function latestSnapshots(league: string): PricedItem[] {
  *  last WRITE, and the insert dedupe skips flat repeats, so a quiet item can read up to ~55 min
  *  older than the last poll — callers show it as an age, never as "live". */
 export function latestSnapshotPrices(league: string): Array<{ itemId: string; baseValue: number; fetchedAt: string }> {
-  return getDb()
-    .prepare(
-      `SELECT s.item_id AS itemId, s.chaos_equiv AS baseValue, s.fetched_at AS fetchedAt
-       FROM price_snapshots s
-       JOIN (
-         SELECT item_id, MAX(id) AS mx FROM price_snapshots WHERE league = ? GROUP BY item_id
-       ) m ON m.item_id = s.item_id AND m.mx = s.id`,
-    )
-    .all(league) as Array<{ itemId: string; baseValue: number; fetchedAt: string }>;
+  return latestPriceRows(league).map((r) => ({ itemId: r.itemId, baseValue: r.baseValue, fetchedAt: r.fetchedAt }));
 }
 
 /** Price history for one item in one league, oldest→newest, limited. */
@@ -175,12 +158,7 @@ export function itemSpark(
        WHERE league = ? AND item_id = ?`,
     )
     .get(league, itemId) as { spark7dJson: string | null; change7d: number | null } | undefined;
-  const base = db
-    .prepare(
-      `SELECT chaos_equiv AS baseValue FROM price_snapshots
-       WHERE league = ? AND item_id = ? ORDER BY id DESC LIMIT 1`,
-    )
-    .get(league, itemId) as { baseValue: number } | undefined;
+  const base = latestPriceRowsFor(league, [itemId], db)[0];
   return {
     spark7d: sp?.spark7dJson ? (JSON.parse(sp.spark7dJson) as number[]) : null,
     change7d: sp?.change7d ?? null,

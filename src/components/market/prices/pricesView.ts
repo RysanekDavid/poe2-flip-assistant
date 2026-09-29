@@ -48,13 +48,34 @@ export function matchesQuery(item: MarketPriceItem, query: string): boolean {
   return q === "" || item.name.toLowerCase().includes(q);
 }
 
+type ChipFilter = Pick<PriceFilter, "movers" | "liquid">;
+
+function passesChips(i: MarketPriceItem, chips: ChipFilter): boolean {
+  if (chips.movers && (i.change7d === null || Math.abs(i.change7d) < MOVER_PCT)) return false;
+  return !chips.liquid || (i.volumePerHour !== null && i.volumePerHour >= LIQUID_PER_HOUR);
+}
+
 export function visibleItems(items: readonly MarketPriceItem[], filter: PriceFilter, sort: PriceSort): MarketPriceItem[] {
   const searching = filter.query.trim() !== "";
   return items
     .filter((i) => (searching ? matchesQuery(i, filter.query) : i.category === filter.category))
-    .filter((i) => !filter.movers || (i.change7d !== null && Math.abs(i.change7d) >= MOVER_PCT))
-    .filter((i) => !filter.liquid || (i.volumePerHour !== null && i.volumePerHour >= LIQUID_PER_HOUR))
+    .filter((i) => passesChips(i, filter))
     .sort((a, b) => comparePrices(a, b, sort));
+}
+
+/**
+ * What the rail shows under the active chips, so a count always equals the rows a click reveals:
+ * per category (a click clears the search) and the "All" search row (query + chips).
+ */
+export function railCounts(items: readonly MarketPriceItem[], filter: Omit<PriceFilter, "category">): { byCategory: Map<string, number>; matches: number } {
+  const byCategory = new Map<string, number>();
+  let matches = 0;
+  for (const i of items) {
+    if (!passesChips(i, filter)) continue;
+    byCategory.set(i.category, (byCategory.get(i.category) ?? 0) + 1);
+    if (filter.query.trim() !== "" && matchesQuery(i, filter.query)) matches += 1;
+  }
+  return { byCategory, matches };
 }
 
 /** Clicking the active column flips it; a new column starts where its data is most useful. */
