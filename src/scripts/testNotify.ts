@@ -8,7 +8,9 @@ import { fireAlert } from "../core/alertEngine";
 import { browserPrefs, getPrefs, readWebhook, setPref, setWebhook, tickerMutedTypes, setDigestEnabled, getDigestEnabled } from "../db/notifyQueries";
 import { maskWebhook, redactWebhook, WebhookUrlSchema } from "../core/notify/webhookUrl";
 import { alertBatchMessage, messageChars, type NotifyAlert } from "../core/notify/discordMessage";
-import { defaultPrefs, NOTIFY_TYPES } from "../core/notify/prefs";
+import { defaultPrefs, NOTIFY_TYPES, resolvePrefs } from "../core/notify/prefs";
+import type { NotifySettings } from "../lib/notifySettings";
+import { deliverySummary } from "../lib/notifySummary";
 import { ensureNotifySchema } from "../db/notifyMigrations";
 import { sampleSnipeCard } from "./snipeCardFixture";
 
@@ -40,6 +42,7 @@ testPrefDefaults();
 testEnqueue();
 testMessageLimits();
 testCardEmbed();
+testDeliverySummary();
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
 process.exit(fail === 0 ? 0 : 1);
@@ -192,4 +195,26 @@ function testCardEmbed(): void {
   ok("title carries the base type", embed?.title === "SNIPE · Doom Grip (Vaal Gauntlets)", embed?.title);
   const broken = alertBatchMessage([{ ...a, details: "{\"v\":2}" }]).embeds[0];
   ok("unreadable card → plain text embed, no thumbnail", broken?.thumbnail === undefined && broken?.fields[0]?.name === "Value");
+}
+
+/** The one-line delivery status the Alerts disclosure and the Settings card both render. */
+function testDeliverySummary(): void {
+  const prefs = resolvePrefs([]);
+  const base: NotifySettings = {
+    webhook: { state: "none", masked: null },
+    prefs,
+    digest: true,
+    board: { enabled: false, posted: false, updatedAt: null, intervalMin: 60 },
+    status: { pending: 0, lastSentAt: null, failed7d: 0, lastError: null, lastErrorAt: null },
+  };
+  const fresh = deliverySummary("default", base);
+  ok("nothing set up → not configured, no digest claimed without a webhook", !fresh.configured && fresh.text === "Popups not enabled · Discord off", fresh.text);
+  const discordTypes = prefs.filter((p) => p.discord).length;
+  const unit = discordTypes === 1 ? "type" : "types";
+  const hooked = deliverySummary("denied", { ...base, webhook: { state: "set", masked: "discord.com/…" } });
+  ok("webhook set → configured, Discord types counted, digest shown", hooked.configured && hooked.text === `Popups blocked by the browser · Discord on for ${discordTypes} ${unit} · digest daily`, hooked.text);
+  const popups = deliverySummary("granted", { ...base, prefs: prefs.map((p) => ({ ...p, popup: p.type === "SNIPE" })) });
+  ok("popups granted → configured, one routed type", popups.configured && popups.text.startsWith("Popups on for 1 type ·"), popups.text);
+  const lost = deliverySummary("unsupported", { ...base, webhook: { state: "unreadable", masked: null } });
+  ok("an unreadable webhook is called out, not reported as off", !lost.configured && lost.text.includes("unreadable"), lost.text);
 }

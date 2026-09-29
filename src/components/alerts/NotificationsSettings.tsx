@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Check, Loader2, MessageSquare, RefreshCw, Send, SlidersHorizontal, Trash2, TriangleAlert } from "lucide-react";
-import { fetchNotifySettings, postNotifySettings, type NotifySettings } from "../../lib/notifySettings";
+import type { NotifySettings } from "../../lib/notifySettings";
 import { Button } from "../ui/Button";
 import { NotifyPrefsTable } from "./NotifyPrefsTable";
-import { announceAlertsChanged } from "./AlertsContext";
+import type { NotifySettingsApi, Run } from "./useNotifySettings";
 
 const INPUT = "rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 font-mono text-neutral-200 outline-none focus:border-sky-500";
 const BTN = "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm disabled:opacity-40";
@@ -32,9 +32,6 @@ function DeliveryStatus({ view }: { view: NotifySettings }) {
     </div>
   );
 }
-
-/** `done` is the success note — fixed, or derived from the fresh view (e.g. whether a refresh was queued). */
-type Run = (body: unknown, done?: string | ((view: NotifySettings) => string)) => Promise<boolean>;
 
 function WebhookForm({ view, busy, run }: { view: NotifySettings; busy: boolean; run: Run }) {
   const [url, setUrl] = useState("");
@@ -134,48 +131,14 @@ function LiveBoardControls({ view, busy, run }: { view: NotifySettings; busy: bo
   );
 }
 
-/** Load the settings view once; `run` posts one action and swaps in the fresh view. */
-function useNotifySettings() {
-  const [view, setView] = useState<NotifySettings | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-
-  const load = useCallback(() => {
-    fetchNotifySettings()
-      .then(setView)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
-  useEffect(load, [load]);
-
-  const run = useCallback<Run>((body, done) => {
-    setBusy(true);
-    setError(null);
-    setInfo(null);
-    return postNotifySettings(body)
-      .then((v) => {
-        setView(v);
-        if (done) setInfo(typeof done === "string" ? done : done(v));
-        announceAlertsChanged(); // the feed reads ticker/sound/popup routing from the same table
-        return true;
-      })
-      .catch((e: unknown) => {
-        setError(e instanceof Error ? e.message : String(e));
-        return false;
-      })
-      .finally(() => setBusy(false));
-  }, []);
-  return { view, busy, error, info, run };
-}
-
 /**
  * Alerts tab → routing + Discord. The per-type matrix decides ticker / sound / desktop popup /
  * Discord; Discord is the channel that reaches a player whose game is fullscreen (browser popups
  * don't). The webhook is stored encrypted and only ever shown masked; alerts are batched (≤1
  * message per 30 s, up to 10 alerts each). `popupBlocked` dims the popup column with its reason.
  */
-export function NotificationsSettings({ popupBlocked }: { popupBlocked: string | null }) {
-  const { view, busy, error, info, run } = useNotifySettings();
+export function NotificationsSettings({ popupBlocked, settings }: { popupBlocked: string | null; settings: NotifySettingsApi }) {
+  const { view, busy, error, info, run } = settings;
   return (
     <section className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
       <header className="mb-3 flex flex-wrap items-center gap-2.5">
