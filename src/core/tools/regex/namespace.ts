@@ -124,7 +124,8 @@ function candidateEntries(input: NamespaceInput): NameEntry[] {
   return out;
 }
 
-function indexTrigrams(entries: readonly NameEntry[]): Map<string, number[]> {
+/** trigram → indices of the entries whose haystack contains it (each index once per trigram). */
+export function indexTrigrams(entries: readonly NameEntry[]): Map<string, number[]> {
   const index = new Map<string, number[]>();
   entries.forEach((entry, i) => {
     const seen = new Set<string>();

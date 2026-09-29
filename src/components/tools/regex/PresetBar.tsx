@@ -8,7 +8,7 @@ import {
   PresetSavedSchema,
   requestRegexApi,
   type Preset,
-  type PresetParams,
+  type PricePresetParams,
 } from "../../../lib/tools/regexContract";
 
 const PRESETS_URL = "/api/tools/regex/presets";
@@ -29,7 +29,7 @@ function usePresets() {
       .catch((e: unknown) => setError(`loading presets failed: ${describe(e)}`));
   }, []);
   useEffect(reload, [reload]);
-  const save = (name: string, params: PresetParams): Promise<boolean> =>
+  const save = (name: string, params: PricePresetParams): Promise<boolean> =>
     requestRegexApi(PRESETS_URL, { method: "POST", body: { name, params } }, PresetSavedSchema)
       .then(() => {
         reload();
@@ -46,8 +46,8 @@ function usePresets() {
   return { presets, error, save, remove };
 }
 
-function PresetChip({ preset, onLoad, onDelete }: { preset: Preset; onLoad: (p: PresetParams) => void; onDelete: () => void }) {
-  const params = preset.params;
+function PresetChip({ preset, onLoad, onDelete }: { preset: Preset; onLoad: (p: PricePresetParams) => void; onDelete: () => void }) {
+  const params = preset.params?.tab === "price" ? preset.params : null;
   const title = params
     ? `${params.mode === "keep" ? "keep ≥" : "trash <"} ${params.minDiv} Div · ${params.categories.length} categories${params.includeUniques ? " + uniques" : ""} · saved in ${preset.league}`
     : `cannot load: ${preset.invalid ?? "unknown"}`;
@@ -64,8 +64,10 @@ function PresetChip({ preset, onLoad, onDelete }: { preset: Preset; onLoad: (p: 
 }
 
 /** Saved selections. A preset stores parameters only — the string is rebuilt from live prices. */
-export function PresetBar({ params, onLoad }: { params: PresetParams; onLoad: (p: PresetParams) => void }) {
-  const { presets, error, save, remove } = usePresets();
+export function PresetBar({ params, onLoad }: { params: PricePresetParams; onLoad: (p: PricePresetParams) => void }) {
+  const { presets: all, error, save, remove } = usePresets();
+  // other tabs' presets belong to their own panels; unparseable rows stay visible so they can be deleted
+  const presets = all.filter((p) => p.params === null || p.params.tab === "price");
   const [name, setName] = useState("");
   const submit = () => {
     const trimmed = name.trim();

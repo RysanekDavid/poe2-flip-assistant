@@ -23,6 +23,8 @@ export interface SearchTerm {
   raw: string;
   negated: boolean;
   alternatives: string[];
+  /** The term's pattern with its original case (quotes and ! removed); regex escapes like \D are case-sensitive. */
+  pattern: string;
   position: number;
 }
 
@@ -55,7 +57,7 @@ function toTerm(content: string, raw: string, position: number): SearchTerm {
   const alternatives = body.split("|");
   const empty = alternatives.findIndex((a) => a.length === 0);
   if (empty !== -1) throw new SearchParseError(`empty alternative #${empty + 1} around |`, position);
-  return { raw, negated, alternatives: alternatives.map((a) => a.toLowerCase()), position };
+  return { raw, negated, alternatives: alternatives.map((a) => a.toLowerCase()), pattern: body, position };
 }
 
 export function parseSearch(text: string): SearchAst {
