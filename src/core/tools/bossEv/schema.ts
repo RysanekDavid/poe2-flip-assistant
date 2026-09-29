@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CATEGORIES } from "../../../api/types";
 import { PATCH_VERSION_RE } from "../../../sources/patchNotes/contracts";
 
 /*
@@ -56,6 +57,8 @@ export const lootLineSchema = z
     rate: rateSchema,
     confidence: confidenceSchema,
     source: sourceSchema,
+    /** A Lineage support gem: poe2scout rarely lists them, so the board counts them apart when unpriced. */
+    lineage: z.literal(true).optional(),
   })
   .strict();
 export type LootLine = z.infer<typeof lootLineSchema>;
@@ -90,15 +93,52 @@ export const bossSchema = z
   .strict();
 export type Boss = z.infer<typeof bossSchema>;
 
+const NINJA_TYPES: readonly string[] = CATEGORIES.map((c) => c.type);
+/** A poe.ninja exchange type the poller fetches, or null for an item ninja does not list at all. */
+const ninjaCategorySchema = z
+  .string()
+  .refine((t) => NINJA_TYPES.includes(t), (t) => ({ message: `${t} is not a poe.ninja type the poller fetches (CATEGORIES)` }))
+  .nullable();
+
+/**
+ * Every exchange id the file references must be declared with its ninja type, and every declared
+ * id used: an id from a type the poller never fetches would otherwise price as silently missing.
+ */
+function checkNinjaCategories(file: { ninjaCategories: Record<string, string | null>; bosses: Boss[] }, ctx: z.RefinementCtx): void {
+  const declared = new Map(Object.entries(file.ninjaCategories));
+  const used = new Set<string>();
+  const need = (id: string, where: string, mustBeListed: boolean): void => {
+    used.add(id);
+    if (!declared.has(id)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${where}: ${id} missing from ninjaCategories` });
+    else if (mustBeListed && declared.get(id) == null) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${where}: ${id} is declared unlisted but priced from ninja` });
+    }
+  };
+  for (const boss of file.bosses) {
+    for (const tier of boss.tiers) {
+      for (const line of tier.entry) {
+        need(line.itemId, boss.id, false);
+        for (const part of line.craftFrom ?? []) need(part.itemId, boss.id, true);
+      }
+      for (const loot of tier.loot) if (loot.priceRef.kind === "ninja") need(loot.priceRef.itemId, boss.id, true);
+    }
+  }
+  for (const id of declared.keys()) {
+    if (!used.has(id)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `ninjaCategories.${id} is not referenced` });
+  }
+}
+
 export const bossLootFileSchema = z
   .object({
     schemaVersion: z.literal(1),
     patch: z.string().regex(PATCH_VERSION_RE, "expected a patch version like 0.5.5"),
     dataAsOf: isoDay,
+    ninjaCategories: z.record(z.string().min(1), ninjaCategorySchema),
     bosses: z.array(bossSchema).min(1),
   })
   .strict()
   .superRefine((file, ctx) => {
+    checkNinjaCategories(file, ctx);
     const seen = new Set<string>();
     for (const boss of file.bosses) {
       if (seen.has(boss.id)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate boss id ${boss.id}` });
