@@ -43,8 +43,21 @@ interface DataTableProps<T> {
    * cell must render its own button for keyboard users. Mouse clicks on the row still call onRowClick.
    */
   interactiveCells?: boolean;
+  /** The row whose detail is open: `renderExpanded` draws it in a full-width row right under it. */
+  expandedKey?: string;
+  renderExpanded?: (row: T) => ReactNode;
+  /**
+   * Id namespace of the detail row (`detailRowId(prefix, key)`), so a cell's expand button can point
+   * aria-controls at it. Must be unique per table on the page.
+   */
+  detailIdPrefix?: string;
+  /** Two-line cells (value + a muted sub-line): taller rows with vertical padding. */
+  tall?: boolean;
   emptyState: ReactNode;
 }
+
+/** The id of a row's expanded detail — for the aria-controls of the button that opens it. */
+export const detailRowId = (prefix: string, key: string): string => `${prefix}-${key}`;
 
 const ALIGN_CLASS: Record<ColumnAlign, string> = { left: "text-left", right: "text-right", center: "text-center" };
 
@@ -85,16 +98,33 @@ function HeaderCell<T>({ col, sort }: { col: Column<T>; sort?: TableSort }) {
   );
 }
 
-type RowA11y = Pick<HTMLAttributes<HTMLTableRowElement>, "tabIndex" | "role" | "aria-pressed" | "aria-selected" | "onKeyDown">;
+type RowA11y = Pick<
+  HTMLAttributes<HTMLTableRowElement>,
+  "tabIndex" | "role" | "aria-pressed" | "aria-selected" | "aria-expanded" | "aria-controls" | "onKeyDown"
+>;
 
-/** A clickable row is a keyboard button unless its cells carry their own controls (see interactiveCells). */
-function rowA11y(clickable: boolean, interactiveCells: boolean, selected: boolean, onKey: () => void): RowA11y {
+interface RowState {
+  selected: boolean;
+  /** undefined for a table without expansion. */
+  expanded: boolean | undefined;
+  detailId: string;
+}
+
+/**
+ * A clickable row is a keyboard button unless its cells carry their own controls (see
+ * interactiveCells). In an expandable table, open/closed is aria-expanded on whichever control
+ * toggles it — never aria-selected, which would announce an open row as a chosen one.
+ */
+function rowA11y(clickable: boolean, interactiveCells: boolean, state: RowState, onKey: () => void): RowA11y {
+  const { selected, expanded, detailId } = state;
   if (!clickable) return {};
-  if (interactiveCells) return { "aria-selected": selected };
+  if (interactiveCells) return expanded === undefined ? { "aria-selected": selected } : {};
   return {
     tabIndex: 0,
     role: "button",
-    "aria-pressed": selected,
+    "aria-pressed": expanded === undefined ? selected : undefined,
+    "aria-expanded": expanded,
+    "aria-controls": expanded ? detailId : undefined,
     onKeyDown: (e: KeyboardEvent<HTMLTableRowElement>) => {
       if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
       e.preventDefault();
@@ -103,11 +133,62 @@ function rowA11y(clickable: boolean, interactiveCells: boolean, selected: boolea
   };
 }
 
+interface RowProps<T> {
+  row: T;
+  columns: Column<T>[];
+  selected: boolean;
+  /** undefined for a table without expansion; otherwise whether this row's detail is open. */
+  expanded: boolean | undefined;
+  detail: ReactNode;
+  detailId: string;
+  onRowClick?: (row: T) => void;
+  interactiveCells: boolean;
+  tall: boolean;
+}
+
+function Row<T>({ row, columns, selected, expanded, detail, detailId, onRowClick, interactiveCells, tall }: RowProps<T>) {
+  const highlight = selected || expanded === true;
+  return (
+    <>
+      <tr
+        {...rowA11y(onRowClick != null, interactiveCells, { selected, expanded, detailId }, () => onRowClick?.(row))}
+        onClick={
+          onRowClick
+            ? (e) => {
+                if (!fromInnerControl(e.target, e.currentTarget)) onRowClick(row);
+              }
+            : undefined
+        }
+        className={`${tall ? "h-[3.25rem]" : "h-9"} ${onRowClick ? "cursor-pointer hover:bg-neutral-800/50" : ""} ${highlight ? "bg-amber-400/10" : ""}`}
+      >
+        {columns.map((c) => (
+          <td
+            key={c.key}
+            className={`${c.wrap ? "whitespace-normal py-1.5 [overflow-wrap:anywhere]" : "whitespace-nowrap"} ${tall ? "py-2" : ""} ${expanded ? "" : "border-b border-line/70"} px-2 text-neutral-200 ${ALIGN_CLASS[c.align ?? "left"]}`}
+          >
+            {c.cell(row)}
+          </td>
+        ))}
+      </tr>
+      {expanded && (
+        <tr id={detailId}>
+          <td colSpan={columns.length} className="border-b border-line/70 bg-neutral-950 px-2 pb-3 pt-1">
+            {/* zero min-content: a wide detail scrolls inside the row instead of widening the table */}
+            <div className="w-0 min-w-full overflow-x-auto">{detail}</div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
 /**
  * The standard table: sticky header under the app shell (no inner scroll box, which hid the first
- * row), h-9 rows, ⓘ header tooltips. A clickable row is a real keyboard target (Enter/Space).
+ * row), h-9 rows, ⓘ header tooltips. A clickable row is a real keyboard target (Enter/Space). With
+ * `renderExpanded`, the open row's detail sits directly under it, not below the whole table.
  */
-export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, sort, interactiveCells = false, emptyState }: DataTableProps<T>) {
+export function DataTable<T>(props: DataTableProps<T>) {
+  const { columns, rows, rowKey, onRowClick, selectedKey, sort, interactiveCells = false, expandedKey, renderExpanded, detailIdPrefix = "detail", tall = false, emptyState } = props;
   if (rows.length === 0) return <>{emptyState}</>;
   return (
     <table className="w-full border-separate border-spacing-0 text-sm">
@@ -119,26 +200,20 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, s
       <tbody>
         {rows.map((row) => {
           const key = rowKey(row);
-          const selected = key === selectedKey;
+          const expanded = renderExpanded ? key === expandedKey : undefined;
           return (
-            <tr
+            <Row
               key={key}
-              {...rowA11y(onRowClick != null, interactiveCells, selected, () => onRowClick?.(row))}
-              onClick={
-                onRowClick
-                  ? (e) => {
-                      if (!fromInnerControl(e.target, e.currentTarget)) onRowClick(row);
-                    }
-                  : undefined
-              }
-              className={`h-9 ${onRowClick ? "cursor-pointer hover:bg-neutral-800/50" : ""} ${selected ? "bg-amber-400/10" : ""}`}
-            >
-              {columns.map((c) => (
-                <td key={c.key} className={`${c.wrap ? "whitespace-normal py-1.5 [overflow-wrap:anywhere]" : "whitespace-nowrap"} border-b border-line/70 px-2 text-neutral-200 ${ALIGN_CLASS[c.align ?? "left"]}`}>
-                  {c.cell(row)}
-                </td>
-              ))}
-            </tr>
+              row={row}
+              columns={columns}
+              selected={key === selectedKey}
+              expanded={expanded}
+              detail={expanded && renderExpanded ? renderExpanded(row) : null}
+              detailId={detailRowId(detailIdPrefix, key)}
+              onRowClick={onRowClick}
+              interactiveCells={interactiveCells}
+              tall={tall}
+            />
           );
         })}
       </tbody>

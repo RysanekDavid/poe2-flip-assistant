@@ -62,6 +62,8 @@ export function testShareRoundTrip(): void {
   assert.deepEqual(read, { kind: "ok", selection }, "share link → identical selection");
   const vendor: TabSelection = { ...emptyVendorSelection(), resistances: { fire: 30, cold: null, lightning: null, chaos: null } };
   assert.deepEqual(readShare("vendor", encodeShare(vendor)), { kind: "ok", selection: vendor });
+  const tablet = emptyPoolSelection("tablet");
+  assert.deepEqual(readShare(null, encodeShare(tablet)), { kind: "ok", selection: tablet }, "a link without ?tool= opens the code's own tab");
   assert.equal(readShare("waystone", null).kind, "none");
   const wrongTab = readShare("tablet", url.searchParams.get("s"));
   assert.ok(wrongTab.kind === "error" && /waystone/.test(wrongTab.message), "a tool/selection mismatch is reported, not guessed");

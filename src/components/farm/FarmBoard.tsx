@@ -10,7 +10,6 @@ import { useVisiblePoll } from "../../lib/useVisiblePoll";
 import { Button } from "../ui/Button";
 import { PageHeader } from "../ui/PageHeader";
 import { StaleBadge } from "../ui/StaleBadge";
-import { ToolChips } from "../shell/ToolChips";
 import { BossDetail } from "./BossDetail";
 import { BossTable } from "./BossTable";
 import { MechanicStrip } from "./MechanicStrip";
@@ -37,17 +36,33 @@ function useFarm() {
   return { data, error, reload: load };
 }
 
-function useSelection(details: readonly BossView[], firstRowId: string | null) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+/** One boss open at a time; clicking the open one closes it. */
+function useExpansion() {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [tierByBoss, setTierByBoss] = useState<Record<string, string>>({});
-  const selected = details.find((b) => b.id === (selectedId ?? firstRowId)) ?? null;
+  const toggle = (id: string): void => setExpandedId((open) => (open === id ? null : id));
   const tierOf = (boss: BossView): TierResult => {
     const first = boss.tiers[0];
     if (!first) throw new Error(`boss ${boss.id} has no tiers`);
     return boss.tiers.find((t) => t.tierId === tierByBoss[boss.id]) ?? first;
   };
   const setTier = (bossId: string, tierId: string): void => setTierByBoss((prev) => ({ ...prev, [bossId]: tierId }));
-  return { selected, tierOf, select: setSelectedId, setTier };
+  return { expandedId, toggle, tierOf, setTier };
+}
+
+interface DetailProps {
+  details: readonly BossView[];
+  bossId: string;
+  tierOf: (boss: BossView) => TierResult;
+  setTier: (bossId: string, tierId: string) => void;
+  exPerDiv: number;
+}
+
+/** The open row's detail; a row without a matching detail view is a server contract break. */
+function InlineDetail({ details, bossId, tierOf, setTier, exPerDiv }: DetailProps) {
+  const boss = details.find((b) => b.id === bossId);
+  if (!boss) throw new Error(`farm: no detail view for boss ${bossId}`);
+  return <BossDetail boss={boss} tier={tierOf(boss)} onTier={(id) => setTier(boss.id, id)} exPerDiv={exPerDiv} />;
 }
 
 const LEGEND =
@@ -89,24 +104,21 @@ function PatchWarning({ warning }: { warning: FarmResponse["patchWarning"] }) {
   );
 }
 
-/** Farm tab: mechanic baskets by 7d heat, then pinnacle bosses by net per kill with a detail panel. */
+/** Farm tab: mechanic baskets by 7d heat, then pinnacle bosses by net per kill, each row opening its detail inline. */
 export function FarmBoard() {
   const { data, error, reload } = useFarm();
-  const { selected, tierOf, select, setTier } = useSelection(data?.details ?? [], data?.bosses[0]?.id ?? null);
+  const { expandedId, toggle, tierOf, setTier } = useExpansion();
   const exPerDiv = data?.rates?.exaltPerDivine ?? null;
   return (
-    <section className="grid gap-3">
+    <section className="grid grid-cols-1 gap-3">
       <PageHeader
         title="What to farm now"
         purpose="Mechanic baskets by 7d heat, pinnacle bosses by net per kill — and your Div/hour at your own pace."
         legend={LEGEND}
         action={
-          <>
-            <ToolChips tab="farm" />
-            <Button variant="ghost" size="sm" onClick={reload} aria-label="Refresh farm data">
-              <RefreshCw aria-hidden className="h-4 w-4" />
-            </Button>
-          </>
+          <Button variant="ghost" size="sm" onClick={reload} aria-label="Refresh farm data">
+            <RefreshCw aria-hidden className="h-4 w-4" />
+          </Button>
         }
       />
       {error && <p role="alert" className="text-sm text-bad">Farm data unavailable — {error}</p>}
@@ -116,8 +128,14 @@ export function FarmBoard() {
           <DataLine data={data} />
           <PatchWarning warning={data.patchWarning} />
           <MechanicStrip mechanics={data.mechanics} exPerDiv={exPerDiv} onSpeedSaved={reload} />
-          <BossTable bosses={data.bosses} selectedId={selected?.id ?? null} onSelect={select} exPerDiv={exPerDiv} onSpeedSaved={reload} />
-          {selected && <BossDetail boss={selected} tier={tierOf(selected)} onTier={(id) => setTier(selected.id, id)} exPerDiv={exPerDiv ?? 0} />}
+          <BossTable
+            bosses={data.bosses}
+            expandedId={expandedId}
+            onToggle={toggle}
+            renderDetail={(id) => <InlineDetail details={data.details} bossId={id} tierOf={tierOf} setTier={setTier} exPerDiv={exPerDiv ?? 0} />}
+            exPerDiv={exPerDiv}
+            onSpeedSaved={reload}
+          />
         </>
       )}
     </section>

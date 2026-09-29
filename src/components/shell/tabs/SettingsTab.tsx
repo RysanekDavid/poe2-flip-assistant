@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { AccountSecurityPanel, SettingsPanel } from "../../SettingsPanel";
 import { NavModePanel } from "../../NavModePanel";
 import { SystemHealthPanel } from "../../system/SystemHealthPanel";
-import { AlertRouting } from "../../alerts/AlertsTab";
+import { NotificationsLink } from "../../settings/NotificationsLink";
 import { PageHeader } from "../../ui/PageHeader";
 import { useNavMode } from "../NavModeProvider";
 import { useTabRoute } from "../useTabRoute";
@@ -48,8 +48,9 @@ export function SettingsTab() {
           <div id={SECTION_ID.mode} className="scroll-mt-[var(--shell-h,0px)]">
             <NavModePanel />
           </div>
-          <div id={SECTION_ID.notify} className="scroll-mt-[var(--shell-h,0px)] space-y-4">
-            <AlertRouting />
+          {/* status only: routing is edited in the Alerts tab, so the two can never disagree */}
+          <div id={SECTION_ID.notify} className="scroll-mt-[var(--shell-h,0px)]">
+            <NotificationsLink />
           </div>
         </div>
       </div>

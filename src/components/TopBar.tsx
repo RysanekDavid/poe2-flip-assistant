@@ -107,7 +107,10 @@ function UserMenu() {
       <span className="absolute -top-2 left-2.5 bg-neutral-950 px-1.5 text-xs font-medium uppercase tracking-widest text-neutral-500">
         profile
       </span>
-      <WealthChip />
+      {/* phones: the net worth lives one tap away in Wealth; the name and actions must fit */}
+      <span className="hidden md:contents">
+        <WealthChip />
+      </span>
       <span
         title="signed-in account"
         className="bg-gradient-to-b from-amber-100 to-amber-300 bg-clip-text text-base font-semibold tracking-wide text-transparent"
@@ -121,14 +124,16 @@ function UserMenu() {
           title="open the setup guide / tour"
           className="inline-flex items-center gap-1 rounded border border-neutral-700 bg-neutral-800/40 px-2 py-0.5 text-xs font-medium text-neutral-300 transition hover:border-amber-400/60 hover:text-amber-200"
         >
-          <BookOpen className="h-3 w-3" /> Guide
+          <BookOpen className="h-3 w-3" />
+          <span className="max-md:sr-only">Guide</span>
         </button>
         <button
           onClick={logout}
           title="sign out"
           className="inline-flex items-center gap-1 rounded border border-red-900/60 bg-red-950/30 px-2 py-0.5 text-xs font-medium text-red-300 transition hover:border-red-500/70 hover:bg-red-900/40 hover:text-red-200"
         >
-          <LogOut className="h-3 w-3" /> Sign out
+          <LogOut className="h-3 w-3" />
+          <span className="max-md:sr-only">Sign out</span>
         </button>
       </div>
     </div>

@@ -12,7 +12,6 @@ import { useTabRoute } from "../../shell/useTabRoute";
 import { tabRouteHref } from "../../shell/tabRegistry";
 import { PoolRegexPanel, type PoolUpdater } from "./PoolRegexPanel";
 import { DEFAULT_PRICE_PARAMS, PriceRegexPanel } from "./PriceRegexPanel";
-import { REGEX_TAB_INFO, RegexTabBar, tabButtonId, tabPanelId } from "./RegexTabBar";
 import { emptyVendorSelection } from "./selectionOps";
 import { SESSION_KEY, parseStoredState, type RegexToolState } from "./sessionState";
 import { useMaxChars } from "./useMaxChars";
@@ -78,9 +77,12 @@ function useShareLink(tool: string | null, apply: (s: TabSelection) => void): [s
   const router = useRouter();
   const pathname = usePathname();
   const code = params.get(SHARE_PARAM);
+  // The raw ?tool=, not the resolved one: `?tab=regex&s=…` without a tool resolves to Waystone, and
+  // a tablet code must still open Tablet instead of reading as a mismatch.
+  const rawTool = params.get("tool");
   const [banner, setBanner] = useState<string | null>(null);
   useEffect(() => {
-    const read = readShare(tool, code);
+    const read = readShare(rawTool, code);
     if (read.kind === "none") return;
     if (read.kind === "error") {
       console.warn(`[tools/regex] share link rejected: ${read.message}`);
@@ -90,7 +92,7 @@ function useShareLink(tool: string | null, apply: (s: TabSelection) => void): [s
       setBanner(null);
     }
     router.replace(`${pathname}${tabRouteHref({ tab: "regex", tool: read.kind === "ok" ? read.selection.tab : tool })}`, { scroll: false });
-  }, [tool, code, apply, router, pathname]);
+  }, [tool, rawTool, code, apply, router, pathname]);
   return [banner, () => setBanner(null)];
 }
 
@@ -128,9 +130,12 @@ function ActivePanel({ tab, state, onSelection, onUpdatePool, onPrice, maxChars,
   }
 }
 
-/** The Regex tab: sub-tab bar, share-link handling, and one panel per item kind. */
+/**
+ * The Regex tab: share-link handling and one panel per item kind. The shell's SubTabBar switches
+ * kinds, and the tab registry lists exactly REGEX_TABS, so an unknown ?tool= never reaches here.
+ */
 export function RegexTool() {
-  const { tool, go } = useTabRoute();
+  const { tool } = useTabRoute();
   const tab: RegexTab = isRegexTab(tool) ? tool : DEFAULT_TAB;
   const [state, setState] = useState<RegexToolState>(initialState);
   const [maxChars, setMaxChars] = useMaxChars();
@@ -139,16 +144,11 @@ export function RegexTool() {
   const onUpdatePool = useCallback((t: PoolTab, fn: (s: PoolTabSelection) => PoolTabSelection) => setState((prev) => withSelection(prev, fn(prev[t]))), []);
   const onPrice = useCallback((price: PricePresetParams) => setState((prev) => ({ ...prev, price })), []);
   const [banner, dismiss] = useShareLink(tool, onSelection);
-  const unknownTool = tool !== null && !isRegexTab(tool) ? `There is no "${tool}" regex tool — showing ${REGEX_TAB_INFO[DEFAULT_TAB].label}.` : null;
-  const notice = banner ?? unknownTool;
   return (
     <section className="flex flex-col gap-4">
       <PageHeader title="Regex" purpose="Build stash-search strings (Ctrl+F in game) that light up the waystones, tablets, relics, jewels or gear you want." />
-      <RegexTabBar active={tab} onSelect={(t) => go("regex", t)} />
-      {notice && <ShareBanner message={notice} onDismiss={banner ? dismiss : () => go("regex", DEFAULT_TAB)} />}
-      <div role="tabpanel" id={tabPanelId(tab)} aria-labelledby={tabButtonId(tab)}>
-        <ActivePanel tab={tab} state={state} onSelection={onSelection} onUpdatePool={onUpdatePool} onPrice={onPrice} maxChars={maxChars} onMaxChars={setMaxChars} />
-      </div>
+      {banner && <ShareBanner message={banner} onDismiss={dismiss} />}
+      <ActivePanel tab={tab} state={state} onSelection={onSelection} onUpdatePool={onUpdatePool} onPrice={onPrice} maxChars={maxChars} onMaxChars={setMaxChars} />
     </section>
   );
 }

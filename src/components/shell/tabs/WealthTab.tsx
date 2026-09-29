@@ -5,7 +5,6 @@ import { SellPanel } from "../../wealth/SellPanel";
 import { useReadStash, type ReadMessage } from "../../wealth/useReadStash";
 import { Button } from "../../ui/Button";
 import { PageHeader } from "../../ui/PageHeader";
-import { ToolChips } from "../ToolChips";
 import { useTabRoute } from "../useTabRoute";
 
 const HEADER = {
@@ -32,12 +31,9 @@ export function WealthTab() {
         purpose={purpose}
         legend={LEGEND}
         action={
-          <>
-            <ToolChips tab="wealth" />
-            <Button variant="primary" onClick={stash.read} disabled={stash.busy} title="1 trade search + up to 10 fetches">
-              {stash.busy ? "Reading…" : "Read stash"}
-            </Button>
-          </>
+          <Button variant="primary" onClick={stash.read} disabled={stash.busy} title="1 trade search + up to 10 fetches">
+            {stash.busy ? "Reading…" : "Read stash"}
+          </Button>
         }
       />
       {stash.msg && (

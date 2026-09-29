@@ -6,7 +6,6 @@ import { AutoSnipeBar } from "../../AutoSnipeBar";
 import { SnipeTargets } from "../../SnipeTargets";
 import { PageHeader } from "../../ui/PageHeader";
 import { PanelLoading } from "../PanelLoading";
-import { ToolChips } from "../ToolChips";
 import { useTabRoute } from "../useTabRoute";
 
 const PriceCheckTool = dynamic(() => import("../../market/pricecheck/PriceCheckTool").then((m) => m.PriceCheckTool), {
@@ -25,7 +24,6 @@ function PriceView() {
         title="Price check"
         purpose="Paste an item: what it is worth, where that number came from, and how to sell it."
         legend={PRICE_LEGEND}
-        action={<ToolChips tab="market" />}
       />
       <PriceCheckTool />
     </>
@@ -38,7 +36,6 @@ function BoardView() {
       <PageHeader
         title="Market"
         purpose="What sells on the trade site right now, and listings priced under what they are worth."
-        action={<ToolChips tab="market" />}
       />
       <DemandBoard />
       <AutoSnipeBar />
