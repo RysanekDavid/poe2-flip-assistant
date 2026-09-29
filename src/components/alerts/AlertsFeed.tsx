@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { BellRing, CheckCheck, TriangleAlert } from "lucide-react";
 import { useAlertCenter } from "./AlertsContext";
 import { AlertActions, LeagueTag, typeTone } from "./AlertBits";
+import { AlertArt, TypeChip, TypeGlyph } from "./AlertTypeBadge";
 import { SnipeCardView, ageLabel } from "./SnipeCardView";
-import type { Alert, AlertGroup } from "../../lib/alertCenter";
+import { collapseRuns, type Alert, type AlertGroup, type AlertRun } from "../../lib/alertCenter";
 import { alertTypeLabel } from "../../lib/alertLabels";
 import { useSnipeOutcomes } from "../../lib/useSnipeOutcomes";
 import type { CardOutcome, SnipeOutcomesResponse } from "../../lib/snipeOutcomeContract";
@@ -21,12 +22,12 @@ function cardOutcome(outcomes: SnipeOutcomesResponse | null, listingId: string):
   return view && outcomes ? { view, fetchMethod: outcomes.fetchMethod } : null;
 }
 
-function FilterChip({ label, unseen, total, active, tone, onClick }: {
+function FilterChip({ label, type, unseen, total, active, onClick }: {
   label: string;
+  type: string | null; // null = "All"
   unseen: number;
   total: number;
   active: boolean;
-  tone: string;
   onClick: () => void;
 }) {
   return (
@@ -38,18 +39,26 @@ function FilterChip({ label, unseen, total, active, tone, onClick }: {
         active ? "border-neutral-300 bg-neutral-800 text-neutral-100" : "border-neutral-800 text-neutral-400 hover:border-neutral-600"
       }`}
     >
-      <span className={`font-semibold ${tone}`}>{label}</span>
+      {type != null && <TypeGlyph type={type} className={`h-3.5 w-3.5 ${typeTone(type)}`} />}
+      <span className={`font-semibold ${type == null ? "text-neutral-200" : typeTone(type)}`}>{label}</span>
       <span className="tabular-nums">{unseen > 0 ? <span className="text-amber-300">{unseen}</span> : total}</span>
     </button>
   );
 }
 
-/** Non-snipe alert (or a snipe from before cards / with an unreadable card): one compact row. */
-function CompactRow({ a }: { a: Alert }) {
+/** Non-snipe alert (or a snipe from before cards / with an unreadable card), repeats folded to ×N. */
+function CompactRow({ run }: { run: AlertRun }) {
+  const a = run.alert;
   return (
-    <li className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md border px-3 py-1.5 text-sm ${a.seen === 0 ? "border-amber-500/30 bg-neutral-800/50" : "border-neutral-800/70 bg-neutral-900/40"}`}>
-      <span className={`w-28 shrink-0 text-xs font-semibold ${typeTone(a.type)}`}>{alertTypeLabel(a.type)}</span>
+    <li className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md border px-3 py-1.5 text-sm ${run.unseen ? "border-amber-500/30 bg-neutral-800/50" : "border-neutral-800/70 bg-neutral-900/40"}`}>
+      <AlertArt alert={a} />
+      <TypeChip type={a.type} />
       <span className="font-medium text-neutral-100">{a.item_name ?? a.item_id}</span>
+      {run.count > 1 && (
+        <span className="text-xs tabular-nums text-neutral-400" title={`${run.count} alerts in a row for this item — showing the latest`}>
+          ×{run.count}
+        </span>
+      )}
       <LeagueTag league={a.foreign_league} />
       {a.details_error && (
         <span title={`item card unavailable: ${a.details_error}`}>
@@ -69,15 +78,16 @@ function FeedList({ alerts, hidden, outcomes }: { alerts: Alert[]; hidden: numbe
   }
   return (
     <ul className="space-y-2">
-      {alerts.map((a) =>
-        a.type === "SNIPE" && a.details ? (
+      {collapseRuns(alerts).map((run) => {
+        const a = run.alert;
+        return a.type === "SNIPE" && a.details ? (
           <li key={a.id}>
             <SnipeCardView alert={a} card={a.details} outcome={cardOutcome(outcomes, a.item_id)} />
           </li>
         ) : (
-          <CompactRow key={a.id} a={a} />
-        ),
-      )}
+          <CompactRow key={a.id} run={run} />
+        );
+      })}
       {hidden > 0 && <li className="px-2 text-xs text-neutral-500">+{hidden} older not shown (the newest 15 per type are kept here)</li>}
     </ul>
   );
@@ -136,15 +146,15 @@ export function AlertsFeed() {
         />
       </header>
       <div className="mb-3 flex flex-wrap gap-1.5">
-        <FilterChip label="All" unseen={allUnseen} total={total} active={isActive(null)} tone="text-neutral-200" onClick={() => setChosen(ALL)} />
+        <FilterChip label="All" type={null} unseen={allUnseen} total={total} active={isActive(null)} onClick={() => setChosen(ALL)} />
         {groups.map((g) => (
           <FilterChip
             key={g.type}
             label={alertTypeLabel(g.type)}
+            type={g.type}
             unseen={g.unseen}
             total={g.total}
             active={isActive(g.type)}
-            tone={typeTone(g.type)}
             onClick={() => setChosen({ kind: "type", type: g.type })}
           />
         ))}

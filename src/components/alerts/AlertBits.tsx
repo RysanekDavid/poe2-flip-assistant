@@ -6,20 +6,31 @@ import type { Alert } from "../../lib/alertCenter";
 import { isNotifyType } from "../../core/notify/prefs";
 import { alertTypeLabel } from "../../lib/alertLabels";
 
-export const TYPE_TONE: Record<string, string> = {
-  SPREAD: "text-good",
-  SPIKE: "text-warn",
-  VOLUME: "text-sky-300",
-  TREND: "text-amber-300",
-  TREND_REVERSAL: "text-bad",
-  SNIPE: "text-orange-400",
-  CRAFT_MARGIN: "text-amber-400",
-  LEAGUE: "text-amber-200",
-  PATCH: "text-amber-200",
+interface TypeChipStyle {
+  text: string;
+  border: string;
+}
+
+/**
+ * One colour per type from the semantic tokens (good/info/warn/bad) plus orange, so types stop
+ * blurring together. Amber is left to primary actions and the unseen highlight; information-only
+ * types (league, patch, legacy rows) stay neutral.
+ */
+const TYPE_CHIP: Record<string, TypeChipStyle> = {
+  SNIPE: { text: "text-good", border: "border-good/40" },
+  CRAFT_MARGIN: { text: "text-orange-300", border: "border-orange-400/40" },
+  SPREAD: { text: "text-info", border: "border-info/40" },
+  TREND: { text: "text-warn", border: "border-warn/40" },
+  SPIKE: { text: "text-bad", border: "border-bad/40" },
 };
+const NEUTRAL_CHIP: TypeChipStyle = { text: "text-neutral-300", border: "border-neutral-700" };
+
+export function typeChip(type: string): TypeChipStyle {
+  return TYPE_CHIP[type] ?? NEUTRAL_CHIP;
+}
 
 export function typeTone(type: string): string {
-  return TYPE_TONE[type] ?? "text-neutral-300";
+  return typeChip(type).text;
 }
 
 /** Copy-whisper + trade-link actions for one alert. */
