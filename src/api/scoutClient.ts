@@ -192,6 +192,50 @@ export async function fetchScout(): Promise<{ rates: ScoutRates; items: ScoutIte
   return cache;
 }
 
+// --- lineage support gems: a CURRENCY category, not a unique one, so /Items never lists them ---
+
+const CurrencyPageSchema = z
+  .object({
+    CurrentPage: z.number(),
+    Pages: z.number(),
+    Items: z.array(
+      z
+        .object({
+          ApiId: z.string(),
+          Text: z.string(),
+          CurrentPrice: z.number().nullish(),
+        })
+        .passthrough(),
+    ),
+  })
+  .passthrough();
+
+export interface ScoutLineageGem {
+  name: string;
+  /** Exalted, like /Items (checked 2026-09-29: Uul-Netol's Embrace 360k ex ≈ 669 div at 538 ex/div). */
+  priceExalt: number;
+}
+
+// ~75 gems exist; a runaway page count means the endpoint changed shape, not that there are more gems
+const MAX_LINEAGE_PAGES = 5;
+
+/** Every lineage gem poe2scout prices in `league`. A null or 0 price means "no current price" and is dropped. */
+export async function fetchScoutLineage(league: string): Promise<ScoutLineageGem[]> {
+  const lp = encodeURIComponent(league);
+  const gems: ScoutLineageGem[] = [];
+  let listed = 0;
+  for (let page = 1; page <= MAX_LINEAGE_PAGES; page += 1) {
+    const res = await get(`/${REALM}/Leagues/${lp}/Currencies/ByCategory?category=lineagesupportgems&page=${page}&perPage=100`, CurrencyPageSchema);
+    listed += res.Items.length;
+    for (const i of res.Items) if (i.CurrentPrice != null && i.CurrentPrice > 0) gems.push({ name: i.Text, priceExalt: i.CurrentPrice });
+    if (page < res.Pages) continue;
+    // an empty category is a renamed/moved endpoint, not a league without lineage gems
+    if (listed === 0) throw new Error(`poe2scout lineage list for "${league}" is empty — category renamed?`);
+    return gems;
+  }
+  throw new Error(`poe2scout lineage list for "${league}" has more than ${MAX_LINEAGE_PAGES} pages — endpoint shape changed?`);
+}
+
 // --- demand board: richer per-item data (listings + price history) from ByCategory ---
 
 /** Unique categories with a real secondary market — the flip-relevant ones. */

@@ -1,5 +1,5 @@
 import { latestSnapshots, uniqueValueMap, upsertItemValues, itemValuesAgeHours } from "../db/marketQueries";
-import { fetchScout } from "../api/scoutClient";
+import { fetchScout, fetchScoutLineage, type ScoutLineageGem } from "../api/scoutClient";
 import { getDefaultLeague } from "./leagueState";
 
 /**
@@ -9,7 +9,8 @@ import { getDefaultLeague } from "./leagueState";
  *
  * Two sources, both already in our DB so a scan does ZERO network calls:
  *   - poe.ninja: every currency-exchange item, valued LIVE from price_snapshots (poller-fresh)
- *   - poe2scout: priced uniques, cached in item_values and refreshed every ~6h (refreshUniqueValues)
+ *   - poe2scout: priced uniques and lineage gems, cached in item_values and refreshed every ~6h
+ *     (refreshUniqueValues)
  */
 export interface ItemValue {
   div: number; // total value (unit × stack)
@@ -41,10 +42,20 @@ export function buildValuer(league: string = getDefaultLeague()): Valuer {
 
 const REFRESH_AFTER_H = 6;
 
+/** item_values source tag for lineage gems — kept apart from "scout" so unique-only readers skip them. */
+export const LINEAGE_SOURCE = "scout-lineage";
+
+/** Lineage gems (priced in Exalted) → item_values rows in Divine; a 0 price never becomes a 0 value. */
+export function lineageRows(gems: readonly ScoutLineageGem[], exaltPerDivine: number): Array<{ nameKey: string; div: number; source: string }> {
+  if (!(exaltPerDivine > 0)) throw new Error(`lineage valuation needs a positive ex/div rate, got ${exaltPerDivine}`);
+  return gems.filter((g) => g.priceExalt > 0).map((g) => ({ nameKey: g.name.toLowerCase(), div: g.priceExalt / exaltPerDivine, source: LINEAGE_SOURCE }));
+}
+
 /**
- * Refresh poe2scout unique prices into item_values, at most once per 6 hours. Returns rows
- * written (0 if the cache is still fresh). Call before a balance scan so showcase items
- * get valued; the daily guard keeps it from hammering scout.
+ * Refresh poe2scout unique and lineage-gem prices into item_values, at most once per 6 hours.
+ * Returns rows written (0 if the cache is still fresh). Call before a balance scan so showcase
+ * items get valued; the guard keeps it from hammering scout. Uniques are stored before the lineage
+ * fetch, so a lineage failure still throws (and is logged by the caller) without losing them.
  */
 export async function refreshUniqueValues(league: string = getDefaultLeague()): Promise<number> {
   const age = itemValuesAgeHours(league);
@@ -55,5 +66,7 @@ export async function refreshUniqueValues(league: string = getDefaultLeague()): 
     .filter((i) => i.priceExalt > 0 && i.name)
     .map((i) => ({ nameKey: i.name.toLowerCase(), div: i.priceExalt / rates.exaltPerDivine, source: "scout" }));
   upsertItemValues(league, rows);
-  return rows.length;
+  const lineage = lineageRows(await fetchScoutLineage(league), rates.exaltPerDivine);
+  upsertItemValues(league, lineage);
+  return rows.length + lineage.length;
 }
