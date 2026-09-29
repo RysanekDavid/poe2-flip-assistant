@@ -6,6 +6,18 @@
   color-scheme: dark;
 }
 
-body {
-  @apply bg-neutral-950 text-neutral-100;
+@layer base {
+  body {
+    @apply bg-bg text-fg;
+  }
+
+  /* One visible keyboard focus style app-wide; mouse clicks stay ring-free via :focus-visible. */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-amber-400/60;
+  }
+
+  /* Prices line up column-wise without every table remembering to ask for it. */
+  td {
+    font-variant-numeric: tabular-nums;
+  }
 }
