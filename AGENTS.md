@@ -65,7 +65,8 @@ new size debt, explicit `any`, silent catches, low-contrast text or text below 1
 - `src/db/` — schema, migrations and typed queries. Market tables are league-scoped and user
   tables are scoped by `user_id`.
 - `src/scheduler/` — poller loops: the market cycle, trade scans, the league watcher, the scout
-  values loop and the balance loop.
+  values loop, the unique trade-values loop (trade2 prices for boss uniques scout leaves unpriced)
+  and the balance loop.
 - `src/auth/` — scrypt + HMAC sessions and per-user POESESSID encryption (`secretbox`).
 - `src/config/env.ts` — the only place env vars are read.
 - `src/data/poe2/` — committed, integrity-checked artifacts: the RePoE snapshot (`repoe/`), the

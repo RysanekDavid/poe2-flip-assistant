@@ -3,6 +3,7 @@
 import { ExternalLink } from "lucide-react";
 import { fmtDiv, fmtRate } from "../../core/tools/bossEv/headline";
 import { sortLoot } from "../../core/tools/bossEv/rowText";
+import { tradeSourceLabel, tradeSourceTitle } from "../../core/tools/bossEv/tradeText";
 import type { LootLineView } from "../../lib/tools/bossEvContract";
 import { DataTable, type Column } from "../ui/DataTable";
 import { ItemArt } from "../ui/ItemArt";
@@ -43,7 +44,15 @@ function PriceCell({ line, exPerDiv }: { line: LootLineView; exPerDiv: number | 
       </span>
     );
   }
-  return <PriceChip div={line.price.div} exPerDiv={exPerDiv} source={line.price.source} ageMin={line.price.ageHours == null ? undefined : line.price.ageHours * 60} />;
+  const chip = <PriceChip div={line.price.div} exPerDiv={exPerDiv} source={line.price.source} ageMin={line.price.ageHours == null ? undefined : line.price.ageHours * 60} />;
+  if (line.price.source !== "trade") return chip;
+  // a trade2 fallback is an asking price scout could not give: say so on the row, not only on hover
+  return (
+    <span className="inline-flex flex-col items-end" title={tradeSourceTitle(line.price)}>
+      {chip}
+      <span className="text-xs text-neutral-400">{tradeSourceLabel(line.price)}</span>
+    </span>
+  );
 }
 
 /** The sourced rate, or a rarity label when no number is published; both sources and confidence on hover. */
@@ -75,7 +84,7 @@ const host = (url: string): string => new URL(url).hostname.replace(/^www\./, ""
 function columns(exPerDiv: number | null): Column<LootLineView>[] {
   return [
     { key: "name", header: "Drop", cell: (l) => <DropCell line={l} /> },
-    { key: "price", header: "Price", align: "right", tip: "poe.ninja for exchange items, poe2scout for uniques and lineage gems; unpriced drops are left out of EV, never counted as 0", cell: (l) => <PriceCell line={l} exPerDiv={exPerDiv} /> },
+    { key: "price", header: "Price", align: "right", tip: "poe.ninja for exchange items, poe2scout for uniques and lineage gems, trade listings for uniques poe2scout has no price for (trade prices are gathered for the default league only); unpriced drops are left out of EV, never counted as 0", cell: (l) => <PriceCell line={l} exPerDiv={exPerDiv} /> },
     { key: "rate", header: "Rate", align: "right", tip: "per-kill drop rate as the cited source states it, or its rarity label when it gives no number. ? = sources disagree or the rate is unverified", cell: (l) => <RateCell line={l} /> },
     {
       key: "ev",

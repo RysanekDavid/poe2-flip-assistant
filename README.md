@@ -58,7 +58,7 @@ query credential columns.
 | Source | Use | Important limitation |
 |---|---|---|
 | poe.ninja | Reference mids, volume, history | Aggregated observation; not executable bid/ask. |
-| trade2 | Listings and craft comparables | An ask can disappear and is not a guaranteed sale. |
+| trade2 | Listings, craft comparables, boss-unique fallback prices | An ask can disappear and is not a guaranteed sale. |
 | poe2scout | Unique-item market flow | Aggregated signal, not a live listing. |
 | SQLite snapshots | Historical trends | Observed history; legacy `chaos_equiv` values are Divine. |
 | Curated KB | Stable mechanics and warnings | Patch-sensitive; confidence labels must be preserved. |

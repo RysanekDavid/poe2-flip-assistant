@@ -64,8 +64,9 @@ function entryLineView(line: EntryLine, prices: PriceLookup): EntryLineView {
   };
 }
 
-/** Why a line has no price, in the words of the market that failed to price it. */
-function unpricedReason(ref: PriceRef, prices: PriceLookup): string {
+/** Why a line has no price, in the words of every market that failed to price it. */
+function unpricedReason(line: LootLine, prices: PriceLookup): string {
+  const ref = line.priceRef;
   switch (ref.kind) {
     case "unpriced":
       return ref.reason;
@@ -73,9 +74,12 @@ function unpricedReason(ref: PriceRef, prices: PriceLookup): string {
       return "not listed on poe.ninja";
     case "pool":
       return "no pool member listed on poe.ninja";
-    case "scout":
+    case "scout": {
       // scout's 0 means "no current listing price", never "free"
-      return prices.scoutListedAtZero(ref.name) ? "listed by poe2scout at 0 (no current price)" : "not listed by poe2scout";
+      const scout = prices.scoutListedAtZero(ref.name) ? "listed by poe2scout at 0 (no current price)" : "not listed by poe2scout";
+      // lineage gems have no trade2 fallback (scout's lineage list is their only source)
+      return line.lineage === true ? scout : `${scout}; ${prices.tradeUnpriced(ref.name)}`;
+    }
     case "manual":
       return "no market price found";
   }
@@ -97,7 +101,7 @@ function lootLineView(line: LootLine, prices: PriceLookup, art: BossArt): LootLi
     priceKind: line.priceRef.kind,
     pool: prices.pool(line.priceRef),
     rarity: line.rarity ?? null,
-    unpricedReason: price == null ? unpricedReason(line.priceRef, prices) : null,
+    unpricedReason: price == null ? unpricedReason(line, prices) : null,
     price,
     rate: line.rate,
     confidence: line.confidence,
