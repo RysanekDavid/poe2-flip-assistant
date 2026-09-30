@@ -8,7 +8,7 @@ import type { PricedItem } from "../api/types";
 import { signSession } from "../auth/auth";
 import { meResponse } from "../auth/meResponse";
 import { config } from "../config/env";
-import { TAB_IDS, TABS, TOOL_REDIRECTS, parseTabRoute, redirectTool, tabMeta } from "../components/shell/tabRegistry";
+import { TAB_IDS, TAB_REDIRECTS, TABS, TOOL_REDIRECTS, followRenames, parseTabRoute, redirectTab, redirectTool, tabIdSchema, tabMeta } from "../components/shell/tabRegistry";
 import { TOOL_ICON_KEYS } from "../components/shell/toolIconKeys";
 import { tourStepsFor } from "../components/onboardingTour";
 import { entityById } from "../core/entities/load";
@@ -94,7 +94,7 @@ function testVisibility(): void {
   const beginner = visibleTabs("beginner").map((t) => t.id);
   assert.deepEqual(beginner, ["learn", "farm", "market", "alerts", "settings", "coach"]);
   assert.deepEqual(visibleTabs("advanced").map((t) => t.id), [...TAB_IDS]);
-  for (const hidden of ["exchange", "craft", "wealth", "regex", "patches"] as const) assert.ok(!beginner.includes(hidden), `${hidden} hidden`);
+  for (const hidden of ["flips", "craft", "wealth", "regex", "patches"] as const) assert.ok(!beginner.includes(hidden), `${hidden} hidden`);
   for (const [tab, tools] of Object.entries(BEGINNER_TOOLS)) {
     const known = tabMeta(tab as (typeof TAB_IDS)[number]).tools?.map((t) => t.id) ?? [];
     for (const tool of tools ?? []) assert.ok(known.includes(tool), `beginner tool ${tab}/${tool} exists in the registry`);
@@ -106,7 +106,7 @@ function testVisibility(): void {
   assert.deepEqual(visibleTools("advanced", "farm")?.map((t) => t.id), ["board", "strategies"]);
   assert.equal(visibleTools("beginner", "alerts"), undefined);
   assert.equal(defaultTabFor("beginner"), "learn");
-  assert.equal(defaultTabFor("advanced"), "exchange");
+  assert.equal(defaultTabFor("advanced"), "flips");
   pass("visibleTabs / visibleTools / defaultTabFor");
 }
 
@@ -162,10 +162,40 @@ function testToolRedirects(): void {
   pass("renamed tools: ?tool=board → opportunities, targets exist, old ids retired");
 }
 
+/** Exchange became Flips: an old ?tab=exchange lands on Flips, and a beginner still gets the fallback. */
+function testTabRedirects(): void {
+  assert.equal(redirectTab("exchange"), "flips", "old Exchange link → Flips");
+  assert.equal(redirectTab("flips"), "flips");
+  assert.equal(redirectTab("market"), "market");
+  assert.equal(redirectTab(null), null);
+  assert.equal(redirectTab("toString"), "toString", "a prototype key is not a redirect; the parser rejects it");
+  assert.equal(redirectTab("bogus"), "bogus", "an unknown tab is left for the parser to reject");
+  assert.equal(redirectTool("market", "toString"), "toString", "a prototype key is not a tool redirect");
+  assert.equal(redirectTool("market", "board"), "opportunities");
+  assert.deepEqual(parseModeRoute("advanced", redirectTab("exchange"), null), { tab: "flips", tool: null, rejected: [], hidden: [] });
+  assert.deepEqual(
+    parseModeRoute("beginner", redirectTab("exchange"), null),
+    { tab: "learn", tool: "what", rejected: [], hidden: ["tab=flips"] },
+    "a beginner's old Exchange link falls back like any hidden tab",
+  );
+  assert.deepEqual(parseModeRoute("advanced", "exchange", null).rejected, ["tab=exchange"], "the old id itself is no longer a tab");
+  // what useTabRoute hands AppShell: a non-empty `renamed` is what rewrites the URL (without a warning)
+  assert.deepEqual(followRenames("exchange", null), { tab: "flips", tool: null, renamed: ["tab=exchange"] });
+  assert.deepEqual(followRenames("flips", null), { tab: "flips", tool: null, renamed: [] }, "the current id is not rewritten");
+  assert.deepEqual(followRenames("market", "board"), { tab: "market", tool: "opportunities", renamed: ["tool=board"] });
+  assert.deepEqual(followRenames(null, null), { tab: null, tool: null, renamed: [] });
+  assert.deepEqual(followRenames("bogus", "x"), { tab: "bogus", tool: "x", renamed: [] }, "unknown ids are the parser's to reject");
+  for (const [from, to] of TAB_REDIRECTS) {
+    assert.ok(TAB_IDS.includes(to), `tab redirect target ${to} is a registry tab`);
+    assert.ok(!tabIdSchema.safeParse(from).success, `redirected tab id ${from} is no longer a tab`);
+  }
+  pass("renamed tabs: ?tab=exchange → flips, targets exist, old ids retired");
+}
+
 function testModeRoutes(): void {
   const route = (mode: "beginner" | "advanced", tab: string | null, tool: string | null) => parseModeRoute(mode, tab, tool);
   assert.deepEqual(route("beginner", null, null), { tab: "learn", tool: "what", rejected: [], hidden: [] });
-  assert.deepEqual(route("beginner", "exchange", null), { tab: "learn", tool: "what", rejected: [], hidden: ["tab=exchange"] });
+  assert.deepEqual(route("beginner", "flips", null), { tab: "learn", tool: "what", rejected: [], hidden: ["tab=flips"] });
   assert.deepEqual(route("beginner", "craft", "moves"), { tab: "learn", tool: "what", rejected: [], hidden: ["tab=craft"] });
   assert.deepEqual(route("beginner", "farm", null), { tab: "farm", tool: "strategies", rejected: [], hidden: [] }, "hidden default tool is silent");
   assert.deepEqual(route("beginner", "farm", "board"), { tab: "farm", tool: "strategies", rejected: [], hidden: ["tool=board"] });
@@ -174,7 +204,7 @@ function testModeRoutes(): void {
   assert.deepEqual(route("beginner", "bogus", "x"), { tab: "learn", tool: "what", rejected: ["tab=bogus", "tool=x"], hidden: [] });
   assert.deepEqual(route("beginner", "farm", "nope"), { tab: "farm", tool: "strategies", rejected: ["tool=nope"], hidden: [] });
   assert.deepEqual(route("beginner", "coach", null), { tab: "coach", tool: null, rejected: [], hidden: [] }, "Coach in both modes");
-  assert.deepEqual(route("advanced", null, null), { tab: "exchange", tool: null, rejected: [], hidden: [] });
+  assert.deepEqual(route("advanced", null, null), { tab: "flips", tool: null, rejected: [], hidden: [] });
   assert.deepEqual(route("advanced", "farm", null), { tab: "farm", tool: "board", rejected: [], hidden: [] });
   assert.deepEqual(route("advanced", "learn", "atlas"), { tab: "learn", tool: "atlas", rejected: [], hidden: [] });
   const beginnerTour = tourStepsFor("beginner").map((s) => s.element);
@@ -290,6 +320,7 @@ async function main(): Promise<void> {
   testVisibility();
   testSubTabs();
   testToolRedirects();
+  testTabRedirects();
   testModeRoutes();
   const grades = testDataRefs();
   await testLookup(user);

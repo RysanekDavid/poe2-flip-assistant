@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * GET /api/league/start and POST /api/league/start/presets — league-start mode. Shared by the
- * routes (validated on the way out) and the Exchange tab panel (validated on the way in).
+ * routes (validated on the way out) and the Flips tab panel (validated on the way in).
  *
  * All money is Divine. A price nobody observed is null, never 0: a 0 would read as "worthless".
  * Ratios are "price N days later ÷ price today" at the same point of past league starts.

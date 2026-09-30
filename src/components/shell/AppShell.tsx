@@ -16,7 +16,7 @@ import { CredBanner } from "./CredBanner";
 import { NavModeProvider, useNavMode } from "./NavModeProvider";
 import { useTabRoute } from "./useTabRoute";
 import { tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
-import { ExchangeTab } from "./tabs/ExchangeTab";
+import { FlipsTab } from "./tabs/FlipsTab";
 import { MarketTab } from "./tabs/MarketTab";
 import { FarmTab } from "./tabs/FarmTab";
 import { CraftTab } from "./tabs/CraftTab";
@@ -56,7 +56,7 @@ function useCanonicalRoute(route: TabRoute, rejected: readonly string[], hidden:
   const { mode } = useNavMode();
   const unknown = rejected.join(", ");
   const hiddenText = hidden.join(", ");
-  // an old link to a renamed tool is expected, not an error: rewrite it without a warning
+  // an old link to a renamed tab or tool is expected, not an error: rewrite it without a warning
   const renamedText = renamed.join(", ");
   const href = tabRouteHref(route);
   useEffect(() => {
@@ -72,8 +72,8 @@ function useCanonicalRoute(route: TabRoute, rejected: readonly string[], hidden:
 /** Coach is kept mounted (below) so an open conversation survives tab switches. */
 function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
   switch (tab) {
-    case "exchange":
-      return <ExchangeTab />;
+    case "flips":
+      return <FlipsTab />;
     case "market":
       return <MarketTab />;
     case "farm":
@@ -124,7 +124,7 @@ function ShellBody() {
   useShellHeightVar(headerRef);
 
   return (
-    // one alert poll for the TopBar badge, its popover, the Alerts tab and the Exchange ticker
+    // one alert poll for the TopBar badge, its popover, the Alerts tab and the Flips ticker
     <AlertsProvider>
       <main className="mx-auto w-full max-w-screen-2xl flex-1 space-y-4 p-6">
         <Onboarding />

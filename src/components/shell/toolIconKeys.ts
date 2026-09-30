@@ -5,7 +5,7 @@ import type { TabId } from "./tabRegistry";
  * tabRegistry.ts. toolIcons.ts must supply exactly these keys (its type is derived from this list).
  */
 export const TOOL_ICON_KEYS = {
-  exchange: [],
+  flips: [],
   market: ["prices", "price", "opportunities"],
   farm: ["board", "strategies"],
   craft: ["recipes", "moves", "modpool"],

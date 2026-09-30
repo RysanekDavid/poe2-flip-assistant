@@ -6,7 +6,7 @@ import { RECIPES } from "../core/craftRecipes";
 const source = (...segments: string[]): string =>
   readFileSync(join(process.cwd(), ...segments), "utf8");
 
-// The estimated-row caveat lives once, in the Top Flips legend behind the Exchange page header.
+// The estimated-row caveat lives once, in the Top Flips legend behind the Flips page header.
 const discover = source("src", "components", "DiscoverColumns.tsx");
 const farm = source("src", "components", "farm", "FarmBoard.tsx");
 const craft = source("src", "components", "CraftTopPicks.tsx");
