@@ -33,7 +33,9 @@ EXPECTED_IDS = (
     "expedition-grand",
     "fracture-cleansed",
     "ritual-omens",
+    "ritual-wildwood-blooms",
     "strongbox-uniques",
+    "trial-of-chaos-fates",
 )
 
 
@@ -132,7 +134,7 @@ def test_list_mode_returns_every_match_under_the_cap() -> None:
     listed = _invoke()
     sources = [EvidenceSource.model_validate(s) for s in listed["sources"]]
     assert [s.id for s in sources] == [listed["evidence_id"]]
-    assert citations_are_valid(f"Ten setups [{listed['evidence_id']}].", sources)
+    assert citations_are_valid(f"Twelve setups [{listed['evidence_id']}].", sources)
 
 
 def test_detail_mode_carries_grades_notes_risks_and_bounded_sources() -> None:
@@ -148,8 +150,8 @@ def test_detail_mode_carries_grades_notes_risks_and_bounded_sources() -> None:
     assert row["risks"] and any("Deadly" in risk for risk in row["risks"])
     notes = row["claim_notes"]
     assert any(line.startswith("mod ") and "[vp]: " in line for line in notes), "vp notes too"
-    ritual = _invoke(strategy_id="ritual-omens")["strategy"]
-    assert any(line.startswith("waystone [uv]: ") for line in ritual["claim_notes"])
+    strongbox = _invoke(strategy_id="strongbox-uniques")["strategy"]
+    assert any(line.startswith("waystone [uv]: ") for line in strongbox["claim_notes"])
     sources = [EvidenceSource.model_validate(s) for s in payload["sources"]]
     assert [s.id for s in sources] == [row["evidence_id"]] and sources[0].type == "knowledge"
     assert citations_are_valid(f"Farm Manoki [{row['evidence_id']}].", sources)
@@ -170,6 +172,16 @@ def test_rows_flag_a_league_the_strategy_was_not_checked_in() -> None:
     assert detail["mode"] == "detail", "a single match skips the list round"
     assert detail["strategy"]["checked_in_league"] is False
     assert "Forbidden Rites" in detail["strategy"]["league_note"]
+
+
+def test_trial_of_chaos_is_a_mechanic_without_atlas_setup() -> None:
+    detail = _invoke(mechanic="trial_of_chaos")
+    assert detail["mode"] == "detail", "the only Trial of Chaos strategy comes back as detail"
+    row = detail["strategy"]
+    assert row["id"] == "trial-of-chaos-fates"
+    assert row["master"] == "any" and row["master_nodes"] == [] and row["tablets"] == []
+    assert row["waystone_prefer"] == []
+    assert _ids(_invoke(mechanic="ritual")) == ["ritual-omens", "ritual-wildwood-blooms"]
 
 
 def test_oversized_data_fails_at_tool_build(tmp_path: Path) -> None:

@@ -11,7 +11,7 @@
     "leagues": [
       "Forbidden Rites"
     ],
-    "stamped_at": "2026-09-29"
+    "stamped_at": "2026-09-30"
   },
   "status": "draft",
   "budget": {
@@ -236,15 +236,18 @@
   "waystone": {
     "prefer": [
       "item_rarity",
+      "monster_effectiveness",
       "waystone_drop_chance"
     ],
-    "notes": "Item rarity first; waystone drop chance keeps the loop going.",
+    "notes": "The waystone's rarity applies to items found in the map, the boss's drops included; monster effectiveness adds item quantity; waystone drop chance keeps the loop going.",
     "claim": {
-      "v": "uv",
+      "v": "syn",
       "src": [
+        "https://repoe-fork.github.io/poe2/",
+        "https://www.pathofexile.com/forum/view-thread/3932540",
         "https://poe2db.tw/us/Waystones"
       ],
-      "note": "Editorial. poe2db does not say whether the map's item rarity total adds to what the Map Boss drops."
+      "note": "RePoE waystone lines read 'N% more Rarity of Items found in this Area' and 'N% more Waystones found in Area'; 0.5.0 'Halved the bonus to Quantity of Item Dropped … provided by increased Monster Effectiveness', so that bonus still exists. That these reach the Map Boss's drops is our reading of 'found in this Area'; not measured."
     }
   },
   "steps": [

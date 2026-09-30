@@ -44,12 +44,14 @@ const EXPECTED_IDS = [
   "expedition-grand",
   "fracture-cleansed",
   "ritual-omens",
+  "ritual-wildwood-blooms",
   "strongbox-uniques",
+  "trial-of-chaos-fates",
 ];
 
 // --- committed data ---
 const strategies = loadStrategies();
-assert.deepEqual(strategies.map((s) => s.id), EXPECTED_IDS, "the ten strategies, ordered by id");
+assert.deepEqual(strategies.map((s) => s.id), EXPECTED_IDS, "the twelve strategies, ordered by id");
 assert.deepEqual(
   readdirSync(STRATEGIES_DIR).filter((f) => f.endsWith(".json")).sort(),
   EXPECTED_IDS.map((id) => `${id}.json`),
@@ -218,6 +220,8 @@ const byId = (list: readonly { id: string }[]): string[] => list.map((s) => s.id
 assert.deepEqual(byId(filterStrategies(views, EMPTY_FILTER)), EXPECTED_IDS, "no filter keeps all");
 const breachOnly = filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["breach"]) });
 assert.deepEqual(byId(breachOnly), ["breach-hiveblood"]);
+assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["ritual"]) })), ["ritual-omens", "ritual-wildwood-blooms"]);
+assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["trial_of_chaos"]) })), ["trial-of-chaos-fates"]);
 const cheap = filterStrategies(views, { ...EMPTY_FILTER, budget: "league_start" });
 assert.ok(cheap.length > 0 && cheap.every((s) => s.budget.tier === "league_start"), "league_start keeps only league_start");
 const mid = filterStrategies(views, { ...EMPTY_FILTER, budget: "mid" });

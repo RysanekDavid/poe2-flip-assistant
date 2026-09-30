@@ -18,6 +18,7 @@ export const MECHANIC_LABEL: Record<Mechanic, string> = {
   map_boss: "Map bosses",
   corruption: "Corruption",
   anomaly: "Anomaly",
+  trial_of_chaos: "Trial of Chaos",
 };
 
 export const BUDGET_LABEL: Record<BudgetTier, string> = {

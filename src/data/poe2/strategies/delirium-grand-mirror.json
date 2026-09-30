@@ -11,7 +11,7 @@
     "leagues": [
       "Forbidden Rites"
     ],
-    "stamped_at": "2026-09-29"
+    "stamped_at": "2026-09-30"
   },
   "status": "draft",
   "budget": {
@@ -307,7 +307,7 @@
               "https://poe2db.tw/us/Delirium_Tablet",
               "https://repoe-fork.github.io/poe2/"
             ],
-            "note": "Suffix 'of Eternity'; optional. No search button: trade2 lists two stats with this text (3226351972, 1174954559)."
+            "note": "Suffix 'of Eternity'; optional. No search button: trade2 files this exact text under two ids (3226351972, 1174954559), and RePoE's stat descriptions carry two entries with it but name only map_affliction_secondary_wave_delay_seconds_+, so neither id can be tied to the tablet stat."
           }
         },
         {
@@ -329,17 +329,18 @@
   ],
   "waystone": {
     "prefer": [
-      "pack_size",
-      "monster_rarity"
+      "monster_rarity",
+      "pack_size"
     ],
-    "notes": "More monsters in the fog means more Delirium kills; there is no measured order.",
+    "notes": "Monster rarity means more rare monsters, which 'These demons are all your own...' turns into Delirium Demons in fog; pack size adds monsters and a chance of extra rares.",
     "claim": {
-      "v": "uv",
+      "v": "syn",
       "src": [
-        "https://poe2db.tw/us/Waystones",
+        "https://www.pathofexile.com/forum/view-thread/3932540",
+        "https://poe2db.tw/us/These_demons_are_all_your_own...",
         "https://www.pathofexile.com/forum/view-thread/4000864"
       ],
-      "note": "Editorial. 0.5.5 stopped Delirium pack counts scaling above 100% Deliriousness; no source ties waystone totals to Delirium rewards."
+      "note": "0.5.0: Monster Rarity 'affects the chances of magic and rare monsters'; pack size adds a chance for an additional Rare Monster. The link to Delirium rewards runs through that notable and is ours, not measured. 0.5.5 stopped Delirium pack counts scaling above 100% Deliriousness."
     }
   },
   "steps": [
@@ -351,7 +352,8 @@
   ],
   "risks": [
     "0.5.5: Delirium packs no longer scale above 100% Deliriousness — pushing deliriousness past that adds danger, not packs.",
-    "Liquid Emotion prices differ a lot by type; the basket lists two examples only."
+    "Liquid Emotion prices differ a lot by type; the basket lists two examples only.",
+    "More waystone modifiers mean fewer revives (poe2db Waystones); 0.5.5 fixed Simulacrum of Delusion areas ignoring the Waystone's revives, so they now use them."
   ],
   "measured": null
 }

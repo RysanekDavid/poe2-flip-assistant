@@ -24,6 +24,7 @@ export const MECHANICS = [
   "map_boss",
   "corruption",
   "anomaly",
+  "trial_of_chaos",
 ] as const;
 export const mechanicSchema = z.enum(MECHANICS);
 export type Mechanic = z.infer<typeof mechanicSchema>;

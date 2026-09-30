@@ -11,7 +11,7 @@
     "leagues": [
       "Forbidden Rites"
     ],
-    "stamped_at": "2026-09-29"
+    "stamped_at": "2026-09-30"
   },
   "status": "draft",
   "budget": {
@@ -321,9 +321,12 @@
     "claim": {
       "v": "uv",
       "src": [
-        "https://poe2db.tw/us/Waystones"
+        "https://poe2db.tw/us/Waystones",
+        "https://poe2db.tw/us/Expedition",
+        "https://poe2db.tw/us/Expedition_Tablet",
+        "https://repoe-fork.github.io/poe2/"
       ],
-      "note": "Editorial; no source ties waystone totals to Expedition rewards."
+      "note": "Unverified. poe2db counts Expedition monsters as not naturally spawning, and Expedition has its own 'Expedition Monster Rarity' tablet stat, so the waystone's monster rarity may not reach runic monsters. The waystone rarity line reads 'Rarity of Items found in this Area' (RePoE), which would cover excavated chests, but no source confirms it; test in game."
     }
   },
   "steps": [
