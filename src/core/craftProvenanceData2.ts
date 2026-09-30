@@ -149,12 +149,12 @@ const WAVE2_PROVENANCE: Record<string, RecipeProvenance> = {
   boots_evasion_ms_ruin: compilationOnly(`${ONE_ENTRY} The base already carries 35% MS; the reveal and the exalts set the price band.`, ["§1", "§3", "§4", "§5", "§7"]),
   armour_evasion_es_body_essence: compilationOnly(`${ONE_ENTRY} A ~1 ex base where every step lands; the reveal and the resistances set the sale.`, ["§4", "§5", "§7"]),
   belt_life_res_desecrated_hybrid: compilationOnly(
-    "The compilation: '3/4 chance to hit Elemental+Chaos mod of chosen element' — RePoE's four boss suffixes per belt fit it only if all three reveal options come from the chosen boss (unverified). 0.6 shades it for the open K6 belt question; a miss still sells.",
+    "The compilation: '3/4 chance to hit Elemental+Chaos mod of chosen element' — RePoE's four boss suffixes per belt fit it only if all three reveal options come from the chosen boss (unverified) and assuming equal spawn weights. 0.6 shades it for the open K6 belt question (probable by internal id, still an inference); a miss still sells.",
     ["§4", "§5", "§7"],
     "creator_claim",
   ),
   ring_prismatic_catalyst_attack: compilationOnly(
-    `${ONE_ENTRY} Two exalt slams must each land a damage line; its '3/4' hybrid odds are the belt's, and RePoE gives rings 3/4 only for the Ulaman hybrid.`,
+    `${ONE_ENTRY} Two exalt slams must each land a damage line; its '3/4' hybrid odds are the belt's, and RePoE gives rings 3/4 only for the Ulaman hybrid (4/5/6 boss suffixes; equal spawn weights assumed).`,
     ["§3", "§4", "§5", "§7", "§8"],
   ),
 };

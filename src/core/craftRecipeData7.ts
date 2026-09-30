@@ -12,7 +12,7 @@ import type { CraftRecipe } from "./craftRecipes";
 /** Essence + Dextral + boss omen + Collarbone — the shared opening. The Sovereign is priced; the Liege
  *  and the Blackblooded are the Fire and Cold alternatives. */
 const HYBRID_MATS: CraftRecipe["materials"] = [
-  { material: MATS.greaterEssenceThawing, qtyPerAttempt: 1, note: "Any Greater resistance essence (the compilation names none); Thawing = cold is priced." },
+  { material: MATS.greaterEssenceThawing, qtyPerAttempt: 1, note: "A Greater resistance essence of an element the base lacks (the compilation names none); Thawing = cold is priced." },
   { material: MATS.omenDextralNecromancy, qtyPerAttempt: 1, note: "Forces the Collarbone's desecration onto a suffix." },
   { material: MATS.omenTheSovereign, qtyPerAttempt: 1, note: "Ulaman → Lightning + Chaos hybrid; the Liege (Fire) and the Blackblooded (Cold) are the alternatives." },
   { material: MATS.preservedCollarbone, qtyPerAttempt: 1, note: "'Desecrates a Rare Amulet, Ring or Belt' (item text)." },
@@ -30,8 +30,8 @@ export const RECIPES_7: CraftRecipe[] = [
       category: "accessory.belt",
       rarity: "magic",
       ilvlMin: 65, // top belt life tier +(150–174) is modifier level 65 (RePoE)
-      stats: [{ text: "# to maximum Life" }],
-      note: "MAGIC belt with maximum Life and one resistance. The compilation names no base, life roll or item level; ilvl 65+ is where the top life tier opens.",
+      stats: [{ text: "# to maximum Life", min: 100 }], // matches the result leg
+      note: "MAGIC belt with 100+ maximum Life (our minimum, matching the result leg) and one resistance. The compilation names no base, life roll or item level; ilvl 65+ is where the top life tier opens.",
     },
     result: {
       label: "Rare belt · life + resistances",
@@ -62,9 +62,9 @@ export const RECIPES_7: CraftRecipe[] = [
       label: "Magic Prismatic Ring · life + a resistance (ilvl 75+)",
       type: "Prismatic Ring",
       rarity: "magic",
-      ilvlMin: 75, // top flat Physical/Fire to Attacks tiers are modifier level 75 (RePoE; KB §3)
-      stats: [{ text: "# to maximum Life" }],
-      note: "MAGIC Prismatic Ring (+(7–10)% all elemental res implicit, RePoE) with Life and one resistance, ilvl 75+. The compilation prefers Prismatic; it names no life roll.",
+      ilvlMin: 75, // top flat Physical/Fire to Attacks tiers are modifier level 75 (RePoE AddedPhysicalDamage9 / AddedFireDamage9)
+      stats: [{ text: "# to maximum Life", min: 60 }], // matches the result leg
+      note: "MAGIC Prismatic Ring (+(7–10)% all elemental res implicit, RePoE) with 60+ Life (our minimum, matching the result leg) and one resistance, ilvl 75+. The compilation prefers Prismatic; it names no life roll.",
     },
     result: {
       label: "Rare Prismatic Ring · flat phys to Attacks + life",

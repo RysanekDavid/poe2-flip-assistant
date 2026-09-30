@@ -194,6 +194,9 @@ const recipe = (key: string): CraftRecipe => {
   const fireSlam = allSteps(recipe("ring_prismatic_catalyst_attack")).find((s) => uses(s, MATS.xophsCatalyst.id));
   ok("an omen-less catalyst slam is flagged against KB §8", /KB §8/.test(fireSlam?.unverified ?? "") && !uses(fireSlam!, MATS.omenCatalysingExaltation.id));
   // entity catalog: Scraps improve "an armour", Whetstones "a martial weapon"
+  // poe2db: Seeking's crit is a SUFFIX on every class — the crit bow must not route it into a prefix
+  const seeking = recipe("bow_seeking_desecrated_prefix").guide.shopping;
+  ok("the Seeking bow keeps a suffix open for its essence", /suffix open for the essence/.test(seeking) && !/prefix open for the essence/.test(seeking));
   const foreign: Partial<Record<CraftRecipe["domain"], string>> = { armour: MATS.whetstone.id, weapon: MATS.scrap.id };
   const wrongQuality = RECIPES.filter((r) => allSteps(r).some((s) => uses(s, foreign[r.domain] ?? "")));
   ok("armour never spends Whetstones, weapons never spend Scraps", wrongQuality.length === 0, wrongQuality.map((r) => r.key).join(","));

@@ -26,14 +26,17 @@ function bowMats(essence: typeof MATS.greaterEssenceAbrasion | typeof MATS.great
   ];
 }
 
-const BOW_BASE: CraftRecipe["base"] = {
-  label: "Magic bow · 110%+ phys (ilvl 75+)",
-  category: "weapon.bow",
-  rarity: "magic",
-  ilvlMin: 75, // the (155–169)% phys tier is modifier level 75 on bows (RePoE)
-  stats: [{ text: "#% increased Physical Damage", min: 110 }],
-  note: "MAGIC bow with % increased Physical Damage (110%+ is our threshold; the compilation: 'higher is better, any % works') and one suffix, the second prefix open. ilvl 75+.",
-};
+/** Abrasion's flat phys is a PREFIX, Seeking's crit a SUFFIX (poe2db), so the open slots differ. */
+function bowBase(slots: string): CraftRecipe["base"] {
+  return {
+    label: "Magic bow · 110%+ phys (ilvl 75+)",
+    category: "weapon.bow",
+    rarity: "magic",
+    ilvlMin: 75, // the (155–169)% phys tier is modifier level 75 on bows (RePoE)
+    stats: [{ text: "#% increased Physical Damage", min: 110 }],
+    note: `MAGIC bow with % increased Physical Damage (110%+ is our threshold; the compilation: 'higher is better, any % works') and one suffix. ${slots} ilvl 75+.`,
+  };
+}
 
 export const RECIPES_6: CraftRecipe[] = [
   // 1) Katla's Gloom putrefaction gloves. hitRate 0.2: the boots/body slot machine's ~1 in 3, shaded
@@ -56,8 +59,9 @@ export const RECIPES_6: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 75,
       corrupted: true, // the putrefaction omen corrupts — uncorrupted listings are a different product
-      stats: [{ text: "#% increased Magnitude of Ailments you inflict", min: 20, tier: 1 }],
-      note: "Valued from instant-buyout CORRUPTED comparables with the Decay '(20–32)% increased Magnitude of Ailments you inflict' line — one of the five Decay prefix families, the generic one.",
+      // DecayInfluenceAilmentMagnitude2 (26-32)%, modifier level 75 — the tier the guide's pick list names
+      stats: [{ text: "#% increased Magnitude of Ailments you inflict", min: 26, tier: 1 }],
+      note: "Valued from instant-buyout CORRUPTED comparables with the level-75 Decay tier '(26–32)% increased Magnitude of Ailments you inflict' — one of the five Decay prefix families, the generic one.",
     },
     materials: [
       { material: MATS.artificers, qtyPerAttempt: 1, note: "One Augment socket for the rune (the compilation says 2; KB: gloves cap at 1)." },
@@ -75,7 +79,7 @@ export const RECIPES_6: CraftRecipe[] = [
     key: "bow_abrasion_desecrated_prefix",
     domain: "weapon",
     label: "Bow · Abrasion + desecrated prefix (non-crit)",
-    base: BOW_BASE,
+    base: bowBase("The essence takes the second prefix, the desecration the third."),
     result: {
       label: "Rare bow · %phys + flat phys, 300+ pdps",
       category: "weapon.bow",
@@ -96,7 +100,7 @@ export const RECIPES_6: CraftRecipe[] = [
     key: "bow_seeking_desecrated_prefix",
     domain: "weapon",
     label: "Bow · Seeking + desecrated prefix (crit)",
-    base: BOW_BASE,
+    base: bowBase("The essence takes a suffix, the desecration the second prefix."),
     result: {
       label: "Rare bow · %phys + 3%+ crit",
       category: "weapon.bow",
@@ -120,28 +124,31 @@ export const RECIPES_6: CraftRecipe[] = [
     key: "quarterstaff_flames_desecrated_prefix",
     domain: "weapon",
     label: "Quarterstaff · Flames essence + desecrated prefix",
+    // RePoE 4.5.5.2 (dump 2026-09-30), quarterstaff prefix pool: LocalIncreasedPhysicalDamagePercent1-8
+    // (weapon:1) — (110-134)% is tier 5, level 46; the % elemental alternative is
+    // WeaponElementalDamageOnTwohandWeapon1-6 (two_hand_weapon:1, bow:0): (72-85)% level 33 … (120-139)% level 81.
     base: {
-      label: "Magic quarterstaff · % elemental (ilvl 75+)",
+      label: "Magic quarterstaff · 110%+ phys (ilvl 75+)",
       category: "weapon.warstaff",
       rarity: "magic",
       ilvlMin: 75, // the compilation's base note
-      stats: [{ text: "#% increased Elemental Damage with Attacks", min: 72 }],
-      note: "MAGIC quarterstaff with % increased Elemental Damage with Attacks (72%+ is our threshold: RePoE's (72–85)% tier, level 33, or better) and an open prefix. The compilation also accepts % Physical or Added Elemental bases.",
+      stats: [{ text: "#% increased Physical Damage", min: 110 }],
+      note: "MAGIC quarterstaff with a high % increased Physical Damage roll (the compilation's first base prefix, 'high roll'; 110%+ is our threshold, RePoE's (110–134)% tier or better) and an open prefix. The compilation also accepts % Elemental or Added Elemental bases — the leg searches only the physical one.",
     },
     result: {
-      label: "Rare quarterstaff · % elemental + flat fire",
+      label: "Rare quarterstaff · %phys + flat fire",
       category: "weapon.warstaff",
       rarity: "rare",
       ilvlMin: 75,
-      stats: [{ text: "#% increased Elemental Damage with Attacks", min: 72, tier: 1 }],
-      note: "Valued from instant-buyout comparables: rare quarterstaff with 72%+ elemental damage with attacks. The compilation's headline is '1000+ DPS'.",
+      stats: [{ text: "#% increased Physical Damage", min: 110, tier: 1 }],
+      note: "Valued from instant-buyout comparables: rare quarterstaff with 110%+ physical damage. The essence's flat line and the reveal are upside the leg does not search. The compilation's headline is '1000+ DPS'.",
     },
     materials: [
       { material: MATS.greaterEssenceFlames, qtyPerAttempt: 1, note: "Two-hander flat fire, Adds (56–70) to (84–107) (poe2db) — the compilation's example essence." },
       { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 1 },
       { material: MATS.preservedJawbone, qtyPerAttempt: 1 },
       { material: MATS.artificers, qtyPerAttempt: 2, note: "Two sockets (runes not tracked)." },
-      { material: MATS.whetstone, qtyPerAttempt: 10, note: "~10 to 20% quality — our estimate, the compilation names no count." },
+      { material: MATS.whetstone, qtyPerAttempt: 20, note: "Worst case for 20% quality at 1% per use: the quality a Whetstone adds to a rare is unverified and the compilation names no count." },
     ],
     hitRate: 0.5,
     guide: GUIDES_6.quarterstaff_flames_desecrated_prefix!,
@@ -184,7 +191,7 @@ export const RECIPES_6: CraftRecipe[] = [
       { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 0.3, note: "Conditional in the compilation (~93 ex)." },
       { material: MATS.omenLight, qtyPerAttempt: 0.2, note: "Conditional in the compilation (~3 div): strips a bad desecrated mod with an Annulment." },
       { material: MATS.annul, qtyPerAttempt: 0.2 },
-      { material: MATS.scrap, qtyPerAttempt: 14, note: "~14 scraps to 20% quality (our estimate)." },
+      { material: MATS.scrap, qtyPerAttempt: 20, note: "Worst case for 20% quality at 1% per use: the quality a Scrap adds to a rare is unverified." },
       { material: MATS.artificers, qtyPerAttempt: 1, note: "One socket — the boots cap (runes not tracked)." },
     ],
     hitRate: 0.6,
@@ -226,7 +233,7 @@ export const RECIPES_6: CraftRecipe[] = [
       { material: MATS.omenSinistralNecromancy, qtyPerAttempt: 1, note: "Optional in the compilation; forces the prefix." },
       { material: MATS.preservedRib, qtyPerAttempt: 1 },
       { material: MATS.exalted, qtyPerAttempt: 2, note: "The compilation's 'Exalted Orb x2' for the open slots." },
-      { material: MATS.scrap, qtyPerAttempt: 14, note: "~14 scraps to 20% quality (our estimate)." },
+      { material: MATS.scrap, qtyPerAttempt: 20, note: "Worst case for 20% quality at 1% per use: the quality a Scrap adds to a rare is unverified." },
       { material: MATS.artificers, qtyPerAttempt: 2, note: "Two sockets for Iron Runes (runes not tracked)." },
     ],
     hitRate: 0.6,

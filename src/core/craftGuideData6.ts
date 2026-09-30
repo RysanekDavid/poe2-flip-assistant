@@ -21,10 +21,23 @@ const EXALT_PAIR = "Omen of Greater Exaltation adds two mods from one exalt (KB 
 
 type BowVariant = "abrasion" | "seeking";
 
-const BOW: Record<BowVariant, { essence: string; mod: string; want: string[] }> = {
+interface BowText {
+  essence: string;
+  mod: string;
+  /** Where the essence, the desecration and the two exalted mods land — the essence's side differs. */
+  slots: string;
+  check: string;
+  fill: string;
+  want: string[];
+}
+
+const BOW: Record<BowVariant, BowText> = {
   abrasion: {
     essence: "Greater Essence of Abrasion",
-    mod: "'Adds (16—24) to (28—42) Physical Damage' on bows (poe2db) — RePoE's third-highest of nine flat-phys tiers, matching the compilation's 'T3 flat phys'",
+    mod: "the PREFIX 'Adds (16—24) to (28—42) Physical Damage' on bows (poe2db) — RePoE's third-highest of nine flat-phys tiers, matching the compilation's 'T3 flat phys'",
+    slots: "Keep the second prefix open for the essence and the third for the desecration; Greater Exaltation then fills two suffixes.",
+    check: "Rare: %phys + flat phys + the base's suffix, one prefix open.",
+    fill: "The prefixes are full, so both land on suffixes.",
     want: [
       "flat Cold damage — the compilation's priority for non-crit (Ice Shot) bows; top tier Adds (72–81) to (110–123), modifier level 81",
       "flat Fire or Lightning damage",
@@ -33,7 +46,10 @@ const BOW: Record<BowVariant, { essence: string; mod: string; want: string[] }> 
   },
   seeking: {
     essence: "Greater Essence of Seeking",
-    mod: "'+(3.11—3.8)% to Critical Hit Chance' on bows (poe2db) — RePoE's third-highest of six crit tiers, matching the compilation's 'T3 crit'",
+    mod: "the SUFFIX '+(3.11—3.8)% to Critical Hit Chance' on bows (poe2db lists it as a suffix on every class) — RePoE's third-highest of six crit tiers, matching the compilation's 'T3 crit'",
+    slots: "Keep a suffix open for the essence; the second prefix takes the desecration; Greater Exaltation fills the third prefix and third suffix.",
+    check: "Rare: %phys + crit + the base's suffix, two prefixes open.",
+    fill: "One prefix and one suffix are open, so one lands on each side.",
     want: [
       "flat Physical damage — the compilation's first want; top tier Adds (26–39) to (44–66), modifier level 75",
       "flat Cold, Fire or Lightning damage",
@@ -49,7 +65,7 @@ function bowGuide(variant: BowVariant): CraftGuide {
   return {
     goal: `Rare bow: high % Physical + the essence's ${crit ? "T3 crit" : "T3 flat phys"} + a desecrated prefix + two exalted mods. ${crit ? "Crit" : "Non-crit"} Deadeye/Ice Shot bows.`,
     shopping:
-      "MAGIC bow, ilvl 75+ (the %phys T7 is modifier level 75, T8 is 82; RePoE), with high % increased Physical Damage and one suffix. The compilation hunts it with Perfect Transmutation/Augmentation; buying one is the same start. Keep the second prefix open for the essence and the third for the desecration.",
+      `MAGIC bow, ilvl 75+ (the %phys T7 is modifier level 75, T8 is 82; RePoE), with high % increased Physical Damage and one suffix. The compilation hunts it with Perfect Transmutation/Augmentation; buying one is the same start. ${v.slots}`,
     marketCheck: `Price finished ${crit ? "crit bows (%phys + 3%+ crit)" : "phys bows with flat elemental"} before buying. The compilation rates it 'medium' budget with 'RNG on the final slam'.`,
     phases: [
       {
@@ -59,7 +75,7 @@ function bowGuide(variant: BowVariant): CraftGuide {
             do: `${v.essence} on the magic bow.`,
             why: `Upgrades it to rare and adds ${v.mod}. ${ESSENCE_KEEPS}`,
             mats: [crit ? MATS.greaterEssenceSeeking : MATS.greaterEssenceAbrasion],
-            check: crit ? "Rare: %phys + crit + the base's suffix." : "Rare: %phys + flat phys + the base's suffix, one prefix open.",
+            check: v.check,
           },
         ],
       },
@@ -85,7 +101,7 @@ function bowGuide(variant: BowVariant): CraftGuide {
         steps: [
           {
             do: "Omen of Greater Exaltation + one Greater Exalted Orb.",
-            why: `${EXALT_PAIR} Greater floor 35 (KB §1); the compilation allows the Perfect orb (floor 50) on a good bow.`,
+            why: `${EXALT_PAIR} ${v.fill} Greater floor 35 (KB §1); the compilation allows the Perfect orb (floor 50) on a good bow.`,
             mats: [MATS.omenGreaterExaltation, MATS.greaterExalted],
             check: "Six mods.",
           },
@@ -154,10 +170,10 @@ const glovesGuide: CraftGuide = {
 };
 
 const quarterstaffGuide: CraftGuide = {
-  goal: "Rare quarterstaff: % Elemental (or % Physical) + the essence's flat damage + a desecrated prefix + two sockets. The compilation's '1000+ DPS Monk quarterstaff', 'beginner friendly'.",
+  goal: "Rare quarterstaff: a high % Physical (or % Elemental) base + the essence's flat damage + a desecrated prefix + two sockets. The compilation's '1000+ DPS Monk quarterstaff', 'beginner friendly'.",
   shopping:
-    "MAGIC quarterstaff, ilvl 75+ (the compilation), with % increased Elemental Damage with Attacks — or % Physical / Added Elemental — and an open prefix. Sort trade by DPS. Don't pair Added Fire with the Flames essence: an essence mod that shares a family with an existing mod is not covered by the KB (§7).",
-  marketCheck: "Price finished elemental quarterstaves with the essence's flat line first. The compilation calls the bases cheap and the essences accessible.",
+    "MAGIC quarterstaff, ilvl 75+ (the compilation), with a high-roll % increased Physical Damage — the compilation's first base prefix; it also accepts % Elemental Damage with Attacks or Added Elemental — and an open prefix. Sort trade by DPS. Don't pair Added Fire with the Flames essence: an essence mod that shares a family with an existing mod is not covered by the KB (§7).",
+  marketCheck: "Price finished quarterstaves with the base's % line and the essence's flat line first. The compilation calls the bases cheap and the essences accessible.",
   phases: [
     {
       title: "Flat damage essence",
@@ -166,7 +182,7 @@ const quarterstaffGuide: CraftGuide = {
           do: "Greater Essence of Flames — the compilation also names 'ice' and 'storm'; the 0.5.5b cold and lightning ones are Greater Essence of Ice and of Electricity (RePoE ids …Cold / …Lightning).",
           why: `Upgrades to rare and adds 'Adds (56—70) to (84—107) Fire Damage' on quarterstaves (poe2db) — the compilation's own example. ${ESSENCE_KEEPS}`,
           mats: [MATS.greaterEssenceFlames],
-          check: "Rare: % elemental + flat fire, one prefix open.",
+          check: "Rare: the base's % line + flat fire, one prefix open.",
         },
       ],
     },
@@ -177,10 +193,13 @@ const quarterstaffGuide: CraftGuide = {
           do: "Activate Omen of Sinistral Necromancy FIRST, then the Preserved Jawbone; reveal at the Well of Souls.",
           why: "Sinistral forces the prefix side (KB §4). The jackpot is a % damage prefix.",
           mats: [MATS.omenSinistralNecromancy, MATS.preservedJawbone],
+          // RePoE 4.5.5.2 (dump 2026-09-30): AbyssModQuarterstaffAmanamuPrefixFireDamageIgniteMagnitude, domain
+          // desecrated, prefix, level 65, spawn [warstaff:1, default:0, amanamu_mod:1] — spawns on quarterstaves.
+          // WeaponElementalDamageOnTwohandWeapon6 = (120-139)%, level 81, spawn [bow:0, two_hand_weapon:1].
           pick: [
             "desecrated: (86–99)% increased Fire Damage + (14–23)% increased Ignite Magnitude (Amanamu; Cold/Freeze and Lightning/Shock twins)",
+            "% increased Physical Damage — top (170–179)%, modifier level 82 (only if the base's % line is elemental)",
             "% increased Elemental Damage with Attacks — top (120–139)%, modifier level 81",
-            "% increased Physical Damage (phys path)",
           ],
           onFail: "No damage prefix → still a rare staff with two flat/% lines; finish cheaply or sell.",
         },
@@ -221,7 +240,7 @@ const bootsGuide: CraftGuide = {
       title: "Desecrate, then exalt",
       steps: [
         {
-          do: "Choose the side: Omen of Sinistral (prefix: flat/% Evasion, Life) or Dextral Necromancy (suffix: Dexterity, a hybrid resistance), then a Preserved Rib. Leave it unrevealed.",
+          do: "Choose the side: Omen of Sinistral (prefix: flat/% Evasion, Life) or Dextral Necromancy (suffix: Dexterity), then a Preserved Rib. Leave it unrevealed.",
           why: "Necromancy picks the side (KB §4); a Rib 'Desecrates a Rare Armour' (item text).",
           mats: [MATS.omenSinistralNecromancy, MATS.omenDextralNecromancy, MATS.preservedRib],
         },
@@ -249,7 +268,6 @@ function bootsFinish(): GuidePhase {
           "prefix (Sinistral): flat Evasion — top +(147–176), modifier level 54",
           "prefix (Sinistral): % increased Evasion Rating — top (92–100)%",
           "suffix (Dextral): Dexterity — top +(31–33), modifier level 74",
-          "suffix (Dextral): +(13–17)% to Lightning/Fire/Cold and Chaos Resistances (desecrated)",
         ],
       },
       {

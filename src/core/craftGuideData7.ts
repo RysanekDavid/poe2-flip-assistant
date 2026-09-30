@@ -11,11 +11,28 @@ import type { CraftGuide, GuidePhase } from "./craftRecipes";
 // KB §7 (verified-secondary, 2026-09-30): a Greater essence keeps the magic item's mods, like a Regal.
 const ESSENCE_KEEPS = "The magic mods stay, like a Regal Orb (KB §7).";
 
-// RePoE craft catalog: the boss suffixes a Collarbone can reveal, per boss, on each item class.
+/*
+ * Boss suffixes a Collarbone can reveal (RePoE 4.5.5.2, snapshot loader dump 2026-09-30; every desecrated
+ * suffix below is required_level 65 and spawns with weight 1 on its tag — the snapshot carries 1/0 spawn
+ * flags, not relative weights, so equal weights are an assumption):
+ *   Heavy Belt, 4 per boss —
+ *     Ulaman:  AbyssModArmourJewelleryUlamanSuffixLightningChaosResistance, …UlamanSuffixStrengthAndDexterity,
+ *              AbyssModBootsAndBeltUlamanSuffixReducedPoisonDurationSelf, AbyssModBeltUlamanSuffixReducedSlowPotencySelfIfCharmedRecently
+ *     Amanamu: AbyssModArmourJewelleryAmanamuSuffixFireChaosResistance, …AmanamuSuffixStrengthAndIntelligence,
+ *              AbyssModBootsAndBeltAmanamuSuffixReducedIgniteDuration, AbyssModBeltAmanamuSuffixThornsBaseCriticalStrikeChance
+ *     Kurgal:  AbyssModArmourJewelleryKurgalSuffixColdChaosResistance, …KurgalSuffixDexterityAndIntelligence,
+ *              AbyssModBootsAndBeltKurgalSuffixReducedBleedDurationSelf, AbyssModBeltKurgalSuffixManaRegenerationRate
+ *   Prismatic Ring, 4 / 5 / 6 —
+ *     Ulaman:  the two ArmourJewellery ones + AbyssModRingAmuletUlamanSuffixSkillSpeed, …UlamanSuffixRecoverPercentMaxLifeOnKill
+ *     Amanamu: the two ArmourJewellery ones + AbyssModRingAmuletAmanamuSuffixSkillEffectDuration,
+ *              …AmanamuSuffixRemnantCollectionRange, AbyssModRingAmanamuSuffixLifeLeechAmount
+ *     Kurgal:  the two ArmourJewellery ones + AbyssModRingAmuletKurgalSuffixExposureEffect, …KurgalSuffixCooldownRecoveryRate,
+ *              …KurgalSuffixRecoverPercentMaxManaOnKill, AbyssModRingKurgalSuffixManaLeechAmount
+ */
 const BELT_BOSS =
-  "Two open questions. KB conflict K6: the boss omens act on 'your next Weapon or Jewellery Desecration' (item text) and nothing we hold says a belt counts as jewellery for them (docs/kb/currency-core.md groups belts with jewellery only for Vaal outcomes). And the compilation's '3/4 chance' matches RePoE only if all three reveal options come from the chosen boss: each boss has exactly four belt suffixes (its elemental + chaos hybrid, an attribute pair, a reduced-ailment-duration line and one more), so three options of four. That all-boss reading is the same unverified one the Sovereign crossbow rests on.";
+  "Two open questions. KB conflict K6: the boss omens act on 'your next Weapon or Jewellery Desecration' (item text). A belt probably counts — by internal id (poe2db; RePoE Metadata/Items/Currency/…) the Preserved Collarbone is AbyssalBenchTicketJewellery ('Desecrates a Rare Amulet, Ring or Belt'), so a belt desecration is internally a Jewellery one — but that is still an inference. And the compilation's '3/4 chance' matches RePoE only if all three reveal options come from the chosen boss and assumes equal spawn weights: each boss has exactly four belt suffixes (its elemental + chaos hybrid, an attribute pair, a reduced-ailment-duration line and one more), so three options of four. That all-boss reading is the same unverified one the Sovereign crossbow rests on.";
 const RING_BOSS =
-  "The compilation copies the belt's '3/4 chance'. RePoE gives rings four Ulaman suffixes but five Amanamu and six Kurgal ones, so even if all three reveal options come from the chosen boss (unverified — the Sovereign crossbow's reading), the odds are 3/4 for Lightning (Sovereign), 3/5 for Fire (Liege) and 1/2 for Cold (Blackblooded).";
+  "The compilation copies the belt's '3/4 chance'. RePoE gives rings four Ulaman suffixes but five Amanamu and six Kurgal ones, so even if all three reveal options come from the chosen boss (unverified — the Sovereign crossbow's reading) and assuming equal spawn weights, the odds are 3/4 for Lightning (Sovereign), 3/5 for Fire (Liege) and 1/2 for Cold (Blackblooded).";
 const FIRE_SLAM =
   "The compilation's second slam uses a Fire catalyst with no Catalysing omen. KB §8: catalyst quality alone only scales mod magnitude, never roll weights — the bias needs Omen of Catalysing Exaltation (KB §4), and the first slam consumed it with all the quality. As written this is an unbiased exalt onto the last prefix; a second Catalysing omen (not in the compilation's bill) is what KB §8 says would bias it.";
 
@@ -26,9 +43,10 @@ function resOpening(slot: "belt" | "ring"): GuidePhase[] {
       title: "Second resistance",
       steps: [
         {
-          do: "A Greater resistance essence on the magic base — Thawing (cold) is priced; Insulation is fire, Grounding lightning.",
+          do: "A Greater resistance essence of an element the base doesn't have — Thawing (cold) is priced; Insulation is fire, Grounding lightning.",
           why: `The compilation: 'Guarantee a second resistance mod'. Greater Essence of Thawing adds '+(31—35)% to Cold Resistance' on ${slot === "belt" ? "belts" : "rings"} (poe2db), RePoE's cold-res tier at modifier level 60. ${ESSENCE_KEEPS}`,
           mats: [MATS.greaterEssenceThawing],
+          warning: "Never the base's own element: what an essence does when its mod shares a family with a mod already on the item is unverified (KB §7).",
           check: "Rare: life + two resistances.",
         },
       ],
@@ -78,7 +96,7 @@ export const GUIDES_7: Record<string, CraftGuide> = {
   ring_prismatic_catalyst_attack: {
     goal: "Rare Prismatic Ring: life + two resistances + a desecrated elemental + chaos hybrid + flat Physical and flat Fire damage to Attacks.",
     shopping:
-      "MAGIC Prismatic Ring (implicit +(7–10)% to all Elemental Resistances, RePoE; the compilation says '+10') with Life and a resistance, ilvl 75+ — the top flat Physical and Fire to Attacks tiers are modifier level 75 (KB §3, RePoE).",
+      "MAGIC Prismatic Ring (implicit +(7–10)% to all Elemental Resistances, RePoE; the compilation says '+10') with Life and a resistance, ilvl 75+ — the top flat Physical and Fire to Attacks tiers are modifier level 75 (RePoE AddedPhysicalDamage9 / AddedFireDamage9).",
     marketCheck: "Price attack rings with flat phys + life + resistances first. The compilation rates it 'high' difficulty.",
     phases: [
       ...resOpening("ring"),
