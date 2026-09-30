@@ -181,9 +181,30 @@ const recipe = (key: string): CraftRecipe => {
   ok("no recipe text claims Spirit only adds while Magic", claims.length === 0, claims.join(" | "));
 }
 
+// --- 2026-09-30 second wave: single-source mechanics carry a badge; RePoE gates hold ---
+{
+  const cat = loadCraftCatalog();
+  const ms35 = Object.values(cat.mods).find((m) => m.family === "MovementVelocity" && m.text.startsWith("35%"));
+  ok("35% MS boots base clears RePoE's modifier level", !!ms35 && (recipe("boots_evasion_ms_ruin").base.ilvlMin ?? 0) >= ms35.level, String(ms35?.level));
+  const gloves = allSteps(recipe("gloves_putrefaction_decay"));
+  ok("the putrefaction gloves' Decay-pool claim is flagged", /Decay/.test(gloves.find((s) => uses(s, MATS.omenPutrefaction.id))?.unverified ?? ""));
+  ok("the gloves' 2-socket claim is flagged against the KB cap", /1 socket/.test(gloves.find((s) => uses(s, MATS.artificers.id))?.unverified ?? ""));
+  const bossSteps = ["belt_life_res_desecrated_hybrid", "ring_prismatic_catalyst_attack"].map((k) => allSteps(recipe(k)).find((s) => uses(s, MATS.omenTheSovereign.id)));
+  ok("the boss-omen hybrid reveals are flagged (K6 / all-boss options)", bossSteps.every((s) => /3\/4/.test(s?.unverified ?? "")));
+  const fireSlam = allSteps(recipe("ring_prismatic_catalyst_attack")).find((s) => uses(s, MATS.xophsCatalyst.id));
+  ok("an omen-less catalyst slam is flagged against KB §8", /KB §8/.test(fireSlam?.unverified ?? "") && !uses(fireSlam!, MATS.omenCatalysingExaltation.id));
+  // entity catalog: Scraps improve "an armour", Whetstones "a martial weapon"
+  // poe2db: Seeking's crit is a SUFFIX on every class — the crit bow must not route it into a prefix
+  const seeking = recipe("bow_seeking_desecrated_prefix").guide.shopping;
+  ok("the Seeking bow keeps a suffix open for its essence", /suffix open for the essence/.test(seeking) && !/prefix open for the essence/.test(seeking));
+  const foreign: Partial<Record<CraftRecipe["domain"], string>> = { armour: MATS.whetstone.id, weapon: MATS.scrap.id };
+  const wrongQuality = RECIPES.filter((r) => allSteps(r).some((s) => uses(s, foreign[r.domain] ?? "")));
+  ok("armour never spends Whetstones, weapons never spend Scraps", wrongQuality.length === 0, wrongQuality.map((r) => r.key).join(","));
+}
+
 // --- data integrity survives the edits ---
 {
-  ok("25 curated recipes", RECIPES.length === 25, String(RECIPES.length));
+  ok("33 curated recipes", RECIPES.length === 33, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));

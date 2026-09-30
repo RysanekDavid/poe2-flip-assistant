@@ -1,5 +1,5 @@
 {
-  "note": "YouTube oEmbed (https://www.youtube.com/oembed?url=<video url>&format=json) fields title, author_name, author_url, fetched 2026-09-29 for the craft recipe provenance (src/core/craftProvenanceData.ts). Upload dates are not part of oEmbed; the provenance dates come from search-index listings (datePrecision: listing). Entries E1-E5 were added 2026-09-29 for the recipe expansion (craftProvenanceData2.ts), fetched sequentially one URL at a time.",
+  "note": "YouTube oEmbed (https://www.youtube.com/oembed?url=<video url>&format=json) fields title, author_name, author_url, fetched 2026-09-29 for the craft recipe provenance (src/core/craftProvenanceData.ts). Upload dates are not part of oEmbed; the provenance dates come from search-index listings (datePrecision: listing). Entries E1-E5 were added 2026-09-29 for the recipe expansion (craftProvenanceData2.ts), fetched sequentially one URL at a time. Entry E6 was added 2026-09-30 for the second wave (craftProvenanceData2.ts); its upload_date is NOT from oEmbed but from the video's own watch page (uploadDate / datePublished), read the same day, so the provenance marks that date exact.",
   "fetched_on": "2026-09-29",
   "videos": [
     { "tag": "S4", "url": "https://www.youtube.com/watch?v=NK-Oat_OtgQ", "title": "How to Craft The Best Jewels in The Game (5 mods) - Path of Exile 2", "author_name": "Fubgun", "author_url": "https://www.youtube.com/@Fubgun" },
@@ -14,6 +14,7 @@
     { "tag": "E2", "url": "https://www.youtube.com/watch?v=dbgOKCI5tOk", "title": "[PoE 2] Endgame Crossbow Crafting Guide - for POEGuy's Warbringer Mortar Cannon Build.", "author_name": "POEGuy", "author_url": "https://www.youtube.com/@poeguy007" },
     { "tag": "E3", "url": "https://www.youtube.com/watch?v=W4RuaAJYoZc", "title": "POE2 Time-Lost Jewels | Complete Crafting Breakdown", "author_name": "Scorpius", "author_url": "https://www.youtube.com/@ScorpiusOfficial" },
     { "tag": "E4", "url": "https://www.youtube.com/watch?v=9kKdoq0tZXg", "title": "Poe2-0.5.5 How to Profit craft Mana Stacking Rings", "author_name": "SaVeQ", "author_url": "https://www.youtube.com/@saveqm" },
-    { "tag": "E5", "url": "https://www.youtube.com/watch?v=yHxcpQiNihg", "title": "The mana stacker ring craft that made me 2 mirrors in PoE2 0.5 (and are still good in 0.5.5)", "author_name": "WesDesu", "author_url": "https://www.youtube.com/@wesdesu" }
+    { "tag": "E5", "url": "https://www.youtube.com/watch?v=yHxcpQiNihg", "title": "The mana stacker ring craft that made me 2 mirrors in PoE2 0.5 (and are still good in 0.5.5)", "author_name": "WesDesu", "author_url": "https://www.youtube.com/@wesdesu" },
+    { "tag": "E6", "url": "https://www.youtube.com/watch?v=e-MihyBNVd4", "title": "PoE 2 0.5 - Crafting EXPLODE GLOVES for Martial Artist", "author_name": "Lolcohol", "author_url": "https://www.youtube.com/@Lolcohol", "upload_date": "2026-06-04" }
   ]
 }

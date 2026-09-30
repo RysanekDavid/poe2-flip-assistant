@@ -46,6 +46,8 @@ def test_recipe_identity_matches_the_typescript_recipe_data() -> None:
         "craftRecipeData3.ts",
         "craftRecipeData4.ts",
         "craftRecipeData5.ts",
+        "craftRecipeData6.ts",
+        "craftRecipeData7.ts",
     ):
         source = _ts(f"src/core/{name}")
         matches = pattern.findall(source)
