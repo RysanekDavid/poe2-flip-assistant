@@ -11,8 +11,8 @@ import { StaleBadge } from "../ui/StaleBadge";
 /** Same threshold the Farm board uses for scout unique prices: older than two days reads amber. */
 const PRICE_WARN_AFTER_MIN = 48 * 60;
 
-const NO_LEAGUE_HISTORY = "poe2scout has no price history this league";
-const NO_ITEM_HISTORY = "poe2scout has too little price history for this item";
+const NO_LEAGUE_HISTORY = "poe2scout has no price history this league (none in the last 7 days)";
+const NO_ITEM_HISTORY = "poe2scout has too little price history for this item in the last 7 days";
 
 // Column tooltips carry the honesty caveats: none of these numbers is a sale price or a sale count.
 const COLUMNS: ReadonlyArray<{ k: SortKey; label: string; right?: boolean; tip?: string }> = [
@@ -74,7 +74,8 @@ function AskCell({ r, exPerDiv }: { r: DemandRow; exPerDiv: number }) {
   return (
     <td className={`${CELL} whitespace-nowrap text-right`}>
       <span className="inline-flex items-center justify-end gap-1.5">
-        <PriceChip div={r.marketDivine} exPerDiv={exPerDiv} source="scout" ageMin={ageMin ?? undefined} />
+        {/* the age shows once, on the badge beside the chip */}
+        <PriceChip div={r.marketDivine} exPerDiv={exPerDiv} source="scout" />
         {ageMin != null ? (
           <StaleBadge ageMin={ageMin} warnAfterMin={PRICE_WARN_AFTER_MIN} />
         ) : (
