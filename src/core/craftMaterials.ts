@@ -21,6 +21,8 @@ export const MATS = {
   omenPutrefaction: { id: "omen-of-putrefaction", label: "Omen of Putrefaction", group: "omen" },
   omenCatalysingExaltation: { id: "omen-of-catalysing-exaltation", label: "Omen of Catalysing Exaltation", group: "omen" },
   omenTheLiege: { id: "omen-of-the-liege", label: "Omen of the Liege", group: "omen" },
+  // Ulaman twin of the Liege: "guarantee a random Ulaman modifier" on a Weapon/Jewellery desecration.
+  omenTheSovereign: { id: "omen-of-the-sovereign", label: "Omen of the Sovereign", group: "omen" },
   omenDextralCrystallisation: { id: "omen-of-dextral-crystallisation", label: "Omen of Dextral Crystallisation", group: "omen" },
   omenSinistralCrystallisation: { id: "omen-of-sinistral-crystallisation", label: "Omen of Sinistral Crystallisation", group: "omen" },
   omenGreaterExaltation: { id: "omen-of-greater-exaltation", label: "Omen of Greater Exaltation", group: "omen" },
@@ -56,6 +58,8 @@ export const MATS = {
   // Fire (Xoph's) / Lightning (Esh's) — the giga-spirit amulet biases toward these res rolls (never Cold).
   xophsCatalyst: { id: "xophs-catalyst", label: "Xoph's Catalyst", group: "catalyst" },
   eshsCatalyst: { id: "eshs-catalyst", label: "Esh's Catalyst", group: "catalyst" },
+  // Caster tag — RePoE gives "+# to Level of all Spell Skills" the implicit tags caster + gem.
+  sibilantCatalyst: { id: "sibilant-catalyst", label: "Sibilant Catalyst", group: "catalyst" },
 
   // --- essences (ninja category "Essences") ---
   greaterEssenceAbrasion: { id: "greater-essence-of-abrasion", label: "Greater Essence of Abrasion", group: "essence" },
@@ -67,6 +71,10 @@ export const MATS = {
   greaterEssenceOpulence: { id: "greater-essence-of-opulence", label: "Greater Essence of Opulence", group: "essence" },
   greaterEssenceInsulation: { id: "greater-essence-of-insulation", label: "Greater Essence of Insulation", group: "essence" },
   perfectEssenceEnhancement: { id: "perfect-essence-of-enhancement", label: "Perfect Essence of Enhancement", group: "essence" },
+  // poe2db: "(68—79)% increased Armour, Evasion and Energy Shield" prefix on helmets/body armours/…
+  greaterEssenceEnhancement: { id: "greater-essence-of-enhancement", label: "Greater Essence of Enhancement", group: "essence" },
+  // poe2db: ring "(4—6)% increased maximum Mana" (RePoE EssenceIncreasedManaPercent1, a PREFIX)
+  perfectEssenceMind: { id: "perfect-essence-of-the-mind", label: "Perfect Essence of the Mind", group: "essence" },
   // Base tier only on the exchange — no Greater/Perfect "Hysteria" (the +2-projectile gloves suffix 50/50).
   essenceOfHysteria: { id: "essence-of-hysteria", label: "Essence of Hysteria", group: "essence" },
   // Converts an existing mod into a "Mark of the Abyssal Lord" that a Jawbone turns into a Desecrated slot.
@@ -84,6 +92,7 @@ export const MATS = {
   artificers: { id: "artificers", label: "Artificer's Orb", group: "currency" },
   artificersShard: { id: "artificers-shard", label: "Artificer's Shard", group: "currency" },
   scrap: { id: "scrap", label: "Armourer's Scrap", group: "currency" },
+  whetstone: { id: "whetstone", label: "Blacksmith's Whetstone", group: "currency" },
   chaos: { id: "chaos", label: "Chaos Orb", group: "currency" },
   greaterChaos: { id: "greater-chaos-orb", label: "Greater Chaos Orb", group: "currency" },
   perfectChaos: { id: "perfect-chaos-orb", label: "Perfect Chaos Orb", group: "currency" },

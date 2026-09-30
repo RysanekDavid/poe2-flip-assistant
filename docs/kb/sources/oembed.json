@@ -1,5 +1,5 @@
 {
-  "note": "YouTube oEmbed (https://www.youtube.com/oembed?url=<video url>&format=json) fields title, author_name, author_url, fetched 2026-09-29 for the craft recipe provenance (src/core/craftProvenanceData.ts). Upload dates are not part of oEmbed; the provenance dates come from search-index listings (datePrecision: listing).",
+  "note": "YouTube oEmbed (https://www.youtube.com/oembed?url=<video url>&format=json) fields title, author_name, author_url, fetched 2026-09-29 for the craft recipe provenance (src/core/craftProvenanceData.ts). Upload dates are not part of oEmbed; the provenance dates come from search-index listings (datePrecision: listing). Entries E1-E5 were added 2026-09-29 for the recipe expansion (craftProvenanceData2.ts), fetched sequentially one URL at a time.",
   "fetched_on": "2026-09-29",
   "videos": [
     { "tag": "S4", "url": "https://www.youtube.com/watch?v=NK-Oat_OtgQ", "title": "How to Craft The Best Jewels in The Game (5 mods) - Path of Exile 2", "author_name": "Fubgun", "author_url": "https://www.youtube.com/@Fubgun" },
@@ -9,6 +9,11 @@
     { "tag": "S10", "url": "https://www.youtube.com/watch?v=Gdc5I2BmBGY", "title": "Stupidly Easy Putrefaction \"Craft\" For BiS League Start Gear in POE2!", "author_name": "XTheFarmerX", "author_url": "https://www.youtube.com/@XTheFarmerX_POE2" },
     { "tag": "S11", "url": "https://youtu.be/J7PxG6k6gts", "title": "Beginner, Intermediate, and Expert Level Amulet Craft Guide | Full Amulet Crafting Tutorial", "author_name": "XTheFarmerX", "author_url": "https://www.youtube.com/@XTheFarmerX_POE2" },
     { "tag": "S20", "url": "https://youtu.be/o0Q975G2s2g", "title": "NAUČ SE CRAFTIT NEJLEPŠÍ JEWELY V POE 2", "author_name": "Pavel na Netu", "author_url": "https://www.youtube.com/@PavelnaNetu" },
-    { "tag": "S21", "url": "https://www.youtube.com/watch?v=TWgmQuiLeHA", "title": "Attack ring craft PERFECTED! PoE 2 - 0.5", "author_name": "Keyson", "author_url": "https://www.youtube.com/@Keyson77" }
+    { "tag": "S21", "url": "https://www.youtube.com/watch?v=TWgmQuiLeHA", "title": "Attack ring craft PERFECTED! PoE 2 - 0.5", "author_name": "Keyson", "author_url": "https://www.youtube.com/@Keyson77" },
+    { "tag": "E1", "url": "https://www.youtube.com/watch?v=T5Yt4Sa1jDA", "title": "Easy Energy Shield Crafting For Profit | PoE 2 0.5", "author_name": "Barczi POE2", "author_url": "https://www.youtube.com/@BarcziPOE2" },
+    { "tag": "E2", "url": "https://www.youtube.com/watch?v=dbgOKCI5tOk", "title": "[PoE 2] Endgame Crossbow Crafting Guide - for POEGuy's Warbringer Mortar Cannon Build.", "author_name": "POEGuy", "author_url": "https://www.youtube.com/@poeguy007" },
+    { "tag": "E3", "url": "https://www.youtube.com/watch?v=W4RuaAJYoZc", "title": "POE2 Time-Lost Jewels | Complete Crafting Breakdown", "author_name": "Scorpius", "author_url": "https://www.youtube.com/@ScorpiusOfficial" },
+    { "tag": "E4", "url": "https://www.youtube.com/watch?v=9kKdoq0tZXg", "title": "Poe2-0.5.5 How to Profit craft Mana Stacking Rings", "author_name": "SaVeQ", "author_url": "https://www.youtube.com/@saveqm" },
+    { "tag": "E5", "url": "https://www.youtube.com/watch?v=yHxcpQiNihg", "title": "The mana stacker ring craft that made me 2 mirrors in PoE2 0.5 (and are still good in 0.5.5)", "author_name": "WesDesu", "author_url": "https://www.youtube.com/@wesdesu" }
   ]
 }
