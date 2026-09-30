@@ -7,15 +7,21 @@ import { confidenceSchema, rarityLabelSchema, rateSchema, sourceSchema, unmodell
  * blanks. All money is Divine.
  */
 
-export const priceSourceSchema = z.enum(["ninja", "scout", "manual"]);
+export const priceSourceSchema = z.enum(["ninja", "scout", "trade", "manual"]);
 export type PriceSource = z.infer<typeof priceSourceSchema>;
 
-/** A price with its provenance: every number the tool shows carries source and age. */
-export const resolvedPriceSchema = z.object({
-  div: z.number(),
-  source: priceSourceSchema,
-  ageHours: z.number().nullable(),
-});
+const priceBase = { div: z.number(), ageHours: z.number().nullable() };
+
+/**
+ * A price with its provenance: every number the tool shows carries source and age. A trade2
+ * fallback price also says how many listings the search saw and how many the price stands on.
+ */
+export const resolvedPriceSchema = z.discriminatedUnion("source", [
+  z.object({ ...priceBase, source: z.literal("ninja") }),
+  z.object({ ...priceBase, source: z.literal("scout") }),
+  z.object({ ...priceBase, source: z.literal("manual") }),
+  z.object({ ...priceBase, source: z.literal("trade"), listed: z.number().int().nonnegative(), samples: z.number().int().positive() }),
+]);
 export type ResolvedPrice = z.infer<typeof resolvedPriceSchema>;
 
 const craftPartViewSchema = z.object({
