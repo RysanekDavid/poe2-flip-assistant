@@ -23,7 +23,7 @@ async function uniquesBody(userId: number): Promise<MarketUniquesResponse> {
 
 /**
  * GET /api/market/prices/uniques → the UNIQUES group of Market › Prices. Reads the shared poe2scout
- * demand cache (the Market board's: one in-flight fill, then a TTL). A cold cache costs a full scout
+ * demand cache (shared with Opportunities and Wealth › Sell: one in-flight fill, then a TTL). A cold cache costs a full scout
  * fill, so the Prices tool asks only once a unique category or a search is on screen. scout is
  * fetched for the default league only; the body names both that league and the caller's, and the
  * tool says so when they differ. Any failure (scout, the trade table, the builder or the contract)

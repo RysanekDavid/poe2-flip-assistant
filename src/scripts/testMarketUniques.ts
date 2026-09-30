@@ -38,8 +38,8 @@ function testCategories(): void {
 
 const demandItem = (id: number, over: Partial<DemandItem> = {}): DemandItem => ({
   id, name: `Unique ${id}`, type: "Silk Robe", category: "armour", icon: `https://web.poecdn.com/u${id}.png`,
-  priceExalt: 1000, rawPriceExalt: 1000, quantity: 12, listedAvg: null, sellThrough: null, momentumPct: null,
-  samples: 0, sparkPrices: [], priceAt: new Date(NOW - 18 * 24 * H).toISOString(), ...over,
+  priceExalt: 1000, quantity: 12, sellThrough: null, momentumPct: null,
+  samples: 0, sparkPrices: [], recent: [], priceAt: new Date(NOW - 18 * 24 * H).toISOString(), ...over,
 });
 
 const tradeRow = (nameKey: string, div: number | null, over: Partial<UniqueTradeRow> = {}): UniqueTradeRow => ({

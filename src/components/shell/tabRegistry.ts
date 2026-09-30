@@ -31,11 +31,11 @@ export const TABS: readonly TabMeta[] = [
   {
     id: "market",
     label: "Market",
-    hint: "every item's price · price check · trade site demand · snipes",
+    hint: "every item's price · price check · what to buy on the trade site now",
     tools: [
       { id: "prices", label: "Prices", hint: "every exchange item: price, 7-day trend, volume" },
       { id: "price", label: "Price check", hint: "paste an item: what it is worth and how to sell it" },
-      { id: "board", label: "Market board", hint: "what sells on the trade site, and listings under value" },
+      { id: "opportunities", label: "Opportunities", hint: "what to buy on the trade site now: snipes, near-misses, rising uniques" },
     ],
   },
   {
@@ -105,6 +105,21 @@ export const TABS: readonly TabMeta[] = [
   },
   { id: "coach", label: "Coach", hint: "market · craft · verified sources" },
 ];
+
+/**
+ * Renamed tools: an old ?tool= keeps working by landing on its replacement (Market board became
+ * Opportunities on 2026-09-30). Only renames belong here, never removals.
+ */
+export const TOOL_REDIRECTS: Partial<Record<TabId, Readonly<Record<string, string>>>> = {
+  market: { board: "opportunities" },
+};
+
+/** The tool id a raw ?tool= stands for today; unknown and current ids pass through unchanged. */
+export function redirectTool(rawTab: string | null, rawTool: string | null): string | null {
+  const tab = tabIdSchema.safeParse(rawTab);
+  if (!tab.success || rawTool === null) return rawTool;
+  return TOOL_REDIRECTS[tab.data]?.[rawTool] ?? rawTool;
+}
 
 function defaultTool(tools: readonly ToolMeta[]): ToolMeta {
   const first = tools[0];

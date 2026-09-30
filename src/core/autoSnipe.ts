@@ -3,7 +3,7 @@ import { metered, newMeter, type TradeMeter } from "../api/tradeMeter";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { config } from "../config/env";
 import { fireAlert } from "./alertEngine";
-import { saveSnipeFailure, saveSnipeReport } from "../db/snipeReportQueries";
+import { lastScanReport, saveSnipeFailure, saveSnipeReport } from "../db/snipeReportQueries";
 import { getDefaultLeague } from "./leagueState";
 import { listUsers } from "../db/userQueries";
 import { buildStatIndex, type StatIndex, type ResolvedStat } from "./statResolver";
@@ -11,12 +11,14 @@ import { valueListingLive } from "./comparableValuation";
 import { SNIPE_PROFILES, profileToQuery, type SnipeProfile } from "./snipeProfiles";
 import { pickArchetypes, pickCandidates, rankCandidates, type Candidate } from "./autoSnipeCandidates";
 import { bookReference, feedPriceBook, newBookCounters, describeRefusals, type BookCounters } from "./priceBookFeed";
-import { evaluateSnipe } from "./snipeGate";
+import { evaluateSnipe, type SnipeGateInput, type SnipeGateResult } from "./snipeGate";
+import { NEAR_MISS_KEEP, NEAR_MISS_MIN_MARGIN_PCT, nearMissReason, selectNearMisses, toNearMiss, type NearMissLimits } from "./snipeNearMiss";
 import { scanRates } from "./scanRates";
 import { snipeAlertMessage } from "./snipeAlert";
 import { buildSnipeCard, listingTradeQuery } from "./snipeCard";
 import { recordSnipeOutcome } from "../db/snipeOutcomeQueries";
 import type { SnipeCard } from "../lib/snipeCard";
+import type { NearMiss } from "../lib/snipeScanContract";
 import type { DivRates } from "./listingPrice";
 
 /**
@@ -78,6 +80,8 @@ export interface ScanReport {
   maxSearches: number;
   book: BookCounters;
   findings: SnipeFinding[];
+  /** Best still-fresh near-misses of this and earlier scans (Market › Opportunities), deepest first. */
+  nearMisses: NearMiss[];
   diags: ProfileDiag[];
   errors: Array<{ profile: string; error: string }>;
 }
@@ -89,6 +93,7 @@ interface ScanCtx {
   league: string;
   report: ScanReport;
   meter: TradeMeter; // counts only this scan's requests — other consumers on the shared limiter don't eat it
+  nearPool: NearMiss[]; // valued listings that just missed the gate, newest scan first
 }
 
 /** A candidate with its archetype's diagnostics and the id of the search that FOUND it — the id a
@@ -191,17 +196,47 @@ function trackOutcome(c: PoolEntry, finding: SnipeFinding, ctx: ScanCtx): void {
   }
 }
 
+const nearMissLimits = (): NearMissLimits => ({
+  gate: config.snipeGate,
+  minMarginPct: NEAR_MISS_MIN_MARGIN_PCT,
+  minValueDiv: config.valuation.minValueDiv,
+});
+
+/** Keep a gate failure that was only short on margin or comparables — free, the value is already known. */
+function noteNearMiss(c: PoolEntry, input: SnipeGateInput, verdict: SnipeGateResult, basis: NearMiss["basis"], ctx: ScanCtx): void {
+  const reason = nearMissReason(input, verdict, nearMissLimits());
+  if (reason == null || verdict.pass || input.refDiv == null) return;
+  ctx.nearPool.push(
+    toNearMiss({
+      listing: c.listing,
+      archetype: c.profile.label,
+      league: ctx.league,
+      askDiv: c.div,
+      refDiv: input.refDiv,
+      samples: input.samples,
+      basis,
+      reason,
+      detail: verdict.detail,
+      exaltPerDivine: ctx.rates.exaltPerDivine,
+    }),
+  );
+}
+
+const gateInput = (c: PoolEntry, refDiv: number | null, samples: number): SnipeGateInput => ({
+  askDiv: c.div,
+  refDiv,
+  samples,
+  resolvedMods: c.resolvedMods,
+  indexed: c.listing.indexed,
+  discountPct: config.valuation.discountPct,
+});
+
 /** Confirm + alert a candidate as a snipe, or return null. Spends up to two comparable searches. */
 async function valueAndAlert(c: PoolEntry, ctx: ScanCtx): Promise<SnipeFinding | null> {
   const { value, plan, searchUrl, broadened } = await valueListingLive(c.listing, ctx.idx, ctx.rates, ctx.cred);
-  const verdict = evaluateSnipe({
-    askDiv: c.div,
-    refDiv: value.valueDiv,
-    samples: value.samples,
-    resolvedMods: c.resolvedMods,
-    indexed: c.listing.indexed,
-    discountPct: config.valuation.discountPct,
-  });
+  const input = gateInput(c, value.valueDiv, value.samples);
+  const verdict = evaluateSnipe(input);
+  if (!verdict.pass) noteNearMiss(c, input, verdict, "comps", ctx);
   if (!verdict.pass || verdict.valueDiv < config.valuation.minValueDiv) return null;
 
   const finding: SnipeFinding = {
@@ -238,11 +273,15 @@ async function valueAndAlert(c: PoolEntry, ctx: ScanCtx): Promise<SnipeFinding |
 }
 
 /** Book short-circuit: a well-sampled signature whose ask isn't under the book's discount line
- *  is a known fair price — skip the live valuation and save the rate budget. */
-function knownFair(c: Candidate, ctx: ScanCtx): boolean {
+ *  is a known fair price — skip the live valuation and save the rate budget. Such a listing may
+ *  still be a near-miss on the book's value. */
+function knownFair(c: PoolEntry, ctx: ScanCtx): boolean {
   const ref = bookReference(ctx.league, c.sig, c.listing.listingId);
   if (ref.valueDiv == null || ref.samples < config.snipeGate.minSamples) return false;
-  return c.div > ref.valueDiv * (1 - config.valuation.discountPct / 100);
+  if (c.div <= ref.valueDiv * (1 - config.valuation.discountPct / 100)) return false;
+  const input = gateInput(c, ref.valueDiv, ref.samples);
+  noteNearMiss(c, input, evaluateSnipe(input), "book", ctx);
+  return true;
 }
 
 async function collectPhase(profiles: SnipeProfile[], ctx: ScanCtx): Promise<PoolEntry[]> {
@@ -285,6 +324,16 @@ async function valuationPhase(pool: PoolEntry[], ctx: ScanCtx): Promise<void> {
   }
 }
 
+/**
+ * The last report's near-misses, when it was scanned in the same league. Each scan covers only a
+ * slice of the archetypes, so without carrying them the list would shrink to whatever this slice saw.
+ * An unreadable last report carries nothing and says so.
+ */
+function carriedNearMisses(league: string): NearMiss[] {
+  const report = lastScanReport()?.report;
+  return report && report.league === league ? (report.nearMisses ?? []) : [];
+}
+
 let rotationCursor = 0;
 let running = false;
 
@@ -301,6 +350,7 @@ export function emptyReport(exaltPerDivine: number, league: string): ScanReport 
     maxSearches: config.autoSnipe.maxSearchesPerScan,
     book: newBookCounters(),
     findings: [],
+    nearMisses: [],
     diags: [],
     errors: [],
   };
@@ -316,9 +366,11 @@ async function runScan(cred: TradeCred): Promise<ScanReport> {
   const { picked, next } = pickArchetypes(SNIPE_PROFILES, rotationCursor, config.autoSnipe.archetypesPerScan);
   rotationCursor = next;
   const report = emptyReport(rates.exaltPerDivine, league);
-  const ctx: ScanCtx = { idx: buildStatIndex(stats), rates, cred, league, report, meter: newMeter() };
+  const ctx: ScanCtx = { idx: buildStatIndex(stats), rates, cred, league, report, meter: newMeter(), nearPool: [] };
 
   await metered(ctx.meter, async () => valuationPhase(await collectPhase(picked, ctx), ctx));
+  // this scan's near-misses first (newer), then the last report's that are still fresh
+  report.nearMisses = selectNearMisses([...ctx.nearPool, ...carriedNearMisses(league)], Date.now(), nearMissLimits(), NEAR_MISS_KEEP);
   report.searches = ctx.meter.search;
   report.fetches = ctx.meter.fetch;
   const refusals = describeRefusals(report.book);

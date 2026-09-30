@@ -1,8 +1,7 @@
 /* Scanner status contract — pure, NO network, NO DB: members never receive archetype diagnostics,
  * and an unreadable stored report is reported without breaking the status (Scan now stays usable).
  * Run: npm run test:snipe. */
-import { findingCard, parseScanReport, reportForViewer, SnipeScanStatusSchema } from "../lib/snipeScanContract";
-import { sampleSnipeCard } from "./snipeCardFixture";
+import { parseScanReport, reportForViewer, SnipeScanStatusSchema } from "../lib/snipeScanContract";
 
 let fail = 0;
 const ok = (name: string, cond: boolean, extra = ""): void => {
@@ -32,9 +31,15 @@ const status = SnipeScanStatusSchema.safeParse({
 });
 ok("a garbage report does not fail the status itself", status.success);
 
-ok("finding without a card is flagged, not dropped", findingCard(finding).ok === false);
-ok("finding with a valid card renders it", findingCard({ ...finding, card: sampleSnipeCard() }).ok);
-ok("finding with a bad card is flagged", findingCard({ ...finding, card: { v: 2 } }).ok === false);
+const nearMiss = {
+  listingId: "n1", archetype: "Rings", name: "Doom Loop", baseType: "Ruby Ring", rarity: "Rare", icon: null, priceDiv: 7, valueDiv: 10,
+  marginPct: 30, samples: 6, basis: "comps", reason: "not-discounted", detail: "30% under value, need 35%", listedAt: null,
+  exaltPerDivine: 400, tradeUrl: "https://www.pathofexile.com/trade2/search/poe2/Standard?q=x",
+};
+ok("a report from before near-misses still parses", parseScanReport(report).report?.nearMisses === undefined);
+ok("near-misses parse with the report", parseScanReport({ ...report, league: "Standard", nearMisses: [nearMiss] }).report?.nearMisses?.length === 1);
+ok("a near-miss linking off trade2 fails the report loudly", parseScanReport({ ...report, nearMisses: [{ ...nearMiss, tradeUrl: "https://evil.example/x" }] }).error !== null);
+ok("a near-miss with off-poecdn art fails the report loudly", parseScanReport({ ...report, nearMisses: [{ ...nearMiss, icon: "https://evil.example/x.png" }] }).error !== null);
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
 process.exit(fail === 0 ? 0 : 1);

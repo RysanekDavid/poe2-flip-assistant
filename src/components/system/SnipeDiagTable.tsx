@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Radar } from "lucide-react";
+import { Loader2, Play, Radar } from "lucide-react";
 import { fmtDivOrEx } from "../../lib/format";
-import { fetchSnipeScanStatus, parseScanReport, type SnipeDiag, type SnipeScanStatus } from "../../lib/snipeScanContract";
-import { useVisiblePoll } from "../../lib/useVisiblePoll";
+import { parseScanReport, type SnipeDiag, type SnipeScanStatus } from "../../lib/snipeScanContract";
+import { useSnipeOutcomes } from "../../lib/useSnipeOutcomes";
+import { ageLabel } from "../alerts/SnipeCardView";
+import { Button } from "../ui/Button";
 import { DataTable, type Column } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
+import { SnipeHitRates } from "./SnipeHitRates";
+import { scanBlocker, useSnipeScanner } from "./useSnipeScanner";
 
-const POLL_MS = 60_000;
 const int = (n: number): string => n.toLocaleString("en", { maximumFractionDigits: 0 });
 
 function diagColumns(exPerDiv: number): Column<SnipeDiag>[] {
@@ -37,7 +39,7 @@ function DiagBody({ status }: { status: SnipeScanStatus }) {
     <>
       <p className="mb-2 text-xs text-neutral-400">
         searched {report.searched}/{report.profiles} archetypes · valued {report.valuations}/{report.maxValuations} ·{" "}
-        {report.findings.length} snipe(s)
+        {report.findings.length} snipe(s) · {report.nearMisses?.length ?? 0} near-miss(es) kept
         {report.errors.length > 0 && <span className="text-warn"> · {report.errors.length} error(s)</span>}
       </p>
       <DataTable
@@ -55,25 +57,44 @@ function DiagBody({ status }: { status: SnipeScanStatus }) {
   );
 }
 
-/** Owner diagnostics for the auto-snipe scanner, moved off the player-facing Market tab. */
-export function SnipeDiagTable() {
-  const [status, setStatus] = useState<SnipeScanStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const load = useCallback(() => {
-    fetchSnipeScanStatus()
-      .then((s) => {
-        setStatus(s);
-        setError(null);
-      })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
-  useVisiblePoll(load, POLL_MS);
-
+function StatusLine({ status }: { status: SnipeScanStatus }) {
   return (
-    <div>
-      <h3 className="mb-1 text-sm font-semibold text-neutral-200">Auto-snipe scan</h3>
-      {error && <p role="alert" className="text-xs text-bad">scan diagnostics unavailable — {error}</p>}
-      {!status && !error && <p className="text-xs text-neutral-400">loading…</p>}
+    <span className="flex flex-wrap items-center gap-x-2 text-xs text-neutral-400">
+      <span>{status.enabled ? `scans every ${status.intervalMin}m` : "manual scans only"}</span>
+      <span aria-hidden>·</span>
+      <span className={status.live ? "text-good" : "text-warn"}>{status.live ? "trade connected" : "not connected — add your POESESSID in Settings"}</span>
+      {status.lastScanAt && (
+        <>
+          <span aria-hidden>·</span>
+          <span title={`${status.lastScanAt} UTC`}>last scan {ageLabel(status.lastScanAt)} ago</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Owner diagnostics for the auto-snipe scanner, kept off the player-facing Market tab: its status,
+ * a manual scan, the alert hit rates and the last scan's per-archetype yield.
+ */
+export function SnipeDiagTable() {
+  const { status, scanning, notice, scanNow } = useSnipeScanner();
+  const outcomes = useSnipeOutcomes();
+  const blocker = scanBlocker(status);
+  return (
+    <div className="grid gap-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h3 className="text-sm font-semibold text-neutral-200">Auto-snipe scan</h3>
+        {status && <StatusLine status={status} />}
+        <Button size="sm" className="ml-auto" onClick={scanNow} disabled={scanning || blocker != null} title={blocker ?? "queue one scan now"}>
+          {scanning ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" /> : <Play aria-hidden className="h-3.5 w-3.5" />}
+          {scanning ? "scan queued…" : "Scan now"}
+        </Button>
+      </div>
+      {notice && <p role="alert" className="rounded border border-warn/40 bg-warn/10 px-2 py-1 text-xs text-warn">{notice}</p>}
+      {outcomes.data && <SnipeHitRates data={outcomes.data} />}
+      {outcomes.error && <p className="text-xs text-warn">alert outcomes unavailable: {outcomes.error}</p>}
+      {!status && !notice && <p className="text-xs text-neutral-400">loading…</p>}
       {status && <DiagBody status={status} />}
     </div>
   );

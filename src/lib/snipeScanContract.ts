@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { SnipeCardSchema, type SnipeCard } from "./snipeCard";
+import { PoecdnIconUrl, Trade2Url } from "./snipeCard";
 
-/** One snipe from the last scan. `card` is checked per finding, so one bad card never blanks the list. */
+/** One snipe from the last scan (its card lives on the SNIPE alert; the report only counts findings). */
 const FindingSchema = z.object({
   listingId: z.string(),
   itemName: z.string(),
@@ -25,7 +25,39 @@ export const SnipeDiagSchema = z.object({
 });
 export type SnipeDiag = z.infer<typeof SnipeDiagSchema>;
 
+/** Gate failures that still make a listing worth a look: under value, but not by enough (or on too few comparables). */
+export const NEAR_MISS_REASONS = ["not-discounted", "thin-reference"] as const;
+export type NearMissReason = (typeof NEAR_MISS_REASONS)[number];
+
+/**
+ * A valued listing that passed every snipe check except the margin or the comparable count.
+ * Market › Opportunities shows the best few instead of an empty "no snipes" line. `basis` says where
+ * the value came from: a live comparable search, or the price book (the scan's free short-circuit).
+ */
+export const NearMissSchema = z.object({
+  listingId: z.string().min(1),
+  archetype: z.string().min(1),
+  name: z.string().max(200),
+  baseType: z.string().max(200),
+  rarity: z.string().max(20).nullable(),
+  icon: PoecdnIconUrl.nullable(),
+  priceDiv: z.number().positive(),
+  valueDiv: z.number().positive(),
+  marginPct: z.number().finite(),
+  samples: z.number().int().nonnegative(),
+  basis: z.enum(["comps", "book"]),
+  reason: z.enum(NEAR_MISS_REASONS),
+  /** The gate's own words ("28% under value, need 35%"). */
+  detail: z.string().max(300),
+  /** trade2 `indexed`: near-misses age out like snipes do. */
+  listedAt: z.string().nullable(),
+  exaltPerDivine: z.number().positive(),
+  tradeUrl: Trade2Url,
+});
+export type NearMiss = z.infer<typeof NearMissSchema>;
+
 const ReportSchema = z.object({
+  league: z.string().optional(), // the league the scan ran in; older reports lack it
   profiles: z.number(),
   searched: z.number(),
   exaltPerDivine: z.number(),
@@ -33,6 +65,7 @@ const ReportSchema = z.object({
   maxValuations: z.number(),
   findings: z.array(FindingSchema),
   diags: z.array(SnipeDiagSchema).optional(), // stripped for members (see reportForViewer)
+  nearMisses: z.array(NearMissSchema).optional(), // reports from before near-misses have none
   errors: z.array(z.object({ profile: z.string(), error: z.string() })),
 });
 export type SnipeScanReport = z.infer<typeof ReportSchema>;
@@ -77,17 +110,6 @@ export function reportForViewer(raw: unknown, isOwner: boolean): unknown {
   const copy: Record<string, unknown> = { ...raw };
   delete copy.diags;
   return copy;
-}
-
-export type FindingCard = { ok: true; card: SnipeCard } | { ok: false; error: string };
-
-/** A finding's item card, or why it cannot be shown as one. */
-export function findingCard(finding: SnipeScanReport["findings"][number]): FindingCard {
-  if (finding.card === undefined) return { ok: false, error: "scanned before item cards existed" };
-  const parsed = SnipeCardSchema.safeParse(finding.card);
-  if (parsed.success) return { ok: true, card: parsed.data };
-  const issue = parsed.error.issues[0];
-  return { ok: false, error: `card has an unexpected shape at ${issue?.path.join(".") ?? "?"}: ${issue?.message ?? "invalid"}` };
 }
 
 /** Fetch and validate the scanner status; throws with the reason on any failure. */

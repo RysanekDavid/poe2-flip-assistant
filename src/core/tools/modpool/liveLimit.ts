@@ -1,9 +1,10 @@
 import { createLoginRateLimiter, type LoginGate, type LoginRateLimitOptions } from "../../../auth/loginRateLimit";
 
 /**
- * Per-user cap on mod-pool live values that actually spend a trade2 search: 10 per rolling hour.
- * Cache hits never count. The shared web limiter already protects the account-wide budget; this
- * keeps one user clicking down a 31-row table from eating everyone's interactive searches.
+ * Per-user cap on click-driven trade2 lookups that actually spend a search: 10 per rolling hour per
+ * feature (mod-pool live values, Opportunities live listings). Cache hits never count. The shared
+ * web limiter already protects the account-wide budget; this keeps one user clicking down a table
+ * from eating everyone's interactive searches.
  *
  * Reuses the login limiter's in-memory sliding window (one `next start` process sees every request;
  * a restart only ever errs toward allowing). Its "failure" is simply "one spent search" here.
@@ -15,9 +16,10 @@ export interface LiveLimiter {
   recordSpend(userId: number): void;
 }
 
-export function createLiveLimiter(overrides: Partial<LoginRateLimitOptions> = {}): LiveLimiter {
+/** `scope` names the feature, so two features' limiters never share a user's window. */
+export function createLiveLimiter(overrides: Partial<LoginRateLimitOptions> = {}, scope = "mod-pool-live"): LiveLimiter {
   const inner = createLoginRateLimiter({ maxFailures: LIVE_VALUES_PER_HOUR, windowMs: 3_600_000, ...overrides });
-  const key = (userId: number): string => `mod-pool-live:${userId}`;
+  const key = (userId: number): string => `${scope}:${userId}`;
   return {
     check: (userId) => inner.check(key(userId)),
     recordSpend: (userId) => inner.recordFailure(key(userId)),

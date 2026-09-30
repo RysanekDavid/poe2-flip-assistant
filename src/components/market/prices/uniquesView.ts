@@ -1,9 +1,9 @@
-import { MIN_VALUE_DIV } from "../../../lib/demandView";
 import type { MarketUniqueItem } from "../../../lib/marketUniquesContract";
 
 /** Pure list logic of the UNIQUES group (no React), so the node test can pin sort + filter rules. */
 
-export { MIN_VALUE_DIV };
+/** Below this a unique is mostly vendor noise (258 of 312 uniques sat under 0.1 Div on 2026-09-30). */
+export const MIN_VALUE_DIV = 1;
 
 export const UNIQUE_SORT_KEYS = ["name", "value", "age", "listings", "change"] as const;
 export type UniqueSortKey = (typeof UNIQUE_SORT_KEYS)[number];
@@ -19,7 +19,7 @@ export interface UniqueFilter {
   /** scout category id to show; ignored while `query` is set (search spans every unique category). */
   category: string;
   query: string;
-  /** Only uniques worth at least MIN_VALUE_DIV — on by default, as on the Market board. */
+  /** Only uniques worth at least MIN_VALUE_DIV — on by default. */
   valuableOnly: boolean;
 }
 

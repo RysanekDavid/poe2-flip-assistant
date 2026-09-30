@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "./database";
 import { parseStoredCard, type SnipeCard } from "../lib/snipeCard";
 import type { LastAlert } from "../core/alertRefire";
+import type { SnipeAlertRow } from "../core/opportunities/liveSnipes";
 
 /**
  * Per-user alert feed. Rows carry the league of the pipeline that produced them (the caller
@@ -94,6 +95,37 @@ export function hasAlertEver(userId: number, itemId: string, type: string): bool
   if (type === "SNIPE" && db.prepare("SELECT 1 FROM snipe_outcomes WHERE listing_id = ?").get(itemId) != null) return true;
   const row = db.prepare(`SELECT 1 FROM alerts WHERE user_id = ? AND item_id = ? AND type = ? LIMIT 1`).get(userId, itemId, type);
   return row != null;
+}
+
+const SnipeAlertSchema = z.object({
+  id: z.number().int(),
+  item_id: z.string(),
+  league: z.string().nullable(),
+  seen: z.number().int(),
+  created_at: z.string(),
+  details: z.string().nullable(),
+});
+
+/**
+ * A user's SNIPE alerts fired in the last `withinMinutes`, newest first, with their parsed cards
+ * (Market › Opportunities). A row whose card no longer parses is dropped and logged once, as in the
+ * feed; the feed still shows it with its error.
+ */
+export function recentSnipeAlerts(userId: number, withinMinutes: number): SnipeAlertRow[] {
+  const raw = getDb()
+    .prepare(
+      `SELECT id, item_id, league, seen, created_at, details FROM alerts
+       WHERE user_id = ? AND type = 'SNIPE' AND created_at >= datetime('now', ?)
+       ORDER BY created_at DESC, id DESC LIMIT 200`,
+    )
+    .all(userId, `-${Math.ceil(withinMinutes)} minutes`);
+  const rows: SnipeAlertRow[] = [];
+  for (const r of z.array(SnipeAlertSchema).parse(raw)) {
+    const { card, error } = parseStoredCard(r.details, r.id, { log: !reportedCorruptCards.has(r.id) });
+    if (error) reportedCorruptCards.add(r.id);
+    if (card) rows.push({ alertId: r.id, listingId: r.item_id, league: r.league, seen: r.seen, createdAt: r.created_at, card });
+  }
+  return rows;
 }
 
 /**

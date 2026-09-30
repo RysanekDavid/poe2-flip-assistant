@@ -114,12 +114,7 @@ export const config = {
   snipe: {
     discountPct: pos("SNIPE_DISCOUNT_PCT", 40, 100), // ask ≤ reference × (1 - 40%) → snipe
     obsRetentionDays: num("SNIPE_OBS_RETENTION_DAYS", 21), // price-book observations older than this are pruned
-    // medium-volume sweet spot for auto-picked snipe targets (high vol = bots, low vol = can't resell)
-    minListings: num("SNIPE_MIN_LISTINGS", 8),
-    maxListings: num("SNIPE_MAX_LISTINGS", 150),
-    minTargetDiv: num("SNIPE_MIN_TARGET_DIV", 10), // ignore cheap items — only worth sniping valuable ones
-    maxTargetDiv: num("SNIPE_MAX_TARGET_DIV", 200), // ignore whale/mirror tier — can't afford to buy or resell fast
-    minSampleLogs: num("SNIPE_MIN_SAMPLE_LOGS", 4), // need this many price-log points to trust the value
+    maxTargetDiv: num("SNIPE_MAX_TARGET_DIV", 200), // autosnipe skips whale/mirror tier — can't afford to buy or resell fast
   },
 
   // rare-item comparable valuation (paste an item → relaxed search → median of comparables)

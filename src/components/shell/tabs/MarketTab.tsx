@@ -1,14 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { DemandBoard } from "../../DemandBoard";
-import { AutoSnipeBar } from "../../AutoSnipeBar";
-import { SnipeTargets } from "../../SnipeTargets";
 import { PageHeader } from "../../ui/PageHeader";
 import { PanelLoading } from "../PanelLoading";
 import { useTabRoute } from "../useTabRoute";
 
 const PricesTool = dynamic(() => import("../../market/prices/PricesTool").then((m) => m.PricesTool), {
+  loading: PanelLoading,
+});
+
+const OpportunitiesTool = dynamic(() => import("../../market/opportunities/OpportunitiesTool").then((m) => m.OpportunitiesTool), {
   loading: PanelLoading,
 });
 
@@ -34,29 +35,15 @@ function PriceView() {
   );
 }
 
-function BoardView() {
-  return (
-    <>
-      <PageHeader
-        title="Market"
-        purpose="What sells on the trade site right now, and listings priced under what they are worth."
-      />
-      <DemandBoard />
-      <AutoSnipeBar />
-      <SnipeTargets />
-    </>
-  );
-}
-
 /**
  * What things are worth: every exchange item (tool=prices, the default), a price check of a pasted
- * item (tool=price), or the trade-site demand + snipe board (tool=board).
+ * item (tool=price), or what to buy on the trade site now (tool=opportunities).
  */
 export function MarketTab() {
   const { tool } = useTabRoute();
   switch (tool) {
-    case "board":
-      return <BoardView />;
+    case "opportunities":
+      return <OpportunitiesTool />;
     case "price":
       return <PriceView />;
     case "prices":

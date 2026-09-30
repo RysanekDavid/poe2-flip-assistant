@@ -21,6 +21,9 @@ const pinnedUrl = (host: RegExp, what: string) =>
     .refine((u) => host.test(u), `must be a ${what} URL`);
 const IconUrl = pinnedUrl(POECDN, "poecdn.com item-art");
 const TradeUrl = pinnedUrl(TRADE2, "pathofexile.com/trade2");
+/** The same pins for other listing-derived payloads (near-misses, live listings). */
+export const PoecdnIconUrl = IconUrl;
+export const Trade2Url = TradeUrl;
 
 export const CARD_MOD_KINDS = ["implicit", "enchant", "rune", "explicit", "crafted", "fractured", "desecrated"] as const;
 export type CardModKind = (typeof CARD_MOD_KINDS)[number];

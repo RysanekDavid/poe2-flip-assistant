@@ -50,21 +50,23 @@ function useShellHeightVar(ref: RefObject<HTMLElement | null>): void {
  * the fallback route (useTabRoute resolves it), so there is no blank frame while the URL catches up.
  * Lives here only — one shell, one rewrite.
  */
-function useCanonicalRoute(route: TabRoute, rejected: readonly string[], hidden: readonly string[]): void {
+function useCanonicalRoute(route: TabRoute, rejected: readonly string[], hidden: readonly string[], renamed: readonly string[]): void {
   const router = useRouter();
   const pathname = usePathname();
   const { mode } = useNavMode();
   const unknown = rejected.join(", ");
   const hiddenText = hidden.join(", ");
+  // an old link to a renamed tool is expected, not an error: rewrite it without a warning
+  const renamedText = renamed.join(", ");
   const href = tabRouteHref(route);
   useEffect(() => {
-    if (unknown === "" && hiddenText === "") return;
+    if (unknown === "" && hiddenText === "" && renamedText === "") return;
     if (unknown !== "") console.warn(`[tabs] ignoring unknown ${unknown} — showing ${href}`);
     if (hiddenText !== "") {
       console.warn(`[tabs] ${hiddenText} is hidden in ${mode} mode (Settings › Mode) — showing ${href}`);
     }
     router.replace(`${pathname}${href}`, { scroll: false });
-  }, [unknown, hiddenText, mode, href, pathname, router]);
+  }, [unknown, hiddenText, renamedText, mode, href, pathname, router]);
 }
 
 /** Coach is kept mounted (below) so an open conversation survives tab switches. */
@@ -115,9 +117,9 @@ export function AppShell() {
 }
 
 function ShellBody() {
-  const { tab, tool, rejected, hidden } = useTabRoute();
+  const { tab, tool, rejected, hidden, renamed } = useTabRoute();
   const { mode } = useNavMode();
-  useCanonicalRoute({ tab, tool }, rejected, hidden);
+  useCanonicalRoute({ tab, tool }, rejected, hidden, renamed);
   const headerRef = useRef<HTMLElement>(null);
   useShellHeightVar(headerRef);
 
