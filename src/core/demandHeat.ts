@@ -1,3 +1,5 @@
+import type { DemandTrust } from "../lib/demandContract";
+
 /**
  * Demand-board "Heat" — pure math, kept out of the route so it is testable without scout.
  *
@@ -12,16 +14,32 @@
  * Mean per-step FRACTIONAL decrease in listing count, oldest→newest: each step contributes
  * max(0, prev − next) / prev. Fractional, not absolute — a 900-listing unique that loses 10
  * listings per scrape (1%) is churn, a 12-listing unique that loses 3 (25%) is selling through.
- * Increases (new supply) are clipped at 0. Result is 0..1.
+ * Increases (new supply) are clipped at 0. Result is 0..1, or null with fewer than 2 points: no
+ * history is "unknown", and a 0 would read as "nothing sells".
  */
-export function sellThroughProxy(qtys: readonly number[]): number {
-  if (qtys.length < 2) return 0;
+export function sellThroughProxy(qtys: readonly number[]): number | null {
+  if (qtys.length < 2) return null;
   let drops = 0;
   for (let i = 1; i < qtys.length; i++) {
     const prev = qtys[i - 1]!;
     if (prev > 0) drops += Math.max(0, prev - qtys[i]!) / prev;
   }
   return drops / (qtys.length - 1);
+}
+
+/** Listings or log points below this are too few to trust a price. */
+const MIN_TRUSTED = 3;
+
+/**
+ * Row reliability. Too few live listings is thin whatever the log says. An empty log is its own
+ * state: it means poe2scout stopped logging, not that the item is illiquid, so the board's
+ * default "hide thin" must not hide it.
+ */
+export function demandTrust(samples: number, quantity: number, divergePct: number): DemandTrust {
+  if (quantity < MIN_TRUSTED) return "thin";
+  if (samples === 0) return "no-history";
+  if (samples < MIN_TRUSTED) return "thin";
+  return divergePct > 40 ? "noisy" : "ok";
 }
 
 /** A per-step drop of this fraction (20% of the listings gone each scrape) counts as fully hot. */
@@ -39,7 +57,9 @@ export function momentumNorm(momentumPct: number): number {
 }
 
 /** Heat 0–100: half sell-through proxy, half positive momentum. Board-independent, so an item's
- *  heat does not move just because another item on the board changed. */
-export function heatScore(sellThrough: number, momentumPct: number): number {
+ *  heat does not move just because another item on the board changed. Null when either half is
+ *  unknown — scoring the missing half as 0 would rank a history-less item as cold. */
+export function heatScore(sellThrough: number | null, momentumPct: number | null): number | null {
+  if (sellThrough == null || momentumPct == null) return null;
   return Math.round(100 * (0.5 * sellThroughNorm(sellThrough) + 0.5 * momentumNorm(momentumPct)));
 }
