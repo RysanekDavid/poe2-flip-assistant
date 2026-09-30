@@ -7,6 +7,7 @@ import { MATS } from "../core/craftMaterials";
 import { RECIPES, type CraftRecipe, type GuideStep } from "../core/craftRecipes";
 import { checkStep, recipeLegality } from "../core/craftProvenance/legality";
 import { entityByExchangeId, loadEntityCatalog } from "../core/entities/load";
+import { comboFor, loadCraftCatalog } from "../core/tools/craftmoves/catalog";
 
 let fail = 0;
 const ok = (name: string, cond: boolean, extra = "") => {
@@ -93,8 +94,9 @@ const recipe = (key: string): CraftRecipe => {
   ok("wand Astrid's step is flagged unverified", !!astrid?.unverified);
   const bench = wandSteps.find((s) => /bench craft/i.test(s.do));
   ok("wand bench-craft step is flagged unverified", !!bench?.unverified);
-  const loop = allSteps(recipe("amulet_giga_spirit")).find((s) => /Desecrate.*repeatedly/i.test(s.do));
-  ok("giga-Spirit multi-desecration loop is flagged unverified", !!loop?.unverified);
+  // S11 transcript + RePoE (IncreasedSpirit1-5 are ordinary amulet prefixes): Spirit is chaos-spammed on a RARE
+  const giga = recipe("amulet_giga_spirit");
+  ok("giga Spirit is hunted with Chaos Orbs on a rare base", giga.base.rarity === "rare" && allSteps(giga).some((s) => uses(s, MATS.chaos.id) && /Spirit/.test(s.do)));
 }
 
 // --- ring budgets: reveal rerolls priced as Echoes, Light strips paired with Annulments ---
@@ -112,7 +114,14 @@ const recipe = (key: string): CraftRecipe => {
   const clean = putrefaction.filter((r) => r.result.corrupted !== true).map((r) => r.key);
   ok("putrefaction result legs are corrupted comparables", putrefaction.length > 0 && clean.length === 0, clean.join(","));
   // KB §2: a fracture recipe sells a fractured mod — its result must search the fractured stat
-  const fractureResults = ["amulet_fracture_plus3", "gloves_projectile_plus2", "ring_fractured_t1res", "jewel_fractured_5mod"].filter(
+  const fractureResults = [
+    "amulet_fracture_plus3",
+    "gloves_projectile_plus2",
+    "ring_fractured_t1res",
+    "jewel_fractured_5mod",
+    "jewel_timelost_fractured_radius",
+    "amulet_plus3_spirit_chaos",
+  ].filter(
     (k) => !recipe(k).result.stats.some((s) => s.group === "fractured" && s.tier !== 2),
   );
   ok("fracture recipes value a FRACTURED defining mod", fractureResults.length === 0, fractureResults.join(","));
@@ -138,9 +147,43 @@ const recipe = (key: string): CraftRecipe => {
   ok("5-mod jewel results require 3 suffixes as a tier-1 stat", threeSuffix.length === 0, threeSuffix.join(","));
 }
 
+// --- 2026-09-30 expansion: KB-open and single-source mechanics carry a visible badge ---
+{
+  const magicEssences = new Set<string>([MATS.greaterEssenceEnhancement.id, MATS.greaterEssenceAbrasion.id]);
+  const expansion = ["helmet_tiara_es", "armour_vile_robe_spirit", "armour_vile_robe_es", "crossbow_sovereign_ballista"];
+  const essenceSteps = expansion.flatMap((k) => allSteps(recipe(k)).filter((s) => (s.mats ?? []).some((m) => magicEssences.has(m.id))));
+  // KB §7 (verified-secondary since 2026-09-30): a Greater essence keeps the magic mods — cited, no longer a badge
+  ok("magic-base essence steps cite KB §7 in prose", essenceSteps.length === 4 && essenceSteps.every((s) => /KB §7/.test(s.why ?? "") && !/KB §7/.test(s.unverified ?? "")));
+  const sovereign = allSteps(recipe("crossbow_sovereign_ballista")).find((s) => uses(s, MATS.omenTheSovereign.id));
+  ok("the 'guaranteed ballista' claim is flagged against RePoE's two Ulaman prefixes", /TWO Ulaman/.test(sovereign?.unverified ?? ""));
+  const plus4 = allSteps(recipe("amulet_plus4_breach_quality")).filter((s) => (s.mats ?? []).length > 0);
+  ok("every +4 quality-tech step is flagged unverified", plus4.length > 0 && plus4.every((s) => !!s.unverified));
+  const putrefy = allSteps(recipe("quiver_putrefaction")).find((s) => uses(s, MATS.omenPutrefaction.id));
+  ok("the quiver's 6-mod conflict is flagged on the putrefy step", /6/.test(putrefy?.unverified ?? ""));
+  // omen text: Crystallisation acts on the next "Perfect or Corrupted Essence"; Essence of the Breach is a Corrupted one (RePoE)
+  const crystalOmens = new Set<string>([MATS.omenDextralCrystallisation.id, MATS.omenSinistralCrystallisation.id]);
+  const crystal = ["ring_breach_mana_stacker", "amulet_plus3_spirit_chaos", "amulet_plus4_breach_quality"].flatMap((k) =>
+    allSteps(recipe(k)).filter((s) => (s.mats ?? []).some((m) => crystalOmens.has(m.id))),
+  );
+  const perfectOrCorrupted = (m: { id: string; label: string }): boolean => m.label.startsWith("Perfect") || m.id === MATS.essenceOfTheBreach.id;
+  const unpaired = crystal.filter((s) => !(s.mats ?? []).some((m) => m.group === "essence" && perfectOrCorrupted(m)));
+  ok("expansion Crystallisation steps pair with a Perfect or Corrupted essence", crystal.length === 3 && unpaired.length === 0, `${crystal.length} steps`);
+}
+
+// --- RePoE: Spirit is an ordinary amulet prefix a Chaos Orb can roll on a rare (S11 chaos-spams it) ---
+{
+  const cat = loadCraftCatalog();
+  const amulets = ["Solar Amulet", "Stellar Amulet"].map((b) => comboFor(cat, "Amulets", b));
+  ok("amulet prefix pools carry the Spirit family (RePoE IncreasedSpirit1-5)", amulets.every((c) => c !== null && "BaseSpirit" in c.prefix));
+  const magicOnly = /Spirit[^.]*only[^.]*(add|while)[^.]*Magic/i;
+  const claims = RECIPES.flatMap((r) => [r.base.note, r.result.note, ...r.materials.map((m) => m.note ?? ""), r.guide.shopping, ...allSteps(r).map(stepText)])
+    .filter((t) => magicOnly.test(t ?? ""));
+  ok("no recipe text claims Spirit only adds while Magic", claims.length === 0, claims.join(" | "));
+}
+
 // --- data integrity survives the edits ---
 {
-  ok("16 curated recipes", RECIPES.length === 16, String(RECIPES.length));
+  ok("25 curated recipes", RECIPES.length === 25, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));

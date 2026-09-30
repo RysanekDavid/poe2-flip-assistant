@@ -193,21 +193,17 @@ export const GUIDES_2: Record<string, CraftGuide> = {
   amulet_giga_spirit: {
     goal: "Rare amulet: Spirit (T1/T2) + global Armour/Evasion/ES + Fire/Elemental Res + a rarity/life filler. ~70 div in → ~180 div sale.",
     shopping:
-      "Gold or Solar amulet, kept MAGIC rarity — Spirit can only be added while Magic, so sequence it before any Rare upgrade. ilvl 75+.",
-    marketCheck: "The Spirit hunt dominates the cost (T1 ~200-300 chaos of attempts). Price finished Spirit amulets first — Spirit gates aura/Arctic Armour thresholds, so demand is deep.",
+      "RARE Gold Amulet (rarity implicit), ilvl 75+ — in the video, the fractured +3 from the intermediate craft. A Solar's +10–15 Spirit implicit blurs the Spirit comparables. Spirit is an ordinary amulet prefix (RePoE IncreasedSpirit1–5, top +47–50 at level 54), so Chaos Orbs can roll it on the rare.",
+    marketCheck: "The Spirit hunt dominates the cost (T1 ~200-300 chaos of attempts). Price finished Spirit amulets first — the creator: Spirit 'allows you to run an extra aura', so demand is deep.",
     phases: [
       {
         title: "Hunt the Spirit",
         steps: [
           {
-            do: "Desecrate (Collarbone bone) repeatedly on the MAGIC amulet until Spirit lands.",
-            why: "T2 fallback landed in ~30 attempts; T1 costs far more. Keep an Abyssal Echoes to reroll a dead reveal set.",
-            mats: [MATS.preservedCollarbone, MATS.omenAbyssalEchoes],
-            warning: "Spirit only adds while MAGIC — do NOT Regal to Rare before it lands, it forecloses Spirit permanently.",
+            do: "Chaos Orbs on the rare amulet until Spirit lands.",
+            why: "Each Chaos Orb removes one random mod and adds one (KB §1). S11: T1 'will cost you probably like two or 300' chaos; the T2 fallback landed in ~30. Corrected 2026-09-30 — the old 'Magic only, repeated desecration' reading contradicted the video and RePoE.",
+            mats: [MATS.chaos],
             check: "Amulet carries a Spirit prefix.",
-            // KB §5: max ONE desecrated mod per item; RePoE bone text: bones desecrate RARE items
-            unverified:
-              "Contradicts KB §5 (one desecrated mod per item) and the bone text (desecrates a RARE item) — a repeat-desecrate loop on a magic amulet is unconfirmed; hit rate and the 30-bone cost are unverified.",
           },
         ],
       },
@@ -215,9 +211,10 @@ export const GUIDES_2: Record<string, CraftGuide> = {
         title: "Convert a suffix to global defence",
         steps: [
           {
-            do: "Omen of Dextral Exaltation → guaranteed suffix, then Omen of Dextral Crystallisation + Perfect Essence of Enhancement.",
-            why: "Spirit blocks further Magic-only additions once Rare — this converts a suffix into a 'global Armour/Evasion/ES' prefix as the workaround.",
-            mats: [MATS.omenDextralExaltation, MATS.omenDextralCrystallisation, MATS.perfectEssenceEnhancement],
+            do: "Omen of Dextral Exaltation + Greater Exalted Orb → guaranteed suffix, then Omen of Dextral Crystallisation + Perfect Essence of Enhancement.",
+            why: "Converts a suffix into a 'global Armour/Evasion/ES' prefix — the creator's route once the Spirit is in (his reason, 'we can't add spirit anymore because it's not a magic item', is unverified).",
+            mats: [MATS.omenDextralExaltation, MATS.greaterExalted, MATS.omenDextralCrystallisation, MATS.perfectEssenceEnhancement],
+            warning: "The essence needs an open prefix and NO essence mod already on the amulet — one crafted mod per item (KB §7).",
           },
         ],
       },
@@ -225,13 +222,15 @@ export const GUIDES_2: Record<string, CraftGuide> = {
         title: "Resistance slam + fill",
         steps: [
           {
-            do: "Fire (Xoph's) or Lightning (Esh's) Catalyst — never Cold — then Catalysing + Greater Exaltation + a Perfect Exalted Orb.",
-            why: "Catalyst biases the slam toward Fire/Elemental Res. Cold Catalyst is the trap (see wallet warnings).",
-            mats: [MATS.xophsCatalyst, MATS.eshsCatalyst, MATS.omenCatalysingExaltation, MATS.omenGreaterExaltation, MATS.perfectExalted],
+            do: "Fire (Xoph's) or Lightning (Esh's) Catalyst — never Cold — then Catalysing + Dextral + Greater Exaltation + a Perfect Exalted Orb.",
+            why: "Catalyst biases the slam toward Fire/Elemental Res; Dextral keeps both mods on the suffixes (same-family omens stack, KB §4). Cold Catalyst is the trap (see wallet warnings).",
+            mats: [MATS.xophsCatalyst, MATS.eshsCatalyst, MATS.omenCatalysingExaltation, MATS.omenDextralExaltation, MATS.omenGreaterExaltation, MATS.perfectExalted],
           },
           {
             do: "Fill the last slot via more desecration (High Life/ES/Evasion/Rarity), then catalyse cosmetically before listing.",
-            why: "Amulets don't display a quality tag — cosmetic Catalysts only inflate the numbers buyers filter on.",
+            why: "One Preserved Collarbone with an Omen of Abyssal Echoes ('100% worth it here', S11). Amulets don't display a quality tag — cosmetic Catalysts only inflate the numbers buyers filter on.",
+            mats: [MATS.preservedCollarbone, MATS.omenAbyssalEchoes],
+            warning: "Only with NO desecrated mod already on the amulet — max one per item (KB §5). The video's base still carried the intermediate craft's desecrated prefix: strip it first (Omen of Light + Orb of Annulment) or skip this step.",
           },
         ],
       },

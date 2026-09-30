@@ -8,6 +8,10 @@ import { PageHeader } from "../../ui/PageHeader";
 import { PanelLoading } from "../PanelLoading";
 import { useTabRoute } from "../useTabRoute";
 
+const PricesTool = dynamic(() => import("../../market/prices/PricesTool").then((m) => m.PricesTool), {
+  loading: PanelLoading,
+});
+
 const PriceCheckTool = dynamic(() => import("../../market/pricecheck/PriceCheckTool").then((m) => m.PriceCheckTool), {
   loading: PanelLoading,
 });
@@ -44,8 +48,20 @@ function BoardView() {
   );
 }
 
-/** Trade-site market: price check a pasted item (tool=price) or the demand + snipe board (tool=board). */
+/**
+ * What things are worth: every exchange item (tool=prices, the default), a price check of a pasted
+ * item (tool=price), or the trade-site demand + snipe board (tool=board).
+ */
 export function MarketTab() {
   const { tool } = useTabRoute();
-  return tool === "board" ? <BoardView /> : <PriceView />;
+  switch (tool) {
+    case "board":
+      return <BoardView />;
+    case "price":
+      return <PriceView />;
+    case "prices":
+      return <PricesTool />;
+    default:
+      throw new Error(`MarketTab: unknown tool ${String(tool)}`);
+  }
 }

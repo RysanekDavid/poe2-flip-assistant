@@ -32,7 +32,7 @@ export const BEGINNER_TABS: readonly TabId[] = ["learn", "farm", "market", "aler
  */
 export const BEGINNER_TOOLS: Partial<Record<TabId, readonly string[]>> = {
   farm: ["strategies"],
-  market: ["price"],
+  market: ["prices", "price"],
   settings: ["account", "notify", "mode", "system"],
 };
 

@@ -33,7 +33,7 @@ const KB_FACTS: ReadonlyArray<{ section: "1" | "7"; text: string }> = [
   { section: "1", text: '"Upgrades a Normal or Magic item to a Rare item with 4 random modifiers" / "Right click this item then left click a normal or magic item to apply it. Current modifiers are not retained." [verified-primary' },
   { section: "1", text: '"Removes a random modifier from an item" / "Right click this item then left click on a magic or rare item to apply it." [verified-primary' },
   { section: "7", text: '"Upgrades a Magic item to a Rare item, adding a guaranteed modifier" / "Right click this item then left click a Magic item to apply it."' },
-  { section: "7", text: "keeps the magic item's own mods is NOT in the item text [unverified]" },
+  { section: "7", text: "A Lesser/regular/Greater essence KEEPS the magic item's own mods and adds its guaranteed one, like a Regal Orb [verified-secondary" },
 ];
 
 /** Verbatim currency-core fragments (whitespace-normalised) behind the corrected targets. */

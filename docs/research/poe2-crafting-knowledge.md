@@ -11,6 +11,10 @@ actively contradict current values.
 Lesser/regular/Greater essence target (§7) were added from datamined item text in the entity catalog `src/data/poe2/entities.json.gz` (game data 0.5.5b)
 and poe2db. The rest of the file is unchanged.
 
+**Corrections 2026-09-30 (partial):** §7 — whether a Lesser/regular/Greater essence keeps a magic
+item's mods moved from [unverified] to verified-secondary (Maxroll + the Regal Orb item text); the
+essence-vs-existing-family case stays open. The rest of the file is unchanged.
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -213,8 +217,16 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   Abyss and Breach essences read "Removes a random modifier and augments a Rare item with a new
   guaranteed modifier" / "… left click a Rare item to apply it." [verified-primary — entity catalog `src/data/poe2/entities.json.gz` (game data 0.5.5b),
   all 82 essences; [poe2db Essence_of_the_Body](https://poe2db.tw/us/Essence_of_the_Body),
-  accessed 2026-09-29]. Whether a Lesser/regular/Greater essence keeps the magic item's own
-  mods is NOT in the item text [unverified].
+  accessed 2026-09-29]. A Lesser/regular/Greater essence KEEPS the magic item's own mods and adds
+  its guaranteed one, like a Regal Orb [verified-secondary — Maxroll "How to Craft in PoE2"
+  (ZiggyD, last updated 2026-06-18, written for 0.5.2): "Greater Essences, act the same way as
+  regals (upgrading Magic to Rare), but with a specific and guaranteed third Modifier!", with a
+  worked example that keeps a magic boot's 35% Movement Speed and resistance suffix through a
+  Greater Essence of Ruin ([maxroll](https://maxroll.gg/poe2/resources/how-to-craft-in-path-of-exile-2),
+  accessed 2026-09-30); the Regal Orb item text it is compared to: "Current modifiers are retained
+  and a new one is added" (entity catalog, game data 0.5.5b; [poe2db Regal_Orb](https://poe2db.tw/us/Regal_Orb),
+  accessed 2026-09-30)]. The essence's own item text does not say so. NOT covered: what happens
+  when the essence's guaranteed mod shares a family with a mod already on the item [unverified].
 - Essence of **Insulation = FIRE resistance** (not generic/cold). Check each essence's actual
   mod before buying.
 - Greater Essence of Seeking: guaranteed crit, magnitude scales by base (martial weapon
