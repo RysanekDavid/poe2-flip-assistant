@@ -24,7 +24,7 @@ export type NavMode = z.infer<typeof navModeSchema>;
 export const NAV_MODE_LABEL: Record<NavMode, string> = { beginner: "Beginner", advanced: "Advanced" };
 
 /** Beginner nav in display order. Coach is not listed: it is a helper, shown in both modes. */
-export const BEGINNER_TABS: readonly TabId[] = ["learn", "farm", "market", "alerts", "settings"];
+export const BEGINNER_TABS: readonly TabId[] = ["learn", "farm", "trade", "alerts", "settings"];
 
 /**
  * Beginner tools of the tabs above that declare tools; a tab missing here keeps all of its tools.
@@ -32,7 +32,7 @@ export const BEGINNER_TABS: readonly TabId[] = ["learn", "farm", "market", "aler
  */
 export const BEGINNER_TOOLS: Partial<Record<TabId, readonly string[]>> = {
   farm: ["strategies"],
-  market: ["prices", "price"],
+  trade: ["prices", "price"],
   settings: ["account", "notify", "mode", "system"],
 };
 

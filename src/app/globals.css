@@ -32,3 +32,15 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+@layer components {
+  /*
+   * The "Coach" half of the wordmark: a dark outline keeps the bone letters crisp on the translucent
+   * header, and the hard teal drop echoes the owl's plumage. --brand-drop lets small sizes use a
+   * thinner drop so the counters of the letters do not fill in.
+   */
+  .brand-coach {
+    -webkit-text-stroke: 1px theme("colors.bg");
+    text-shadow: 0 var(--brand-drop, 3px) 0 theme("colors.brand.teal");
+  }
+}

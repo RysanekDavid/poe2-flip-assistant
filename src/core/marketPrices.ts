@@ -5,7 +5,7 @@ import { ECONOMY_CATEGORIES, economyCategory, OTHER_CATEGORY } from "../lib/econ
 import type { MarketPriceCategory, MarketPriceItem, MarketPricesResponse } from "../lib/marketPricesContract";
 
 /**
- * The Market › Prices body: poe.ninja's latest value per item, its 7-day trend, and the Currency
+ * The Trade › Prices body: poe.ninja's latest value per item, its 7-day trend, and the Currency
  * Exchange's own flow where the exchange has a fresh market. Pure over its inputs so the test can
  * pin the null handling (unknown never becomes 0) and the unit (Divine per item, never inverted).
  */

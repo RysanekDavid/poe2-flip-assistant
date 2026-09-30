@@ -39,7 +39,7 @@ function PriceView() {
  * What things are worth: every exchange item (tool=prices, the default), a price check of a pasted
  * item (tool=price), or what to buy on the trade site now (tool=opportunities).
  */
-export function MarketTab() {
+export function TradeTab() {
   const { tool } = useTabRoute();
   switch (tool) {
     case "opportunities":
@@ -49,6 +49,6 @@ export function MarketTab() {
     case "prices":
       return <PricesTool />;
     default:
-      throw new Error(`MarketTab: unknown tool ${String(tool)}`);
+      throw new Error(`TradeTab: unknown tool ${String(tool)}`);
   }
 }

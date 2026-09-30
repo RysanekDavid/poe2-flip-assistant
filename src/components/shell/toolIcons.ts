@@ -25,7 +25,7 @@ const TOOL_ICONS: { [T in TabId]: Record<ToolIconKey<T>, ToolIcon> } = {
   patches: {},
   alerts: {},
   coach: {},
-  market: { prices: art(artDivine.src), price: glyph(Tag), opportunities: art(artMarket.src) },
+  trade: { prices: art(artDivine.src), price: glyph(Tag), opportunities: art(artMarket.src) },
   farm: { board: art(artWaystone.src), strategies: art(artTablet.src) },
   craft: { recipes: art(CURRENCY_ART.ex), moves: glyph(ClipboardPaste), modpool: art(CURRENCY_ART.chaos) },
   wealth: { worth: art(artWealth.src), sell: art(artGold.src) },

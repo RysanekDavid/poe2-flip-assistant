@@ -120,7 +120,7 @@ ok("snipe fires at 5 div", cheap.pass, cheap.pass ? "" : cheap.detail);
 ok("no snipe at 9 div (10% under)", !judge(9).pass);
 ok("thin data blocks snipe", !judge(5, 1).pass);
 
-// 6. Market › Price check (paste → value → sell hint), async
+// 6. Trade › Price check (paste → value → sell hint), async
 runPriceCheckCases(ok).then(
   () => {
     console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);

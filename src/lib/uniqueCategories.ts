@@ -1,5 +1,5 @@
 /**
- * poe2scout unique category (CategoryApiId) → the rail label and URL slug of Market › Prices.
+ * poe2scout unique category (CategoryApiId) → the rail label and URL slug of Trade › Prices.
  * Client-safe (no node imports): the route labels its rows with it, and the Prices tool validates
  * `?cat=` against these slugs before the uniques have loaded.
  *

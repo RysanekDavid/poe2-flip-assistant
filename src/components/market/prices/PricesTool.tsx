@@ -124,7 +124,7 @@ function Body({ exchange }: { exchange: Loaded<MarketPricesResponse> }) {
   );
 }
 
-/** Market › Prices: every exchange item and unique, poe.ninja-style — category rail, sortable tables, inline charts. */
+/** Trade › Prices: every exchange item and unique, poe.ninja-style — category rail, sortable tables, inline charts. */
 export function PricesTool() {
   const exchange = useMarketPrices();
   const { data } = exchange;

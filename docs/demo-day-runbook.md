@@ -29,7 +29,7 @@ printf '%s\n' "$DEMO_PASSWORD" | sudo -u poe2flip bash -c \
 unset DEMO_PASSWORD
 ```
 
-`--advanced` gives the demo account the full nav (Flips, Market › Opportunities, Craft, …); without it a
+`--advanced` gives the demo account the full nav (Flips, Trade › Opportunities, Craft, …); without it a
 new account starts in Beginner mode, and switching back needs Settings, which stays off camera.
 
 The script refuses passwords in argv/interactive echoed input and does not print its generated

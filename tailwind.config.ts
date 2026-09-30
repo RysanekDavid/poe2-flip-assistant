@@ -4,6 +4,8 @@ import type { Config } from "tailwindcss";
  * Design tokens. One accent (amber — the game's gold) so a highlighted number always means the same
  * thing; sky is reserved for links. Text sizes stop at 12px because anything smaller failed the
  * readability audit next to the game client. Radius stays stock: panels rounded-lg, controls rounded-md.
+ * The `brand` colours belong to the owl logo and its wordmark only; they are not UI accents, so the
+ * single-accent rule above still holds for everything interactive.
  */
 const config: Config = {
   darkMode: "class",
@@ -25,6 +27,12 @@ const config: Config = {
         good: "#22c55e",
         warn: "#eab308",
         bad: "#ef4444",
+        // sampled from the owl mascot: its teal plumage and bone-white face
+        brand: {
+          teal: "#2f7d77",
+          "teal-hi": "#5fb5ad",
+          bone: "#efe6d2",
+        },
       },
       fontSize: {
         xs: ["12px", { lineHeight: "16px" }],
@@ -32,6 +40,16 @@ const config: Config = {
         base: ["14px", { lineHeight: "20px" }],
         lg: ["16px", { lineHeight: "24px" }],
         xl: ["20px", { lineHeight: "28px" }],
+      },
+      keyframes: {
+        // a slow amber glow on the Coach owl, so the helper reads as alive without a badge
+        breathe: {
+          "0%, 100%": { filter: "drop-shadow(0 0 0 rgb(251 191 36 / 0))" },
+          "50%": { filter: "drop-shadow(0 0 6px rgb(251 191 36 / 0.55))" },
+        },
+      },
+      animation: {
+        breathe: "breathe 3.2s ease-in-out infinite",
       },
     },
   },

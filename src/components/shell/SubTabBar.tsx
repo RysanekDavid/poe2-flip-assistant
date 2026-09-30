@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, type KeyboardEvent, type MouseEvent } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { subTabsFor } from "../../lib/navMode";
 import { ItemArt } from "../ui/ItemArt";
 import { useNavMode } from "./NavModeProvider";
+import { TabArt } from "./TabArt";
 import { TAB_ICONS } from "./tabIcons";
 import { tabMeta, tabRouteHref, type TabId, type ToolMeta } from "./tabRegistry";
 import { toolIcon } from "./toolIcons";
@@ -33,14 +33,9 @@ export function useSubTabs(): SubTabs {
 }
 
 function Crumb({ tab }: { tab: TabId }) {
-  const icon = TAB_ICONS[tab];
   return (
     <span aria-hidden className="mr-1 flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-      {icon.kind === "art" ? (
-        <Image src={icon.src} alt="" className="h-4 w-4 object-contain opacity-60" />
-      ) : (
-        <icon.Icon strokeWidth={1.75} className="h-4 w-4 text-amber-200/60" />
-      )}
+      <TabArt src={TAB_ICONS[tab]} className="h-4 w-4 object-contain opacity-85" />
       {tabMeta(tab).label}
       <span className="text-neutral-500">›</span>
     </span>

@@ -1,4 +1,4 @@
-/* Market › Price check cases, run from testValuation.ts: classification of the fixture pastes, the
+/* Trade › Price check cases, run from testValuation.ts: classification of the fixture pastes, the
  * currency plan through an injected PlanContext, trade-only stacks, uniques without a poe2scout row,
  * corrupted uniques/rares, the contract round trip, and a spy proving the base check never spends
  * trade2 budget. No network, no DB. */
@@ -198,8 +198,8 @@ async function testLiveGates(ok: Ok): Promise<void> {
 
 export async function runPriceCheckCases(ok: Ok): Promise<void> {
   ok(
-    "pricecheck: Market opens on Prices, Price check stays routable",
-    parseTabRoute("market", null).tool === "prices" && parseTabRoute("market", "price").tool === "price" && parseTabRoute("market", "opportunities").tool === "opportunities",
+    "pricecheck: Trade opens on Prices, Price check stays routable",
+    parseTabRoute("trade", null).tool === "prices" && parseTabRoute("trade", "price").tool === "price" && parseTabRoute("trade", "opportunities").tool === "opportunities",
   );
   testClassify(ok);
   await testBase(ok);

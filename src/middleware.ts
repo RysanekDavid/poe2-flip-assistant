@@ -146,7 +146,8 @@ function decodeBase64Url(value: string): ArrayBuffer {
   return buffer;
 }
 
-// Skip Next internals and static assets; everything else is gated.
+// Skip Next internals and static assets; everything else is gated. The icons are app/icon.png and
+// app/apple-icon.png: the login page links them too, so a signed-out browser must reach them.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png).*)"],
 };

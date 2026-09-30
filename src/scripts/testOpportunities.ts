@@ -1,10 +1,10 @@
-/* Market › Opportunities contracts: the automatic budget from net worth (and none without one),
+/* Trade › Opportunities contracts: the automatic budget from net worth (and none without one),
  * near-miss selection, trend eligibility (thin or stale history is left out, never faked), the
  * per-user cap on live-listing clicks, the old ?tool=board deep link, and the SNIPE alert read.
  * Run: npm run test:market-league (runWithTestEnv.ts opportunities sets a TEMP DB_PATH). */
 import type { HistoryPoint } from "../api/scoutDemand";
 import { TradeRateLimitedError } from "../api/tradeErrors";
-import { redirectTool } from "../components/shell/tabRegistry";
+import { followRenames, redirectTool } from "../components/shell/tabRegistry";
 import { config } from "../config/env";
 import { fireAlert } from "../core/alertEngine";
 import { BUDGET_SHARE_OF_NET_WORTH, budgetFromNetWorth, withinBudget } from "../core/opportunities/budget";
@@ -196,7 +196,8 @@ async function testListingsCap(): Promise<void> {
 }
 
 function testRedirectAndDb(): void {
-  ok("deep link: ?tab=market&tool=board → opportunities", redirectTool("market", "board") === "opportunities" && redirectTool("farm", "board") === "board");
+  const old = followRenames("market", "board");
+  ok("deep link: ?tab=market&tool=board → trade + opportunities", old.tab === "trade" && old.tool === "opportunities" && redirectTool("farm", "board") === "board");
   const db = getDb();
   db.exec("DELETE FROM alerts");
   const snipe = (id: string) => ({ type: "SNIPE" as const, itemId: id, itemName: "Doom Grip", message: "m", value: 40, threshold: 35, dedupe: "once" as const, details: sampleSnipeCard() });

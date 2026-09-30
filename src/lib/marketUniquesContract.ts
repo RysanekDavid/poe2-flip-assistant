@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * GET /api/market/prices/uniques — the UNIQUES group of Market › Prices. Pure zod, client-safe:
+ * GET /api/market/prices/uniques — the UNIQUES group of Trade › Prices. Pure zod, client-safe:
  * the route parses its own body on the way out and the Prices tool parses it on the way in.
  *
  * Units: `valueDiv` is the Divine price of ONE unique (poe2scout's Exalted ask ÷ scout's own

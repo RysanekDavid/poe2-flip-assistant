@@ -57,7 +57,7 @@ function BudgetChip({ budget }: { budget: Budget }) {
   );
 }
 
-/** Market › Opportunities: what to buy on the trade site now, each item with art, numbers and one action. */
+/** Trade › Opportunities: what to buy on the trade site now, each item with art, numbers and one action. */
 export function OpportunitiesTool() {
   const state = useOpportunities();
   return (

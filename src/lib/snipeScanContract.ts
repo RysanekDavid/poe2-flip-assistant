@@ -34,7 +34,7 @@ export type NearMissReason = (typeof NEAR_MISS_REASONS)[number];
 
 /**
  * A valued listing that passed every snipe check except the margin or the comparable count.
- * Market › Opportunities shows the best few instead of an empty "no snipes" line. `basis` says where
+ * Trade › Opportunities shows the best few instead of an empty "no snipes" line. `basis` says where
  * the value came from: a live comparable search, or the price book (the scan's free short-circuit).
  */
 export const NearMissSchema = z.object({

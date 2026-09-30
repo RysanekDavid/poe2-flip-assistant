@@ -11,7 +11,7 @@ const REMOVED_PREFIXES: Record<string, string> = {
   HUNT_: "the Hunt feature was removed",
 };
 
-const SNIPE_TARGETS_REMOVED = "snipe targets were removed — Market › Opportunities";
+const SNIPE_TARGETS_REMOVED = "snipe targets were removed — Trade › Opportunities";
 
 /** Single keys whose feature is gone. */
 const REMOVED_KEYS: Record<string, string> = {

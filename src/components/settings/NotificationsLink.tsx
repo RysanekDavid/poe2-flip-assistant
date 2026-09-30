@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { deliverySummary } from "../../lib/notifySummary";
 import { DELIVERY_ANCHOR } from "../alerts/AlertDelivery";
 import { useNotifyPermission } from "../alerts/DesktopNotifyControl";
 import { useNotifySettings } from "../alerts/useNotifySettings";
+import { TabArt } from "../shell/TabArt";
 import { TAB_ICONS } from "../shell/tabIcons";
 import { tabRouteHref } from "../shell/tabRegistry";
 
@@ -16,12 +16,11 @@ import { tabRouteHref } from "../shell/tabRegistry";
 export function NotificationsLink() {
   const [perm] = useNotifyPermission();
   const { view, error } = useNotifySettings();
-  const icon = TAB_ICONS.alerts;
   const status = view ? deliverySummary(perm, view).text : error ? `status unavailable — ${error}` : "loading…";
   return (
     <section className="rounded-lg border border-line bg-surface/60 p-4">
       <header className="mb-1 flex items-center gap-2">
-        {icon.kind === "art" ? <Image src={icon.src} alt="" className="h-5 w-5 object-contain" /> : <icon.Icon aria-hidden className="h-5 w-5 text-amber-200/80" />}
+        <TabArt src={TAB_ICONS.alerts} className="h-5 w-5 object-contain" />
         <h3 className="text-lg font-semibold text-neutral-100">Notifications</h3>
       </header>
       <p className={`mb-3 text-sm ${view == null && error ? "text-bad" : "text-neutral-400"}`}>{status}</p>

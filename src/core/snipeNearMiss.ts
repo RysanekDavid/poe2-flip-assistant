@@ -7,7 +7,7 @@ import { listingTradeQuery } from "./snipeCard";
 
 /**
  * Near-misses: listings the scan valued that cleared every snipe check except the margin or the
- * comparable count. Market › Opportunities shows the best few instead of an empty snipe section.
+ * comparable count. Trade › Opportunities shows the best few instead of an empty snipe section.
  * Pure: the scanner collects them for free (the valuation already ran, or the price book answered),
  * so they cost no trade2 request of their own.
  */

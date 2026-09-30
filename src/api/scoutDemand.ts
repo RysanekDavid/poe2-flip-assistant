@@ -3,7 +3,7 @@ import { getDefaultLeague } from "../core/leagueState";
 import { fetchScoutRates, scoutGet, scoutItemsFetchedAt, SCOUT_CACHE_TTL_MS, SCOUT_REALM, type ScoutRates } from "./scoutClient";
 
 /**
- * Unique demand data (Market › Prices uniques, Opportunities, Wealth competition): every priced unique in the flip-relevant categories (all pages), its recent
+ * Unique demand data (Trade › Prices uniques, Opportunities, Wealth competition): every priced unique in the flip-relevant categories (all pages), its recent
  * price/listing history, and when poe2scout last set its price. Split from scoutClient so each
  * stays small.
  */
@@ -86,7 +86,7 @@ export interface DemandItem {
   momentumPct: number | null; // price change older half → newer half of the recent history
   samples: number; // recent history points — 0 = poe2scout has no recent history for it
   sparkPrices: number[]; // recent prices, oldest→newest — for row sparklines
-  /** The points inside HISTORY_WINDOW_MS, oldest→newest: Market › Opportunities reads its trends from them. */
+  /** The points inside HISTORY_WINDOW_MS, oldest→newest: Trade › Opportunities reads its trends from them. */
   recent: HistoryPoint[];
   /** ISO time poe2scout last set this price (any age); null when its history has no point for the item. */
   priceAt: string | null;

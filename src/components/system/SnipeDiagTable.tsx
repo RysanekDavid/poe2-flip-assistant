@@ -74,7 +74,7 @@ function StatusLine({ status }: { status: SnipeScanStatus }) {
 }
 
 /**
- * Owner diagnostics for the auto-snipe scanner, kept off the player-facing Market tab: its status,
+ * Owner diagnostics for the auto-snipe scanner, kept off the player-facing Trade tab: its status,
  * a manual scan, the alert hit rates and the last scan's per-archetype yield.
  */
 export function SnipeDiagTable() {
