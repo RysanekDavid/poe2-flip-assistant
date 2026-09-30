@@ -29,7 +29,7 @@ printf '%s\n' "$DEMO_PASSWORD" | sudo -u poe2flip bash -c \
 unset DEMO_PASSWORD
 ```
 
-`--advanced` gives the demo account the full nav (Exchange, Market › Opportunities, Craft, …); without it a
+`--advanced` gives the demo account the full nav (Flips, Market › Opportunities, Craft, …); without it a
 new account starts in Beginner mode, and switching back needs Settings, which stays off camera.
 
 The script refuses passwords in argv/interactive echoed input and does not print its generated
@@ -65,7 +65,7 @@ run `bash deploy/deploy.sh <PREVIOUS_FULL_SHA>` after verifying the SHA.
 
 ## 5. Exact three-minute click path
 
-1. Start already authenticated on **Currency Exchange**; enter `20 Divine` in the converter.
+1. Start already authenticated on **Flips**; enter `20 Divine` in the converter.
 2. Open one **Top Flip** row and its price chart. Call it an observed heuristic, not an order.
 3. Show the leading **FarmAdvisor** basket and drivers. Call it basket heat, not Div/hour.
 4. Open **Craft → Armour craft → Boots · putrefaction ES (caster) → Craft**. Show the market
