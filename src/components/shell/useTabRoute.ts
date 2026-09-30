@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseModeRoute } from "../../lib/navMode";
-import { tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
+import { redirectTool, tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
 import { useNavMode } from "./NavModeProvider";
 
 export interface TabRouteApi extends TabRoute {
@@ -11,6 +11,8 @@ export interface TabRouteApi extends TabRoute {
   rejected: readonly string[];
   /** URL params hidden in the user's nav mode (e.g. "tab=exchange" for a beginner); AppShell redirects. */
   hidden: readonly string[];
+  /** A renamed ?tool= that was followed to its new id (e.g. "tool=board"); AppShell rewrites the URL. */
+  renamed: readonly string[];
   /** Navigate to a tab (and optionally one of its tools). Pushes history so Back returns here. */
   go: (tab: TabId, tool?: string) => void;
 }
@@ -27,12 +29,14 @@ export function useTabRoute(): TabRouteApi {
   const params = useSearchParams();
   const { mode } = useNavMode();
   const rawTab = params.get("tab");
-  const rawTool = params.get("tool");
+  const askedTool = params.get("tool");
+  const rawTool = redirectTool(rawTab, askedTool);
   const parsed = useMemo(() => parseModeRoute(mode, rawTab, rawTool), [mode, rawTab, rawTool]);
+  const renamed = useMemo(() => (rawTool === askedTool ? [] : [`tool=${askedTool}`]), [rawTool, askedTool]);
 
   const go = useCallback(
     (tab: TabId, tool?: string) => {
-      const next = parseModeRoute(mode, tab, tool ?? null);
+      const next = parseModeRoute(mode, tab, redirectTool(tab, tool ?? null));
       if (next.rejected.length > 0) throw new Error(`go(): unknown route ${next.rejected.join(", ")}`);
       const href = tabRouteHref(next);
       // A link inside a visible page may still point at a hidden one; land on the fallback, loudly.
@@ -45,5 +49,5 @@ export function useTabRoute(): TabRouteApi {
     [mode, pathname, router],
   );
 
-  return { tab: parsed.tab, tool: parsed.tool, rejected: parsed.rejected, hidden: parsed.hidden, go };
+  return { tab: parsed.tab, tool: parsed.tool, rejected: parsed.rejected, hidden: parsed.hidden, renamed, go };
 }

@@ -11,9 +11,16 @@ const REMOVED_PREFIXES: Record<string, string> = {
   HUNT_: "the Hunt feature was removed",
 };
 
+const SNIPE_TARGETS_REMOVED = "snipe targets were removed — Market › Opportunities";
+
 /** Single keys whose feature is gone. */
 const REMOVED_KEYS: Record<string, string> = {
   DESKTOP_NOTIFY: "server-side OS toasts were removed (popups are per-user browser notifications)",
+  // SNIPE_MAX_TARGET_DIV stays: autosnipe candidates still use it
+  SNIPE_MIN_LISTINGS: SNIPE_TARGETS_REMOVED,
+  SNIPE_MAX_LISTINGS: SNIPE_TARGETS_REMOVED,
+  SNIPE_MIN_TARGET_DIV: SNIPE_TARGETS_REMOVED,
+  SNIPE_MIN_SAMPLE_LOGS: SNIPE_TARGETS_REMOVED,
 };
 
 function removalReason(key: string): string | null {

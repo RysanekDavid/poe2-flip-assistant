@@ -257,6 +257,12 @@ ok("env: other HUNT_* keys say the feature is gone", retired.some((w) => w.inclu
 ok("env: no retired keys → no warnings", retiredEnvWarnings({ TRADE_MIN_REQUEST_MS: "6000" }).length === 0);
 const toast = retiredEnvWarnings({ DESKTOP_NOTIFY: "false" });
 ok("env: a leftover DESKTOP_NOTIFY is named at boot", toast.length === 1 && toast[0]?.includes("DESKTOP_NOTIFY is set but server-side OS toasts were removed") === true, toast.join(" | "));
+const targets = retiredEnvWarnings({ SNIPE_MIN_LISTINGS: "8", SNIPE_MAX_LISTINGS: "150", SNIPE_MIN_TARGET_DIV: "10", SNIPE_MIN_SAMPLE_LOGS: "4", SNIPE_MAX_TARGET_DIV: "200" });
+ok(
+  "env: the four snipe-target keys are named at boot, SNIPE_MAX_TARGET_DIV (still used) is not",
+  targets.length === 4 && targets.every((w) => w.includes("snipe targets were removed — Market › Opportunities")) && !targets.some((w) => w.includes("SNIPE_MAX_TARGET_DIV")),
+  targets.join(" | "),
+);
 
 // --- web routes answer a busy shared budget with 503 + Retry-After, not a hung request ---
 const busy = tradeErrorResponse(new TradeRateLimitedError("search", 31_200));

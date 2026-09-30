@@ -1,14 +1,14 @@
-/* Market › board regressions (2026-09-30): only page 1 of each poe2scout category was read, and a
- * league where scout has no recent price history showed an empty default view with sell-through,
- * trend and heat all 0. Covers paging + dedupe, the shared demand cache, the history → unknown
- * logic and the default filter. */
+/* The shared poe2scout unique demand fill (Market › Prices uniques, Opportunities, Wealth competition).
+ * Regressions of 2026-09-30: only page 1 of each category was read, and a league without recent
+ * price history showed sell-through and trend as 0. Covers paging + dedupe, the shared cache, the
+ * history → unknown logic and the sell-through proxy. */
 import {
   createDemandCache,
   fetchCategoryPages,
-  hasPriceHistory,
   historyByItem,
   HISTORY_WINDOW_MS,
   MAX_DEMAND_PAGES,
+  sellThroughProxy,
   toDemandItems,
   WARNED_TTL_MS,
   type ByCategoryItem,
@@ -17,11 +17,7 @@ import {
   type HistoryPoint,
 } from "../api/scoutDemand";
 import { SCOUT_CACHE_TTL_MS } from "../api/scoutClient";
-import { demandTrust, heatScore } from "../core/demandHeat";
-import { rankSnipeTargets } from "../core/snipeTargets";
 import { tradeListingQuote } from "../core/wealth/tradeRoute";
-import type { DemandRow } from "../lib/demandContract";
-import { applyFilters, DEFAULT_FILTERS, DEFAULT_SORT, sortRows } from "../lib/demandView";
 
 let fail = 0;
 const ok = (name: string, cond: boolean, extra = "") => {
@@ -164,47 +160,33 @@ function testHistory(): void {
   // today's scout: every unique has points, but all older than the window
   const stale = new Map([[1, pts([68, 90, 30], [40, 100, 24], [18, 120, 12])]]);
   const [bare, missing] = toDemandItems([item(1), item(2)], stale, NOW);
-  ok("stale history → sell-through, trend, listed avg unknown (null), not 0", bare!.sellThrough === null && bare!.momentumPct === null && bare!.listedAvg === null);
-  ok("stale history → heat unknown (null), not 0", heatScore(bare!.sellThrough, bare!.momentumPct) === null);
+  ok("stale history → sell-through and trend unknown (null), not 0", bare!.sellThrough === null && bare!.momentumPct === null);
+  ok("stale history → no recent points for a trend", bare!.recent.length === 0);
   ok("stale history still dates the price", bare!.samples === 0 && bare!.priceExalt === 100 && bare!.priceAt === new Date(NOW - 18 * DAY).toISOString());
   ok("item missing from the history → age unknown (null)", missing!.priceAt === null);
-  ok("no recent history anywhere → league has none", !hasPriceHistory([bare!, missing!]));
 
   const fresh = new Map([[3, pts([6, 90, 30], [4, 100, 24], [2, 110, 18], [0.5, 120, 12], [9, 50, 99])]]);
   const [live] = toDemandItems([item(3)], fresh, NOW);
   ok("recent history → sell-through and trend are numbers", live!.sellThrough != null && live!.sellThrough > 0 && (live!.momentumPct ?? 0) > 0);
   ok("only points inside the 7-day window count", live!.samples === 4 && live!.sparkPrices.join(",") === "90,100,110,120" && HISTORY_WINDOW_MS === 7 * DAY);
-  ok("recent history → league has it", hasPriceHistory([live!]));
-
-  ok("trust: no history but enough listings is not thin", demandTrust(0, 20, 0) === "no-history");
-  ok("trust: too few listings is thin even without history", demandTrust(0, 2, 0) === "thin");
-  ok("trust: a short history is thin", demandTrust(2, 20, 0) === "thin");
-  ok("trust: enough history + listings is ok", demandTrust(5, 20, 0) === "ok");
+  ok("recent points keep price + quantity, oldest first", live!.recent.map((p) => `${p.price}/${p.quantity}`).join(",") === "90/30,100/24,110/18,120/12");
 }
 
-function testSnipeAndWealth(): void {
-  const valuable = toDemandItems([item(1, { CurrentPrice: 50 * 500 })], new Map(), NOW);
-  ok("snipe targets: no history → none qualify (the panel explains why)", rankSnipeTargets(valuable, 500).length === 0 && !hasPriceHistory(valuable));
+/** Mean per-step FRACTIONAL drop, supply increases clipped at 0 (moved from the retired demandHeat test). */
+function testSellThrough(): void {
+  const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+  ok("sell-through: fewer than 2 points → null (unknown, not \"nothing sells\")", sellThroughProxy([]) === null && sellThroughProxy([50]) === null);
+  ok("sell-through: 10→8→6 → (20% + 25%)/2", near(sellThroughProxy([10, 8, 6]) ?? NaN, 0.225));
+  ok("sell-through: new supply clipped, 10→20→15 → (0 + 25%)/2", near(sellThroughProxy([10, 20, 15]) ?? NaN, 0.125));
+  ok("sell-through: only increases → 0", sellThroughProxy([5, 50, 500]) === 0);
+  ok("sell-through: a zero-listing step contributes nothing", sellThroughProxy([0, 0, 5]) === 0);
+  ok("sell-through: a big churning count stays tiny", (sellThroughProxy([900, 890, 900, 890]) ?? NaN) < 0.01);
+}
+
+function testWealth(): void {
   const rates = { exaltPerDivine: 500, chaosPerDivine: 30 };
   const q = tradeListingQuote(2, 1, { listed: 5, sellThrough: null, samples: 0 }, rates);
   ok("wealth competition: unknown sell-through stays null, no 'slow' claim", q.competition?.sellThrough === null && q.competitionNote === null);
-}
-
-const row = (id: number, marketDivine: number, trust: DemandRow["trust"]): DemandRow => ({
-  id, name: `U${id}`, type: "Base", category: "armour", icon: null, marketDivine, priceAt: null, quantity: 20,
-  listedAvg: null, sellThrough: null, momentumPct: null, spark: [], heat: null, trust, divergePct: 0, tradeUrl: "",
-});
-
-function testDefaultView(): void {
-  // today's league: no row has history — the old default ("hide thin", thin = no history) showed nothing
-  const rows = [row(1, 0.05, "no-history"), row(2, 3700, "no-history"), row(3, 29, "no-history"), row(4, 0.9, "no-history"), row(5, 12, "thin")];
-  const shown = sortRows(applyFilters(rows, DEFAULT_FILTERS), DEFAULT_SORT.key, DEFAULT_SORT.dir);
-  ok("default view: rows without history are shown", shown.length > 0);
-  ok("default view: ≥ 1 Div only, by value, thin hidden", shown.map((r) => r.id).join(",") === "2,3", shown.map((r) => r.id).join(","));
-  const all = sortRows(applyFilters(rows, { ...DEFAULT_FILTERS, valuableOnly: false, trustedOnly: false }), DEFAULT_SORT.key, DEFAULT_SORT.dir);
-  ok("both toggles off: everything, most valuable first", all.map((r) => r.id).join(",") === "2,3,5,4,1", all.map((r) => r.id).join(","));
-  const byHeat = sortRows([{ ...row(6, 5, "ok"), heat: 10 }, row(7, 5, "no-history"), { ...row(8, 5, "ok"), heat: 40 }], "heat", "asc");
-  ok("unknown heat sorts last in either direction", byHeat.map((r) => r.id).join(",") === "6,8,7", byHeat.map((r) => r.id).join(","));
 }
 
 async function main(): Promise<void> {
@@ -213,8 +195,8 @@ async function main(): Promise<void> {
   await testCache();
   await testInflightFailure();
   testHistory();
-  testSnipeAndWealth();
-  testDefaultView();
+  testSellThrough();
+  testWealth();
   console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);
   process.exit(fail === 0 ? 0 : 1);
 }

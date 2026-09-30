@@ -13,7 +13,11 @@ It never buys, sells, whispers, clicks, or controls the game.
 
 - **Currency Exchange:** reference converter, observed market history, risk-adjusted flip
   heuristics, alerts, and manual position tracking.
-- **Web Market:** poe2scout demand signals plus the read-only autosnipe scanner.
+- **Market:** every item's price (exchange items and uniques), a paste-an-item price check, and
+  **Opportunities** — what to buy on the trade site now: still-live snipe cards from the read-only
+  autosnipe scanner, its closest near-misses, and uniques whose price rises while listings fall,
+  all inside a budget taken from your net worth. Opening a unique spends one trade search
+  (10 per hour per user, shared with Mod pool live values); nothing searches in the background for it.
 - **Alerts:** one feed for snipes (full item card, whisper, trade link), craft margins, spreads
   and league news, with per-type ticker / sound / desktop-popup / Discord routing.
 - **Craft:** sixteen curated recipes with observed comparables, modelled EV, interactive steps,
