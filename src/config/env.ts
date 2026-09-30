@@ -59,7 +59,7 @@ export function flag(key: string, fallback: boolean): boolean {
 }
 
 export const config = {
-  league: process.env.LEAGUE_NAME ?? "Runes of Aldur",
+  league: process.env.LEAGUE_NAME ?? "Forbidden Rites", // fallback only; the runtime setting (Settings) wins
   dbPath: process.env.DB_PATH ?? "./data/poe2flip.db",
   authSecret: process.env.AUTH_SECRET ?? "", // HMAC key for session cookies; REQUIRED in production
   secretKey: process.env.SECRET_KEY ?? "", // AES key material for encrypting stored secrets (per-user POESESSID); falls back to AUTH_SECRET
