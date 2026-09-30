@@ -78,13 +78,17 @@ function testProvenanceData(): void {
 
 /** Every linked video's creator is the committed oEmbed author_name for that URL. */
 function testOembedAttribution(): void {
-  const oembed = JSON.parse(readFileSync(join(process.cwd(), "docs/kb/sources/oembed.json"), "utf8")) as { videos: Array<{ url: string; author_name: string }> };
+  const oembed = JSON.parse(readFileSync(join(process.cwd(), "docs/kb/sources/oembed.json"), "utf8")) as {
+    videos: Array<{ url: string; author_name: string; upload_date?: string }>;
+  };
   const author = new Map(oembed.videos.map((v) => [v.url, v.author_name]));
+  const uploaded = new Map(oembed.videos.flatMap((v) => (v.upload_date ? [[v.url, v.upload_date] as const] : [])));
   const videos = RECIPES.flatMap((r) => provenanceFor(r.key).sources.filter((s) => s.kind === "video" && s.url !== null));
   const wrong = videos.filter((s) => author.get(s.url ?? "") !== s.creator).map((s) => `${s.url}: ${s.creator}`);
   ok("every linked video's creator matches docs/kb/sources/oembed.json", videos.length > 0 && wrong.length === 0, wrong.join(" | "));
-  const listingOnly = videos.every((s) => s.date === null || s.datePrecision === "listing");
-  ok("video dates are marked as search-listing precision", listingOnly);
+  // oEmbed carries no date: an exact video date must be the upload date recorded from the watch page
+  const badDates = videos.filter((s) => s.date !== null && s.datePrecision !== "listing" && uploaded.get(s.url ?? "") !== s.date);
+  ok("video dates are search listings or the recorded watch-page upload date", badDates.length === 0, badDates.map((s) => s.url).join(","));
 }
 
 // --- D-2 audit artifact: stamped with the manifest's snapshot, current, and free of violations ---

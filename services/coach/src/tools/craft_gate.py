@@ -57,6 +57,28 @@ RECIPES: dict[str, RecipeMeta] = {
     "amulet_plus4_breach_quality": RecipeMeta(
         "Amulet · +4 Spell quality tech (unverified)", "jewellery"
     ),
+    "gloves_putrefaction_decay": RecipeMeta(
+        "Gloves · Katla's Gloom putrefaction (Decay)", "armour"
+    ),
+    "bow_abrasion_desecrated_prefix": RecipeMeta(
+        "Bow · Abrasion + desecrated prefix (non-crit)", "weapon"
+    ),
+    "bow_seeking_desecrated_prefix": RecipeMeta(
+        "Bow · Seeking + desecrated prefix (crit)", "weapon"
+    ),
+    "quarterstaff_flames_desecrated_prefix": RecipeMeta(
+        "Quarterstaff · Flames essence + desecrated prefix", "weapon"
+    ),
+    "boots_evasion_ms_ruin": RecipeMeta("Boots · evasion 35% MS + Ruin essence", "armour"),
+    "armour_evasion_es_body_essence": RecipeMeta(
+        "Body Armour · budget Evasion/ES + Body essence", "armour"
+    ),
+    "belt_life_res_desecrated_hybrid": RecipeMeta(
+        "Belt · life + res + desecrated chaos hybrid", "jewellery"
+    ),
+    "ring_prismatic_catalyst_attack": RecipeMeta(
+        "Ring · Prismatic catalysed flat attack damage", "jewellery"
+    ),
 }
 
 # craftValuation.ts gate constants.
