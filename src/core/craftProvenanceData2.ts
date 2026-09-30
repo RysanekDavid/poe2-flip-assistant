@@ -15,6 +15,13 @@ import type { RecipeProvenance, RecipeSource } from "./craftProvenance/schema";
  * Tiers: "primary" = the creator's own video; "secondary" = a write-up of someone's craft (the
  * compilation, Exile Codex, Forge of Exiles, POECurrency, p2pah, Mobalytics). Exile Codex pages print
  * only a "Last updated" date; that printed date is used (precision exact, read from the page).
+ *
+ * Second wave (2026-09-30, craftRecipeData6.ts + craftRecipeData7.ts): every recipe is one entry of
+ * the compilation's index.html, re-fetched on 2026-09-30 (still the 2026-06-10 commit). Its gloves_003
+ * credits "LoK HoL (YouTube)"; we matched that to Lolcohol's "PoE 2 0.5 - Crafting EXPLODE GLOVES for
+ * Martial Artist" (oEmbed E6) by title and name — our inference. We read that video's watch page
+ * (upload date, description), not the video. Its quarterstaff_003 credits "Dopamine Hunter (YouTube)";
+ * no matching video was found, so that credit is an anecdote.
  */
 
 function guide(title: string, url: string, creator: string | null, date: string | null, datePrecision: RecipeSource["datePrecision"]): RecipeSource {
@@ -91,7 +98,66 @@ const FORGE_SOIS = guide(
   "exact",
 );
 
+// The watch page's uploadDate / datePublished (2026-06-04T02:55:52-07:00), read 2026-09-30 → exact.
+const LOLCOHOL: RecipeSource = {
+  kind: "video",
+  title: "PoE 2 0.5 - Crafting EXPLODE GLOVES for Martial Artist",
+  url: "https://www.youtube.com/watch?v=e-MihyBNVd4",
+  creator: "Lolcohol",
+  date: "2026-06-04",
+  datePrecision: "exact",
+  tier: "primary",
+  ref: null,
+};
+const DOPAMINE_HUNTER: RecipeSource = {
+  kind: "video",
+  title: "Dopamine Hunter quarterstaff craft credited by the compilation (quarterstaff_003), video not located",
+  url: null,
+  creator: "Dopamine Hunter",
+  date: null,
+  datePrecision: null,
+  tier: "anecdote",
+  ref: null,
+};
+
 const NO_ODDS = "Curated estimate: the sources state no hit odds.";
+const ONE_ENTRY = "A single compilation entry, which states no odds.";
+
+/** Second-wave recipes backed by the compilation entry alone. */
+function compilationOnly(note: string, kbRuleRefs: string[], basis: "unknown" | "creator_claim" = "unknown"): RecipeProvenance {
+  return { patchVerified: "0.5.5b", status: "draft", sources: [COMPILATION], hitRateBasis: { basis, n: null, note }, extraEntityRefs: [], kbRuleRefs };
+}
+
+const BOW_WAVE2 = compilationOnly(`${ONE_ENTRY} The essence and exalts always land; about half the Sinistral reveals give a flat-damage prefix (our estimate).`, ["§1", "§4", "§5", "§7"]);
+
+/** Second wave (2026-09-30): the compilation's gloves_003, bow_001/002, quarterstaff_003, boots_003, body_armour_003, belt_001, ring_001. */
+const WAVE2_PROVENANCE: Record<string, RecipeProvenance> = {
+  gloves_putrefaction_decay: {
+    patchVerified: "0.5.5b",
+    status: "draft",
+    sources: [COMPILATION, LOLCOHOL],
+    hitRateBasis: { basis: "unknown", n: null, note: "Curated: the putrefaction slot machine's ~1 in 3, shaded to 0.2 because the leg values one of the five Decay prefix families." },
+    extraEntityRefs: [],
+    kbRuleRefs: ["§4", "§5", "§9"],
+  },
+  bow_abrasion_desecrated_prefix: BOW_WAVE2,
+  bow_seeking_desecrated_prefix: BOW_WAVE2,
+  quarterstaff_flames_desecrated_prefix: {
+    ...compilationOnly(`${ONE_ENTRY} Every step lands; the reveal decides whether a % damage prefix joins the flat line.`, ["§4", "§5", "§7"]),
+    sources: [COMPILATION, DOPAMINE_HUNTER],
+  },
+  boots_evasion_ms_ruin: compilationOnly(`${ONE_ENTRY} The base already carries 35% MS; the reveal and the exalts set the price band.`, ["§1", "§3", "§4", "§5", "§7"]),
+  armour_evasion_es_body_essence: compilationOnly(`${ONE_ENTRY} A ~1 ex base where every step lands; the reveal and the resistances set the sale.`, ["§4", "§5", "§7"]),
+  belt_life_res_desecrated_hybrid: compilationOnly(
+    "The compilation: '3/4 chance to hit Elemental+Chaos mod of chosen element' — RePoE's four boss suffixes per belt fit it only if all three reveal options come from the chosen boss (unverified) and assuming equal spawn weights. 0.6 shades it for the open K6 belt question (probable by internal id, still an inference); a miss still sells.",
+    ["§4", "§5", "§7"],
+    "creator_claim",
+  ),
+  ring_prismatic_catalyst_attack: compilationOnly(
+    `${ONE_ENTRY} Two exalt slams must each land a damage line; its '3/4' hybrid odds are the belt's, and RePoE gives rings 3/4 only for the Ulaman hybrid (4/5/6 boss suffixes; equal spawn weights assumed).`,
+    ["§3", "§4", "§5", "§7", "§8"],
+  ),
+};
 
 const VILE_ROBE: RecipeProvenance = {
   patchVerified: "0.5.5b",
@@ -154,4 +220,5 @@ export const EXPANSION_PROVENANCE: Record<string, RecipeProvenance> = {
     extraEntityRefs: [],
     kbRuleRefs: ["§4", "§5", "§7", "§8"],
   },
+  ...WAVE2_PROVENANCE,
 };
