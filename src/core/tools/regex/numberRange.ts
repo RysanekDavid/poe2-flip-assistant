@@ -5,7 +5,9 @@
  * The fragment matches the exact decimal spelling of every value in range and nothing else ONLY
  * when the caller puts a non-digit literal on both sides (`% of`, `\)`, a space): there is no
  * lookbehind, and `.` also matches non-digits, so "215%" would satisfy a bare `1[5-9]%`.
- * poolTokens always adds that boundary; any other caller must too.
+ * poolTokens adds that boundary, or (header properties, `label:.*range%`) drops the left one only
+ * after testing every value 0–999 (or up to the span top) against numberRangeSpan; any other caller
+ * must do one or the other.
  */
 
 export interface NumberRangeOptions {
@@ -61,6 +63,15 @@ function widen(min: number, max: number | null): { min: number; max: number | nu
 }
 
 /**
+ * The inclusive values numberRangeRegex(min, max, options) is written for: widened by round10, and
+ * an open top ends at the last value of OPEN_MAX_DIGITS digits (or of min's own length if longer).
+ */
+export function numberRangeSpan(min: number, max: number | null, options: NumberRangeOptions = {}): { lo: number; hi: number } {
+  const range = options.round10 ? widen(min, max) : { min, max };
+  return { lo: range.min, hi: range.max ?? Math.max(10 ** OPEN_MAX_DIGITS - 1, 10 ** String(range.min).length - 1) };
+}
+
+/**
  * Regex fragment for integers min..max (max null = no upper bound). Throws RangeError for
  * decimals, negatives or min > max — a threshold that cannot be expressed must not become a
  * fragment that silently matches something else.
@@ -69,11 +80,11 @@ export function numberRangeRegex(min: number, max: number | null, options: Numbe
   assertInteger("min", min);
   if (max !== null) assertInteger("max", max);
   if (max !== null && max < min) throw new RangeError(`min ${min} is above max ${max}`);
-  const range = options.round10 ? widen(min, max) : { min, max };
-  const hi = range.max ?? Math.max(10 ** OPEN_MAX_DIGITS - 1, 10 ** String(range.min).length - 1);
+  const span = numberRangeSpan(min, max, options);
+  const hi = span.hi;
   const patterns: string[] = [];
-  for (let digits = String(range.min).length; digits <= String(hi).length; digits++) {
-    const lo = Math.max(range.min, digits === 1 ? 0 : 10 ** (digits - 1));
+  for (let digits = String(span.lo).length; digits <= String(hi).length; digits++) {
+    const lo = Math.max(span.lo, digits === 1 ? 0 : 10 ** (digits - 1));
     const top = Math.min(hi, 10 ** digits - 1);
     patterns.push(...sameLength(String(lo), String(top)));
   }
