@@ -170,6 +170,8 @@ function testTabRedirects(): void {
   assert.equal(redirectTab(null), null);
   assert.equal(redirectTab("toString"), "toString", "a prototype key is not a redirect; the parser rejects it");
   assert.equal(redirectTab("bogus"), "bogus", "an unknown tab is left for the parser to reject");
+  assert.equal(redirectTool("market", "toString"), "toString", "a prototype key is not a tool redirect");
+  assert.equal(redirectTool("market", "board"), "opportunities");
   assert.deepEqual(parseModeRoute("advanced", redirectTab("exchange"), null), { tab: "flips", tool: null, rejected: [], hidden: [] });
   assert.deepEqual(
     parseModeRoute("beginner", redirectTab("exchange"), null),

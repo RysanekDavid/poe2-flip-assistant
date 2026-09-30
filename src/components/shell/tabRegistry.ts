@@ -130,7 +130,9 @@ export function redirectTab(rawTab: string | null): string | null {
 export function redirectTool(rawTab: string | null, rawTool: string | null): string | null {
   const tab = tabIdSchema.safeParse(rawTab);
   if (!tab.success || rawTool === null) return rawTool;
-  return TOOL_REDIRECTS[tab.data]?.[rawTool] ?? rawTool;
+  const renames = TOOL_REDIRECTS[tab.data];
+  // own keys only, so ?tool=toString cannot resolve to an Object.prototype member
+  return renames && Object.prototype.hasOwnProperty.call(renames, rawTool) ? (renames[rawTool] ?? rawTool) : rawTool;
 }
 
 export interface RenamedParams {
