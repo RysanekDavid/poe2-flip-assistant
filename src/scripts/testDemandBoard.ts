@@ -89,7 +89,7 @@ async function testDedupe(): Promise<void> {
   ok("dedupe: a page made only of earlier rows throws", err?.includes("only repeats") === true && circular.asked.join(",") === "1,2", err ?? "no throw");
 }
 
-const data = (warnings: string[] = []): DemandData => ({ rates: { exaltPerDivine: 500, chaosPerDivine: 30 }, items: [], warnings });
+const data = (warnings: string[] = []): DemandData => ({ rates: { exaltPerDivine: 500, chaosPerDivine: 30 }, items: [], unpriced: [], warnings });
 
 async function testCache(): Promise<void> {
   let clock = NOW;

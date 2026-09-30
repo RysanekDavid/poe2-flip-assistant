@@ -10,7 +10,7 @@ import { fetchScoutRates, scoutGet, scoutItemsFetchedAt, SCOUT_CACHE_TTL_MS, SCO
  */
 
 /** Unique categories with a real secondary market — the flip-relevant ones. */
-const DEMAND_CATEGORIES = ["accessory", "armour", "weapon", "flask", "jewel", "sanctum"] as const;
+export const DEMAND_CATEGORIES = ["accessory", "armour", "weapon", "flask", "jewel", "sanctum"] as const;
 
 // Armour is the largest category at 227 uniques (3 pages of 100, 2026-09-30). A count past this
 // bound means paging stopped working, not that GGG added a thousand uniques.
@@ -216,6 +216,23 @@ export function toDemandItems(raw: readonly ByCategoryItem[], history: ReadonlyM
   );
 }
 
+/** A listed unique poe2scout gives no current price: the Prices tool still shows it, honestly unpriced. */
+export interface UnpricedUnique {
+  id: number;
+  name: string;
+  type: string;
+  category: string;
+  icon: string | null;
+  quantity: number;
+}
+
+/** The rows toDemandItems drops for having no CurrentPrice, minus scout's "INCOMPLETE" placeholders. */
+export function toUnpricedUniques(raw: readonly ByCategoryItem[]): UnpricedUnique[] {
+  return raw
+    .filter((r) => r.CurrentPrice == null && r.Name != null && r.Name !== "INCOMPLETE")
+    .map((r) => ({ id: r.ItemId, name: r.Name!, type: r.Type ?? "", category: r.CategoryApiId, icon: r.IconUrl ?? null, quantity: r.CurrentQuantity }));
+}
+
 /** True when at least one item has a recent history point; false = scout has no recent history this league. */
 export const hasPriceHistory = (items: readonly DemandItem[]): boolean => items.some((i) => i.samples > 0);
 
@@ -262,13 +279,20 @@ async function fetchHistory(league: string): Promise<{ history: Map<number, Hist
   }
 }
 
-export type DemandData = { rates: ScoutRates; items: DemandItem[]; warnings: string[] };
+export type DemandData = { rates: ScoutRates; items: DemandItem[]; unpriced: UnpricedUnique[]; warnings: string[] };
+/** A cache fill as served: the data, the league it describes and when it was fetched (ms epoch). */
+export type CachedDemand = DemandData & { at: number; league: string };
 
 async function loadDemand(league: string): Promise<DemandData> {
   const rates = await fetchScoutRates(league);
   const pages = await fetchDemandPages(league);
   const { history, warning } = await fetchHistory(league);
-  return { rates, items: toDemandItems(pages.items, history, Date.now()), warnings: [...pages.warnings, ...(warning ? [warning] : [])] };
+  return {
+    rates,
+    items: toDemandItems(pages.items, history, Date.now()),
+    unpriced: toUnpricedUniques(pages.items),
+    warnings: [...pages.warnings, ...(warning ? [warning] : [])],
+  };
 }
 
 /**
@@ -277,13 +301,13 @@ async function loadDemand(league: string): Promise<DemandData> {
  * after WARNED_TTL_MS so a transient failure does not stick for the full TTL.
  */
 export function createDemandCache(load: (league: string) => Promise<DemandData>, now: () => number = Date.now) {
-  let cache: (DemandData & { at: number; league: string }) | null = null;
-  let inflight: { league: string; promise: Promise<DemandData>; token: symbol } | null = null;
+  let cache: CachedDemand | null = null;
+  let inflight: { league: string; promise: Promise<CachedDemand>; token: symbol } | null = null;
   const fresh = (league: string): boolean => {
     if (cache == null || cache.league !== league) return false;
     return now() - cache.at < (cache.warnings.length > 0 ? WARNED_TTL_MS : SCOUT_CACHE_TTL_MS);
   };
-  const get = (league: string): Promise<DemandData> => {
+  const get = (league: string): Promise<CachedDemand> => {
     if (cache != null && fresh(league)) return Promise.resolve(cache);
     if (inflight != null && inflight.league === league) return inflight.promise;
     const token = Symbol(league);
@@ -311,6 +335,6 @@ export function scoutFetchedAt(): number | null {
 }
 
 /** Flow + momentum + price age for gear uniques across the demand categories, for the app default league. */
-export function fetchDemand(): Promise<DemandData> {
+export function fetchDemand(): Promise<CachedDemand> {
   return demandCache.get(getDefaultLeague());
 }
