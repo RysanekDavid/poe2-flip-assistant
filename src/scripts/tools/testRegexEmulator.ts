@@ -159,6 +159,10 @@ function testPoe2reTokens(lines: readonly string[]): void {
   for (const n of [1, 5, 9]) assert.equal(matchesItem('"er 1[0-6]\\)"', tier(n)), false, `…not T${n}`);
   assert.ok(matchesItem('"m rar.*\\+([4-9].|1..)%"', lines), "poe2.re-style `m rar.*` reads Item Rarity +40%");
   assert.equal(matchesItem('"m rar.*\\+([5-9].|1..)%"', lines), false, "…and 40 is below 50");
+  // poeregex.cz's shape, which the property tokens now share: no "+" or space after the colon
+  assert.ok(matchesItem('"r rarity:.*([1-9].|\\d..)%"', lines), "poeregex.cz Monster Rarity ≥ 10 finds +103%");
+  assert.equal(matchesItem('"r rarity:.*([1-9].|\\d..)%"', lines.map((l) => l.replace("Monster Rarity: +103%", "Monster Rarity: +9%"))), false, "…not +9%");
+  assert.equal(matchesItem('"m rarity:.*(1[5-9]|[2-9].|\\d..)%"', ["Item Rarity: +4%", "Monster Rarity: +103%"]), false, "`.*` does not cross into the next line");
 }
 
 function loadWaystone(): RegexPool {
