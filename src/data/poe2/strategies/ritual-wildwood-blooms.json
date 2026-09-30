@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "id": "ritual-wildwood-blooms",
+  "title": "Ritual: Sacred Blooms and the Viridian Wildwood",
+  "summary": "Forbidden Rites only: take Sacred Blooms from Ritual rewards, bloom a cluster of maps with the Viridian Wildwood, collect Primal, Vivid and Wild Wisps inside, then clear the empowered map. Two or more Ritual Tablets add an altar and more Wisps.",
+  "mechanics": [
+    "ritual"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-09-30"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "build_needs": "Clears a map whose monsters Wisps made Magic, gave extra modifiers or made more rewarding; GGG calls them considerably more dangerous.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://www.pathofexile.com/forum/view-thread/3999865"
+      ],
+      "note": "Editorial estimate from GGG's description of empowered monsters; not measured."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "sacred-bloom",
+        "name": "Sacred Bloom"
+      },
+      "role": "primary",
+      "why": "A Ritual reward in Forbidden Rites; adds a Viridian Wildwood to a Map and all Maps connected to it. Use it or sell it on the Currency Exchange.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Sacred_Bloom",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "an-audience-with-the-king",
+        "name": "An Audience with the King"
+      },
+      "role": "secondary",
+      "why": "An exclusive Ritual drop; tribute not spent on favours can be offered toward it.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Ritual"
+        ]
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "hilda",
+    "nodes": [
+      {
+        "name": "Breeding Season",
+        "tier": 1,
+        "effect": "15% increased Rare Monsters; Rare Monsters have 25% increased chance of Monster Modifiers",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      },
+      {
+        "name": "Ancient Inscriptions",
+        "tier": 3,
+        "effect": "8% increased effect of Explicit Modifiers on Tablets for each type of Tablet affecting Map area",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": null,
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://www.pathofexile.com/forum/view-thread/3999865"
+      ],
+      "note": "No master node targets Ritual or the Wildwood. Vivid Wisps add modifiers to Rare Monsters, so more rares (Breeding Season) give them more targets; Ancient Inscriptions strengthens the Ritual Tablets. Our picks, not measured. T2 and T4 are free picks."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Tempting Offers",
+      "tree": "Ritual",
+      "effect": "Ritual Altars allow rerolling Favours an additional time",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Tempting_Offers",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Tempting_Offers"
+        ]
+      }
+    },
+    {
+      "name": "Patient Devotion",
+      "tree": "Ritual",
+      "effect": "Deferring Favours at Ritual Altars costs 50% reduced Tribute; Deferred Favours reappear 50% sooner",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Patient_Devotion",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Patient_Devotion"
+        ]
+      }
+    },
+    {
+      "name": "Increased Tribute",
+      "tree": "Ritual",
+      "effect": "Monsters Sacrificed at Ritual Altars grant 5% increased Tribute (a small node the tree repeats)",
+      "priority": "recommended",
+      "poe2db_url": "https://poe2db.tw/us/Increased_Tribute",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Increased_Tribute"
+        ]
+      }
+    },
+    {
+      "name": "Between Two Worlds",
+      "tree": "Ritual",
+      "effect": "Ritual Altars spawn a Wildwood Wisp",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Between_Two_Worlds",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Between_Two_Worlds"
+        ],
+        "note": "Whether this Wisp counts toward the Wisps collected inside the Viridian Wildwood is not documented."
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Ritual Tablet",
+      "unique": null,
+      "count": 2,
+      "mods": [
+        {
+          "text": "Monsters Sacrificed at Ritual Altars in Map grant (18–30)% increased Tribute",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_159726667",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Our pick: more tribute to afford a Sacred Bloom when it is offered."
+          }
+        },
+        {
+          "text": "Ritual Altars in Map allow rerolling Favours (1–3) additional times",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_120737942",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of Prayers'. Our pick: more rerolls to find a Sacred Bloom. trade2 shows the stat's one-reroll wording; RePoE gives both 120737942 texts to map_ritual_additional_reward_rerolls."
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "pack_size",
+      "monster_rarity"
+    ],
+    "notes": "Wisps empower the map's monsters, so more monsters (pack size) and more rares (monster rarity) give Primal and Vivid Wisps more targets.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://www.pathofexile.com/forum/view-thread/3999865",
+        "https://www.pathofexile.com/forum/view-thread/3932540"
+      ],
+      "note": "GGG: 'Primal Wisps can transform Normal Monsters into Magic Monsters, Vivid Wisps can add modifiers to Rare Monsters, and Wild Wisps increase the rarity of items dropped by monsters.' 0.5.0: Monster Rarity 'affects the chances of magic and rare monsters'. Our reading, not measured."
+    }
+  },
+  "steps": [
+    "Allocate Tempting Offers and the Increased Tribute nodes; Patient Devotion lets you defer a Sacred Bloom you cannot afford yet.",
+    "Set Hilda: Breeding Season and Ancient Inscriptions; T2 and T4 are free picks.",
+    "Slot two or more Ritual Tablets: since 0.5.5 that adds an extra altar if possible and increases the Wisps you collect in the Viridian Wildwood.",
+    "Take a Sacred Bloom from the Ritual rewards and apply it to an endgame map: the Wildwood is added to that map and every map connected to it.",
+    "In a bloomed map, enter the Wildwood and follow the Wisp trails before time runs out: Primal (Normal monsters become Magic), Vivid (modifiers on Rares), Wild (more item rarity).",
+    "Leave the Wildwood and clear the map: its monsters carry the Wisps you collected."
+  ],
+  "risks": [
+    "Sacred Blooms can only be found in the Forbidden Rites league.",
+    "GGG: empowered monsters become considerably more dangerous in exchange for their improved rewards.",
+    "GGG teased a rarer fourth Wisp, the Sacred Wisp; what it does is not documented here.",
+    "The Wildwood timer, Wisp counts and returns are not documented or measured; the basket has no map-loot rows.",
+    "0.5.5 disabled the old Viridian Wildwood unique map."
+  ],
+  "measured": null
+}

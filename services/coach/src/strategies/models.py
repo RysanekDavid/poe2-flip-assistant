@@ -23,6 +23,7 @@ Mechanic = Literal[
     "map_boss",
     "corruption",
     "anomaly",
+    "trial_of_chaos",
 ]
 BudgetTier = Literal["league_start", "mid", "high"]
 Master = Literal["jado", "doryani", "hilda", "any"]

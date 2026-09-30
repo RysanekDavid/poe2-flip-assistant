@@ -64,7 +64,7 @@ function TabletBlock({ tablet }: { tablet: TabletView }) {
 
 /** Tablets to slot, each mod with its evidence grade and a trade2 search when its stat id is known. */
 export function TabletMods({ tablets }: { tablets: readonly TabletView[] }) {
-  if (tablets.length === 0) return <p className="text-sm text-neutral-400">No tablet — this strategy runs on waystone and atlas alone.</p>;
+  if (tablets.length === 0) return <p className="text-sm text-neutral-400">No tablet in this strategy.</p>;
   return (
     <ul aria-label="Tablets" className="grid gap-3">
       {tablets.map((tablet, index) => (
