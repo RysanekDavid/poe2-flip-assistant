@@ -1,31 +1,18 @@
 "use client";
 
 import { compact } from "../../lib/format";
-import { formatDenom, type Denom } from "../../core/treasury";
+import type { DemandRow } from "../../lib/demandContract";
+import type { SortDir, SortKey } from "../../lib/demandView";
 import { categoryColor, worthTone, SCROLL_BOX, THEAD_STICKY, ROW_BASE, CELL } from "../../lib/tableStyle";
+import { PriceChip } from "../ui/PriceChip";
 import { Sparkline } from "../ui/Sparkline";
+import { StaleBadge } from "../ui/StaleBadge";
 
-export interface DemandRow {
-  id: number;
-  name: string;
-  type: string;
-  category: string;
-  icon: string | null;
-  market: Denom;
-  marketDivine: number;
-  quantity: number;
-  listedAvg: number;
-  sellThrough: number;
-  momentumPct: number;
-  spark: number[];
-  heat: number;
-  trust: "ok" | "thin" | "noisy";
-  divergePct: number;
-  tradeUrl: string;
-}
+/** Same threshold the Farm board uses for scout unique prices: older than two days reads amber. */
+const PRICE_WARN_AFTER_MIN = 48 * 60;
 
-export type SortKey = "name" | "marketDivine" | "quantity" | "listedAvg" | "sellThrough" | "momentumPct" | "heat";
-export type SortDir = "asc" | "desc";
+const NO_LEAGUE_HISTORY = "poe2scout has no price history this league";
+const NO_ITEM_HISTORY = "poe2scout has too little price history for this item";
 
 // Column tooltips carry the honesty caveats: none of these numbers is a sale price or a sale count.
 const COLUMNS: ReadonlyArray<{ k: SortKey; label: string; right?: boolean; tip?: string }> = [
@@ -34,7 +21,7 @@ const COLUMNS: ReadonlyArray<{ k: SortKey; label: string; right?: boolean; tip?:
     k: "marketDivine",
     label: "cheapest ask",
     right: true,
-    tip: "poe2scout CurrentPrice = the cheapest listed ask (outlier-guarded against the recent log) — what sellers ask, not what buyers paid",
+    tip: "poe2scout CurrentPrice = the cheapest listed ask (outlier-guarded against the recent log) — what sellers ask, not what buyers paid. The chip is how long ago poe2scout set it.",
   },
   { k: "quantity", label: "Listed", right: true, tip: "listings right now" },
   { k: "listedAvg", label: "listed (avg)", right: true, tip: "average listing count over the price log — supply, not trade flow" },
@@ -47,6 +34,16 @@ const COLUMNS: ReadonlyArray<{ k: SortKey; label: string; right?: boolean; tip?:
   { k: "momentumPct", label: "Trend", right: true },
   { k: "heat", label: "Heat", right: true, tip: "sell-through proxy blended with rising price" },
 ];
+
+/** "—" for a figure scout gives no data for; the reason rides on the title, as PriceChip does. */
+function Unknown({ tip }: { tip: string }) {
+  return (
+    <span className="text-neutral-500" title={tip}>
+      <span aria-hidden>—</span>
+      <span className="sr-only">{tip}</span>
+    </span>
+  );
+}
 
 function ItemCell({ r }: { r: DemandRow }) {
   return (
@@ -67,42 +64,82 @@ function ItemCell({ r }: { r: DemandRow }) {
   );
 }
 
-function AskCell({ r }: { r: DemandRow }) {
+function priceAgeMin(priceAt: string | null): number | null {
+  if (priceAt == null) return null;
+  return (Date.now() - Date.parse(priceAt)) / 60_000;
+}
+
+function AskCell({ r, exPerDiv }: { r: DemandRow; exPerDiv: number }) {
+  const ageMin = priceAgeMin(r.priceAt);
   return (
-    <td className={`${CELL} whitespace-nowrap text-right tabular-nums text-neutral-300`}>
-      {formatDenom(r.market)}
-      {r.trust === "noisy" && (
-        <span className="ml-1 text-warn" title={`headline ask was a ~${r.divergePct.toFixed(0)}% outlier vs the recent log — showing recent median, verify on trade`}>
-          ⚠
-        </span>
-      )}
-      {r.trust === "thin" && (
-        <span className="ml-1 text-neutral-500" title="few listings/data points — low confidence">
-          ~
-        </span>
-      )}
+    <td className={`${CELL} whitespace-nowrap text-right`}>
+      <span className="inline-flex items-center justify-end gap-1.5">
+        <PriceChip div={r.marketDivine} exPerDiv={exPerDiv} source="scout" ageMin={ageMin ?? undefined} />
+        {ageMin != null ? (
+          <StaleBadge ageMin={ageMin} warnAfterMin={PRICE_WARN_AFTER_MIN} />
+        ) : (
+          <Unknown tip="price age unknown — poe2scout's history has no point for this item" />
+        )}
+        {r.trust === "noisy" && (
+          <span className="text-warn" title={`headline ask was a ~${r.divergePct.toFixed(0)}% outlier vs the recent log — showing recent median, verify on trade`}>
+            ⚠
+          </span>
+        )}
+        {r.trust === "thin" && (
+          <span className="text-neutral-500" title="few listings/data points — low confidence">
+            ~
+          </span>
+        )}
+      </span>
     </td>
   );
 }
 
-function DemandRowView({ r }: { r: DemandRow }) {
+function UnknownCell({ tip }: { tip: string }) {
+  return (
+    <td className={`${CELL} text-right`}>
+      <Unknown tip={tip} />
+    </td>
+  );
+}
+
+function Num({ value, fmt, unknownTip }: { value: number | null; fmt: (n: number) => string; unknownTip: string }) {
+  if (value == null) return <UnknownCell tip={unknownTip} />;
+  return <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{fmt(value)}</td>;
+}
+
+const pct = (fraction: number): string => `${(fraction * 100).toFixed(0)}%`;
+
+function TrendCell({ r, unknownTip }: { r: DemandRow; unknownTip: string }) {
+  if (r.momentumPct == null) return <UnknownCell tip={unknownTip} />;
+  const m = r.momentumPct;
+  return (
+    <td className={`${CELL} whitespace-nowrap text-right`}>
+      <span className="inline-flex items-center justify-end gap-1.5">
+        {r.spark.length >= 2 && <Sparkline data={r.spark} />}
+        <span className={`tabular-nums ${m >= 0 ? "text-good" : "text-bad"}`}>
+          {m >= 0 ? "+" : ""}
+          {m.toFixed(0)}%
+        </span>
+      </span>
+    </td>
+  );
+}
+
+function DemandRowView({ r, exPerDiv, unknownTip }: { r: DemandRow; exPerDiv: number; unknownTip: string }) {
   return (
     <tr className={ROW_BASE}>
       <ItemCell r={r} />
-      <AskCell r={r} />
+      <AskCell r={r} exPerDiv={exPerDiv} />
       <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{compact(r.quantity)}</td>
-      <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{compact(r.listedAvg)}</td>
-      <td className={`${CELL} text-right tabular-nums text-neutral-400`}>{(r.sellThrough * 100).toFixed(0)}%</td>
-      <td className={`${CELL} whitespace-nowrap text-right`}>
-        <span className="inline-flex items-center justify-end gap-1.5">
-          {r.spark.length >= 2 && <Sparkline data={r.spark} />}
-          <span className={`tabular-nums ${r.momentumPct >= 0 ? "text-good" : "text-bad"}`}>
-            {r.momentumPct >= 0 ? "+" : ""}
-            {r.momentumPct.toFixed(0)}%
-          </span>
-        </span>
-      </td>
-      <td className={`${CELL} text-right font-bold tabular-nums ${worthTone(r.heat)}`}>{r.heat}</td>
+      <Num value={r.listedAvg} fmt={compact} unknownTip={unknownTip} />
+      <Num value={r.sellThrough} fmt={pct} unknownTip={unknownTip} />
+      <TrendCell r={r} unknownTip={unknownTip} />
+      {r.heat == null ? (
+        <UnknownCell tip={unknownTip} />
+      ) : (
+        <td className={`${CELL} text-right font-bold tabular-nums ${worthTone(r.heat)}`}>{r.heat}</td>
+      )}
       <td className={`${CELL} text-center`}>
         <a href={r.tradeUrl} target="_blank" rel="noopener noreferrer" className="inline-block rounded bg-neutral-700 px-2 py-1 text-xs hover:bg-neutral-600">
           open →
@@ -113,13 +150,17 @@ function DemandRowView({ r }: { r: DemandRow }) {
 }
 
 /** Sortable demand table; the parent owns filtering, sort state and the empty state. */
-export function DemandTable({ rows, sortKey, sortDir, onSort }: {
+export function DemandTable({ rows, exPerDiv, historyAvailable, sortKey, sortDir, onSort }: {
   rows: DemandRow[];
+  exPerDiv: number;
+  /** False = no row has a log, so every unknown figure says the league has none. */
+  historyAvailable: boolean;
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (k: SortKey) => void;
 }) {
   const arrow = (k: SortKey) => (k === sortKey ? (sortDir === "asc" ? " ▲" : " ▼") : "");
+  const unknownTip = historyAvailable ? NO_ITEM_HISTORY : NO_LEAGUE_HISTORY;
   return (
     <div className={SCROLL_BOX}>
       <table className="w-full text-sm">
@@ -141,7 +182,7 @@ export function DemandTable({ rows, sortKey, sortDir, onSort }: {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <DemandRowView key={r.id} r={r} />
+            <DemandRowView key={r.id} r={r} exPerDiv={exPerDiv} unknownTip={unknownTip} />
           ))}
         </tbody>
       </table>
