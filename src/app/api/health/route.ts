@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { latestFetchedAt } from "../../../db/marketQueries";
 import { leagueForUser } from "../../../core/leagueUsers";
 import { resolveRates } from "../../../core/rates";
-import { scoutFetchedAt, fetchScout } from "../../../api/scoutClient";
+import { fetchScout } from "../../../api/scoutClient";
+import { scoutFetchedAt } from "../../../api/scoutDemand";
 import { buildIdentifier } from "../../../lib/buildInfo";
 import { getCurrentUser } from "../../../auth/session";
 

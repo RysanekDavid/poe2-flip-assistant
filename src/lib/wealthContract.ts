@@ -42,7 +42,8 @@ export type CxSellQuote = z.infer<typeof cxQuoteSchema>;
 
 export const competitionSchema = z.object({
   listed: z.number(),
-  sellThrough: z.number(),
+  /** Share of listings gone per poe2scout scrape; null when scout has too little history to say. */
+  sellThrough: z.number().nullable(),
   samples: z.number(),
 });
 export type ListingCompetition = z.infer<typeof competitionSchema>;

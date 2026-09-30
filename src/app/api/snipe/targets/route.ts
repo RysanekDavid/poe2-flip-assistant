@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchDemand } from "../../../../api/scoutClient";
+import { fetchDemand, hasPriceHistory } from "../../../../api/scoutDemand";
 import { rankSnipeTargets } from "../../../../core/snipeTargets";
 import { getCurrentUser } from "../../../../auth/session";
 
@@ -21,7 +21,8 @@ export async function GET(): Promise<Response> {
     // a working id-based link lazily per target via /api/snipe/listings (one trade2 POST
     // per click, not 30 on load — rate-limit safe).
     const targets = rankSnipeTargets(items, rates.exaltPerDivine).slice(0, 30);
-    return NextResponse.json({ targets });
+    // Targets need price-log points to trust a value; without any, the panel says why it is empty.
+    return NextResponse.json({ targets, historyAvailable: hasPriceHistory(items) });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }

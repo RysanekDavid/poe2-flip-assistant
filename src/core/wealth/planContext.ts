@@ -1,4 +1,4 @@
-import { fetchDemand } from "../../api/scoutClient";
+import { fetchDemand } from "../../api/scoutDemand";
 import type { PricedItem } from "../../api/types";
 import { config } from "../../config/env";
 import { scoutValueMap } from "../../db/marketQueries";

@@ -40,7 +40,7 @@ function competitionNote(c: ListingCompetition | null): string | null {
   if (c == null) return null;
   const parts: string[] = [];
   if (c.listed > CROWDED_LISTINGS) parts.push(`${c.listed} listed — price to the front, expect to undercut`);
-  if (c.samples > 0 && c.sellThrough < SLOW_SELL_THROUGH) parts.push("slow sell-through — patient price may sit for days");
+  if (c.sellThrough != null && c.sellThrough < SLOW_SELL_THROUGH) parts.push("slow sell-through — patient price may sit for days");
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 

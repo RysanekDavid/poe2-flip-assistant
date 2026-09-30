@@ -1,21 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { Crosshair, ExternalLink, TrendingUp, ChevronDown, Loader2 } from "lucide-react";
 import { ItemArt } from "./ui/ItemArt";
 import { EmptyState } from "./ui/EmptyState";
 import { InfoTip } from "./ui/Tooltip";
 
-interface Target {
-  name: string;
-  type: string;
-  icon: string | null;
-  valueDiv: number;
-  quantity: number;
-  sellThrough: number; // avg share of listings gone per scrape (0..1) — a proxy, not sales
-  momentumPct: number;
-  reason: string;
+const targetSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  icon: z.string().nullable(),
+  valueDiv: z.number(),
+  quantity: z.number(),
+  sellThrough: z.number().nullable(), // avg share of listings gone per scrape (0..1) — a proxy, not sales; null = unknown
+  momentumPct: z.number().nullable(),
+  reason: z.string(),
+});
+type Target = z.infer<typeof targetSchema>;
+const targetsResponseSchema = z.object({ targets: z.array(targetSchema), historyAvailable: z.boolean() });
+const errorSchema = z.object({ error: z.string() });
+
+interface TargetsState {
+  targets: Target[] | null;
+  /** False = poe2scout has no price-log points this league, so no target can qualify. */
+  historyAvailable: boolean;
+  error: string | null;
 }
+
+const NO_HISTORY = "needs poe2scout price history — none available this league";
 
 interface ListingRow {
   price: { amount: number; currency: string } | null;
@@ -38,24 +51,38 @@ const ABOUT =
   "Auto-picked valuable, medium-volume uniques (bots own the rest). Open a target to load its cheapest live listings; " +
   "one far under the Div value is a snipe — open the search and buy it yourself. Needs your POESESSID (Settings).";
 
-function useTargets(): { targets: Target[] | null; error: string | null } {
-  const [targets, setTargets] = useState<Target[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+function useTargets(): TargetsState {
+  const [state, setState] = useState<TargetsState>({ targets: null, historyAvailable: true, error: null });
   useEffect(() => {
     const load = () =>
       fetch("/api/snipe/targets")
         .then(async (r) => {
-          const d = (await r.json()) as { targets?: Target[]; error?: string };
-          if (!r.ok || d.error) throw new Error(d.error ?? `/api/snipe/targets → ${r.status}`);
-          setTargets(d.targets ?? []);
-          setError(null);
+          const body: unknown = await r.json();
+          const err = errorSchema.safeParse(body);
+          if (!r.ok || err.success) throw new Error(err.success ? err.data.error : `/api/snipe/targets → ${r.status}`);
+          const d = targetsResponseSchema.parse(body);
+          setState({ targets: d.targets, historyAvailable: d.historyAvailable, error: null });
         })
-        .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+        .catch((e: unknown) => setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })));
     load();
     const id = setInterval(load, 5 * 60_000);
     return () => clearInterval(id);
   }, []);
-  return { targets, error };
+  return state;
+}
+
+function TargetsBody({ targets, historyAvailable, error }: TargetsState) {
+  if (error) return <p role="alert" className="py-2 text-sm text-bad">{error}</p>;
+  if (targets == null) return <p className="py-2 text-sm text-neutral-400">loading…</p>;
+  if (targets.length === 0 && !historyAvailable) return <p className="py-2 text-sm text-neutral-400">{NO_HISTORY}</p>;
+  if (targets.length === 0) {
+    return <EmptyState icon={<Crosshair className="h-5 w-5" />} sentence="No medium-volume targets right now — the value band finds none in this market." />;
+  }
+  return (
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {targets.map((t) => <TargetCard key={t.name} t={t} />)}
+    </div>
+  );
 }
 
 /**
@@ -64,7 +91,7 @@ function useTargets(): { targets: Target[] | null; error: string | null } {
  * (the site ignores `?q=`).
  */
 export function SnipeTargets() {
-  const { targets, error } = useTargets();
+  const state = useTargets();
   return (
     <section className="rounded-lg border border-line bg-neutral-900/50 p-4">
       <header className="mb-3 flex items-center gap-2">
@@ -72,17 +99,7 @@ export function SnipeTargets() {
         <h3 className="text-lg font-semibold text-neutral-100">Snipe targets</h3>
         <InfoTip tip={ABOUT} label="About snipe targets" side="bottom" />
       </header>
-      {error ? (
-        <p role="alert" className="py-2 text-sm text-bad">{error}</p>
-      ) : targets == null ? (
-        <p className="py-2 text-sm text-neutral-400">loading…</p>
-      ) : targets.length === 0 ? (
-        <EmptyState icon={<Crosshair className="h-5 w-5" />} sentence="No medium-volume targets right now — the value band finds none in this market." />
-      ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {targets.map((t) => <TargetCard key={t.name} t={t} />)}
-        </div>
-      )}
+      <TargetsBody {...state} />
     </section>
   );
 }
@@ -148,7 +165,7 @@ function TargetCard({ t }: { t: Target }) {
           <span className="mt-1 flex items-baseline gap-1.5">
             <span className="text-lg font-bold tabular-nums text-neutral-100">{fmt(t.valueDiv, 1)}</span>
             <span className="text-xs text-neutral-400">Div value</span>
-            {t.momentumPct > 5 && (
+            {t.momentumPct != null && t.momentumPct > 5 && (
               <span className="ml-auto flex items-center gap-0.5 text-xs text-good">
                 <TrendingUp aria-hidden className="h-3 w-3" />
                 {fmt(t.momentumPct)}%
@@ -156,7 +173,7 @@ function TargetCard({ t }: { t: Target }) {
             )}
           </span>
           <span className="mt-1 block text-xs text-neutral-400" title="average share of listings gone between poe2scout scrapes — a sell-through proxy, not sales">
-            {t.quantity} listed · ~{fmt(t.sellThrough * 100)}% sell-through
+            {t.quantity} listed · {t.sellThrough == null ? "sell-through unknown" : `~${fmt(t.sellThrough * 100)}% sell-through`}
           </span>
         </span>
       </button>

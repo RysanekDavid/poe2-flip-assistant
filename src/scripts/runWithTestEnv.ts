@@ -10,6 +10,7 @@ const targets = {
   "craft-provenance": "src/scripts/testCraftProvenance.ts",
   balance: "src/scripts/testBalanceLeague.ts",
   demand: "src/scripts/testDemandHeat.ts",
+  "demand-board": "src/scripts/testDemandBoard.ts",
   db: "src/scripts/testDbCompact.ts",
   "entity-catalog": "src/scripts/testEntityCatalog.ts",
   "features-schema": "src/scripts/testFeatureSchema.ts",
