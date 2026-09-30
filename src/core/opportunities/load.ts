@@ -17,7 +17,7 @@ import { buildRising } from "./rising";
 import { buildSnipeSection } from "./snipeSection";
 
 /**
- * The I/O half of Market › Opportunities: reads what the app already stores (SNIPE alerts, the
+ * The I/O half of Trade › Opportunities: reads what the app already stores (SNIPE alerts, the
  * outcome tracker, the last scan report, net worth, the shared poe2scout fill and the trade2
  * fallback prices) and hands it to the pure builders. It sends no trade2 request.
  */

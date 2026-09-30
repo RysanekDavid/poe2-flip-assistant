@@ -92,7 +92,7 @@ async function testNavModeRoute(user: UserRow): Promise<void> {
 
 function testVisibility(): void {
   const beginner = visibleTabs("beginner").map((t) => t.id);
-  assert.deepEqual(beginner, ["learn", "farm", "market", "alerts", "settings", "coach"]);
+  assert.deepEqual(beginner, ["learn", "farm", "trade", "alerts", "settings", "coach"]);
   assert.deepEqual(visibleTabs("advanced").map((t) => t.id), [...TAB_IDS]);
   for (const hidden of ["flips", "craft", "wealth", "regex", "patches"] as const) assert.ok(!beginner.includes(hidden), `${hidden} hidden`);
   for (const [tab, tools] of Object.entries(BEGINNER_TOOLS)) {
@@ -101,7 +101,7 @@ function testVisibility(): void {
   }
   for (const tab of BEGINNER_TABS) assert.ok(TAB_IDS.includes(tab));
   assert.deepEqual(visibleTools("beginner", "farm")?.map((t) => t.id), ["strategies"]);
-  assert.deepEqual(visibleTools("beginner", "market")?.map((t) => t.id), ["prices", "price"]);
+  assert.deepEqual(visibleTools("beginner", "trade")?.map((t) => t.id), ["prices", "price"]);
   assert.deepEqual(visibleTools("beginner", "settings")?.map((t) => t.id), ["account", "notify", "mode", "system"]);
   assert.deepEqual(visibleTools("advanced", "farm")?.map((t) => t.id), ["board", "strategies"]);
   assert.equal(visibleTools("beginner", "alerts"), undefined);
@@ -114,8 +114,8 @@ function testVisibility(): void {
 function testSubTabs(): void {
   const ids = (mode: "beginner" | "advanced", tab: (typeof TAB_IDS)[number], role: "owner" | "member" = "owner") => subTabsFor(mode, tab, role)?.map((t) => t.id) ?? null;
   assert.equal(ids("beginner", "farm"), null, "a beginner's Farm has one tool — no bar");
-  assert.deepEqual(ids("beginner", "market"), ["prices", "price"], "a beginner's Market: Prices + Price check");
-  assert.deepEqual(ids("advanced", "market"), ["prices", "price", "opportunities"]);
+  assert.deepEqual(ids("beginner", "trade"), ["prices", "price"], "a beginner's Trade: Prices + Price check");
+  assert.deepEqual(ids("advanced", "trade"), ["prices", "price", "opportunities"]);
   assert.equal(ids("advanced", "alerts"), null, "no tools, no bar");
   assert.equal(ids("advanced", "coach"), null);
   assert.deepEqual(ids("advanced", "farm"), ["board", "strategies"]);
@@ -141,15 +141,15 @@ function testSubTabs(): void {
 
 /** Market board became Opportunities: the old ?tool=board still lands on it, in both modes' own way. */
 function testToolRedirects(): void {
-  assert.equal(redirectTool("market", "board"), "opportunities", "old Market board link → Opportunities");
+  assert.equal(redirectTool("trade", "board"), "opportunities", "old Market board link → Opportunities");
   assert.equal(redirectTool("farm", "board"), "board", "Farm board is its own tool, never redirected");
-  assert.equal(redirectTool("market", "prices"), "prices");
-  assert.equal(redirectTool("market", null), null);
+  assert.equal(redirectTool("trade", "prices"), "prices");
+  assert.equal(redirectTool("trade", null), null);
   assert.equal(redirectTool("bogus", "board"), "board", "an unknown tab is left for the parser to reject");
-  assert.deepEqual(parseModeRoute("advanced", "market", redirectTool("market", "board")), { tab: "market", tool: "opportunities", rejected: [], hidden: [] });
+  assert.deepEqual(parseModeRoute("advanced", "trade", redirectTool("trade", "board")), { tab: "trade", tool: "opportunities", rejected: [], hidden: [] });
   assert.deepEqual(
-    parseModeRoute("beginner", "market", redirectTool("market", "board")),
-    { tab: "market", tool: "prices", rejected: [], hidden: ["tool=opportunities"] },
+    parseModeRoute("beginner", "trade", redirectTool("trade", "board")),
+    { tab: "trade", tool: "prices", rejected: [], hidden: ["tool=opportunities"] },
     "a beginner's old board link still falls back to what the mode shows",
   );
   for (const [tab, map] of Object.entries(TOOL_REDIRECTS)) {
@@ -162,16 +162,21 @@ function testToolRedirects(): void {
   pass("renamed tools: ?tool=board → opportunities, targets exist, old ids retired");
 }
 
-/** Exchange became Flips: an old ?tab=exchange lands on Flips, and a beginner still gets the fallback. */
+/**
+ * Exchange became Flips and Market became Trade: an old ?tab= lands on today's tab (a Market link's
+ * ?tool=board too), and a beginner still gets the fallback of a hidden tab.
+ */
 function testTabRedirects(): void {
   assert.equal(redirectTab("exchange"), "flips", "old Exchange link → Flips");
   assert.equal(redirectTab("flips"), "flips");
-  assert.equal(redirectTab("market"), "market");
+  assert.equal(redirectTab("market"), "trade", "old Market link → Trade");
+  assert.equal(redirectTab("trade"), "trade");
   assert.equal(redirectTab(null), null);
   assert.equal(redirectTab("toString"), "toString", "a prototype key is not a redirect; the parser rejects it");
   assert.equal(redirectTab("bogus"), "bogus", "an unknown tab is left for the parser to reject");
-  assert.equal(redirectTool("market", "toString"), "toString", "a prototype key is not a tool redirect");
-  assert.equal(redirectTool("market", "board"), "opportunities");
+  assert.equal(redirectTool("trade", "toString"), "toString", "a prototype key is not a tool redirect");
+  assert.equal(redirectTool("trade", "board"), "opportunities");
+  assert.equal(redirectTool("market", "board"), "board", "tool renames key on today's tab id; followRenames maps the tab first");
   assert.deepEqual(parseModeRoute("advanced", redirectTab("exchange"), null), { tab: "flips", tool: null, rejected: [], hidden: [] });
   assert.deepEqual(
     parseModeRoute("beginner", redirectTab("exchange"), null),
@@ -179,17 +184,26 @@ function testTabRedirects(): void {
     "a beginner's old Exchange link falls back like any hidden tab",
   );
   assert.deepEqual(parseModeRoute("advanced", "exchange", null).rejected, ["tab=exchange"], "the old id itself is no longer a tab");
+  assert.deepEqual(parseModeRoute("advanced", "market", null).rejected, ["tab=market"], "nor is market");
+  assert.deepEqual(parseModeRoute("beginner", redirectTab("market"), "price"), { tab: "trade", tool: "price", rejected: [], hidden: [] }, "Trade stays a beginner tab");
   // what useTabRoute hands AppShell: a non-empty `renamed` is what rewrites the URL (without a warning)
   assert.deepEqual(followRenames("exchange", null), { tab: "flips", tool: null, renamed: ["tab=exchange"] });
   assert.deepEqual(followRenames("flips", null), { tab: "flips", tool: null, renamed: [] }, "the current id is not rewritten");
-  assert.deepEqual(followRenames("market", "board"), { tab: "market", tool: "opportunities", renamed: ["tool=board"] });
+  assert.deepEqual(followRenames("market", null), { tab: "trade", tool: null, renamed: ["tab=market"] });
+  assert.deepEqual(followRenames("market", "price"), { tab: "trade", tool: "price", renamed: ["tab=market"] }, "a Learn-style ?tab=market&tool=price link");
+  assert.deepEqual(followRenames("market", "board"), { tab: "trade", tool: "opportunities", renamed: ["tab=market", "tool=board"] }, "both renames in one old link");
+  assert.deepEqual(followRenames("trade", "board"), { tab: "trade", tool: "opportunities", renamed: ["tool=board"] });
+  assert.deepEqual(followRenames("trade", "prices"), { tab: "trade", tool: "prices", renamed: [] });
+  const oldBoard = followRenames("market", "board");
+  assert.deepEqual(parseModeRoute("advanced", oldBoard.tab, oldBoard.tool), { tab: "trade", tool: "opportunities", rejected: [], hidden: [] });
+  assert.deepEqual(parseModeRoute("beginner", oldBoard.tab, oldBoard.tool), { tab: "trade", tool: "prices", rejected: [], hidden: ["tool=opportunities"] });
   assert.deepEqual(followRenames(null, null), { tab: null, tool: null, renamed: [] });
   assert.deepEqual(followRenames("bogus", "x"), { tab: "bogus", tool: "x", renamed: [] }, "unknown ids are the parser's to reject");
   for (const [from, to] of TAB_REDIRECTS) {
     assert.ok(TAB_IDS.includes(to), `tab redirect target ${to} is a registry tab`);
     assert.ok(!tabIdSchema.safeParse(from).success, `redirected tab id ${from} is no longer a tab`);
   }
-  pass("renamed tabs: ?tab=exchange → flips, targets exist, old ids retired");
+  pass("renamed tabs: ?tab=exchange → flips, ?tab=market(&tool=board) → trade(+opportunities), targets exist, old ids retired");
 }
 
 function testModeRoutes(): void {
@@ -199,8 +213,8 @@ function testModeRoutes(): void {
   assert.deepEqual(route("beginner", "craft", "moves"), { tab: "learn", tool: "what", rejected: [], hidden: ["tab=craft"] });
   assert.deepEqual(route("beginner", "farm", null), { tab: "farm", tool: "strategies", rejected: [], hidden: [] }, "hidden default tool is silent");
   assert.deepEqual(route("beginner", "farm", "board"), { tab: "farm", tool: "strategies", rejected: [], hidden: ["tool=board"] });
-  assert.deepEqual(route("beginner", "market", "opportunities"), { tab: "market", tool: "prices", rejected: [], hidden: ["tool=opportunities"] });
-  assert.deepEqual(route("beginner", "market", null), { tab: "market", tool: "prices", rejected: [], hidden: [] }, "Prices is the Market default");
+  assert.deepEqual(route("beginner", "trade", "opportunities"), { tab: "trade", tool: "prices", rejected: [], hidden: ["tool=opportunities"] });
+  assert.deepEqual(route("beginner", "trade", null), { tab: "trade", tool: "prices", rejected: [], hidden: [] }, "Prices is the Trade default");
   assert.deepEqual(route("beginner", "bogus", "x"), { tab: "learn", tool: "what", rejected: ["tab=bogus", "tool=x"], hidden: [] });
   assert.deepEqual(route("beginner", "farm", "nope"), { tab: "farm", tool: "strategies", rejected: ["tool=nope"], hidden: [] });
   assert.deepEqual(route("beginner", "coach", null), { tab: "coach", tool: null, rejected: [], hidden: [] }, "Coach in both modes");

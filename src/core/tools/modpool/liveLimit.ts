@@ -1,6 +1,6 @@
 /**
  * Per-user cap on click-driven trade2 lookups that actually spend a search: LIVE_VALUES_PER_HOUR per
- * rolling hour, ONE window per user shared by every such feature (Mod pool live values and Market ›
+ * rolling hour, ONE window per user shared by every such feature (Mod pool live values and Trade ›
  * Opportunities live listings). Cache hits never count. The shared web governor protects the
  * account-wide budget; this keeps one user clicking down a table from eating everyone's
  * interactive searches.

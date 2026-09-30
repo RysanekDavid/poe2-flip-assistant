@@ -4,7 +4,7 @@ import { z } from "zod";
  * Plain data (no React, no image imports) so the URL router, the nav and the node test scripts all
  * read one list. Tab art lives in tabIcons.ts because tsx cannot import PNGs outside Next.
  */
-export const TAB_IDS = ["flips", "market", "farm", "craft", "wealth", "regex", "patches", "learn", "alerts", "settings", "coach"] as const;
+export const TAB_IDS = ["flips", "trade", "farm", "craft", "wealth", "regex", "patches", "learn", "alerts", "settings", "coach"] as const;
 
 export const tabIdSchema = z.enum(TAB_IDS);
 export type TabId = z.infer<typeof tabIdSchema>;
@@ -29,9 +29,9 @@ export interface TabMeta {
 export const TABS: readonly TabMeta[] = [
   { id: "flips", label: "Flips", hint: "Currency Exchange flips · positions · league start" },
   {
-    id: "market",
-    label: "Market",
-    hint: "every item's price · price check · what to buy on the trade site now",
+    id: "trade",
+    label: "Trade",
+    hint: "prices · price check · what to buy now",
     tools: [
       { id: "prices", label: "Prices", hint: "every exchange item: price, 7-day trend, volume" },
       { id: "price", label: "Price check", hint: "paste an item: what it is worth and how to sell it" },
@@ -108,18 +108,23 @@ export const TABS: readonly TabMeta[] = [
 
 /**
  * Renamed tools: an old ?tool= keeps working by landing on its replacement (Market board became
- * Opportunities on 2026-09-30). Only renames belong here, never removals.
+ * Opportunities on 2026-09-30). Keyed by today's tab id, since followRenames maps the tab first.
+ * Only renames belong here, never removals.
  */
 export const TOOL_REDIRECTS: Partial<Record<TabId, Readonly<Record<string, string>>>> = {
-  market: { board: "opportunities" },
+  trade: { board: "opportunities" },
 };
 
 /**
  * Renamed tabs: an old ?tab= keeps working by landing on its replacement (Exchange became Flips on
- * 2026-09-30, once item prices had moved to Market › Prices). Only renames belong here, never removals.
+ * 2026-09-30, once item prices had moved to Market › Prices; Market became Trade on 2026-10-01, as
+ * all three of its tools are about trading). Only renames belong here, never removals.
  * A Map, not an object literal, so ?tab=toString cannot resolve to an Object.prototype member.
  */
-export const TAB_REDIRECTS: ReadonlyMap<string, TabId> = new Map<string, TabId>([["exchange", "flips"]]);
+export const TAB_REDIRECTS: ReadonlyMap<string, TabId> = new Map<string, TabId>([
+  ["exchange", "flips"],
+  ["market", "trade"],
+]);
 
 /** The tab id a raw ?tab= stands for today; unknown and current ids pass through unchanged. */
 export function redirectTab(rawTab: string | null): string | null {

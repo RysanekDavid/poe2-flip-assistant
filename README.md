@@ -13,8 +13,8 @@ It never buys, sells, whispers, clicks, or controls the game.
 
 - **Flips:** Currency Exchange flips — observed market history, risk-adjusted flip heuristics
   (Top Flips), alerts, manual position tracking, and the league-start panel. Item prices live in
-  Market › Prices; the rate converter sits in the header on every tab.
-- **Market:** every item's price (exchange items and uniques), a paste-an-item price check, and
+  Trade › Prices; the rate converter sits in the header on every tab.
+- **Trade:** every item's price (exchange items and uniques), a paste-an-item price check, and
   **Opportunities** — what to buy on the trade site now: still-live snipe cards from the read-only
   autosnipe scanner, its closest near-misses, and uniques whose price rises while listings fall,
   all inside a budget taken from your net worth. Opening a unique spends one trade search

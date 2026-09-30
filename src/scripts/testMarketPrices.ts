@@ -1,4 +1,4 @@
-/* Market › Prices against a TEMP DB: the latest-row query, the response builder, the contract,
+/* Trade › Prices against a TEMP DB: the latest-row query, the response builder, the contract,
  * the category labels and the table's sort/filter rules. No network.
  * Run: npm run test:market-league (runWithTestEnv sets DB_PATH). */
 import assert from "node:assert/strict";

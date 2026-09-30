@@ -13,7 +13,7 @@ const ADVANCED_ONLY = TABS.filter((t) => t.id !== "coach" && !BEGINNER_TABS.incl
 
 const TIP = (
   <>
-    Beginner: Learn, Farm strategies, Price check, Alerts. Advanced adds {ADVANCED_ONLY.join(", ")}, the market and farm boards and
+    Beginner: Learn, Farm strategies, Price check, Alerts. Advanced adds {ADVANCED_ONLY.join(", ")}, Trade › Opportunities, the Farm board and
     the POESESSID trade connection. Coach is in both.
   </>
 );

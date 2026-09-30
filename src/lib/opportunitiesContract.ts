@@ -4,7 +4,7 @@ import { NearMissSchema } from "./snipeScanContract";
 import { UNIQUE_VALUE_SOURCES } from "./marketUniquesContract";
 
 /**
- * GET /api/market/opportunities and GET /api/market/opportunities/listings — Market › Opportunities,
+ * GET /api/market/opportunities and GET /api/market/opportunities/listings — Trade › Opportunities,
  * "what to buy on the trade site now". Pure zod, client-safe: each route parses its body on the way
  * out and the tool parses it on the way in.
  *

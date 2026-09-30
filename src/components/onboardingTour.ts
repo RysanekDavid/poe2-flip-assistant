@@ -24,9 +24,9 @@ export const TOUR_STEPS: readonly TourStep[] = [
     element: '[data-tour="tabs"]',
     title: "Where things are",
     description:
-      "Flips = Currency Exchange flips at Ange. Market = prices, price check and what to buy on the trade site now. Farm = what to run. Craft, Wealth and Regex are your tools. Every tab has its own link — bookmark or share it.",
+      "Flips = Currency Exchange flips at Ange. Trade = prices, price check and what to buy on the trade site now. Farm = what to run. Craft, Wealth and Regex are your tools. Every tab has its own link — bookmark or share it.",
     beginnerDescription:
-      "Learn = what an item is and your atlas route. Farm = what to run at your budget. Market = what a drop is worth. More tools unlock under Settings › Mode.",
+      "Learn = what an item is and your atlas route. Farm = what to run at your budget. Trade = what a drop is worth. More tools unlock under Settings › Mode.",
   },
   {
     tab: "learn",

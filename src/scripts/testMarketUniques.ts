@@ -1,4 +1,4 @@
-/* Market › Prices UNIQUES group: category labels, the builder's null handling and trade-fallback
+/* Trade › Prices UNIQUES group: category labels, the builder's null handling and trade-fallback
  * labelling, the contract, and the table's filters. Pure — no network, no DB.
  * Run: npm run test:market-league (runWithTestEnv sets the test env). */
 import assert from "node:assert/strict";

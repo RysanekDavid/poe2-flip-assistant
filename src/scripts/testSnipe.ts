@@ -260,7 +260,7 @@ ok("env: a leftover DESKTOP_NOTIFY is named at boot", toast.length === 1 && toas
 const targets = retiredEnvWarnings({ SNIPE_MIN_LISTINGS: "8", SNIPE_MAX_LISTINGS: "150", SNIPE_MIN_TARGET_DIV: "10", SNIPE_MIN_SAMPLE_LOGS: "4", SNIPE_MAX_TARGET_DIV: "200" });
 ok(
   "env: the four snipe-target keys are named at boot, SNIPE_MAX_TARGET_DIV (still used) is not",
-  targets.length === 4 && targets.every((w) => w.includes("snipe targets were removed — Market › Opportunities")) && !targets.some((w) => w.includes("SNIPE_MAX_TARGET_DIV")),
+  targets.length === 4 && targets.every((w) => w.includes("snipe targets were removed — Trade › Opportunities")) && !targets.some((w) => w.includes("SNIPE_MAX_TARGET_DIV")),
   targets.join(" | "),
 );
 

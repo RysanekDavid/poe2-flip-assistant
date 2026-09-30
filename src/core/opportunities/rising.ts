@@ -4,9 +4,9 @@ import type { Budget, RisingSection, RisingUnique } from "../../lib/opportunitie
 import { withinBudget } from "./budget";
 
 /**
- * "Rising uniques" on Market › Opportunities: uniques worth at least RISING_MIN_VALUE_DIV whose
+ * "Rising uniques" on Trade › Opportunities: uniques worth at least RISING_MIN_VALUE_DIV whose
  * price climbs while their listing count shrinks. Read from data the app already holds (the shared
- * poe2scout demand fill with its PriceHistory points, priced like Market › Prices with the trade2
+ * poe2scout demand fill with its PriceHistory points, priced like Trade › Prices with the trade2
  * fallback), so it costs no trade2 request. A trend is only called on enough RECENT points; thin or
  * stale history is left out, never shown as a flat 0 or a guess. Listing counts are supply, not sales.
  */
@@ -72,7 +72,7 @@ export function uniqueTrend(recent: readonly HistoryPoint[], hasOlder: boolean, 
 }
 
 export interface RisingInput {
-  /** Market › Prices' uniques: scout price, else the trade2 fallback, else null. */
+  /** Trade › Prices' uniques: scout price, else the trade2 fallback, else null. */
   items: readonly MarketUniqueItem[];
   /** Per item id: scout's recent points (the demand fill's `recent`) and its newest point at any age. */
   history: ReadonlyMap<string, { recent: readonly HistoryPoint[]; newestAt: string | null }>;

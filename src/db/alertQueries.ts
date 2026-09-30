@@ -108,7 +108,7 @@ const SnipeAlertSchema = z.object({
 
 /**
  * A user's SNIPE alerts fired in the last `withinMinutes`, newest first, with their parsed cards
- * (Market › Opportunities). A row whose card no longer parses is dropped and logged once, as in the
+ * (Trade › Opportunities). A row whose card no longer parses is dropped and logged once, as in the
  * feed; the feed still shows it with its error.
  */
 export function recentSnipeAlerts(userId: number, withinMinutes: number): SnipeAlertRow[] {

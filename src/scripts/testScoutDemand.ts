@@ -1,4 +1,4 @@
-/* The shared poe2scout unique demand fill (Market › Prices uniques, Opportunities, Wealth competition).
+/* The shared poe2scout unique demand fill (Trade › Prices uniques, Opportunities, Wealth competition).
  * Regressions of 2026-09-30: only page 1 of each category was read, and a league without recent
  * price history showed sell-through and trend as 0. Covers paging + dedupe, the shared cache, the
  * history → unknown logic and the sell-through proxy. */

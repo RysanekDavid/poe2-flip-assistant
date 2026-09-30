@@ -17,7 +17,7 @@ import { NavModeProvider, useNavMode } from "./NavModeProvider";
 import { useTabRoute } from "./useTabRoute";
 import { tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
 import { FlipsTab } from "./tabs/FlipsTab";
-import { MarketTab } from "./tabs/MarketTab";
+import { TradeTab } from "./tabs/TradeTab";
 import { FarmTab } from "./tabs/FarmTab";
 import { CraftTab } from "./tabs/CraftTab";
 import { WealthTab } from "./tabs/WealthTab";
@@ -74,8 +74,8 @@ function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
   switch (tab) {
     case "flips":
       return <FlipsTab />;
-    case "market":
-      return <MarketTab />;
+    case "trade":
+      return <TradeTab />;
     case "farm":
       return <FarmTab />;
     case "craft":

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * POST /api/pricecheck and POST /api/pricecheck/live. Shared by the routes, core/pricecheck and the
- * Market › Price check panel, so a server-side shape change fails the client parse loudly instead
+ * Trade › Price check panel, so a server-side shape change fails the client parse loudly instead
  * of rendering blanks. Client-safe: no server imports. Every Div figure is nullable — unknown is
  * null, never 0 — and per unit unless its name says total.
  */

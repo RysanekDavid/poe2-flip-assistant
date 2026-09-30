@@ -22,7 +22,7 @@ const art = (src: StaticImageData): TabIcon => ({ kind: "art", src });
 // Kept apart from tabRegistry.ts so node test scripts never import PNGs.
 export const TAB_ICONS: Record<TabId, TabIcon> = {
   flips: art(iconExchange),
-  market: art(iconMarket),
+  trade: art(iconMarket),
   farm: art(iconFarm),
   craft: art(iconCraft),
   wealth: art(iconWealth),

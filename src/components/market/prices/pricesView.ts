@@ -1,6 +1,6 @@
 import type { MarketPriceItem } from "../../../lib/marketPricesContract";
 
-/** Pure list logic of Market › Prices (no React), so the node test can pin sort + filter rules. */
+/** Pure list logic of Trade › Prices (no React), so the node test can pin sort + filter rules. */
 
 export const PRICE_SORT_KEYS = ["name", "value", "change", "volume"] as const;
 export type PriceSortKey = (typeof PRICE_SORT_KEYS)[number];

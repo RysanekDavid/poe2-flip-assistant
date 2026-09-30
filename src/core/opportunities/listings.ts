@@ -5,7 +5,7 @@ import { scoutKey } from "../../lib/scoutKey";
 import { spendReserved, type LiveLimiter } from "../tools/modpool/liveLimit";
 
 /**
- * Live cheapest listings behind a Market › Opportunities row: ONE trade2 search + ONE fetch per
+ * Live cheapest listings behind a Trade › Opportunities row: ONE trade2 search + ONE fetch per
  * click, through the shared governor (tradeClient). Nothing runs in the background. A shared cache
  * answers repeat clicks for free (listings are public, so every viewer may share them), a click on
  * a search already in flight waits for it for free, and each user's spent searches count against

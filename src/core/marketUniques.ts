@@ -6,7 +6,7 @@ import type { MarketUniqueCategory, MarketUniqueItem, MarketUniquesResponse } fr
 import { tradeUnpricedNote } from "./tools/bossEv/tradeText";
 
 /**
- * The UNIQUES group of Market › Prices, built from the shared poe2scout demand fill (no requests
+ * The UNIQUES group of Trade › Prices, built from the shared poe2scout demand fill (no requests
  * of its own) plus the trade2 fallback prices the poller stores for the default league. Pure over
  * its inputs so the test can pin the rules: a value is scout's when scout has one, else the trade
  * fallback, else null with a reason — never 0, and never Divine inverted.

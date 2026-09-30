@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/market/opportunities → Market › Opportunities: the viewer's still-live snipe cards, the
+ * GET /api/market/opportunities → Trade › Opportunities: the viewer's still-live snipe cards, the
  * scan's best near-misses and rising uniques, all inside a budget taken from their latest net worth.
  * Reads stored data only (no trade2 request). A scout failure fails the rising section alone, with
  * its reason; anything else (DB, contract) answers 500 with its message.

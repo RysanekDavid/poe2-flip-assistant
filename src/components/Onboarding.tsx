@@ -29,7 +29,7 @@ function AdvancedBullets() {
     <ul className="space-y-2 text-sm">
       <li className="flex gap-2.5">
         <Compass className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
-        <span><b>Flips, Market & Farm</b> are shared market intelligence — same prices, charts and farm advice for everyone.</span>
+        <span><b>Flips, Trade & Farm</b> are shared market intelligence — same prices, charts and farm advice for everyone.</span>
       </li>
       <li className="flex gap-2.5">
         <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
@@ -52,7 +52,7 @@ function BeginnerBullets() {
       </li>
       <li className="flex gap-2.5">
         <Flame className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-        <span><b>Farm</b> — what to run for your budget. <b>Market</b> — paste a drop to price it.</span>
+        <span><b>Farm</b> — what to run for your budget. <b>Trade</b> — paste a drop to price it.</span>
       </li>
       <li className="flex gap-2.5">
         <Compass className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />

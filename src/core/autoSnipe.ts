@@ -79,7 +79,7 @@ export interface ScanReport {
   maxSearches: number;
   book: BookCounters;
   findings: SnipeFinding[];
-  /** Best still-fresh near-misses of this and earlier scans (Market › Opportunities), deepest first. */
+  /** Best still-fresh near-misses of this and earlier scans (Trade › Opportunities), deepest first. */
   nearMisses: NearMiss[];
   diags: ProfileDiag[];
   errors: Array<{ profile: string; error: string }>;
