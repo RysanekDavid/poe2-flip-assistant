@@ -18,7 +18,7 @@ function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
 }
 
 /** Plain left-click goes through go() (dedupes history); modified clicks keep open-in-new-tab. */
-function tabClickHandler(go: (tab: TabId) => void): (e: MouseEvent<HTMLAnchorElement>, id: TabId) => void {
+export function tabClickHandler(go: (tab: TabId) => void): (e: MouseEvent<HTMLAnchorElement>, id: TabId) => void {
   return (e, id) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
@@ -63,7 +63,8 @@ export function TabNav() {
   const onClick = tabClickHandler(go);
   const coach = tabMeta("coach");
   return (
-    <nav aria-label="Sections" className="flex items-end gap-0.5 px-4 max-md:overflow-x-auto max-md:overflow-y-hidden md:px-6" data-tour="tabs">
+    // below md the strip bleeds to the screen edges (-mx-4 against the header's px-4) so it scrolls edge to edge
+    <nav aria-label="Sections" className="-mx-4 flex items-end gap-0.5 px-4 max-md:overflow-x-auto max-md:overflow-y-hidden md:mx-0 md:px-0" data-tour="tabs">
       {visibleTabs(mode)
         .filter((t) => t.id !== "coach")
         .map((t) => (

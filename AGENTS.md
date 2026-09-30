@@ -92,6 +92,9 @@ new size debt, explicit `any`, silent catches, low-contrast text or text below 1
 - **UI tokens** (`tailwind.config.ts`): dark theme only. Text is never below 12px. Use a single
   amber `accent` (`#fbbf24`) so that highlighted always means the same thing; sky/`info` is for
   links only. Don't use `text-neutral-600/700` on the page background (it fails AA contrast).
+  The `brand` tokens (`brand-teal`, `brand-teal-hi`, `brand-bone`) and the Rubik font belong to
+  the logo and wordmark (`shell/Brand.tsx`) only. They are a separate brand set, not UI accents,
+  so never use them for actions, highlights or data.
   Prefer game art (`ItemArt`, icons from the entity catalog) and tooltips over prose or status
   noise.
 - **Units:** poe.ninja `primaryValue` is the **Divine price of one item**. Never invert it. The

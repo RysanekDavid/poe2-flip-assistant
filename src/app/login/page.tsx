@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Loader2 } from "lucide-react";
 import { z } from "zod";
+import { Brand } from "../../components/shell/Brand";
 
 const ErrorBody = z.object({ error: z.string() });
 
@@ -61,8 +62,10 @@ export default function LoginPage() {
   return (
     <main className="flex flex-1 items-center justify-center bg-neutral-950 p-6">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl border border-neutral-800 bg-neutral-900/60 p-6">
-        <div>
-          <h1 className="text-xl font-bold">PoE2 Coach</h1>
+        <div className="space-y-2">
+          <h1>
+            <Brand size="login" />
+          </h1>
           <p className="text-sm text-neutral-500">Sign in to continue</p>
         </div>
         <label className="block space-y-1">

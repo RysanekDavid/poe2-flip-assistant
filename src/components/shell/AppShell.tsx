@@ -1,17 +1,14 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode, type RefObject } from "react";
+import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { TopBar } from "../TopBar";
 import { Onboarding } from "../Onboarding";
 import { LeagueBanner } from "../LeagueBanner";
-import { LeagueSelect } from "../LeagueSelect";
-import { MarketStatus } from "../MarketStatus";
 import { AlertsProvider } from "../alerts/AlertsContext";
 import { AlertsTab } from "../alerts/AlertsTab";
 import { CoachPanel } from "../coach/CoachPanel";
-import { TabNav } from "./TabNav";
-import { SubTabBar, subTabId, subTabPanelId, useSubTabs } from "./SubTabBar";
+import { ShellHeader } from "./ShellHeader";
+import { subTabId, subTabPanelId, useSubTabs } from "./SubTabBar";
 import { CredBanner } from "./CredBanner";
 import { NavModeProvider, useNavMode } from "./NavModeProvider";
 import { useTabRoute } from "./useTabRoute";
@@ -25,24 +22,6 @@ import { RegexTab } from "./tabs/RegexTab";
 import { PatchesTab } from "./tabs/PatchesTab";
 import { LearnTab } from "./tabs/LearnTab";
 import { SettingsTab } from "./tabs/SettingsTab";
-
-/**
- * Publishes the sticky header's height as --shell-h so sticky table heads and scroll targets sit
- * just under it instead of hiding their first row behind it (the header height changes when its
- * rows wrap at narrow widths).
- */
-function useShellHeightVar(ref: RefObject<HTMLElement | null>): void {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) throw new Error("AppShell: header ref not attached");
-    const root = document.documentElement;
-    const publish = () => root.style.setProperty("--shell-h", `${el.getBoundingClientRect().height}px`);
-    publish();
-    const observer = new ResizeObserver(publish);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref]);
-}
 
 /**
  * A mistyped, outdated or mode-hidden link must not silently show another page: warn, then replace
@@ -120,8 +99,6 @@ function ShellBody() {
   const { tab, tool, rejected, hidden, renamed } = useTabRoute();
   const { mode } = useNavMode();
   useCanonicalRoute({ tab, tool }, rejected, hidden, renamed);
-  const headerRef = useRef<HTMLElement>(null);
-  useShellHeightVar(headerRef);
 
   return (
     // one alert poll for the TopBar badge, its popover, the Alerts tab and the Flips ticker
@@ -132,21 +109,7 @@ function ShellBody() {
         <LeagueBanner />
         {/* POESESSID health: beginner mode hides the trade connection it would send them to */}
         {mode === "advanced" && <CredBanner />}
-        <header ref={headerRef} className="sticky top-0 z-40 -mx-6 -mt-6 border-b border-line bg-neutral-950/85 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 md:px-6">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <h1 className="text-xl font-bold">PoE2 Coach</h1>
-              {/* league picker sits with the rates it controls — per account, switchable anytime */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                <MarketStatus />
-                <LeagueSelect />
-              </div>
-            </div>
-            <TopBar />
-          </div>
-          <TabNav />
-          <SubTabBar />
-        </header>
+        <ShellHeader />
         {tab !== "coach" && (
           <ToolPanel>
             <ActiveTab tab={tab} />
