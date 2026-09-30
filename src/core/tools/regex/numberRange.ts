@@ -6,8 +6,8 @@
  * when the caller puts a non-digit literal on both sides (`% of`, `\)`, a space): there is no
  * lookbehind, and `.` also matches non-digits, so "215%" would satisfy a bare `1[5-9]%`.
  * poolTokens adds that boundary, or (header properties, `label:.*range%`) drops the left one only
- * after testing every value 0–999 (or up to the span top) against numberRangeSpan; any other caller
- * must do one or the other.
+ * for an open range, after testing every value up to numberRangeSpan's top; any other caller must
+ * do one or the other.
  */
 
 export interface NumberRangeOptions {

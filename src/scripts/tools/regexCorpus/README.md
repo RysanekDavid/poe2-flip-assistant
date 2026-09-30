@@ -20,6 +20,9 @@ Things the corpus cannot settle. When one is confirmed, add the paste here and m
   property tokens use the `label:.*range%` form so a missing `+` or different spacing still
   matches, but a different label word would not. Confirm each with a Ctrl+C paste and a search
   such as `ess:.*([1-9].|\d..)%` on a waystone with Monster Effectiveness.
+- [ ] **A parenthesised quality label on vendor stock.** Does any equipment print something like
+  `Quality (Attack Modifiers): +20%` instead of `Quality: +20%`? The vendor token `lity:.*…%`
+  needs `lity:` right before the colon, so it would miss that line.
 - [ ] **`.` never crosses tooltip lines.** The emulator assumes each line is searched on its own
   (see `searchEmulator.ts`). Check: on a waystone with `Item Rarity: +40%` and
   `Monster Rarity: +103%`, `"m rarity:.*1..%"` must stay dark.

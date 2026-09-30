@@ -301,8 +301,6 @@ export const baseTypeTokens = (ns: PoolNamespace, baseNames: readonly string[]):
 
 // A "Label: +#%" header: only spacing and an optional "+" between the colon and the number.
 const LABEL_BEFORE_NUMBER = /^(.*:)\s*\+?$/;
-/** Values the labelled form is proven on (at least); numberRange's open ranges stop at 3 digits too. */
-const PROOF_MAX = 999;
 
 /** Shortest suffix of the label (ending in its colon) that no other namespace line contains. */
 function labelSuffix(ns: PoolNamespace, target: LineTarget, label: string): string | null {
@@ -317,13 +315,12 @@ function labelSuffix(ns: PoolNamespace, target: LineTarget, label: string): stri
 
 /*
  * `.*` drops the number's left boundary, so `rarity:.*1[5-9]%` would read "115%" as 15. The token
- * is kept only when every value from 0 to PROOF_MAX (or the span's top), printed with and without
- * the "+", lights exactly when it is inside the span numberRange was asked for — bounded ranges
- * usually fail this and fall back.
+ * is kept only when every value from 0 to the open span's top (999 below 4-digit minimums, from
+ * numberRange's OPEN_MAX_DIGITS), printed with and without the "+", lights exactly when it is
+ * ≥ the minimum. Past the top any hit is still ≥ the minimum, which is why only open ranges qualify.
  */
 function provesSpan(regex: RegExp, label: string, after: string, span: { lo: number; hi: number }): boolean {
-  const top = Math.max(PROOF_MAX, span.hi);
-  for (let v = 0; v <= top; v++) {
+  for (let v = 0; v <= span.hi; v++) {
     const want = v >= span.lo && v <= span.hi;
     if (regex.test(`${label} +${v}${after}`) !== want || regex.test(`${label} ${v}${after}`) !== want) return false;
   }
@@ -334,9 +331,11 @@ function provesSpan(regex: RegExp, label: string, after: string, span: { lo: num
  * `<label suffix>.*<range><unit>` (poeregex.cz's shape): no literal space or "+" after the colon,
  * so an unverified header that prints "30%" instead of "+30%" still matches, and a space-free
  * suffix needs no quotes. Relies on `.` not crossing tooltip lines (searchEmulator models that).
- * Null when the header is not "Label: #" shaped or no suffix/range passes the checks.
+ * Null when the header is not "Label: #" shaped or no suffix/range passes the checks, and always
+ * for a bounded range: after `.*` its top cannot be enforced ("+1150%" ends in "150%").
  */
 function labelledToken(ns: PoolNamespace, target: LineTarget, bounds: ValueBounds, round10: boolean): PoolToken | null {
+  if (bounds.max !== null) return null;
   const [before, after, ...rest] = target.template.split(NUMBER_SLOT);
   const label = LABEL_BEFORE_NUMBER.exec(before ?? "")?.[1];
   if (after === undefined || rest.length > 0 || label === undefined) return null;
@@ -348,8 +347,7 @@ function labelledToken(ns: PoolNamespace, target: LineTarget, bounds: ValueBound
     const text = `${escapeSearchText(core)}.*${num}${trail.text}`;
     const regex = compileSafeRegex(text);
     if (!provesSpan(regex, label, after, span) || numericCollisions(regex, ns, target, new Set(), span.lo).length > 0) continue;
-    const note = `any spacing or "+" after "${label}" matches`;
-    return { text, kind: "property", covers: [target.key], collisions: [], anchored: trail.anchored, rounded: round10, verify: false, note };
+    return { text, kind: "property", covers: [target.key], collisions: [], anchored: trail.anchored, rounded: round10, verify: false };
   }
   return null;
 }

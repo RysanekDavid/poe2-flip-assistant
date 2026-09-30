@@ -121,6 +121,15 @@ function testBoundedFallsBack(ns: PoolNamespace): void {
   assert.ok(!t.text.includes(".*"), `bounded range keeps its left boundary: ${t.text}`);
   assert.equal(matchesItem(`"${t.text}"`, ["Pack Size: +140%"]), false, "140 is outside 10–49");
   assert.ok(matchesItem(`"${t.text}"`, ["Pack Size: +40%"]), "40 is inside 10–49");
+  // a proof that stops at 999 would pass `ze:.*1..%` for 100–199, which lights "+1150%" (ends in "150%")
+  const hundreds = propertyToken(ns, header("waystone", "packSize"), { min: 100, max: 199 }, false);
+  assert.ok(!hundreds.text.includes(".*"), `100–199 keeps its left boundary: ${hundreds.text}`);
+  assert.equal(matchesItem(`"${hundreds.text}"`, ["Pack Size: +1150%"]), false, "1150 is outside 100–199");
+  assert.ok(matchesItem(`"${hundreds.text}"`, ["Pack Size: +150%"]), "150 is inside 100–199");
+  const wide = propertyToken(ns, header("waystone", "packSize"), { min: 10, max: 5000 }, false);
+  assert.ok(!wide.text.includes(".*"), `a 4-digit top also keeps the literal form: ${wide.text}`);
+  assert.equal(matchesItem(`"${wide.text}"`, ["Pack Size: +15000%"]), false, "15000 is outside 10–5000");
+  assert.ok(matchesItem(`"${wide.text}"`, ["Pack Size: +4999%"]) && !matchesItem(`"${wide.text}"`, ["Pack Size: +9%"]), "4999 in, 9 out");
 }
 
 function testVendor(): void {
