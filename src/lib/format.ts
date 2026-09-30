@@ -31,6 +31,10 @@ export function roundPrice(n: number): string {
   return n.toFixed(2);
 }
 
+const fmtEx = (ex: number): string => `${ex.toLocaleString("en", { maximumFractionDigits: ex >= 10 ? 0 : 1 })} ex`;
+const fmtDiv = (div: number): string =>
+  `${div.toLocaleString("en", div >= 1 ? { maximumFractionDigits: 1 } : { maximumSignificantDigits: 2 })} div`;
+
 /**
  * A Divine amount the way a trader reads it: ≥1 → "12.3 div", below 1 → exalted ("45 ex"),
  * non-positive → "—". Sub-Div asks MUST go through this — `toFixed(0)` printed a 1-ex bait
@@ -39,8 +43,16 @@ export function roundPrice(n: number): string {
  */
 export function fmtDivOrEx(div: number, exPerDiv: number): string {
   if (!(div > 0)) return "—";
-  if (div >= 1) return `${div.toLocaleString("en", { maximumFractionDigits: 1 })} div`;
-  if (!(exPerDiv > 0)) return `${div.toLocaleString("en", { maximumSignificantDigits: 2 })} div`;
-  const ex = div * exPerDiv;
-  return `${ex.toLocaleString("en", { maximumFractionDigits: ex >= 10 ? 0 : 1 })} ex`;
+  if (div >= 1 || !(exPerDiv > 0)) return fmtDiv(div);
+  return fmtEx(div * exPerDiv);
+}
+
+/**
+ * A low–high Divine band with BOTH ends in the unit fmtDivOrEx picks for the high end. Mixed units
+ * ("190 ex – 1.1 div") hide how wide the band is; "0.83 div – 1.1 div" or "12 ex – 19 ex" don't.
+ */
+export function fmtDivOrExRange(low: number, high: number, exPerDiv: number): string {
+  if (!(low > 0) || !(high > 0)) return `${fmtDivOrEx(low, exPerDiv)} – ${fmtDivOrEx(high, exPerDiv)}`;
+  if (high >= 1 || !(exPerDiv > 0)) return `${fmtDiv(low)} – ${fmtDiv(high)}`;
+  return `${fmtEx(low * exPerDiv)} – ${fmtEx(high * exPerDiv)}`;
 }

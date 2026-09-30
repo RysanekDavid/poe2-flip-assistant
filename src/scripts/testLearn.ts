@@ -101,7 +101,7 @@ function testVisibility(): void {
   }
   for (const tab of BEGINNER_TABS) assert.ok(TAB_IDS.includes(tab));
   assert.deepEqual(visibleTools("beginner", "farm")?.map((t) => t.id), ["strategies"]);
-  assert.deepEqual(visibleTools("beginner", "market")?.map((t) => t.id), ["price"]);
+  assert.deepEqual(visibleTools("beginner", "market")?.map((t) => t.id), ["prices", "price"]);
   assert.deepEqual(visibleTools("beginner", "settings")?.map((t) => t.id), ["account", "notify", "mode", "system"]);
   assert.deepEqual(visibleTools("advanced", "farm")?.map((t) => t.id), ["board", "strategies"]);
   assert.equal(visibleTools("beginner", "alerts"), undefined);
@@ -114,7 +114,8 @@ function testVisibility(): void {
 function testSubTabs(): void {
   const ids = (mode: "beginner" | "advanced", tab: (typeof TAB_IDS)[number], role: "owner" | "member" = "owner") => subTabsFor(mode, tab, role)?.map((t) => t.id) ?? null;
   assert.equal(ids("beginner", "farm"), null, "a beginner's Farm has one tool — no bar");
-  assert.equal(ids("beginner", "market"), null);
+  assert.deepEqual(ids("beginner", "market"), ["prices", "price"], "a beginner's Market: Prices + Price check");
+  assert.deepEqual(ids("advanced", "market"), ["prices", "price", "board"]);
   assert.equal(ids("advanced", "alerts"), null, "no tools, no bar");
   assert.equal(ids("advanced", "coach"), null);
   assert.deepEqual(ids("advanced", "farm"), ["board", "strategies"]);
@@ -145,7 +146,8 @@ function testModeRoutes(): void {
   assert.deepEqual(route("beginner", "craft", "moves"), { tab: "learn", tool: "what", rejected: [], hidden: ["tab=craft"] });
   assert.deepEqual(route("beginner", "farm", null), { tab: "farm", tool: "strategies", rejected: [], hidden: [] }, "hidden default tool is silent");
   assert.deepEqual(route("beginner", "farm", "board"), { tab: "farm", tool: "strategies", rejected: [], hidden: ["tool=board"] });
-  assert.deepEqual(route("beginner", "market", "board"), { tab: "market", tool: "price", rejected: [], hidden: ["tool=board"] });
+  assert.deepEqual(route("beginner", "market", "board"), { tab: "market", tool: "prices", rejected: [], hidden: ["tool=board"] });
+  assert.deepEqual(route("beginner", "market", null), { tab: "market", tool: "prices", rejected: [], hidden: [] }, "Prices is the Market default");
   assert.deepEqual(route("beginner", "bogus", "x"), { tab: "learn", tool: "what", rejected: ["tab=bogus", "tool=x"], hidden: [] });
   assert.deepEqual(route("beginner", "farm", "nope"), { tab: "farm", tool: "strategies", rejected: ["tool=nope"], hidden: [] });
   assert.deepEqual(route("beginner", "coach", null), { tab: "coach", tool: null, rejected: [], hidden: [] }, "Coach in both modes");

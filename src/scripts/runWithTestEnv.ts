@@ -16,6 +16,7 @@ const targets = {
   flips: "src/scripts/testFlipModel.ts",
   learn: "src/scripts/testLearn.ts",
   market: "src/scripts/testMarketLeague.ts",
+  "market-prices": "src/scripts/testMarketPrices.ts",
   notify: "src/scripts/testNotify.ts",
   "notify-drain": "src/scripts/testNotifyDrain.ts",
   "alert-center": "src/scripts/testAlertCenter.ts",

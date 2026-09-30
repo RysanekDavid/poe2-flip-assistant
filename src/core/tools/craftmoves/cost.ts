@@ -9,7 +9,7 @@ import type { CraftMove, MoveMaterial } from "./ruleTypes";
 export interface SnapshotPrice {
   priceDiv: number;
   icon: string | null;
-  ageMin: number | null;
+  ageMin: number;
 }
 
 export interface PricedMaterial extends MoveMaterial {
