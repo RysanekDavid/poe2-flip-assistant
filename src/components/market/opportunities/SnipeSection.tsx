@@ -49,7 +49,7 @@ function NearMissRow({ n }: { n: NearMiss }) {
 }
 
 function emptySentence(section: Section, budget: Budget): string {
-  if (!section.scannerEnabled) return "The background snipe scanner is switched off, so nothing is being valued.";
+  if (!section.scannerEnabled) return "The scheduled snipe scan is switched off; only scans the owner starts by hand still look for snipes.";
   if (section.overBudget > 0) {
     const cap = budget.capDiv === null ? "" : ` (≤ ${fmtDiv(budget.capDiv)} Div)`;
     return `${section.overBudget} under-value listing${section.overBudget === 1 ? " costs" : "s cost"} more than your budget${cap}.`;

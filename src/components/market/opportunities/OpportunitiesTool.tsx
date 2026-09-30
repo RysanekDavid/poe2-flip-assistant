@@ -34,7 +34,7 @@ function useOpportunities(): Load {
 const LEGEND =
   "Under value now: snipes the background scanner alerted that are still fresh (under 2 h old and not seen gone), plus the " +
   "closest near-misses. Rising uniques: worth 1 Div or more, price up and listings down across poe2scout's recent points; " +
-  "listings leaving is not the same as sales. Opening a row spends one trade search with your POESESSID (10 per hour).";
+  "listings leaving is not the same as sales. Opening a row spends one trade search with your POESESSID: 10 per hour, shared with Mod pool live values.";
 
 /** The automatic budget: a share of your latest net worth, or an honest "no net worth yet". */
 function budgetText(b: Budget): { label: string; tip: string } {

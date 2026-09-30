@@ -48,7 +48,6 @@ export interface SnipeFinding {
   marginPct: number;
   samples: number; // comparables behind the value (confidence)
   searchUrl: string; // working trade link to the comparable search
-  card: SnipeCard; // what the alert renders: icon, mods, valuation basis, item trade link
 }
 
 /** Per-archetype diagnostics — explains what each archetype contributed (tune mins/categories). */
@@ -143,7 +142,8 @@ async function collectArchetype(profile: SnipeProfile, ctx: ScanCtx): Promise<{ 
   return { candidates, diag, queryId };
 }
 
-function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
+/** `card` (icon, mods, valuation basis, item trade link) is stored with the alert, not in the report. */
+function alertEveryone(finding: SnipeFinding, card: SnipeCard, ctx: ScanCtx): void {
   // market snipes are shared opportunities — alert every account holder, once per listing each.
   // The scan runs under ONE cred in the app default league, so that is the market they belong to.
   for (const u of listUsers()) {
@@ -163,8 +163,8 @@ function alertEveryone(finding: SnipeFinding, ctx: ScanCtx): void {
       value: finding.marginPct,
       threshold: config.valuation.discountPct,
       whisper: finding.whisper,
-      link: finding.card.tradeUrl, // finds THIS listing; the comparable search rides in the card
-      details: finding.card,
+      link: card.tradeUrl, // finds THIS listing; the comparable search rides in the card
+      details: card,
       dedupe: "once",
     });
   }
@@ -254,20 +254,20 @@ async function valueAndAlert(c: PoolEntry, ctx: ScanCtx): Promise<SnipeFinding |
     marginPct: verdict.marginPct,
     samples: value.samples,
     searchUrl,
-    card: buildSnipeCard({
-      listing: c.listing,
-      league: ctx.league,
-      priceDiv: c.div,
-      valueDiv: verdict.valueDiv,
-      marginPct: verdict.marginPct,
-      exaltPerDivine: ctx.rates.exaltPerDivine,
-      value,
-      searchStats: plan.searchStats,
-      broadened,
-      comparablesUrl: searchUrl,
-    }),
   };
-  alertEveryone(finding, ctx);
+  const card = buildSnipeCard({
+    listing: c.listing,
+    league: ctx.league,
+    priceDiv: c.div,
+    valueDiv: verdict.valueDiv,
+    marginPct: verdict.marginPct,
+    exaltPerDivine: ctx.rates.exaltPerDivine,
+    value,
+    searchStats: plan.searchStats,
+    broadened,
+    comparablesUrl: searchUrl,
+  });
+  alertEveryone(finding, card, ctx);
   trackOutcome(c, finding, ctx);
   return finding;
 }

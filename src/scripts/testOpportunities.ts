@@ -8,13 +8,13 @@ import { redirectTool } from "../components/shell/tabRegistry";
 import { config } from "../config/env";
 import { fireAlert } from "../core/alertEngine";
 import { BUDGET_SHARE_OF_NET_WORTH, budgetFromNetWorth, withinBudget } from "../core/opportunities/budget";
-import { createListingsCache, LIVE_LISTINGS_PER_HOUR, lookupListings, type LookupDeps } from "../core/opportunities/listings";
+import { createListingsCache, lookupListings, type LookupDeps } from "../core/opportunities/listings";
 import { selectLiveSnipes } from "../core/opportunities/liveSnipes";
 import { buildRising, MAX_NEWEST_POINT_AGE_MS, uniqueTrend } from "../core/opportunities/rising";
 import { buildSnipeSection } from "../core/opportunities/snipeSection";
 import { NEAR_MISS_LIMIT, nearMissReason, selectNearMisses, type NearMissLimits } from "../core/snipeNearMiss";
 import { evaluateSnipe, type SnipeGateInput } from "../core/snipeGate";
-import { createLiveLimiter } from "../core/tools/modpool/liveLimit";
+import { createLiveLimiter, LIVE_VALUES_PER_HOUR, spendReserved } from "../core/tools/modpool/liveLimit";
 import { recentSnipeAlerts } from "../db/alertQueries";
 import { getDb } from "../db/database";
 import type { MarketUniqueItem } from "../lib/marketUniquesContract";
@@ -145,7 +145,7 @@ function testRising(): void {
 async function testListingsCap(): Promise<void> {
   let searches = 0;
   const deps = (over: Partial<LookupDeps> = {}): LookupDeps => ({
-    cache: createListingsCache(), limiter: createLiveLimiter({ maxFailures: LIVE_LISTINGS_PER_HOUR, now: () => NOW }, "test-listings"),
+    cache: createListingsCache(), limiter: createLiveLimiter({ now: () => NOW }),
     cred: { poesessid: "x", source: "stored" }, notSpent: (e) => e instanceof TradeRateLimitedError,
     search: async () => {
       searches += 1;
@@ -154,23 +154,45 @@ async function testListingsCap(): Promise<void> {
     ...over,
   });
   const d = deps();
-  for (let i = 0; i < LIVE_LISTINGS_PER_HOUR; i++) await lookupListings({ userId: 1, key: `k${i}`, name: "U", nowMs: NOW }, d);
+  for (let i = 0; i < LIVE_VALUES_PER_HOUR; i++) await lookupListings({ userId: 1, key: `k${i}`, name: "U", nowMs: NOW }, d);
   const over = await lookupListings({ userId: 1, key: "k-new", name: "U", nowMs: NOW }, d);
-  ok("listings: the 11th spent search in an hour is refused with a wait", over.kind === "limited" && over.retryAfterSec > 0 && searches === LIVE_LISTINGS_PER_HOUR);
+  ok("listings: the 11th spent search in an hour is refused with a wait", over.kind === "limited" && over.retryAfterSec > 0 && searches === LIVE_VALUES_PER_HOUR);
   const hit = await lookupListings({ userId: 1, key: "k0", name: "U", nowMs: NOW + MIN }, d);
-  ok("listings: a cache hit is free, even at the cap", hit.kind === "ok" && hit.body.cached && searches === LIVE_LISTINGS_PER_HOUR);
+  ok("listings: a cache hit is free, even at the cap", hit.kind === "ok" && hit.body.cached && searches === LIVE_VALUES_PER_HOUR);
   ok("listings: another user has their own cap", (await lookupListings({ userId: 2, key: "k-new", name: "U", nowMs: NOW }, d)).kind === "ok");
   ok("listings: a miss without a cookie spends nothing", (await lookupListings({ userId: 3, key: "k-x", name: "U", nowMs: NOW }, deps({ cred: null }))).kind === "no-cred");
   const busy = deps({ search: async () => Promise.reject(new TradeRateLimitedError("search", 30_000)) });
   let refusals = 0;
-  for (let i = 0; i < LIVE_LISTINGS_PER_HOUR + 2; i++) {
+  for (let i = 0; i < LIVE_VALUES_PER_HOUR + 2; i++) {
     try {
       await lookupListings({ userId: 4, key: `b${i}`, name: "U", nowMs: NOW }, busy);
     } catch (e: unknown) {
       if (e instanceof TradeRateLimitedError) refusals += 1;
     }
   }
-  ok("listings: a busy shared budget (503) propagates and does not use up the cap", refusals === LIVE_LISTINGS_PER_HOUR + 2 && busy.limiter.check(4).allowed);
+  ok("listings: a busy shared budget (503) propagates and does not use up the cap", refusals === LIVE_VALUES_PER_HOUR + 2 && busy.limiter.check(4).allowed);
+  // Mod pool live values and live listings share ONE window per user
+  const shared = deps();
+  for (let i = 0; i < LIVE_VALUES_PER_HOUR; i++) {
+    const slot = shared.limiter.reserve(5);
+    if (!slot.allowed) throw new Error("mod-pool spend refused early");
+    await spendReserved(slot, () => false, async () => "mod-pool value");
+  }
+  const afterModPool = await lookupListings({ userId: 5, key: "s1", name: "U", nowMs: NOW }, shared);
+  ok("listings: mod-pool spends count against the same window", afterModPool.kind === "limited");
+  let calls = 0;
+  let finish: () => void = () => undefined;
+  const slow = deps({
+    search: () => {
+      calls += 1;
+      return new Promise((resolve) => (finish = () => resolve({ total: 1, listings: [], searchUrl: "https://www.pathofexile.com/trade2/search/poe2/Standard/x" })));
+    },
+  });
+  const first = lookupListings({ userId: 6, key: "same", name: "U", nowMs: NOW }, slow);
+  const second = lookupListings({ userId: 7, key: "same", name: "U", nowMs: NOW }, slow);
+  finish();
+  const [a, b] = await Promise.all([first, second]);
+  ok("listings: a second click on a search in flight shares it for free", calls === 1 && a.kind === "ok" && b.kind === "ok" && b.body.cached);
 }
 
 function testRedirectAndDb(): void {

@@ -1,14 +1,17 @@
 import { z } from "zod";
 import { PoecdnIconUrl, Trade2Url } from "./snipeCard";
 
-/** One snipe from the last scan (its card lives on the SNIPE alert; the report only counts findings). */
+/**
+ * One snipe from the last scan. Its item card is stored with the SNIPE alert only (Alerts and
+ * Opportunities render it from there); older reports that still carry a `card` parse, the field is
+ * just not read.
+ */
 const FindingSchema = z.object({
   listingId: z.string(),
   itemName: z.string(),
   baseType: z.string(),
   marginPct: z.number(),
   searchUrl: z.string(),
-  card: z.unknown().optional(), // reports from before item cards have none
 });
 
 /** Per-archetype scan diagnostics (core/autoSnipe ProfileDiag) — owner-only, shown under System. */

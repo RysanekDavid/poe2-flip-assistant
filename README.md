@@ -17,7 +17,7 @@ It never buys, sells, whispers, clicks, or controls the game.
   **Opportunities** — what to buy on the trade site now: still-live snipe cards from the read-only
   autosnipe scanner, its closest near-misses, and uniques whose price rises while listings fall,
   all inside a budget taken from your net worth. Opening a unique spends one trade search
-  (10 per hour per user); nothing searches in the background for it.
+  (10 per hour per user, shared with Mod pool live values); nothing searches in the background for it.
 - **Alerts:** one feed for snipes (full item card, whisper, trade link), craft margins, spreads
   and league news, with per-type ticker / sound / desktop-popup / Discord routing.
 - **Craft:** sixteen curated recipes with observed comparables, modelled EV, interactive steps,

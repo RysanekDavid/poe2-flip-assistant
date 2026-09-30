@@ -13,7 +13,7 @@ import type { CraftCatalog } from "../../core/tools/craftmoves/catalog";
 import { KB_GATE_EXAMPLES } from "../../core/tools/craftmoves/gates";
 import { RatesUnavailableError } from "../../core/tools/craftmoves/moves";
 import { implicitPseudoRefs, resolveTier, tierTemplate } from "../../core/tools/modpool/bookSignal";
-import { createLiveLimiter, LIVE_VALUES_PER_HOUR, meteredSpend } from "../../core/tools/modpool/liveLimit";
+import { createLiveLimiter, LIVE_VALUES_PER_HOUR, spendReserved, type LiveLimiter } from "../../core/tools/modpool/liveLimit";
 import { lookupFamilyValue, memoObs } from "../../core/tools/modpool/load";
 import { loadStatIndex, NEGATIVE_TTL_MS, resetStatIndexCache, StatCatalogUnavailableError } from "../../core/tools/modpool/statIndex";
 import { cachedLiveValue, cacheKeyOf, fetchLiveValue, freshAfter, liveQuery, type LiveDeps, type LiveTarget } from "../../core/tools/modpool/liveValue";
@@ -263,21 +263,32 @@ async function testStatIndexNegativeCache(): Promise<void> {
   resetStatIndexCache();
 }
 
+/** Take a slot or fail the test: the limiter refusing here is itself the bug. */
+function take(lim: LiveLimiter, userId: number): { release: () => void } {
+  const slot = lim.reserve(userId);
+  if (!slot.allowed) throw new Error(`user ${userId}: no live slot left`);
+  return slot;
+}
+
 async function testLiveLimiter(): Promise<void> {
   let clock = NOW;
   const lim = createLiveLimiter({ now: () => clock });
-  for (let i = 0; i < LIVE_VALUES_PER_HOUR; i++) lim.recordSpend(1);
-  const gate = lim.check(1);
-  assert.ok(!gate.allowed && gate.retryAfterSec === 3600, "the 11th spend in an hour is refused with Retry-After");
+  for (let i = 0; i < LIVE_VALUES_PER_HOUR; i++) take(lim, 1);
+  const gate = lim.reserve(1);
+  assert.ok(!gate.allowed && gate.retryAfterSec === 3600, "the 11th reservation in an hour is refused with Retry-After");
   assert.ok(lim.check(2).allowed, "per user, not global");
   const notSpent = (e: unknown) => e instanceof RatesUnavailableError;
-  await assert.rejects(meteredSpend(lim, 3, notSpent, () => Promise.reject(new RatesUnavailableError(L))), RatesUnavailableError);
-  await assert.rejects(meteredSpend(lim, 3, notSpent, () => Promise.reject(new Error("trade2 502"))), /502/);
-  await meteredSpend(lim, 3, notSpent, () => Promise.resolve(1));
-  for (let i = 0; i < LIVE_VALUES_PER_HOUR - 3; i++) lim.recordSpend(3);
-  assert.ok(lim.check(3).allowed, "a refused-before-trade2 error is not counted (2 of 3 attempts counted)");
-  lim.recordSpend(3);
+  await assert.rejects(spendReserved(take(lim, 3), notSpent, () => Promise.reject(new RatesUnavailableError(L))), RatesUnavailableError);
+  await assert.rejects(spendReserved(take(lim, 3), notSpent, () => Promise.reject(new Error("trade2 502"))), /502/);
+  await spendReserved(take(lim, 3), notSpent, () => Promise.resolve(1));
+  for (let i = 0; i < LIVE_VALUES_PER_HOUR - 3; i++) take(lim, 3);
+  assert.ok(lim.check(3).allowed, "a refused-before-trade2 error hands its slot back (2 of 3 attempts counted)");
+  take(lim, 3);
   assert.equal(lim.check(3).allowed, false);
+  const released = take(lim, 4);
+  released.release();
+  released.release();
+  assert.ok(lim.check(4).allowed, "a release is idempotent and never frees someone else's slot");
   clock += 3_600_001;
   assert.ok(lim.check(1).allowed, "the window rolls");
 }

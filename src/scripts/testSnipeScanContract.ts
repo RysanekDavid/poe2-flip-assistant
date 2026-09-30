@@ -36,6 +36,10 @@ const nearMiss = {
   marginPct: 30, samples: 6, basis: "comps", reason: "not-discounted", detail: "30% under value, need 35%", listedAt: null,
   exaltPerDivine: 400, tradeUrl: "https://www.pathofexile.com/trade2/search/poe2/Standard?q=x",
 };
+ok("an older report whose findings still carry a card parses, the card unread", (() => {
+  const f = parseScanReport({ ...report, findings: [{ ...finding, card: { v: 1 } }] }).report?.findings[0];
+  return f !== undefined && !("card" in f);
+})());
 ok("a report from before near-misses still parses", parseScanReport(report).report?.nearMisses === undefined);
 ok("near-misses parse with the report", parseScanReport({ ...report, league: "Standard", nearMisses: [nearMiss] }).report?.nearMisses?.length === 1);
 ok("a near-miss linking off trade2 fails the report loudly", parseScanReport({ ...report, nearMisses: [{ ...nearMiss, tradeUrl: "https://evil.example/x" }] }).error !== null);

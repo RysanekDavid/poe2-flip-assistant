@@ -5,7 +5,8 @@ import { withCredStatus } from "../../../../../auth/credStatus";
 import { getCurrentUser } from "../../../../../auth/session";
 import { getCallerCred } from "../../../../../auth/tradeCred";
 import { getDefaultLeague } from "../../../../../core/leagueState";
-import { LIVE_LISTINGS_PER_HOUR, listingsCache, listingsKey, listingsLimiter, lookupListings } from "../../../../../core/opportunities/listings";
+import { listingsCache, listingsKey, lookupListings } from "../../../../../core/opportunities/listings";
+import { LIVE_VALUES_PER_HOUR, liveLimiter } from "../../../../../core/tools/modpool/liveLimit";
 import { LIVE_LISTINGS_SHOWN, listingsQuerySchema, listingsResponseSchema } from "../../../../../lib/opportunitiesContract";
 import { tradeErrorResponse } from "../../../../../lib/tradeRouteError";
 
@@ -19,7 +20,8 @@ const notSpent = (e: unknown): boolean => e instanceof TradeRateLimitedError;
  * GET /api/market/opportunities/listings?name=<unique>&base=<base type> → the cheapest live listings
  * of one unique, read-only (the player buys by hand). A fresh shared cache hit is free. A miss spends
  * ONE search + ONE fetch with the caller's own POESESSID through the shared governor: no stored
- * cookie → 409, over LIVE_LISTINGS_PER_HOUR for this user → 429 + Retry-After, busy shared budget →
+ * cookie → 409, over LIVE_VALUES_PER_HOUR for this user (one window shared with Mod pool live values)
+ * → 429 + Retry-After, busy shared budget →
  * 503 + Retry-After. Default league only: trade2 searches search it.
  */
 export async function GET(req: Request): Promise<Response> {
@@ -36,7 +38,7 @@ export async function GET(req: Request): Promise<Response> {
       { userId: user.id, key: listingsKey(league, name, base), name, nowMs: Date.now() },
       {
         cache: listingsCache,
-        limiter: listingsLimiter,
+        limiter: liveLimiter,
         cred,
         notSpent,
         // record what this call says about the caller's stored POESESSID (403 → expired banner)
@@ -47,7 +49,7 @@ export async function GET(req: Request): Promise<Response> {
       return NextResponse.json({ error: "no POESESSID stored — add your session cookie in Settings to see live listings" }, { status: 409 });
     }
     if (out.kind === "limited") {
-      const error = `live listings are capped at ${LIVE_LISTINGS_PER_HOUR} searches per hour per user`;
+      const error = `live lookups are capped at ${LIVE_VALUES_PER_HOUR} searches per hour per user, shared with Mod pool live values`;
       return NextResponse.json({ error, retryAfterSec: out.retryAfterSec }, { status: 429, headers: { "Retry-After": String(out.retryAfterSec) } });
     }
     return NextResponse.json(listingsResponseSchema.parse(out.body));

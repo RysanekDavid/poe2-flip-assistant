@@ -5,7 +5,7 @@ import { getCurrentUser } from "../../../../../auth/session";
 import { getCallerCred } from "../../../../../auth/tradeCred";
 import { getDefaultLeague } from "../../../../../core/leagueState";
 import { RatesUnavailableError } from "../../../../../core/tools/craftmoves/moves";
-import { LIVE_VALUES_PER_HOUR, liveLimiter, meteredSpend } from "../../../../../core/tools/modpool/liveLimit";
+import { LIVE_VALUES_PER_HOUR, liveLimiter, spendReserved } from "../../../../../core/tools/modpool/liveLimit";
 import { lookupFamilyValue, valueFamily } from "../../../../../core/tools/modpool/load";
 import { ModNotSearchableError, UnknownBaseError } from "../../../../../core/tools/modpool/pool";
 import { StatCatalogUnavailableError } from "../../../../../core/tools/modpool/statIndex";
@@ -37,7 +37,8 @@ function errorResponse(e: unknown): Response {
  *
  * A fresh shared cache hit answers free: no credential, no trade2 request, no per-user count. A miss
  * spends ONE search + ONE fetch with the caller's own POESESSID through the web limiter: no stored
- * cookie → 409, over LIVE_VALUES_PER_HOUR for this user → 429 + Retry-After, busy shared budget or
+ * cookie → 409, over LIVE_VALUES_PER_HOUR for this user (one window shared with Opportunities live
+ * listings) → 429 + Retry-After, busy shared budget or
  * trade2 stat catalog down → 503 + Retry-After.
  */
 export async function POST(req: Request): Promise<Response> {
@@ -55,12 +56,13 @@ export async function POST(req: Request): Promise<Response> {
     if (!cred) {
       return NextResponse.json({ error: "no POESESSID stored — add your session cookie in Settings to value live" }, { status: 409 });
     }
-    const gate = liveLimiter.check(user.id);
-    if (!gate.allowed) {
-      return retryResponse(429, `live values are capped at ${LIVE_VALUES_PER_HOUR} searches per hour per user`, gate.retryAfterSec);
+    const slot = liveLimiter.reserve(user.id);
+    if (!slot.allowed) {
+      const error = `live lookups are capped at ${LIVE_VALUES_PER_HOUR} searches per hour per user, shared with Opportunities live listings`;
+      return retryResponse(429, error, slot.retryAfterSec);
     }
     // record what this trade2 call says about the caller's stored POESESSID (403 → expired banner)
-    const value = await meteredSpend(liveLimiter, user.id, notSpent, () =>
+    const value = await spendReserved(slot, notSpent, () =>
       withCredStatus(user.id, cred, () => valueFamily(body.data, found.target, cred, now)),
     );
     return NextResponse.json(modValueResponseSchema.parse(value));
