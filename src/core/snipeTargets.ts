@@ -1,5 +1,5 @@
 import { config } from "../config/env";
-import type { DemandItem } from "../api/scoutClient";
+import type { DemandItem } from "../api/scoutDemand";
 
 /**
  * Auto-pick which items are worth watching for snipes — NO manual entry. The user never
@@ -19,10 +19,15 @@ export interface SnipeTarget {
   icon: string | null; // poe2scout art — the same icon the demand board rows use
   valueDiv: number; // current market value
   quantity: number; // live listings (volume proxy)
-  sellThrough: number; // avg share of listings gone per scrape (0..1) — resell-speed proxy
-  momentumPct: number; // price trend
+  sellThrough: number | null; // avg share of listings gone per scrape (0..1) — resell-speed proxy; null = unknown
+  momentumPct: number | null; // price trend; null = unknown
   score: number; // ranking score
   reason: string;
+}
+
+function targetReason(valueDiv: number, quantity: number, sellThrough: number | null): string {
+  const base = `~${valueDiv.toFixed(0)} Div · ${quantity} listed`;
+  return sellThrough == null ? base : `${base} · ~${(sellThrough * 100).toFixed(0)}% of listings leave per scrape`;
 }
 
 export function rankSnipeTargets(items: DemandItem[], exaltPerDivine: number): SnipeTarget[] {
@@ -45,8 +50,9 @@ export function rankSnipeTargets(items: DemandItem[], exaltPerDivine: number): S
     .map(({ it, valueDiv }) => {
       // reward value × resell-speed; a mild bonus for rising price (snipe resells into a pump).
       // Resell speed = the sell-through proxy, NOT the listing count: a big static supply means
-      // slow resale, which the old listing-count score rewarded.
-      const score = valueDiv * (1 + 10 * it.sellThrough) * (1 + Math.max(it.momentumPct, 0) / 200);
+      // slow resale, which the old listing-count score rewarded. An unknown factor earns no bonus
+      // (it only ranks, it is never displayed as a number).
+      const score = valueDiv * (1 + 10 * (it.sellThrough ?? 0)) * (1 + Math.max(it.momentumPct ?? 0, 0) / 200);
       return {
         name: it.name,
         type: it.type,
@@ -56,7 +62,7 @@ export function rankSnipeTargets(items: DemandItem[], exaltPerDivine: number): S
         sellThrough: it.sellThrough,
         momentumPct: it.momentumPct,
         score,
-        reason: `~${valueDiv.toFixed(0)} Div · ${it.quantity} listed · ~${(it.sellThrough * 100).toFixed(0)}% of listings leave per scrape`,
+        reason: targetReason(valueDiv, it.quantity, it.sellThrough),
       };
     })
     .sort((a, b) => b.score - a.score);

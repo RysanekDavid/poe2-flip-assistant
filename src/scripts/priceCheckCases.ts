@@ -197,7 +197,10 @@ async function testLiveGates(ok: Ok): Promise<void> {
 }
 
 export async function runPriceCheckCases(ok: Ok): Promise<void> {
-  ok("pricecheck: Market opens on Price check", parseTabRoute("market", null).tool === "price" && parseTabRoute("market", "board").tool === "board");
+  ok(
+    "pricecheck: Market opens on Prices, Price check stays routable",
+    parseTabRoute("market", null).tool === "prices" && parseTabRoute("market", "price").tool === "price" && parseTabRoute("market", "board").tool === "board",
+  );
   testClassify(ok);
   await testBase(ok);
   await testLiveSearches(ok);

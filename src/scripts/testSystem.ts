@@ -18,6 +18,7 @@ import { testHealthRoute, testCoachSummary, testGovernorState } from "./testSyst
 import { testNinjaUserAgent } from "./testSystemNinja";
 import { testTradeMetaUserAgent } from "./testTradeMetaUa";
 import { testBalanceLoop } from "./testSystemBalance";
+import { testUniqueTradeHeartbeat } from "./testSystemUniqueTrade";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -100,6 +101,7 @@ const CFG: SubsystemConfig = {
   patchNotes: { ...config.patchNotes, enabled: true, intervalMin: 30 },
   snipeOutcomes: { ...config.snipeOutcomes, enabled: true },
   leagueStart: { ...config.leagueStart, backfillEnabled: true },
+  uniqueTradeValues: { ...config.uniqueTradeValues, enabled: true },
 };
 
 function testStaleDerivation(): void {
@@ -138,6 +140,7 @@ async function main(): Promise<void> {
   await testWithHeartbeat();
   testHeartbeatTable();
   testStaleDerivation();
+  await testUniqueTradeHeartbeat(CFG);
   testGovernorState();
   await testCoachSummary();
   await testHealthRoute();

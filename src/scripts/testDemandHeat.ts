@@ -12,10 +12,10 @@ const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
 
 // --- sellThroughProxy: mean per-step FRACTIONAL drop, increases clipped at 0 ---
 {
-  ok("fewer than 2 points → 0", sellThroughProxy([]) === 0 && sellThroughProxy([50]) === 0);
-  const drain = sellThroughProxy([10, 8, 6]); // (0.2 + 0.25) / 2
+  ok("fewer than 2 points → null (unknown, not \"nothing sells\")", sellThroughProxy([]) === null && sellThroughProxy([50]) === null);
+  const drain = sellThroughProxy([10, 8, 6]) ?? NaN; // (0.2 + 0.25) / 2
   ok("steady drawdown 10→8→6 → (20% + 25%)/2 = 0.225", near(drain, 0.225), String(drain));
-  const clipped = sellThroughProxy([10, 20, 15]); // (0 + 0.25) / 2
+  const clipped = sellThroughProxy([10, 20, 15]) ?? NaN; // (0 + 0.25) / 2
   ok("new supply is clipped: 10→20→15 → (0 + 25%)/2 = 0.125", near(clipped, 0.125), String(clipped));
   ok("only increases → 0 (a listing flood is not demand)", sellThroughProxy([5, 50, 500]) === 0);
   ok("static count → 0", sellThroughProxy([900, 900, 900, 900]) === 0);
@@ -24,11 +24,11 @@ const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
 
 // --- heat: listing count no longer dominates ---
 {
-  const bigChurn = sellThroughProxy([900, 890, 900, 890]); // ~0.7% per step: churn, not demand
-  const smallSelling = sellThroughProxy([12, 9, 7, 4]); // ~28% per step: draining
+  const bigChurn = sellThroughProxy([900, 890, 900, 890]) ?? NaN; // ~0.7% per step: churn, not demand
+  const smallSelling = sellThroughProxy([12, 9, 7, 4]) ?? NaN; // ~28% per step: draining
   ok("900→890→900→890 has a tiny fractional sell-through", bigChurn < 0.01, String(bigChurn));
-  const hBig = heatScore(bigChurn, 0);
-  const hSmall = heatScore(smallSelling, 0);
+  const hBig = heatScore(bigChurn, 0) ?? NaN;
+  const hSmall = heatScore(smallSelling, 0) ?? NaN;
   ok("big churning listing count scores below a small draining item", hBig < hSmall, `big ${hBig} vs small ${hSmall}`);
   ok("draining item past saturation + no momentum = 50", hSmall === 50, String(hSmall));
 }
@@ -42,6 +42,8 @@ const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
   ok("+25% momentum → 0.5", momentumNorm(25) === 0.5);
   ok("heat capped at 100", heatScore(1, 999) === 100);
   ok("no sell-through, no momentum → 0", heatScore(0, 0) === 0);
+  ok("unknown sell-through → heat unknown, not 0", heatScore(null, 30) === null);
+  ok("unknown momentum → heat unknown, not 0", heatScore(0.2, null) === null);
 }
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);

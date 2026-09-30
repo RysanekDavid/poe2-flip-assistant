@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import { getDb } from "./database";
+import { latestSnapshotRows } from "./latestSnapshotQueries";
 import { parseStoredList } from "./patchSummaryMigrations";
 import { parseSqliteTimestamp } from "../lib/sqliteTime";
 
@@ -104,24 +105,9 @@ const CATALOG_MAX_LEAGUES = 8;
 // Keyed by connection so a test's in-memory database never sees another database's rows.
 const catalogMemo = new WeakMap<Db, Map<string, { atMs: number; rows: NinjaCatalogRow[] }>>();
 
-/**
- * Loose index scan: hop from item_id to the next item_id with one index seek each, then read each
- * item's newest row by seek. A GROUP BY over the league walked every snapshot (~130 ms at 30 days).
- */
+/** Name, category and art from each item's latest row: the shared, spark-free latest-row read. */
 function readNinjaCatalog(league: string, db: Db): NinjaCatalogRow[] {
-  return db.prepare(`
-    WITH RECURSIVE ids(itemId) AS (
-      SELECT MIN(item_id) FROM price_snapshots WHERE league = @league
-      UNION ALL
-      SELECT (SELECT MIN(item_id) FROM price_snapshots WHERE league = @league AND item_id > ids.itemId)
-      FROM ids WHERE ids.itemId IS NOT NULL
-    )
-    SELECT s.item_id AS itemId, s.item_name AS itemName, s.category, s.icon
-    FROM ids JOIN price_snapshots s ON s.id = (
-      SELECT id FROM price_snapshots WHERE league = @league AND item_id = ids.itemId
-      ORDER BY fetched_at DESC, id DESC LIMIT 1
-    )
-  `).all({ league }) as NinjaCatalogRow[];
+  return latestSnapshotRows(league, db).map((r) => ({ itemId: r.itemId, itemName: r.itemName, category: r.category, icon: r.icon }));
 }
 
 /**
