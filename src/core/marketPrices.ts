@@ -49,7 +49,8 @@ function toItem(row: LatestPriceRow, cx: CxMarketView | null): MarketPriceItem {
   return {
     itemId: row.itemId,
     name: row.itemName,
-    category: railType(row.category),
+    category: row.category,
+    railCategory: railType(row.category),
     icon: row.icon,
     valueDiv: positiveOrNull(row.baseValue),
     valueAt: row.fetchedAt,
@@ -64,18 +65,18 @@ function toItem(row: LatestPriceRow, cx: CxMarketView | null): MarketPriceItem {
 
 /**
  * Every labelled category (empty ones too, so the rail never reshuffles), plus Other only while it
- * holds something; each with a count and art: the curated item's icon, else the priciest item's.
+ * holds something; each with art: the curated item's icon, else the priciest item's.
  */
 function categoriesOf(items: readonly MarketPriceItem[]): MarketPriceCategory[] {
   const listed = [...ECONOMY_CATEGORIES, OTHER_CATEGORY].map((c) => {
-    const own = items.filter((i) => i.category === c.type);
+    const own = items.filter((i) => i.railCategory === c.type);
     const curated = own.find((i) => i.itemId === c.iconItemId && i.icon !== null);
     const priciest = own
       .filter((i) => i.icon !== null)
       .reduce<MarketPriceItem | null>((best, i) => (best === null || (i.valueDiv ?? 0) > (best.valueDiv ?? 0) ? i : best), null);
-    return { type: c.type, slug: c.slug, label: c.label, icon: (curated ?? priciest)?.icon ?? null, count: own.length };
+    return { category: { type: c.type, slug: c.slug, label: c.label, icon: (curated ?? priciest)?.icon ?? null }, count: own.length };
   });
-  return listed.filter((c) => c.type !== OTHER_CATEGORY.type || c.count > 0);
+  return listed.filter(({ category, count }) => category.type !== OTHER_CATEGORY.type || count > 0).map(({ category }) => category);
 }
 
 /** SQLite UTC text sorts chronologically as a string. */

@@ -1,7 +1,7 @@
 /**
  * poe.ninja exchange `type` (what price_snapshots.category stores) → the word a player uses, the
  * URL slug and the item whose art stands for the category. Client-safe (no node imports): the
- * route builds the rail from it and the Prices tool parses `?cat=` against it.
+ * route builds the rail from it, and the Prices tool validates `?cat=` against that rail.
  *
  * Labels for types the poller no longer fetches stay here: their rows live out the 30-day retention.
  *
@@ -46,9 +46,4 @@ export const OTHER_CATEGORY: EconomyCategory = { type: "Other", slug: "other", l
 /** The label of a stored type, or null when nobody labelled it (the caller files it under Other). */
 export function economyCategory(type: string): EconomyCategory | null {
   return ECONOMY_CATEGORIES.find((c) => c.type === type) ?? null;
-}
-
-/** `?cat=` → a category, or null when the slug is unknown (the caller warns and rewrites the URL). */
-export function categoryBySlug(slug: string): EconomyCategory | null {
-  return [...ECONOMY_CATEGORIES, OTHER_CATEGORY].find((c) => c.slug === slug) ?? null;
 }

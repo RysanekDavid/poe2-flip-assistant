@@ -8,8 +8,12 @@ type Db = Database.Database;
  * fetched_at, ties broken by the higher id. Every current-price reader (positions, valuation,
  * flips, spreads, craft, the insert dedupe, the Prices overview) goes through here, so two panels
  * can never disagree about which row is "latest".
+ *
+ * Two shapes on purpose. LatestSnapshotRow never touches item_spark, so the write path (insert
+ * dedupe), the catalog and price-only readers cannot be taken down by one corrupt sparkline.
+ * LatestPriceRow adds the trend and fails loudly on a bad spark: only readers that render it pay.
  */
-export interface LatestPriceRow {
+export interface LatestSnapshotRow {
   itemId: string;
   itemName: string;
   category: string;
@@ -19,17 +23,26 @@ export interface LatestPriceRow {
   icon: string | null;
   /** SQLite UTC write time of the snapshot row. */
   fetchedAt: string;
+}
+
+export interface LatestPriceRow extends LatestSnapshotRow {
   change7d: number | null;
   spark7d: number[] | null;
   /** SQLite UTC time item_spark was last refreshed; null when no trend row exists. */
   trendAt: string | null;
 }
 
-type RawRow = Omit<LatestPriceRow, "spark7d"> & { spark7dJson: string | null };
+type RawPriceRow = LatestSnapshotRow & { change7d: number | null; spark7dJson: string | null; trendAt: string | null };
 
+/** item_spark.spark_7d JSON → numbers; every failure names the item so a bad row is findable. */
 function parseSpark(json: string | null, itemId: string): number[] | null {
   if (json === null) return null;
-  const parsed: unknown = JSON.parse(json);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch (e) {
+    throw new Error(`item_spark.spark_7d for ${itemId} is not valid JSON`, { cause: e });
+  }
   if (!Array.isArray(parsed) || !parsed.every((v): v is number => typeof v === "number")) {
     throw new Error(`item_spark.spark_7d for ${itemId} is not a number array`);
   }
@@ -50,30 +63,39 @@ const ALL_ITEM_IDS = `WITH RECURSIVE ids(itemId) AS (
 
 const GIVEN_ITEM_IDS = `WITH ids(itemId) AS (SELECT DISTINCT value FROM json_each(@itemIds))`;
 
-const LATEST_ROW_SELECT = `
-  SELECT s.item_id AS itemId, s.item_name AS itemName, s.category, s.chaos_equiv AS baseValue,
-         s.volume, s.icon, s.fetched_at AS fetchedAt,
-         sp.change_7d AS change7d, sp.spark_7d AS spark7dJson, sp.updated_at AS trendAt
-  FROM ids
+const SNAPSHOT_COLUMNS = `s.item_id AS itemId, s.item_name AS itemName, s.category, s.chaos_equiv AS baseValue,
+  s.volume, s.icon, s.fetched_at AS fetchedAt`;
+
+const NEWEST_ROW = `FROM ids
   JOIN price_snapshots s ON s.id = (
     SELECT id FROM price_snapshots WHERE league = @league AND item_id = ids.itemId
     ORDER BY fetched_at DESC, id DESC LIMIT 1
-  )
+  )`;
+
+const SNAPSHOT_SELECT = `SELECT ${SNAPSHOT_COLUMNS} ${NEWEST_ROW}`;
+const PRICE_SELECT = `SELECT ${SNAPSHOT_COLUMNS},
+    sp.change_7d AS change7d, sp.spark_7d AS spark7dJson, sp.updated_at AS trendAt
+  ${NEWEST_ROW}
   LEFT JOIN item_spark sp ON sp.league = s.league AND sp.item_id = s.item_id`;
 
-function toRows(raw: RawRow[]): LatestPriceRow[] {
+function toPriceRows(raw: RawPriceRow[]): LatestPriceRow[] {
   return raw.map(({ spark7dJson, ...r }) => ({ ...r, spark7d: parseSpark(spark7dJson, r.itemId) }));
+}
+
+/** Newest snapshot of every item in one league, WITHOUT the trend: cannot fail on item_spark. */
+export function latestSnapshotRows(league: string, db: Db = getDb()): LatestSnapshotRow[] {
+  return db.prepare(`${ALL_ITEM_IDS} ${SNAPSHOT_SELECT}`).all({ league }) as LatestSnapshotRow[];
 }
 
 /** Newest snapshot of every item in one league, with its trend, in ONE statement. */
 export function latestPriceRows(league: string, db: Db = getDb()): LatestPriceRow[] {
-  return toRows(db.prepare(`${ALL_ITEM_IDS} ${LATEST_ROW_SELECT}`).all({ league }) as RawRow[]);
+  return toPriceRows(db.prepare(`${ALL_ITEM_IDS} ${PRICE_SELECT}`).all({ league }) as RawPriceRow[]);
 }
 
-/** Same rows for a known id set (craft materials): a seek per id, no scan of the league's ids.
- *  Ids with no snapshot in the league are absent from the result. */
+/** Same rows for a known id set (craft materials, one chart): a seek per id, no scan of the
+ *  league's ids. Ids with no snapshot in the league are absent from the result. */
 export function latestPriceRowsFor(league: string, itemIds: readonly string[], db: Db = getDb()): LatestPriceRow[] {
   if (itemIds.length === 0) return [];
-  const stmt = db.prepare(`${GIVEN_ITEM_IDS} ${LATEST_ROW_SELECT}`);
-  return toRows(stmt.all({ league, itemIds: JSON.stringify(itemIds) }) as RawRow[]);
+  const stmt = db.prepare(`${GIVEN_ITEM_IDS} ${PRICE_SELECT}`);
+  return toPriceRows(stmt.all({ league, itemIds: JSON.stringify(itemIds) }) as RawPriceRow[]);
 }

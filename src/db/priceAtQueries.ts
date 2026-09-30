@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 import { getDb } from "./database";
-import { latestPriceRows } from "./latestSnapshotQueries";
+import { latestSnapshotRows } from "./latestSnapshotQueries";
 import { parseStoredList } from "./patchSummaryMigrations";
 import { parseSqliteTimestamp } from "../lib/sqliteTime";
 
@@ -105,9 +105,9 @@ const CATALOG_MAX_LEAGUES = 8;
 // Keyed by connection so a test's in-memory database never sees another database's rows.
 const catalogMemo = new WeakMap<Db, Map<string, { atMs: number; rows: NinjaCatalogRow[] }>>();
 
-/** Name, category and art from each item's latest row: the shared latest-row read. */
+/** Name, category and art from each item's latest row: the shared, spark-free latest-row read. */
 function readNinjaCatalog(league: string, db: Db): NinjaCatalogRow[] {
-  return latestPriceRows(league, db).map((r) => ({ itemId: r.itemId, itemName: r.itemName, category: r.category, icon: r.icon }));
+  return latestSnapshotRows(league, db).map((r) => ({ itemId: r.itemId, itemName: r.itemName, category: r.category, icon: r.icon }));
 }
 
 /**

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { TriangleAlert } from "lucide-react";
-import { categoryBySlug, DEFAULT_CATEGORY_SLUG } from "../../../lib/economyCategories";
+import { DEFAULT_CATEGORY_SLUG } from "../../../lib/economyCategories";
 import type { MarketPriceCategory, MarketPriceItem, MarketPricesResponse } from "../../../lib/marketPricesContract";
 import { timestampAgeMs } from "../../../lib/sqliteTime";
 import { DataTable } from "../../ui/DataTable";
@@ -22,11 +22,18 @@ const LEGEND =
   "Exchange (GGG's hourly digest, 6h mean); ~ marks an estimate from poe.ninja volume where the exchange has no data. Uniques " +
   "and other trade-site items are not listed yet.";
 
-/** ?cat= and ?q= mirror the view so it deep-links; an unknown category warns and is rewritten. */
-function usePricesParams() {
+const listed = (categories: readonly MarketPriceCategory[], slug: string): boolean => categories.some((c) => c.slug === slug);
+
+/**
+ * ?cat= and ?q= mirror the view so it deep-links. A category this response does not list warns and
+ * is rewritten: unknown, or known but absent right now (Other exists only while it holds items), so
+ * the table never claims "no priced items yet" for a bucket that simply isn't there.
+ */
+function usePricesParams(categories: readonly MarketPriceCategory[]) {
   const params = useSearchParams();
   const rawCat = params.get("cat");
-  const [slug, setSlug] = useState(() => (rawCat !== null && categoryBySlug(rawCat) ? rawCat : DEFAULT_CATEGORY_SLUG));
+  const [picked, setSlug] = useState(() => (rawCat !== null && listed(categories, rawCat) ? rawCat : DEFAULT_CATEGORY_SLUG));
+  const slug = listed(categories, picked) ? picked : DEFAULT_CATEGORY_SLUG;
   const [query, setQuery] = useState(() => params.get("q") ?? "");
   const write = useCallback((cat: string, q: string) => {
     const url = new URL(window.location.href);
@@ -36,10 +43,10 @@ function usePricesParams() {
     window.history.replaceState(window.history.state, "", url);
   }, []);
   useEffect(() => {
-    if (rawCat === null || categoryBySlug(rawCat)) return;
-    console.warn(`[market] unknown price category cat=${rawCat} — showing ${DEFAULT_CATEGORY_SLUG}`);
+    if (rawCat === null || listed(categories, rawCat)) return;
+    console.warn(`[market] price category cat=${rawCat} is not listed — showing ${DEFAULT_CATEGORY_SLUG}`);
     write(DEFAULT_CATEGORY_SLUG, params.get("q") ?? "");
-  }, [rawCat, params, write]);
+  }, [rawCat, params, write, categories]);
   const selectCategory = (next: string): void => {
     setSlug(next);
     setQuery("");
@@ -125,7 +132,7 @@ function isSortKey(key: string): key is PriceSortKey {
 }
 
 function Body({ data }: { data: MarketPricesResponse }) {
-  const { slug, query, selectCategory, search } = usePricesParams();
+  const { slug, query, selectCategory, search } = usePricesParams(data.categories);
   const [sort, setSort] = useState<PriceSort>(DEFAULT_PRICE_SORT);
   const [movers, setMovers] = useState(false);
   const [liquid, setLiquid] = useState(false);

@@ -2,7 +2,7 @@ import { getDb } from "./database";
 import { config } from "../config/env";
 import type { PricedItem } from "../api/types";
 import { timestampAgeMs } from "../lib/sqliteTime";
-import { latestPriceRows, latestPriceRowsFor } from "./latestSnapshotQueries";
+import { latestPriceRows, latestPriceRowsFor, latestSnapshotRows } from "./latestSnapshotQueries";
 
 /**
  * Market-table persistence — extracted from queries.ts (already over the file-size cap) when
@@ -21,7 +21,7 @@ import { latestPriceRows, latestPriceRowsFor } from "./latestSnapshotQueries";
 function lastSnapshotPerItem(league: string): Map<string, { baseValue: number; ageMin: number }> {
   const nowMs = Date.now();
   return new Map(
-    latestPriceRows(league).map((r) => [r.itemId, { baseValue: r.baseValue, ageMin: timestampAgeMs(r.fetchedAt, nowMs) / 60_000 }]),
+    latestSnapshotRows(league).map((r) => [r.itemId, { baseValue: r.baseValue, ageMin: timestampAgeMs(r.fetchedAt, nowMs) / 60_000 }]),
   );
 }
 
@@ -126,7 +126,7 @@ export function latestSnapshots(league: string): PricedItem[] {
  *  last WRITE, and the insert dedupe skips flat repeats, so a quiet item can read up to ~55 min
  *  older than the last poll — callers show it as an age, never as "live". */
 export function latestSnapshotPrices(league: string): Array<{ itemId: string; baseValue: number; fetchedAt: string }> {
-  return latestPriceRows(league).map((r) => ({ itemId: r.itemId, baseValue: r.baseValue, fetchedAt: r.fetchedAt }));
+  return latestSnapshotRows(league).map((r) => ({ itemId: r.itemId, baseValue: r.baseValue, fetchedAt: r.fetchedAt }));
 }
 
 /** Price history for one item in one league, oldest→newest, limited. */
@@ -146,24 +146,18 @@ export function priceHistory(
 }
 
 /** Latest ninja 7d sparkline + change + current price for one item in one league.
- *  Lets the chart show a retroactive 7-day curve before our own DB has spanned that long. */
+ *  Lets the chart show a retroactive 7-day curve before our own DB has spanned that long.
+ *
+ *  Read through the latest row, so the spark only comes WITH a current price. item_spark is never
+ *  pruned, so an item whose snapshots aged out of retention (ninja dropped it 30+ days ago) keeps
+ *  an orphan spark row; that "7-day" curve describes a window over a month old and is not shown. */
 export function itemSpark(
   league: string,
   itemId: string,
 ): { spark7d: number[] | null; change7d: number | null; baseValue: number | null } {
-  const db = getDb();
-  const sp = db
-    .prepare(
-      `SELECT spark_7d AS spark7dJson, change_7d AS change7d FROM item_spark
-       WHERE league = ? AND item_id = ?`,
-    )
-    .get(league, itemId) as { spark7dJson: string | null; change7d: number | null } | undefined;
-  const base = latestPriceRowsFor(league, [itemId], db)[0];
-  return {
-    spark7d: sp?.spark7dJson ? (JSON.parse(sp.spark7dJson) as number[]) : null,
-    change7d: sp?.change7d ?? null,
-    baseValue: base?.baseValue ?? null,
-  };
+  const row = latestPriceRowsFor(league, [itemId])[0];
+  if (row === undefined) return { spark7d: null, change7d: null, baseValue: null };
+  return { spark7d: row.spark7d, change7d: row.change7d, baseValue: row.baseValue };
 }
 
 /** Newest snapshot time across one league's items — for the "data age" indicator. */

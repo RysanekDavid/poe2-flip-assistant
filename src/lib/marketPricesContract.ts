@@ -18,8 +18,10 @@ export type PriceVolumeSource = (typeof PRICE_VOLUME_SOURCES)[number];
 export const marketPriceItemSchema = z.object({
   itemId: z.string().min(1),
   name: z.string().min(1),
-  /** poe.ninja exchange type (price_snapshots.category). */
+  /** poe.ninja exchange type (price_snapshots.category), as stored: what the watchlist persists. */
   category: z.string().min(1),
+  /** The rail category the item is filed under: `category`, or "Other" when nobody labelled it. */
+  railCategory: z.string().min(1),
   icon: z.string().nullable(),
   /** poe.ninja value; null when ninja lists the item without a price. */
   valueDiv: finite.positive().nullable(),
@@ -40,12 +42,11 @@ export const marketPriceItemSchema = z.object({
 export type MarketPriceItem = z.infer<typeof marketPriceItemSchema>;
 
 export const marketPriceCategorySchema = z.object({
-  /** poe.ninja exchange type. */
+  /** poe.ninja exchange type, or "Other" for the bucket of unlabelled types. */
   type: z.string().min(1),
   slug: z.string().min(1),
   label: z.string().min(1),
   icon: z.string().nullable(),
-  count: z.number().int().nonnegative(),
 });
 export type MarketPriceCategory = z.infer<typeof marketPriceCategorySchema>;
 

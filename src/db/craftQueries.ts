@@ -1,6 +1,6 @@
 import { timestampAgeMs } from "../lib/sqliteTime";
 import { getDb } from "./database";
-import { latestPriceRows, latestPriceRowsFor } from "./latestSnapshotQueries";
+import { latestPriceRowsFor, latestSnapshotRows } from "./latestSnapshotQueries";
 
 /**
  * Craft-margin persistence — kept out of queries.ts, which is already over the file-size cap.
@@ -133,7 +133,7 @@ export interface MaterialPrice {
   icon: string | null; // poecdn item art
   change7d: number | null;
   spark7d: number[] | null;
-  ageMin: number | null; // minutes since the snapshot was fetched
+  ageMin: number; // minutes since the snapshot was fetched
 }
 
 /**
@@ -143,7 +143,7 @@ export interface MaterialPrice {
  */
 export function getCurrencyDivMap(league: string): Map<string, number> {
   return new Map(
-    latestPriceRows(league)
+    latestSnapshotRows(league)
       .filter((r) => r.category === "Currency")
       .map((r) => [r.itemId, r.baseValue]),
   );

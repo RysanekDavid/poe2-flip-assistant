@@ -20,7 +20,7 @@ export const LIQUID_PER_HOUR = 10;
 export const THIN_PER_HOUR = 1;
 
 export interface PriceFilter {
-  /** Category type to show; ignored while `query` is set (search spans every category). */
+  /** Rail category type to show; ignored while `query` is set (search spans every category). */
   category: string;
   query: string;
   movers: boolean;
@@ -58,7 +58,7 @@ function passesChips(i: MarketPriceItem, chips: ChipFilter): boolean {
 export function visibleItems(items: readonly MarketPriceItem[], filter: PriceFilter, sort: PriceSort): MarketPriceItem[] {
   const searching = filter.query.trim() !== "";
   return items
-    .filter((i) => (searching ? matchesQuery(i, filter.query) : i.category === filter.category))
+    .filter((i) => (searching ? matchesQuery(i, filter.query) : i.railCategory === filter.category))
     .filter((i) => passesChips(i, filter))
     .sort((a, b) => comparePrices(a, b, sort));
 }
@@ -72,10 +72,15 @@ export function railCounts(items: readonly MarketPriceItem[], filter: Omit<Price
   let matches = 0;
   for (const i of items) {
     if (!passesChips(i, filter)) continue;
-    byCategory.set(i.category, (byCategory.get(i.category) ?? 0) + 1);
+    byCategory.set(i.railCategory, (byCategory.get(i.railCategory) ?? 0) + 1);
     if (filter.query.trim() !== "" && matchesQuery(i, filter.query)) matches += 1;
   }
   return { byCategory, matches };
+}
+
+/** POST /api/watchlist body: the stored ninja type, never the rail's "Other" bucket. */
+export function watchPayload(item: MarketPriceItem): { itemId: string; itemName: string; category: string } {
+  return { itemId: item.itemId, itemName: item.name, category: item.category };
 }
 
 /** Clicking the active column flips it; a new column starts where its data is most useful. */

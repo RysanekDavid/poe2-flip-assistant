@@ -9,12 +9,13 @@ import type { CxItemStats } from "../core/cx/cxPersistence";
 import { buildMarketPrices } from "../core/marketPrices";
 import { getDb } from "../db/database";
 import { getCurrencyDivMap, getMaterialPrices } from "../db/craftQueries";
-import { latestPriceRows, latestPriceRowsFor } from "../db/latestSnapshotQueries";
-import { insertSnapshots, latestSnapshotPrices, latestSnapshots } from "../db/marketQueries";
-import { categoryBySlug, ECONOMY_CATEGORIES, economyCategory, OTHER_CATEGORY } from "../lib/economyCategories";
+import { latestPriceRows, latestPriceRowsFor, latestSnapshotRows } from "../db/latestSnapshotQueries";
+import { insertSnapshots, itemSpark, latestSnapshotPrices, latestSnapshots } from "../db/marketQueries";
+import { toSqliteTime } from "../db/priceAtQueries";
+import { ECONOMY_CATEGORIES, economyCategory, OTHER_CATEGORY } from "../lib/economyCategories";
 import { fmtDivOrExRange } from "../lib/format";
 import { marketPricesResponseSchema, type MarketPriceItem } from "../lib/marketPricesContract";
-import { comparePrices, DEFAULT_PRICE_SORT, fmtChange, nextSort, railCounts, visibleItems } from "../components/market/prices/pricesView";
+import { comparePrices, DEFAULT_PRICE_SORT, fmtChange, nextSort, railCounts, visibleItems, watchPayload } from "../components/market/prices/pricesView";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -47,9 +48,6 @@ function testCategories(): void {
   assert.equal(economyCategory("Breach")?.label, "Catalysts");
   assert.equal(economyCategory("Ritual")?.label, "Omens");
   assert.equal(economyCategory("Tattoos"), null);
-  assert.equal(categoryBySlug("omens")?.type, "Ritual");
-  assert.equal(categoryBySlug("other")?.type, OTHER_CATEGORY.type);
-  assert.equal(categoryBySlug("bogus"), null);
   pass("categories: every polled type labelled (retired labels allowed), unique slugs, unlabelled → null");
 }
 
@@ -82,16 +80,22 @@ function testLatestRows(): void {
  * The seeded rows make the old MAX(id) rule disagree (a backfilled row with an older stamp has the
  * higher id), so a reader still on MAX(id) fails here.
  */
+const minutesAgo = (min: number): string => toSqliteTime(Date.now() - min * 60_000);
+
+function putSnapshot(itemId: string, category: string, baseValue: number, fetchedAt: string): void {
+  getDb()
+    .prepare("INSERT INTO price_snapshots (league, item_id, item_name, category, chaos_equiv, volume, icon, fetched_at) VALUES (?, ?, ?, ?, ?, 1, NULL, ?)")
+    .run(A, itemId, itemId.replace(/-/g, " "), category, baseValue, fetchedAt);
+}
+
 function testReadersAgree(): void {
-  const db = getDb();
-  db.exec("DELETE FROM price_snapshots; DELETE FROM item_spark;");
-  const put = db.prepare(
-    "INSERT INTO price_snapshots (league, item_id, item_name, category, chaos_equiv, volume, icon, fetched_at) VALUES (?, ?, ?, 'Currency', ?, 1, NULL, ?)",
-  );
-  put.run(A, "regal", "Regal Orb", 0.02, "2026-09-29 12:00:00");
-  put.run(A, "regal", "Regal Orb", 0.01, "2026-09-29 09:00:00"); // backfill: higher id, older stamp
-  put.run(A, "alch", "Orb of Alchemy", 0.03, "2026-09-29 12:00:00");
-  put.run(A, "alch", "Orb of Alchemy", 0.04, "2026-09-29 12:00:00"); // same stamp: higher id wins
+  getDb().exec("DELETE FROM price_snapshots; DELETE FROM item_spark;");
+  // Inside the 55-min heartbeat, so the dedupe below compares prices rather than re-writing on age.
+  const recent = minutesAgo(10);
+  putSnapshot("regal", "Currency", 0.02, recent);
+  putSnapshot("regal", "Currency", 0.01, minutesAgo(180)); // backfill: higher id, older stamp
+  putSnapshot("alch", "Currency", 0.03, recent);
+  putSnapshot("alch", "Currency", 0.04, recent); // same stamp: higher id wins
   const want = new Map([["regal", 0.02], ["alch", 0.04]]);
   const readers: Array<[string, Map<string, number>]> = [
     ["latestPriceRows", new Map(latestPriceRows(A).map((r) => [r.itemId, r.baseValue]))],
@@ -100,10 +104,43 @@ function testReadersAgree(): void {
     ["latestSnapshotPrices", new Map(latestSnapshotPrices(A).map((r) => [r.itemId, r.baseValue]))],
     ["getCurrencyDivMap", getCurrencyDivMap(A)],
     ["getMaterialPrices", new Map([...getMaterialPrices(A, ["regal", "alch"])].map(([id, m]) => [id, m.priceDiv]))],
+    ["latestSnapshotRows", new Map(latestSnapshotRows(A).map((r) => [r.itemId, r.baseValue]))],
+    ["itemSpark", new Map(["regal", "alch"].map((id) => [id, itemSpark(A, id).baseValue ?? -1]))],
   ];
   for (const [name, got] of readers) assert.deepEqual(got, want, `${name} picks max(fetched_at), tie → id DESC`);
   assert.deepEqual(latestPriceRowsFor(A, []), []);
   pass("latest-row readers agree: max(fetched_at) wins over MAX(id), equal stamps → higher id");
+  testWritePathAgrees();
+}
+
+/** The insert dedupe reads the same latest row, and getCurrencyDivMap filters on THAT row's category. */
+function testWritePathAgrees(): void {
+  assert.equal(insertSnapshots(A, [priced("regal", "Currency", 0.02)]), 0, "the max(fetched_at) price is no change → 0 rows");
+  assert.equal(insertSnapshots(A, [priced("regal", "Currency", 0.01)]), 1, "the MAX(id) backfill price is a real change → 1 row");
+  putSnapshot("shifter", "Currency", 0.5, minutesAgo(120));
+  putSnapshot("shifter", "Fragments", 0.6, minutesAgo(5));
+  assert.equal(latestSnapshotRows(A).find((r) => r.itemId === "shifter")?.category, "Fragments");
+  assert.ok(!getCurrencyDivMap(A).has("shifter"), "dropped when the newest row is not Currency");
+  pass("write path agrees: dedupe reads max(fetched_at); getCurrencyDivMap drops an item whose newest row left Currency");
+}
+
+/**
+ * One corrupt item_spark row must not stop the poller or blank the price-only readers; readers
+ * that render the spark still fail loudly and name the item. An orphan spark (no snapshot left in
+ * retention) is not served as a current trend.
+ */
+function testSparkBlastRadius(): void {
+  const db = getDb();
+  db.prepare("UPDATE item_spark SET spark_7d = '{broken' WHERE league = ? AND item_id = 'regal'").run(A);
+  assert.equal(insertSnapshots(A, [priced("alch", "Currency", 0.05)]), 1, "the write path ignores item_spark");
+  assert.ok(latestSnapshotPrices(A).some((r) => r.itemId === "regal"), "price-only readers still answer");
+  assert.ok(getCurrencyDivMap(A).has("regal"));
+  assert.throws(() => latestPriceRows(A), /spark_7d for regal is not valid JSON/);
+  assert.throws(() => itemSpark(A, "regal"), /spark_7d for regal/);
+  db.prepare("INSERT INTO item_spark (league, item_id, spark_7d, change_7d, updated_at) VALUES (?, 'ghost', '[1,2]', 9, CURRENT_TIMESTAMP)").run(A);
+  assert.deepEqual(itemSpark(A, "ghost"), { spark7d: null, change7d: null, baseValue: null }, "orphan spark: no current row, no trend");
+  db.exec("DELETE FROM item_spark;");
+  pass("corrupt spark: write path + price-only readers unaffected, spark readers throw with the item id; orphan spark hidden");
 }
 
 function cxView(): CxMarketView {
@@ -131,9 +168,10 @@ function testBuilder(): void {
   assert.equal(body.cxHour, 1_790_000_000);
   assert.deepEqual(body.rates, { exPerDiv: 200, chaosPerDiv: 40, source: "cx", fetchedAt: "2026-09-29 10:00:00" });
   const currency = body.categories.find((c) => c.type === "Currency");
-  assert.deepEqual([currency?.count, currency?.icon, currency?.label], [3, "https://x/divine.png", "Currency"], "curated icon");
+  assert.deepEqual([currency?.icon, currency?.label], ["https://x/divine.png", "Currency"], "curated icon");
+  assert.equal(body.items.filter((i) => i.railCategory === "Currency").length, 3);
   assert.equal(body.categories.find((c) => c.type === "Ritual")?.icon, "https://x/omen-of-chance.png", "fallback: priciest item's icon");
-  assert.equal(body.categories.length, ECONOMY_CATEGORIES.length, "empty categories stay listed (count 0)");
+  assert.equal(body.categories.length, ECONOMY_CATEGORIES.length, "empty categories stay listed");
   assert.ok(body.fetchedAt !== null && body.fetchedAt >= item("divine").valueAt, "fetchedAt = newest value row");
   const none = marketPricesResponseSchema.parse(buildMarketPrices({ league: "Empty", rows: [], cx: null, rates: null }));
   assert.deepEqual([none.fetchedAt, none.rates, none.cxHour, none.items.length], [null, null, null, 0]);
@@ -154,8 +192,10 @@ function testUnlabelledType(): void {
   try {
     const twice = [0, 1].map(() => marketPricesResponseSchema.parse(buildMarketPrices({ league: A, rows: strays, cx: null, rates: null })));
     const body = twice[1]!;
-    assert.deepEqual(body.items.map((i) => i.category), [OTHER_CATEGORY.type, OTHER_CATEGORY.type]);
-    assert.deepEqual(body.categories.filter((c) => c.type === OTHER_CATEGORY.type).map((c) => [c.label, c.count]), [["Other", 2]]);
+    assert.deepEqual(body.items.map((i) => [i.category, i.railCategory]), [["Tattoos", "Other"], ["Tattoos", "Other"]], "real type kept");
+    assert.deepEqual(body.categories.filter((c) => c.type === OTHER_CATEGORY.type).map((c) => c.label), ["Other"]);
+    assert.equal(railCounts(body.items, { query: "", movers: false, liquid: false }).byCategory.get(OTHER_CATEGORY.type), 2);
+    assert.equal(watchPayload(body.items[0]!).category, "Tattoos", "the watchlist gets the ninja type, never the Other bucket");
   } finally {
     console.warn = realWarn;
   }
@@ -166,7 +206,7 @@ function testUnlabelledType(): void {
 }
 
 function row(itemId: string, category: string, valueDiv: number | null, change7d: number | null, volumePerHour: number | null): MarketPriceItem {
-  return { itemId, name: itemId, category, icon: null, valueDiv, valueAt: "2026-09-29 10:00:00", change7d, spark7d: null, trendAt: null, volumePerHour, volumeSource: volumePerHour === null ? null : "cx", cxMidDiv: null, cxBand: null };
+  return { itemId, name: itemId, category, railCategory: category, icon: null, valueDiv, valueAt: "2026-09-29 10:00:00", change7d, spark7d: null, trendAt: null, volumePerHour, volumeSource: volumePerHour === null ? null : "cx", cxMidDiv: null, cxBand: null };
 }
 
 function testView(): void {
@@ -196,4 +236,5 @@ testCategories();
 testLatestRows();
 testBuilder();
 testReadersAgree();
+testSparkBlastRadius();
 testView();

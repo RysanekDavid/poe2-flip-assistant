@@ -5,6 +5,7 @@ import { assertOk, describeError, warnOnFailure } from "../../../lib/clientWarn"
 import { marketPricesResponseSchema, type MarketPriceItem, type MarketPricesResponse } from "../../../lib/marketPricesContract";
 import { useVisiblePoll } from "../../../lib/useVisiblePoll";
 import { WatchlistResponseSchema, inLeague } from "../../../lib/watchlistContract";
+import { watchPayload } from "./pricesView";
 
 // poe.ninja refreshes hourly and the exchange digest hourly; five minutes catches either promptly.
 const POLL_MS = 5 * 60_000;
@@ -58,7 +59,7 @@ export function useWatched() {
     (item: MarketPriceItem) => {
       const request = watched.has(item.itemId)
         ? sendWatch("DELETE", { itemId: item.itemId })
-        : sendWatch("POST", { itemId: item.itemId, itemName: item.name, category: item.category });
+        : sendWatch("POST", watchPayload(item));
       request
         .then(() => {
           setError(null);
