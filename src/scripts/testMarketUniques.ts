@@ -12,6 +12,7 @@ import {
   changeGapReason,
   compareUniques,
   DEFAULT_UNIQUE_SORT,
+  emptyUniquesSentence,
   uniqueRailCounts,
   valueSourceLabel,
   visibleUniques,
@@ -125,6 +126,11 @@ function testFilters(): void {
   assert.equal(ids(visibleUniques(items, { category: "armour", query: "silk", valuableOnly: true }, DEFAULT_UNIQUE_SORT)), "4", "search spans every category and matches the base");
   const counts = uniqueRailCounts(items, { query: "u", valuableOnly: true });
   assert.deepEqual([counts.byCategory.get("armour"), counts.byCategory.get("weapon"), counts.matches], [2, 1, 3], "rail counts follow the value filter");
+  const empty = (category: string, query: string, valuableOnly: boolean): string => emptyUniquesSentence(items, { category, query, valuableOnly });
+  assert.match(empty("armour", "zzz-no-match", true), /^No unique matches your search/, "a search that matches nothing does not blame ≥ 1 Div");
+  assert.match(empty("armour", "U1", true), /turn off "≥ 1 Div"/, "a match hidden by the filter blames the filter");
+  assert.match(empty("jewel", "", true), /lists no uniques in this category/, "an empty category says so, filter or not");
+  assert.match(empty("armour", "", true), /turn off "≥ 1 Div"/, "a category the filter emptied blames the filter");
   assert.match(changeGapReason(row("6", "armour", 5, { spark7d: [4] })), /only 1 poe2scout price point/);
   assert.match(changeGapReason(row("7", "armour", 5)), /no poe2scout price point in the last 7 days/);
   assert.match(changeGapReason(row("8", "armour", null)), /no price for it, so no trend/);

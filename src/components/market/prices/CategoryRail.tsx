@@ -9,19 +9,23 @@ export interface RailEntry {
   slug: string;
   label: string;
   icon: string | null;
-  /** Rows a click reveals under the active filters; null while that group is still loading. */
+  /** Rows a click reveals under the active filters; null until the group's data is ready. */
   count: number | null;
 }
 
 export type RailSection = "exchange" | "uniques";
 
+/** idle = not requested yet (no count), loading = "…", error = "—" plus a warning icon. */
+export type RailStatus = "ready" | "loading" | "idle" | "error";
+
 export interface RailGroup {
   section: RailSection;
   title: string;
   entries: readonly RailEntry[];
-  /** Search matches in this group under its filters; null while loading. */
+  /** Search matches in this group under its filters; null until the group's data is ready. */
   matches: number | null;
-  /** Why the group has no data (shown on its header, loudly). */
+  status: RailStatus;
+  /** Why the group has no data (shown on its header, loudly); set when status is "error". */
   error: string | null;
 }
 
@@ -93,11 +97,18 @@ function useStripFollowsActive(strip: RefObject<HTMLUListElement | null>, key: s
   }, [strip, key]);
 }
 
-const countText =(n: number | null): string => (n === null ? "…" : String(n));
+/** A count the group can vouch for: none before it was asked for, … while loading, — when it failed. */
+function countText(n: number | null, status: RailStatus): string {
+  if (status === "idle") return "";
+  if (status === "error") return "—";
+  return n === null ? "…" : String(n);
+}
 
+/** On lg the group title; below lg it shows only when the group failed, so the strip carries the warning too. */
 function GroupHeader({ group }: { group: RailGroup }) {
+  const visibility = group.error ? "flex shrink-0 self-center" : "hidden lg:flex";
   return (
-    <li className="hidden items-center gap-1.5 px-2 pt-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:flex">
+    <li className={`${visibility} items-center gap-1.5 px-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:pt-2`}>
       {group.title}
       {group.error && (
         <span title={group.error} className="inline-flex">
@@ -112,24 +123,26 @@ function GroupHeader({ group }: { group: RailGroup }) {
 }
 
 function SearchRow({ group, current, onClick }: { group: RailGroup; current: boolean; onClick: () => void }) {
+  const count = countText(group.matches, group.status);
   return (
     <li className="shrink-0">
       <button type="button" onClick={onClick} aria-current={current ? "true" : undefined} className={`${ROW} ${current ? ROW_ACTIVE : ROW_IDLE}`}>
         <Search aria-hidden className="h-5 w-5 text-neutral-400" />
         <span className="flex-1 whitespace-nowrap">All {group.section === "uniques" ? "uniques" : "exchange"}</span>
-        <span className="text-xs tabular-nums text-neutral-400">{countText(group.matches)} matches</span>
+        {count !== "" && <span className="text-xs tabular-nums text-neutral-400">{count} matches</span>}
       </button>
     </li>
   );
 }
 
-function EntryRow({ entry, current, onClick }: { entry: RailEntry; current: boolean; onClick: () => void }) {
+function EntryRow({ entry, status, current, onClick }: { entry: RailEntry; status: RailStatus; current: boolean; onClick: () => void }) {
+  const count = countText(entry.count, status);
   return (
     <li className="shrink-0">
       <button type="button" onClick={onClick} aria-current={current ? "true" : undefined} className={`${ROW} ${current ? ROW_ACTIVE : ROW_IDLE}`}>
         <ItemArt src={entry.icon} size={6} />
         <span className="flex-1 whitespace-nowrap">{entry.label}</span>
-        <span className="text-xs tabular-nums text-neutral-500">{countText(entry.count)}</span>
+        {count !== "" && <span className="text-xs tabular-nums text-neutral-500">{count}</span>}
       </button>
     </li>
   );
@@ -161,7 +174,7 @@ function RailGroupRows({ group, searching, activeSlug, activeSection, onSelect, 
       <GroupHeader group={group} />
       {searching && <SearchRow group={group} current={group.section === activeSection} onClick={() => onSearchSection(group.section)} />}
       {group.entries.map((e) => (
-        <EntryRow key={e.slug} entry={e} current={!searching && e.slug === activeSlug} onClick={() => onSelect(e.slug)} />
+        <EntryRow key={e.slug} entry={e} status={group.status} current={!searching && e.slug === activeSlug} onClick={() => onSelect(e.slug)} />
       ))}
     </>
   );

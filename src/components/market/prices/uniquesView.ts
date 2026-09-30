@@ -58,6 +58,18 @@ export function visibleUniques(items: readonly MarketUniqueItem[], filter: Uniqu
     .sort((a, b) => compareUniques(a, b, sort));
 }
 
+/**
+ * Why the table is empty. Blames "≥ 1 Div" only when rows in scope (the category, or the search
+ * matches) exist and the filter hid them all; a search that matches nothing says exactly that.
+ */
+export function emptyUniquesSentence(items: readonly MarketUniqueItem[], filter: UniqueFilter): string {
+  const searching = filter.query.trim() !== "";
+  const inScope = items.some((i) => (searching ? matchesUnique(i, filter.query) : i.category === filter.category));
+  if (inScope && filter.valuableOnly) return `Nothing here is worth ${MIN_VALUE_DIV} Div or more — turn off "≥ ${MIN_VALUE_DIV} Div" to see the rest.`;
+  if (searching) return "No unique matches your search.";
+  return "poe2scout lists no uniques in this category yet.";
+}
+
 /** Rail counts under the value filter, so a count always equals the rows a click reveals. */
 export function uniqueRailCounts(items: readonly MarketUniqueItem[], filter: Omit<UniqueFilter, "category">): { byCategory: Map<string, number>; matches: number } {
   const byCategory = new Map<string, number>();

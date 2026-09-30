@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import { assertOk, describeError, warnOnFailure } from "../../../lib/clientWarn";
 import { marketPricesResponseSchema, type MarketPriceItem, type MarketPricesResponse } from "../../../lib/marketPricesContract";
 import { marketUniquesResponseSchema, type MarketUniquesResponse } from "../../../lib/marketUniquesContract";
@@ -34,23 +35,50 @@ export function useMarketPrices() {
   return { data, error };
 }
 
-/** The UNIQUES group, polled apart so a poe2scout outage never takes the exchange table down. */
-export function useMarketUniques() {
+const routeError = z.object({ error: z.string() });
+
+/** The route answers a failure with `{ error }`; carry that text to the pane instead of a bare status. */
+async function readUniques(r: Response): Promise<MarketUniquesResponse> {
+  const body: unknown = await r.json();
+  if (!r.ok) {
+    const e = routeError.safeParse(body);
+    throw new Error(`${UNIQUES_ROUTE} → HTTP ${r.status}${e.success ? `: ${e.data.error}` : ""}`);
+  }
+  return marketUniquesResponseSchema.parse(body);
+}
+
+/**
+ * The UNIQUES group, polled apart so a poe2scout outage never takes the exchange table down.
+ * Nothing is fetched until `wanted` first turns true (a unique category or a search is on screen):
+ * a cold demand cache costs a full scout fill, which an exchange-only visit should not trigger.
+ * Once requested it keeps polling, so going back and forth does not reload from scratch.
+ */
+export function useMarketUniques(wanted: boolean) {
   const [data, setData] = useState<MarketUniquesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [requested, setRequested] = useState(wanted);
+  useEffect(() => {
+    if (wanted) setRequested(true);
+  }, [wanted]);
   const load = useCallback(() => {
+    if (!requested) return;
     fetch(UNIQUES_ROUTE, { cache: "no-store" })
       .then(async (r) => {
-        setData(marketUniquesResponseSchema.parse(await assertOk(r, UNIQUES_ROUTE).json()));
+        setData(await readUniques(r));
         setError(null);
       })
       .catch((e: unknown) => {
         warnOnFailure("[market] uniques")(e);
         setError(describeError(e));
       });
-  }, []);
+  }, [requested]);
+  // Wanted at mount: useVisiblePoll's first run loads. Wanted later: that run was a no-op, so load here.
+  const wantedAtMount = useRef(wanted);
+  useEffect(() => {
+    if (requested && !wantedAtMount.current) load();
+  }, [requested, load]);
   useVisiblePoll(load, POLL_MS);
-  return { data, error };
+  return { data, error, requested };
 }
 
 async function sendWatch(method: "POST" | "DELETE", body: unknown): Promise<void> {
