@@ -4,6 +4,8 @@
  *                    in no line outside the allowed set;
  *   thresholdToken — a number range glued to literal text on both sides of the number, so it can
  *                    only read that one line's number (numberRange.ts needs those boundaries);
+ *   propertyToken  — header "Label: +#%" lines: `label:.*range%`, proven value by value, else the
+ *                    thresholdToken form;
  *   literalTokens  — greedy fragment cover for header/base lines (rarity, corrupted, tablet type).
  * "Safe" is checked, not assumed: literal candidates through the trigram index, anchored and
  * numeric ones by testing the compiled pattern against every namespace line.
@@ -11,11 +13,12 @@
 import type { TokenKind } from "../../../lib/tools/regexPoolContract";
 import { coverWithFragments } from "./compose";
 import { escapeSearchText, unsafeMatches } from "./fragment";
-import { numberRangeRegex } from "./numberRange";
+import { normalizeText } from "./namespace";
+import { numberRangeRegex, numberRangeSpan } from "./numberRange";
 import { baseKey, headerKey, modKey, normalizedSegments, type NsLine, type PoolNamespace } from "./poolNamespace";
 import { rarityHeaderId, type PoolHeader, type Rarity } from "./pools/headers";
 import type { PoolMod, RegexPool } from "./pools/schema";
-import { segmentsOf } from "./pools/template";
+import { NUMBER_SLOT, segmentsOf } from "./pools/template";
 import { fillSample } from "./poolSamples";
 import { spanToken } from "./poolSpanTokens";
 import { compileSafeRegex } from "./safeRegex";
@@ -296,9 +299,75 @@ export const corruptedToken = (ns: PoolNamespace): PoolToken[] => literalTokens(
 export const baseTypeTokens = (ns: PoolNamespace, baseNames: readonly string[]): PoolToken[] =>
   literalTokens(ns, baseNames.map(baseKey), "type");
 
-/** Header property range, e.g. Item Rarity ≥ 40 → `m rarity: \+([4-9].|…)%`-style token. */
+// A "Label: +#%" header: only spacing and an optional "+" between the colon and the number.
+const LABEL_BEFORE_NUMBER = /^(.*:)\s*\+?$/;
+
+/** Shortest suffix of the label (ending in its colon) that no other namespace line contains. */
+function labelSuffix(ns: PoolNamespace, target: LineTarget, label: string): string | null {
+  const others = ns.lines.filter((l) => l.owner !== target.key && l.template !== target.template);
+  for (let len = 2; len <= label.length; len++) {
+    const core = label.slice(label.length - len);
+    if (core.startsWith(" ") || /["!]/.test(core)) continue;
+    if (!others.some((l) => l.segments.some((s) => s.includes(core)))) return core;
+  }
+  return null;
+}
+
+/*
+ * `.*` drops the number's left boundary, so `rarity:.*1[5-9]%` would read "115%" as 15. The token
+ * is kept only when every value from 0 to the open span's top (999 below 4-digit minimums, from
+ * numberRange's OPEN_MAX_DIGITS), printed with and without the "+", lights exactly when it is
+ * ≥ the minimum. Past the top any hit is still ≥ the minimum, which is why only open ranges qualify.
+ */
+function provesSpan(regex: RegExp, label: string, after: string, span: { lo: number; hi: number }): boolean {
+  for (let v = 0; v <= span.hi; v++) {
+    const want = v >= span.lo && v <= span.hi;
+    if (regex.test(`${label} +${v}${after}`) !== want || regex.test(`${label} ${v}${after}`) !== want) return false;
+  }
+  return true;
+}
+
+/**
+ * `<label suffix>.*<range><unit>` (poeregex.cz's shape): no literal space or "+" after the colon,
+ * so an unverified header that prints "30%" instead of "+30%" still matches, and a space-free
+ * suffix needs no quotes. Relies on `.` not crossing tooltip lines (searchEmulator models that).
+ * Null when the header is not "Label: #" shaped or no suffix/range passes the checks, and always
+ * for a bounded range: after `.*` its top cannot be enforced ("+1150%" ends in "150%").
+ */
+function labelledToken(ns: PoolNamespace, target: LineTarget, bounds: ValueBounds, round10: boolean): PoolToken | null {
+  if (bounds.max !== null) return null;
+  const [before, after, ...rest] = target.template.split(NUMBER_SLOT);
+  const label = LABEL_BEFORE_NUMBER.exec(before ?? "")?.[1];
+  if (after === undefined || rest.length > 0 || label === undefined) return null;
+  const core = labelSuffix(ns, target, normalizeText(label));
+  if (core === null) return null;
+  const num = numberRangeRegex(bounds.min, bounds.max, { round10 });
+  const span = numberRangeSpan(bounds.min, bounds.max, { round10 });
+  for (const trail of trailEdges(after)) {
+    const text = `${escapeSearchText(core)}.*${num}${trail.text}`;
+    const regex = compileSafeRegex(text);
+    if (!provesSpan(regex, label, after, span) || numericCollisions(regex, ns, target, new Set(), span.lo).length > 0) continue;
+    return { text, kind: "property", covers: [target.key], collisions: [], anchored: trail.anchored, rounded: round10, verify: false };
+  }
+  return null;
+}
+
+// Quotes are part of the price of a spaced token in the 250-char box.
+const renderedLength = (text: string): number => text.length + (text.includes(" ") ? 2 : 0);
+
+/**
+ * Header property range, e.g. Item Rarity ≥ 40 → `"m rarity:.*([4-9].|[1-9]..)%"`. Falls back to
+ * thresholdToken's literal edges (`: \+` …) when the labelled form cannot be proven exact. An
+ * unverified header always takes the labelled form (its "+" and spacing are guesses); a verified
+ * one keeps the literal form when that is shorter (Item Level on relics: ` (…)$` beats `l:.*(…)$`).
+ */
 export function propertyToken(ns: PoolNamespace, header: PoolHeader, bounds: ValueBounds, round10: boolean): PoolToken {
-  return thresholdToken(ns, { key: headerKey(header.id), template: header.template }, 0, bounds, { kind: "property", round10 });
+  const target = { key: headerKey(header.id), template: header.template };
+  const labelled = labelledToken(ns, target, bounds, round10);
+  if (labelled && header.verified === "unverified") return labelled;
+  const literal = thresholdToken(ns, target, 0, bounds, { kind: "property", round10 });
+  if (!labelled) return literal;
+  return renderedLength(literal.text) < renderedLength(labelled.text) && literal.collisions.length === 0 ? literal : labelled;
 }
 
 /** Waystone tier range. The base-name lines print the same "Waystone (Tier N)" text, so they are allowed. */

@@ -5,6 +5,13 @@
  *   - a term is a case-insensitive regex tested against each tooltip line on its own, and holds
  *     when any line matches (so ^ and $ are line anchors);
  *   - "!a|b" negates the whole alternation (NOT (a OR b)).
+ * Line scope (checked 2026-09-30, no GGG statement found): PoE1's regex guide describes the search
+ * as per line with the `m`/`i` flags (github.com/michaelschufi/poe-stash-regex-search) and a
+ * forum user could not span lines even with `(.|\n)*` (pathofexile.com/forum/view-thread/3579592);
+ * PoE2 guides say "it checks each line separately" (exiledbench.com), and poe2.re / poeregex.cz
+ * ship `m rar.*…%` / `rarity:.*…%` tokens that only work if `.*` stays on one line. So `.` never
+ * crosses a line here — also the conservative model, since the property tokens' `label:.*` would
+ * otherwise reach a later line's number. Still to confirm in-game (regexCorpus/README.md).
  * Patterns go through safeRegex (validated AST, re-serialized), never `new RegExp(rawText)`.
  *
  * Defense in depth: safeRegex's step budgets bound backtracking by construction, and every input
