@@ -148,8 +148,8 @@ def test_detail_mode_carries_grades_notes_risks_and_bounded_sources() -> None:
     assert row["risks"] and any("Deadly" in risk for risk in row["risks"])
     notes = row["claim_notes"]
     assert any(line.startswith("mod ") and "[vp]: " in line for line in notes), "vp notes too"
-    ritual = _invoke(strategy_id="ritual-omens")["strategy"]
-    assert any(line.startswith("waystone [uv]: ") for line in ritual["claim_notes"])
+    strongbox = _invoke(strategy_id="strongbox-uniques")["strategy"]
+    assert any(line.startswith("waystone [uv]: ") for line in strongbox["claim_notes"])
     sources = [EvidenceSource.model_validate(s) for s in payload["sources"]]
     assert [s.id for s in sources] == [row["evidence_id"]] and sources[0].type == "knowledge"
     assert citations_are_valid(f"Farm Manoki [{row['evidence_id']}].", sources)

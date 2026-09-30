@@ -5,6 +5,8 @@
  * prints the mod text next to EVERY text trade2 files under that id (trade2 repeats an id with
  * "Area"/"Map" wordings, and the one that matches is what proves the id) and exits 1 on any miss.
  * Extra ids on the command line are printed the same way, to settle a stat left null in the data.
+ * When two ids share the tablet text, the id whose other ("Area") text is the mod's own RePoE stat wins
+ * (src/data/poe2/README.md, strategy KB).
  * Network-bound, so not part of CI. */
 import "../config/env";
 import { fetchTradeMeta } from "../api/tradeMeta";

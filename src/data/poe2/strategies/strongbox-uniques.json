@@ -11,7 +11,7 @@
     "leagues": [
       "Forbidden Rites"
     ],
-    "stamped_at": "2026-09-29"
+    "stamped_at": "2026-09-30"
   },
   "status": "draft",
   "budget": {
@@ -202,7 +202,7 @@
         {
           "text": "Map contains (1–2) additional Strongboxes",
           "side": "suffix",
-          "trade_stat_id": "explicit.stat_3240183538",
+          "trade_stat_id": "explicit.stat_3040603554",
           "claim": {
             "v": "vp",
             "src": [
@@ -210,7 +210,7 @@
               "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
             ],
-            "note": "Suffix 'of Compartments' (Overseer only). trade2 files the exact text 'Map contains # additional Strongboxes' under 3240183538, so the search uses it; that id's area wording ('Area contains an additional Strongbox') and RePoE's stat names would pair the ids the other way round."
+            "note": "Suffix 'of Compartments' (Overseer only; stat maps_with_powerful_bosses_additional_strongbox_+). 3040603554's other text, 'Areas with Powerful Map Bosses contain an additional Strongbox', is this stat in RePoE; its Map text is the one-Strongbox wording. Corrected 2026-09-30: was 3240183538, which is map_num_extra_strongboxes."
           }
         },
         {
@@ -228,7 +228,7 @@
         {
           "text": "Map contains an additional Strongbox",
           "side": "suffix",
-          "trade_stat_id": "explicit.stat_3040603554",
+          "trade_stat_id": "explicit.stat_3240183538",
           "claim": {
             "v": "vp",
             "src": [
@@ -237,7 +237,7 @@
               "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
             ],
-            "note": "Suffix 'of the Antiquarian'; rolls on any tablet base. trade2 files the exact text 'Map contains an additional Strongbox' under 3040603554, so the search uses it; that id's area wording ('Areas with Powerful Map Bosses…') and RePoE's stat names would pair the ids the other way round."
+            "note": "Suffix 'of the Antiquarian' (stat map_num_extra_strongboxes); rolls on any tablet base. 3240183538's other text, 'Area contains an additional Strongbox', is this stat in RePoE; its Map text is the '# additional Strongboxes' wording. Corrected 2026-09-30: was 3040603554, the Powerful Map Boss stat."
           }
         }
       ]
@@ -251,9 +251,12 @@
     "claim": {
       "v": "uv",
       "src": [
-        "https://poe2db.tw/us/Waystones"
+        "https://poe2db.tw/us/Waystones",
+        "https://poe2db.tw/us/Strongbox",
+        "https://www.pathofexile.com/forum/view-thread/3932540",
+        "https://repoe-fork.github.io/poe2/"
       ],
-      "note": "Editorial; no source says waystone item rarity changes strongbox contents."
+      "note": "Unverified. The waystone rarity line reads 'more Rarity of Items found in this Area' (RePoE), but strongbox contents have their own rarity sources (Ornate and Possessed Strongboxes on poe2db; 0.5.0's 'more Rarity of Contained Items' strongbox prefixes) and poe2db counts strongbox monsters as not naturally spawning. No source says whether the map total multiplies strongbox contents; test in game."
     }
   },
   "steps": [

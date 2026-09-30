@@ -12,7 +12,7 @@
     "leagues": [
       "Forbidden Rites"
     ],
-    "stamped_at": "2026-09-29"
+    "stamped_at": "2026-09-30"
   },
   "status": "draft",
   "budget": {
@@ -233,21 +233,22 @@
         {
           "text": "Map contains an additional Essence",
           "side": "prefix",
-          "trade_stat_id": null,
+          "trade_stat_id": "explicit.stat_395808938",
           "claim": {
             "v": "vp",
             "src": [
               "https://poe2db.tw/us/Overseer_Tablet",
               "https://poe2db.tw/us/Irradiated_Tablet",
-              "https://repoe-fork.github.io/poe2/"
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
             ],
-            "note": "Prefix 'Crystallised'; rolls on any tablet base. No search button: trade2 files this exact text under both 395808938 and 2162684861."
+            "note": "Prefix 'Crystallised' (stat map_extra_monoliths); rolls on any tablet base. trade2 files this exact text under 395808938 and 2162684861; 395808938 is the one whose other text, 'Area contains an additional Essence', RePoE gives to map_extra_monoliths."
           }
         },
         {
           "text": "Map contains (1–2) additional Essences",
           "side": "suffix",
-          "trade_stat_id": null,
+          "trade_stat_id": "explicit.stat_2162684861",
           "claim": {
             "v": "vp",
             "src": [
@@ -255,7 +256,7 @@
               "https://repoe-fork.github.io/poe2/",
               "https://www.pathofexile.com/api/trade2/data/stats"
             ],
-            "note": "Suffix 'of Crystals' (Overseer only). No search button: trade2 has no 'Map contains # additional Essences' text, and 395808938 and 2162684861 both read 'Map contains an additional Essence'."
+            "note": "Suffix 'of Crystals' (Overseer only; stat maps_with_powerful_bosses_additional_essence_+). trade2 shows this stat's one-Essence wording 'Map contains an additional Essence' (RePoE's tablet text at 1); 2162684861 pairs it with 'Areas with Powerful Map Bosses contain an additional Essence', which RePoE gives to this stat."
           }
         },
         {
@@ -275,16 +276,17 @@
   ],
   "waystone": {
     "prefer": [
-      "item_rarity",
-      "monster_rarity"
+      "pack_size"
     ],
-    "notes": "No source ties waystone totals to essence drops; rarity totals pay off on the rest of the map.",
+    "notes": "Pack size adds a chance of an extra Rare Monster to rare packs, and extra rares in Essence packs carry Essences too. Intensifying Energies adds an essence chance per explicit Waystone modifier.",
     "claim": {
-      "v": "uv",
+      "v": "syn",
       "src": [
-        "https://poe2db.tw/us/Waystones"
+        "https://www.pathofexile.com/forum/view-thread/3932540",
+        "https://poe2db.tw/us/Essence",
+        "https://poe2db.tw/us/Intensifying_Energies"
       ],
-      "note": "Editorial default. poe2db confirms 0.5 waystone mods bundle difficulty with these reward totals, not what they do for essences."
+      "note": "0.5.0: 'Essence Monster Packs are now affected by modifiers to Pack Size' and pack size modifiers 'provide a chance for an additional Rare Monster to appear in Rare Monster packs'; poe2db: 'Additional Rare Monsters in Essence Packs also carry Essences.' Chaining them is ours and not measured; no source ties item or monster rarity to essence drops."
     }
   },
   "steps": [

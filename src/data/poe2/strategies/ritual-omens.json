@@ -11,7 +11,7 @@
     "leagues": [
       "Forbidden Rites"
     ],
-    "stamped_at": "2026-09-29"
+    "stamped_at": "2026-09-30"
   },
   "status": "draft",
   "budget": {
@@ -262,13 +262,15 @@
         {
           "text": "Ritual Altars in Map allow rerolling Favours (1–3) additional times",
           "side": "suffix",
-          "trade_stat_id": null,
+          "trade_stat_id": "explicit.stat_120737942",
           "claim": {
             "v": "vp",
             "src": [
-              "https://poe2db.tw/us/Ritual_Tablet"
+              "https://poe2db.tw/us/Ritual_Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
             ],
-            "note": "No search button: trade2's closest stat reads 'an additional time' (120737942); that it is this mod is unconfirmed."
+            "note": "Suffix 'of Prayers' (stat map_ritual_additional_reward_rerolls). trade2 shows the stat's one-reroll wording 'allow rerolling Favours an additional time' (RePoE's tablet text at 1); RePoE gives both 120737942 texts (Area and Map) to this stat."
           }
         },
         {
@@ -318,16 +320,16 @@
   ],
   "waystone": {
     "prefer": [
-      "pack_size",
-      "monster_rarity"
+      "pack_size"
     ],
-    "notes": "More monsters to sacrifice should mean more tribute; no source measures it.",
+    "notes": "Every monster slain in the circle feeds the altar, and pack size adds monsters plus a chance of an extra rare to each pack.",
     "claim": {
-      "v": "uv",
+      "v": "syn",
       "src": [
-        "https://poe2db.tw/us/Waystones"
+        "https://poe2db.tw/us/Ritual",
+        "https://www.pathofexile.com/forum/view-thread/3932540"
       ],
-      "note": "Editorial; no source ties waystone totals to tribute."
+      "note": "poe2db Ritual: 'Every monster you slaughter in the circle will feed the altar.' 0.5.0: pack size modifiers add a chance for an additional Rare Monster. More tribute from more monsters is our reading, not measured; no source says rarer monsters grant more tribute, so monster rarity is left out."
     }
   },
   "steps": [
