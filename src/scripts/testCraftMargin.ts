@@ -128,7 +128,7 @@ const ok = (name: string, cond: boolean, extra = "") => {
   const relaxed = resultQuery(boots.result, { idx }, true).query;
   ok("relaxed result search drops tier-2 support stats", (relaxed.stats ?? []).map((f) => f.id).join(",") === "explicit.ms");
   const putrefaction = RECIPES.filter((r) => r.materials.some((m) => m.material.id === MATS.omenPutrefaction.id));
-  ok("putrefaction recipes found", putrefaction.length === 4, putrefaction.map((r) => r.key).join(","));
+  ok("putrefaction recipes found", putrefaction.length === 5, putrefaction.map((r) => r.key).join(","));
   ok("every putrefaction result leg searches CORRUPTED comparables", putrefaction.every((r) => resultQuery(r.result, { idx }, false).query.corrupted === true));
   ok("base legs stay uncorrupted", putrefaction.every((r) => legToQuery(r.base, idx).query.corrupted === false));
 }
@@ -202,9 +202,9 @@ async function noRatesIsTransient(): Promise<void> {
   ok("near-miss on a zero median → leg-failed, not a throw", zeroMedian.report.status === "leg-failed" && /engine error/.test(zeroMedian.report.error ?? ""));
 }
 
-// --- recipe integrity: 25 recipes, valid hitRate, every material has a positive expected qty ---
+// --- recipe integrity: 33 recipes, valid hitRate, every material has a positive expected qty ---
 {
-  ok("25 curated recipes", RECIPES.length === 25, String(RECIPES.length));
+  ok("33 curated recipes", RECIPES.length === 33, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));

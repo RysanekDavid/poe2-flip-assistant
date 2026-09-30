@@ -7,7 +7,7 @@
  * "Catalysing", "Crystallisation"; omens are "…of the Liege" not "…of Liege"; the Delirium
  * "Contempt" liquid only exists as a Potent/Ancient-Potent tier, no plain "Liquid Contempt".
  */
-export type MaterialGroup = "omen" | "essence" | "catalyst" | "bone" | "currency" | "delirium";
+export type MaterialGroup = "omen" | "essence" | "catalyst" | "bone" | "currency" | "delirium" | "rune";
 
 export interface CraftMaterial {
   id: string; // poe.ninja item id (matches price_snapshots.item_id)
@@ -60,6 +60,8 @@ export const MATS = {
   eshsCatalyst: { id: "eshs-catalyst", label: "Esh's Catalyst", group: "catalyst" },
   // Caster tag — RePoE gives "+# to Level of all Spell Skills" the implicit tags caster + gem.
   sibilantCatalyst: { id: "sibilant-catalyst", label: "Sibilant Catalyst", group: "catalyst" },
+  // Physical tag — the prismatic ring's Catalysing slam fishes flat phys to Attacks with it.
+  uulNetolsCatalyst: { id: "uul-netols-catalyst", label: "Uul-Netol's Catalyst", group: "catalyst" },
 
   // --- essences (ninja category "Essences") ---
   greaterEssenceAbrasion: { id: "greater-essence-of-abrasion", label: "Greater Essence of Abrasion", group: "essence" },
@@ -71,6 +73,12 @@ export const MATS = {
   greaterEssenceOpulence: { id: "greater-essence-of-opulence", label: "Greater Essence of Opulence", group: "essence" },
   greaterEssenceInsulation: { id: "greater-essence-of-insulation", label: "Greater Essence of Insulation", group: "essence" },
   perfectEssenceEnhancement: { id: "perfect-essence-of-enhancement", label: "Perfect Essence of Enhancement", group: "essence" },
+  // poe2db: armour/belt/jewellery "+(16—19)% to Chaos Resistance" suffix (RePoE CurrencyGreaterEssenceChaos)
+  greaterEssenceRuin: { id: "greater-essence-of-ruin", label: "Greater Essence of Ruin", group: "essence" },
+  // poe2db: armour/belt/jewellery "+(31—35)% to Cold Resistance" suffix (RePoE CurrencyGreaterEssenceColdResist)
+  greaterEssenceThawing: { id: "greater-essence-of-thawing", label: "Greater Essence of Thawing", group: "essence" },
+  // poe2db: quarterstaves "Adds (56—70) to (84—107) Fire Damage" prefix (RePoE CurrencyGreaterEssenceFire)
+  greaterEssenceFlames: { id: "greater-essence-of-flames", label: "Greater Essence of Flames", group: "essence" },
   // poe2db: "(68—79)% increased Armour, Evasion and Energy Shield" prefix on helmets/body armours/…
   greaterEssenceEnhancement: { id: "greater-essence-of-enhancement", label: "Greater Essence of Enhancement", group: "essence" },
   // poe2db: ring "(4—6)% increased maximum Mana" (RePoE EssenceIncreasedManaPercent1, a PREFIX)
@@ -124,6 +132,10 @@ export const MATS = {
   ancientPotentLiquidContempt: { id: "ancient-potent-liquid-contempt", label: "Ancient Potent Liquid Contempt", group: "delirium" },
   // No recipe uses it; Tools → Craft moves prices it as a legal move on Time-Lost jewels.
   ancientPotentLiquidFerocity: { id: "ancient-potent-liquid-ferocity", label: "Ancient Potent Liquid Ferocity", group: "delirium" },
+
+  // --- runes (ninja category "Runes") ---
+  // Gloves only: "Can roll Decay modifiers" (RePoE RuneWarpingDecayInfluence); cannot be retrieved or replaced.
+  katlasGloom: { id: "katlas-gloom", label: "Katla's Gloom", group: "rune" },
 } as const satisfies Record<string, CraftMaterial>;
 
 export type MaterialKey = keyof typeof MATS;
@@ -138,5 +150,6 @@ export const MATERIAL_GROUPS: ReadonlyArray<{ group: MaterialGroup; label: strin
   { group: "catalyst", label: "Catalysts" },
   { group: "bone", label: "Abyssal Bones" },
   { group: "delirium", label: "Delirium Instills" },
+  { group: "rune", label: "Runes" },
   { group: "currency", label: "Currency" },
 ];

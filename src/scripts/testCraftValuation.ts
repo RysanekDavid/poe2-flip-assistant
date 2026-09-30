@@ -90,6 +90,7 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
     legFloors ===
       [
         "amulet_giga_spirit",
+        "armour_evasion_es_body_essence",
         "armour_putrefaction",
         "armour_vile_robe_es",
         "armour_vile_robe_spirit",
