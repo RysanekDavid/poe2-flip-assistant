@@ -1,184 +1,143 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { TriangleAlert } from "lucide-react";
-import { DEFAULT_CATEGORY_SLUG } from "../../../lib/economyCategories";
-import type { MarketPriceCategory, MarketPriceItem, MarketPricesResponse } from "../../../lib/marketPricesContract";
+import type { MarketPricesResponse } from "../../../lib/marketPricesContract";
+import type { MarketUniquesResponse } from "../../../lib/marketUniquesContract";
 import { timestampAgeMs } from "../../../lib/sqliteTime";
-import { DataTable } from "../../ui/DataTable";
+import { UNIQUE_CATEGORIES } from "../../../lib/uniqueCategories";
 import { EmptyState } from "../../ui/EmptyState";
-import { ItemArt } from "../../ui/ItemArt";
 import { PageHeader } from "../../ui/PageHeader";
 import { StaleBadge } from "../../ui/StaleBadge";
-import { CategoryRail } from "./CategoryRail";
-import { PriceDetail } from "./PriceDetail";
-import { PRICES_DETAIL_PREFIX, pricesColumns } from "./pricesColumns";
-import { DEFAULT_PRICE_SORT, LIQUID_PER_HOUR, MOVER_PCT, nextSort, PRICE_SORT_KEYS, railCounts, visibleItems, type PriceSort, type PriceSortKey } from "./pricesView";
-import { useMarketPrices, useWatched } from "./usePrices";
+import { CategoryRail, type RailGroup, type RailStatus } from "./CategoryRail";
+import { ExchangePane } from "./ExchangePane";
+import { SkeletonRows } from "./pricesBits";
+import { railCounts } from "./pricesView";
+import { UniquesPane } from "./UniquesPane";
+import { uniqueRailCounts } from "./uniquesView";
+import { useMarketPrices, useMarketUniques } from "./usePrices";
+import { sectionOf, usePricesParams } from "./usePricesParams";
 
 const LEGEND =
-  "Values are poe.ninja's exchange price of one item, in Divine with Exalted under it. Volume is units per hour on the Currency " +
-  "Exchange (GGG's hourly digest, 6h mean); ~ marks an estimate from poe.ninja volume where the exchange has no data. Uniques " +
-  "and other trade-site items are not listed yet.";
+  "Exchange values are poe.ninja's price of one item, in Divine with Exalted under it. Volume is units per hour on the Currency " +
+  "Exchange (GGG's hourly digest, 6h mean); ~ marks an estimate from poe.ninja volume where the exchange has no data. Unique " +
+  "values are poe2scout's cheapest ask for the default league; \"trade listings\" marks a trade-site price where scout has none.";
 
-const listed = (categories: readonly MarketPriceCategory[], slug: string): boolean => categories.some((c) => c.slug === slug);
+interface Loaded<T> {
+  data: T | null;
+  error: string | null;
+}
+
+interface UniquesState extends Loaded<MarketUniquesResponse> {
+  requested: boolean;
+}
+
+interface Filters {
+  query: string;
+  movers: boolean;
+  liquid: boolean;
+  valuableOnly: boolean;
+}
+
+function statusOf(data: unknown, error: string | null, requested: boolean): RailStatus {
+  if (data !== null) return "ready";
+  if (error !== null) return "error";
+  return requested ? "loading" : "idle";
+}
+
+/** Both rail groups under the active filters. Each group loads on its own; its rows keep static labels meanwhile. */
+function useRailGroups(exchange: Loaded<MarketPricesResponse>, uniques: UniquesState, f: Filters): RailGroup[] {
+  const ex = useMemo(() => (exchange.data ? railCounts(exchange.data.items, f) : null), [exchange.data, f]);
+  const un = useMemo(() => (uniques.data ? uniqueRailCounts(uniques.data.items, f) : null), [uniques.data, f]);
+  const icons = new Map(uniques.data?.categories.map((c) => [c.id, c.icon]) ?? []);
+  return [
+    {
+      section: "exchange",
+      title: "Exchange",
+      entries: (exchange.data?.categories ?? []).map((c) => ({ slug: c.slug, label: c.label, icon: c.icon, count: ex?.byCategory.get(c.type) ?? 0 })),
+      matches: ex?.matches ?? null,
+      status: statusOf(exchange.data, exchange.error, true),
+      error: exchange.data ? null : exchange.error,
+    },
+    {
+      section: "uniques",
+      title: "Uniques",
+      entries: UNIQUE_CATEGORIES.map((c) => ({ slug: c.slug, label: c.label, icon: icons.get(c.id) ?? null, count: un ? (un.byCategory.get(c.id) ?? 0) : null })),
+      matches: un?.matches ?? null,
+      status: statusOf(uniques.data, uniques.error, uniques.requested),
+      error: uniques.data ? null : uniques.error,
+    },
+  ];
+}
+
+interface ExchangeSlotProps {
+  exchange: Loaded<MarketPricesResponse>;
+  slug: string;
+  filters: Filters;
+  setMovers: (on: boolean) => void;
+  setLiquid: (on: boolean) => void;
+}
+
+function ExchangeSlot({ exchange, slug, filters, setMovers, setLiquid }: ExchangeSlotProps) {
+  const { data, error } = exchange;
+  if (!data) {
+    if (error) return <EmptyState icon={<TriangleAlert className="h-5 w-5 text-amber-300" />} sentence={`Could not load prices: ${error}`} />;
+    return <SkeletonRows label="Loading prices" />;
+  }
+  const { query, movers, liquid } = filters;
+  const category = data.categories.find((c) => c.slug === slug);
+  const pane = <ExchangePane data={data} category={category} query={query} movers={movers} liquid={liquid} onMovers={setMovers} onLiquid={setLiquid} />;
+  if (!error) return pane;
+  return (
+    <div className="grid min-w-0 content-start gap-3">
+      <p role="alert" className="text-sm text-amber-300">
+        Could not refresh prices: {error}
+      </p>
+      {pane}
+    </div>
+  );
+}
 
 /**
- * ?cat= and ?q= mirror the view so it deep-links. A category this response does not list warns and
- * is rewritten: unknown, or known but absent right now (Other exists only while it holds items), so
- * the table never claims "no priced items yet" for a bucket that simply isn't there.
+ * Rail + the active group's pane. It does not wait for the exchange payload: a unique deep link
+ * renders from the uniques route alone, and each pane shows its own loading or error state.
  */
-function usePricesParams(categories: readonly MarketPriceCategory[]) {
-  const params = useSearchParams();
-  const rawCat = params.get("cat");
-  const [picked, setSlug] = useState(() => (rawCat !== null && listed(categories, rawCat) ? rawCat : DEFAULT_CATEGORY_SLUG));
-  const slug = listed(categories, picked) ? picked : DEFAULT_CATEGORY_SLUG;
-  const [query, setQuery] = useState(() => params.get("q") ?? "");
-  const write = useCallback((cat: string, q: string) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("cat", cat);
-    if (q.trim() === "") url.searchParams.delete("q");
-    else url.searchParams.set("q", q);
-    window.history.replaceState(window.history.state, "", url);
-  }, []);
-  useEffect(() => {
-    if (rawCat === null || listed(categories, rawCat)) return;
-    console.warn(`[market] price category cat=${rawCat} is not listed — showing ${DEFAULT_CATEGORY_SLUG}`);
-    write(DEFAULT_CATEGORY_SLUG, params.get("q") ?? "");
-  }, [rawCat, params, write, categories]);
-  const selectCategory = (next: string): void => {
-    setSlug(next);
-    setQuery("");
-    write(next, "");
-  };
-  const search = (q: string): void => {
-    setQuery(q);
-    write(slug, q);
-  };
-  return { slug, query, selectCategory, search };
-}
-
-function Chip({ on, onClick, title, children }: { on: boolean; onClick: () => void; title: string; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      title={title}
-      className={`h-7 rounded-md border px-2.5 text-xs font-medium transition-colors ${
-        on ? "border-amber-400/60 bg-amber-400/15 text-amber-100" : "border-neutral-700 bg-neutral-900/60 text-neutral-400 hover:text-neutral-100"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function SkeletonRows() {
-  return (
-    <div role="status" aria-label="Loading prices" className="grid gap-1">
-      {Array.from({ length: 8 }, (_, i) => (
-        <div key={i} className="h-11 animate-pulse rounded bg-neutral-800/60" />
-      ))}
-    </div>
-  );
-}
-
-interface TableProps {
-  data: MarketPricesResponse;
-  rows: MarketPriceItem[];
-  /** undefined while a search spans every category. */
-  category: MarketPriceCategory | undefined;
-  sort: PriceSort;
-  onSort: (key: string) => void;
-}
-
-function PricesTable({ data, rows, category, sort, onSort }: TableProps) {
-  const [expanded, setExpanded] = useState<string | undefined>(undefined);
-  const { watched, toggle, error } = useWatched();
-  const exPerDiv = data.rates?.exPerDiv ?? null;
-  const onToggle = (item: MarketPriceItem): void => setExpanded((open) => (open === item.itemId ? undefined : item.itemId));
-  const labels = new Map(data.categories.map((c) => [c.type, c.label]));
-  const categoryLabel = category === undefined ? (type: string) => labels.get(type) ?? type : null;
-  const columns = pricesColumns({ league: data.league, exPerDiv, cxHour: data.cxHour, watched, expandedKey: expanded, onToggle, onWatch: toggle, categoryLabel });
-  const empty = (
-    <EmptyState icon={<ItemArt src={category?.icon ?? null} size={6} />} sentence="No priced items yet — they appear after the next market poll." />
-  );
-  return (
-    <>
-      {error && <p role="alert" className="text-sm text-amber-300">Watchlist: {error}</p>}
-      <div className="min-w-0 max-md:overflow-x-auto max-md:[&_th]:static">
-        <DataTable
-          columns={columns}
-          rows={rows}
-          rowKey={(r) => r.itemId}
-          onRowClick={onToggle}
-          interactiveCells
-          tall
-          sort={{ key: sort.key, dir: sort.dir, onSort }}
-          expandedKey={expanded}
-          renderExpanded={(r) => <PriceDetail item={r} exPerDiv={exPerDiv} />}
-          detailIdPrefix={PRICES_DETAIL_PREFIX}
-          emptyState={empty}
-        />
-      </div>
-    </>
-  );
-}
-
-function isSortKey(key: string): key is PriceSortKey {
-  return (PRICE_SORT_KEYS as readonly string[]).includes(key);
-}
-
-function Body({ data }: { data: MarketPricesResponse }) {
-  const { slug, query, selectCategory, search } = usePricesParams(data.categories);
-  const [sort, setSort] = useState<PriceSort>(DEFAULT_PRICE_SORT);
+function Body({ exchange }: { exchange: Loaded<MarketPricesResponse> }) {
+  const { slug, query, selectCategory, selectSection, search } = usePricesParams(exchange.data?.categories ?? null);
   const [movers, setMovers] = useState(false);
   const [liquid, setLiquid] = useState(false);
-  const category = data.categories.find((c) => c.slug === slug);
-  const rows = useMemo(
-    () => visibleItems(data.items, { category: category?.type ?? "", query, movers, liquid }, sort),
-    [data.items, category, query, movers, liquid, sort],
-  );
-  const counts = useMemo(() => railCounts(data.items, { query, movers, liquid }), [data.items, query, movers, liquid]);
-  const onSort = (key: string): void => {
-    if (!isSortKey(key)) throw new Error(`prices: column ${key} is not sortable`);
-    setSort((s) => nextSort(s, key));
-  };
+  const [valuableOnly, setValuableOnly] = useState(true);
+  const section = sectionOf(slug);
+  const uniques = useMarketUniques(section === "uniques" || query.trim() !== "");
+  const filters = useMemo(() => ({ query, movers, liquid, valuableOnly }), [query, movers, liquid, valuableOnly]);
+  const groups = useRailGroups(exchange, uniques, filters);
+  const uniqueCategory = UNIQUE_CATEGORIES.find((c) => c.slug === slug);
   return (
     <div className="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)]">
-      <CategoryRail categories={data.categories} active={category?.type ?? ""} query={query} counts={counts.byCategory} matches={counts.matches} onSelect={(c) => selectCategory(c.slug)} onQuery={search} />
-      <div className="grid min-w-0 content-start gap-3">
-        <div role="group" aria-label="Filters" className="flex flex-wrap items-center gap-1.5">
-          <Chip on={movers} onClick={() => setMovers((v) => !v)} title={`7-day change of at least ±${MOVER_PCT}%`}>
-            Movers
-          </Chip>
-          <Chip on={liquid} onClick={() => setLiquid((v) => !v)} title={`At least ${LIQUID_PER_HOUR} units traded per hour`}>
-            Liquid
-          </Chip>
-          <span className="ml-auto text-xs tabular-nums text-neutral-400">{rows.length} items</span>
-        </div>
-        <PricesTable data={data} rows={rows} category={query.trim() === "" ? category : undefined} sort={sort} onSort={onSort} />
-      </div>
+      <CategoryRail groups={groups} activeSlug={slug} activeSection={section} query={query} onSelect={selectCategory} onSearchSection={selectSection} onQuery={search} />
+      {uniqueCategory ? (
+        <UniquesPane data={uniques.data} error={uniques.error} categoryId={uniqueCategory.id} query={query} valuableOnly={valuableOnly} onValuableOnly={setValuableOnly} />
+      ) : (
+        <ExchangeSlot exchange={exchange} slug={slug} filters={filters} setMovers={setMovers} setLiquid={setLiquid} />
+      )}
     </div>
   );
 }
 
-/** Market › Prices: every exchange item, poe.ninja-style — category rail, sortable table, inline chart. */
+/** Market › Prices: every exchange item and unique, poe.ninja-style — category rail, sortable tables, inline charts. */
 export function PricesTool() {
-  const { data, error } = useMarketPrices();
+  const exchange = useMarketPrices();
+  const { data } = exchange;
   const ageMin = data?.fetchedAt ? timestampAgeMs(data.fetchedAt) / 60_000 : null;
   return (
     <section className="grid gap-4">
       <PageHeader
         title="Prices"
-        purpose={`Every exchange item${data ? ` in ${data.league}` : ""}: price, 7-day trend and how much trades per hour.`}
+        purpose={`Every exchange item${data ? ` in ${data.league}` : ""} and every unique: price, 7-day trend and how much trades.`}
         legend={LEGEND}
         action={data && <StaleBadge ageMin={ageMin} warnAfterMin={180} />}
       />
-      {error && <EmptyState icon={<TriangleAlert className="h-5 w-5 text-amber-300" />} sentence={`Could not load prices: ${error}`} />}
-      {data ? <Body data={data} /> : !error && <SkeletonRows />}
+      <Body exchange={exchange} />
     </section>
   );
 }
