@@ -46,4 +46,4 @@ swapping one is a one-line `art(...)` change in `src/components/shell/tabIcons.t
 
 ## Owner tab art
 
-Top-level tab icons in this folder (`Currency_exchange.png`, `Web_market.png`, `Craft.png`, `Wealth.png`, `Coach.png`, `settings.png`, and since 2026-09-30 `Farm.png`, `Regex.png`, `Learn.png`, `Patches.png`) are custom art supplied by the owner and wired in `src/components/shell/tabIcons.ts`.
+Top-level tab icons in this folder (`Currency_exchange.png`, `Web_market.png`, `Craft.png`, `Wealth.png`, `Coach.png`, `settings.png`, and since 2026-09-30 `Farm.png`, `Regex.png`, `Learn.png`, `Patches.png`) are custom art supplied by the owner and wired in `src/components/shell/tabIcons.ts`, each with a per-image brightness `lift` so the dark metal art reads beside the gold art. Swapping a PNG means re-measuring its lift (see the comment there).

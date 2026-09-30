@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 import { deliverySummary, type PopupPermission } from "../../lib/notifySummary";
+import { TabArt } from "../shell/TabArt";
 import { TAB_ICONS } from "../shell/tabIcons";
 import { DesktopNotifyControl, useNotifyPermission } from "./DesktopNotifyControl";
 import { NotificationsSettings } from "./NotificationsSettings";
@@ -38,7 +38,7 @@ function useDeepLinked(): boolean {
 function Art() {
   const icon = TAB_ICONS.alerts;
   if (icon.kind === "glyph") return <icon.Icon aria-hidden className="h-5 w-5 text-amber-200/80" />;
-  return <Image src={icon.src} alt="" className="h-5 w-5 object-contain" />;
+  return <TabArt icon={icon} className="h-5 w-5 object-contain" />;
 }
 
 /**

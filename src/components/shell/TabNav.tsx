@@ -1,23 +1,24 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { AlertsTabBadge } from "../alerts/AlertsTab";
 import { defaultToolFor, visibleTabs, type NavMode } from "../../lib/navMode";
 import { tabMeta, tabRouteHref, type TabId, type TabMeta } from "./tabRegistry";
 import { useNavMode } from "./NavModeProvider";
+import { TabArt } from "./TabArt";
 import { TAB_ICONS } from "./tabIcons";
 import { useTabRoute } from "./useTabRoute";
 
 function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
-  const dim = active ? "opacity-100" : "opacity-60 group-hover:opacity-90";
+  // Inactive art stays near full strength: at 60% the dark metal PNGs sank into the header.
+  const dim = active ? "opacity-100" : "opacity-85 group-hover:opacity-100";
   const icon = TAB_ICONS[id];
   if (icon.kind === "glyph") {
     // Gold tint so a line glyph sits beside the metal-and-gold tab art instead of reading as UI chrome.
     return <icon.Icon aria-hidden strokeWidth={1.75} className={`h-7 w-7 shrink-0 p-0.5 text-amber-200/80 transition-opacity ${dim}`} />;
   }
-  return <Image src={icon.src} alt="" className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "flips"} />;
+  return <TabArt icon={icon} className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "flips"} />;
 }
 
 /** Plain left-click goes through go() (dedupes history); modified clicks keep open-in-new-tab. */
