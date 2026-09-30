@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "trial-of-chaos-fates",
   "title": "Trial of Chaos: 30-room runs for Trialmaster Fates",
-  "summary": "Since 0.5.5 a Trial of Chaos can be paused and resumed, pays a chest per room and rewards only Currency and Soul Cores. Continue a finished 10-room trial twice for up to 30 rooms and a Trialmaster Fragment per stage, then fight the Trialmaster or sell the Fates.",
+  "summary": "Since 0.5.5 a Trial of Chaos can be paused and resumed, pays a chest per room, and completion rewards are only Currency and Soul Cores. A finished 10-room trial can be continued twice; each subsequent successful run awards a different Trialmaster Fragment, so players who reach later rooms can obtain all three Fates in a single run.",
   "mechanics": [
     "trial_of_chaos"
   ],
@@ -74,20 +74,6 @@
     },
     {
       "ref": {
-        "id": "divine",
-        "name": "Divine Orb"
-      },
-      "role": "lottery",
-      "why": "poe2db's Trial of Chaos wager table lists Divine Orb x2 and Divine Orb x5.",
-      "claim": {
-        "v": "vp",
-        "src": [
-          "https://poe2db.tw/us/Inscribed_Ultimatum"
-        ]
-      }
-    },
-    {
-      "ref": {
         "id": "unique-mahuxotls-machination",
         "name": "Mahuxotl's Machination"
       },
@@ -110,7 +96,7 @@
       "src": [
         "https://www.pathofexile.com/forum/view-thread/4000864"
       ],
-      "note": "0.5.5 gives the Trial level-based inherent bonuses 'to compensate for Atlas Passive Bonuses not applying inside the Trial of Chaos', so no master or atlas setup is listed."
+      "note": "The primary fact is only that 0.5.5 gives the Trial level-based inherent bonuses 'to compensate for Atlas Passive Bonuses not applying inside the Trial of Chaos'. Master node effects inside the Trial are undocumented, so no master is listed."
     }
   },
   "atlas_passives": [],
@@ -131,13 +117,13 @@
     "Choose the modifiers at the start of each encounter: since 0.5.5 the difficulty modifiers applied between rooms also raise the quality of drops.",
     "Each room ends in a reward chest, and you can leave and resume from the same room later (0.5.5).",
     "After 10 rooms, continue without a new Ultimatum, up to twice: the modifiers carry over and each successful continuation awards a different Trialmaster Fragment.",
-    "When continuing you may take the double-or-nothing currency wager.",
+    "When continuing you may take the optional double-or-nothing wager: Currency wager stakes (poe2db lists them, Divine Orb among them) are doubled or lost.",
     "Place Deadly, Cowardly and Victorious Fate in the door at the end of a Trial of Chaos to fight the Trialmaster, or sell them."
   ],
   "risks": [
     "Atlas passives do not apply inside the Trial of Chaos; 0.5.5 adds level-based inherent bonuses instead.",
     "Run rewards are only Currency and Soul Cores since 0.5.5 (no corrupted items); which Soul Cores drop is not documented, so the basket lists none.",
-    "The wager is double or nothing.",
+    "Wager stakes are doubled or lost; the wager is not a drop.",
     "The Trialmaster no longer drops Magic Inscribed Ultimatums (0.5.5).",
     "The Trialmaster uniques have no exchange price here."
   ],

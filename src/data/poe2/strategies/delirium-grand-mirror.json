@@ -353,7 +353,7 @@
   "risks": [
     "0.5.5: Delirium packs no longer scale above 100% Deliriousness — pushing deliriousness past that adds danger, not packs.",
     "Liquid Emotion prices differ a lot by type; the basket lists two examples only.",
-    "More waystone modifiers mean fewer revives (poe2db Waystones), and since 0.5.5 a Simulacrum respects the revives of the Waystone used to open it."
+    "More waystone modifiers mean fewer revives (poe2db Waystones); 0.5.5 fixed Simulacrum of Delusion areas ignoring the Waystone's revives, so they now use them."
   ],
   "measured": null
 }

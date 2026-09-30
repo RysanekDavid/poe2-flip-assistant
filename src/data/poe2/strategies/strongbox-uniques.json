@@ -267,7 +267,8 @@
   ],
   "risks": [
     "Unique strongbox contents are random (for example Ixchel's Torment grants a corrupted unique); the basket prices only the keys.",
-    "Overlord's Influence adds content only where the Map Boss is Powerful."
+    "Overlord's Influence adds content only where the Map Boss is Powerful.",
+    "Whether 'of Compartments' requires a Powerful Map Boss is unverified (RePoE names its stat maps_with_powerful_bosses_additional_strongbox_+, the same family as 'of Crystals')."
   ],
   "measured": null
 }

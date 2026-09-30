@@ -89,7 +89,7 @@
         "https://poe2db.tw/us/Masters_of_the_Atlas",
         "https://www.pathofexile.com/forum/view-thread/3999865"
       ],
-      "note": "No master node targets Ritual or the Wildwood. Vivid Wisps add modifiers to Rare Monsters, so more rares (Breeding Season) give them more targets; Ancient Inscriptions strengthens the Ritual Tablets. Our picks, not measured. T2 and T4 are free picks."
+      "note": "No master node targets Ritual or the Wildwood. Vivid Wisps add modifiers to Rare Monsters, so more rares (Breeding Season) give them more targets. Ancient Inscriptions counts types of Tablet, so two Ritual Tablets are one type and give 8%; a second tablet type adds another 8%. Our picks, not measured. T2 and T4 are free picks."
     }
   },
   "atlas_passives": [
