@@ -24,7 +24,7 @@
     "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts && tsx src/scripts/testDeployShell.ts && tsx src/scripts/testDeploySmoke.ts && tsx src/scripts/testLegalNotice.ts",
     "test:league": "tsx src/scripts/testLeague.ts && tsx src/scripts/testLeagueMigration.ts && tsx src/scripts/testLeagueEmblem.ts",
     "test:user-league": "tsx src/scripts/runWithTestEnv.ts user-league && tsx src/scripts/runWithTestEnv.ts watchlist-prices",
-    "test:market-league": "tsx src/scripts/runWithTestEnv.ts market",
+    "test:market-league": "tsx src/scripts/runWithTestEnv.ts market && tsx src/scripts/runWithTestEnv.ts market-prices",
     "test:rates": "tsx src/scripts/runWithTestEnv.ts rates",
     "test:cx": "tsx src/scripts/runWithTestEnv.ts cx",
     "test:flips": "tsx src/scripts/runWithTestEnv.ts flips",

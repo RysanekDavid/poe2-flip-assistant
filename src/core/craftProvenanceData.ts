@@ -1,4 +1,5 @@
 import { recipeProvenanceSchema, type RecipeProvenance, type RecipeSource } from "./craftProvenance/schema";
+import { COMPILATION, EXPANSION_PROVENANCE } from "./craftProvenanceData2";
 
 /**
  * Structured provenance for every curated recipe, migrated from the free-text `source` strings the
@@ -131,9 +132,9 @@ const DATA: Record<string, RecipeProvenance> = {
     patchVerified: "0.5.5b",
     status: "draft",
     sources: [S11],
-    hitRateBasis: { basis: "unknown", n: null, note: "Curated estimate; the repeat-desecrate Spirit loop contradicts KB §5 (one desecrated mod per item) and is unverified." },
+    hitRateBasis: { basis: "unknown", n: null, note: "Curated estimate: S11's Spirit chaos hunt runs until it lands (T1 ~200–300 chaos, T2 in ~30); the finishing slams swing the sale." },
     extraEntityRefs: [],
-    kbRuleRefs: ["§4", "§5", "§8"],
+    kbRuleRefs: ["§1", "§4", "§5", "§8"],
   },
   quarterstaff_desecrate_crit: {
     patchVerified: "0.5.5b",
@@ -175,6 +176,13 @@ const DATA: Record<string, RecipeProvenance> = {
     extraEntityRefs: [],
     kbRuleRefs: ["§2", "§5", "§6"],
   },
+  // single compilation source for the quiver itself; the putrefaction mechanics are our own test (KB §9)
+  quiver_putrefaction: {
+    ...PUTREFACTION_BOOTS,
+    sources: [COMPILATION, OWN_TEST],
+    hitRateBasis: { basis: "unknown", n: null, note: "Curated ~1-in-3 estimate carried over from the boots/body slot machine; the compilation quotes a 2–12 div range, not a rate." },
+  },
+  ...EXPANSION_PROVENANCE,
 };
 
 /** Validated once at import: a malformed entry is a data bug and must stop the process. */

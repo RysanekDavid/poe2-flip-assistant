@@ -1,5 +1,5 @@
 import { deriveRates, type ExchangeRates } from "./priceEngine";
-import { latestSnapshots, latestFetchedAt } from "../db/marketQueries";
+import { latestSnapshotRows, type LatestSnapshotRow } from "../db/latestSnapshotQueries";
 import { latestRates, type CurrencyRateRow, type RateSource } from "../db/ratesQueries";
 // Zone-less SQLite stamps read as local time would be an hours-wide freshness bug in exactly the
 // check that decides whether a rate is still usable; the shared parser pins them to UTC.
@@ -80,14 +80,24 @@ function fromStoredSource(
  * did `deriveRates(latestSnapshots())` use this instead and surface `source`/`fetchedAt` so the
  * UI can say where a number came from and how old it is.
  */
-export function resolveRates(league: string, nowMs: number = Date.now()): ResolvedRates | null {
+export function resolveRates(
+  league: string,
+  nowMs: number = Date.now(),
+  // A caller that already holds this league's latest rows (the Prices route) passes them so the
+  // stale-digest fallback doesn't read the same rows a second time.
+  preRead?: readonly LatestSnapshotRow[],
+): ResolvedRates | null {
   const stored = latestRates(league);
 
   const cx = fromStoredSource(stored, "cx", CX_MAX_AGE_MS, nowMs);
   if (cx != null) return cx;
 
-  const ninja = deriveRates(latestSnapshots(league));
-  const ninjaAt = ninja != null ? latestFetchedAt(league) : null;
+  // The loose-scan read (two index seeks per item) instead of latestSnapshots + latestFetchedAt,
+  // which each walked the league's whole 30-day history (~220 ms together at 400k rows) exactly
+  // when the digest is stale. The newest per-item row time IS the league's newest snapshot time.
+  const latest = preRead ?? latestSnapshotRows(league);
+  const ninja = deriveRates(latest);
+  const ninjaAt = ninja != null ? latest.reduce<string | null>((max, r) => (max === null || r.fetchedAt > max ? r.fetchedAt : max), null) : null;
   if (ninja != null && ninjaAt != null && timestampAgeMs(ninjaAt, nowMs) <= NINJA_MAX_AGE_MS) {
     return { rates: ninja, source: "ninja", fetchedAt: ninjaAt };
   }

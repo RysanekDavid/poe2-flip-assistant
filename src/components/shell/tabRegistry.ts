@@ -31,8 +31,9 @@ export const TABS: readonly TabMeta[] = [
   {
     id: "market",
     label: "Market",
-    hint: "price check · trade site demand · snipes",
+    hint: "every item's price · price check · trade site demand · snipes",
     tools: [
+      { id: "prices", label: "Prices", hint: "every exchange item: price, 7-day trend, volume" },
       { id: "price", label: "Price check", hint: "paste an item: what it is worth and how to sell it" },
       { id: "board", label: "Market board", hint: "what sells on the trade site, and listings under value" },
     ],
