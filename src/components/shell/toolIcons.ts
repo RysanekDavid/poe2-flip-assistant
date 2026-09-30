@@ -21,7 +21,7 @@ const glyph = (Icon: LucideIcon): ToolIcon => ({ kind: "glyph", Icon });
 // NPC pays for gear); Price uses the Divine Orb, the unit every price in the app is quoted in.
 // Typed from TOOL_ICON_KEYS: a key missing here, or one not listed there, fails the typecheck.
 const TOOL_ICONS: { [T in TabId]: Record<ToolIconKey<T>, ToolIcon> } = {
-  exchange: {},
+  flips: {},
   patches: {},
   alerts: {},
   coach: {},

@@ -3,15 +3,15 @@
 import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseModeRoute } from "../../lib/navMode";
-import { redirectTool, tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
+import { followRenames, redirectTool, tabRouteHref, type TabId, type TabRoute } from "./tabRegistry";
 import { useNavMode } from "./NavModeProvider";
 
 export interface TabRouteApi extends TabRoute {
   /** URL params that did not parse (e.g. "tab=bogus"); AppShell alone warns and rewrites them. */
   rejected: readonly string[];
-  /** URL params hidden in the user's nav mode (e.g. "tab=exchange" for a beginner); AppShell redirects. */
+  /** URL params hidden in the user's nav mode (e.g. "tab=flips" for a beginner); AppShell redirects. */
   hidden: readonly string[];
-  /** A renamed ?tool= that was followed to its new id (e.g. "tool=board"); AppShell rewrites the URL. */
+  /** A renamed ?tab= or ?tool= that was followed to its new id (e.g. "tab=exchange"); AppShell rewrites the URL. */
   renamed: readonly string[];
   /** Navigate to a tab (and optionally one of its tools). Pushes history so Back returns here. */
   go: (tab: TabId, tool?: string) => void;
@@ -28,11 +28,10 @@ export function useTabRoute(): TabRouteApi {
   const pathname = usePathname();
   const params = useSearchParams();
   const { mode } = useNavMode();
-  const rawTab = params.get("tab");
+  const askedTab = params.get("tab");
   const askedTool = params.get("tool");
-  const rawTool = redirectTool(rawTab, askedTool);
-  const parsed = useMemo(() => parseModeRoute(mode, rawTab, rawTool), [mode, rawTab, rawTool]);
-  const renamed = useMemo(() => (rawTool === askedTool ? [] : [`tool=${askedTool}`]), [rawTool, askedTool]);
+  const followed = useMemo(() => followRenames(askedTab, askedTool), [askedTab, askedTool]);
+  const parsed = useMemo(() => parseModeRoute(mode, followed.tab, followed.tool), [mode, followed]);
 
   const go = useCallback(
     (tab: TabId, tool?: string) => {
@@ -49,5 +48,5 @@ export function useTabRoute(): TabRouteApi {
     [mode, pathname, router],
   );
 
-  return { tab: parsed.tab, tool: parsed.tool, rejected: parsed.rejected, hidden: parsed.hidden, renamed, go };
+  return { tab: parsed.tab, tool: parsed.tool, rejected: parsed.rejected, hidden: parsed.hidden, renamed: followed.renamed, go };
 }

@@ -4,12 +4,12 @@ import { z } from "zod";
  * Plain data (no React, no image imports) so the URL router, the nav and the node test scripts all
  * read one list. Tab art lives in tabIcons.ts because tsx cannot import PNGs outside Next.
  */
-export const TAB_IDS = ["exchange", "market", "farm", "craft", "wealth", "regex", "patches", "learn", "alerts", "settings", "coach"] as const;
+export const TAB_IDS = ["flips", "market", "farm", "craft", "wealth", "regex", "patches", "learn", "alerts", "settings", "coach"] as const;
 
 export const tabIdSchema = z.enum(TAB_IDS);
 export type TabId = z.infer<typeof tabIdSchema>;
 
-export const DEFAULT_TAB: TabId = "exchange";
+export const DEFAULT_TAB: TabId = "flips";
 
 export interface ToolMeta {
   id: string;
@@ -27,7 +27,7 @@ export interface TabMeta {
 }
 
 export const TABS: readonly TabMeta[] = [
-  { id: "exchange", label: "Exchange", hint: "in-game Currency Exchange flips" },
+  { id: "flips", label: "Flips", hint: "Currency Exchange flips · positions · league start" },
   {
     id: "market",
     label: "Market",
@@ -114,11 +114,38 @@ export const TOOL_REDIRECTS: Partial<Record<TabId, Readonly<Record<string, strin
   market: { board: "opportunities" },
 };
 
+/**
+ * Renamed tabs: an old ?tab= keeps working by landing on its replacement (Exchange became Flips on
+ * 2026-09-30, once item prices had moved to Market › Prices). Only renames belong here, never removals.
+ * A Map, not an object literal, so ?tab=toString cannot resolve to an Object.prototype member.
+ */
+export const TAB_REDIRECTS: ReadonlyMap<string, TabId> = new Map<string, TabId>([["exchange", "flips"]]);
+
+/** The tab id a raw ?tab= stands for today; unknown and current ids pass through unchanged. */
+export function redirectTab(rawTab: string | null): string | null {
+  return rawTab === null ? null : (TAB_REDIRECTS.get(rawTab) ?? rawTab);
+}
+
 /** The tool id a raw ?tool= stands for today; unknown and current ids pass through unchanged. */
 export function redirectTool(rawTab: string | null, rawTool: string | null): string | null {
   const tab = tabIdSchema.safeParse(rawTab);
   if (!tab.success || rawTool === null) return rawTool;
   return TOOL_REDIRECTS[tab.data]?.[rawTool] ?? rawTool;
+}
+
+export interface RenamedParams {
+  tab: string | null;
+  tool: string | null;
+  /** The asked params that were renamed (e.g. "tab=exchange"); non-empty means rewrite the URL. */
+  renamed: string[];
+}
+
+/** Raw ?tab=&tool= → today's ids. The tab goes first because a tool rename is keyed by the current tab id. */
+export function followRenames(askedTab: string | null, askedTool: string | null): RenamedParams {
+  const tab = redirectTab(askedTab);
+  const tool = redirectTool(tab, askedTool);
+  const renamed = [...(tab === askedTab ? [] : [`tab=${askedTab}`]), ...(tool === askedTool ? [] : [`tool=${askedTool}`])];
+  return { tab, tool, renamed };
 }
 
 function defaultTool(tools: readonly ToolMeta[]): ToolMeta {

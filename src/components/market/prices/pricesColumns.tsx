@@ -118,7 +118,7 @@ function VolumeCell({ item, cxHour }: { item: MarketPriceItem; cxHour: number | 
 
 function ActionsCell({ item, ctx }: { item: MarketPriceItem; ctx: PricesColumnCtx }) {
   const watching = ctx.watched.has(item.itemId);
-  const watchLabel = watching ? `Stop watching ${item.name}` : `Watch ${item.name} (alerts + Exchange watchlist)`;
+  const watchLabel = watching ? `Stop watching ${item.name}` : `Watch ${item.name} (alerts + Flips watchlist)`;
   return (
     <span className="inline-flex items-center justify-end gap-1">
       <button

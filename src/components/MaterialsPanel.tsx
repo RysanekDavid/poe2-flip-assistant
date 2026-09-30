@@ -47,7 +47,7 @@ function ageLabel(min: number | null): string {
 /**
  * Craft-material price tracker. The curated inputs the margin engine consumes, grouped by kind,
  * each with its live ninja price (Div, exalt fallback), 7d change + sparkline, and data age.
- * Click a row to open its full price chart below — same chart the Currency Exchange tab uses.
+ * Click a row to open its full price chart below — same chart the Flips tab uses.
  */
 export function MaterialsPanel() {
   const [data, setData] = useState<Resp | null>(null);

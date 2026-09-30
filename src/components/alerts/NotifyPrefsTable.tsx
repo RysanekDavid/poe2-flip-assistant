@@ -18,7 +18,7 @@ const TYPE_HINT: Record<PrefRow["type"], string> = {
 };
 
 const CHANNEL_HINT: Record<Channel, string> = {
-  ticker: "show it in the alert feed, the bell badge and the Exchange strip",
+  ticker: "show it in the alert feed, the bell badge and the Flips strip",
   sound: "chime when one arrives (this browser)",
   popup: "browser desktop notification — needs permission",
   discord: "send it to your Discord webhook (reaches a fullscreen game)",

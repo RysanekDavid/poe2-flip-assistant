@@ -53,7 +53,7 @@ function useAlertPoll(load: () => void): void {
 }
 
 /**
- * ONE alert poll for the whole page. The TopBar badge, its popover and the Exchange ticker each
+ * ONE alert poll for the whole page. The TopBar badge, its popover and the Flips ticker each
  * used to poll /api/alerts on their own; they now read this provider. Browser notifications are
  * raised here too, so they fire on every tab — not only while the ticker happens to be mounted.
  */

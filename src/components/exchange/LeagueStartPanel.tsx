@@ -107,7 +107,7 @@ function ActivePanel({ d }: { d: LeagueStartResponse }) {
   );
 }
 
-/** Exchange tab: full panel during a league's first days, one quiet line otherwise. */
+/** Flips tab: full panel during a league's first days, one quiet line otherwise. */
 export function LeagueStartPanel() {
   const { data, error } = useLeagueStart();
   if (error) return <p className="text-xs text-bad">League start: {error}</p>;

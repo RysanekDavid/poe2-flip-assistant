@@ -15,8 +15,8 @@ import { EmptyState } from "../../ui/EmptyState";
 import { PageHeader } from "../../ui/PageHeader";
 import { LeagueStartPanel } from "../../exchange/LeagueStartPanel";
 
-/** In-game Currency Exchange: find a flip, plan it, track the position, log the result. */
-export function ExchangeTab() {
+/** Currency Exchange flips: find a flip, plan it, track the position, log the result. */
+export function FlipsTab() {
   const [selected, setSelected] = useState<FlipSelection | null>(null);
 
   // The plan opens below Top Flips; bring it into view without jumping when it already is.
@@ -30,8 +30,8 @@ export function ExchangeTab() {
   return (
     <>
       <PageHeader
-        title="Currency Exchange"
-        purpose="Flips on Ange's exchange right now — click a row for its flip plan and price chart."
+        title="Flips"
+        purpose="Currency Exchange flips on Ange right now — click a row for its flip plan and price chart."
         legend={<TopFlipsLegend />}
       />
       <AlertTicker />

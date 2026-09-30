@@ -20,7 +20,7 @@ function TickerItem({ a }: { a: Alert }) {
 }
 
 /**
- * One-line alert strip for the Exchange tab: unseen count and the newest alerts of types shown in
+ * One-line alert strip for the Flips tab: unseen count and the newest alerts of types shown in
  * the feed. Per-type muting and routing live in the Alerts tab, not here.
  */
 export function AlertTicker() {
