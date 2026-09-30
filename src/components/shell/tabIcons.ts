@@ -1,5 +1,5 @@
 import type { StaticImageData } from "next/image";
-import { BookOpen, ScrollText, Search, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import iconExchange from "../../assets/Currency_exchange.png";
 import iconMarket from "../../assets/Web_market.png";
 import iconCraft from "../../assets/Craft.png";
@@ -8,10 +8,13 @@ import iconCoach from "../../assets/Coach.png";
 import iconSettings from "../../assets/settings.png";
 // The gold lantern logo stands in until the owner supplies dedicated Alerts art.
 import iconAlerts from "../../assets/logo/logo_gold_bg.png";
-import iconWaystone from "../../assets/items/waystone.png";
+import iconFarm from "../../assets/Farm.png";
+import iconRegex from "../../assets/Regex.png";
+import iconPatches from "../../assets/Patches.png";
+import iconLearn from "../../assets/Learn.png";
 import type { TabId } from "./tabRegistry";
 
-/** Tab art, or a lucide glyph where no in-game object fits (swap to `art` once owner PNGs exist). */
+/** Tab art (owner-supplied PNGs in src/assets), or a lucide glyph where no art exists yet. */
 export type TabIcon = { kind: "art"; src: StaticImageData } | { kind: "glyph"; Icon: LucideIcon };
 
 const art = (src: StaticImageData): TabIcon => ({ kind: "art", src });
@@ -20,12 +23,12 @@ const art = (src: StaticImageData): TabIcon => ({ kind: "art", src });
 export const TAB_ICONS: Record<TabId, TabIcon> = {
   flips: art(iconExchange),
   market: art(iconMarket),
-  farm: art(iconWaystone),
+  farm: art(iconFarm),
   craft: art(iconCraft),
   wealth: art(iconWealth),
-  regex: { kind: "glyph", Icon: Search },
-  patches: { kind: "glyph", Icon: ScrollText },
-  learn: { kind: "glyph", Icon: BookOpen },
+  regex: art(iconRegex),
+  patches: art(iconPatches),
+  learn: art(iconLearn),
   alerts: art(iconAlerts),
   settings: art(iconSettings),
   coach: art(iconCoach),

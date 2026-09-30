@@ -43,3 +43,7 @@ emblem cut the same way, a line in `leagueEmblem.ts` and a line in `components/L
 The remaining top-level PNGs (tab icons, `logo/`, `Section Icons/`) were supplied by the owner.
 The Regex and Patches tabs use lucide glyphs (`Search`, `ScrollText`) until owner art exists;
 swapping one is a one-line `art(...)` change in `src/components/shell/tabIcons.ts`.
+
+## Owner tab art
+
+Top-level tab icons in this folder (`Currency_exchange.png`, `Web_market.png`, `Craft.png`, `Wealth.png`, `Coach.png`, `settings.png`, and since 2026-09-30 `Farm.png`, `Regex.png`, `Learn.png`, `Patches.png`) are custom art supplied by the owner and wired in `src/components/shell/tabIcons.ts`.
