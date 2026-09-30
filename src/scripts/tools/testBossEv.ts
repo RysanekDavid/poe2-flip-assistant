@@ -129,7 +129,7 @@ const SRC = { title: "synthetic", url: "https://example.com/s", accessed: "2026-
 function syntheticInputs(overrides: Partial<Record<string, number>> = {}): PriceInputs {
   const base: Record<string, number> = { a: 1, b: 5, c: 1, g: 1, p: 10, r: 40, u: 100, ...overrides };
   const ninja = new Map(Object.entries(base).map(([id, div]) => [id, { div, name: id.toUpperCase(), icon: null, ageHours: 0.5, volume: div * 10 }]));
-  return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), nowMs: NOW };
+  return { ninja, scout: new Map([["scouted", 3]]), scoutAgeHours: 20, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), tradeFallback: true, nowMs: NOW };
 }
 
 const TIER: Tier = {
@@ -317,7 +317,7 @@ function testHeadlines(): void {
 
 function testCuratedEvaluates(): void {
   const file = parseBossLoot(readCurated());
-  const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), nowMs: NOW };
+  const empty: PriceInputs = { ninja: new Map(), scout: new Map(), scoutAgeHours: null, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), tradeFallback: true, nowMs: NOW };
   const bosses = evaluateBosses(file, priceLookup(empty), ART);
   const rows = buildFarmBoard([], bosses, 0);
   const payload = {

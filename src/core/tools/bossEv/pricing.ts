@@ -13,7 +13,8 @@ import { uniqueTradeValues, type UniqueTradeRow } from "../../../db/uniqueTradeQ
 import { timestampAgeMs } from "../../../lib/sqliteTime";
 import type { PoolRange, ResolvedPrice } from "../../../lib/tools/bossEvContract";
 import { lootNinjaIds, type BossLootFile, type PriceRef } from "./schema";
-import { tradeUnpricedNote } from "./tradeText";
+import { TRADE_DEFAULT_LEAGUE_ONLY, tradeUnpricedNote } from "./tradeText";
+import { getDefaultLeague } from "../../leagueState";
 import { scoutKey } from "../../../lib/scoutKey";
 
 /** One exchange item as the latest poe.ninja snapshot has it. */
@@ -40,6 +41,11 @@ export interface PriceInputs {
   scoutZero: ReadonlySet<string>;
   /** trade2 fallback checks of the uniques scout does not price, keyed by scoutKey. */
   trade: ReadonlyMap<string, UniqueTradeRow>;
+  /**
+   * Whether the trade2 fallback covers this league at all: its job searches the app's default
+   * league only (trade2 searches search that league), so a user pinned elsewhere never gets one.
+   */
+  tradeFallback: boolean;
   nowMs: number;
 }
 
@@ -104,7 +110,7 @@ export function resolvePrice(ref: PriceRef, inputs: PriceInputs): ResolvedPrice 
       if (unique != null && unique > 0) return { div: unique, source: "scout", ageHours: inputs.scoutAgeHours };
       const gem = inputs.lineage.get(key);
       if (gem != null && gem > 0) return { div: gem, source: "scout", ageHours: inputs.lineageAgeHours };
-      return tradePrice(inputs.trade.get(key), inputs.nowMs);
+      return inputs.tradeFallback ? tradePrice(inputs.trade.get(key), inputs.nowMs) : null;
     }
     case "manual":
       return { div: ref.div, source: "manual", ageHours: (inputs.nowMs - Date.parse(`${ref.asOf}T00:00:00Z`)) / HOUR_MS };
@@ -125,7 +131,7 @@ export function priceLookup(inputs: PriceInputs): PriceLookup {
     price: (ref) => resolvePrice(ref, inputs),
     pool: (ref) => poolRange(ref, inputs),
     scoutListedAtZero: (name) => inputs.scoutZero.has(scoutKey(name)),
-    tradeUnpriced: (name) => tradeUnpricedNote(inputs.trade.get(scoutKey(name)) ?? null, inputs.nowMs),
+    tradeUnpriced: (name) => (inputs.tradeFallback ? tradeUnpricedNote(inputs.trade.get(scoutKey(name)) ?? null, inputs.nowMs) : TRADE_DEFAULT_LEAGUE_ONLY),
     item: (itemId) => {
       const quote = inputs.ninja.get(itemId);
       return quote ? { name: quote.name, icon: quote.icon, volume: quote.volume } : null;
@@ -171,6 +177,7 @@ export function loadPriceInputs(
       volume: row.volume,
     });
   }
+  const tradeFallback = league === getDefaultLeague();
   return {
     ninja,
     scout: byScoutKey(uniqueValueMap(league)),
@@ -178,7 +185,9 @@ export function loadPriceInputs(
     lineage: byScoutKey(lineageValueMap(league)),
     lineageAgeHours: itemValuesAgeHours(league, SCOUT_LINEAGE_SOURCE),
     scoutZero: new Set([...scoutZeroKeys(league)].map(scoutKey)),
-    trade: uniqueTradeValues(league),
+    // rows of a league that was the default once are not read either: nothing refreshes them now
+    trade: tradeFallback ? uniqueTradeValues(league) : new Map(),
+    tradeFallback,
     nowMs,
   };
 }

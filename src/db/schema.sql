@@ -59,7 +59,9 @@ CREATE TABLE IF NOT EXISTS item_values (
 -- instant-buyout listings, PER ITEM in Divine; NULL when too few usable listings (never 0).
 -- value_div / listed / samples / observed_at describe the last SUCCESSFUL search (all NULL before
 -- one); a failed search only moves checked_at + error, so a transient failure keeps the last price
--- with its true age. checked_at (every attempt) also feeds the job's rolling-hour search cap.
+-- with its true age. searched_at moves only when a search request was actually sent (answered or
+-- not): the job's rolling-hour search cap counts it, never an attempt that spent nothing (a name
+-- trade2's catalog does not know).
 CREATE TABLE IF NOT EXISTS unique_trade_values (
   league TEXT NOT NULL,
   name_key TEXT NOT NULL,      -- scoutKey of the curated unique name
@@ -68,10 +70,11 @@ CREATE TABLE IF NOT EXISTS unique_trade_values (
   samples INTEGER,             -- listings value_div stands on after bait trimming
   observed_at TEXT,            -- ISO time of that search
   checked_at TEXT NOT NULL,    -- ISO time of the last attempt, successful or not
+  searched_at TEXT,            -- ISO time of the last attempt that sent a search request
   error TEXT,                  -- why the last attempt failed, NULL when it succeeded
   PRIMARY KEY (league, name_key)
 );
-CREATE INDEX IF NOT EXISTS idx_unique_trade_values_checked ON unique_trade_values(checked_at);
+CREATE INDEX IF NOT EXISTS idx_unique_trade_values_searched ON unique_trade_values(searched_at);
 
 -- Price-book observations — SHARED. One row per observed listing (base + mod-signature → ask
 -- price in Div). The valuation/snipe engine aggregates these into a market value distribution

@@ -39,9 +39,15 @@ export function curatedTradeNames(file: BossLootFile): string[] {
   return [...byKey.values()];
 }
 
-/** When a stored unique may be searched again: sooner after a failure than after a success. */
-export function dueAtMs(row: Pick<UniqueTradeRow, "checkedAtMs" | "error">, refreshMs: number): number {
-  return row.checkedAtMs + (row.error != null ? Math.min(TRADE_RETRY_AFTER_ERROR_MS, refreshMs) : refreshMs);
+/**
+ * When a stored unique may be searched again. A search trade2 failed to answer is retried sooner;
+ * a success, or a failure that sent nothing (trade2's catalog does not know the name, which only a
+ * patch or a curation fix changes), waits the full refresh — so a catalog miss is reported once
+ * per refresh, not every tick.
+ */
+export function dueAtMs(row: Pick<UniqueTradeRow, "checkedAtMs" | "searchedAtMs" | "error">, refreshMs: number): number {
+  const failedSearch = row.error != null && row.searchedAtMs === row.checkedAtMs;
+  return row.checkedAtMs + (failedSearch ? Math.min(TRADE_RETRY_AFTER_ERROR_MS, refreshMs) : refreshMs);
 }
 
 /**
@@ -52,7 +58,7 @@ export function dueAtMs(row: Pick<UniqueTradeRow, "checkedAtMs" | "error">, refr
 export function pickCandidates(
   names: readonly string[],
   scoutPriced: ReadonlySet<string>,
-  stored: ReadonlyMap<string, Pick<UniqueTradeRow, "checkedAtMs" | "error">>,
+  stored: ReadonlyMap<string, Pick<UniqueTradeRow, "checkedAtMs" | "searchedAtMs" | "error">>,
   nowMs: number,
   refreshMs: number,
 ): string[] {
@@ -68,10 +74,10 @@ export function pickCandidates(
 
 /**
  * Searches this tick may spend: at most `perTick`, and never past `capPerHour` counting every
- * attempt of the last rolling hour (restarts and back-to-back ticks included).
+ * request actually sent in the last rolling hour (restarts and back-to-back ticks included).
  */
-export function searchSlots(recentChecksMs: readonly number[], nowMs: number, capPerHour: number, perTick: number): number {
-  const lastHour = recentChecksMs.filter((t) => t > nowMs - HOUR_MS && t <= nowMs).length;
+export function searchSlots(recentSearchesMs: readonly number[], nowMs: number, capPerHour: number, perTick: number): number {
+  const lastHour = recentSearchesMs.filter((t) => t > nowMs - HOUR_MS && t <= nowMs).length;
   return Math.max(0, Math.min(perTick, capPerHour - lastHour));
 }
 

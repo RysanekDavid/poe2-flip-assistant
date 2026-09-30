@@ -84,7 +84,7 @@ const host = (url: string): string => new URL(url).hostname.replace(/^www\./, ""
 function columns(exPerDiv: number | null): Column<LootLineView>[] {
   return [
     { key: "name", header: "Drop", cell: (l) => <DropCell line={l} /> },
-    { key: "price", header: "Price", align: "right", tip: "poe.ninja for exchange items, poe2scout for uniques and lineage gems, trade listings for uniques poe2scout has no price for; unpriced drops are left out of EV, never counted as 0", cell: (l) => <PriceCell line={l} exPerDiv={exPerDiv} /> },
+    { key: "price", header: "Price", align: "right", tip: "poe.ninja for exchange items, poe2scout for uniques and lineage gems, trade listings for uniques poe2scout has no price for (trade prices are gathered for the default league only); unpriced drops are left out of EV, never counted as 0", cell: (l) => <PriceCell line={l} exPerDiv={exPerDiv} /> },
     { key: "rate", header: "Rate", align: "right", tip: "per-kill drop rate as the cited source states it, or its rarity label when it gives no number. ? = sources disagree or the rate is unverified", cell: (l) => <RateCell line={l} /> },
     {
       key: "ev",

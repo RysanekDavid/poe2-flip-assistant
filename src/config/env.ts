@@ -35,6 +35,15 @@ export function pos(key: string, fallback: number, max = Infinity): number {
   return n;
 }
 
+/** `pos` with a floor too: a value below `min` fails at boot like any other out-of-range value. */
+function atLeast(key: string, fallback: number, min: number, max = Infinity): number {
+  const n = pos(key, fallback, max);
+  if (n < min) {
+    throw new Error(`Invalid configuration: ${key}=${process.env[key] ?? "(unset)"} — must be at least ${min} (default ${fallback}). Fix or remove ${key} and restart.`);
+  }
+  return n;
+}
+
 /**
  * A boolean switch that accepts only "true" / "false" (any case). The older flags treat every
  * other value as false, so a typo like AUTOSNIPE_ENABLED=ture silently disables a subsystem;
@@ -200,8 +209,10 @@ export const config = {
     // Search-budget share of trade2's ~100/h (600 per 6 h per IP): autosnipe ~36 + craft ~30 +
     // snipe outcomes ≤6 + reprice ≤4 + this 6 ≈ 82/h, leaving room for interactive lookups.
     maxSearchesPerHour: pos("UNIQUE_TRADE_MAX_SEARCHES_PER_HOUR", 6, 12),
-    // each unique is re-searched at most this often; ~50 candidates at 6/h are covered in ~8-9 h
-    refreshHours: pos("UNIQUE_TRADE_REFRESH_HOURS", 24, 24 * 7),
+    // each unique is re-searched at most this often; ~50 candidates at 6/h are covered in ~8-9 h.
+    // Floored at 2 h: the rolling-hour search ledger keeps one spend per unique, exact only while
+    // no unique is searched twice within the hour.
+    refreshHours: atLeast("UNIQUE_TRADE_REFRESH_HOURS", 24, 2, 24 * 7),
   },
 
   // League-start price curves from GGG's public exchange digests of past leagues.

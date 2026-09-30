@@ -23,7 +23,7 @@ const readJson = (rel: string): Record<string, unknown> => JSON.parse(readFileSy
 
 function inputs(ninja: Record<string, number>, scout: Record<string, number> = {}): PriceInputs {
   const quotes = Object.entries(ninja).map(([id, div]) => [id, { div, name: id, icon: `${POECDN}?${id}`, ageHours: div, volume: 1 }] as const);
-  return { ninja: new Map(quotes), scout: new Map(Object.entries(scout)), scoutAgeHours: 3, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), nowMs: NOW };
+  return { ninja: new Map(quotes), scout: new Map(Object.entries(scout)), scoutAgeHours: 3, lineage: new Map(), lineageAgeHours: null, scoutZero: new Set(), trade: new Map(), tradeFallback: true, nowMs: NOW };
 }
 
 function testArtSchema(): void {

@@ -31,6 +31,9 @@ export function tradeSourceTitle(p: { listed: number; samples: number; ageHours:
   ].join("\n");
 }
 
+/** The trade half of an unpriced unique's reason in any league but the default one. */
+export const TRADE_DEFAULT_LEAGUE_ONLY = "trade prices are gathered for the default league only";
+
 /**
  * The trade half of an unpriced unique's reason. The last attempt wins: a failed search says why,
  * a successful one says how thin the market was.
@@ -38,7 +41,11 @@ export function tradeSourceTitle(p: { listed: number; samples: number; ageHours:
 export function tradeUnpricedNote(row: UniqueTradeRow | null, nowMs: number): string {
   if (row == null) return "not searched on trade yet";
   const ago = (ms: number): string => `${fmtAgeHours((nowMs - ms) / HOUR_MS)} ago`;
-  if (row.error != null) return `trade search failed ${ago(row.checkedAtMs)}: ${row.error}`;
+  if (row.error != null) {
+    // an attempt that sent nothing (trade2's catalog does not know the name) is not a failed search
+    const sent = row.searchedAtMs === row.checkedAtMs;
+    return sent ? `trade search failed ${ago(row.checkedAtMs)}: ${row.error}` : `not searchable on trade (checked ${ago(row.checkedAtMs)}): ${row.error}`;
+  }
   const seen = row.observed;
   if (seen == null) throw new Error(`unique_trade_values ${row.nameKey}: no observation and no error`);
   if (seen.listed === 0) return `no instant-buyout listings on trade (searched ${ago(seen.atMs)})`;

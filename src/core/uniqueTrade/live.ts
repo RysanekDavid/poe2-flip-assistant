@@ -2,8 +2,10 @@ import { searchListings, type TradeCred } from "../../api/tradeClient";
 import { fetchTradeMeta } from "../../api/tradeMeta";
 import { withCredStatus } from "../../auth/credStatus";
 import { config } from "../../config/env";
+import { getCredStatus } from "../../db/credStatusQueries";
 import { uniqueValueMap } from "../../db/marketQueries";
-import { recordUniqueTradeFailure, recordUniqueTradeObservation, uniqueTradeChecksSince, uniqueTradeValues } from "../../db/uniqueTradeQueries";
+import { recordUniqueTradeFailure, recordUniqueTradeObservation, uniqueTradeSearchesSince, uniqueTradeValues } from "../../db/uniqueTradeQueries";
+import type { CredState } from "../../lib/poeSettingsContract";
 import { scoutKey } from "../../lib/scoutKey";
 import { getDefaultLeague } from "../leagueState";
 import { resolveRates } from "../rates";
@@ -26,13 +28,18 @@ export interface ScanOwner {
 }
 
 /**
- * Why a tick cannot search, or null. The User-Agent carries the operator contact
- * (DATA_SOURCE_CONTACT), never the cookie owner's own contact: a stored cred's contact is whatever
- * the user typed in Settings, and personal data must not ride in request headers.
+ * Why a tick cannot search, or the cred it searches with. The User-Agent carries the operator
+ * contact (DATA_SOURCE_CONTACT), never the cookie owner's own: a stored cred's contact is whatever
+ * the user typed in Settings, and personal data must not ride in request headers. A stored cookie
+ * trade2 already answered 403 is not tried again until a new one is saved (Settings resets the
+ * state); the .env cookie's health is not recorded, so it is always tried.
  */
-export function scanCred(owner: ScanOwner, contact: string): { cred: TradeCred } | { skip: string } {
+export function scanCred(owner: ScanOwner, contact: string, credState: CredState): { cred: TradeCred } | { skip: string } {
   if (contact.trim() === "") return { skip: "DATA_SOURCE_CONTACT is not set — trade2 requests must name an operator contact" };
   if (owner.cred == null) return { skip: "owner has no POESESSID stored — no trade2 searches until one is saved in Settings" };
+  if (owner.cred.source === "stored" && credState === "expired") {
+    return { skip: "the owner's POESESSID is expired (trade2 answered 403) — save a fresh one in Settings to resume" };
+  }
   return { cred: { poesessid: owner.cred.poesessid, source: owner.cred.source, contact: contact.trim() } };
 }
 
@@ -41,7 +48,7 @@ export function scanCred(owner: ScanOwner, contact: string): { cred: TradeCred }
  * prices can only be stored for it.
  */
 export async function tickUniqueTrade(owner: ScanOwner, nowMs: number = Date.now()): Promise<UniqueTradeOutcome> {
-  const auth = scanCred(owner, config.dataSourceContact);
+  const auth = scanCred(owner, config.dataSourceContact, getCredStatus(owner.id).state);
   if ("skip" in auth) return { kind: "skipped", reason: auth.skip };
   const league = getDefaultLeague();
   const resolved = resolveRates(league, nowMs);
@@ -53,7 +60,7 @@ export async function tickUniqueTrade(owner: ScanOwner, nowMs: number = Date.now
     names: NAMES,
     scoutPriced: new Set([...uniqueValueMap(league).keys()].map(scoutKey)),
     stored: uniqueTradeValues(league),
-    recentChecksMs: uniqueTradeChecksSince(nowMs - HOUR_MS),
+    recentSearchesMs: uniqueTradeSearchesSince(nowMs - HOUR_MS),
     capPerHour: cfg.maxSearchesPerHour,
     perTick: perTickOf(cfg.maxSearchesPerHour, UNIQUE_TRADE_TICK_MIN),
     refreshMs: cfg.refreshHours * HOUR_MS,
@@ -62,7 +69,7 @@ export async function tickUniqueTrade(owner: ScanOwner, nowMs: number = Date.now
     // each search is the owner's cookie answering trade2, so a 403 marks a stored cookie expired
     search: (q) => withCredStatus(owner.id, auth.cred, () => searchListings(q, TRADE_COMPARABLES, "asc", auth.cred)),
     observe: (w) => recordUniqueTradeObservation(league, w),
-    fail: (nameKey, error, at) => recordUniqueTradeFailure(league, nameKey, error, at),
+    fail: (w) => recordUniqueTradeFailure(league, w),
   });
   return { kind: "ran", report };
 }
