@@ -33,6 +33,16 @@ const config: Config = {
         lg: ["16px", { lineHeight: "24px" }],
         xl: ["20px", { lineHeight: "28px" }],
       },
+      keyframes: {
+        // a slow amber glow on the Coach owl, so the helper reads as alive without a badge
+        breathe: {
+          "0%, 100%": { filter: "drop-shadow(0 0 0 rgb(251 191 36 / 0))" },
+          "50%": { filter: "drop-shadow(0 0 6px rgb(251 191 36 / 0.55))" },
+        },
+      },
+      animation: {
+        breathe: "breathe 3.2s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

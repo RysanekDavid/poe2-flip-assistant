@@ -10,15 +10,11 @@ import { TabArt } from "./TabArt";
 import { TAB_ICONS } from "./tabIcons";
 import { useTabRoute } from "./useTabRoute";
 
+// Inactive art stays near full strength: at 60% the dark metal PNGs sank into the header.
+const dimClass = (active: boolean): string => (active ? "opacity-100" : "opacity-85 group-hover:opacity-100");
+
 function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
-  // Inactive art stays near full strength: at 60% the dark metal PNGs sank into the header.
-  const dim = active ? "opacity-100" : "opacity-85 group-hover:opacity-100";
-  const icon = TAB_ICONS[id];
-  if (icon.kind === "glyph") {
-    // Gold tint so a line glyph sits beside the metal-and-gold tab art instead of reading as UI chrome.
-    return <icon.Icon aria-hidden strokeWidth={1.75} className={`h-7 w-7 shrink-0 p-0.5 text-amber-200/80 transition-opacity ${dim}`} />;
-  }
-  return <TabArt icon={icon} className={`h-7 w-7 object-contain transition-opacity ${dim}`} priority={id === "flips"} />;
+  return <TabArt src={TAB_ICONS[id]} className={`h-7 w-7 object-contain transition-opacity ${dimClass(active)}`} priority={id === "flips"} />;
 }
 
 /** Plain left-click goes through go() (dedupes history); modified clicks keep open-in-new-tab. */
@@ -86,7 +82,11 @@ export function TabNav() {
             : "border-neutral-800 bg-neutral-900/45 text-neutral-400 hover:border-amber-400/25 hover:text-neutral-200"
         }`}
       >
-        <TabGlyph id="coach" active={tab === "coach"} />
+        {/* the owl breathes a slow amber glow so the helper reads as present; still for reduced motion */}
+        <TabArt
+          src={TAB_ICONS.coach}
+          className={`h-7 w-7 object-contain transition-opacity motion-safe:animate-breathe ${dimClass(tab === "coach")}`}
+        />
         {coach.label}
       </Link>
     </nav>

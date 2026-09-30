@@ -40,10 +40,33 @@ emblem cut the same way, a line in `leagueEmblem.ts` and a line in `components/L
 
 ## Owner-supplied art
 
-The remaining top-level PNGs (tab icons, `logo/`, `Section Icons/`) were supplied by the owner.
-The Regex and Patches tabs use lucide glyphs (`Search`, `ScrollText`) until owner art exists;
-swapping one is a one-line `art(...)` change in `src/components/shell/tabIcons.ts`.
+Everything else at the top level, plus `logo/` and `Section Icons/`, was supplied by the owner.
 
-## Owner tab art
+### Tab art
 
-Top-level tab icons in this folder (`Currency_exchange.png`, `Web_market.png`, `Craft.png`, `Wealth.png`, `Coach.png`, `settings.png`, and since 2026-09-30 `Farm.png`, `Regex.png`, `Learn.png`, `Patches.png`) are custom art supplied by the owner and wired in `src/components/shell/tabIcons.ts`, each with a per-image brightness `lift` so the dark metal art reads beside the gold art. Swapping a PNG means re-measuring its lift (see the comment there).
+One PNG per tab, trimmed to 128 px on a transparent background and wired in
+`src/components/shell/tabIcons.ts` (drawn by `TabArt`, as supplied, with no filter):
+
+| File | Tab |
+|------|-----|
+| `Currency_exchange.png` | Flips |
+| `Web_market.png` | Trade (also the Trade › Opportunities sub-tab) |
+| `Farm.png` | Farm |
+| `Craft.png` | Craft |
+| `Wealth.png` | Wealth |
+| `Regex.png` | Regex |
+| `Patches.png` | Patches |
+| `Learn.png` | Learn |
+| `Alerts.png` | Alerts (a bell) |
+| `settings.png` | Settings |
+| `Coach.png` | Coach button (the gold owl; it breathes a slow amber glow unless reduced motion is on) |
+
+Swapping one is a file replacement; keep it square, trimmed and around 128 px.
+
+### Logo
+
+- `logo/app_logo.png`: the teal owl mascot holding an orb, pointing right, 256 px, transparent. The
+  header, login page and loading chrome draw it through `src/components/shell/Brand.tsx`, next to
+  the Rubik "PoE2 Coach" wordmark.
+- The browser and home-screen icons are the owl's head, as the Next file conventions
+  `src/app/icon.png` (256 px) and `src/app/apple-icon.png` (180 px), not files in this folder.

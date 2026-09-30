@@ -36,9 +36,7 @@ function useDeepLinked(): boolean {
 }
 
 function Art() {
-  const icon = TAB_ICONS.alerts;
-  if (icon.kind === "glyph") return <icon.Icon aria-hidden className="h-5 w-5 text-amber-200/80" />;
-  return <TabArt icon={icon} className="h-5 w-5 object-contain" />;
+  return <TabArt src={TAB_ICONS.alerts} className="h-5 w-5 object-contain" />;
 }
 
 /**
