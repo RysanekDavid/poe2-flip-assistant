@@ -23,7 +23,7 @@ export const RECIPES_5: CraftRecipe[] = [
       rarity: "rare",
       ilvlMin: 75, // T1 flat mana (+165–179) is modifier level 75 on Breach Rings (RePoE)
       stats: [{ text: "#% increased Rarity of Items found", group: "fractured" }],
-      note: "Breach Ring (implicit '+20% to Maximum Quality', RePoE) with a FRACTURED rarity SUFFIX, ilvl 75+. A fractured rarity PREFIX would take one of the three prefixes this craft fills. ~5–10 div (p2pah).",
+      note: "Breach Ring (implicit '+20% to Maximum Quality', RePoE) with a FRACTURED rarity SUFFIX, ilvl 75+. A fractured rarity PREFIX would take one of the three prefixes this craft fills.",
     },
     result: {
       label: "Breach Ring · T1 flat mana + % mana",
@@ -35,11 +35,15 @@ export const RECIPES_5: CraftRecipe[] = [
         { text: "#% increased maximum Mana", min: 4, tier: 1 },
         { text: "Minions deal #% increased Damage if you've Hit Recently", group: "desecrated", tier: 2 },
       ],
-      note: "Valued from instant-buyout comparables: Breach Ring with T1 flat mana (165+) and the essence's 4–6% maximum mana, plus the desecrated Amanamu minion-damage prefix when enough are listed. p2pah: the three core prefixes are worth '30+ divines to several hundred', finished rings 200+ div.",
+      note: "Valued from instant-buyout comparables: Breach Ring with T1 flat mana (165+) and the essence's 4–6% maximum mana, plus the desecrated Amanamu minion-damage prefix when enough are listed.",
     },
     materials: [
       { material: MATS.annul, qtyPerAttempt: 2.5, note: "Strip to the fractured rarity + one mod before the chaos phase, plus ~0.5 for a missed resistance slam." },
-      { material: MATS.chaos, qtyPerAttempt: 300, note: "Chaos until TRUE T1 flat mana (~300 chaos ≈ 10–12 div per p2pah)." },
+      {
+        material: MATS.chaos,
+        qtyPerAttempt: 200,
+        note: "Chaos until TRUE T1 flat mana. Our estimate, no reviewed source gives a count: T1 is one of ~195–200 mod tiers a Breach Ring rolls at ilvl 75–82 (RePoE), equal spawn weights assumed.",
+      },
       { material: MATS.omenDextralExaltation, qtyPerAttempt: 1, note: "Plants the sacrificial suffix the Crystallisation eats." },
       { material: MATS.exalted, qtyPerAttempt: 1 },
       { material: MATS.omenDextralCrystallisation, qtyPerAttempt: 1, note: "The Perfect essence then removes only a suffix (item text) — the fractured rarity can't go." },
@@ -50,7 +54,7 @@ export const RECIPES_5: CraftRecipe[] = [
       { material: MATS.omenAbyssalEchoes, qtyPerAttempt: 1, note: "One reroll of the three options, fishing minion damage." },
       { material: MATS.xophsCatalyst, qtyPerAttempt: 80, note: "40% elemental quality before EACH of the two slams — Catalysing consumes it all (KB §4). Tul's/Esh's work the same." },
       { material: MATS.omenCatalysingExaltation, qtyPerAttempt: 2.5, note: "7.5× tag weight at 40% (KB §4) — a bias, not a guarantee." },
-      { material: MATS.perfectExalted, qtyPerAttempt: 2.5, note: "Two resistance suffixes + ~0.5 re-slam; p2pah allows a Greater Exalt instead." },
+      { material: MATS.perfectExalted, qtyPerAttempt: 2.5, note: "Two resistance suffixes + ~0.5 re-slam." },
       { material: MATS.omenDextralAnnulment, qtyPerAttempt: 0.5, note: "Keeps the miss-annul on the suffixes." },
     ],
     hitRate: 0.5,

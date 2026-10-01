@@ -9,11 +9,12 @@ import type { RecipeProvenance, RecipeSource } from "./craftProvenance/schema";
  * an upload date we could read, except the two mana-ring videos, whose dates come from a search
  * listing ("14 days ago" / "15 days ago" on 2026-09-29, so ±1 day). We read the Exile Codex summaries
  * of the Barczi, POEGuy and Scorpius videos, not the videos. We have NOT reviewed the SaVeQ and
- * WesDesu mana-ring videos: they are listed because their titles place the craft in 0.5/0.5.5,
- * and every step that rests on the ring write-up alone carries an `unverified` badge.
+ * WesDesu mana-ring videos: they are listed because their titles place the craft in 0.5/0.5.5.
+ * The mana ring's step-by-step write-up turned out to be a real-money-trading shop's blog and was
+ * dropped on 2026-10-01, so every ring step no reviewed source gives carries an `unverified` badge.
  *
  * Tiers: "primary" = the creator's own video; "secondary" = a write-up of someone's craft (the
- * compilation, Exile Codex, Forge of Exiles, p2pah, Mobalytics). Real-money-trading shops are never cited
+ * compilation, Exile Codex, Forge of Exiles, Mobalytics, a forum report). Real-money-trading shops are never cited
  * (RMT_DOMAINS in src/lib/claim.ts; the schema rejects them). Exile Codex pages print
  * only a "Last updated" date; that printed date is used (precision exact, read from the page).
  *
@@ -59,13 +60,26 @@ const CODEX_POEGUY = guide(
   "exact",
 );
 const POEGUY = video("[PoE 2] Endgame Crossbow Crafting Guide - for POEGuy's Warbringer Mortar Cannon Build.", "https://www.youtube.com/watch?v=dbgOKCI5tOk", "POEGuy", null);
-const P2PAH_RING = guide(
-  "How to Craft Mana Stacking Rings in Path of Exile 2",
-  "https://www.p2pah.com/blog/path-of-exile-2/1893-how-to-craft-mana-stacking-rings-in-path-of-exile-2.html",
+// Fetched 2026-10-01. A player report on jewellery reveals (three options of the forced Lich, unless
+// a mod-group conflict blocks them) — single-source community evidence, not GGG text.
+const FORUM_LIEGE = guide(
+  "Omen of the Liege does not Guarantee Amanamu Modifiers on Desecrated Wands",
+  "https://www.pathofexile.com/forum/view-thread/3956293",
   null,
-  "2026-03-28",
+  "2026-06-08",
   "exact",
 );
+// The item text the Liege step quotes, kept with the KB section that records it.
+const LIEGE_TEXT: RecipeSource = {
+  kind: "kb",
+  title: "Omen of the Liege item text (poe2db, accessed 2026-10-01)",
+  url: "https://poe2db.tw/us/Omen_of_the_Liege",
+  creator: null,
+  date: null,
+  datePrecision: null,
+  tier: "secondary",
+  ref: "docs/kb/desecration-abyss.md",
+};
 const SAVEQ = video("Poe2-0.5.5 How to Profit craft Mana Stacking Rings", "https://www.youtube.com/watch?v=9kKdoq0tZXg", "SaVeQ", "2026-09-15");
 const WESDESU = video(
   "The mana stacker ring craft that made me 2 mirrors in PoE2 0.5 (and are still good in 0.5.5)",
@@ -184,7 +198,8 @@ export const EXPANSION_PROVENANCE: Record<string, RecipeProvenance> = {
   ring_breach_mana_stacker: {
     patchVerified: "0.5.5b",
     status: "draft",
-    sources: [P2PAH_RING, SAVEQ, WESDESU],
+    // Draft: no reviewed source walks the whole craft; the videos are unwatched, the others back single steps.
+    sources: [SAVEQ, WESDESU, LIEGE_TEXT, FORUM_LIEGE],
     hitRateBasis: { basis: "unknown", n: null, note: `${NO_ODDS} Every gate is a retry loop; the minion-damage reveal and the resistance slams decide the sale.` },
     extraEntityRefs: [],
     kbRuleRefs: ["§1", "§2", "§4", "§5", "§7", "§8"],
