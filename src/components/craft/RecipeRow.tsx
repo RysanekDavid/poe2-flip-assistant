@@ -8,6 +8,7 @@ import { evLabel, type RecipeView } from "./craftView";
 import { GateNote } from "./GateNote";
 import { MarginBreakdown } from "./MarginBreakdown";
 import { HitRateChip, recipeHitRate, StatusChip } from "./ProvenanceChips";
+import { DurabilityTip } from "../farm/strategies/Durability";
 
 export interface DomainMeta {
   title: string;
@@ -95,6 +96,7 @@ export function RecipeRow({ r, ex, open, onToggle, onOpen, icons, meta, interval
             <span>{meta.title}</span>
             <HitRateChip h={recipeHitRate(r)} live={r.provenance.hitRate} />
             <StatusChip p={r.provenance} />
+            {r.provenance.durability && <DurabilityTip durability={r.provenance.durability} />}
             {scanLabel(r) && <span className="text-amber-300">· {scanLabel(r)}</span>}
             {rep?.status === "ok" && <GateNote r={r} intervalMin={intervalMin} />}
           </div>

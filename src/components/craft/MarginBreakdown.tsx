@@ -11,7 +11,7 @@ import { evLabel, priceLabel, type RecipeView } from "./craftView";
 import { GateNote } from "./GateNote";
 import { basisWord, pct, recipeHitRate } from "./ProvenanceChips";
 import { SourcesList } from "./SourcesList";
-import { DurabilityNote } from "./DurabilityNote";
+import { RecipeDurabilityNote } from "./DurabilityNote";
 import { RETURN_FLAG_MULTIPLE } from "../../core/craftValuation";
 
 /** How a leg's number was derived — a percentile of floor-passing asks or a comparable median,
@@ -169,7 +169,7 @@ export function MarginBreakdown({ r, ex, icons, intervalMin }: { r: RecipeView; 
       <CraftSessionInline r={r} ex={ex} icons={icons} />
       {r.purpose === "sell" && <CardActions recipeKey={r.key} />}
       <MaterialsTable r={r} ex={ex} icons={icons} />
-      {r.provenance.durability && <DurabilityNote d={r.provenance.durability} />}
+      {r.provenance.durability && <RecipeDurabilityNote d={r.provenance.durability} />}
 
       {rep?.status === "ok" && rep.base && rep.result && (
         <p className="rounded-md bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">

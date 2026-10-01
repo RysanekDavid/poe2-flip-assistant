@@ -4,7 +4,8 @@
  * schemas on every read, so a hand edit that drifts from the shape fails loudly instead of rendering.
  */
 import { z } from "zod";
-import { claimSchema, isRmtUrl } from "../../lib/claim";
+import { isRmtUrl } from "../../lib/claim";
+import { durabilitySchema } from "../strategies/schema";
 import { PATCH_VERSION_RE } from "../../sources/patchNotes/contracts";
 import { ENTITY_ID_PATTERN } from "../entities/schema";
 
@@ -89,16 +90,11 @@ export const creatorClaimSchema = z
 export type CreatorClaim = z.infer<typeof creatorClaimSchema>;
 
 /**
- * Why a recipe keeps working and what would end it — the same shape as a strategy's durability
- * (why_it_works / breaks_when / claim). `claim` grades the why_it_works mechanic at its weakest link.
+ * Why a recipe keeps working and what would end it: the strategies' durability schema itself
+ * (why_it_works / breaks_when / a claim with at least one source), so the two cannot drift. For a
+ * recipe the claim grades the why_it_works mechanic at its weakest link.
  */
-export const recipeDurabilitySchema = z
-  .object({
-    why_it_works: z.string().min(1),
-    breaks_when: z.array(z.string().min(1)).min(1),
-    claim: claimSchema,
-  })
-  .strict();
+export const recipeDurabilitySchema = durabilitySchema;
 export type RecipeDurability = z.infer<typeof recipeDurabilitySchema>;
 
 export const recipeProvenanceSchema = z
