@@ -33,6 +33,7 @@ import { getDb } from "../db/database";
 import { insertSnapshots } from "../db/marketQueries";
 import type { Claim } from "../lib/claim";
 import { strategiesResponseSchema } from "../lib/strategiesContract";
+import { runStrategyCardCases } from "./strategyCardCases";
 
 const EXPECTED_IDS = [
   "abyss-depths-omens",
@@ -187,14 +188,25 @@ rejects("unknown key", "fracture-cleansed.json", (c) => ({ ...c, extra: true }),
 rejects("five master nodes", "fracture-cleansed.json", (c) => {
   c.atlas_master.nodes = [...c.atlas_master.nodes, ...c.atlas_master.nodes];
 }, /malformed/);
+rejects("rating without a source", "fracture-cleansed.json", (c) => {
+  c.ratings.build = { ...c.ratings.build, claim: { v: "syn", src: [], note: "none" } };
+}, /malformed/);
+rejects("budget without a source", "fracture-cleansed.json", (c) => {
+  c.budget = { ...c.budget, claim: { v: "syn", src: [], note: "none" } };
+}, /malformed/);
+rejects("schema version 1", "fracture-cleansed.json", (c) => ({ ...c, schema_version: 1 }), /malformed/);
 assert.throws(() => readStrategies(mkdtempSync(join(tmpdir(), "strategies-empty-"))), /no strategy files/);
-console.log("PASS  loader rejects: id ≠ filename, unknown/renamed yield, misplaced node, 'any' with nodes, bad stat id, sourceless vp, extra key, >4 nodes, empty dir");
+console.log("PASS  loader rejects: id ≠ filename, unknown/renamed yield, misplaced node, 'any' with nodes, bad stat id, sourceless vp, extra key, >4 nodes, unsourced rating/budget, schema v1, empty dir");
 
 // --- views: prices and search links ---
 const NOW = Date.parse("2026-09-29T12:00:00Z");
-const views = buildStrategyViews(strategies, "Forbidden Rites", new Map([["fracturing-orb", { div: 1.5, fetchedAt: "2026-09-29T11:30:00.000Z" }]]), NOW);
+const MARKETS = new Map([["fracturing-orb", { div: 1.5, fetchedAt: "2026-09-29T11:30:00.000Z", change7d: 12, volume: 400 }]]);
+const views = buildStrategyViews(strategies, "Forbidden Rites", MARKETS, NOW);
 const fracture = views.find((v) => v.id === "fracture-cleansed");
-assert.deepEqual(fracture?.yields[0]?.price, { div: 1.5, ageMin: 30, source: "ninja" }, "priced by exchange id, age in minutes");
+assert.deepEqual(fracture?.yields[0]?.price, { div: 1.5, ageMin: 30, change7d: 12, source: "ninja" }, "priced by exchange id, age in minutes, 7d change");
+assert.ok(fracture?.trend && Math.abs(fracture.trend.change7d - 12) < 1e-9, "one priced drop with a trend carries the headline");
+assert.deepEqual([fracture.trend.counted, fracture.trend.total], [1, new Set(fracture.yields.map((y) => y.ref.id)).size], "counted of total drops");
+assert.equal(views.find((v) => v.id === "breach-hiveblood")?.trend, null, "no priced drop → no trend, never 0%");
 assert.ok(fracture?.yields[0]?.icon_url?.startsWith("https://web.poecdn.com/"), "yield art from the catalog");
 assert.equal(views.find((v) => v.id === "breach-hiveblood")?.yields[0]?.price, null, "unpriced yield is null, never 0");
 for (const view of views) {
@@ -214,6 +226,7 @@ for (const view of views) {
   }
 }
 console.log("PASS  views: exchange price + age per yield (null when unpriced), trade2 search per tablet mod with a stat id");
+runStrategyCardCases(strategies, views);
 
 // --- page filters ---
 const byId = (list: readonly { id: string }[]): string[] => list.map((s) => s.id);
@@ -248,17 +261,19 @@ console.log("PASS  filters: mechanics (any of), budget ceiling, yield search, ?b
 if (!/tmp|temp|scratchpad/i.test(config.dbPath)) throw new Error(`refusing to seed ${config.dbPath}; run via npm run test:strategies`);
 for (const suffix of ["", "-wal", "-shm"]) rmSync(`${config.dbPath}${suffix}`, { force: true });
 const LEAGUE = "Strategy Test League";
-const seed = (itemId: string, baseValue: number): PricedItem => ({ itemId, itemName: itemId, category: "Currency", baseValue, volume: 50, change7d: null, spark7d: null, icon: null });
-insertSnapshots(LEAGUE, [seed("fracturing-orb", 0.8), seed("exalted", 0.004), seed("chaos", 0.02)]);
+const seed = (itemId: string, baseValue: number, change7d: number | null = null): PricedItem => ({ itemId, itemName: itemId, category: "Currency", baseValue, volume: 50, change7d, spark7d: null, icon: null });
+insertSnapshots(LEAGUE, [seed("fracturing-orb", 0.8, 25), seed("exalted", 0.004), seed("chaos", 0.02)]);
 getDb().prepare("UPDATE price_snapshots SET fetched_at = datetime('now', '-10 minutes') WHERE league = ?").run(LEAGUE);
 const body = strategiesResponseSchema.parse(loadStrategyBoard(LEAGUE, Date.now()));
 assert.equal(body.computedLeague, LEAGUE);
 assert.equal(body.strategies.length, EXPECTED_IDS.length, "the route returns every strategy; filtering is client-side");
 assert.ok(body.exPerDiv !== null && Math.abs(body.exPerDiv - 250) < 1e-9, "exalted per divine from the seeded ninja rates");
 assert.equal(body.strategies.find((s) => s.id === "fracture-cleansed")?.yields[0]?.price?.div, 0.8);
+assert.equal(body.strategies.find((s) => s.id === "fracture-cleansed")?.trend?.change7d, 25, "the stored 7d change reaches the card");
+assert.equal(body.mechanics.find((m) => m.mechanic === "corruption")?.trend?.change7d, 25, "and the mechanic chip");
 const empty = strategiesResponseSchema.parse(loadStrategyBoard("League Without Data", Date.now()));
 assert.equal(empty.pricesFetchedAt, null);
-assert.ok(empty.strategies.every((s) => s.yields.every((y) => y.price === null)), "no data → every yield unpriced");
+assert.ok(empty.strategies.every((s) => s.yields.every((y) => y.price === null) && s.trend === null), "no data → every yield unpriced, no trend");
 const route = readFileSync("src/app/api/farm/strategies/route.ts", "utf8");
 assert.match(route, /getCurrentUser\(\)[\s\S]*status: 401[\s\S]*loadStrategyBoard\(leagueForUser\(user\.id\)/, "auth, then the viewer's league");
 assert.match(route, /strategiesResponseSchema\.parse\(body\)/, "validated on the way out");

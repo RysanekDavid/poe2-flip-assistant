@@ -1,7 +1,7 @@
 "use client";
 
 import type { Confidence } from "../../core/tools/bossEv/schema";
-import { fmtDiv, type Tone } from "../../core/tools/bossEv/headline";
+import type { Tone } from "../../core/tools/bossEv/headline";
 
 /** Headline colours. Amber is the ceiling for anything resting on an unconfirmed rate (headline.ts). */
 export const TONE_CLASS: Record<Tone, string> = {
@@ -17,11 +17,6 @@ export function fmtPct(p: number): string {
   if (p <= 0) return "0%";
   if (p < 0.01) return "<1%";
   return `${Math.round(p * 100)}%`;
-}
-
-/** "30 div/h", "−120 ex/h" — a viewer's own Div/hour, never a fabricated one. */
-export function fmtDivHour(divPerHour: number, exPerDiv: number | null, signed = false): string {
-  return `${fmtDiv(divPerHour, exPerDiv ?? 0, signed)}/h`;
 }
 
 /** "1 in 23" for a kills-per-drop count. */

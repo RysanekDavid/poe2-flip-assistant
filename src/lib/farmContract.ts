@@ -7,30 +7,17 @@ import { bossViewSchema, floorDropSchema } from "./tools/bossEvContract";
  * ranked by net per kill, and each boss's full evaluation for the detail panel. Shared by the route
  * (validated on the way out) and the client (validated on the way in). All money is Divine.
  *
- * Div/hour is the viewer's own: it exists only where they entered their clear speed (and, for a
- * mechanic, their own Div per map) — never a fabricated default, so every such field is nullable.
+ * No Div/hour anywhere: drop rates per map are unknown and the owner dropped hand-typed paces, so a
+ * per-hour number would be made up. Mechanics carry their 7-day basket heat, bosses their net per kill.
  */
 
-export const farmKindSchema = z.enum(["boss", "mechanic"]);
-export type FarmKind = z.infer<typeof farmKindSchema>;
-
 /**
- * How far a net (and the Div/hour scaled from it) can be trusted: `lower` when some drop has no
+ * How far a net can be trusted: `lower` when some drop has no
  * sourced rate or no price (EV leaves it out, so the real value is at least this), `upper` when part
  * of the entry is unpriced, `unknown` when both, `exact` otherwise.
  */
 export const netBoundSchema = z.enum(["exact", "lower", "upper", "unknown"]);
 export type NetBound = z.infer<typeof netBoundSchema>;
-
-/** The viewer's own pace on one board row; null wherever they have not entered it. */
-const speedFields = {
-  /** Minutes per kill (boss) or per map (mechanic). */
-  yourMinutes: z.number().positive().nullable(),
-  /** Div/hour; null unless every input it needs is known (bosses: also null when netBound is unknown). */
-  divPerHour: z.number().nullable(),
-  /** The bound divPerHour inherits (a boss's netBound; a mechanic's own numbers are exact); null with no Div/hour. */
-  divPerHourBound: netBoundSchema.nullable(),
-};
 
 const driverSchema = z.object({ item: z.string(), change7d: z.number(), valueDiv: z.number(), volume: z.number() });
 
@@ -46,9 +33,6 @@ export const mechanicRowSchema = z.object({
   drivers: z.array(driverSchema),
   /** Art of the basket's top driver; null when the snapshot has none. */
   icon: z.string().nullable(),
-  ...speedFields,
-  /** The viewer's own Div per map for this mechanic — the market cannot know what a map yields. */
-  yourDivPerRun: z.number().nonnegative().nullable(),
 });
 export type MechanicRow = z.infer<typeof mechanicRowSchema>;
 
@@ -96,61 +80,10 @@ export const bossRowSchema = z.object({
   unpricedLineage: z.number().int(),
   /** Drops with no published rate — EV leaves them out, so it is a lower bound. */
   unknownRate: z.number().int(),
-  ...speedFields,
 });
 export type BossRow = z.infer<typeof bossRowSchema>;
 
 export type FarmBoardRow = MechanicRow | BossRow;
-
-/** One saved pace, as PUT /api/farm/speed returns it (GET /api/farm folds them into the rows). */
-export const speedEntrySchema = z.object({
-  kind: farmKindSchema,
-  key: z.string(),
-  minutesPerRun: z.number().positive(),
-  /** Mechanics only; null = not entered (a boss's per-kill value comes from the market). */
-  divPerRun: z.number().nonnegative().nullable(),
-  /** Epoch ms of the last save. */
-  updatedAt: z.number().int(),
-});
-export type SpeedEntry = z.infer<typeof speedEntrySchema>;
-
-// A day is far past any real clear; the cap only stops a typo from reading as a pace.
-export const MAX_MINUTES_PER_RUN = 24 * 60;
-// Far above any real map's yield; only stops a typo (an extra zero or two) from reading as one.
-export const MAX_DIV_PER_RUN = 10_000;
-
-/**
- * PUT /api/farm/speed body: a full replacement of the viewer's pace on one row. A boss takes no
- * divPerRun — its per-kill value is the market net, and a hand-typed one would silently override it.
- */
-export const speedPutSchema = z
-  .object({
-    kind: farmKindSchema,
-    key: z.string().trim().min(1).max(64),
-    minutesPerRun: z.number().finite().positive().max(MAX_MINUTES_PER_RUN),
-    divPerRun: z.number().finite().nonnegative().max(MAX_DIV_PER_RUN).nullable().optional(),
-  })
-  .strict()
-  .refine((b) => b.kind === "mechanic" || b.divPerRun == null, {
-    message: "divPerRun is for mechanics only — a boss's per-kill value comes from the market",
-    path: ["divPerRun"],
-  });
-export type SpeedPut = z.infer<typeof speedPutSchema>;
-
-/** DELETE /api/farm/speed body. */
-export const speedDeleteSchema = z.object({ kind: farmKindSchema, key: z.string().trim().min(1).max(64) }).strict();
-export type SpeedDelete = z.infer<typeof speedDeleteSchema>;
-
-export const speedPutResponseSchema = z.object({ entry: speedEntrySchema });
-export const speedDeleteResponseSchema = z.object({ ok: z.literal(true) });
-export const speedErrorSchema = z.object({ error: z.string() });
-
-/** "minutesPerRun: Number must be greater than 0" — the first issue, with where it is. */
-export function speedErrorText(error: z.ZodError): string {
-  const first = error.issues[0];
-  if (!first) return "invalid request";
-  return first.path.length > 0 ? `${first.path.join(".")}: ${first.message}` : first.message;
-}
 
 export const farmRatesSchema = z.object({
   exaltPerDivine: z.number(),

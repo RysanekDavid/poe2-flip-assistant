@@ -31,7 +31,7 @@ export const BEGINNER_TABS: readonly TabId[] = ["learn", "farm", "trade", "alert
  * Settings keeps `account` for password + sessions only — its POESESSID block is hidden separately.
  */
 export const BEGINNER_TOOLS: Partial<Record<TabId, readonly string[]>> = {
-  farm: ["strategies"],
+  farm: ["strategies", "bosses"],
   trade: ["prices", "price"],
   settings: ["account", "notify", "mode", "system"],
 };
@@ -102,7 +102,7 @@ export function parseModeRoute(mode: NavMode, rawTab: string | null, rawTool: st
   }
   const tools = visibleTools(mode, parsed.tab);
   if (!tools || parsed.tool === null || tools.some((t) => t.id === parsed.tool)) return { ...parsed, rejected, hidden: [] };
-  // The tab's own default may be hidden (Farm board for a beginner): only an explicit ?tool= is a hidden deep link.
+  // The tab's own default may be hidden for a beginner: only an explicit ?tool= is a hidden deep link.
   const explicit = known && rawTool !== null && parsed.tool === rawTool;
   return { tab: parsed.tab, tool: defaultToolFor(mode, parsed.tab), rejected, hidden: explicit ? [`tool=${rawTool}`] : [] };
 }

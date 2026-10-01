@@ -43,9 +43,9 @@ export const SNIPE_OUTCOME_CHECK_COLUMNS: ReadonlyArray<readonly [string, string
 const checkColumnsSql = SNIPE_OUTCOME_CHECK_COLUMNS.map(([name, def]) => `${name} ${def},`).join("\n    ");
 
 const USER_TABLES_SQL = `
-  -- The player's own clear speed per boss / mechanic, so the farm board can show Div per hour.
-  -- div_per_run is only meaningful for mechanics (a boss's per-kill EV comes from the market);
-  -- NULL means "not entered", never zero.
+  -- Retired 2026-10-01: the player's hand-typed clear speed per boss / mechanic. The owner dropped
+  -- every manual Div/hour input (nobody keeps a pace up by hand), so nothing reads or writes this
+  -- table any more. It stays only so existing rows are not deleted without the owner's say-so.
   CREATE TABLE IF NOT EXISTS farm_user_speed (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     kind TEXT NOT NULL CHECK (kind IN ('boss', 'mechanic')),

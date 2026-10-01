@@ -1,6 +1,5 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
 import { fmtDiv, fmtRate } from "../../core/tools/bossEv/headline";
 import { sortLoot } from "../../core/tools/bossEv/rowText";
 import { tradeSourceLabel, tradeSourceTitle } from "../../core/tools/bossEv/tradeText";
@@ -60,7 +59,7 @@ function RateCell({ line }: { line: LootLineView }) {
   const unknown = line.rate.kind === "unknown";
   const text = unknown && line.rarity ? line.rarity.label : fmtRate(line.rate);
   const weak = line.confidence === "conflicting" || line.confidence === "unverified";
-  const rateLine = unknown ? "no published rate" : `per-kill rate as ${line.source.title} states it`;
+  const rateLine = unknown ? `no published rate (${line.source.title}, checked ${line.source.accessed})` : `per-kill rate as ${line.source.title} states it (checked ${line.source.accessed})`;
   const rarityLine = line.rarity ? `\n${line.rarity.source.title} labels it "${line.rarity.label}"` : "";
   const title = `${rateLine}${rarityLine}\n${CONFIDENCE_HINT[line.confidence]}`;
   return (
@@ -79,13 +78,11 @@ function evText(line: LootLineView, exPerDiv: number): { text: string; title: st
   return { text: "—", title: line.price == null ? "no price — excluded from EV" : "no known rate — excluded from EV" };
 }
 
-const host = (url: string): string => new URL(url).hostname.replace(/^www\./, "");
-
 function columns(exPerDiv: number | null): Column<LootLineView>[] {
   return [
     { key: "name", header: "Drop", cell: (l) => <DropCell line={l} /> },
     { key: "price", header: "Price", align: "right", tip: "poe.ninja for exchange items, poe2scout for uniques and lineage gems, trade listings for uniques poe2scout has no price for (trade prices are gathered for the default league only); unpriced drops are left out of EV, never counted as 0", cell: (l) => <PriceCell line={l} exPerDiv={exPerDiv} /> },
-    { key: "rate", header: "Rate", align: "right", tip: "per-kill drop rate as the cited source states it, or its rarity label when it gives no number. ? = sources disagree or the rate is unverified", cell: (l) => <RateCell line={l} /> },
+    { key: "rate", header: "Rate", align: "right", tip: "per-kill drop rate as the cited source states it, or its rarity label when it gives no number; hover a rate for its source. ? = sources disagree or the rate is unverified", cell: (l) => <RateCell line={l} /> },
     {
       key: "ev",
       header: "EV / kill",
@@ -99,20 +96,13 @@ function columns(exPerDiv: number | null): Column<LootLineView>[] {
         );
       },
     },
-    {
-      key: "src",
-      header: "Source",
-      cell: (l) => (
-        <a href={l.source.url} target="_blank" rel="noreferrer" title={`${l.source.title} — checked ${l.source.accessed}`} className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-100">
-          <ExternalLink aria-hidden className="h-3 w-3" />
-          {host(l.source.url)}
-        </a>
-      ),
-    },
   ];
 }
 
-/** Every drop of one tier with art, price, rate or rarity, EV share and citation — by EV, unrated below. */
+/**
+ * Every drop of one tier with art, price, rate or rarity and EV share — by EV, unrated below. The
+ * citation rides in the rate's hover; the panel lists each source once instead of a link per row.
+ */
 export function LootTable({ loot, exPerDiv }: { loot: LootLineView[]; exPerDiv: number | null }) {
   return <DataTable columns={columns(exPerDiv)} rows={sortLoot(loot)} rowKey={(l) => l.name} emptyState={<p className="text-sm text-neutral-400">No drops listed.</p>} />;
 }

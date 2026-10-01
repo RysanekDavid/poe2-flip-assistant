@@ -1,23 +1,17 @@
 "use client";
 
-import { useState, type FocusEvent, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
-import { orderBosses, type BossOrder } from "../../core/farm/farmSpeed";
 import type { BossRow } from "../../lib/farmContract";
-import { DataTable, detailRowId, type Column, type TableSort } from "../ui/DataTable";
+import { DataTable, detailRowId, type Column } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
 import { BossNameCell, EntryCell, NetCell } from "./bossCells";
-import { PaceCell, RiskCell } from "./bossRiskPace";
-import { deleteSpeed, putSpeed, useRowSaves, type RowSaves } from "./farmSpeedApi";
-
-type SaveMinutes = (bossId: string, minutes: number | null) => void;
+import { RiskCell } from "./bossRisk";
 
 interface ColumnCtx {
   exPerDiv: number | null;
   expandedId: string | null;
   onToggle: (id: string) => void;
-  save: SaveMinutes;
-  status: RowSaves["status"];
 }
 
 // A 1% width shrinks an auto-layout column to its content, so Entry cost sits right beside Boss
@@ -25,9 +19,10 @@ interface ColumnCtx {
 const SHRINK = "1%";
 const DETAIL_PREFIX = "boss-detail";
 
-// Six columns so the board fits a 1280 px screen: floor/chase ride under Net, chase odds under
-// Risk, liquidity is a thin-market mark on Entry, and pace + Div/h share one cell.
-function columns({ exPerDiv, expandedId, onToggle, save, status }: ColumnCtx): Column<BossRow>[] {
+// Five columns: floor/chase ride under Net, chase odds under Risk, and liquidity is a thin-market
+// mark on Entry. No Div/hour column: it would need the player's own pace, and hand-typed paces
+// were dropped (nobody keeps one up by hand).
+function columns({ exPerDiv, expandedId, onToggle }: ColumnCtx): Column<BossRow>[] {
   return [
     { key: "boss", header: "Boss", width: SHRINK, cell: (r) => <BossNameCell r={r} expanded={r.id === expandedId} detailId={detailRowId(DETAIL_PREFIX, r.id)} onToggle={onToggle} /> },
     {
@@ -52,14 +47,6 @@ function columns({ exPerDiv, expandedId, onToggle, save, status }: ColumnCtx): C
       cell: (r) => <RiskCell r={r} />,
     },
     {
-      key: "divh",
-      header: "Your Div/h",
-      align: "right",
-      sortable: true,
-      tip: "type your minutes per kill (the whole cycle, entry to loot picked up; private to you): net per kill × 60 ÷ your minutes. ≥ / ≤ carry the net's bound, ? = net unknown.",
-      cell: (r) => <PaceCell r={r} exPerDiv={exPerDiv} onCommit={(m) => save(r.id, m)} save={status(r.id)} />,
-    },
-    {
       key: "open",
       header: "",
       width: "2rem",
@@ -69,86 +56,35 @@ function columns({ exPerDiv, expandedId, onToggle, save, status }: ColumnCtx): C
 }
 
 interface Props {
+  /** Board order: the server's net ranking (farmBoard.ts). */
   bosses: BossRow[];
   /** The boss whose detail is open under its row; null = all closed. */
   expandedId: string | null;
   onToggle: (id: string) => void;
   renderDetail: (bossId: string) => ReactNode;
   exPerDiv: number | null;
-  /** After a pace is saved or cleared: reload, so Div/hour comes from the server. */
-  onSpeedSaved: () => void;
 }
 
-/** Board order (the server's net ranking) until "Your Div/h" is clicked: desc → asc → board again. */
-function useDivHourSort() {
-  const [order, setOrder] = useState<BossOrder>({ key: "board" });
-  const onSort = (key: string): void => {
-    if (key !== "divh") throw new Error(`Farm bosses: unknown sort column ${key}`);
-    setOrder((o) => (o.key !== "divh" ? { key, dir: "desc" } : o.dir === "desc" ? { key, dir: "asc" } : { key: "board" }));
-  };
-  const sort: TableSort = { key: order.key, dir: order.key === "divh" ? order.dir : "desc", onSort };
-  return { order, sort };
-}
-
-const isInput = (t: EventTarget | null): boolean => t instanceof HTMLInputElement;
-
-/**
- * Freeze the row order while any pace input has focus (orderBosses): a save reloads the board, and
- * a re-sort then would move the row being typed in. Tabbing input → input keeps the freeze.
- */
-function useFocusFreeze() {
-  const [frozen, setFrozen] = useState<readonly string[] | null>(null);
-  const handlers = (shownIds: readonly string[]) => ({
-    onFocus: (e: FocusEvent<HTMLDivElement>): void => {
-      if (isInput(e.target)) setFrozen((f) => f ?? shownIds);
-    },
-    onBlur: (e: FocusEvent<HTMLDivElement>): void => {
-      const next = e.relatedTarget;
-      if (!(isInput(next) && next instanceof Node && e.currentTarget.contains(next))) setFrozen(null);
-    },
-  });
-  return { frozen, handlers };
-}
-
-function SaveFailures({ failures, bosses }: { failures: RowSaves["failures"]; bosses: readonly BossRow[] }) {
-  if (failures.length === 0) return null;
-  const name = (id: string): string => bosses.find((b) => b.id === id)?.name ?? id;
+/** Pinnacle bosses by net per kill; a row opens its entry and drops under it. */
+export function BossTable({ bosses, expandedId, onToggle, renderDetail, exPerDiv }: Props) {
   return (
-    <p role="alert" className="text-sm text-bad">
-      Pace not saved — {failures.map((f) => `${name(f.rowKey)}: ${f.error}`).join(" · ")}
-    </p>
-  );
-}
-
-/** Pinnacle bosses by net per kill (or by the viewer's Div/hour); a row opens its entry and drops under it. */
-export function BossTable({ bosses, expandedId, onToggle, renderDetail, exPerDiv, onSpeedSaved }: Props) {
-  const { order, sort } = useDivHourSort();
-  // inputs stay enabled while a save is in flight: disabling them would steal focus from the next field
-  const saves = useRowSaves(onSpeedSaved);
-  const save: SaveMinutes = (bossId, minutes) =>
-    saves.run(bossId, () => (minutes == null ? deleteSpeed({ kind: "boss", key: bossId }) : putSpeed({ kind: "boss", key: bossId, minutesPerRun: minutes })));
-  const freeze = useFocusFreeze();
-  const rows = orderBosses(bosses, order, freeze.frozen);
-  return (
-    <div className="grid min-w-0 grid-cols-1 gap-1.5" {...freeze.handlers(rows.map((r) => r.id))}>
-      <SaveFailures failures={saves.failures} bosses={bosses} />
-      {/* phones scroll the six columns in their own box, where a shell-offset sticky head would float over
-          the rows, so it goes static there; from md up the page scrolls and the head stays sticky */}
-      <div className="min-w-0 max-md:overflow-x-auto max-md:[&_th]:static">
-        <DataTable
-          columns={columns({ exPerDiv, expandedId, onToggle, save, status: saves.status })}
-          rows={rows}
-          rowKey={(r) => r.id}
-          onRowClick={(r) => onToggle(r.id)}
-          expandedKey={expandedId ?? undefined}
-          detailIdPrefix={DETAIL_PREFIX}
-          renderExpanded={(r) => renderDetail(r.id)}
-          sort={sort}
-          interactiveCells
-          tall
-          emptyState={<EmptyState icon={null} sentence="No boss data — the curated loot tables did not load." />}
-        />
-      </div>
+    // phones scroll the columns in their own box, where a shell-offset sticky head would float over
+    // the rows, so it goes static there; from md up the page scrolls and the head stays sticky.
+    // `relative` makes the box the containing block of the rows' sr-only (absolute) text, which
+    // otherwise escapes the scroll clip and widens the whole page on a phone.
+    <div className="relative min-w-0 max-md:overflow-x-auto max-md:[&_th]:static">
+      <DataTable
+        columns={columns({ exPerDiv, expandedId, onToggle })}
+        rows={bosses}
+        rowKey={(r) => r.id}
+        onRowClick={(r) => onToggle(r.id)}
+        expandedKey={expandedId ?? undefined}
+        detailIdPrefix={DETAIL_PREFIX}
+        renderExpanded={(r) => renderDetail(r.id)}
+        interactiveCells
+        tall
+        emptyState={<EmptyState icon={null} sentence="No boss data — the curated loot tables did not load." />}
+      />
     </div>
   );
 }

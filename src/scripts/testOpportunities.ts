@@ -197,7 +197,8 @@ async function testListingsCap(): Promise<void> {
 
 function testRedirectAndDb(): void {
   const old = followRenames("market", "board");
-  ok("deep link: ?tab=market&tool=board → trade + opportunities", old.tab === "trade" && old.tool === "opportunities" && redirectTool("farm", "board") === "board");
+  // Farm's own "board" is a separate rename (to Strategies): the Trade rename must not leak into it.
+  ok("deep link: ?tab=market&tool=board → trade + opportunities", old.tab === "trade" && old.tool === "opportunities" && redirectTool("farm", "board") === "strategies");
   const db = getDb();
   db.exec("DELETE FROM alerts");
   const snipe = (id: string) => ({ type: "SNIPE" as const, itemId: id, itemName: "Doom Grip", message: "m", value: 40, threshold: 35, dedupe: "once" as const, details: sampleSnipeCard() });

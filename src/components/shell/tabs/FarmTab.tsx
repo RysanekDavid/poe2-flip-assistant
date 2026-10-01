@@ -1,11 +1,11 @@
 "use client";
 
-import { FarmBoard } from "../../farm/FarmBoard";
+import { BossesTool } from "../../farm/BossesTool";
 import { StrategiesTool } from "../../farm/strategies/StrategiesTool";
 import { useTabRoute } from "../useTabRoute";
 
-/** Farm tab: the board (mechanic heat strip, pinnacle boss table, boss detail) or atlas strategies (tool=strategies). */
+/** Farm tab: strategy cards (the default) or the pinnacle boss table (tool=bosses). */
 export function FarmTab() {
   const { tool } = useTabRoute();
-  return tool === "strategies" ? <StrategiesTool /> : <FarmBoard />;
+  return tool === "bosses" ? <BossesTool /> : <StrategiesTool />;
 }

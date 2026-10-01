@@ -19,6 +19,11 @@ It never buys, sells, whispers, clicks, or controls the game.
   autosnipe scanner, its closest near-misses, and uniques whose price rises while listings fall,
   all inside a budget taken from your net worth. Opening a unique spends one trade search
   (10 per hour per user, shared with Mod pool live values); nothing searches in the background for it.
+- **Farm:** **Strategies** (the default) — one card per way to farm maps: the 7-day price move of
+  its drops, two drops at today's price, Budget / Build / Complexity bars rated against a fixed
+  scale with a cited reason each, and a drawer with the full atlas setup, a Regex › Waystone link,
+  the priced loot and the risks. **Bosses** — pinnacle bosses by net per kill. No Div/hour
+  anywhere: drop rates are unknown and nothing measures a player's pace.
 - **Alerts:** one feed for snipes (full item card, whisper, trade link), craft margins, spreads
   and league news, with per-type ticker / sound / desktop-popup / Discord routing.
 - **Craft:** sixteen curated recipes with observed comparables, modelled EV, interactive steps,
