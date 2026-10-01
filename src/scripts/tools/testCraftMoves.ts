@@ -232,7 +232,7 @@ testParserMarker();
 testContract(cat);
 runRankCases(cat);
 runTargetCases(cat);
-runPlannerDataCases(cat);
+runPlannerDataCases(cat, kbText);
 assertPanelExport("src/components/craft/moves/CraftMovesTool.tsx", "CraftMovesTool", "src/components/shell/tabs/CraftTab.tsx");
 assert.deepEqual(parseTabRoute("craft", "moves"), { tab: "craft", tool: "moves", rejected: [] });
 for (const bad of ["hunt", "craft-moves", "", "MOVES"]) {
