@@ -1,7 +1,7 @@
 import type { MaterialKey } from "../../craftMaterials";
 import type { ItemState } from "./classify";
 import { KB, KB_CURRENCY_CORE, type MoveRule, type Verdict } from "./ruleTypes";
-import { all, floorNote, isMagic, isMagicOrRare, isNormal, isRare, lowIlvlWarning, needMods, needOpen, PASS } from "./rulePredicates";
+import { all, floorNote, isMagic, isMagicOrRare, isNormal, isRare, lowIlvlWarning, needMods, needOpen, needRemovable, PASS } from "./rulePredicates";
 
 /** Plain currency: transmute/aug/regal/alchemy/exalt/chaos/divine/annul/fracture (KB §1, §2). */
 
@@ -126,7 +126,7 @@ const CHAOS: MoveRule[] = tiers(
     effect: "removes ONE random existing mod and adds one new mod — not a full reroll",
     source: S1,
     verified: true,
-    check: (s) => (isRare(s) ? all([needMods(s, 1)]) : null),
+    check: (s) => (isRare(s) ? all([needRemovable(s, 1)]) : null),
   },
   "chaos",
   [
@@ -204,7 +204,7 @@ const SINGLES: MoveRule[] = [
     notes: [`Omen of Whittling does NOT work with Annulment (${KB} §4)`],
     source: `${S1}; ${CC_TARGETS}`,
     verified: true,
-    check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1)]) : null),
+    check: (s) => (isMagicOrRare(s) ? all([needRemovable(s, 1)]) : null),
   },
   {
     id: "fracture",

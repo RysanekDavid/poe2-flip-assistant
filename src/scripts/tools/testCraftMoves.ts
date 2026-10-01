@@ -22,6 +22,7 @@ import { SAMPLE_ITEM } from "../../components/craft/moves/craftMovesClient";
 import { runRankCases } from "./craftMovesRankCases";
 import { runTargetCases } from "./craftMovesTargets";
 import { runModPoolCases } from "./testModPool";
+import { runPlannerDataCases } from "./craftMovesPlannerData";
 
 const KB_PATH = join(process.cwd(), "docs", "research", KB);
 const kbText = readFileSync(KB_PATH, "utf8").replace(/\r/g, "");
@@ -231,6 +232,7 @@ testParserMarker();
 testContract(cat);
 runRankCases(cat);
 runTargetCases(cat);
+runPlannerDataCases(cat, kbText);
 assertPanelExport("src/components/craft/moves/CraftMovesTool.tsx", "CraftMovesTool", "src/components/shell/tabs/CraftTab.tsx");
 assert.deepEqual(parseTabRoute("craft", "moves"), { tab: "craft", tool: "moves", rejected: [] });
 for (const bad of ["hunt", "craft-moves", "", "MOVES"]) {
@@ -245,6 +247,7 @@ runModPoolCases(cat)
       `ALL PASS — craft-moves: catalog stamp, ${KB_GATE_EXAMPLES.length} KB §3 gate rows, ${KB6_FACTS.length} KB §6 facts, fixtures (full/2+2/magic/desecrated/corrupted/unmatched/advanced), jewels/liquids/catalysed/headers/markers, ` +
         `${ALL_RULES.length} rules with provenance, rarity targets vs item text (entity catalog + currency-core §1/§4), null-not-zero pricing, desecrated marker, contract, ` +
         "next-best-move cards (Sinistral first on an open prefix, Whittling never top-3, corrupted → none, variants collapse), outcome text, share link, panel wiring; " +
+        "catalog v2 (groups + tags), Crystallisation vs omen item text, Dusk/Gloam signed allowances; " +
         "mod pool (KB gates, text → stat, book ref boundaries + escaping, coverage, null-not-zero, live cache TTL + budget, contract)",
     ),
   )

@@ -1,8 +1,12 @@
 import type { ItemState } from "./classify";
-import { KB, KB_CURRENCY_CORE, type MoveRule, type Verdict } from "./ruleTypes";
-import { all, isMagicOrRare, isRare, needMods, needOpen, whittlingTarget } from "./rulePredicates";
+import { KB, KB_CURRENCY_CORE, type MoveRule, type UnlistedMaterial, type Verdict } from "./ruleTypes";
+import { all, isMagicOrRare, isRare, needOpen, needRemovable, whittlingTarget } from "./rulePredicates";
+import { JEWEL_ESSENCE } from "./ruleTableInstill";
 
-/** Omens riding an Exalted / Chaos / Annulment click (KB §1, §4, §8). The Annulment omens follow the orb onto magic items. */
+/**
+ * Omens riding an Exalted / Chaos / Annulment click or a Perfect / Corrupted Essence (KB §1, §4,
+ * §7, §8). The Annulment omens follow the orb onto magic items.
+ */
 
 const S4 = `${KB} §4`;
 
@@ -22,7 +26,7 @@ function whittle(side: "prefix" | "suffix" | null) {
     if (!isRare(s)) return null;
     const target = whittlingTarget(s);
     const unrevealed = s.slots.unrevealed > 0;
-    return all([needMods(s, 1, side ?? undefined)], {
+    return all([needRemovable(s, 1, side ?? undefined)], {
       pass: true,
       warnings: unrevealed ? [target] : [],
       notes: unrevealed ? [] : [target],
@@ -30,12 +34,13 @@ function whittle(side: "prefix" | "suffix" | null) {
   };
 }
 
-const CATALYST_CLASSES = new Set(["Rings", "Amulets"]);
+const ABOVE_40 = "the multiplier is documented at 20% (×5) and 40% (×7.5) only — above 40% (a Refined Breach Ring caps at 45%) it is not";
 
+/** Rings/amulets only: classify sets maxQuality for exactly the classes catalysts apply to. */
 function catalysingCheck(s: ItemState): Verdict {
-  if (!isRare(s) || s.itemClass == null || !CATALYST_CLASSES.has(s.itemClass)) return null;
+  if (!isRare(s) || s.maxQuality == null) return null;
   if (!s.quality) return { block: "no catalyst quality on the item — apply a catalyst first" };
-  return all([needOpen(s, "any")]);
+  return all([needOpen(s, "any")], { pass: true, warnings: s.quality > 40 ? [ABOVE_40] : [] });
 }
 
 const EXALTATION: MoveRule[] = [
@@ -107,6 +112,7 @@ const EXALTATION: MoveRule[] = [
     effect: "the next Exalt consumes ALL catalyst quality to bias toward the catalyst's tag (×5 at 20%, ×7.5 at 40%)",
     warnings: ["a weighted bias, NOT a guarantee — and all quality is consumed"],
     notes: [
+      "×5 / ×7.5 is the community model of the bias (KB §4), not item text; nothing documents the multiplier above 40% quality",
       "with Greater Exaltation the bias may hit only the FIRST added mod (KB dispute) — budget first-only",
       `raw catalyst quality alone never changes roll weights (${KB} §8)`,
     ],
@@ -126,7 +132,7 @@ const REMOVAL: MoveRule[] = [
     effect: "the Chaos removal hits a PREFIX, then one new mod is added",
     source: `${KB} §1; ${S4}`,
     verified: true,
-    check: (s) => (isRare(s) ? all([needMods(s, 1, "prefix")]) : null),
+    check: (s) => (isRare(s) ? all([needRemovable(s, 1, "prefix")]) : null),
   },
   {
     id: "omen-dextral-erasure",
@@ -137,7 +143,7 @@ const REMOVAL: MoveRule[] = [
     effect: "the Chaos removal hits a SUFFIX, then one new mod is added",
     source: `${KB} §1; ${S4}`,
     verified: true,
-    check: (s) => (isRare(s) ? all([needMods(s, 1, "suffix")]) : null),
+    check: (s) => (isRare(s) ? all([needRemovable(s, 1, "suffix")]) : null),
   },
   {
     id: "omen-whittling",
@@ -187,7 +193,7 @@ const REMOVAL: MoveRule[] = [
     notes: [ANNUL_OMEN_NOTE],
     source: `${S4}; ${KB} §1; ${KB_CURRENCY_CORE} §1, §5`,
     verified: false,
-    check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1, "prefix")]) : null),
+    check: (s) => (isMagicOrRare(s) ? all([needRemovable(s, 1, "prefix")]) : null),
   },
   {
     id: "omen-dextral-annulment",
@@ -199,8 +205,69 @@ const REMOVAL: MoveRule[] = [
     notes: [ANNUL_OMEN_NOTE],
     source: `${S4}; ${KB} §1; ${KB_CURRENCY_CORE} §1, §5`,
     verified: false,
-    check: (s) => (isMagicOrRare(s) ? all([needMods(s, 1, "suffix")]) : null),
+    check: (s) => (isMagicOrRare(s) ? all([needRemovable(s, 1, "suffix")]) : null),
   },
 ];
 
-export const OMEN_RULES: readonly MoveRule[] = [...EXALTATION, ...REMOVAL];
+/** What the Crystallisation omen text names: "your next Perfect or Corrupted Essence" (entity catalog, 0.5.5b). */
+export const RARE_ESSENCE: UnlistedMaterial = { key: "perfect-or-corrupted-essence", label: "Perfect or Corrupted Essence of your choice" };
+
+// RePoE CurrencyCorruptedEssence* (entity catalog, game data 0.5.5b): the rare-target essences that are not Perfect.
+const CORRUPTED_ESSENCE_IDS: ReadonlySet<string> = new Set([
+  "essence-of-delirium",
+  "essence-of-horror",
+  "essence-of-hysteria",
+  "essence-of-insanity",
+  "essence-of-the-abyss",
+  "essence-of-the-breach",
+]);
+
+/** True for the exchange ids a Crystallisation omen acts on: every Perfect essence and the corrupted ones. */
+export function isPerfectOrCorruptedEssence(exchangeId: string): boolean {
+  return exchangeId.startsWith("perfect-essence-of-") || CORRUPTED_ESSENCE_IDS.has(exchangeId);
+}
+
+const CRYSTALLISATION_NOTES = [
+  `a Crystallisation omen is consumed by ANY essence, Greater included (${S4}, single-source) — activate it right before the Perfect or Corrupted one`,
+  "pick the essence whose guaranteed mod you want — read its actual mod first",
+];
+
+const CRAFTED_SIDE_UNKNOWN = `the item already has a crafted mod (one per item, ${KB} §7) — what a side-steered essence does when that mod is on the other side is not in the KB`;
+
+/** KB §4 side mapping on a KB §7 remove-then-replace: removal restricted to `side`, write unchanged. */
+function crystallise(side: "prefix" | "suffix") {
+  return (s: ItemState): Verdict => {
+    if (!isRare(s)) return null;
+    const unverifiedBecause = s.jewel ? JEWEL_ESSENCE : s.slots.crafted > 0 ? CRAFTED_SIDE_UNKNOWN : undefined;
+    return all([needRemovable(s, 1, side)], { pass: true, unverifiedBecause });
+  };
+}
+
+const CRYSTALLISATION: MoveRule[] = [
+  {
+    id: "omen-sinistral-crystallisation",
+    label: "Omen of Sinistral Crystallisation + Perfect Essence",
+    family: "omen",
+    materials: ["omenSinistralCrystallisation", RARE_ESSENCE],
+    requires: "rare with a prefix",
+    effect: "the Perfect or Corrupted Essence removes only a PREFIX, then writes its guaranteed mod into the crafted slot",
+    notes: CRYSTALLISATION_NOTES,
+    source: `${S4}; ${KB} §7`,
+    verified: true,
+    check: crystallise("prefix"),
+  },
+  {
+    id: "omen-dextral-crystallisation",
+    label: "Omen of Dextral Crystallisation + Perfect Essence",
+    family: "omen",
+    materials: ["omenDextralCrystallisation", RARE_ESSENCE],
+    requires: "rare with a suffix",
+    effect: "the Perfect or Corrupted Essence removes only a SUFFIX, then writes its guaranteed mod into the crafted slot",
+    notes: CRYSTALLISATION_NOTES,
+    source: `${S4}; ${KB} §7`,
+    verified: true,
+    check: crystallise("suffix"),
+  },
+];
+
+export const OMEN_RULES: readonly MoveRule[] = [...EXALTATION, ...REMOVAL, ...CRYSTALLISATION];

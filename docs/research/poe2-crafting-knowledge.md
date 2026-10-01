@@ -32,6 +32,10 @@ Omen of Corruption no longer obtainable, Omen of Sanctification; §5 re-desecrat
 Light REFUTED; §7 the Astrid's Creativity exception [verified-primary]; §10 question 1 narrowed. The
 rest of the file is unchanged.
 
+**Corrections 2026-10-01 (partial, craft planner data):** §3 lists every base whose RePoE implicit
+changes the prefix/suffix limits (not only Dusk/Gloam Rings); §8 adds the Refined Breach Ring's
+"+25% to Maximum Quality" implicit and its literal 45% catalyst cap. The rest of the file is unchanged.
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -117,6 +121,15 @@ earlier "82/70 for all bases" guide claim resolves to 82/65.
 0.5.5b]: **Dusk Ring** = "+1 Prefix Modifier allowed" / "-1 Suffix Modifier allowed" (4 prefixes,
 2 suffixes); **Gloam Ring** is the mirror (−1 prefix / +1 suffix; auto-captions spell it "gloom ring"). A four-flat-prefix attack ring
 needs the Dusk Ring.
+
+**Every affix-allowance base** [verified-primary — RePoE snapshot `base_items` implicits, game data
+0.5.5b, read from the craft catalog 2026-10-01]: Dusk Ring / Dusk Amulet +1 prefix −1 suffix;
+Gloam Ring / Gloam Amulet −1 prefix +1 suffix; Penumbra Ring / Penumbra Amulet "+2 Prefix Modifiers
+allowed" / "-2 Suffix Modifiers allowed"; Tenebrous Ring / Tenebrous Amulet the mirror (−2 / +2);
+Absent Amulet −1 prefix −1 suffix; Lament Amulet and Twisted Amulet −1 prefix; Portent Amulet and
+Distorted Amulet −1 suffix. The Craft moves tool adds each implicit to the rare 3 + 3 (e.g. Penumbra
+5 prefixes + 1 suffix), the same literal reading as the Dusk Ring above; what the implicits do to a
+MAGIC item's 1 + 1 is [unverified], so the tool leaves that limit unknown.
 
 → ilvl-81 base can top chaos res but never top ele res. PoE2 in-game tier numbers count
 UPWARD — "T1" in this doc = highest tier (PoE1 vernacular). Headline-mod coverage now comes from
@@ -309,7 +322,11 @@ Chayula's=Chaos, Flesh=Life, Neural=Mana, Carapace=Defences, Reaver=Attack, Sibi
 Skittering=Speed, Adaptive=Attributes, Necrotic=Minion (0.5.2). Quality cap 20% on
 rings/amulets (40% Breach Rings); switching catalyst type wipes existing quality; quality
 buffs matching-tag mod magnitude (e.g. +60 life @20% Flesh → ~+72 effective) — roll-weight
-bias exists ONLY via Omen of Catalysing Exaltation (see §4).
+bias exists ONLY via Omen of Catalysing Exaltation (see §4). The Breach Ring's extra 20% is its
+implicit "+20% to Maximum Quality"; the **Refined Breach Ring** carries "+25% to Maximum Quality"
+[verified-primary — RePoE snapshot `base_items` implicits, game data 0.5.5b], so its cap reads as
+45% [single-source — the implicit text read literally, not tested in game]. Nothing documents the
+Catalysing multiplier above 40% quality [unverified].
 
 ## 9. In-game-confirmed burns (our own testing)
 

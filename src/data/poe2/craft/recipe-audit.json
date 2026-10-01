@@ -961,7 +961,7 @@
             {
               "kind": "pairing",
               "verdict": "unknown",
-              "detail": "no rule covers Omen of Sinistral Crystallisation",
+              "detail": "Omen of Sinistral Crystallisation is not paired here as any rule expects (omen-sinistral-crystallisation)",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -1097,9 +1097,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of Dextral Crystallisation",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of Dextral Crystallisation pairing matches verified rule omen-dextral-crystallisation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §7"
             }
           ]
         },
@@ -1362,7 +1362,7 @@
         },
         {
           "idx": 1,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -1378,9 +1378,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of Dextral Crystallisation",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of Dextral Crystallisation pairing matches verified rule omen-dextral-crystallisation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §7"
             }
           ]
         },
@@ -2420,7 +2420,7 @@
         },
         {
           "idx": 1,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -2436,9 +2436,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of Dextral Crystallisation",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of Dextral Crystallisation pairing matches verified rule omen-dextral-crystallisation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §7"
             }
           ]
         },
@@ -2676,9 +2676,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of Dextral Crystallisation",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of Dextral Crystallisation pairing matches verified rule omen-dextral-crystallisation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §7"
             }
           ]
         },
@@ -2767,7 +2767,7 @@
       "steps": [
         {
           "idx": 0,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -2783,9 +2783,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of Sinistral Crystallisation",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Crystallisation pairing matches verified rule omen-sinistral-crystallisation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §7"
             }
           ]
         },
@@ -3912,7 +3912,7 @@
             {
               "kind": "pairing",
               "verdict": "unknown",
-              "detail": "no rule covers Omen of Sinistral Crystallisation",
+              "detail": "Omen of Sinistral Crystallisation is not paired here as any rule expects (omen-sinistral-crystallisation)",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -3936,7 +3936,7 @@
             {
               "kind": "pairing",
               "verdict": "unknown",
-              "detail": "no rule covers Omen of Sinistral Crystallisation",
+              "detail": "Omen of Sinistral Crystallisation is not paired here as any rule expects (omen-sinistral-crystallisation)",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -4531,7 +4531,7 @@
         },
         {
           "idx": 4,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -4547,9 +4547,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of Dextral Crystallisation",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of Dextral Crystallisation pairing matches verified rule omen-dextral-crystallisation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §7"
             }
           ]
         },
@@ -4674,7 +4674,7 @@
             {
               "kind": "pairing",
               "verdict": "unknown",
-              "detail": "no rule covers Omen of Dextral Crystallisation",
+              "detail": "Omen of Dextral Crystallisation is not paired here as any rule expects (omen-dextral-crystallisation)",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]
@@ -4958,7 +4958,7 @@
         },
         {
           "idx": 9,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -4968,9 +4968,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of Dextral Crystallisation",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of Dextral Crystallisation pairing matches verified rule omen-dextral-crystallisation",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §7"
             }
           ]
         },

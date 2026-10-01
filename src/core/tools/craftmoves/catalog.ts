@@ -7,14 +7,14 @@ import { z } from "zod";
  * The slim craft catalog: every item-domain prefix/suffix mod, desecrated mod and crafted-only mod
  * a craftable item class can carry, with its RePoE level, tier family and value ranges.
  *
- * Built offline by `npm run build:craft-catalog` from the committed RePoE snapshot (gzipped: ~3.4 MB of
- * JSON, mostly tier pools repeated across base-type combos, compresses to ~150 KB). The web process
+ * Built offline by `npm run build:craft-catalog` from the committed RePoE snapshot (gzipped: ~3.6 MB of
+ * JSON, mostly tier pools repeated across base-type combos, compresses to ~175 KB). The web process
  * must never load that ~60 MB snapshot (see src/core/cx/repoeNames.ts), so the tool reads only this
  * derived artifact. `sourceSha256` pins the snapshot it came from; test:tools:craft-moves fails when
  * the snapshot is re-synced without rebuilding this file.
  */
 
-export const CRAFT_CATALOG_SCHEMA_VERSION = 1 as const;
+export const CRAFT_CATALOG_SCHEMA_VERSION = 2 as const;
 export const CRAFT_CATALOG_PATH = join(process.cwd(), "src", "data", "poe2", "craft", "craft-catalog.json.gz");
 
 export const AFFIX_SIDES = ["prefix", "suffix"] as const;
@@ -28,6 +28,10 @@ const CatalogModSchema = z.object({
   /** Affix name as shown in advanced (Ctrl+Alt+C) copies: "of the Brute". */
   name: z.string(),
   family: z.string().min(1),
+  /** Every RePoE mod group; `family` keeps only `type ?? groups[0]`, too little to see a group clash. */
+  groups: z.array(z.string().min(1)).min(1),
+  /** RePoE implicit_tags ("fire", "resistance", …): what catalyst-tag bias acts on. */
+  tags: z.array(z.string().min(1)),
   side: z.enum(AFFIX_SIDES),
   domain: z.enum(["item", "desecrated"]),
   /** RePoE required_level — the "modifier level" currency floors and ilvl gates compare against. */
