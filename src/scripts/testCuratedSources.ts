@@ -1,17 +1,19 @@
 /*
  * No curated data links a real-money-trading shop. claimSchema and the craft provenance schema
  * already reject one at load; this sweep also covers every URL that does not pass through those
- * schemas (boss loot, strategy notes, TS data tables), so a shop cannot slip in as plain text.
+ * schemas (boss loot, strategy notes, TS data tables) and the Coach's RAG corpus, whose citations
+ * the Coach hands to players.
  */
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { isRmtUrl, RMT_DOMAINS } from "../lib/claim";
+import { readKbManifest } from "./kbManifest";
 
 // npm scripts run from the repo root
 const ROOT = process.cwd();
 // the RePoE snapshot is datamined game data with no citations; everything else here is curated
-const SCAN: ReadonlyArray<{ dir: string; ext: string; skip?: string }> = [
+const TREES: ReadonlyArray<{ dir: string; ext: string; skip?: string }> = [
   { dir: "src/data/poe2", ext: ".json", skip: "repoe" },
   { dir: "src/core", ext: ".ts" },
 ];
@@ -25,20 +27,22 @@ function filesUnder(dir: string, ext: string, skip: string | undefined): string[
   });
 }
 
-function rmtHits(): string[] {
-  const hits: string[] = [];
-  for (const { dir, ext, skip } of SCAN) {
-    for (const file of filesUnder(join(ROOT, dir), ext, skip)) {
-      for (const url of readFileSync(file, "utf8").match(URL_RE) ?? []) {
-        if (isRmtUrl(url)) hits.push(`${relative(ROOT, file)}: ${url}`);
-      }
-    }
-  }
-  return hits;
+/** Curated trees plus exactly the files the Coach ingests (docs/kb manifest corpus). */
+function curatedFiles(): string[] {
+  const trees = TREES.flatMap(({ dir, ext, skip }) => filesUnder(join(ROOT, dir), ext, skip));
+  const corpus = readKbManifest(ROOT).corpus.map((entry) => join(ROOT, entry.path));
+  return [...trees, ...corpus];
 }
 
-const scanned = SCAN.reduce((n, { dir, ext, skip }) => n + filesUnder(join(ROOT, dir), ext, skip).length, 0);
-assert.ok(scanned > 50, `expected to scan the curated data, found only ${scanned} files`);
-const hits = rmtHits();
+function rmtHits(files: readonly string[]): string[] {
+  return files.flatMap((file) =>
+    (readFileSync(file, "utf8").match(URL_RE) ?? []).filter(isRmtUrl).map((url) => `${relative(ROOT, file)}: ${url}`),
+  );
+}
+
+const files = curatedFiles();
+assert.ok(files.length > 50, `expected to scan the curated data, found only ${files.length} files`);
+assert.ok(files.some((f) => f.endsWith(".md")), "the Coach corpus must be part of the sweep");
+const hits = rmtHits(files);
 assert.deepEqual(hits, [], `curated data cites real-money-trading shops (RMT_DOMAINS):\n${hits.join("\n")}`);
-console.log(`PASS  curated sources: ${scanned} files, no link to any of ${RMT_DOMAINS.length} RMT shops`);
+console.log(`PASS  curated sources: ${files.length} files incl. the Coach corpus, no link to any of ${RMT_DOMAINS.length} RMT shops`);

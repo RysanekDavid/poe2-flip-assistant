@@ -21,7 +21,7 @@ assert.ok(!claimSchema.safeParse({ v: "ss", src: ["javascript:alert(1)"] }).succ
 assert.ok(!claimSchema.safeParse({ v: "ok", src: [POE2DB] }).success, "unknown grade");
 assert.ok(!claimSchema.safeParse({ v: "vp", src: [POE2DB], extra: 1 }).success, "strict keys");
 assert.ok(!claimSchema.safeParse({ v: "uv", src: [], note: "" }).success, "empty note rejected");
-for (const shop of ["https://www.poecurrency.com/news/x", "https://iggm.com/news/y", "https://news.u4n.com/z"]) {
+for (const shop of ["https://www.poecurrency.com/news/x", "https://iggm.com/news/y", "https://news.u4n.com/z", "https://TimeSaver.gg:443/blog/x"]) {
   assert.ok(isRmtUrl(shop), `${shop} is an RMT shop`);
   assert.ok(!claimSchema.safeParse({ v: "ss", src: [shop] }).success, `${shop} rejected as a source`);
 }

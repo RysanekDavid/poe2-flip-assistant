@@ -4,13 +4,15 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 
 **Corrections 2026-09-29 (partial, tablet model):** how tablets are used in the Omen of Light and Essence of the Abyss rows (Abyss) and the Precursor Tablets row (Tablets) was corrected against the [0.3.1 patch notes](https://www.pathofexile.com/forum/view-thread/3862213) and docs/kb/atlas-juicing.md §3–§4: tablets go into the Map Device per map, and towers no longer hold them. The drop sources themselves were not re-checked.
 
+**Corrections 2026-10-01 (sources):** citations to real-money-trading shops were removed from the Sources column. Hinekora's Lock was re-sourced from poe2db, Vaal Cultivation Orb gained a poe2db source, and the Precursor Tablets row was re-sourced from Game8's tablet list (which also corrected the Abyss tablet source); the Imbued Alloy row dropped to single-source, and the Hinekora "rare world drop / buy it instead" advice and the "~1-3 Vaal Cultivation Orbs per clear" figure are now unverified.
+
 ---
 
 ## Abyss
 
 | Item | How to farm | Confidence | Sources |
 |---|---|---|---|
-| Omen of Light | Rare Abyss monster carrying **Amanamu's Void**, **Kurgal's Final Gasp**, or **Ulaman's Legion** Lichborn mod. Amanamu's Void variant drops ONLY if killed **outside** the void smoke cloud (opposite of Omen of the Liege). Boost odds with Abyss Precursor Tablets used in the Map Device on the map you run (per map since 0.3.1, not via towers; see atlas-juicing.md §4). No drops below area level 65 (as of 0.5.0). | confirmed | poe2wiki, timesaver.gg, mobalytics, 2× reddit |
+| Omen of Light | Rare Abyss monster carrying **Amanamu's Void**, **Kurgal's Final Gasp**, or **Ulaman's Legion** Lichborn mod. Amanamu's Void variant drops ONLY if killed **outside** the void smoke cloud (opposite of Omen of the Liege). Boost odds with Abyss Precursor Tablets used in the Map Device on the map you run (per map since 0.3.1, not via towers; see atlas-juicing.md §4). No drops below area level 65 (as of 0.5.0). | confirmed | poe2wiki, mobalytics, 2× reddit |
 | Omen of Abyssal Echoes | Same 3-faction Abyss rare pool as Omen of Light | confirmed | poe2wiki, reddit |
 | Omen of Sinistral Necromancy | Same 3-faction Abyss rare pool | confirmed | poe2wiki |
 | Omen of Dextral Necromancy | Same 3-faction Abyss rare pool | confirmed | poe2wiki |
@@ -41,7 +43,7 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 | Omen of Amelioration | Ritual Altar Tribute reward, drop level 1 | single-source | poe2wiki |
 | Omen of Answered Prayers | Ritual Altar Tribute reward, drop level 1 | single-source | poe2wiki |
 | Omen of Chaotic Monsters / Quantity / Rarity | Ritual Altar Tribute reward, drop level 1 | single-source | poe2wiki |
-| Omen of Chaotic Effectiveness | Ritual Altar Tribute reward, drop level 1 (Chaos-Orb-replace-Waystone-mod family, targets Monster Effectiveness). ⚠ *Game8 claims it's obtainable "from the Currency Exchange NPC" — contradicted by poe2scout's ritual-category taxonomy and the general Ritual-sourcing convention for the whole Omen family; treated as unreliable.* | confirmed | poe2wiki (item page), poe2scout, exiledtools, mmogah |
+| Omen of Chaotic Effectiveness | Ritual Altar Tribute reward, drop level 1 (Chaos-Orb-replace-Waystone-mod family, targets Monster Effectiveness). ⚠ *Game8 claims it's obtainable "from the Currency Exchange NPC" — contradicted by poe2scout's ritual-category taxonomy and the general Ritual-sourcing convention for the whole Omen family; treated as unreliable.* | confirmed | poe2wiki (item page), poe2scout, exiledtools |
 | Omen of Sanctification | Ritual Altar Tribute reward, drop level 79 | single-source | poe2wiki |
 | Omen of Refreshment | Ritual Altar Tribute reward, drop level 1 | single-source | poe2wiki |
 | Omen of Reinforcements | Ritual Altar Tribute reward, drop level 1 (effect triggers on Rogue Exiles, but drop source is Ritual only) | single-source | poe2wiki |
@@ -55,9 +57,9 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 | Omen of Sinistral / Dextral Coronation *(DROP-DISABLED 0.3.0)* | Formerly Ritual Tribute; no longer obtainable | single-source | poe2wiki |
 | Omen of Greater Annulment *(DROP-DISABLED 0.3.0)* | Formerly Ritual Tribute; no longer obtainable | single-source | poe2wiki |
 | Omen of Homogenising Coronation / Exaltation *(DROP-DISABLED 0.4.0)* | Formerly Ritual Tribute; no longer obtainable | single-source | poe2wiki |
-| An Audience with the King | Fill the "Tribute to the King" bar by spending unspent Ritual Tribute across maps; slot at the Realmgate to open the Crux of Nothingness (fight The King in the Mists) | confirmed | poe2wiki, trendsmask, u4n, gamepressure |
-| Head of the King | Guaranteed drop from The King in the Mists inside the Crux of Nothingness. Brought to Aoife at Caer Tarth to convert Atlas nodes into Rite of the Nameless maps, gating The Bodach. | confirmed | poe2wiki, game8, boostmatch, timesaver, live poe.ninja URL |
-| Call of the Shadows | Guaranteed drop from the final Ritual altar in a Rite of the Nameless map; collect 5× and slot into the Effigy at Caer Tarth to open the fight vs. The Bodach | confirmed | poe2wiki, game8, maxroll (x2), mmoexp |
+| An Audience with the King | Fill the "Tribute to the King" bar by spending unspent Ritual Tribute across maps; slot at the Realmgate to open the Crux of Nothingness (fight The King in the Mists) | confirmed | poe2wiki, trendsmask, gamepressure |
+| Head of the King | Guaranteed drop from The King in the Mists inside the Crux of Nothingness. Brought to Aoife at Caer Tarth to convert Atlas nodes into Rite of the Nameless maps, gating The Bodach. | confirmed | poe2wiki, game8, live poe.ninja URL |
+| Call of the Shadows | Guaranteed drop from the final Ritual altar in a Rite of the Nameless map; collect 5× and slot into the Effigy at Caer Tarth to open the fight vs. The Bodach | confirmed | poe2wiki, game8, maxroll (x2) |
 
 ---
 
@@ -67,7 +69,7 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 |---|---|---|---|
 | Verisium (base metal) | Drops from monsters empowered/summoned by interacting with Remnants across regions, plus Expedition bosses; first seen as an Act 2 quest item | confirmed | poe2wiki, fextralife |
 | Transcendent Alloy | Crafted (not a random drop) in Verisium Remnants using Runeshapes; chain every Ezomyte/Verisium Remnant in Grand Expeditions, combine at the Verisium Anvil | confirmed | game8, poe2wiki, live poe.ninja URL |
-| Imbued Alloy family (Expansive/Mystic/Swift/Runic) | Unlocked after Act 2 Farrow questline; drops from monsters summoned by interacting with Remnants; competes with Essences for the same crafted-mod slot | confirmed | timesaver.gg, misti.services |
+| Imbued Alloy family (Expansive/Mystic/Swift/Runic) | Unlocked after Act 2 Farrow questline; drops from monsters summoned by interacting with Remnants; competes with Essences for the same crafted-mod slot | unverified | — (no independent source) |
 | Astrid's Creativity | Exclusively obtained through **specific runewords applied to a Verisium Remnant** (Expedition mechanic) — not the Runes of Aldur league mechanic | confirmed | poe2wiki, live poe.ninja URL |
 | Aldur's / Medved's / Olroth's / Uhtred's / Vorana's Saga | Exclusively from **specific runewords applied to a Verisium Remnant**, same chain as Astrid's Creativity; drop level 78 | single-source | poe2wiki |
 
@@ -77,9 +79,9 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 
 | Item | How to farm | Confidence | Sources |
 |---|---|---|---|
-| Liquid Emotions (basic tiers) | Kill monsters inside Delirium fog (Waystone Delirium encounters) or run Simulacrum; Delirium bosses guarantee a drop + upgraded odds. Also buyable at the Currency Exchange NPC (post-Act 3). | confirmed | fextralife, aoeah, reddit |
+| Liquid Emotions (basic tiers) | Kill monsters inside Delirium fog (Waystone Delirium encounters) or run Simulacrum; Delirium bosses guarantee a drop + upgraded odds. Also buyable at the Currency Exchange NPC (post-Act 3). | confirmed | fextralife, reddit |
 | Ancient Liquid Emotions | Same Delirium activity, but gated behind the Atlas passive "I know your childhood fears..." — cannot drop without it. Used only for time-lost jewel crafting, not Waystone instilling. | single-source | poe2wiki |
-| Distilled Emotion (naming note) | ⚠ Treated interchangeably with "Liquid Emotion" across sources for the same currency family — not confirmed as a separate drop pool. | unverified | mobalytics, poe2wiki, timesaver |
+| Distilled Emotion (naming note) | ⚠ Treated interchangeably with "Liquid Emotion" across sources for the same currency family — not confirmed as a separate drop pool. | unverified | mobalytics, poe2wiki |
 
 ---
 
@@ -87,9 +89,9 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 
 | Item | How to farm | Confidence | Sources |
 |---|---|---|---|
-| Breachstone (regular, incl. named variants) | Breach Splinters drop from Hiveborn killed inside active Breach (need Tier 11+ Waystones); 300-splinter stack auto-combines into a Revelatory Wombgift, inserted into the Genesis Tree (0.5's Breach crafting hub) to birth a Breachstone; named variants are RNG'd at that step | confirmed | exiledtools, game8, aoeah |
-| Flawless Breachstone | ⚠ **0.5 acquisition chain not confirmed anywhere found.** Genesis Tree guides (Wombgift → Breachstone) don't mention Flawless variants. Do NOT assume PoE1's "Blessing of" upgrade item still applies. | unverified | aoeah, poewiki (PoE1 precedent only) |
-| Catalysts (all types incl. new Necrotic Catalyst) | **0.5 mechanic change: no longer a monster drop at all.** Exclusively crafted via the Breach Genesis Tree — Breach kills yield Hiveblood, used on Wombgifts (e.g. "Lavish Wombgift"), which output Catalysts; Atlas nodes can target/ban specific types. | confirmed | switchbladegaming, ssegold, reddit (1000-Wombgift dataset) |
+| Breachstone (regular, incl. named variants) | Breach Splinters drop from Hiveborn killed inside active Breach (need Tier 11+ Waystones); 300-splinter stack auto-combines into a Revelatory Wombgift, inserted into the Genesis Tree (0.5's Breach crafting hub) to birth a Breachstone; named variants are RNG'd at that step | confirmed | exiledtools, game8 |
+| Flawless Breachstone | ⚠ **0.5 acquisition chain not confirmed anywhere found.** Genesis Tree guides (Wombgift → Breachstone) don't mention Flawless variants. Do NOT assume PoE1's "Blessing of" upgrade item still applies. | unverified | poewiki (PoE1 precedent only) |
+| Catalysts (all types incl. new Necrotic Catalyst) | **0.5 mechanic change: no longer a monster drop at all.** Exclusively crafted via the Breach Genesis Tree — Breach kills yield Hiveblood, used on Wombgifts (e.g. "Lavish Wombgift"), which output Catalysts; Atlas nodes can target/ban specific types. | confirmed | switchbladegaming, reddit (1000-Wombgift dataset) |
 
 ---
 
@@ -105,8 +107,8 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 
 | Item | How to farm | Confidence | Sources |
 |---|---|---|---|
-| Fracturing Orb | Guaranteed drop from **The Immured Fury**, a unique monster exclusive to Cleansed maps (requires "Hidden Scars" Atlas passive, area level 75+). Small (~5%) secondary chance from Summoning Circle bosses rolling an extra modifier (~1.25% per circle, one Reddit datapoint). | confirmed | poe2wiki, timesaver, reddit |
-| Vaal Cultivation Orb | Tier 3+ Sacrificial Chambers (Apex of Oblation) inside the Temple of Atziri, reached by empowering Vaal Beacons found in maps (Incursion-style temple loop tied to Juatalotli's Triumph altars); ~1-3 per qualifying clear | single-source | poe2wiki, mmojugg |
+| Fracturing Orb | Guaranteed drop from **The Immured Fury**, a unique monster exclusive to Cleansed maps (requires "Hidden Scars" Atlas passive, area level 75+). Small (~5%) secondary chance from Summoning Circle bosses rolling an extra modifier (~1.25% per circle, one Reddit datapoint). | confirmed | poe2wiki, reddit |
+| Vaal Cultivation Orb | Tier 3+ Sacrificial Chambers (Apex of Oblation) inside the Temple of Atziri, reached by empowering Vaal Beacons found in maps (Incursion-style temple loop tied to Juatalotli's Triumph altars). poe2db ties it to the Incursion / Temple of Atziri content and gives drop level 1 and the text "Replaces up to 2 modifiers on a Corrupted Vaal Unique. Replaces other Uniques with a Corrupted Unique of the same Item Class" ([poe2db](https://poe2db.tw/us/Vaal_Cultivation_Orb), accessed 2026-10-01). The "~1-3 per qualifying clear" yield is unverified (its source was removed 2026-10-01). | single-source | poe2wiki, poe2db |
 
 ---
 
@@ -115,7 +117,7 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 | Item | How to farm | Confidence | Sources |
 |---|---|---|---|
 | Chance Shard | No single mechanic. Guaranteed 1 per unique disenchanted at an NPC; also a low-rate random drop from Cruel-act and endgame monsters/containers generally. | confirmed | poe2wiki, gamespot, maxroll |
-| Hinekora's Lock | No dedicated farm. Rare random world drop (drop level ~40-46) across any content; most players just buy it from the Currency Exchange NPC (post-Act 3) rather than farm it. | single-source | timesaver, mmoexp |
+| Hinekora's Lock | Drop level 46; text "Allows an item to foresee the result of the next Currency item used on it. Modifying the item in any way removes the ability to foresee" ([poe2db](https://poe2db.tw/us/Hinekoras_Lock), accessed 2026-10-01). poe2db names no dedicated farm. The earlier "rare random world drop across any content; most players buy it from the Currency Exchange instead" advice is unverified (its only sources were shop guides, removed 2026-10-01). | single-source | poe2db |
 | Aldur runes (Flux/Passion/Breath/Ire/Betrayal of Aldur) | ⚠ **Counterintuitive:** despite the name, best documentation says these are a **generic random world drop** (drop level 65), NOT gated behind the Runes of Aldur league mechanic (Runic Remnants/Runeforging). No Runic Recipe documented. Needs a follow-up check against patch notes/datamining before trusting for hunt filtering. | single-source | fextralife, game8, conquestcapped |
 
 ---
@@ -124,7 +126,7 @@ Merged from 3 research passes covering Omens, Abyss/Ritual-chain items, and misc
 
 | Item | How to farm | Confidence | Sources |
 |---|---|---|---|
-| Precursor Tablets (mechanic-specific, e.g. Breach/Ritual/Abyss Tablet) | Self-referential: the mechanic-specific tablet drops only from doing that mechanic (e.g. Breach Tablets only from Breach/Hiveborn monsters). Generic (non-mechanic) tablets drop from any monster while mapping. Completing a Precursor Tower map also drops an extra tablet. Use: put it in the Map Device to add that mechanic to the one map you open — up to 3 tablets per map (the slots open with the waystone's modifier count), 10 uses each, one spent per map. Towers no longer hold tablets or juice nearby maps; they reveal the Atlas. [verified-primary — [0.3.1 patch notes](https://www.pathofexile.com/forum/view-thread/3862213), accessed 2026-09-29: "You no longer need Towers to use Precursor Tablets, instead, Tablets can now be placed into the Map Device to add their bonuses directly to your Map." / "Towers can still be used to gain visibility on the Atlas, and they will also drop an extra Precursor Tablet as a reward for completing them." / "You can use up to 3 Tablets with each Map" / "Non-Unique Tablets now have 10 uses"; see atlas-juicing.md §3–§4] | confirmed | timesaver, odealo, poe2wiki; GGG 0.3.1 notes (usage) |
+| Precursor Tablets (mechanic-specific, e.g. Breach/Ritual/Abyss Tablet) | Breach, Delirium, Expedition and Ritual tablets are "Dropped by monsters in" that mechanic (Breaches, Deliriums, Expeditions, Rituals). **Exception:** Abyss tablets, like the generic (Irradiated) tablet and the unique Overseer tablets, are listed as "Dropped by monsters in maps", and Abyss tablets also via the Currency Exchange [Game8 List of Tablets, updated 2026-09-10, accessed 2026-10-01: https://game8.co/games/Path-of-Exile-2/archives/487814]. Completing a Precursor Tower map also drops an extra tablet. Use: put it in the Map Device to add that mechanic to the one map you open — up to 3 tablets per map (the slots open with the waystone's modifier count), 10 uses each, one spent per map. Towers no longer hold tablets or juice nearby maps; they reveal the Atlas. [verified-primary — [0.3.1 patch notes](https://www.pathofexile.com/forum/view-thread/3862213), accessed 2026-09-29: "You no longer need Towers to use Precursor Tablets, instead, Tablets can now be placed into the Map Device to add their bonuses directly to your Map." / "Towers can still be used to gain visibility on the Atlas, and they will also drop an extra Precursor Tablet as a reward for completing them." / "You can use up to 3 Tablets with each Map" / "Non-Unique Tablets now have 10 uses"; see atlas-juicing.md §3–§4] | confirmed | game8, poe2wiki; GGG 0.3.1 notes (usage, tower drop) |
 
 ---
 
@@ -150,4 +152,6 @@ Items whose poe.ninja economy category (or apparent category) does **not** match
 ## Adversarial verification (post-research)
 
 - **REFUTED** (2026-09-29) — Precursor Tablets are slotted into a completed Precursor Tower (Atlas towers) to juice nearby maps; Abyss tablets on towers boost Omen of Light and Essence of the Abyss odds
-  → Retired in 0.3.1: "You no longer need Towers to use Precursor Tablets, instead, Tablets can now be placed into the Map Device to add their bonuses directly to your Map." / "Towers can still be used to gain visibility on the Atlas, and they will also drop an extra Precursor Tablet as a reward for completing them." Up to 3 tablets per map, 10 uses each. The tower wording came from pre-0.3.1 guides (timesaver, odealo). Body rows Omen of Light, Essence of the Abyss and Precursor Tablets corrected; the resolved model is docs/kb/atlas-juicing.md §4. (https://www.pathofexile.com/forum/view-thread/3862213)
+  → Retired in 0.3.1: "You no longer need Towers to use Precursor Tablets, instead, Tablets can now be placed into the Map Device to add their bonuses directly to your Map." / "Towers can still be used to gain visibility on the Atlas, and they will also drop an extra Precursor Tablet as a reward for completing them." Up to 3 tablets per map, 10 uses each. The tower wording came from pre-0.3.1 third-party guides. Body rows Omen of Light, Essence of the Abyss and Precursor Tablets corrected; the resolved model is docs/kb/atlas-juicing.md §4. (https://www.pathofexile.com/forum/view-thread/3862213)
+- **Source cleanup** (2026-10-01) — real-money-trading shop citations removed from 15 rows
+  → Downgrades: Imbued Alloy family confirmed→single-source (one non-shop source left); Hinekora's Lock farm advice ("rare world drop, buy it instead") → unverified, row re-sourced to poe2db (drop level 46); Vaal Cultivation Orb "~1-3 per clear" → unverified, poe2db added for the Temple of Atziri link. Corrected: Precursor Tablets — Game8's tablet list (updated 2026-09-10) shows Abyss tablets drop from monsters in maps (and the Currency Exchange), not only from Abyss, so the "mechanic tablet only from its mechanic" rule now names Abyss as an exception. Other rows kept their grade on the remaining sources. (https://poe2db.tw/us/Hinekoras_Lock; https://poe2db.tw/us/Vaal_Cultivation_Orb; https://game8.co/games/Path-of-Exile-2/archives/487814)

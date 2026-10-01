@@ -4,22 +4,22 @@
     "verified_against": "0.5.5",
     "stamped_at": "2026-09-29"
   },
-  "route_source": "Fubgun's 0.5.5 atlas route (2026-09-03), checked against poe2db, the 0.5.5 patch notes, Game8 and timesaver.gg",
+  "route_source": "Fubgun's 0.5.5 atlas route (2026-09-03), checked against poe2db, the 0.5.5 patch notes and Game8",
   "steps": [
     {
       "id": "reforge-waystones-up",
       "title": "Climb waystone tiers with the Reforging Bench",
-      "detail": "Combine 3 waystones of one tier into 1 of the next tier at the Reforging Bench. Doryani in your hideout sells waystones one tier below your best completed tier — feed them in.",
+      "detail": "Combine 3 waystones of one tier into 1 of the next tier at the Reforging Bench. Doryani sells waystones at or just below your best completed tier — feed them in.",
       "warnings": [],
       "strategy_ids": [],
       "claim": {
         "v": "vs",
         "src": [
           "https://maxroll.gg/poe2/resources/reforging-bench-guide",
-          "https://timesaver.gg/blog/poe2-waystone-farming-guide",
-          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/",
+          "https://game8.co/games/Path-of-Exile-2/archives/498659"
         ],
-        "note": "Maxroll: '3x Waystones of the same Tier become 1x Waystone of the next Tier'. Timesaver: Doryani sells up to 10 Tier 1 waystones, or one tier below your highest completed tier. Fubgun reforges T1 up to at least T3."
+        "note": "Maxroll: '3x Waystones of the same Tier become 1x Waystone of the next Tier'. Fubgun reforges T1 up to at least T3. Doryani's stock: Fubgun says 'one tier below your highest completion'; Game8 says 10 waystones, mostly your highest finished tier plus some one tier below, so the step says 'at or just below'."
       }
     },
     {
@@ -44,7 +44,7 @@
         "src": [
           "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
         ],
-        "note": "Routing advice from Fubgun's guide (Exile Codex write-up): boss-rush and run maps magic while unlocking. Two currency-shop pages that repeated it were dropped as sources on 2026-10-01; no primary source states advice like this."
+        "note": "Routing advice from Fubgun's guide (Exile Codex write-up): 'Boss-rush rather than full-clear. Run maps magic unless you need sustain.' It is a guide author's advice; no primary source covers it."
       }
     },
     {
@@ -113,10 +113,13 @@
         "v": "vs",
         "src": [
           "https://game8.co/games/Path-of-Exile-2/archives/603859",
-          "https://timesaver.gg/blog/poe2-arbiter-of-ash-guide",
-          "https://domistae.github.io/poe2-leveling/poe2_endgame_guide.html"
+          "https://game8.co/games/Path-of-Exile-2/archives/602195",
+          "https://domistae.github.io/poe2-leveling/poe2_endgame_guide.html",
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/",
+          "https://poe2db.tw/us/Faded_Crisis_Fragment",
+          "https://poe2db.tw/us/Weathered_Crisis_Fragment"
         ],
-        "note": "Game8: T10+, and the Monolith requires Crisis Fragments. Timesaver: three fragment types (Ancient/Faded/Weathered). domistae: the quest hands out one for the first kill. The three agree once combined."
+        "note": "Game8: 'obtain 2 Crisis Fragments' from the Enigma Chambers (T10+). Fubgun: the chambers give 'the last two stones'. domistae: the quest hands out one for the first kill. poe2db lists three fragments (Ancient, Faded, Weathered), each 'Can be placed in a door in The Burning Monolith'."
       }
     },
     {
@@ -134,10 +137,9 @@
         "src": [
           "https://www.pathofexile.com/forum/view-thread/4000864",
           "https://poe2db.tw/us/Ancient_Crisis_Fragment",
-          "https://timesaver.gg/blog/poe2-arbiter-of-ash-guide",
           "https://game8.co/games/Path-of-Exile-2/archives/602195"
         ],
-        "note": "The resistance change is in the 0.5.5 patch notes and the fragment text reads 'Can be placed in a door in The Burning Monolith' (primary); the unlock order comes from two guides."
+        "note": "The resistance change is in the 0.5.5 patch notes and the fragment text reads 'Can be placed in a door in The Burning Monolith' (primary). That the kill opens the Fortress centre comes from Game8 alone."
       }
     },
     {
@@ -146,7 +148,7 @@
       "detail": "These are the 'halls': T15 maps near the Origin Tower. Their bosses drop the Origin Cradle and the Origin Spark — the two parts of the Arbiter of Divinity key.",
       "warnings": [
         {
-          "text": "T15 waystones only, with limited attempts — bring a build that can kill the boss."
+          "text": "T15 waystones only — bring a build that can kill the boss."
         }
       ],
       "strategy_ids": [],
@@ -155,9 +157,9 @@
         "src": [
           "https://game8.co/games/Path-of-Exile-2/archives/603859",
           "https://game8.co/games/Path-of-Exile-2/archives/602195",
-          "https://timesaver.gg/blog/poe2-arbiter-of-divinity-guide"
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
         ],
-        "note": "Sources disagree on which hall boss drops the Spark and which the Cradle, so the step does not pair them."
+        "note": "Game8: the hall bosses drop the Origin Spark and the Origin Cradle, and the halls need T15 waystones. Fubgun: run 'one Matriarch Hall and one Patriarch Hall (they spawn paired and within sight of each other)'. The step does not say which boss drops which part."
       }
     },
     {
@@ -188,8 +190,7 @@
       "claim": {
         "v": "vp",
         "src": [
-          "https://www.pathofexile.com/forum/view-thread/4000864",
-          "https://timesaver.gg/blog/poe2-atlas-points-arbiter-of-divinity-0-5-5"
+          "https://www.pathofexile.com/forum/view-thread/4000864"
         ],
         "note": "0.5.5 patch notes: 'Defeating the Arbiter of Divinity using the quest version of the Origin Core no longer allows the completion of a section'."
       }
@@ -208,7 +209,6 @@
         "v": "vp",
         "src": [
           "https://www.pathofexile.com/forum/view-thread/4000864",
-          "https://timesaver.gg/blog/poe2-atlas-points-arbiter-of-divinity-0-5-5",
           "https://poe2db.tw/us/Origin_Core"
         ],
         "note": "0.5.5 patch notes: 'Defeating the Arbiter of Divinity using the non-quest version of the Origin Core now completes the entire Precursor Fortress for the Map owner, allowing you to allocate the Atlas Passive Tree as desired.'"

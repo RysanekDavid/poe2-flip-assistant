@@ -148,5 +148,8 @@ new size debt, explicit `any`, silent catches, low-contrast text or text below 1
   `## Adversarial verification (post-research)`. The log is never ingested.
 - UI data (strategies, the Learn primer, the craft provenance) uses the same grades through
   `src/lib/claim.ts` (`vp`/`vs`/`ss`/`uv`/`cf`/`syn`) and shows them with `ClaimBadge`.
+- Never cite a site that sells currency, items or boosting for real money (`RMT_DOMAINS` in
+  `src/lib/claim.ts`). The claim schemas reject them, and `testCuratedSources` (in `test:coach`)
+  sweeps the curated data and the Coach corpus for them.
 - Check game mechanics against the entity catalog and RePoE snapshot plus poe2db and the patch
   notes before writing them down. Don't ask the owner something the data can answer.

@@ -15,6 +15,10 @@ and poe2db. The rest of the file is unchanged.
 item's mods moved from [unverified] to verified-secondary (Maxroll + the Regal Orb item text); the
 essence-vs-existing-family case stays open. The rest of the file is unchanged.
 
+**Corrections 2026-10-01 (sources):** citations to real-money-trading shops were removed. The Chaos
+Orb and Divine Orb facts (§1) were re-sourced from poe2db item text; the jewel affix cap (§6) is now
+single-source (Maxroll) and the Time-Lost 3 + 3 claim is [unverified].
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -46,9 +50,11 @@ Sources: identical exception wording on all poe2wiki min-level currency pages; f
 **Other currency facts:**
 - **Chaos Orb (PoE2)** removes ONE random existing modifier and adds one new — NOT a full
   reroll. Targeted removal side: Omen of Sinistral (prefix) / Dextral (suffix) Erasure.
-  (CONFIRMED 2026-07-13 round; u4n, Fextralife.)
+  Item text: "Removes a random modifier and augments a Rare item with a new random modifier"
+  (CONFIRMED; poe2db Chaos_Orb accessed 2026-10-01, Fextralife.)
 - **Divine Orb** rerolls numeric values of ALL existing mods within their current tiers —
-  cannot change tiers, cannot target a subset. (CONFIRMED; game8, mmojugg.)
+  cannot change tiers, cannot target a subset. Item text: "Randomises the numeric values of
+  modifiers on an item" (CONFIRMED; game8, poe2db Divine_Orb accessed 2026-10-01.)
 - **Orb of Augmentation family** works on MAGIC items with an open affix only.
 - **Orb of Alchemy** works on a NORMAL **or** MAGIC item and makes it rare with 4 random mods; a
   magic item's own mods are discarded, not kept. Item text: "Upgrades a Normal or Magic item to a
@@ -69,7 +75,7 @@ Sources: identical exception wording on all poe2wiki min-level currency pages; f
 - Fractured mod **values are Divine-proof** (bug fixed 0.2.0e). 0.5.1 hotfixes closed every
   un-fracture bypass (Runeforging; Fluxes; Passion/Breath/Ire/Betrayal of Aldur transforms).
 
-Sources: poe2wiki Fracturing_Orb (edit history through 0.5.1), timesaver 0.5.4, vulkk, mobalytics.
+Sources: poe2wiki Fracturing_Orb (edit history through 0.5.1), vulkk, mobalytics.
 
 ## 3. Item-level → tier gates (partially CONFIRMED)
 
@@ -182,9 +188,9 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   **Melancholy** = "Upgrades Radius to Very Large" (prefix). (poe2db Ancient_Potent_Liquid_Ferocity
   / _Melancholy accessed 2026-09-28 + RePoE `CraftedJewelRadius*Resistance` /
   `CraftedJewelRadiusExtraLargeSize`.)
-- **Affix caps**: rare basic jewel = 2 prefixes + 2 suffixes, magic = 1 + 1 [verified-secondary:
-  Maxroll 0.5.2 jewel guide, mmoexp; researcher pass accessed 2026-09-29]. Rare Time-Lost cap is
-  UNRESOLVED (timesaver claims 3 + 3, uncorroborated).
+- **Affix caps**: rare basic jewel = 2 prefixes + 2 suffixes, magic = 1 + 1 [single-source:
+  Maxroll 0.5.2 jewel guide; researcher pass accessed 2026-09-29]. Rare Time-Lost cap is
+  UNRESOLVED (a 3 + 3 claim came only from a gold-seller guide — [unverified]).
 - **5-mod basic jewel is possible**: basic jewels cap at 2 prefixes + 2 suffixes, but Contempt's
   crafted mod raises one side's cap by 1 while sitting on the other. Creator crafts [S4, S20 in
   docs/kb/creator-videos.md] then strip the crafted mod with Omen of Sinistral Annulment and

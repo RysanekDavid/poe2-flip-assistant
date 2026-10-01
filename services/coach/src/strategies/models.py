@@ -46,10 +46,27 @@ RMT_DOMAINS: tuple[str, ...] = (
     "u4gm.com",
     "mmojugg.com",
     "mmoexp.com",
+    "mmogah.com",
+    "mmopixel.com",
     "ezg.com",
     "eznpc.com",
-    "poe-store.com",
-    "ign-store.com",
+    "aoeah.com",
+    "ssegold.com",
+    "rpgstash.com",
+    "timesaver.gg",
+    "boostmatch.gg",
+    "expcarry.com",
+    "epiccarry.com",
+    "grindout.com",
+    "eld.gg",
+    "eldorado.gg",
+    "g2g.com",
+    "playerauctions.com",
+    "overgear.com",
+    "odealo.com",
+    "skycoach.gg",
+    "instant-carry.com",
+    "misti.services",
 )
 
 
@@ -57,6 +74,8 @@ def is_rmt_url(url: str) -> bool:
     """True when the URL's host is an RMT shop or one of its subdomains (isRmtUrl in claim.ts)."""
     host = (urlsplit(url).hostname or "").lower()
     return any(host == d or host.endswith(f".{d}") for d in RMT_DOMAINS)
+
+
 Text = Annotated[str, StringConstraints(min_length=1)]
 
 

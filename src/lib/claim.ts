@@ -32,9 +32,10 @@ export const CLAIM_MEANING: Record<ClaimVerdict, string> = {
 export const isUnsettledClaim = (verdict: ClaimVerdict): boolean => verdict === "uv" || verdict === "cf";
 
 /**
- * Real-money-trading shops that publish SEO "guides" to sell currency. They are never a source: a
- * citation is a link we send players to, and their facts are copied from elsewhere anyway. Matched
- * on the host and its subdomains. Python mirror: RMT_DOMAINS in services/coach/src/strategies/models.py.
+ * Shops that sell PoE2 currency, items or boosting for real money, each confirmed on its own site
+ * (2026-10-01); most also publish SEO "guides". They are never a source: a citation is a link we
+ * send players to. Matched on the host and its subdomains. Python mirror: RMT_DOMAINS in
+ * services/coach/src/strategies/models.py (test_engine_drift pins the two lists together).
  */
 export const RMT_DOMAINS = [
   "poecurrency.com",
@@ -43,16 +44,36 @@ export const RMT_DOMAINS = [
   "u4gm.com",
   "mmojugg.com",
   "mmoexp.com",
+  "mmogah.com",
+  "mmopixel.com",
   "ezg.com",
   "eznpc.com",
-  "poe-store.com",
-  "ign-store.com",
+  "aoeah.com",
+  "ssegold.com",
+  "rpgstash.com",
+  "timesaver.gg",
+  "boostmatch.gg",
+  "expcarry.com",
+  "epiccarry.com",
+  "grindout.com",
+  "eld.gg",
+  "eldorado.gg",
+  "g2g.com",
+  "playerauctions.com",
+  "overgear.com",
+  "odealo.com",
+  "skycoach.gg",
+  "instant-carry.com",
+  "misti.services",
 ] as const;
 
-/** True when the URL's host is an RMT shop or one of its subdomains; an unparsable URL is not one. */
+// scheme://[userinfo@]host — a plain match, so the check runs the same in every browser the Learn tab supports
+const URL_HOST = /^[a-z][a-z0-9+.-]*:\/\/(?:[^@/?#]*@)?([^/?#:]+)/i;
+
+/** True when the URL's host is an RMT shop or one of its subdomains; a string with no host is not one. */
 export function isRmtUrl(url: string): boolean {
-  if (!URL.canParse(url)) return false;
-  const host = new URL(url).hostname.toLowerCase();
+  const host = URL_HOST.exec(url)?.[1]?.toLowerCase();
+  if (host === undefined) return false;
   return RMT_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
 }
 

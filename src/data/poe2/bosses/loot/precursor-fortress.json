@@ -13,12 +13,11 @@
       "id": "arbiter-of-ash",
       "name": "The Arbiter of Ash",
       "mechanic": "Precursor Fortress",
-      "accessChain": "Place one Weathered, one Faded and one Ancient Crisis Fragment in the Burning Monolith (a Precursor Fortress since 0.5.0); all three are consumed. One unique drops per kill; Farm of Exile (235 kills, 0.3.0–0.5.0) publishes rates for Morior Invictus, Prism of Belief and Sacred Flame only — Solus Ipse, Ab Aeterno and Sine Aequo are confirmed drops without a published rate. 0.5 has no uber version.",
+      "accessChain": "Place one Weathered, one Faded and one Ancient Crisis Fragment in the Burning Monolith (moved into the Fortress in 0.5.0); all three are consumed. One unique drops per kill; Farm of Exile (235 kills, 0.3.0–0.5.0) publishes rates for Morior Invictus, Prism of Belief and Sacred Flame only — Solus Ipse, Ab Aeterno and Sine Aequo are confirmed drops without a published rate.",
       "sources": [
         {"title":"Farm of Exile — The Arbiter of Ash (235 kills, 0.3.0–0.5.0)","url":"https://farmofexile.com/poe2/article/the-arbiter-of-ash","accessed":"2026-09-29"},
         {"title":"Path of Exile 2 — 0.5.0 patch notes","url":"https://www.pathofexile.com/forum/view-thread/3932540","accessed":"2026-09-29"},
         {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"},
-        {"title":"timesaver.gg — Arbiter of Ash guide","url":"https://timesaver.gg/blog/poe2-arbiter-of-ash-guide","accessed":"2026-09-28"},
         {"title":"poe2db — The Arbiter of Ash (unique list)","url":"https://poe2db.tw/us/The_Arbiter_of_Ash","accessed":"2026-09-29"}
       ],
       "tiers": [

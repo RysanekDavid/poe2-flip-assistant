@@ -5,71 +5,71 @@
       "path": "docs/kb/currency-core.md",
       "patch": "0.5.4b",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-09-29",
-      "sha256": "5f51cfe2c9b8cd6af3bd68b462f6d8202e98f9703ebbafd51b812e3894fe9e98"
+      "stamped_at": "2026-10-01",
+      "sha256": "d2bf2429df65359bbf79bd9c9873f5c291c4167bd90a5eb3ad7f0532d23065ef"
     },
     {
       "path": "docs/kb/breach.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-09-29",
-      "sha256": "8d56ecc27558453ea806b1b2a8735319d75b78424ca24cec74c84ceddb6fee75"
+      "stamped_at": "2026-10-01",
+      "sha256": "ce3b20bfe31787f0617d8436ec7aa1f2f4ed6b2007ed5ce2caf08199ac247fde"
     },
     {
       "path": "docs/kb/desecration-abyss.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-08-02",
-      "sha256": "8c1f0afbf88dbc9ab9078008583463dfa620882fe30a55eaec860ec8171514e0"
+      "stamped_at": "2026-10-01",
+      "sha256": "8f91d4a0b03ea9ba3eaed7f0c2ae91379ab1b021402a1e964c1db44c1f6408dd"
     },
     {
       "path": "docs/kb/delirium.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-09-29",
-      "sha256": "5db3356443899bd3d009592eb15b59c9f23fe7003e3f26e8bc5d94e4c3d009d4"
+      "stamped_at": "2026-10-01",
+      "sha256": "731e0af7b9703200f475efba5754a0bf3b5b068362c746383080783921ab4581"
     },
     {
       "path": "docs/kb/expedition-ritual.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-09-29",
-      "sha256": "a2e49355c221c494a7cfdaf728b2713cc68e20ea5a20aeaf351021f11b3c3b7d"
+      "stamped_at": "2026-10-01",
+      "sha256": "2eede836dc7af34f93164e35c278b54a4ae9da58d7ebb0bae21488329dcf0400"
     },
     {
       "path": "docs/kb/atlas-juicing.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-09-29",
-      "sha256": "df1f8c16390c9ba2fb8e9e4d80cb8a24b84769786d8bb0e8798eed64b912a236"
+      "stamped_at": "2026-10-01",
+      "sha256": "ad91846c268bb044818885a5d9618d884d2bc03fce196854857188f68c2ffa6c"
     },
     {
       "path": "docs/kb/economy-meta.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-07-14",
-      "sha256": "6fb8fc77d1de585d94c241d1adadec451046c710a71c12cbd228f1ff51361989"
+      "stamped_at": "2026-10-01",
+      "sha256": "85874fdab09be9efefdba8618dace0d1a5a9c76aa63bd9e978fcb8e77df398a6"
     },
     {
       "path": "docs/kb/league-mechanics-misc.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-09-29",
-      "sha256": "8b05ccce8383610aee85df716fd2ac692f3f79a0d8edeaed5249c9d4393d3ac7"
+      "stamped_at": "2026-10-01",
+      "sha256": "5f2187fe0406a102deaf8b492ea427e8a57914da6250c0eb293834a7aafef6fb"
     },
     {
       "path": "docs/kb/drop-sources.md",
       "patch": "0.5.x",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-09-29",
-      "sha256": "04a2a7ae0680b08b57e120b715c7291312ce31b109b79415902ec7f929f41ec0"
+      "stamped_at": "2026-10-01",
+      "sha256": "870c1daa9a1da2af72c9dff6aa7d9fe74f6d4a237f86fc9be3a0c88e29f6a618"
     },
     {
       "path": "docs/kb/community-reddit.md",
       "patch": "0.5.x",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-07-14",
-      "sha256": "1623cd2a0ee285f1a437182a7a52ee6554001f74ace5534daed97bb2374fee9f"
+      "stamped_at": "2026-10-01",
+      "sha256": "2bbfa8d17f333376f78115be27c8df342f8d675cdbbc19af06b7abac791a8a2d"
     },
     {
       "path": "docs/kb/creator-videos.md",
@@ -82,15 +82,15 @@
       "path": "docs/research/poe2-crafting-knowledge.md",
       "patch": "0.5.x",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-09-30",
-      "sha256": "c69e6ec0ee02303be6adc0f796b35b74404dd33e7a9bff97b72797db67a6375d"
+      "stamped_at": "2026-10-01",
+      "sha256": "02a6b17b2f6ac54bfdc10deb9dece028fa94ff120d992ebc45342c40ba518383"
     },
     {
       "path": "docs/research/poe2-bow-crafting-0.5.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-08-20",
-      "sha256": "59f31246c01e587ce9caeb5bd72cad9d2545901d461e7e54667a903c3e0a2329"
+      "stamped_at": "2026-10-01",
+      "sha256": "3663f921a1c9c741a03c05ee6e5d4a270c1d3c882ff437dabee4923cf24df8cb"
     },
     {
       "path": "docs/research/rare-item-valuation.md",

@@ -14,9 +14,10 @@
         "v": "vs",
         "src": [
           "https://poe2db.tw/us/Scroll_of_Wisdom",
-          "https://boostmatch.gg/blog/poe-2/articles/poe-2-0-5-scroll-wisdom-guide"
+          "https://poe2db.tw/us/The_Hooded_One",
+          "https://earth.gamerguides.com/path-of-exile-2/guide/getting-started/tips-and-tricks/identifying-magical-items-for-free"
         ],
-        "note": "Effect from poe2db. The free Hooded One identify is from boostmatch. Pickup bucket from poe.ninja/poe2scout prices on 2026-09-29 (~0.02–0.06 Ex)."
+        "note": "Effect from poe2db. The Hooded One's dialogue on poe2db: 'Bring me any magical objects you find. I can identify them for you.' GamerGuides: he identifies 'for free'. Pickup bucket from poe.ninja/poe2scout prices on 2026-09-29 (~0.02–0.06 Ex)."
       }
     },
     {
@@ -321,7 +322,7 @@
     },
     {
       "entity_id": "omen-of-light",
-      "who_uses": "Crafters: your next Orb of Annulment removes only Desecrated mods. Drops from Abyss rares.",
+      "who_uses": "Crafters: your next Orb of Annulment removes only Desecrated mods. Guides say Abyss rares with Amanamu's Void drop it when killed outside their void cloud.",
       "pickup": "always",
       "ref_ex": 5200,
       "claim": {
@@ -329,10 +330,10 @@
         "src": [
           "https://poe2db.tw/us/Omen_of_Light",
           "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Ritual",
-          "https://timesaver.gg/blog/poe2-amanamu-farming-guide",
-          "https://www.reddit.com/r/PathOfExile2/comments/1wb7crm/omen_of_liege_dropping_even_though_im_killing/"
+          "https://farmofexile.com/poe2/article/omen-of-light-abyss-farming",
+          "https://www.poe2.com/juice-box/abyss-amanamu"
         ],
-        "note": "Item text from poe2db; price from poe.ninja only (~9 Div on 2026-09-29). Drop source: timesaver (a 0.5.4 guide) has Amanamu rares killed outside their void cloud drop it; a 0.5.5 Reddit report says rares of other factions now drop it too. Neither poe2db nor the patch notes we read state the drop source."
+        "note": "Item text from poe2db; price from poe.ninja only (~9 Div on 2026-09-29). Drop source from two fan farming guides (Farm of Exile for 0.5.5, poe2.com for 0.5): kill Amanamu's Void rares outside the void cloud; inside it they drop Omen of the Liege instead. Neither poe2db nor the patch notes we read state the drop source, so treat it as a lead to test in game."
       }
     },
     {
