@@ -47,6 +47,8 @@ export const itemStateSchema = z.object({
   baseType: z.string().nullable(),
   ilvl: z.number().nullable(),
   quality: z.number().nullable(),
+  /** Catalyst quality cap of a ring/amulet (20% + its "Maximum Quality" implicit); null elsewhere. */
+  maxQuality: z.number().nullable(),
   corrupted: z.boolean(),
   mirrored: z.boolean(),
   unidentified: z.boolean(),

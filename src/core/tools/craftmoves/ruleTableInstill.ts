@@ -1,7 +1,7 @@
 import type { MaterialKey } from "../../craftMaterials";
 import type { ItemState } from "./classify";
 import { KB, KB_CURRENCY_CORE, type MoveRule, type UnlistedMaterial, type Verdict } from "./ruleTypes";
-import { all, isMagic, isRare, needMods } from "./rulePredicates";
+import { all, isMagic, isRare, needRemovable } from "./rulePredicates";
 
 /** Things written INTO an item: essences (crafted slot), catalysts (quality), liquid emotions (KB §6–§8). */
 
@@ -73,19 +73,19 @@ function perfectEssenceCheck(s: ItemState): Verdict {
   if (!isRare(s)) return null;
   const notes = s.slots.crafted > 0 ? [`replaces the existing crafted mod — one crafted slot per item (${S7})`] : [];
   const unverifiedBecause = s.jewel ? JEWEL_ESSENCE : undefined;
-  return all([needMods(s, 1)], { pass: true, notes, unverifiedBecause });
+  return all([needRemovable(s, 1)], { pass: true, notes, unverifiedBecause });
 }
 
 const CATALYST_TAGS =
   "Xoph's=Fire, Tul's=Cold, Esh's=Lightning, Uul-Netol's=Phys, Chayula's=Chaos, Flesh=Life, Neural=Mana, Carapace=Defences, " +
   "Reaver=Attack, Sibilant=Caster, Skittering=Speed, Adaptive=Attributes, Necrotic=Minion";
 
+/** The cap is 20% (KB §8) plus the base's "+N% to Maximum Quality" implicit, read by classify. */
 function catalystCheck(s: ItemState): Verdict {
-  if (s.itemClass !== "Rings" && s.itemClass !== "Amulets") return null;
-  const breach = /\bBreach Ring\b/.test(s.baseType ?? "");
-  const cap = breach ? 40 : 20;
+  const cap = s.maxQuality;
+  if (cap == null) return null;
   if ((s.quality ?? 0) >= cap) return { block: `quality already at the ${cap}% cap` };
-  return { pass: true, notes: breach ? ["Breach Rings cap at 40% quality"] : [] };
+  return { pass: true, notes: cap > 20 ? [`this base caps at ${cap}% quality (its "+${cap - 20}% to Maximum Quality" implicit)`] : [] };
 }
 
 const CATALYSTS: MoveRule[] = [
@@ -94,7 +94,7 @@ const CATALYSTS: MoveRule[] = [
     label: "Catalyst",
     family: "catalyst",
     materials: [ANY_CATALYST],
-    requires: "ring or amulet below the quality cap (20%, Breach Rings 40%)",
+    requires: "ring or amulet below its quality cap: 20% plus any '+N% to Maximum Quality' implicit (Breach Ring 40%, Refined Breach Ring 45%)",
     effect: "adds quality that buffs the MAGNITUDE of matching-tag mods (e.g. +60 life at 20% Flesh ≈ +72) — never roll weights",
     warnings: ["switching catalyst type wipes the existing quality"],
     notes: [CATALYST_TAGS, "roll-weight bias exists only through Omen of Catalysing Exaltation"],

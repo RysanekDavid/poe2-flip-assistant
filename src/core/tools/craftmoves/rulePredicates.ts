@@ -22,6 +22,10 @@ export function needOpen(s: ItemState, side: "prefix" | "suffix" | "any", count 
     if (s.flags.some((f) => f.code === "over-cap-jewel")) return { block: "over-cap jewel: whether the other side can still take a mod is unverified (KB §6 b)" };
     const unknownCap = s.capacity == null ? s.flags.find((f) => f.code === "unknown-capacity") : undefined;
     if (unknownCap) return { block: unknownCap.message };
+    if (s.capacity != null && s.flags.some((f) => f.code === "over-capacity")) {
+      const { p, s: sfx } = s.capacity;
+      return { block: `${s.prefixes} prefixes + ${s.suffixes} suffixes exceed this item's ${p} + ${sfx} limit — a line was misread, so open slots are not counted` };
+    }
     return { block: OPEN_UNKNOWN };
   }
   if (open >= count) return null;
@@ -35,6 +39,21 @@ export function needMods(s: ItemState, count: number, side?: "prefix" | "suffix"
   if (have >= count) return null;
   const where = side ?? "explicit";
   return { block: `needs ${count} ${where} mod${count === 1 ? "" : "s"}, found ${have}` };
+}
+
+/**
+ * At least `count` mods a removal (Chaos, Annulment, Whittling, side omens, Perfect/Corrupted
+ * essence) can take, optionally on one side. Fractured mods are out: the Fracturing Orb "locks it
+ * in place" (item text, currency-core §1). Desecrated and unrevealed mods stay removable targets.
+ */
+export function needRemovable(s: ItemState, count: number, side?: "prefix" | "suffix"): Block {
+  const onSide = s.affixes.filter((a) => side == null || a.side === side);
+  const removable = onSide.filter((a) => a.kind !== "fractured").length;
+  if (removable >= count) return null;
+  const where = side ?? "explicit";
+  const fractured = onSide.length - removable;
+  if (fractured === 0) return needMods(s, count, side);
+  return { block: `needs ${count} removable ${where} mod${count === 1 ? "" : "s"}, found ${removable} — ${fractured} fractured (locked in place)` };
 }
 
 /** First block wins; all null → pass with the given extras. */

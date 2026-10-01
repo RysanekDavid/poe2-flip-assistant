@@ -55,6 +55,8 @@ export interface ItemState {
   baseType: string | null;
   ilvl: number | null;
   quality: number | null;
+  /** Catalyst quality cap (rings/amulets only; see catalystQualityCap), else null. */
+  maxQuality: number | null;
   corrupted: boolean;
   mirrored: boolean;
   unidentified: boolean;
@@ -87,8 +89,9 @@ function capacityOf(rarity: string, jewel: boolean, timeLost: boolean): Capacity
 
 /**
  * Signed affix allowances: Contempt's crafted "+1 Suffix Modifier allowed" (sits in a PREFIX slot)
- * and its prefix twin, and the Dusk / Gloam Ring implicits "+1 Prefix … / -1 Suffix Modifier
- * allowed" and their mirror (KB §3, RePoE base_items implicits).
+ * and its prefix twin, and the base implicits "±N Prefix/Suffix Modifier(s) allowed" that RePoE
+ * base_items lists for the Dusk/Gloam/Penumbra/Tenebrous rings and amulets and the Absent, Distorted,
+ * Lament, Portent and Twisted amulets (KB §3).
  */
 export const EXTRA_CAPACITY = /^([+-]?\d+) (Prefix|Suffix) Modifiers? allowed$/i;
 
@@ -112,7 +115,8 @@ function extraCapacity(affixes: readonly Affix[]): Allowance {
 }
 
 /**
- * Allowance a base's own implicits grant (Dusk Ring +1 prefix / -1 suffix, Gloam Ring the mirror).
+ * Allowance a base's own implicit text grants (Dusk Ring +1 prefix / -1 suffix, Penumbra +2 / -2,
+ * Absent Amulet -1 / -1, …): generic over every "±N … Modifier(s) allowed" implicit in the catalog.
  * Read from the catalog, not the paste: affix matching skips the implicit section.
  */
 export function baseAllowance(cat: CraftCatalog, baseType: string | null): Allowance {
@@ -121,18 +125,32 @@ export function baseAllowance(cat: CraftCatalog, baseType: string | null): Allow
   return extra;
 }
 
+const MAX_QUALITY = /^\+(\d+)% to Maximum Quality$/i;
+const CATALYST_CLASSES: ReadonlySet<string> = new Set(["Rings", "Amulets"]);
+
+/**
+ * Catalyst quality cap of a ring/amulet: 20% (KB §8) plus every "+N% to Maximum Quality" implicit
+ * the base carries (RePoE base_items: Breach Ring +20 → 40, Refined Breach Ring +25 → 45). Null
+ * for other classes, which catalysts do not apply to.
+ */
+export function catalystQualityCap(cat: CraftCatalog, itemClass: string | null, baseType: string | null): number | null {
+  if (itemClass == null || !CATALYST_CLASSES.has(itemClass)) return null;
+  const implicits = (baseType ? cat.bases[baseType]?.implicits : undefined) ?? [];
+  return implicits.reduce((cap, line) => cap + Number(MAX_QUALITY.exec(line)?.[1] ?? 0), 20);
+}
+
 function withExtraCapacity(cap: Capacity | null, extra: Allowance): Capacity | null {
   if (cap == null) return null;
   return { p: cap.p + extra.p, s: cap.s + extra.s, total: cap.total + extra.p + extra.s };
 }
 
 const MAGIC_BASE_ALLOWANCE =
-  "this base's implicit changes its affix limits, which KB §3 states for rares only — open slots on a magic one are not counted";
+  "this base's implicit changes its prefix/suffix limits; KB §3 applies that text to the rare 3 + 3 only — on a magic item the limits are unverified, so open slots are not counted";
 
 /**
- * The base's implicit allowance on top of the rarity cap. KB §3 gives the rare result (Dusk Ring =
- * 4 prefixes + 2 suffixes); what it does to a magic item's 1 + 1 is not verified, so that cap is
- * unknown rather than guessed. A normal item carries no affixes, so its 0 + 0 stays.
+ * The base's implicit allowance on top of the rarity cap. KB §3 applies the implicit text to the rare
+ * 3 + 3 (Dusk Ring = 4 prefixes + 2 suffixes); what it does to a magic item's 1 + 1 is not verified,
+ * so that cap is unknown rather than guessed. A normal item carries no affixes, so its 0 + 0 stays.
  */
 function applyBaseAllowance(state: ItemState, extra: Allowance): void {
   if (extra.p === 0 && extra.s === 0) return;
@@ -153,6 +171,7 @@ function emptyState(parsed: ParsedItem, meta: ItemMeta, itemClass: string | null
     baseType,
     ilvl: parsed.itemLevel,
     quality: meta.quality,
+    maxQuality: null,
     corrupted: parsed.corrupted,
     mirrored: parsed.mirrored,
     unidentified: meta.unidentified,
@@ -232,6 +251,7 @@ export function classifyItem(parsed: ParsedItem, meta: ItemMeta, cat: CraftCatal
     state.flags.push({ code: "unknown-capacity", message: "rare Time-Lost jewel affix limit is unresolved (KB §6) — open slots are not counted" });
   }
   applyBaseAllowance(state, baseAllowance(cat, base.baseType));
+  state.maxQuality = catalystQualityCap(cat, base.itemClass, base.baseType);
   if (base.ambiguous) state.flags.push({ code: "ambiguous-base", message: `"${base.baseType}" names bases with different tag sets — tier pools may be off` });
   const combo = base.itemClass && base.baseType ? comboFor(cat, base.itemClass, base.baseType) : null;
   if (!combo) {
