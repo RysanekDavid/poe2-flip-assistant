@@ -6,7 +6,7 @@ This is the working contract for coding agents and contributors. `README.md` cov
 
 ## Stack
 
-- **Web + API:** Next.js 15 (App Router), React 19, TypeScript, Tailwind. Node ≥ 20.18.1.
+- **Web + API:** Next.js 15 (App Router), React 19, TypeScript, Tailwind. Node ≥ 22; CI and production target Node 24 LTS (`.nvmrc`).
 - **Data:** SQLite via better-sqlite3 (shared market data plus per-user data). zod validates at
   every boundary.
 - **Poller:** a long-running Node process (`src/scheduler/poller.ts`) that reads poe.ninja,

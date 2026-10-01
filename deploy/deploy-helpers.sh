@@ -8,6 +8,8 @@ require_command() {
   fi
 }
 
+# better-sqlite3 13 (needed because 12.x and older abort under Node 24.19+) segfaults on Node 20,
+# so refuse before any service is stopped rather than fail the post-switch health check.
 validate_node_version() {
   node -e '
 function parse(value) {
@@ -23,7 +25,7 @@ for (let index = 0; index < minimum.length; index += 1) {
     throw new Error(`Node.js ${process.argv[2]}+ is required; found ${process.argv[1]}`);
   }
 }
-' "$(node --version)" "20.18.1"
+' "$(node --version)" "22.0.0"
 }
 
 switch_current() {

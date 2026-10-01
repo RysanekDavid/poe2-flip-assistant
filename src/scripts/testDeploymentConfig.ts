@@ -25,7 +25,7 @@ const validatorMatch = deploySources.match(
 assert.ok(validatorMatch?.[1], "timeout validator body must remain executable by the test");
 const timeoutValidator = validatorMatch[1];
 const nodeValidatorMatch = deploySources.match(
-  /validate_node_version\(\) \{\s+node -e '\r?\n([\s\S]*?)\r?\n' "\$\(node --version\)" "20\.18\.1"/,
+  /validate_node_version\(\) \{\s+node -e '\r?\n([\s\S]*?)\r?\n' "\$\(node --version\)" "22\.0\.0"/,
 );
 assert.ok(nodeValidatorMatch?.[1], "Node version validator must remain executable by the test");
 const nodeValidator = nodeValidatorMatch[1];
@@ -118,9 +118,9 @@ assert.doesNotMatch(deploy, /PATCH_NOTES_ENABLED|patch_notes_enabled/, "contact 
 assert.ok(deploy.indexOf("DATA_SOURCE_CONTACT is required") < deploy.indexOf("trap rollback ERR"), "contact gate precedes the rollback trap");
 assert.match(deployReadme, /deployment preflight rejects a blank\s+contact/);
 assertAppOriginShapeGate();
-assert.equal(packageConfig.engines?.node, ">=20.18.1");
-assert.match(rootReadme, /Node\.js 20\.18\.1\+/);
-assert.match(deployReadme, /# Node 24 LTS \(NodeSource\)\. deploy\.sh refuses anything older than 20\.18\.1\./);
+assert.equal(packageConfig.engines?.node, ">=22");
+assert.match(rootReadme, /Node\.js 22\+/);
+assert.match(deployReadme, /# Node 24 LTS \(NodeSource\)\. deploy\.sh refuses anything older than 22\./);
 assert.match(deployReadme, /deb\.nodesource\.com\/setup_24\.x/);
 // The Node-upgrade rollback recovery must name the real Node units (Coach is Python).
 assert.match(deployReadme, /setup_20\.x[\s\S]*systemctl restart poe2flip-web poe2flip-poller/);
@@ -160,10 +160,10 @@ assert.equal(runTimeoutValidator(validRuntime), 0);
 assert.notEqual(runTimeoutValidator(`${validRuntime}\nCOACH_TOTAL_TIMEOUT_SECONDS=70`), 0);
 assert.notEqual(runTimeoutValidator(`${validRuntime}\nCHAT_MODEL=gpt-5.4`), 0);
 assert.notEqual(runTimeoutValidator(validRuntime.replace("gpt-5.4-mini", "gpt-5.4")), 0);
-assert.equal(runNodeValidator("v20.18.1"), 0);
+assert.notEqual(runNodeValidator("v20.18.1"), 0, "better-sqlite3 13 segfaults on Node 20");
 assert.equal(runNodeValidator("v22.0.0"), 0);
 assert.equal(runNodeValidator("v24.0.0"), 0);
-assert.notEqual(runNodeValidator("v20.18.0"), 0);
+assert.notEqual(runNodeValidator("v21.7.3"), 0);
 assert.notEqual(runNodeValidator("v18.20.8"), 0);
 
 function runTimeoutValidator(runtime: string): number | null {
@@ -209,7 +209,7 @@ function assertAppOriginShapeGate(): void {
 }
 
 function runNodeValidator(version: string): number | null {
-  return spawnSync(process.execPath, ["-e", nodeValidator, version, "20.18.1"], {
+  return spawnSync(process.execPath, ["-e", nodeValidator, version, "22.0.0"], {
     encoding: "utf8",
     stdio: "ignore",
   }).status;

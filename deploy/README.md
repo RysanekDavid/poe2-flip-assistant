@@ -18,7 +18,7 @@ Next.js routes.
 
 ## 2. System setup (as root)
 ```bash
-# Node 24 LTS (NodeSource). deploy.sh refuses anything older than 20.18.1.
+# Node 24 LTS (NodeSource). deploy.sh refuses anything older than 22.
 curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 apt-get install -y nodejs build-essential sqlite3
 
@@ -237,9 +237,18 @@ identifier as well.
 
 ### Upgrading Node on an existing server
 
-better-sqlite3 is a native module compiled for one Node ABI, so every release must be rebuilt
-after a Node major upgrade. Do both steps back to back: a service that restarts in between (crash,
-reboot, the nightly backup timer) would load the old release's module under the new Node and fail.
+Releases built with better-sqlite3 13 or newer contain only Node-API native modules
+(better-sqlite3, sharp, Next's SWC), so they keep running after a Node major upgrade without a
+rebuild, and a rollback to such a release is safe under the new Node. Older releases compiled
+better-sqlite3 for one Node ABI. better-sqlite3 13 needs Node 22 or newer (it segfaults on Node 20)
+and 12.x and older abort under Node 24.19+, so a server still on Node 20 moves in one cutover:
+
+1. Merge the better-sqlite3 13 change. Its deploy stops at the Node preflight
+   (`Node.js 22.0.0+ is required`) before any service is stopped, so the Node 20 release keeps
+   serving. Every later deploy fails the same way until step 2, so do it promptly.
+2. Install Node 24 and immediately run the manual deploy from [Updating later](#updating-later)
+   (`deploy.sh` from `origin/master`). Do both back to back: a service that restarts in between
+   (crash, reboot, the nightly backup timer) loads the old release's Node 20 module and fails.
 
 ```bash
 # As root.
@@ -249,14 +258,11 @@ apt-get install -y nodejs
 node --version                                   # must print v24.x
 ```
 
-Then immediately run the manual deploy from [Updating later](#updating-later) (`deploy.sh` from
-`origin/master`). It runs `npm ci` in a fresh release directory, which rebuilds the native modules
-for Node 24, and the CI deploy does the same on the next merge. The Coach is Python and unaffected.
-
-If that deploy fails, `current` still points at (or the automatic rollback restores) the previous
-release, which was built under Node 20. Its web and poller will not start under Node 24, so expect
-the rollback to report failed services. Recover by reinstalling Node 20 and restarting the Node
-services (the backup and maintenance timers pick up the restored Node on their next run):
+The Coach is Python and unaffected. If that deploy fails, `current` still points at (or the
+automatic rollback restores) the previous release, which was built under Node 20. Its web and
+poller will not start under Node 24, so expect the rollback to report failed services. Recover by
+reinstalling Node 20 and restarting the Node services (the backup and maintenance timers pick up
+the restored Node on their next run):
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
