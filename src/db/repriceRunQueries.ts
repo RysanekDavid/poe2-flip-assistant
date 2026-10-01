@@ -3,7 +3,7 @@ import { getDb } from "./database";
 import { isScanPending, requestScan } from "./scanRequestQueries";
 
 /**
- * reprice_runs: one row per user — the 6h cooldown stamp and how the last Wealth › Sell reprice
+ * reprice_runs: one row per user — the 6h cooldown stamp and how the last Stash › Sell reprice
  * check went. The web enqueues (enqueueReprice), the poller marks started/finished.
  */
 export const REPRICE_COOLDOWN_MS = 6 * 60 * 60 * 1000;

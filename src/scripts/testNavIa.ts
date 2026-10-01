@@ -15,6 +15,9 @@ import {
 } from "../components/shell/tabRegistry";
 import { BEGINNER_TABS, defaultTabFor, isTabVisible, moreTabs, navTabs, parseModeRoute, subTabsFor } from "../lib/navMode";
 import { badgeText, hiddenPageName } from "../components/shell/headerText";
+import { canonicalSearch } from "../components/shell/canonicalUrl";
+import { isRecommendedFlip, topFlips, type TopFlipFields } from "../lib/topFlips";
+import { createTtlCache } from "../lib/ttlCache";
 import { runHomePickCases } from "./homePickCases";
 import { assertPanelExport } from "./tools/toolsTestKit";
 
@@ -97,6 +100,43 @@ function testBannerAndBadge(): void {
   pass("Advanced banner names the page; bell badge caps at 99+");
 }
 
+/** A rewritten old link keeps every param that is not tab/tool (open strategy, filter, shared item). */
+function testCanonicalSearch(): void {
+  const rewrite = (search: string): string => {
+    const params = new URLSearchParams(search);
+    const followed = followRenames(params.get("tab"), params.get("tool"));
+    const route = parseModeRoute("advanced", followed.tab, followed.tool);
+    return canonicalSearch(search, route);
+  };
+  assert.equal(rewrite("?tab=wealth&tool=sell&item=abc"), "?tab=stash&tool=sell&item=abc");
+  assert.equal(rewrite("?tab=farm&tool=board&strategy=x&budget=mid"), "?tab=farm&tool=strategies&strategy=x&budget=mid");
+  assert.equal(rewrite("?tab=patches&s=old"), "?tab=learn&tool=patches&s=old");
+  assert.equal(rewrite("?strategy=x&tab=market&tool=board"), "?tab=trade&tool=opportunities&strategy=x", "tab/tool lead, the rest keep their order");
+  assert.equal(rewrite("?tab=bogus&q=a%20b"), "?tab=home&q=a+b", "an unknown tab lands on Home, extra params still kept");
+  assert.equal(canonicalSearch("", { tab: "flips", tool: null }), "?tab=flips");
+  pass("rename rewrite keeps extra params (item, strategy, budget, s, q)");
+}
+
+function testSharedRules(): void {
+  const row = (over: Partial<TopFlipFields>): TopFlipFields => ({ source: "cx", ranked: true, risk: null, worthScore: 50, ...over });
+  assert.ok(isRecommendedFlip(row({})));
+  assert.ok(!isRecommendedFlip(row({ source: "estimated" })), "an estimate is never a top card, on Flips or Home");
+  assert.ok(!isRecommendedFlip(row({ ranked: false })));
+  assert.ok(!isRecommendedFlip(row({ risk: "DECLINE" })));
+  const top = topFlips([row({ worthScore: 10 }), row({ worthScore: 90, source: "estimated" }), row({ worthScore: 70 })], 3);
+  assert.deepEqual(top.map((r) => r.worthScore), [70, 10]);
+  const cache = createTtlCache<number>(1000);
+  let computed = 0;
+  const compute = (): number => ++computed;
+  assert.equal(cache.get("a", compute, 0), 1);
+  assert.equal(cache.get("a", compute, 999), 1, "served from cache inside the TTL");
+  assert.equal(cache.get("a", compute, 1000), 2, "recomputed at the TTL");
+  assert.equal(cache.get("b", compute, 1000), 3, "keys are separate");
+  assert.throws(() => cache.get("c", () => { throw new Error("boom"); }, 1000), /boom/);
+  assert.equal(cache.get("c", compute, 1001), 4, "a throwing compute caches nothing");
+  pass("one top-flip rule (cx, ranked, not falling) for Flips + Home; TTL cache expires, separates keys, never caches a throw");
+}
+
 function testWiring(): void {
   assertPanelExport("src/components/patches/PatchesBoard.tsx", "PatchesBoard", "src/components/shell/tabs/LearnTab.tsx");
   assertPanelExport("src/components/shell/tabs/HomeTab.tsx", "HomeTab", "src/components/shell/AppShell.tsx");
@@ -109,5 +149,7 @@ function testWiring(): void {
 testOldLinks();
 testStrip();
 testBannerAndBadge();
+testCanonicalSearch();
+testSharedRules();
 testWiring();
 runHomePickCases();

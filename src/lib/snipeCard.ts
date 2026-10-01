@@ -4,7 +4,7 @@ import { z } from "zod";
  * The item card stored with a SNIPE alert (alerts.details). Persisted because the scan report
  * that found the listing rotates away within minutes, and an alert that only says "Doom Grip,
  * 42% under" gives the player nothing to recognise or search. Pure module: the server writes it,
- * the Alerts tab renders it, both through this schema.
+ * the Alerts page renders it, both through this schema.
  */
 /**
  * URL fields pinned to their only legitimate hosts: the card renders them as an <img> and as

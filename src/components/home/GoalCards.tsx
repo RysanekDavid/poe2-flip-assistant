@@ -89,19 +89,24 @@ function GoalCard({ goal, line, mode }: { goal: Goal; line: HomeLine; mode: NavM
           </h3>
           <p className="text-sm text-neutral-400">{goal.sentence}</p>
         </div>
-        {advancedOnly && (
-          <span title="An Advanced tool: it opens with a note on how to show it in your tabs" className="relative z-10 shrink-0 rounded border border-line px-1.5 text-xs text-neutral-400">
-            Advanced
-          </span>
-        )}
       </div>
       <div className="min-w-0 rounded-md border border-line/70 bg-neutral-950/40 px-2.5 py-2 text-sm">
         <span className="mb-0.5 block text-xs uppercase tracking-wider text-neutral-400">Today</span>
         <LineBody line={line} goal={goal} />
       </div>
-      <span aria-hidden className="mt-auto self-end text-sm font-medium text-neutral-300">
-        {goal.action} →
-      </span>
+      {/* footer: the Advanced tag stays out of the title row, so every title wraps the same way */}
+      <div className="mt-auto flex items-center justify-between gap-2">
+        {advancedOnly ? (
+          <span title="An Advanced tool: it opens with a note on how to show it in your tabs" className="relative z-10 rounded border border-line px-1.5 text-xs text-neutral-400">
+            Advanced
+          </span>
+        ) : (
+          <span />
+        )}
+        <span aria-hidden className="text-sm font-medium text-neutral-300">
+          {goal.action} →
+        </span>
+      </div>
     </li>
   );
 }

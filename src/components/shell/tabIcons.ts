@@ -14,7 +14,7 @@ import type { TabId } from "./tabRegistry";
 
 /**
  * Owner-supplied tab art (src/assets), one PNG per tab. Kept apart from tabRegistry.ts so node test
- * scripts never import PNGs. Home.png is a placeholder (a copy of the Waystone item art) until the
+ * scripts never import PNGs. Home.png is a placeholder (a copy of The Triskelion Reforged art) until the
  * owner supplies Home art; swapping it is a file replacement.
  */
 export const TAB_ICONS: Record<TabId, StaticImageData> = {

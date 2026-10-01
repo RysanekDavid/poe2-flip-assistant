@@ -120,7 +120,7 @@ function MarkSeenButton({ filter, unseen, onClick }: { filter: Filter; unseen: n
   );
 }
 
-/** Alerts tab, main column: the whole feed, filterable by type; snipes render as item cards. */
+/** Alerts page, main column: the whole feed, filterable by type; snipes render as item cards. */
 export function AlertsFeed() {
   const { groups, unseen, error, markSeen } = useAlertCenter();
   const { data: outcomes, error: outcomesError } = useSnipeOutcomes();

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { repriceResponseSchema, sellResponseSchema, type SellResponse } from "../../lib/wealthContract";
 import { postJson } from "./useBalance";
 
-/** Wealth › Sell data (/api/wealth/sell) and the queued reprice check (/api/wealth/reprice). */
+/** Stash › Sell data (/api/wealth/sell) and the queued reprice check (/api/wealth/reprice). */
 export function useSell(reloadKey: number): {
   data: SellResponse | null;
   error: string | null;

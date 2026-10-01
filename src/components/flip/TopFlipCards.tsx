@@ -2,6 +2,7 @@
 
 import { TrendingUp } from "lucide-react";
 import { compact } from "../../lib/format";
+import { topFlips } from "../../lib/topFlips";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
@@ -12,30 +13,19 @@ import type { Candidate } from "./flipTypes";
 
 const TOP_COUNT = 3;
 
-/**
- * The table's default order (worthScore desc), restricted to rows that cleared the rank gate and
- * are not falling — a card is a recommendation, so an unranked fat number or a decline never gets one.
- */
-export function pickTopFlips(rows: readonly Candidate[]): Candidate[] {
-  return rows
-    .filter((r) => r.ranked && r.risk !== "DECLINE")
-    .sort((a, b) => b.worthScore - a.worthScore)
-    .slice(0, TOP_COUNT);
-}
+/** A card is a recommendation: the same rule as Home's flip card (lib/topFlips), top three. */
+export const pickTopFlips = (rows: readonly Candidate[]): Candidate[] => topFlips(rows, TOP_COUNT);
 
-/** Net edge for an observed exchange flip, the margin for an estimate (marked "~", like the table). */
+/** The observed net edge (cards only ever hold exchange-observed rows; estimates stay in the table). */
 function Headline({ r, gate }: { r: Candidate; gate: RankGate | null }) {
-  const observed = r.source === "cx";
-  const pct = observed ? r.edgePct : r.marginPct;
   return (
     <span className="flex shrink-0 flex-col items-end gap-1" title={edgeTooltip(r, gate)}>
-      <span className={`text-xl font-bold tabular-nums ${edgeTone(r, pct)}`}>
-        {observed ? "" : "~"}
-        {pct >= 0 ? "+" : ""}
-        {pct.toFixed(1)}%
+      <span className={`text-xl font-bold tabular-nums ${edgeTone(r, r.edgePct)}`}>
+        {r.edgePct >= 0 ? "+" : ""}
+        {r.edgePct.toFixed(1)}%
       </span>
       <span className="inline-flex items-center gap-1 text-xs text-neutral-400">
-        {observed ? "net edge" : "margin"} <EdgeBadge row={r} />
+        net edge <EdgeBadge row={r} />
       </span>
     </span>
   );

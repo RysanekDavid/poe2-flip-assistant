@@ -29,7 +29,7 @@ export async function postJson<T>(url: string, schema: ZodType<T>, body?: unknow
   return schema.parse(data);
 }
 
-/** Wealth › Net worth data: /api/balance, with a visible error instead of a silently empty panel. */
+/** Stash › Net worth data: /api/balance, with a visible error instead of a silently empty panel. */
 export function useBalance(reloadKey: number): { data: BalanceData | null; error: string | null; load: () => void } {
   const [data, setData] = useState<BalanceData | null>(null);
   const [error, setError] = useState<string | null>(null);

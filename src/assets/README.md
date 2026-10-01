@@ -49,7 +49,7 @@ One PNG per tab, trimmed to 128 px on a transparent background and wired in
 
 | File | Tab |
 |------|-----|
-| `Home.png` | Home — PLACEHOLDER: a copy of `items/waystone.png` until the owner supplies Home art (replace the file) |
+| `Home.png` | Home — PLACEHOLDER: a copy of `items/the-triskelion-reforged.png` (game art used nowhere else in the nav; not the Waystone, which Learn › Atlas and Regex › Waystone use, nor the owl) until the owner supplies Home art — replace the file |
 | `Currency_exchange.png` | Flips |
 | `Web_market.png` | Trade (also the Trade › Opportunities sub-tab) |
 | `Farm.png` | Farm |

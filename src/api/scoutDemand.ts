@@ -309,7 +309,7 @@ async function loadDemand(league: string): Promise<DemandData> {
 
 /**
  * League-keyed cache in front of `load`. Concurrent callers share one in-flight fill (Prices
- * uniques, Opportunities and Wealth › Sell can ask at once), and a fill with warnings expires
+ * uniques, Opportunities and Stash › Sell can ask at once), and a fill with warnings expires
  * after WARNED_TTL_MS so a transient failure does not stick for the full TTL.
  */
 export function createDemandCache(load: (league: string) => Promise<DemandData>, now: () => number = Date.now) {

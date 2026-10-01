@@ -5,7 +5,9 @@
  * pins every rule.
  */
 import { z } from "zod";
+import type { NetWorthSummary } from "../../lib/balanceSummaryContract";
 import type { DiscoverResponse } from "../../lib/discoverContract";
+import { topFlips } from "../../lib/topFlips";
 import { fmtDivOrEx, fmtSmart } from "../../lib/format";
 import type { OpportunitiesResponse } from "../../lib/opportunitiesContract";
 import type { PatchesResponse } from "../../lib/patchesContract";
@@ -19,10 +21,6 @@ export type HomePick =
   | { kind: "empty"; text: string };
 
 const pct = (n: number): string => `${n >= 0 ? "+" : "−"}${Math.abs(n).toFixed(1)}%`;
-
-/** Only the fields Home reads from GET /api/balance/summary (the header chip's numbers). */
-export const netWorthSummarySchema = z.object({ netWorthDiv: z.number().nullable(), change24hPct: z.number().nullable() });
-export type NetWorthSummary = z.infer<typeof netWorthSummarySchema>;
 
 /** Only the fields Home reads from GET /api/craft/margins: the ranked picks and their EV. */
 export const craftPicksSchema = z.object({
@@ -49,8 +47,8 @@ export function pickStrategy(data: Pick<StrategiesResponse, "strategies">, art: 
 
 /** The best-scoring exchange flip that passed the rank gate and is not in a falling market. */
 export function pickFlip(data: Pick<DiscoverResponse, "candidates" | "note">): HomePick {
-  const ranked = data.candidates.filter((c) => c.source === "cx" && c.ranked && c.risk !== "DECLINE");
-  const top = [...ranked].sort((a, b) => b.worthScore - a.worthScore)[0];
+  // the Flips page's first top card, by the same rule
+  const top = topFlips(data.candidates, 1)[0];
   // the API's own `note` is operator wording ("poll first"); a player gets the plain reason
   if (!top && data.note !== undefined) return { kind: "empty", text: "Exchange rates are not loaded yet, so there is no flip to rank — check back soon." };
   if (!top) return { kind: "empty", text: "No exchange flip clears the safety bar right now." };

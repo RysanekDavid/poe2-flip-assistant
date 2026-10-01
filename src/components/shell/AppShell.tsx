@@ -22,6 +22,7 @@ import { RegexTab } from "./tabs/RegexTab";
 import { HomeTab } from "./tabs/HomeTab";
 import { LearnTab } from "./tabs/LearnTab";
 import { AdvancedBanner } from "./AdvancedBanner";
+import { canonicalSearch } from "./canonicalUrl";
 import { SettingsTab } from "./tabs/SettingsTab";
 
 /**
@@ -37,12 +38,14 @@ function useCanonicalRoute(route: TabRoute, rejected: readonly string[], renamed
   const unknown = rejected.join(", ");
   // an old link to a renamed tab or tool is expected, not an error: rewrite it without a warning
   const renamedText = renamed.join(", ");
+  const { tab, tool } = route;
   const href = tabRouteHref(route);
   useEffect(() => {
     if (unknown === "" && renamedText === "") return;
     if (unknown !== "") console.warn(`[tabs] ignoring unknown ${unknown} — showing ${href}`);
-    router.replace(`${pathname}${href}`, { scroll: false });
-  }, [unknown, renamedText, href, pathname, router]);
+    // read live: the other params (open strategy, filter, shared item) ride along unchanged
+    router.replace(`${pathname}${canonicalSearch(window.location.search, { tab, tool })}`, { scroll: false });
+  }, [unknown, renamedText, href, tab, tool, pathname, router]);
 }
 
 /** Coach is kept mounted (below) so an open conversation survives tab switches. */
@@ -98,7 +101,7 @@ function ShellBody() {
   useCanonicalRoute({ tab, tool }, rejected, renamed);
 
   return (
-    // one alert poll for the TopBar badge, its popover, the Alerts tab and the Flips ticker
+    // one alert poll for the TopBar badge, its popover, the Alerts page and the Flips ticker
     <AlertsProvider>
       <main className="mx-auto w-full max-w-screen-2xl flex-1 space-y-4 p-6">
         {/* stale-league warning — every price below is wrong if this fires */}

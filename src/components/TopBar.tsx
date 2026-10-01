@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, LogOut } from "lucide-react";
 import { BellIcon, XIcon } from "./ui/icons";
@@ -12,8 +12,10 @@ import { TAB_ICONS } from "./shell/tabIcons";
 import { tabRouteHref } from "./shell/tabRegistry";
 import { useTabRoute } from "./shell/useTabRoute";
 import { AlertsPanel } from "./AlertFeed";
-import { assertOk, warnOnFailure } from "../lib/clientWarn";
+import { assertOk } from "../lib/clientWarn";
+import { useNetWorthSummary } from "./wealth/useNetWorthSummary";
 import { useAlertCenter } from "./alerts/AlertsContext";
+import { useDismiss } from "./ui/useDismiss";
 
 const DIVINE_ART =
   "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png";
@@ -47,29 +49,45 @@ function AlertsPopoverHead({ onClose }: { onClose: () => void }) {
  * Header toolbar — Alerts bell (popover; its link opens the Alerts page) and the profile box with
  * net worth, Settings, Guide and Sign out. Alerts and Settings left the tab strip on 2026-10-01.
  */
+// Phones: pinned under the header across the screen (the bell sits mid-row, so a right-anchored
+// 420 px box would run off the left edge). The header's backdrop blur makes it the containing block
+// for "fixed", so top = its own height. From md up: a dropdown under the bell.
+const POPOVER =
+  "fixed inset-x-2 top-[var(--shell-h,6rem)] z-30 rounded-lg border border-neutral-800 bg-neutral-900 p-4 shadow-2xl " +
+  "md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:w-[420px]";
+
 export function TopBar() {
   const [open, setOpen] = useState(false);
   const { tab } = useTabRoute();
   // badge = unseen alerts you can act on (snipe, craft margin, spread) — info types stay in the feed
   const { actionable } = useAlertCenter();
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(open, close, [popoverRef, bellRef], bellRef);
 
   return (
     <div className="relative flex items-center gap-3">
       <span data-tour="alerts">
-        <IconButton label="Alerts" square active={open || tab === "alerts"} badge={actionable} onClick={() => setOpen((o) => !o)}>
+        <IconButton
+          label="Alerts"
+          square
+          active={open || tab === "alerts"}
+          expanded={open}
+          buttonRef={bellRef}
+          badge={actionable}
+          onClick={() => setOpen((o) => !o)}
+        >
           <BellIcon className="h-5 w-5 text-amber-300" />
         </IconButton>
       </span>
       <UserMenu />
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-30 mt-2 w-[420px] max-w-[92vw] rounded-lg border border-neutral-800 bg-neutral-900 p-4 shadow-2xl">
-            <AlertsPopoverHead onClose={() => setOpen(false)} />
-            <AlertsPanel onNavigate={() => setOpen(false)} />
-          </div>
-        </>
+        <div ref={popoverRef} role="dialog" aria-label="Alerts" className={POPOVER}>
+          <AlertsPopoverHead onClose={close} />
+          <AlertsPanel onNavigate={close} />
+        </div>
       )}
     </div>
   );
@@ -98,19 +116,8 @@ function SettingsLink() {
 
 /** Global net worth next to the profile — the latest Stash snapshot, always in sight. */
 function WealthChip() {
-  const [data, setData] = useState<{ netWorthDiv: number | null; change24hPct: number | null } | null>(null);
-
-  useEffect(() => {
-    const load = () =>
-      fetch("/api/balance/summary")
-        .then((r) => assertOk(r, "/api/balance/summary").json())
-        .then(setData)
-        .catch(warnOnFailure("[topbar] net-worth chip"));
-    load();
-    const id = setInterval(load, 120_000);
-    return () => clearInterval(id);
-  }, []);
-
+  // one shared poll (Home's stash card reads the same store); a failed read logs there
+  const { data } = useNetWorthSummary();
   if (data?.netWorthDiv == null) return null;
   const chg = data.change24hPct;
   return (
@@ -197,6 +204,8 @@ function IconButton({
   children,
   label,
   active,
+  expanded,
+  buttonRef,
   badge,
   square,
   onClick,
@@ -204,15 +213,22 @@ function IconButton({
   children: ReactNode;
   label: string;
   active: boolean;
+  /** Whether the popover this button opens is showing. */
+  expanded: boolean;
+  buttonRef: RefObject<HTMLButtonElement | null>;
   badge?: number;
   square?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
+      ref={buttonRef}
+      type="button"
       onClick={onClick}
       title={label}
-      aria-label={label}
+      aria-label={badge != null && badge > 0 ? `${label} (${badgeText(badge)} new)` : label}
+      aria-haspopup="dialog"
+      aria-expanded={expanded}
       className={`relative flex h-9 items-center justify-center rounded-lg border p-2 shadow-sm transition-all active:scale-95 ${
         square ? "aspect-square" : ""
       } ${

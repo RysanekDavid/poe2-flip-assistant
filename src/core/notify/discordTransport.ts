@@ -12,7 +12,7 @@ import { redactWebhook } from "./webhookUrl";
  *                  message is gone (404, code 10008), or the payload is invalid; the same request
  *                  cannot succeed. `code` is Discord's JSON error code when the body carried one.
  *  - failed:       5xx / network / timeout — transient, retried with backoff
- * `detail` is always token-free: it is logged and shown in the Alerts tab.
+ * `detail` is always token-free: it is logged and shown on the Alerts page.
  */
 export type DeliveryResult =
   | { kind: "ok"; messageId: string | null }
