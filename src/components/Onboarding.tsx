@@ -19,7 +19,7 @@ function AdvancedBullets() {
       </li>
       <li className="flex gap-2.5">
         <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-        <span><b>Wealth & Flip log are yours alone</b> — your net worth and trades are private to your account.</span>
+        <span><b>Stash & Flip log are yours alone</b> — your net worth and trades are private to your account.</span>
       </li>
       <li className="flex gap-2.5">
         <Flame className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
@@ -42,7 +42,7 @@ function BeginnerBullets() {
       </li>
       <li className="flex gap-2.5">
         <Compass className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
-        <span>Trading tools stay hidden until you want them: <b>Settings › Mode</b>.</span>
+        <span>The trading tools wait under <b>More tools</b> at the end of the tab bar; <b>Settings › Mode</b> (the gear in your profile) shows them all.</span>
       </li>
     </ul>
   );

@@ -7,6 +7,7 @@ import { SystemHealthPanel } from "../../system/SystemHealthPanel";
 import { NotificationsLink } from "../../settings/NotificationsLink";
 import { PageHeader } from "../../ui/PageHeader";
 import { useNavMode } from "../NavModeProvider";
+import { TAB_ICONS } from "../tabIcons";
 import { useTabRoute } from "../useTabRoute";
 
 const SECTION_ID: Record<string, string> = {
@@ -39,18 +40,19 @@ export function SettingsTab() {
 
   return (
     <>
-      <PageHeader title="Settings" purpose={PURPOSE[mode]} />
+      <PageHeader title="Settings" purpose={PURPOSE[mode]} art={TAB_ICONS.settings.src} />
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <div id={SECTION_ID.account} className="scroll-mt-[var(--shell-h,0px)]">
           {mode === "advanced" ? <SettingsPanel /> : <AccountSecurityPanel />}
         </div>
+        {/* same order as the sub-tabs: Account, Notifications, Mode, then the owner's System */}
         <div className="space-y-4">
-          <div id={SECTION_ID.mode} className="scroll-mt-[var(--shell-h,0px)]">
-            <NavModePanel />
-          </div>
-          {/* status only: routing is edited in the Alerts tab, so the two can never disagree */}
+          {/* status only: routing is edited on the Alerts page, so the two can never disagree */}
           <div id={SECTION_ID.notify} className="scroll-mt-[var(--shell-h,0px)]">
             <NotificationsLink />
+          </div>
+          <div id={SECTION_ID.mode} className="scroll-mt-[var(--shell-h,0px)]">
+            <NavModePanel />
           </div>
         </div>
       </div>

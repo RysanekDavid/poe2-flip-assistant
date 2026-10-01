@@ -19,6 +19,9 @@ export const MECHANIC_LABEL: Record<Mechanic, string> = {
   corruption: "Corruption",
   anomaly: "Anomaly",
   trial_of_chaos: "Trial of Chaos",
+  temple: "Temple",
+  citadel: "Citadel",
+  irradiated: "Irradiated",
 };
 
 export const BUDGET_LABEL: Record<BudgetTier, string> = {

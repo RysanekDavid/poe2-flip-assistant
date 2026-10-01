@@ -6,7 +6,7 @@ import { sellVerdict } from "../wealth/sellVerdict";
 import { tradeListingQuote } from "../wealth/tradeRoute";
 
 /**
- * The sell hint under a price check, built from the Wealth › Sell planner's own pieces
+ * The sell hint under a price check, built from the Stash › Sell planner's own pieces
  * (planLiquidation rows, sellVerdict, tradeListingQuote) so a price check and the Sell column can
  * never disagree about the same item. Pure.
  */
@@ -33,7 +33,7 @@ export function noHint(reason: string): SellHint {
 
 /**
  * A planned row → sell now on the exchange, list at fair, or hold a rising liquid market.
- * `unpricedReason` replaces the planner's own unpriced text, which points at a Wealth reprice check.
+ * `unpricedReason` replaces the planner's own unpriced text, which points at a Stash reprice check.
  */
 export function hintFromRow(
   row: PlanRow,

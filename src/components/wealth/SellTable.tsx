@@ -1,65 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { PackageOpen } from "lucide-react";
-import type { SellResponse, SellRow, SellVerdict } from "../../lib/wealthContract";
-import { parseSqliteTimestamp } from "../../lib/sqliteTime";
-import { Button } from "../ui/Button";
+import type { SellResponse, SellRow } from "../../lib/wealthContract";
 import { DataTable, type Column } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
 import { ItemArt } from "../ui/ItemArt";
 import { PriceChip, type PriceSource } from "../ui/PriceChip";
-import { fmtAgeMin } from "../ui/StaleBadge";
-
-const VERDICT: Record<SellVerdict, { label: string; className: string }> = {
-  "sell-cx": { label: "Sell now", className: "border-good/40 bg-good/10 text-good" },
-  list: { label: "List", className: "border-neutral-600 text-neutral-200" },
-  reprice: { label: "Reprice", className: "border-amber-400/50 bg-amber-400/10 text-amber-300" },
-  hold: { label: "Hold", className: "border-neutral-600 text-neutral-300" },
-  unpriced: { label: "Unpriced", className: "border-line text-neutral-400" },
-};
-
-const SOURCE: Record<SellRow["valueSource"], PriceSource | undefined> = {
-  cx: "cx", ninja: "ninja", scout: "scout", trade: "trade", none: undefined,
-};
-
-function VerdictChip({ v }: { v: SellVerdict }) {
-  const { label, className } = VERDICT[v];
-  return <span className={`rounded border px-1.5 py-0.5 text-xs font-medium ${className}`}>{label}</span>;
-}
-
-/** "listed 4d" — how long the listing has sat; the age is the case for a reprice. */
-function listedAge(listedAt: string | null): string | null {
-  if (listedAt == null) return null;
-  const at = parseSqliteTimestamp(listedAt);
-  return `listed ${fmtAgeMin((Date.now() - at) / 60_000)}`;
-}
-
-function CopyNote({ note }: { note: string | null }) {
-  const [copied, setCopied] = useState(false);
-  const [failed, setFailed] = useState(false);
-  if (note == null) return null;
-  const copy = () => {
-    navigator.clipboard
-      .writeText(note)
-      .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      })
-      .catch((e: unknown) => {
-        console.warn("[sell] clipboard write failed:", e instanceof Error ? e.message : e);
-        setFailed(true);
-      });
-  };
-  return (
-    <Button size="sm" variant="secondary" onClick={copy} title={failed ? `copy failed — select it: ${note}` : `copy "${note}" for the stash tab note`}>
-      {copied ? "Copied" : failed ? note : "Copy note"}
-    </Button>
-  );
-}
+import { CopyNote, SOURCE, VerdictChip, verdictAge } from "./sellVerdict";
 
 function Why({ row }: { row: SellRow }) {
-  const age = row.verdict === "reprice" || row.verdict === "list" ? listedAge(row.listedAt) : null;
+  const age = verdictAge(row);
   return (
     <span className="block max-w-[26rem] truncate text-neutral-300" title={`${row.reason} · ${row.routeReason}`}>
       {row.reason}
@@ -103,7 +53,7 @@ function columns(exPerDiv: number): Column<SellRow>[] {
   ];
 }
 
-/** The Sell column: one row per stash item, most actionable first (reprice → sell now → list → hold). */
+/** Stash › Sell table view: one row per stash item, most actionable first (reprice → sell now → list → hold). */
 export function SellTable({ data }: { data: SellResponse }) {
   return (
     <DataTable

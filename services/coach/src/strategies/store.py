@@ -6,11 +6,11 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from src.strategies.models import FarmStrategy
+from src.strategies.models import STRATEGY_ADAPTER, Strategy
 
 
-def load_strategies(directory: Path) -> tuple[FarmStrategy, ...]:
-    """Every `<id>.json` in `directory`, validated, ordered by id.
+def load_strategies(directory: Path) -> tuple[Strategy, ...]:
+    """Every `<id>.json` in `directory` (any kind), validated, ordered by id.
 
     Raises RuntimeError on an unreadable or invalid file, an id that is not its filename, a
     duplicate id, or an empty directory: a silently skipped strategy would read as "none exists".
@@ -21,10 +21,12 @@ def load_strategies(directory: Path) -> tuple[FarmStrategy, ...]:
         raise RuntimeError(f"Strategy directory {directory} is missing: {error}") from error
     if not files:
         raise RuntimeError(f"No strategy files in {directory}")
-    strategies: dict[str, FarmStrategy] = {}
+    strategies: dict[str, Strategy] = {}
     for path in files:
         try:
-            strategy = FarmStrategy.model_validate(json.loads(path.read_text(encoding="utf-8")))
+            strategy = STRATEGY_ADAPTER.validate_python(
+                json.loads(path.read_text(encoding="utf-8"))
+            )
         except (OSError, json.JSONDecodeError, ValidationError) as error:
             raise RuntimeError(f"Strategy file {path} is invalid: {error}") from error
         if strategy.id != path.stem:
@@ -38,6 +40,6 @@ def load_strategies(directory: Path) -> tuple[FarmStrategy, ...]:
 
 
 @lru_cache(maxsize=4)
-def get_strategies(directory: Path) -> tuple[FarmStrategy, ...]:
+def get_strategies(directory: Path) -> tuple[Strategy, ...]:
     """Process-wide strategy KB per directory; the files are immutable for a release."""
     return load_strategies(directory)

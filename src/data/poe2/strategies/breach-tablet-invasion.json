@@ -1,0 +1,195 @@
+{
+  "schema_version": 3,
+  "kind": "roll_and_sell",
+  "id": "breach-tablet-invasion",
+  "title": "Breach Tablets 'of the Invasion' (extra rares)",
+  "summary": "Roll Breach Tablets for the 'of the Invasion' suffix (Unstable Breaches spawn 1–2 additional Rare Monsters when Stabilised) with a monster-effectiveness or item-rarity prefix, and sell them to juiced Breach farmers. 0.5.5 cut the suffix from 1–3 to 1–2.",
+  "mechanics": [
+    "breach"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "league_start",
+    "why": "Breach Tablets and Transmutation/Augmentation orbs; a Divine Orb only to push a finished roll to 2.",
+    "build_needs": "None for the rolling; Breach Tablets come from ordinary maps.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Breach_Tablet",
+        "https://poe2db.tw/us/Divine_Orb"
+      ],
+      "note": "Our reading of the method against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": null,
+      "why": "No combat: the method is rolling in the stash and selling.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: the build scale measures map content, and this method has none."
+      }
+    },
+    "complexity": {
+      "value": null,
+      "why": "The complexity scale is written for map setups, not for rolling at the stash.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: no step of the scale describes a rolling loop."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "The 'of the Invasion' suffix adds 1–2 rare monsters to each stabilised Unstable Breach, and Breach rewards come from those monsters.",
+    "breaks_when": [
+      "The suffix is cut again (0.5.5 already cut it from 1–3)",
+      "Breach rare rewards fall in value"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Breach_Tablet",
+        "https://www.pathofexile.com/forum/view-thread/4000864"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "target": {
+    "base": "Breach Tablet",
+    "rarity": [
+      "magic",
+      "rare"
+    ],
+    "claim": {
+      "v": "vp",
+      "src": [
+        "https://poe2db.tw/us/Breach_Tablet",
+        "https://repoe-fork.github.io/poe2/"
+      ],
+      "note": "Base BreachAugment: 'Adds an Otherworldy Breach to a Map', 10 uses. A magic tablet holds one prefix and one suffix; a rare one has room for both suffixes below."
+    }
+  },
+  "target_mods": [
+    {
+      "text": "Unstable Breaches in Map spawn (1–2) additional Rare Monsters when Stabilised",
+      "side": "suffix",
+      "trade_stat_id": "explicit.stat_3762913035",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Breach_Tablet",
+          "https://www.pathofexile.com/api/trade2/data/stats",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "Suffix 'of the Invasion' (RePoE TowerBreachAdditionalRares). 0.5.5 cut it from 1–3 to 1–2 and spawns the rares in waves of 5; a (2–5) roll belongs to the unique tablet Wraeclast Besieged, not this suffix."
+      }
+    },
+    {
+      "text": "Map has (1–2) additional random Modifiers",
+      "side": "suffix",
+      "trade_stat_id": "explicit.stat_588512487",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Tablet",
+          "https://repoe-fork.github.io/poe2/",
+          "https://www.pathofexile.com/api/trade2/data/stats"
+        ],
+        "note": "Suffix 'of Undertaking' (RePoE TowerMapAdditionalModifier), on every tablet base. trade2 files the stat under its singular wording, which RePoE's tablet stat descriptions give the same stat. ASaVeQ's jackpot (5:37) pairs it with the extra-rares suffix and effectiveness."
+      }
+    },
+    {
+      "text": "Monsters have (10–15)% increased Effectiveness",
+      "side": "prefix",
+      "trade_stat_id": "explicit.stat_2065500219",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Tablet",
+          "https://www.pathofexile.com/api/trade2/data/stats"
+        ]
+      }
+    },
+    {
+      "text": "(8–12)% increased Rarity of Items found in Map",
+      "side": "prefix",
+      "trade_stat_id": "explicit.stat_2306002879",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Tablet",
+          "https://www.pathofexile.com/api/trade2/data/stats"
+        ]
+      }
+    }
+  ],
+  "roll_steps": [
+    {
+      "action": "Buy rare Breach Tablets that already carry the 'of the Invasion' suffix and reroll the other mods with Chaos Orbs, aiming at monster effectiveness and an additional-modifiers suffix. The older route is Transmutation and Augmentation on magic bases.",
+      "currencies": [
+        {
+          "id": "chaos",
+          "name": "Chaos Orb"
+        },
+        {
+          "id": "transmute",
+          "name": "Orb of Transmutation"
+        },
+        {
+          "id": "aug",
+          "name": "Orb of Augmentation"
+        }
+      ],
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://www.youtube.com/watch?v=oPZBUSS1Ees"
+        ],
+        "note": "Creator method (ASaVeQ, 2026-07-24): current route at 8:16–8:42, older magic route at 7:33, jackpot at 5:37. The video predates the 0.5.5 cut to 1–2."
+      }
+    },
+    {
+      "action": "Divine Orb toward 2 additional rares (the 0.5.5 maximum), before anything corrupts the tablet.",
+      "currencies": [
+        {
+          "id": "divine",
+          "name": "Divine Orb"
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Divine_Orb",
+          "https://poe2db.tw/us/Ancient_Infuser"
+        ],
+        "note": "A Divine Orb randomises modifier values; an Ancient Infuser corrupts the tablet, after which it cannot be rerolled."
+      }
+    }
+  ],
+  "sell_unit": "single",
+  "sell_ref": null,
+  "price_refs": [],
+  "demand": {
+    "why": "Juiced Breach farms (Wombgifts, Hiveblood) want more stabilised rares per Breach.",
+    "claim": {
+      "v": "ss",
+      "src": [
+        "https://www.youtube.com/watch?v=oPZBUSS1Ees"
+      ],
+      "note": "Creator demand from before 0.5.5 (ASaVeQ 2026-07-24, 9:24 'you always want three'): that was the 1–3 version, so no price is repeated here."
+    }
+  },
+  "risks": [
+    "0.5.5 cut the suffix to 1–2 additional rares: older videos and prices describe the 1–3 version.",
+    "Tablets are not on the currency exchange: price on the trade site with the Search link."
+  ]
+}

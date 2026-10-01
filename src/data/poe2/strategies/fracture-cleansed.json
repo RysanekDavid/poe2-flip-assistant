@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "fracture-cleansed",
   "title": "Fracturing Orbs from Cleansed maps",
   "summary": "Clear a Corrupted Nexus so the corrupted maps around it turn Cleansed, then run those with Hidden Scars and From Distances Untold: Cleansed monsters and modded Summoning Circle bosses can drop Fracturing Orbs.",
@@ -51,6 +52,22 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Hidden Scars lets Cleansed monsters drop Fracturing Orbs, and From Distances Untold adds a 5% chance from modded Summoning Circle bosses in Cleansed areas.",
+    "breaks_when": [
+      "Hidden Scars or From Distances Untold is changed",
+      "Cleansed areas become rarer",
+      "Fracturing Orb prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Hidden_Scars",
+        "https://poe2db.tw/us/From_Distances_Untold"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

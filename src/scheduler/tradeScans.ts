@@ -89,7 +89,7 @@ const repriceProblem = (rs: RepriceUserResult[]): string | null => {
   return failed.length > 0 ? `${failed.length} of ${rs.length} reprice run(s) failed — user ${failed[0]!.userId}: ${failed[0]!.error}` : null;
 };
 
-/** Wealth › Sell reprice checks queued by POST /api/wealth/reprice, run under each user's own cookie. */
+/** Stash › Sell reprice checks queued by POST /api/wealth/reprice, run under each user's own cookie. */
 export function drainReprice(credFor: (userId: number) => TradeCred | null): void {
   if (repriceRunning) return; // stays queued for the next drain
   const userIds = consumeScanRequests("reprice");

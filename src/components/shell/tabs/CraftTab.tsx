@@ -13,9 +13,14 @@ import { decodeItem, SHARE_PARAM } from "../../../lib/tools/shareItem";
 import { ComputedLeague } from "../../ui/ComputedLeague";
 import { PageHeader } from "../../ui/PageHeader";
 import { PanelLoading } from "../PanelLoading";
+import { TAB_ICONS } from "../tabIcons";
 import { useTabRoute } from "../useTabRoute";
 
 const CraftMovesTool = dynamic(() => import("../../craft/moves/CraftMovesTool").then((m) => m.CraftMovesTool), {
+  loading: PanelLoading,
+});
+
+const RollSellTool = dynamic(() => import("../../craft/rollsell/RollSellTool").then((m) => m.RollSellTool), {
   loading: PanelLoading,
 });
 
@@ -71,6 +76,7 @@ function MovesView() {
         title="Craft"
         purpose="Paste an item: its three next best moves, what they cost and what a hit is worth."
         legend={MOVES_LEGEND}
+        art={TAB_ICONS.craft.src}
       />
       {shared.error && <p role="alert" className="text-sm text-bad">{shared.error}</p>}
       <CraftMovesTool initialText={shared.text} />
@@ -85,6 +91,7 @@ function ModPoolView() {
         title="Craft"
         purpose="Pick a base: every mod it rolls at your item level, its tier gates, and what items carrying it ask."
         legend={MOD_POOL_LEGEND}
+        art={TAB_ICONS.craft.src}
       />
       <ModPoolTool />
     </>
@@ -99,6 +106,7 @@ function RecipesView() {
         title="Craft"
         purpose="Recipes that pay today at current prices — craft the amber ones, review the rest."
         legend={RECIPES_LEGEND}
+        art={TAB_ICONS.craft.src}
         action={<RecipesLeague />}
       />
       <Recipes />
@@ -106,10 +114,14 @@ function RecipesView() {
   );
 }
 
-/** Craft tab: recipes that pay today (tool=recipes), an item's next best move (tool=moves) or a base's mod pool (tool=modpool). */
+/**
+ * Craft tab: recipes that pay today (tool=recipes), an item's next best move (tool=moves), a base's
+ * mod pool (tool=modpool) or items worth rolling for one mod and selling (tool=rollsell).
+ */
 export function CraftTab() {
   const { tool } = useTabRoute();
   if (tool === "moves") return <MovesView />;
   if (tool === "modpool") return <ModPoolView />;
+  if (tool === "rollsell") return <RollSellTool />;
   return <RecipesView />;
 }

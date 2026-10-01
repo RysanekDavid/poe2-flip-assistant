@@ -8,25 +8,20 @@ import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { Panel } from "../ui/Panel";
 import { PanelLoading } from "../shell/PanelLoading";
-import { useTabRoute } from "../shell/useTabRoute";
+import { ConnectTradeButton } from "../settings/ConnectTradeButton";
 import { PnlHero, SplitBar, TabBreakdown, ValueChart } from "./WealthCharts";
 import { ManualForm, NetWorthCard } from "./NetWorthCard";
 import { useBalance, type BalanceData } from "./useBalance";
 
 /** No snapshot yet: one line that says what fills it — the header's Read stash, or Settings first. */
 function NoSnapshot({ stashEnabled }: { stashEnabled: boolean }) {
-  const { go } = useTabRoute();
   return stashEnabled ? (
     <EmptyState icon={<Wallet className="h-5 w-5" />} sentence="No stash read yet — Read stash values your public tabs (1 search + up to 10 fetches)." />
   ) : (
     <EmptyState
       icon={<Wallet className="h-5 w-5" />}
       sentence="Connect your POESESSID and account name to read your public stash tabs."
-      cta={
-        <Button variant="secondary" size="sm" onClick={() => go("settings", "account")}>
-          Open Settings
-        </Button>
-      }
+      cta={<ConnectTradeButton />}
     />
   );
 }
@@ -66,7 +61,7 @@ function WorthBody({ data, onChanged }: { data: BalanceData; onChanged: () => vo
   );
 }
 
-/** Wealth › Net worth: what the public stash is worth now, this session and over time. */
+/** Stash › Net worth: what the public stash is worth now, this session and over time. */
 export function BalancePanel({ reloadKey }: { reloadKey: number }) {
   const { data, error, load } = useBalance(reloadKey);
   return (

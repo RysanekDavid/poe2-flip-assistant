@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "delirium-grand-mirror",
   "title": "Delirium: Grand Mirror fog and Simulacrum",
   "summary": "Follow Grand Mirror fog (10 maps since 0.5.5), run Delirium tablets for Fracturing Mirrors and unique bosses, and turn Simulacrum Splinters into Simulacrums.",
@@ -51,6 +52,22 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Delirium monsters in level 75+ maps drop Simulacrum Splinters (Is this about me... or you?), and Grand Mirror fog keeps the Deliriousness that drives Delirium rewards spreading across maps.",
+    "breaks_when": [
+      "The splinter node or Grand Mirror fog is changed",
+      "Simulacrum or Liquid Emotion prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Is_this_about_me..._or_you_",
+        "https://poe2db.tw/us/Delirium",
+        "https://www.pathofexile.com/forum/view-thread/4000864"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

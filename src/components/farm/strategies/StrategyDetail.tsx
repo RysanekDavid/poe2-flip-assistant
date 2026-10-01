@@ -10,6 +10,7 @@ import { ClaimBadge } from "../../ui/ClaimBadge";
 import { ItemArt } from "../../ui/ItemArt";
 import { ProvenanceChip } from "../../ui/ProvenanceChip";
 import { InfoTip } from "../../ui/Tooltip";
+import { DurabilityNote } from "./Durability";
 import { StatusBadge, StrategyMeters, TrendPill, WaystoneRegexLink } from "./StrategyBits";
 import { MasterChips, NotableList, WaystoneChips } from "./StrategyParts";
 import { leagueMismatch, MECHANIC_LABEL } from "./strategiesView";
@@ -17,7 +18,7 @@ import { tabletArtSrc } from "./tabletArtImages";
 import { TabletMods } from "./TabletMods";
 import { YieldBasket } from "./YieldBasket";
 
-function Section({ title, tip, right, children }: { title: string; tip?: string; right?: ReactNode; children: ReactNode }) {
+export function Section({ title, tip, right, children }: { title: string; tip?: string; right?: ReactNode; children: ReactNode }) {
   return (
     <section className="grid content-start gap-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -33,7 +34,7 @@ function Section({ title, tip, right, children }: { title: string; tip?: string;
 }
 
 /** Why each bar sits where it does, with its evidence grade: the ratings are curated, so they show their work. */
-function RatingReasons({ strategy }: { strategy: StrategyView }) {
+export function RatingReasons({ strategy }: { strategy: Pick<StrategyView, "budget" | "ratings"> }) {
   const rows: { label: string; why: string; claim: StrategyView["budget"]["claim"] }[] = [
     { label: "Budget", why: strategy.budget.why, claim: strategy.budget.claim },
     ...(["build", "complexity"] as const satisfies readonly RatingKey[]).map((key) => ({
@@ -144,6 +145,9 @@ export function StrategyDetail({ strategy, data }: DetailProps) {
   return (
     <div className="grid gap-6">
       <Overview strategy={strategy} league={data.computedLeague} />
+      <Section title="Why it keeps working" tip="The game mechanic behind the strategy, and what would end it. Profit itself is only what live prices show.">
+        <DurabilityNote durability={strategy.durability} />
+      </Section>
       <HowItRuns strategy={strategy} />
       <SetUp strategy={strategy} />
       <Section title="Loot" tip="Unit prices only: drop rates are unknown, so no total or Div/hour is claimed." right={loot}>

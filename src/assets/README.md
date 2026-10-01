@@ -49,16 +49,17 @@ One PNG per tab, trimmed to 128 px on a transparent background and wired in
 
 | File | Tab |
 |------|-----|
+| `Home.png` | Home — PLACEHOLDER: a copy of `items/the-triskelion-reforged.png` (game art used nowhere else in the nav; not the Waystone, which Learn › Atlas and Regex › Waystone use, nor the owl) until the owner supplies Home art — replace the file |
 | `Currency_exchange.png` | Flips |
 | `Web_market.png` | Trade (also the Trade › Opportunities sub-tab) |
 | `Farm.png` | Farm |
 | `Craft.png` | Craft |
-| `Wealth.png` | Wealth |
+| `Wealth.png` | Stash (the tab was called Wealth until 2026-10-01; also the Stash › Net worth sub-tab) |
 | `Regex.png` | Regex |
-| `Patches.png` | Patches |
+| `Patches.png` | Learn › Patch notes sub-tab (Patches was its own tab until 2026-10-01) |
 | `Learn.png` | Learn |
-| `Alerts.png` | Alerts (a bell) |
-| `settings.png` | Settings |
+| `Alerts.png` | Alerts page header (the page opens from the header bell) |
+| `settings.png` | Settings button in the profile box, and the Settings page header |
 | `Coach.png` | Coach button (the gold owl; it breathes a slow amber glow unless reduced motion is on) |
 
 Swapping one is a file replacement; keep it square, trimmed and around 128 px.

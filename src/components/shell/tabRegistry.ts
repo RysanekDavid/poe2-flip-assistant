@@ -4,12 +4,12 @@ import { z } from "zod";
  * Plain data (no React, no image imports) so the URL router, the nav and the node test scripts all
  * read one list. Tab art lives in tabIcons.ts because tsx cannot import PNGs outside Next.
  */
-export const TAB_IDS = ["flips", "trade", "farm", "craft", "wealth", "regex", "patches", "learn", "alerts", "settings", "coach"] as const;
+export const TAB_IDS = ["home", "flips", "trade", "farm", "craft", "stash", "regex", "learn", "alerts", "settings", "coach"] as const;
 
 export const tabIdSchema = z.enum(TAB_IDS);
 export type TabId = z.infer<typeof tabIdSchema>;
 
-export const DEFAULT_TAB: TabId = "flips";
+export const DEFAULT_TAB: TabId = "home";
 
 export interface ToolMeta {
   id: string;
@@ -27,15 +27,18 @@ export interface TabMeta {
 }
 
 export const TABS: readonly TabMeta[] = [
+  { id: "home", label: "Home", hint: "what do you want to do today? · today's top picks" },
   { id: "flips", label: "Flips", hint: "Currency Exchange flips · positions · league start" },
   {
     id: "trade",
     label: "Trade",
-    hint: "prices · price check · what to buy now",
+    hint: "price check · prices · what to buy now",
+    // Price check first: a newcomer arrives with a drop in hand, not to browse a price table
     tools: [
-      { id: "prices", label: "Prices", hint: "every exchange item: price, 7-day trend, volume" },
       { id: "price", label: "Price check", hint: "paste an item: what it is worth and how to sell it" },
+      { id: "prices", label: "Prices", hint: "every exchange item: price, 7-day trend, volume" },
       { id: "opportunities", label: "Opportunities", hint: "what to buy on the trade site now: snipes, near-misses, rising uniques" },
+      { id: "methods", label: "Methods", hint: "bench ladders, gambles and collections, with the live margin" },
     ],
   },
   {
@@ -55,12 +58,13 @@ export const TABS: readonly TabMeta[] = [
       { id: "recipes", label: "Recipes", hint: "recipes that pay at today's prices" },
       { id: "moves", label: "Paste item", hint: "paste an item: its next best crafting moves" },
       { id: "modpool", label: "Mod pool", hint: "every mod a base rolls, with tier gates and prices" },
+      { id: "rollsell", label: "Roll & sell", hint: "tablets and waystones worth rolling for one mod, and how to sell them" },
     ],
   },
   {
-    id: "wealth",
-    label: "Wealth",
-    hint: "net worth · what to sell",
+    id: "stash",
+    label: "Stash",
+    hint: "what you own and what to sell",
     tools: [
       { id: "worth", label: "Net worth", hint: "what your public stash is worth, now and over time" },
       { id: "sell", label: "Sell", hint: "what to sell, list, reprice or hold" },
@@ -80,15 +84,15 @@ export const TABS: readonly TabMeta[] = [
       { id: "price", label: "Price", hint: "stash items worth at least a price" },
     ],
   },
-  { id: "patches", label: "Patches", hint: "official patch notes · AI summary · what it means for trading" },
   {
     id: "learn",
     label: "Learn",
-    hint: "what is this item · currency primer · atlas checklist",
+    hint: "what is this item · currency primer · atlas checklist · patch notes",
     tools: [
       { id: "what", label: "What is this", hint: "find any item: what it does and what it is worth" },
       { id: "currency", label: "Currency primer", hint: "the first currencies you meet and whether to pick them up" },
       { id: "atlas", label: "Atlas checklist", hint: "the endgame unlock route, step by step" },
+      { id: "patches", label: "Patch notes", hint: "official patch notes · AI summary · what it means for trading" },
     ],
   },
   { id: "alerts", label: "Alerts", hint: "alert feed · sound, popup & Discord routing" },
@@ -98,7 +102,7 @@ export const TABS: readonly TabMeta[] = [
     hint: "account · trade connection · notifications · system",
     tools: [
       { id: "account", label: "Account", hint: "password, sessions and trade connection" },
-      { id: "notify", label: "Notifications", hint: "delivery status; routing lives in the Alerts tab" },
+      { id: "notify", label: "Notifications", hint: "delivery status; routing lives on the Alerts page (the bell)" },
       { id: "mode", label: "Mode", hint: "Beginner or Advanced navigation" },
       { id: "system", label: "System", hint: "system health (owner only)" },
     ],
@@ -106,24 +110,37 @@ export const TABS: readonly TabMeta[] = [
   { id: "coach", label: "Coach", hint: "market · craft · verified sources" },
 ];
 
-export const TAB_GROUPS = ["market", "earn", "stash", "tools", "account", "helper"] as const;
+/**
+ * The tab strip, left to right, grouped by player job (Coach is drawn apart on the right). Kept
+ * apart from TABS so the strip order can change without moving registry entries around.
+ */
+export const NAV_ORDER: readonly TabId[] = ["home", "farm", "flips", "craft", "trade", "stash", "regex", "learn"];
+
+/**
+ * Pages reached from the header instead of the strip: Alerts behind the bell, Settings in the
+ * profile box. They stay ordinary routes (?tab=alerts, ?tab=settings&tool=…) in both nav modes.
+ */
+export const HEADER_TABS: readonly TabId[] = ["alerts", "settings"];
+
+export const TAB_GROUPS = ["home", "earn", "items", "tools", "header", "helper"] as const;
 export type TabGroup = (typeof TAB_GROUPS)[number];
 
 /**
- * Which player job a tab serves. The nav draws a thin rule wherever two neighbouring visible tabs
- * belong to different groups, so the strip reads as a few clusters rather than eleven equal items.
+ * Which player job a tab serves: earn (Farm, Flips, Craft), prices and my items (Trade, Stash),
+ * tools and knowledge (Regex, Learn). The nav draws a thin rule wherever two neighbouring visible
+ * tabs belong to different groups, so the strip reads as a few clusters rather than equal items.
  */
 export const TAB_GROUP: Record<TabId, TabGroup> = {
-  flips: "market",
-  trade: "market",
+  home: "home",
   farm: "earn",
+  flips: "earn",
   craft: "earn",
-  wealth: "stash",
+  trade: "items",
+  stash: "items",
   regex: "tools",
-  patches: "tools",
   learn: "tools",
-  alerts: "account",
-  settings: "account",
+  alerts: "header",
+  settings: "header",
   coach: "helper",
 };
 
@@ -141,13 +158,23 @@ export const TOOL_REDIRECTS: Partial<Record<TabId, Readonly<Record<string, strin
 /**
  * Renamed tabs: an old ?tab= keeps working by landing on its replacement (Exchange became Flips on
  * 2026-09-30, once item prices had moved to Market › Prices; Market became Trade on 2026-10-01, as
- * all three of its tools are about trading). Only renames belong here, never removals.
+ * all three of its tools are about trading; Wealth became Stash and Patches moved into Learn on
+ * 2026-10-01, with the job-based nav). Only renames belong here, never removals.
  * A Map, not an object literal, so ?tab=toString cannot resolve to an Object.prototype member.
  */
 export const TAB_REDIRECTS: ReadonlyMap<string, TabId> = new Map<string, TabId>([
   ["exchange", "flips"],
   ["market", "trade"],
+  ["wealth", "stash"],
+  ["patches", "learn"],
 ]);
+
+/**
+ * Old tabs that became one tool of their new tab: the old link lands on that tool, not on the new
+ * tab's default. These old tabs had no tools of their own, so whatever ?tool= rode along is replaced.
+ * A Map for the same own-key reason as TAB_REDIRECTS.
+ */
+export const FOLDED_TABS: ReadonlyMap<string, string> = new Map<string, string>([["patches", "patches"]]);
 
 /** The tab id a raw ?tab= stands for today; unknown and current ids pass through unchanged. */
 export function redirectTab(rawTab: string | null): string | null {
@@ -173,8 +200,11 @@ export interface RenamedParams {
 /** Raw ?tab=&tool= → today's ids. The tab goes first because a tool rename is keyed by the current tab id. */
 export function followRenames(askedTab: string | null, askedTool: string | null): RenamedParams {
   const tab = redirectTab(askedTab);
-  const tool = redirectTool(tab, askedTool);
-  const renamed = [...(tab === askedTab ? [] : [`tab=${askedTab}`]), ...(tool === askedTool ? [] : [`tool=${askedTool}`])];
+  const folded = askedTab === null ? undefined : FOLDED_TABS.get(askedTab);
+  const tool = folded ?? redirectTool(tab, askedTool);
+  // a folded tab fills in a tool the link never had; that is part of the tab rename, not a tool rename
+  const toolRenamed = tool !== askedTool && askedTool !== null;
+  const renamed = [...(tab === askedTab ? [] : [`tab=${askedTab}`]), ...(toolRenamed ? [`tool=${askedTool}`] : [])];
   return { tab, tool, renamed };
 }
 

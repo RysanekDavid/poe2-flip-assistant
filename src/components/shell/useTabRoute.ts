@@ -9,7 +9,7 @@ import { useNavMode } from "./NavModeProvider";
 export interface TabRouteApi extends TabRoute {
   /** URL params that did not parse (e.g. "tab=bogus"); AppShell alone warns and rewrites them. */
   rejected: readonly string[];
-  /** URL params hidden in the user's nav mode (e.g. "tab=flips" for a beginner); AppShell redirects. */
+  /** Rendered params outside the user's nav mode (e.g. "tab=flips" for a beginner); AppShell says where they live. */
   hidden: readonly string[];
   /** A renamed ?tab= or ?tool= that was followed to its new id (e.g. "tab=exchange"); AppShell rewrites the URL. */
   renamed: readonly string[];
@@ -19,8 +19,8 @@ export interface TabRouteApi extends TabRoute {
 
 /**
  * The active tab lives in the URL (?tab=&tool=) so tabs deep-link and browser Back works. The route
- * returned is what the user's nav mode renders: a hidden tab or tool resolves to the mode's
- * fallback here, so every consumer (nav, chips, tab bodies) agrees on what is on screen.
+ * returned is what the user's nav mode renders (parseModeRoute), so every consumer (nav, chips,
+ * tab bodies) agrees on what is on screen.
  * Must render under <Suspense> (useSearchParams) and under NavModeProvider.
  */
 export function useTabRoute(): TabRouteApi {
@@ -37,9 +37,8 @@ export function useTabRoute(): TabRouteApi {
     (tab: TabId, tool?: string) => {
       const next = parseModeRoute(mode, tab, redirectTool(tab, tool ?? null));
       if (next.rejected.length > 0) throw new Error(`go(): unknown route ${next.rejected.join(", ")}`);
+      // A page outside the user's mode still opens; AppShell's banner says it is an advanced tool.
       const href = tabRouteHref(next);
-      // A link inside a visible page may still point at a hidden one; land on the fallback, loudly.
-      if (next.hidden.length > 0) console.warn(`[tabs] ${next.hidden.join(", ")} is hidden in ${mode} mode — opening ${href}`);
       // Re-selecting the open tab must not stack duplicate Back entries. Compared against the live
       // location (not this render's params) so a long-lived caller such as the tour never goes stale.
       if (window.location.search === href) return;

@@ -5,14 +5,14 @@ import type { TabId } from "./tabRegistry";
  * tabRegistry.ts. toolIcons.ts must supply exactly these keys (its type is derived from this list).
  */
 export const TOOL_ICON_KEYS = {
+  home: [],
   flips: [],
-  trade: ["prices", "price", "opportunities"],
+  trade: ["prices", "price", "opportunities", "methods"],
   farm: ["strategies", "bosses"],
-  craft: ["recipes", "moves", "modpool"],
-  wealth: ["worth", "sell"],
+  craft: ["recipes", "moves", "modpool", "rollsell"],
+  stash: ["worth", "sell"],
   regex: ["waystone", "tablet", "relic", "jewel", "vendor", "price"],
-  patches: [],
-  learn: ["what", "currency", "atlas"],
+  learn: ["what", "currency", "atlas", "patches"],
   alerts: [],
   settings: ["account", "notify", "mode", "system"],
   coach: [],

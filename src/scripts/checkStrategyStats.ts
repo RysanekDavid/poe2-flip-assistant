@@ -1,4 +1,4 @@
-/* npm run strategies:check [-- explicit.stat_<n> …] — resolve every strategy tablet against the LIVE
+/* npm run strategies:check [-- explicit.stat_<n> …] — resolve every strategy tablet and rolled base against the LIVE
  * trade2 data catalog (read-only endpoints, no POESESSID; needs DATA_SOURCE_CONTACT or POE_CONTACT
  * for the UA): each trade_stat_id must be an explicit stat, each tablet type a trade2 base, each unique
  * tablet a trade2 unique on that base. A wrong id would open a search for a different mod, so this
@@ -11,7 +11,7 @@
 import "../config/env";
 import { fetchTradeMeta } from "../api/tradeMeta";
 import { loadStrategies } from "../core/strategies/load";
-import { TRADE_STAT_ID_PATTERN, type FarmStrategy } from "../core/strategies/schema";
+import { TRADE_STAT_ID_PATTERN, type Strategy, type TabletMod } from "../core/strategies/schema";
 
 interface Catalog {
   explicit: ReadonlyMap<string, readonly string[]>;
@@ -21,29 +21,39 @@ interface Catalog {
 
 const texts = (list: readonly string[]): string => list.map((t) => `"${t}"`).join(" | ");
 
-function checkStrategy(strategy: FarmStrategy, catalog: Catalog): number {
+/** One tablet or rolled base: the base (and unique) must exist on trade2, each pinned stat id must be explicit. */
+function checkBase(type: string, unique: string | null, mods: readonly TabletMod[], catalog: Catalog): number {
   let misses = 0;
-  console.log(strategy.id);
-  for (const tablet of strategy.tablets) {
-    const baseOk = catalog.bases.has(tablet.type);
-    console.log(`  ${baseOk ? "ok  " : "MISS"} base "${tablet.type}"`);
-    if (!baseOk) misses += 1;
-    if (tablet.unique !== null) {
-      const uniqueOk = catalog.uniques.has(`${tablet.unique}|${tablet.type}`);
-      console.log(`  ${uniqueOk ? "ok  " : "MISS"} unique "${tablet.unique}" on ${tablet.type}`);
-      if (!uniqueOk) misses += 1;
+  const baseOk = catalog.bases.has(type);
+  console.log(`  ${baseOk ? "ok  " : "MISS"} base "${type}"`);
+  if (!baseOk) misses += 1;
+  if (unique !== null) {
+    const uniqueOk = catalog.uniques.has(`${unique}|${type}`);
+    console.log(`  ${uniqueOk ? "ok  " : "MISS"} unique "${unique}" on ${type}`);
+    if (!uniqueOk) misses += 1;
+  }
+  for (const mod of mods) {
+    if (mod.trade_stat_id === null) {
+      console.log(`  --   "${mod.text}" (no stat id: ${mod.claim.note ?? "no note"})`);
+      continue;
     }
-    for (const mod of tablet.mods) {
-      if (mod.trade_stat_id === null) {
-        console.log(`  --   "${mod.text}" (no stat id: ${mod.claim.note ?? "no note"})`);
-        continue;
-      }
-      const found = catalog.explicit.get(mod.trade_stat_id);
-      console.log(`  ${found ? "ok  " : "MISS"} "${mod.text}" → ${mod.trade_stat_id}${found ? ` = ${texts(found)}` : " (not an explicit trade2 stat)"}`);
-      if (!found) misses += 1;
-    }
+    const found = catalog.explicit.get(mod.trade_stat_id);
+    console.log(`  ${found ? "ok  " : "MISS"} "${mod.text}" → ${mod.trade_stat_id}${found ? ` = ${texts(found)}` : " (not an explicit trade2 stat)"}`);
+    if (!found) misses += 1;
   }
   return misses;
+}
+
+function checkStrategy(strategy: Strategy, catalog: Catalog): number {
+  console.log(`${strategy.id} (${strategy.kind})`);
+  switch (strategy.kind) {
+    case "farm":
+      return strategy.tablets.reduce((sum, t) => sum + checkBase(t.type, t.unique, t.mods, catalog), 0);
+    case "roll_and_sell":
+      return checkBase(strategy.target.base, null, strategy.target_mods, catalog);
+    case "trade":
+      return 0;
+  }
 }
 
 function printExtraIds(ids: readonly string[], catalog: Catalog): number {

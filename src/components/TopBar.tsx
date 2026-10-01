@@ -1,69 +1,128 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, LogOut } from "lucide-react";
 import { BellIcon, XIcon } from "./ui/icons";
 import { useNavMode } from "./shell/NavModeProvider";
+import { badgeText } from "./shell/headerText";
+import { TabArt } from "./shell/TabArt";
+import { tabClickHandler } from "./shell/TabNav";
+import { TAB_ICONS } from "./shell/tabIcons";
+import { tabRouteHref } from "./shell/tabRegistry";
+import { useTabRoute } from "./shell/useTabRoute";
 import { AlertsPanel } from "./AlertFeed";
-import { assertOk, warnOnFailure } from "../lib/clientWarn";
+import { assertOk } from "../lib/clientWarn";
+import { useNetWorthSummary } from "./wealth/useNetWorthSummary";
 import { useAlertCenter } from "./alerts/AlertsContext";
+import { useDismiss } from "./ui/useDismiss";
 
 const DIVINE_ART =
   "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png";
 
-/** Header toolbar — net-worth chip, Alerts popover, user menu. (The old swap/treasury popover is
- *  gone: rates + converter live in the header strip, holdings live in the Wealth tab.) */
+/** The bell popover's header: the full Alerts page (feed + where alerts are delivered) is one click on. */
+function AlertsPopoverHead({ onClose }: { onClose: () => void }) {
+  const click = tabClickHandler(useTabRoute().go);
+  return (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <h3 className="text-base font-semibold">Alerts</h3>
+      <span className="flex items-center gap-3">
+        <a
+          href={tabRouteHref({ tab: "alerts", tool: null })}
+          onClick={(e) => {
+            onClose();
+            click(e, "alerts");
+          }}
+          className="text-sm text-info hover:underline"
+        >
+          All alerts &amp; delivery →
+        </a>
+        <button onClick={onClose} aria-label="Close alerts" className="text-neutral-400 hover:text-neutral-200">
+          <XIcon className="h-4 w-4" />
+        </button>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Header toolbar — Alerts bell (popover; its link opens the Alerts page) and the profile box with
+ * net worth, Settings, Guide and Sign out. Alerts and Settings left the tab strip on 2026-10-01.
+ */
+// Phones: pinned under the header across the screen (the bell sits mid-row, so a right-anchored
+// 420 px box would run off the left edge). The header's backdrop blur makes it the containing block
+// for "fixed", so top = its own height. From md up: a dropdown under the bell.
+const POPOVER =
+  "fixed inset-x-2 top-[var(--shell-h,6rem)] z-30 rounded-lg border border-neutral-800 bg-neutral-900 p-4 shadow-2xl " +
+  "md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:w-[420px]";
+
 export function TopBar() {
   const [open, setOpen] = useState(false);
+  const { tab } = useTabRoute();
   // badge = unseen alerts you can act on (snipe, craft margin, spread) — info types stay in the feed
   const { actionable } = useAlertCenter();
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(open, close, [popoverRef, bellRef], bellRef);
 
   return (
     <div className="relative flex items-center gap-3">
-      <IconButton label="Alerts" square active={open} badge={actionable} onClick={() => setOpen((o) => !o)}>
-        <BellIcon className="h-5 w-5 text-amber-300" />
-      </IconButton>
+      <span data-tour="alerts">
+        <IconButton
+          label="Alerts"
+          square
+          active={open || tab === "alerts"}
+          expanded={open}
+          buttonRef={bellRef}
+          badge={actionable}
+          onClick={() => setOpen((o) => !o)}
+        >
+          <BellIcon className="h-5 w-5 text-amber-300" />
+        </IconButton>
+      </span>
       <UserMenu />
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-30 mt-2 w-[420px] max-w-[92vw] rounded-lg border border-neutral-800 bg-neutral-900 p-4 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-base font-semibold">Alerts</h3>
-              <button onClick={() => setOpen(false)} className="text-neutral-500 hover:text-neutral-200">
-                <XIcon className="h-4 w-4" />
-              </button>
-            </div>
-            <AlertsPanel />
-          </div>
-        </>
+        <div ref={popoverRef} role="dialog" aria-label="Alerts" className={POPOVER}>
+          <AlertsPopoverHead onClose={close} />
+          <AlertsPanel onNavigate={close} />
+        </div>
       )}
     </div>
   );
 }
 
-/** Global net worth next to the profile — the latest Wealth snapshot, always in sight. */
+/** The profile box's way into Settings (it left the tab strip): owner art, framed while Settings is open. */
+function SettingsLink() {
+  const { tab, go } = useTabRoute();
+  const click = tabClickHandler(go);
+  const active = tab === "settings";
+  return (
+    <a
+      href={tabRouteHref({ tab: "settings", tool: "account" })}
+      onClick={(e) => click(e, "settings")}
+      title="Settings — account, trade connection, notifications, Beginner/Advanced"
+      aria-label="Settings"
+      aria-current={active ? "page" : undefined}
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+        active ? "border-amber-400/70 bg-neutral-800" : "border-neutral-700 bg-neutral-800/40 hover:border-amber-400/60"
+      }`}
+    >
+      <TabArt src={TAB_ICONS.settings} className="h-7 w-7 object-contain" />
+    </a>
+  );
+}
+
+/** Global net worth next to the profile — the latest Stash snapshot, always in sight. */
 function WealthChip() {
-  const [data, setData] = useState<{ netWorthDiv: number | null; change24hPct: number | null } | null>(null);
-
-  useEffect(() => {
-    const load = () =>
-      fetch("/api/balance/summary")
-        .then((r) => assertOk(r, "/api/balance/summary").json())
-        .then(setData)
-        .catch(warnOnFailure("[topbar] net-worth chip"));
-    load();
-    const id = setInterval(load, 120_000);
-    return () => clearInterval(id);
-  }, []);
-
+  // one shared poll (Home's stash card reads the same store); a failed read logs there
+  const { data } = useNetWorthSummary();
   if (data?.netWorthDiv == null) return null;
   const chg = data.change24hPct;
   return (
     <span
-      title="net worth (latest Wealth snapshot) · 24h change — details in the Wealth tab"
+      title="net worth (latest Stash snapshot) · 24h change — details in Stash › Net worth"
       className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-gradient-to-b from-amber-950/50 to-neutral-900 px-2 py-1 shadow-sm"
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- poecdn currency art */}
@@ -107,7 +166,7 @@ function UserMenu() {
       <span className="absolute -top-2 left-2.5 bg-neutral-950 px-1.5 text-xs font-medium uppercase tracking-widest text-neutral-500">
         profile
       </span>
-      {/* phones: the net worth lives one tap away in Wealth; the name and actions must fit */}
+      {/* phones: the net worth lives one tap away in Stash; the name and actions must fit */}
       <span className="hidden md:contents">
         <WealthChip />
       </span>
@@ -117,6 +176,7 @@ function UserMenu() {
       >
         {name}
       </span>
+      <SettingsLink />
       {/* compact action stack to the right of the nick */}
       <div className="flex flex-col gap-1">
         <button
@@ -144,6 +204,8 @@ function IconButton({
   children,
   label,
   active,
+  expanded,
+  buttonRef,
   badge,
   square,
   onClick,
@@ -151,15 +213,22 @@ function IconButton({
   children: ReactNode;
   label: string;
   active: boolean;
+  /** Whether the popover this button opens is showing. */
+  expanded: boolean;
+  buttonRef: RefObject<HTMLButtonElement | null>;
   badge?: number;
   square?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
+      ref={buttonRef}
+      type="button"
       onClick={onClick}
       title={label}
-      aria-label={label}
+      aria-label={badge != null && badge > 0 ? `${label} (${badgeText(badge)} new)` : label}
+      aria-haspopup="dialog"
+      aria-expanded={expanded}
       className={`relative flex h-9 items-center justify-center rounded-lg border p-2 shadow-sm transition-all active:scale-95 ${
         square ? "aspect-square" : ""
       } ${
@@ -170,8 +239,8 @@ function IconButton({
     >
       {children}
       {badge != null && badge > 0 && (
-        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-bad px-1 text-xs font-semibold text-white">
-          {badge}
+        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-bad px-1 text-xs font-semibold tabular-nums text-white">
+          {badgeText(badge)}
         </span>
       )}
     </button>

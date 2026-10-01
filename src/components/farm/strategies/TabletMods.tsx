@@ -8,7 +8,8 @@ import { Tooltip } from "../../ui/Tooltip";
 import { evidenceTip, showsBadge } from "./strategiesView";
 import { tabletArtSrc } from "./tabletArtImages";
 
-function ModRow({ mod, base }: { mod: TabletView["mods"][number]; base: string }) {
+/** One mod with its side, evidence and a trade2 search for `base` with that mod when its stat id is known. */
+export function ModRow({ mod, base }: { mod: TabletView["mods"][number]; base: string }) {
   return (
     <li className="flex items-start gap-2 py-0.5 text-sm text-neutral-300">
       {/* A magic tablet holds one prefix and one suffix; a unique's mods are fixed, so no tag. */}

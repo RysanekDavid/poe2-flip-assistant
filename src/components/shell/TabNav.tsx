@@ -2,9 +2,9 @@
 
 import { Fragment, type MouseEvent } from "react";
 import Link from "next/link";
-import { AlertsTabBadge } from "../alerts/AlertsTab";
-import { defaultToolFor, visibleTabs, type NavMode } from "../../lib/navMode";
+import { defaultToolFor, navTabs, type NavMode } from "../../lib/navMode";
 import { TAB_GROUP, tabMeta, tabRouteHref, type TabId, type TabMeta } from "./tabRegistry";
+import { MoreTools } from "./MoreTools";
 import { useNavMode } from "./NavModeProvider";
 import { TabArt } from "./TabArt";
 import { TAB_ICONS } from "./tabIcons";
@@ -58,9 +58,8 @@ function TabLink({ meta, mode, active, onClick }: TabLinkProps) {
       aria-current={active ? "page" : undefined}
       className={tabClass(active)}
     >
-      <TabArt src={TAB_ICONS[meta.id]} className={artClass(active)} priority={meta.id === "flips"} />
+      <TabArt src={TAB_ICONS[meta.id]} className={artClass(active)} priority={meta.id === "home"} />
       {meta.label}
-      {meta.id === "alerts" && <AlertsTabBadge />}
     </Link>
   );
 }
@@ -92,37 +91,42 @@ function CoachLink({ active, onClick }: { active: boolean; onClick: TabLinkProps
 }
 
 /**
- * Primary navigation, filtered to the user's nav mode, with a rule between job groups. Coach sits
- * apart on the right in both modes: it is a secondary helper, not a work area.
+ * Primary navigation, filtered to the user's nav mode, with a rule between job groups (Home ·
+ * earn · prices and my items · tools and knowledge). Coach sits apart on the right in both modes:
+ * it is a secondary helper, not a work area. Alerts and Settings live in the header (TopBar).
  */
 export function TabNav() {
   const { tab, go } = useTabRoute();
   const { mode } = useNavMode();
   const onClick = tabClickHandler(go);
-  const tabs = visibleTabs(mode).filter((t) => t.id !== "coach");
-  // Beginner's five tabs are mostly one per group, so rules there would split every tab apart
+  const tabs = navTabs(mode).filter((t) => t.id !== "coach");
+  // Beginner's four tabs are one per group, so rules there would split every tab apart
   const ruled = mode === "advanced";
   return (
-    // The strip scrolls sideways whenever it is wider than the header (phones, narrow desktops).
-    // Below md it bleeds to the screen edges (-mx-4 against the header's px-4); pt-1.5/px-1.5 leave
-    // room for the offset focus outline, which the scroll box would otherwise clip.
-    <nav
-      aria-label="Sections"
-      className="-mx-4 flex items-end gap-0.5 overflow-x-auto overflow-y-hidden px-4 pt-1.5 md:-mx-1.5 md:px-1.5"
-      data-tour="tabs"
-    >
-      {tabs.map((t, i) => {
-        const prev = tabs[i - 1];
-        return (
-          <Fragment key={t.id}>
-            {ruled && prev !== undefined && TAB_GROUP[prev.id] !== TAB_GROUP[t.id] && <GroupRule />}
-            <TabLink meta={t} mode={mode} active={tab === t.id} onClick={onClick} />
-          </Fragment>
-        );
-      })}
-      {/* pushes Coach to the right edge, and keeps a gap before it once the strip scrolls */}
-      <span aria-hidden className="ml-auto w-4 shrink-0" />
-      <CoachLink active={tab === "coach"} onClick={onClick} />
-    </nav>
+    // relative: MoreTools' panel anchors here, outside the strip's scroll box, so it is not clipped
+    <div className="relative">
+      {/* The strip scrolls sideways whenever it is wider than the header (phones, narrow desktops).
+          Below md it bleeds to the screen edges (-mx-4 against the header's px-4); pt-1.5/px-1.5 leave
+          room for the offset focus outline, which the scroll box would otherwise clip. */}
+      <nav
+        aria-label="Sections"
+        className="-mx-4 flex items-end gap-0.5 overflow-x-auto overflow-y-hidden px-4 pt-1.5 md:-mx-1.5 md:px-1.5"
+        data-tour="tabs"
+      >
+        {tabs.map((t, i) => {
+          const prev = tabs[i - 1];
+          return (
+            <Fragment key={t.id}>
+              {ruled && prev !== undefined && TAB_GROUP[prev.id] !== TAB_GROUP[t.id] && <GroupRule />}
+              <TabLink meta={t} mode={mode} active={tab === t.id} onClick={onClick} />
+            </Fragment>
+          );
+        })}
+        {mode === "beginner" && <MoreTools />}
+        {/* pushes Coach to the right edge, and keeps a gap before it once the strip scrolls */}
+        <span aria-hidden className="ml-auto w-4 shrink-0" />
+        <CoachLink active={tab === "coach"} onClick={onClick} />
+      </nav>
+    </div>
   );
 }

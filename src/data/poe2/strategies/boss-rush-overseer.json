@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "boss-rush-overseer",
   "title": "Map boss rush with Overseer tablets",
   "summary": "Make more Map Bosses Powerful and more rare packs into bosses, then stack Map Boss rarity, quantity and waystone mods from Overseer tablets and the atlas tree.",
@@ -51,6 +52,24 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Map Boss loot scales with the atlas tree's Map Boss rarity, quantity and waystone nodes, and Overseer tablets add the same on every map.",
+    "breaks_when": [
+      "Fit for a King, Hard-Won Treasures or Pathkeepers is changed",
+      "Overseer tablet Map Boss mods are cut",
+      "High-tier waystones fall in price"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Fit_for_a_King",
+        "https://poe2db.tw/us/Hard-Won_Treasures",
+        "https://poe2db.tw/us/Pathkeepers",
+        "https://poe2db.tw/us/Overseer_Tablet"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

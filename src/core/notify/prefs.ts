@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Alert types a user can route. Pure module (no node imports) — the Alerts tab and the ticker
+ * Alert types a user can route. Pure module (no node imports) — the Alerts page and the ticker
  * import it too.
  */
 export const NOTIFY_TYPES = ["SNIPE", "CRAFT_MARGIN", "SPREAD", "LEAGUE", "PATCH", "TREND", "SPIKE"] as const;

@@ -44,7 +44,7 @@ function ShareOfNetWorth({ committedDiv, netWorth }: { committedDiv: number; net
     case "value":
       return <span>{((committedDiv / netWorth.div) * 100).toFixed(1)}% of net worth</span>;
     case "never":
-      return <span className="text-neutral-500">% of net worth: none recorded yet (Wealth tab)</span>;
+      return <span className="text-neutral-500">% of net worth: none recorded yet (Stash › Net worth)</span>;
     case "error":
       return <span className="text-neutral-500" title={netWorth.reason}>% of net worth: unavailable</span>;
   }

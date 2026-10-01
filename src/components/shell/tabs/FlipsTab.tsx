@@ -7,6 +7,7 @@ import { DiscoverTable } from "../../DiscoverTable";
 import { TopFlipsLegend } from "../../DiscoverColumns";
 import { SpreadTable } from "../../SpreadTable";
 import { FlipDetailCard } from "../../flip/FlipDetailCard";
+import { WatchTopFlipsButton } from "../../flip/WatchTopFlipsButton";
 import type { FlipSelection } from "../../flip/flipTypes";
 import { PriceChart } from "../../PriceChart";
 import { PositionsPanel } from "../../PositionsPanel";
@@ -14,6 +15,7 @@ import { FlipLog } from "../../FlipLog";
 import { EmptyState } from "../../ui/EmptyState";
 import { PageHeader } from "../../ui/PageHeader";
 import { LeagueStartPanel } from "../../exchange/LeagueStartPanel";
+import { TAB_ICONS } from "../tabIcons";
 
 /** Currency Exchange flips: find a flip, plan it, track the position, log the result. */
 export function FlipsTab() {
@@ -31,8 +33,10 @@ export function FlipsTab() {
     <>
       <PageHeader
         title="Flips"
-        purpose="Currency Exchange flips on Ange right now — click a row for its flip plan and price chart."
+        purpose="Currency Exchange flips right now — pick one for its flip plan and price chart."
         legend={<TopFlipsLegend />}
+        art={TAB_ICONS.flips.src}
+        action={<WatchTopFlipsButton />}
       />
       <AlertTicker />
       {/* first days of a league: what past league starts did next; one line otherwise */}
@@ -48,7 +52,7 @@ export function FlipsTab() {
           <EmptyState
             icon={<MousePointerClick className="h-5 w-5" />}
             title="Flip plan"
-            sentence="Click a row in Top Flips or the watchlist — the plan, your Ange prices and the price chart open here."
+            sentence="Pick a flip in Top Flips or the watchlist — its plan, your Ange prices and the price chart open here."
           />
         )}
       </div>

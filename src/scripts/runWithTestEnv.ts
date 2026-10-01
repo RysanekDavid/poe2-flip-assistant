@@ -15,6 +15,7 @@ const targets = {
   "features-schema": "src/scripts/testFeatureSchema.ts",
   flips: "src/scripts/testFlipModel.ts",
   learn: "src/scripts/testLearn.ts",
+  "nav-ia": "src/scripts/testNavIa.ts",
   market: "src/scripts/testMarketLeague.ts",
   "market-prices": "src/scripts/testMarketPrices.ts",
   "market-uniques": "src/scripts/testMarketUniques.ts",

@@ -11,6 +11,7 @@ import { cxRankGate, loadCxMarketView, type CxMarketView } from "../../../core/c
 import { cxPersistedNextHour } from "../../../core/cx/cxOutcomes";
 import type { PricedItem } from "../../../api/types";
 import { DiscoverResponseSchema, type DiscoverResponse } from "../../../lib/discoverContract";
+import { createTtlCache } from "../../../lib/ttlCache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,23 +53,41 @@ export async function GET(req: Request) {
   const limit = Math.min(Number(params.get("limit")) || 40, 2000);
   const q = (params.get("q") ?? "").trim().toLowerCase();
   const league = leagueForUser(user.id);
-  const prices = latestSnapshots(league);
-  const resolved = resolveRates(league);
-  if (!resolved) {
-    return respond({ rates: null, candidates: [], note: "no exalt/chaos price yet — poll first" });
-  }
-  const cx = loadCxMarketView(league, prices);
-  let scored = scoreAll(prices, resolved.rates, cx, q !== "");
-  if (q) scored = scored.filter((c) => c.item.toLowerCase().includes(q));
+  const fetchedAt = latestFetchedAt(league);
+  // A name search scores a different set (whale cap lifted), so only the plain scan is shared.
+  const scan = q === "" ? SCAN_CACHE.get(`${league}|${fetchedAt ?? "never"}`, () => scanMarket(league, "")) : scanMarket(league, q);
+  if (!scan.resolved) return respond({ rates: null, candidates: [], note: "no exalt/chaos price yet — poll first" });
   return respond({
-    rates: resolved.rates,
-    ratesSource: resolved.source,
-    ratesFetchedAt: resolved.fetchedAt,
-    fetchedAt: latestFetchedAt(league),
-    cx: cxSummary(league, cx),
-    candidates: scored.slice(0, limit),
+    rates: scan.resolved.rates,
+    ratesSource: scan.resolved.source,
+    ratesFetchedAt: scan.resolved.fetchedAt,
+    fetchedAt,
+    cx: scan.cx,
+    candidates: scan.scored.slice(0, limit),
   });
 }
+
+interface MarketScan {
+  resolved: ReturnType<typeof resolveRates>;
+  cx: ReturnType<typeof cxSummary>;
+  scored: FlipRow[];
+}
+
+/** The whole-market scan behind GET; nothing in it depends on the viewer, only on the league. */
+function scanMarket(league: string, q: string): MarketScan {
+  const prices = latestSnapshots(league);
+  const resolved = resolveRates(league);
+  if (!resolved) return { resolved, cx: null, scored: [] };
+  const cx = loadCxMarketView(league, prices);
+  const scored = scoreAll(prices, resolved.rates, cx, q !== "");
+  return { resolved, cx: cxSummary(league, cx), scored: q ? scored.filter((c) => c.item.toLowerCase().includes(q)) : scored };
+}
+
+/**
+ * Home's top-flip card and the Flips page ask for the same scan on one page load; the snapshot
+ * changes hourly, and the key carries its time, so 60 s of sharing never hides a new poll.
+ */
+const SCAN_CACHE = createTtlCache<MarketScan>(60_000);
 
 const SeedBody = z.object({ perCategory: z.number().int().positive().max(10).optional() });
 

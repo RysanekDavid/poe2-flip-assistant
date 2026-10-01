@@ -1,7 +1,7 @@
 /*
  * Strategy KB contract (npm run test:strategies, under runWithTestEnv for a TEMP DB):
- *   - every committed src/data/poe2/strategies/*.json parses, its id is its filename, its yields
- *     resolve in the entity catalog and its master nodes sit where poe2db puts them;
+ *   - every committed src/data/poe2/strategies/*.json parses (any kind), its id is its filename,
+ *     its refs resolve in the entity catalog and its master nodes sit where poe2db puts them;
  *   - evidence floor: each strategy's master section and tablets carry at least one primary or
  *     2-source claim, and every unverified/conflicting claim says why in a note;
  *   - the loader fails loudly on each defect class;
@@ -25,33 +25,51 @@ import {
 import { TABLET_BASE_ART, TABLET_UNIQUE_ART, tabletArtFile } from "../components/farm/strategies/tabletArt";
 import { config } from "../config/env";
 import { buildStrategyViews, loadStrategyBoard } from "../core/strategies/board";
-import { loadStrategies, readStrategies, STRATEGIES_DIR } from "../core/strategies/load";
+import { loadStrategies, readStrategies, strategiesOfKind, STRATEGIES_DIR } from "../core/strategies/load";
 import { MASTER_NODES, masterNodeHome } from "../core/strategies/masters";
-import type { FarmStrategy } from "../core/strategies/schema";
+import type { FarmStrategy, Strategy } from "../core/strategies/schema";
 import { getDb } from "../db/database";
 import { insertSnapshots } from "../db/marketQueries";
 import type { Claim } from "../lib/claim";
-import { strategiesResponseSchema } from "../lib/strategiesContract";
+import { strategiesResponseSchema, viewsOfKind } from "../lib/strategiesContract";
 import { runStrategyCardCases } from "./strategyCardCases";
+import { runStrategyKindCases } from "./strategyKindCases";
 
-const EXPECTED_IDS = [
+const FARM_IDS = [
   "abyss-depths-omens",
   "anomaly-lineage",
+  "atziri-temple-rush",
+  "boss-entry-conversion",
   "boss-rush-overseer",
   "breach-hiveblood",
+  "citadel-crisis-fragments",
   "delirium-grand-mirror",
   "essence-overlord",
   "expedition-grand",
   "fracture-cleansed",
+  "irradiated-tablet-farm",
   "ritual-omens",
   "ritual-wildwood-blooms",
   "strongbox-uniques",
   "trial-of-chaos-fates",
 ];
+const OTHER_KINDS: Record<string, Strategy["kind"]> = {
+  "breach-tablet-invasion": "roll_and_sell",
+  "gem-double-corruption": "trade",
+  "loreweave-rings": "trade",
+  "reforging-bench-ladders": "trade",
+  "ritual-tablet-rerolls": "roll_and_sell",
+  "temple-tablet-crystals": "roll_and_sell",
+  "waystone-bench-tiers": "roll_and_sell",
+};
+const EXPECTED_IDS = [...FARM_IDS, ...Object.keys(OTHER_KINDS)].sort();
 
 // --- committed data ---
 const strategies = loadStrategies();
-assert.deepEqual(strategies.map((s) => s.id), EXPECTED_IDS, "the twelve strategies, ordered by id");
+assert.deepEqual(strategies.map((s) => s.id), EXPECTED_IDS, "every strategy, ordered by id");
+assert.deepEqual(Object.fromEntries(strategies.filter((s) => s.kind !== "farm").map((s) => [s.id, s.kind])), OTHER_KINDS, "each non-farm strategy has its kind");
+const farms = strategiesOfKind(strategies, "farm");
+assert.deepEqual(farms.map((s) => s.id), FARM_IDS);
 assert.deepEqual(
   readdirSync(STRATEGIES_DIR).filter((f) => f.endsWith(".json")).sort(),
   EXPECTED_IDS.map((id) => `${id}.json`),
@@ -82,21 +100,27 @@ function claimsOf(value: unknown, out: Claim[] = []): Claim[] {
 
 const settled = (claims: readonly Claim[]): boolean => claims.some((c) => c.v === "vp" || c.v === "vs");
 const grades: Record<string, Record<string, number>> = {};
-for (const s of strategies) {
+for (const s of farms) {
   assert.ok(settled(claimsOf(s.atlas_master)), `${s.id}: master section needs a vp/vs claim`);
   if (s.tablets.length > 0) assert.ok(settled(claimsOf(s.tablets)), `${s.id}: tablets need a vp/vs claim`);
+}
+for (const s of strategiesOfKind(strategies, "roll_and_sell")) {
+  assert.ok(settled([s.target.claim]), `${s.id}: the rolled base is a vp/vs fact`);
+  if (s.target_mods.length > 0) assert.ok(settled(claimsOf(s.target_mods)), `${s.id}: target mods need a vp/vs claim`);
+}
+for (const s of strategies) {
   const all = claimsOf(s);
   for (const c of all) {
     if (c.v === "uv" || c.v === "cf") assert.ok(c.note, `${s.id}: every ${c.v} claim must say why in a note`);
   }
   grades[s.id] = all.reduce<Record<string, number>>((acc, c) => ({ ...acc, [c.v]: (acc[c.v] ?? 0) + 1 }), {});
-  const mods = s.tablets.flatMap((t) => t.mods);
+  const mods = s.kind === "farm" ? s.tablets.flatMap((t) => t.mods) : s.kind === "roll_and_sell" ? s.target_mods : [];
   for (const mod of mods) {
     if (mod.trade_stat_id === null) assert.ok(mod.claim.note, `${s.id}: a mod without a stat id must say why`);
   }
 }
 for (const [id, counts] of Object.entries(grades)) console.log(`INFO  ${id}: ${JSON.stringify(counts)}`);
-console.log("PASS  evidence floor: master + tablets carry vp/vs claims; every uv/cf claim and stat-less mod has a note");
+console.log("PASS  evidence floor: farm master + tablets and rolled bases + target mods carry vp/vs claims; every uv/cf claim and stat-less mod has a note");
 
 // --- tablet art: per base / unique, never one picture for all ---
 interface PoolMod {
@@ -120,8 +144,14 @@ for (const m of tabletPool.mods) {
     poolText.set(text, { side: m.side, bands: tier.bands });
   }
 }
+/** Every tablet a strategy names with its mods: a farm's tablets, or a roll-and-sell's tablet base. */
+function tabletsOf(s: Strategy): { type: string; unique: string | null; mods: FarmStrategy["tablets"][number]["mods"] }[] {
+  if (s.kind === "farm") return s.tablets;
+  if (s.kind === "roll_and_sell" && Object.hasOwn(tabletPool.baseBands, s.target.base)) return [{ type: s.target.base, unique: null, mods: s.target_mods }];
+  return [];
+}
 for (const s of strategies) {
-  for (const t of s.tablets) {
+  for (const t of tabletsOf(s)) {
     for (const mod of t.mods) {
       if (t.unique !== null) {
         assert.equal(mod.side, "unique", `${s.id}: a unique tablet's mod is side "unique"`);
@@ -140,7 +170,7 @@ assert.deepEqual(Object.keys(TABLET_BASE_ART).sort(), [...tabletPool.bases].sort
 for (const file of [...Object.values(TABLET_BASE_ART), ...Object.values(TABLET_UNIQUE_ART)]) {
   assert.ok(existsSync(join("src/assets/items", file)), `self-hosted tablet art ${file} exists`);
 }
-for (const s of strategies) for (const t of s.tablets) tabletArtFile(t);
+for (const s of strategies) for (const t of tabletsOf(s)) tabletArtFile(t);
 assert.equal(tabletArtFile({ type: "Overseer Tablet", unique: null }), "overseer-tablet.webp");
 assert.equal(tabletArtFile({ type: "Irradiated Tablet", unique: "Mastered Domain" }), "mastered-domain.png", "a unique shows its own art");
 assert.throws(() => tabletArtFile({ type: "Overseer Tablet", unique: "Season of the Hunt" }), /no tablet art for unique/);
@@ -148,7 +178,7 @@ assert.throws(() => tabletArtFile({ type: "Waystone", unique: null }), /no table
 console.log("PASS  tablet art: every pool base and strategy tablet resolves to an existing file; unknown names throw");
 
 // --- the loader fails loudly on each defect class ---
-const SAMPLE = strategies.find((s) => s.id === "fracture-cleansed");
+const SAMPLE = farms.find((s) => s.id === "fracture-cleansed");
 if (!SAMPLE) throw new Error("fracture-cleansed sample missing");
 
 function rejects(label: string, file: string, mutate: (copy: FarmStrategy) => unknown, pattern: RegExp): void {
@@ -193,14 +223,24 @@ rejects("rating without a source", "fracture-cleansed.json", (c) => {
 rejects("budget without a source", "fracture-cleansed.json", (c) => {
   c.budget = { ...c.budget, claim: { v: "syn", src: [], note: "none" } };
 }, /malformed/);
-rejects("schema version 1", "fracture-cleansed.json", (c) => ({ ...c, schema_version: 1 }), /malformed/);
+rejects("schema version 2", "fracture-cleansed.json", (c) => ({ ...c, schema_version: 2 }), /malformed/);
+rejects("no durability", "fracture-cleansed.json", (c) => {
+  const { durability: _drop, ...rest } = c;
+  return rest;
+}, /malformed/);
+rejects("unsourced durability", "fracture-cleansed.json", (c) => {
+  c.durability = { ...c.durability, claim: { v: "syn", src: [], note: "none" } };
+}, /malformed/);
+rejects("unknown kind", "fracture-cleansed.json", (c) => ({ ...c, kind: "service" }), /malformed/);
+rejects("farm fields under another kind", "fracture-cleansed.json", (c) => ({ ...c, kind: "trade" }), /malformed/);
 assert.throws(() => readStrategies(mkdtempSync(join(tmpdir(), "strategies-empty-"))), /no strategy files/);
-console.log("PASS  loader rejects: id ≠ filename, unknown/renamed yield, misplaced node, 'any' with nodes, bad stat id, sourceless vp, extra key, >4 nodes, unsourced rating/budget, schema v1, empty dir");
+console.log("PASS  loader rejects: id ≠ filename, unknown/renamed yield, misplaced node, 'any' with nodes, bad stat id, sourceless vp, extra key, >4 nodes, unsourced rating/budget, schema v2, missing/unsourced durability, unknown/mismatched kind, empty dir");
 
 // --- views: prices and search links ---
 const NOW = Date.parse("2026-09-29T12:00:00Z");
 const MARKETS = new Map([["fracturing-orb", { div: 1.5, fetchedAt: "2026-09-29T11:30:00.000Z", change7d: 12, volume: 400 }]]);
-const views = buildStrategyViews(strategies, "Forbidden Rites", MARKETS, NOW);
+const allViews = buildStrategyViews(strategies, "Forbidden Rites", MARKETS, NOW);
+const views = viewsOfKind(allViews, "farm");
 const fracture = views.find((v) => v.id === "fracture-cleansed");
 assert.deepEqual(fracture?.yields[0]?.price, { div: 1.5, ageMin: 30, change7d: 12, source: "ninja" }, "priced by exchange id, age in minutes, 7d change");
 assert.ok(fracture?.trend && Math.abs(fracture.trend.change7d - 12) < 1e-9, "one priced drop with a trend carries the headline");
@@ -225,14 +265,16 @@ for (const view of views) {
   }
 }
 console.log("PASS  views: exchange price + age per yield (null when unpriced), trade2 search per tablet mod with a stat id");
-runStrategyCardCases(strategies, views);
+runStrategyCardCases(farms, views);
+runStrategyKindCases(strategies);
 
 // --- page filters ---
 const byId = (list: readonly { id: string }[]): string[] => list.map((s) => s.id);
-assert.deepEqual(byId(filterStrategies(views, EMPTY_FILTER)), EXPECTED_IDS, "no filter keeps all");
+assert.deepEqual(byId(filterStrategies(views, EMPTY_FILTER)), FARM_IDS, "no filter keeps every farm");
 const breachOnly = filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["breach"]) });
-assert.deepEqual(byId(breachOnly), ["breach-hiveblood"]);
-assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["ritual"]) })), ["ritual-omens", "ritual-wildwood-blooms"]);
+assert.deepEqual(byId(breachOnly), ["boss-entry-conversion", "breach-hiveblood"]);
+assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["ritual"]) })), ["boss-entry-conversion", "ritual-omens", "ritual-wildwood-blooms"]);
+assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["temple"]) })), ["atziri-temple-rush"]);
 assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, mechanics: new Set(["trial_of_chaos"]) })), ["trial-of-chaos-fates"]);
 const cheap = filterStrategies(views, { ...EMPTY_FILTER, budget: "league_start" });
 assert.ok(cheap.length > 0 && cheap.every((s) => s.budget.tier === "league_start"), "league_start keeps only league_start");
@@ -240,7 +282,7 @@ const mid = filterStrategies(views, { ...EMPTY_FILTER, budget: "mid" });
 assert.ok(mid.every((s) => s.budget.tier !== "high") && mid.length > cheap.length, "a ceiling keeps cheaper tiers too");
 assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, yieldQuery: "  fracturing ORB " })), ["fracture-cleansed"]);
 assert.deepEqual(byId(filterStrategies(views, { ...EMPTY_FILTER, yieldQuery: "rakiatas" })), ["anomaly-lineage"], "apostrophe optional");
-assert.equal(filterStrategies(views, { mechanics: new Set(["breach"]), budget: "league_start", yieldQuery: "" }).length, 0, "filters AND together");
+assert.equal(filterStrategies(views, { mechanics: new Set(["trial_of_chaos"]), budget: "league_start", yieldQuery: "" }).length, 0, "filters AND together");
 assert.equal(parseBudget("mid"), "mid");
 assert.equal(parseBudget("cheap"), null, "unknown ?budget= is ignored, not an empty page");
 assert.equal(parseBudget(null), null);
@@ -266,15 +308,23 @@ getDb().prepare("UPDATE price_snapshots SET fetched_at = datetime('now', '-10 mi
 getDb().prepare("UPDATE item_spark SET spark_7d = 'not json' WHERE league = ? AND item_id = 'fracturing-orb'").run(LEAGUE);
 const body = strategiesResponseSchema.parse(loadStrategyBoard(LEAGUE, Date.now()));
 assert.equal(body.computedLeague, LEAGUE);
-assert.equal(body.strategies.length, EXPECTED_IDS.length, "the route returns every strategy; filtering is client-side");
+assert.equal(body.strategies.length, EXPECTED_IDS.length, "the route returns every strategy of every kind; filtering is client-side");
+const bodyFarms = viewsOfKind(body.strategies, "farm");
+const gem = viewsOfKind(body.strategies, "trade").find((s) => s.id === "gem-double-corruption");
+assert.equal(gem?.inputs.find((leg) => leg.ref?.id === "vaal")?.ref?.price, null, "an unseeded leg stays unpriced in the route body");
 assert.ok(body.exPerDiv !== null && Math.abs(body.exPerDiv - 250) < 1e-9, "exalted per divine from the seeded ninja rates");
-assert.equal(body.strategies.find((s) => s.id === "fracture-cleansed")?.yields[0]?.price?.div, 0.8);
-assert.equal(body.strategies.find((s) => s.id === "fracture-cleansed")?.trend?.change7d, 25, "the stored 7d change reaches the card");
+assert.equal(bodyFarms.find((s) => s.id === "fracture-cleansed")?.yields[0]?.price?.div, 0.8);
+assert.equal(bodyFarms.find((s) => s.id === "fracture-cleansed")?.trend?.change7d, 25, "the stored 7d change reaches the card");
 assert.equal(body.mechanics.find((m) => m.mechanic === "corruption")?.trend?.change7d, 25, "and the mechanic chip");
 const empty = strategiesResponseSchema.parse(loadStrategyBoard("League Without Data", Date.now()));
 assert.equal(empty.pricesFetchedAt, null);
-assert.ok(empty.strategies.every((s) => s.yields.every((y) => y.price === null) && s.trend === null), "no data → every yield unpriced, no trend");
+assert.ok(viewsOfKind(empty.strategies, "farm").every((s) => s.yields.every((y) => y.price === null) && s.trend === null), "no data → every yield unpriced, no trend");
+assert.ok(viewsOfKind(empty.strategies, "trade").every((s) => s.price_refs.every((c) => c.ev.status === "unpriced")), "no data → no EV anywhere");
 const route = readFileSync("src/app/api/farm/strategies/route.ts", "utf8");
-assert.match(route, /getCurrentUser\(\)[\s\S]*status: 401[\s\S]*loadStrategyBoard\(leagueForUser\(user\.id\)/, "auth, then the viewer's league");
-assert.match(route, /strategiesResponseSchema\.parse\(body\)/, "validated on the way out");
+assert.match(
+  route,
+  /getCurrentUser\(\)[\s\S]*status: 401[\s\S]*const league = leagueForUser\(user\.id\)[\s\S]*BOARD_CACHE\.get\(league,[\s\S]*loadStrategyBoard\(league,/,
+  "auth, then the viewer's league (the 90 s board cache is keyed by it)",
+);
+assert.match(route, /strategiesResponseSchema\.parse\(loadStrategyBoard\(/, "validated on the way out (before it is cached)");
 console.log("PASS  route body: seeded prices + rates, empty league unpriced, auth → viewer league → validated");

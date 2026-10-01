@@ -11,6 +11,13 @@ It never buys, sells, whispers, clicks, or controls the game.
 
 ## Product
 
+The tab strip is grouped by player job: **Home** · Farm, Flips, Craft (earn) · Trade, Stash
+(prices and my items) · Regex, Learn (tools and knowledge) · Coach. Alerts sit behind the header
+bell and Settings in the profile box; old `?tab=wealth`, `?tab=patches` links still land.
+
+- **Home:** "what do you want to do today?" — one card per goal, each with today's top pick from
+  the page it opens (hottest strategy, top ranked flip, best buy, top craft, net worth, newest
+  patch), or a plain sentence saying why there is none.
 - **Flips:** Currency Exchange flips — observed market history, risk-adjusted flip heuristics
   (Top Flips), alerts, manual position tracking, and the league-start panel. Item prices live in
   Trade › Prices; the rate converter sits in the header on every tab.
@@ -24,7 +31,7 @@ It never buys, sells, whispers, clicks, or controls the game.
   scale with a cited reason each, and a drawer with the full atlas setup, a Regex › Waystone link,
   the priced loot and the risks. **Bosses** — pinnacle bosses by net per kill. No Div/hour
   anywhere: drop rates are unknown and nothing measures a player's pace.
-- **Alerts:** one feed for snipes (full item card, whisper, trade link), craft margins, spreads
+- **Alerts** (the header bell; its "All alerts & delivery" link opens the page): one feed for snipes (full item card, whisper, trade link), craft margins, spreads
   and league news, with per-type ticker / sound / desktop-popup / Discord routing.
 - **Craft:** sixteen curated recipes with observed comparables, modelled EV, interactive steps,
   and manual attempt/P&L tracking. Each recipe shows its sources (creator, date, link), the patch
@@ -32,11 +39,11 @@ It never buys, sells, whispers, clicks, or controls the game.
   uses, per-step legality (floors, rarity, ilvl gates, omen pairing), and a hit rate that shrinks
   logged attempts toward the curated estimate ((hits + 20·model) ÷ (n + 20), pooled from 2+
   players with no player over half the sample).
-- **Wealth:** opt-in read-only valuation of a user's public stash tabs.
+- **Stash** (Wealth until 2026-10-01): opt-in read-only valuation of a user's public stash tabs, and what to sell, list or hold.
 - **Learn (new players):** "What is this?" item lookup (catalog text, live price, sell route,
-  pick-up rule of thumb), a claim-graded currency primer and an atlas progression checklist with
-  per-account progress. New accounts start in **Beginner** nav (Learn · Farm strategies · Price
-  check · Alerts · Settings); pre-existing accounts keep **Advanced**; Settings › Mode switches.
+  pick-up rule of thumb), a claim-graded currency primer, an atlas progression checklist with
+  per-account progress and the patch notes. New accounts start in **Beginner** nav (Home · Farm · Trade ·
+  Learn, the rest under More tools); pre-existing accounts keep **Advanced**; Settings › Mode switches.
 - **Coach:** authenticated LangGraph sidecar with market, knowledge, game-data, and optional
   recent-web tools. Every answer exposes tool/source evidence and a human-verification boundary.
   Item names in answers are hoverable chips with game art, in-game text and any live price.

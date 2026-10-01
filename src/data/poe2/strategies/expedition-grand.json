@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "expedition-grand",
   "title": "Expedition: logbooks and Grand Expeditions",
   "summary": "0.5.5 made Expedition a core mechanic: run Expedition tablets for logbooks and rare runic monsters, then open Grand Expeditions, which The Quest Continues pushes to up to 3 modifiers.",
@@ -49,6 +50,23 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Runic monsters drop Expedition Logbooks (Sown Seeds raises it per runic modifier), and Logbooks open Grand Expeditions that The Quest Continues pushes to more modifiers.",
+    "breaks_when": [
+      "Sown Seeds or The Quest Continues is changed",
+      "Expedition Tablets stop dropping in this league",
+      "Logbook and Verisium prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Sown_Seeds",
+        "https://poe2db.tw/us/The_Quest_Continues",
+        "https://poe2db.tw/us/Expedition_Tablet"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

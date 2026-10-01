@@ -9,6 +9,7 @@ import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { PageHeader } from "../ui/PageHeader";
 import { PatchCard } from "./PatchCard";
+import artPatches from "../../assets/Patches.png";
 
 // The poller checks the forum every 30 minutes; a quarter-hour poll shows a new summary promptly.
 const POLL_MS = 15 * 60_000;
@@ -73,6 +74,7 @@ export function PatchesBoard() {
         title="Patch notes"
         purpose="Official PoE2 patch threads, newest first — what changed and what it may mean for prices."
         legend={LEGEND}
+        art={artPatches.src}
         action={
           <Button size="sm" variant="ghost" onClick={reload} aria-label="Refresh patch notes">
             <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Refresh
