@@ -8,6 +8,7 @@ import type { ExchangeRates } from "../core/priceEngine";
 import { DataTable, type SortDir } from "./ui/DataTable";
 import { EmptyState } from "./ui/EmptyState";
 import { usePersistedChoice } from "./ui/usePersistedChoice";
+import { PanelLoading } from "./shell/PanelLoading";
 import { ColumnPicker } from "./ColumnPicker";
 import type { RankGate } from "./FlipEdge";
 import { DEFAULT_COLUMNS, OPTIONAL_COLUMNS, spreadColumns, type FlipRow, type OptionalColumn } from "./SpreadColumns";
@@ -86,7 +87,7 @@ export function SpreadTable({ selectedId, onSelect }: { selectedId?: string; onS
   const [filter, setFilter] = useState("");
   const [visibleCols, setVisibleCols] = usePersistedChoice<OptionalColumn[]>(COLUMNS_KEY, COLUMNS_SCHEMA, [...DEFAULT_COLUMNS]);
 
-  if (!loaded && !err) return null;
+  if (!loaded && !err) return <PanelLoading />;
   if (rows.length === 0 && !err) return <EmptyState icon={<Eye className="h-5 w-5" />} title="Watchlist" sentence={EMPTY_SENTENCE} />;
 
   const q = filter.trim().toLowerCase();

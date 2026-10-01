@@ -19,7 +19,7 @@ export interface FlipRow extends Candidate {
 export const OPTIONAL_COLUMNS = ["midDivine", "buyExalt", "sellChaos", "marginPct", "change7d", "volume", "throughputDivDay", "oscScore", "worthScore", "mode"] as const;
 export type OptionalColumn = (typeof OPTIONAL_COLUMNS)[number];
 
-/** The six that decide a flip at a glance: what you pay, what you get, the margin, the trend and the money per day. */
+/** With the always-on Item column, the six that decide a flip at a glance: what you pay, what you get, the margin, the trend and the money per day. */
 export const DEFAULT_COLUMNS: readonly OptionalColumn[] = ["buyExalt", "sellChaos", "marginPct", "change7d", "throughputDivDay"];
 
 /** Observed exchange legs keep their precision; your own and estimated prices keep whole orbs. */

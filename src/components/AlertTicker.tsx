@@ -21,14 +21,14 @@ function TickerItem({ a }: { a: Alert }) {
 
 /**
  * One-line alert strip for the Flips tab: unseen count and the newest alerts of types shown in
- * the feed. Per-type muting and routing live in the Alerts tab, not here.
+ * the feed. Per-type muting and routing live on the Alerts page (the header bell), not here.
  */
 export function AlertTicker() {
   const { data, error, unseen, markSeen } = useAlertCenter();
   const recent = data ? tickerRecent(data.alerts, data.tickerMuted, 2) : [];
 
   return (
-    <section data-tour="alerts" aria-label="latest alerts" className="flex h-10 min-w-0 items-center gap-3 overflow-hidden rounded-lg border border-line bg-neutral-900/50 px-3 text-xs">
+    <section aria-label="latest alerts" className="flex h-10 min-w-0 items-center gap-3 overflow-hidden rounded-lg border border-line bg-neutral-900/50 px-3 text-xs">
       <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-neutral-100">
         {unseen > 0 ? <BellRing aria-hidden className="h-4 w-4 text-amber-300" /> : <Bell aria-hidden className="h-4 w-4 text-neutral-400" />}
         Alerts

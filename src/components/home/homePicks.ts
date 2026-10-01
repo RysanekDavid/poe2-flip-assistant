@@ -57,7 +57,8 @@ export function pickFlip(data: Pick<DiscoverResponse, "candidates" | "note">): H
   return {
     kind: "ok",
     text: top.item,
-    detail: `net edge ${pct(top.edgePct)} · held ${top.persistence6 ?? 0}/6 h`,
+    // null persistence is unknown, never 0: leave the fragment out rather than print a number
+    detail: `net edge ${pct(top.edgePct)}${top.persistence6 === null ? "" : ` · held ${top.persistence6}/6 h`}`,
     href: tabRouteHref({ tab: "flips", tool: null }),
     art: top.icon,
   };

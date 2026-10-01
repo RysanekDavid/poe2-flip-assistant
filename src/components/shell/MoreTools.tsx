@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { describeError } from "../../lib/clientWarn";
 import { moreTabs } from "../../lib/navMode";
 import { Button } from "../ui/Button";
+import { useDismiss } from "../ui/useDismiss";
 import { useNavMode } from "./NavModeProvider";
 import { TabArt } from "./TabArt";
 import { TAB_ICONS } from "./tabIcons";
@@ -60,26 +61,12 @@ function panelLeft(trigger: HTMLButtonElement | null): number {
   return Math.max(0, Math.min(left, box.width - PANEL_W));
 }
 
-/** Escape or a press outside the panel and its trigger closes it; focus moves into it on open. */
-function useDismiss(open: boolean, close: () => void, refs: { panel: RefObject<HTMLDivElement | null>; trigger: RefObject<HTMLButtonElement | null> }) {
+/** Escape or a press outside closes the panel and hands focus back to the trigger; opening moves focus in. */
+function usePanelFocus(open: boolean, close: () => void, panel: RefObject<HTMLDivElement | null>, trigger: RefObject<HTMLButtonElement | null>) {
+  useDismiss(open, close, [panel, trigger], trigger);
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") close();
-    };
-    // a document listener, not a fixed overlay: the header's backdrop blur makes "fixed" header-sized
-    const onDown = (e: PointerEvent): void => {
-      const target = e.target instanceof Node ? e.target : null;
-      if (target && !refs.panel.current?.contains(target) && !refs.trigger.current?.contains(target)) close();
-    };
-    window.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onDown);
-    refs.panel.current?.querySelector("button")?.focus();
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onDown);
-    };
-  }, [open, close, refs]);
+    if (open) panel.current?.querySelector("button")?.focus();
+  }, [open, panel]);
 }
 
 interface PanelProps {
@@ -126,9 +113,8 @@ export function MoreTools() {
   const [left, setLeft] = useState<number | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  const refs = useRef({ panel, trigger }).current;
   const close = useRef(() => setLeft(null)).current;
-  useDismiss(left !== null, close, refs);
+  usePanelFocus(left !== null, close, panel, trigger);
   const tools = moreTabs(mode);
   if (tools.length === 0) return null;
   return (
@@ -140,7 +126,7 @@ export function MoreTools() {
         aria-haspopup="dialog"
         onClick={() => setLeft(left === null ? panelLeft(trigger.current) : null)}
         className={TRIGGER}
-        title="the advanced tools: flips, crafting, your stash, regex"
+        title={`Advanced tools: ${tools.map((t) => t.label).join(", ")}`}
       >
         More tools <ChevronDown aria-hidden className="h-4 w-4" />
       </button>

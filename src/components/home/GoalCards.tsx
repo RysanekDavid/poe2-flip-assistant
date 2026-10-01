@@ -52,7 +52,7 @@ function LineBody({ line, goal }: { line: HomeLine; goal: Goal }) {
       return <span className="text-neutral-400">Checking today&apos;s prices…</span>;
     case "error":
       return (
-        <span className="text-amber-300" title={line.message}>
+        <span className="text-bad" title={line.message}>
           Today&apos;s pick did not load — open the page to try again.
         </span>
       );
@@ -90,7 +90,7 @@ function GoalCard({ goal, line, mode }: { goal: Goal; line: HomeLine; mode: NavM
           <p className="text-sm text-neutral-400">{goal.sentence}</p>
         </div>
         {advancedOnly && (
-          <span title="An Advanced tool: it opens with a note on how to show it in your tabs" className="shrink-0 rounded border border-line px-1.5 text-xs text-neutral-400">
+          <span title="An Advanced tool: it opens with a note on how to show it in your tabs" className="relative z-10 shrink-0 rounded border border-line px-1.5 text-xs text-neutral-400">
             Advanced
           </span>
         )}
@@ -99,7 +99,7 @@ function GoalCard({ goal, line, mode }: { goal: Goal; line: HomeLine; mode: NavM
         <span className="mb-0.5 block text-xs uppercase tracking-wider text-neutral-400">Today</span>
         <LineBody line={line} goal={goal} />
       </div>
-      <span aria-hidden className="mt-auto self-end text-sm font-medium text-accent">
+      <span aria-hidden className="mt-auto self-end text-sm font-medium text-neutral-300">
         {goal.action} →
       </span>
     </li>

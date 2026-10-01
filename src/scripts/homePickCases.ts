@@ -59,6 +59,7 @@ function testFlipPick(): void {
   assert.equal(pick.text, "Best", "only ranked, observed, not-falling rows; then the top score");
   assert.equal(pick.detail, "net edge +4.1% · held 6/6 h");
   assert.equal(pick.href, "?tab=flips");
+  assert.equal(ok(pickFlip({ candidates: [candidate({ persistence6: null })] })).detail, "net edge +3.0%", "unknown persistence is left out, never 0/6");
   assert.deepEqual(pickFlip({ candidates: rows.slice(0, 3) }), { kind: "empty", text: "No exchange flip clears the safety bar right now." });
   assert.deepEqual(
     pickFlip({ candidates: [], note: "no exalt/chaos price yet — poll first" }),

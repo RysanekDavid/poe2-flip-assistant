@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ZodType, ZodTypeDef } from "zod";
 import { assertOk, describeError } from "../../lib/clientWarn";
 import { useVisiblePoll } from "../../lib/useVisiblePoll";
@@ -30,5 +30,15 @@ export function useHomePick<T>(url: string, schema: ZodType<T, ZodTypeDef, unkno
       });
   }, [url, schema, pick, enabled]);
   useVisiblePoll(load, POLL_MS);
+  // The poll only runs its task on mount and on becoming visible, so a feed switched on later
+  // (Show all tools, pressed on Home) fetches here instead of waiting out the interval.
+  const wasEnabled = useRef(enabled);
+  useEffect(() => {
+    if (enabled && !wasEnabled.current) {
+      setLine({ kind: "loading" });
+      load();
+    }
+    wasEnabled.current = enabled;
+  }, [enabled, load]);
   return enabled ? line : { kind: "off" };
 }

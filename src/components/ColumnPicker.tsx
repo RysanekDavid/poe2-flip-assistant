@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Button } from "./ui/Button";
+import { useDismiss } from "./ui/useDismiss";
 
 interface Props<K extends string> {
   /** Toggleable columns in display order, with their header labels. */
@@ -13,33 +14,14 @@ interface Props<K extends string> {
   defaults: readonly K[];
 }
 
-/** Closes the menu on a click outside it or Escape — the two ways people expect a menu to go away. */
-function useDismiss(open: boolean, close: () => void) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (e.target instanceof Node && ref.current && !ref.current.contains(e.target)) close();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, close]);
-  return ref;
-}
-
 /** "Columns ▾": a checkbox menu that shows or hides a table's optional columns. */
 export function ColumnPicker<K extends string>({ options, visible, onChange, defaults }: Props<K>) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const close = useCallback(() => setOpen(false), []);
-  const ref = useDismiss(open, close);
+  const ref = useRef<HTMLDivElement>(null);
+  // a press outside the menu or Escape closes it — the two ways people expect a menu to go away
+  useDismiss(open, close, [ref]);
   const shown = new Set(visible);
   // keep the table's column order whatever order the boxes were ticked in
   const toggle = (key: K) => onChange(options.map((o) => o.key).filter((k) => (k === key ? !shown.has(k) : shown.has(k))));
