@@ -24,7 +24,7 @@ const ESSENCE_NOTES = [
  * Abyss/Breach essences replace a mod on a RARE. No essence touches a normal item.
  */
 const CC4 = `${KB_CURRENCY_CORE} §4`;
-const JEWEL_ESSENCE = "the KB does not say which essences, if any, apply to jewels";
+export const JEWEL_ESSENCE = "the KB does not say which essences, if any, apply to jewels";
 
 function magicEssenceCheck(s: ItemState): Verdict {
   if (!isMagic(s)) return null;

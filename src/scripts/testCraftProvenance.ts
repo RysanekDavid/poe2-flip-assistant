@@ -166,7 +166,11 @@ function testPairing(deps: AuditDeps): void {
   ok("Dextral Annulment + Annulment (only an unverified rule) → pairing unknown", has(dextralAnnul, "pairing", "unknown") && !has(dextralAnnul, "pairing", "ok"), JSON.stringify(dextralAnnul));
   ok("Dextral Erasure + Chaos (verified rule) → pairing ok", has(run([MATS.omenDextralErasure, MATS.chaos]), "pairing", "ok"));
   ok("Greater Exaltation rides a Perfect Exalt (any exalt tier)", has(run([MATS.omenGreaterExaltation, MATS.perfectExalted]), "pairing", "ok"));
-  ok("Dextral Crystallisation (no rule) → pairing unknown", has(run([MATS.omenDextralCrystallisation, MATS.perfectEssenceEnhancement]), "pairing", "unknown"));
+  ok("Dextral Crystallisation + a Perfect essence (verified rule) → pairing ok", has(run([MATS.omenDextralCrystallisation, MATS.perfectEssenceEnhancement]), "pairing", "ok"));
+  ok("Sinistral Crystallisation + a Corrupted essence (item text) → pairing ok", has(run([MATS.omenSinistralCrystallisation, MATS.essenceOfTheBreach]), "pairing", "ok"));
+  const greater = run([MATS.omenDextralCrystallisation, MATS.greaterEssenceEnhancement]);
+  ok("Crystallisation + a Greater essence (not Perfect or Corrupted) → pairing unknown", has(greater, "pairing", "unknown") && !has(greater, "pairing", "ok"), JSON.stringify(greater));
+  ok("Crystallisation + an alloy (creator-only) → pairing unknown", !has(run([MATS.omenSinistralCrystallisation, MATS.transcendentAlloy]), "pairing", "ok"));
   ok("Whittling without a Chaos Orb → pairing unknown", has(run([MATS.omenWhittling, MATS.annul]), "pairing", "unknown"));
   ok("a material missing from the game data → catalog violation", has(run([{ id: "not-a-real-orb", label: "Orb of Nothing", group: "currency" }]), "catalog", "violation"));
   ok("a step without materials has no checks", checkStep({ do: "look" }, base(80), deps.byExchangeId, deps.gameDataPatch).length === 0);

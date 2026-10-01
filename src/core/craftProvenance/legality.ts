@@ -4,6 +4,7 @@ import type { EntityRow } from "../entities/schema";
 import type { Rarity } from "../../lib/tradeLink";
 import { VERIFIED_FLOORS, type CurrencyFloor } from "../tools/craftmoves/gates";
 import { ALL_RULES } from "../tools/craftmoves/rules";
+import { isPerfectOrCorruptedEssence, RARE_ESSENCE } from "../tools/craftmoves/ruleTableOmens";
 import { KB, type MoveRule } from "../tools/craftmoves/ruleTypes";
 import type { LegalityCheck, LegalityVerdict, StepLegality } from "./schema";
 
@@ -74,6 +75,7 @@ const PAIRING_ALIAS: Readonly<Record<string, string>> = {
   [MATS.perfectExalted.id]: MATS.exalted.id,
 };
 const BONE = "*bone";
+const RARE_ESSENCE_ANY = "*perfect-or-corrupted-essence";
 
 interface PairingRule {
   id: string;
@@ -82,12 +84,16 @@ interface PairingRule {
   needs: ReadonlySet<string>;
 }
 
-/** Material ids a rule needs; a per-item bone resolver (function spec) becomes "any bone". */
+/**
+ * Material ids a rule needs; a per-item bone resolver (function spec) becomes "any bone" and the
+ * Crystallisation omens' essence "any Perfect or Corrupted essence".
+ */
 function ruleNeeds(rule: MoveRule): Set<string> {
   const needs = new Set<string>();
   for (const spec of rule.materials) {
     if (typeof spec === "function") needs.add(BONE);
     else if (typeof spec === "string") needs.add(MATS[spec].id);
+    else if (spec.key === RARE_ESSENCE.key) needs.add(RARE_ESSENCE_ANY);
     else throw new Error(`legality: omen rule ${rule.id} names unlisted material "${spec.key}" — no pairing can match it`);
   }
   return needs;
@@ -156,16 +162,22 @@ function levelChecks(mats: readonly CraftMaterial[], base: StepBase): LegalityCh
   return out;
 }
 
-function satisfies(rule: PairingRule, present: ReadonlySet<string>, hasBone: boolean): boolean {
-  return [...rule.needs].every((id) => (id === BONE ? hasBone : present.has(id)));
+/** Wildcards a step's materials fill: any bone, any Perfect or Corrupted essence. */
+interface StepWildcards {
+  bone: boolean;
+  rareEssence: boolean;
 }
 
-function omenCheck(omen: CraftMaterial, present: ReadonlySet<string>, hasBone: boolean, rules: readonly PairingRule[]): LegalityCheck {
+function satisfies(rule: PairingRule, present: ReadonlySet<string>, wild: StepWildcards): boolean {
+  return [...rule.needs].every((id) => (id === BONE ? wild.bone : id === RARE_ESSENCE_ANY ? wild.rareEssence : present.has(id)));
+}
+
+function omenCheck(omen: CraftMaterial, present: ReadonlySet<string>, wild: StepWildcards, rules: readonly PairingRule[]): LegalityCheck {
   const candidates = rules.filter((r) => r.needs.has(omen.id));
   if (candidates.length === 0) {
     return { kind: "pairing", verdict: "unknown", detail: `no rule covers ${omen.label}`, source: `${KB} §4` };
   }
-  const matching = candidates.filter((r) => satisfies(r, present, hasBone));
+  const matching = candidates.filter((r) => satisfies(r, present, wild));
   const verified = matching.find((r) => r.verified);
   if (verified) return { kind: "pairing", verdict: "ok", detail: `${omen.label} pairing matches verified rule ${verified.id}`, source: verified.source };
   const unverified = matching[0];
@@ -178,8 +190,11 @@ function omenCheck(omen: CraftMaterial, present: ReadonlySet<string>, hasBone: b
 
 function pairingChecks(mats: readonly CraftMaterial[], rules: readonly PairingRule[]): LegalityCheck[] {
   const present = new Set(mats.map((m) => PAIRING_ALIAS[m.id] ?? m.id));
-  const hasBone = mats.some((m) => m.group === "bone");
-  return mats.filter((m) => m.group === "omen").map((omen) => omenCheck(omen, present, hasBone, rules));
+  const wild: StepWildcards = {
+    bone: mats.some((m) => m.group === "bone"),
+    rareEssence: mats.some((m) => m.group === "essence" && isPerfectOrCorruptedEssence(m.id)),
+  };
+  return mats.filter((m) => m.group === "omen").map((omen) => omenCheck(omen, present, wild, rules));
 }
 
 /** Checks for one step's materials against the base it is applied to. */

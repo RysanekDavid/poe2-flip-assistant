@@ -35,7 +35,7 @@ const variantKey = (id: string): string =>
 
 // matched against variantKey(id), so every currency tier classifies exactly like its base orb
 const RANDOM_ADD = /^(exalt|regal|aug|transmute|alchemy|omen-greater-exaltation)$/;
-const REMOVAL = /^(annul|chaos|essence-perfect|omen-(sinistral|dextral)-(erasure|annulment))$/;
+const REMOVAL = /^(annul|chaos|essence-perfect|omen-(sinistral|dextral)-(erasure|annulment|crystallisation))$/;
 
 /** Card tier of one move (null: never a card), given the family being aimed at. */
 export function tierOf(move: PricedMoveView, target: FamilyGateView | null): Tier | null {
