@@ -12,6 +12,7 @@ import type Database from "better-sqlite3";
 export function ensureCxTables(conn: Database.Database): void {
   conn.exec(MARKET_HISTORY_SQL);
   conn.exec(DERIVED_STATE_SQL);
+  conn.exec(PRICE_SHADOW_SQL);
 }
 
 const MARKET_HISTORY_SQL = `
@@ -81,5 +82,37 @@ const DERIVED_STATE_SQL = `
       state TEXT NOT NULL,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (league, item_id)
+    ) WITHOUT ROWID;
+`;
+
+const PRICE_SHADOW_SQL = `
+    -- Shadow mode: Divine price per exchange item derived from the digest (core/cx/cxPricing),
+    -- stored beside poe.ninja's until the owner decides the cutover. Nothing user-facing reads it.
+    -- hour = digest next_change_id like cx_markets; exchange_id = entity catalog exchange id (the
+    -- poe.ninja item id), so the comparison joins without names. traded_hour < hour = carried.
+    CREATE TABLE IF NOT EXISTS cx_price_shadow (
+      league TEXT NOT NULL,
+      hour INTEGER NOT NULL,
+      exchange_id TEXT NOT NULL,
+      price_div REAL NOT NULL,
+      method TEXT NOT NULL CHECK (method IN ('direct', 'bridge', 'carried')),
+      units REAL NOT NULL,
+      volume_div REAL NOT NULL,
+      legs INTEGER NOT NULL,
+      traded_hour INTEGER NOT NULL,
+      PRIMARY KEY (league, hour, exchange_id)
+    ) WITHOUT ROWID;
+
+    -- Which (league, hour) the shadow has priced, including hours that priced nothing, so the
+    -- poller never recomputes them. unmapped_ids = JSON array of digest ids with fills but no catalog
+    -- exchange id: the items the CX source cannot price until the entity catalog learns them.
+    CREATE TABLE IF NOT EXISTS cx_price_shadow_hours (
+      league TEXT NOT NULL,
+      hour INTEGER NOT NULL,
+      priced INTEGER NOT NULL,
+      carried INTEGER NOT NULL,
+      unmapped_ids TEXT NOT NULL,
+      computed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (league, hour)
     ) WITHOUT ROWID;
 `;
