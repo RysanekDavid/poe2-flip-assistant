@@ -93,8 +93,10 @@ new size debt, explicit `any`, silent catches, low-contrast text or text below 1
   amber `accent` (`#fbbf24`) so that highlighted always means the same thing; sky/`info` is for
   links only. Don't use `text-neutral-600/700` on the page background (it fails AA contrast).
   The `brand` tokens (`brand-teal`, `brand-teal-hi`, `brand-bone`) and the Rubik font belong to
-  the logo and wordmark (`shell/Brand.tsx`) only. They are a separate brand set, not UI accents,
-  so never use them for actions, highlights or data.
+  the logo and wordmark (`shell/Brand.tsx`). The one other use is the nav label colour in
+  `shell/TabNav.tsx` and `shell/SubTabBar.tsx` (bone at 60% idle, 100% active), so the header
+  speaks the owl's palette. They are a separate brand set, not UI accents, so never use them for
+  actions, highlights or data.
   Prefer game art (`ItemArt`, icons from the entity catalog) and tooltips over prose or status
   noise.
 - **Units:** poe.ninja `primaryValue` is the **Divine price of one item**. Never invert it. The

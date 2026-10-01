@@ -10,20 +10,6 @@ import "driver.js/dist/driver.css";
 
 const INTRO_VERSION = "v2"; // bump to re-show the welcome to everyone after a big change
 
-// dark theme for the driver.js popover
-const TOUR_CSS = `
-  .poe2-tour.driver-popover{background:#171717;color:#e5e5e5;border:1px solid #404040;border-radius:.5rem;}
-  .poe2-tour .driver-popover-title{color:#fafafa;font-size:1rem;}
-  .poe2-tour .driver-popover-description{color:#a3a3a3;}
-  .poe2-tour .driver-popover-progress-text{color:#737373;}
-  .poe2-tour button.driver-popover-next-btn,.poe2-tour button.driver-popover-prev-btn{background:#262626;color:#e5e5e5;text-shadow:none;border:1px solid #404040;border-radius:.375rem;}
-  .poe2-tour .driver-popover-close-btn{color:#a3a3a3;}
-  .poe2-tour .driver-popover-arrow-side-left.driver-popover-arrow{border-left-color:#171717;}
-  .poe2-tour .driver-popover-arrow-side-right.driver-popover-arrow{border-right-color:#171717;}
-  .poe2-tour .driver-popover-arrow-side-top.driver-popover-arrow{border-top-color:#171717;}
-  .poe2-tour .driver-popover-arrow-side-bottom.driver-popover-arrow{border-bottom-color:#171717;}
-`;
-
 function AdvancedBullets() {
   return (
     <ul className="space-y-2 text-sm">
@@ -166,10 +152,6 @@ export function Onboarding() {
     tour.drive();
   }, [dismiss, go, mode]);
 
-  return (
-    <>
-      <style>{TOUR_CSS}</style>
-      {open && <Welcome name={me.name} mode={mode} onDismiss={dismiss} onTour={() => void startTour()} />}
-    </>
-  );
+  if (!open) return null;
+  return <Welcome name={me.name} mode={mode} onDismiss={dismiss} onTour={() => void startTour()} />;
 }
