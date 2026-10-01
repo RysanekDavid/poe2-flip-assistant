@@ -100,6 +100,7 @@ function report(over: Partial<RecipeMarginReport> = {}): RecipeMarginReport {
         "helmet_tiara_es",
         "jewel_liquid_5mod_budget",
         "quiver_putrefaction",
+        "ring_dusk_four_flat",
       ].join(","),
     legFloors,
   );

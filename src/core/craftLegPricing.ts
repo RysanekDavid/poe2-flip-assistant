@@ -61,9 +61,11 @@ export function legToQuery(
     category: leg.category,
     rarity: leg.rarity,
     ilvlMin: leg.ilvlMin,
+    ilvlMax: leg.ilvlMax,
     pdpsMin: leg.pdpsMin,
     esMin: leg.esMin,
     evMin: leg.evMin,
+    arMin: leg.arMin,
     // comparables default to uncorrupted (a corrupted result isn't reforge-able) — putrefaction
     // results set true (the omen corrupts), vaal gambles "any" (their outputs mix both)
     corrupted: leg.corrupted === "any" ? undefined : (leg.corrupted ?? false),

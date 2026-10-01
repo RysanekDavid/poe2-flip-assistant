@@ -4,7 +4,7 @@
  * schemas on every read, so a hand edit that drifts from the shape fails loudly instead of rendering.
  */
 import { z } from "zod";
-import { isRmtUrl } from "../../lib/claim";
+import { claimSchema, isRmtUrl } from "../../lib/claim";
 import { PATCH_VERSION_RE } from "../../sources/patchNotes/contracts";
 import { ENTITY_ID_PATTERN } from "../entities/schema";
 
@@ -70,6 +70,37 @@ export const curatedHitRateBasisSchema = z
   })
   .strict();
 
+/** "0:18" or "0:18–0:24" (en dash), as read off a timestamped transcript; hours allowed ("1:02:03"). */
+const TIMESTAMP = String.raw`\d{1,2}(?::\d{2}){1,2}`;
+export const TIMESTAMP_RANGE_RE = new RegExp(`^${TIMESTAMP}(?:–${TIMESTAMP})?$`);
+
+/**
+ * Something the creator SAYS — a sale price, a cost, a hit count. Dated context with a timestamp,
+ * never the recipe's headline: the margin only ever comes from live prices.
+ */
+export const creatorClaimSchema = z
+  .object({
+    text: z.string().min(1),
+    at: z.string().regex(TIMESTAMP_RANGE_RE, "expected a transcript timestamp like 0:18 or 0:18–0:24"),
+    /** The `ref` of the provenance source it was said in (our committed transcript). */
+    sourceRef: z.string().min(1),
+  })
+  .strict();
+export type CreatorClaim = z.infer<typeof creatorClaimSchema>;
+
+/**
+ * Why a recipe keeps working and what would end it — the same shape as a strategy's durability
+ * (why_it_works / breaks_when / claim). `claim` grades the why_it_works mechanic at its weakest link.
+ */
+export const recipeDurabilitySchema = z
+  .object({
+    why_it_works: z.string().min(1),
+    breaks_when: z.array(z.string().min(1)).min(1),
+    claim: claimSchema,
+  })
+  .strict();
+export type RecipeDurability = z.infer<typeof recipeDurabilitySchema>;
+
 export const recipeProvenanceSchema = z
   .object({
     /** Last patch whose game data the recipe was checked against (KB + RePoE). */
@@ -81,9 +112,18 @@ export const recipeProvenanceSchema = z
     extraEntityRefs: z.array(z.string().regex(ENTITY_ID_PATTERN)),
     /** Sections of docs/research/poe2-crafting-knowledge.md the recipe relies on ("§2", "§9b"). */
     kbRuleRefs: z.array(z.string().regex(/^§\d+b?$/)).min(1),
+    /** Required for every recipe added from 2026-10-01 on (test:craft-provenance); older ones may lack it. */
+    durability: recipeDurabilitySchema.optional(),
+    creatorClaims: z.array(creatorClaimSchema).optional(),
   })
   .strict()
   .superRefine((p, ctx) => {
+    const refs = new Set(p.sources.map((s) => s.ref));
+    (p.creatorClaims ?? []).forEach((c, i) => {
+      if (!refs.has(c.sourceRef)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["creatorClaims", i, "sourceRef"], message: `"${c.sourceRef}" is not the ref of any source` });
+      }
+    });
     if (p.status === "reviewed" && p.sources.every((s) => s.tier === "anecdote")) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["status"], message: "a reviewed recipe needs a non-anecdote source" });
     }
@@ -184,6 +224,8 @@ export interface ProvenanceView {
   /** Legality per guide step (flat index); empty when the audit has no entry. */
   steps: StepLegality[];
   legality: LegalityVerdict;
+  durability: RecipeDurability | null;
+  creatorClaims: CreatorClaim[];
 }
 
 export interface AuditStatus {

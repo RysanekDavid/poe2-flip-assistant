@@ -7,7 +7,7 @@ import { runCycle } from "./marketCycle";
 import { runAutoSnipe, drainScanRequests } from "./tradeScans";
 import { SNIPE_PROFILES } from "../core/snipeProfiles";
 import { refreshStalestRecipe, refreshAllRecipes } from "../core/craftMargin";
-import { RECIPES } from "../core/craftRecipes";
+import { SCANNED_RECIPES } from "../core/craftRecipes";
 import { withHeartbeat } from "../core/heartbeat";
 import { startPatchNotesWatcher } from "../sources/patchNotes/watcher";
 import { startLeagueWatcher } from "./leagueWatcher";
@@ -35,8 +35,9 @@ function start(): void {
   // The owner's cred (stored or .env) backs the shared auto-snipe market scan.
   const ownerCred = credForUser({ id: OWNER_ID, role: "owner" });
 
-  // Drop stored reports/history for recipes that no longer exist in code (removed/renamed keys).
-  pruneStaleRecipeReports(RECIPES.map((r) => r.key));
+  // Drop stored reports/history for recipes that are no longer scanned (removed/renamed keys, or a
+  // recipe turned craft-to-use, whose old margin must not linger).
+  pruneStaleRecipeReports(SCANNED_RECIPES.map((r) => r.key));
 
   startTradeScans();
   startAutoSnipe(ownerCred);
@@ -140,7 +141,7 @@ function startCraftMargin(ownerCred: TradeCred | null): void {
   // Craft-margin engine — ranks curated recipes by live EV/attempt. Shared market scan under the
   // owner's cred (like autosnipe); ONE recipe per tick (the stalest) so ≤3 searches + 8 fetches is
   // the whole per-tick cost through the shared trade2 limiter.
-  console.log(`[craft-margin] refreshing 1/${RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
+  console.log(`[craft-margin] refreshing 1/${SCANNED_RECIPES.length} recipes (stalest) every ${config.craftMargin.intervalMin}m`);
   // One craft scan at a time: the tick skips while a manual sweep runs, and a queued manual
   // sweep waits for the tick (its flag stays set until consumed), so no recipe is scanned twice.
   let craftRefreshing = false;

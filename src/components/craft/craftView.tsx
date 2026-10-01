@@ -2,7 +2,7 @@
 
 // Type-only imports are erased at build → safe to pull the canonical report shapes into client
 // components instead of hand-duplicating them (which drifts from the engine).
-import type { CraftDomain, CraftGuide, RecipeMarginReport } from "../../core/craftRecipes";
+import type { CraftDomain, CraftGuide, CraftPurpose, MaterialReportLine, RecipeMarginReport } from "../../core/craftRecipes";
 import type { RankGate } from "../../core/craftValuation";
 import type { ProvenanceView } from "../../core/craftProvenance/schema";
 
@@ -11,6 +11,7 @@ export interface RecipeView {
   key: string;
   label: string;
   domain: CraftDomain;
+  purpose: CraftPurpose; // "use" = craft-to-use: never scanned, no margin
   heroIcon: string | null;
   guide: CraftGuide;
   // sources, verified patch, staleness, step legality and the hit rate the EV uses (calibrated)
@@ -24,6 +25,20 @@ export interface RecipeView {
   lastError: string | null; // transient failure of a newer scan; the report is the last good one
   lastErrorAt: string | null;
   evHistory: number[];
+  useMaterials: MaterialReportLine[] | null; // craft-to-use only: today's exchange prices (no report exists)
+}
+
+/** Priced material lines: the scan's for a craft-to-sell recipe, today's exchange prices for a craft-to-use one. */
+export function pricedMaterials(r: Pick<RecipeView, "report" | "useMaterials">): MaterialReportLine[] | null {
+  return r.report?.materials ?? r.useMaterials;
+}
+
+/** Materials total in Div; null when nothing is priced yet or a craft-to-use line has no price. */
+export function materialsTotal(r: Pick<RecipeView, "report" | "useMaterials">): number | null {
+  if (r.report) return r.report.materialsDiv;
+  const lines = r.useMaterials;
+  if (!lines || lines.some((l) => l.totalDiv == null)) return null;
+  return lines.reduce((s, l) => s + (l.totalDiv ?? 0), 0);
 }
 
 /** Per-material display info (live price label + item art) resolved by the parent panel. */

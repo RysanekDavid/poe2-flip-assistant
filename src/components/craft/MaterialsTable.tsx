@@ -1,6 +1,6 @@
 "use client";
 
-import { MatIcon, priceLabel, type RecipeView } from "./craftView";
+import { materialsTotal, MatIcon, priceLabel, pricedMaterials, type RecipeView } from "./craftView";
 import type { MaterialReportLine } from "../../core/craftRecipes";
 
 function ageLabel(min: number | null): string {
@@ -25,9 +25,10 @@ function usageOrder(r: RecipeView): Map<string, number> {
   return useOrder;
 }
 
-/** Report lines when scanned, else the recipe definition with unknown prices. */
+/** Priced lines when known (scan, or today's prices for a craft-to-use recipe), else the definition. */
 function materialRows(r: RecipeView): MaterialReportLine[] {
-  if (r.report) return r.report.materials;
+  const priced = pricedMaterials(r);
+  if (priced) return priced;
   return r.materialSpecs.map((m) => ({
     id: m.id,
     label: m.label,
@@ -79,7 +80,7 @@ export function MaterialsTable({ r, ex, icons }: { r: RecipeView; ex: number | n
             <td className="px-3 py-1.5" colSpan={4}>
               materials total
             </td>
-            <td className="px-3 py-1.5 text-right tabular-nums">{priceLabel(r.report?.materialsDiv ?? null, ex)}</td>
+            <td className="px-3 py-1.5 text-right tabular-nums">{priceLabel(materialsTotal(r), ex)}</td>
             <td />
           </tr>
         </tbody>

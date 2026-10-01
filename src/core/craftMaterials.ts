@@ -37,6 +37,8 @@ export const MATS = {
   omenDextralErasure: { id: "omen-of-dextral-erasure", label: "Omen of Dextral Erasure", group: "omen" },
   omenLight: { id: "omen-of-light", label: "Omen of Light", group: "omen" },
   omenSinistralAnnulment: { id: "omen-of-sinistral-annulment", label: "Omen of Sinistral Annulment", group: "omen" },
+  // "your next Divine Orb used on a Rare item will Sanctify it" (item text) — the optional end gamble.
+  omenSanctification: { id: "omen-of-sanctification", label: "Omen of Sanctification", group: "omen" },
 
   // --- abyssal bones + gazes (ninja category "Abyss") ---
   preservedCranium: { id: "preserved-cranium", label: "Preserved Cranium", group: "bone" },
@@ -62,6 +64,8 @@ export const MATS = {
   sibilantCatalyst: { id: "sibilant-catalyst", label: "Sibilant Catalyst", group: "catalyst" },
   // Physical tag — the prismatic ring's Catalysing slam fishes flat phys to Attacks with it.
   uulNetolsCatalyst: { id: "uul-netols-catalyst", label: "Uul-Netol's Catalyst", group: "catalyst" },
+  // Attack tag: "Adds quality that enhances Attack modifiers on a ring or amulet" (item text).
+  reaverCatalyst: { id: "reaver-catalyst", label: "Reaver Catalyst", group: "catalyst" },
 
   // --- essences (ninja category "Essences") ---
   greaterEssenceAbrasion: { id: "greater-essence-of-abrasion", label: "Greater Essence of Abrasion", group: "essence" },
@@ -89,6 +93,10 @@ export const MATS = {
   essenceOfTheAbyss: { id: "essence-of-the-abyss", label: "Essence of the Abyss", group: "essence" },
   // Replaces a designated mod with the breach quality mod (the attack-ring craft's whittle shuttle).
   essenceOfTheBreach: { id: "essence-of-the-breach", label: "Essence of the Breach", group: "essence" },
+  // Caster essence: magic → rare plus increased Spell Damage on wands (prefix).
+  greaterEssenceSorcery: { id: "greater-essence-of-sorcery", label: "Greater Essence of Sorcery", group: "essence" },
+  // Corrupted essence, rare items: on boots "60% increased effect of Socketed Augment Items" (suffix, poe2db).
+  essenceOfHorror: { id: "essence-of-horror", label: "Essence of Horror", group: "essence" },
 
   // --- currency (ninja category "Currency") ---
   divine: { id: "divine", label: "Divine Orb", group: "currency" },
@@ -120,6 +128,20 @@ export const MATS = {
   // Force-converts a prefix into the alloy's guaranteed near-min-tier mod (e.g. cast speed) under a
   // Crystallisation omen. Ninja lists it under "Verisium", priced through the same snapshot pipeline.
   transcendentAlloy: { id: "transcendent-alloy", label: "Transcendent Alloy", group: "currency" },
+  // Wand Celestial = "+(142—188) to maximum Mana and +1 to Level of all Spell Skills" (prefix); wand
+  // Transcendent = "(26—31)% increased Cast Speed" + "(7—11)% Elemental Damage as Extra Cold" (suffix) — fact-check 2026-10-01.
+  celestialAlloy: { id: "celestial-alloy", label: "Celestial Alloy", group: "currency" },
+  // Rings: "(7—9)% increased Attack Speed" (suffix); boots Mystic: "+(10—15) to Spirit" (suffix).
+  swiftAlloy: { id: "swift-alloy", label: "Swift Alloy", group: "currency" },
+  mysticAlloy: { id: "mystic-alloy", label: "Mystic Alloy", group: "currency" },
+  chillingFlux: { id: "chilling-flux", label: "Chilling Flux", group: "currency" },
+  etcher: { id: "etcher", label: "Arcanist's Etcher", group: "currency" },
+  // "exceeding maximum quality by up to 10% with a chance of Corrupting it … Can only be used on items
+  // at or above maximum quality" (item text, one per item class).
+  vaalArmourersInfuser: { id: "vaal-armourers-infuser", label: "Vaal Armourer's Infuser", group: "currency" },
+  vaalArcanistsInfuser: { id: "vaal-arcanists-infuser", label: "Vaal Arcanist's Infuser", group: "currency" },
+  vaalBlacksmithsInfuser: { id: "vaal-blacksmiths-infuser", label: "Vaal Blacksmith's Infuser", group: "currency" },
+  vaalCatalysingInfuser: { id: "vaal-catalysing-infuser", label: "Vaal Catalysing Infuser", group: "currency" },
   // The "additional crafted modifier" orb (auto-captioned "Acid's Creativity" in the source video).
   astridsCreativity: { id: "astrids-creativity", label: "Astrid's Creativity", group: "currency" },
 
@@ -130,12 +152,19 @@ export const MATS = {
   potentLiquidContempt: { id: "potent-liquid-contempt", label: "Potent Liquid Contempt", group: "delirium" },
   potentLiquidFerocity: { id: "potent-liquid-ferocity", label: "Potent Liquid Ferocity", group: "delirium" },
   ancientPotentLiquidContempt: { id: "ancient-potent-liquid-contempt", label: "Ancient Potent Liquid Contempt", group: "delirium" },
+  // Basic jewels only: "Removes a random modifer and Augments a Rare Basic Jewel with a new guaranteed
+  // Crafted modifier" (item text); on an Emerald the crafted mod is attack Critical Damage Bonus (poe2db).
+  concentratedLiquidFear: { id: "concentrated-liquid-fear", label: "Concentrated Liquid Fear", group: "delirium" },
   // No recipe uses it; Tools → Craft moves prices it as a legal move on Time-Lost jewels.
   ancientPotentLiquidFerocity: { id: "ancient-potent-liquid-ferocity", label: "Ancient Potent Liquid Ferocity", group: "delirium" },
 
   // --- runes (ninja category "Runes") ---
   // Gloves only: "Can roll Decay modifiers" (RePoE RuneWarpingDecayInfluence); cannot be retrieved or replaced.
   katlasGloom: { id: "katlas-gloom", label: "Katla's Gloom", group: "rune" },
+  ironRune: { id: "iron-rune", label: "Iron Rune", group: "rune" },
+  perfectIronRune: { id: "perfect-iron-rune", label: "Perfect Iron Rune", group: "rune" },
+  // "Place into an Augment Socket containing any tiered Rune to upgrade that Rune" (item text).
+  masterworkRune: { id: "masterwork-rune", label: "Masterwork Rune", group: "rune" },
 } as const satisfies Record<string, CraftMaterial>;
 
 export type MaterialKey = keyof typeof MATS;

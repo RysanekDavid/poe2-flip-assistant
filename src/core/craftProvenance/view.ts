@@ -38,6 +38,8 @@ function viewFor(r: CraftRecipe, entry: RecipeAudit, patchReasons: StaleReason[]
     hitRate: effectiveHitRate(r, prov, stats),
     steps: entry.steps,
     legality: entry.verdict,
+    durability: prov.durability ?? null,
+    creatorClaims: prov.creatorClaims ?? [],
   };
 }
 

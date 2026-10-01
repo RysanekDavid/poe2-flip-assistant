@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 CraftDomain = Literal["jewel", "weapon", "jewellery", "armour"]
+CraftPurpose = Literal["sell", "use"]
 Valuation = Literal["legacy-cheapest", "floor-percentile", "comparable-result"]
 Confidence = Literal["high", "medium", "low"]
 Verdict = Literal["pick", "near_miss", "unpriced"]
@@ -25,6 +26,8 @@ class RecipeMeta:
 
     label: str
     domain: CraftDomain
+    # "use" = craft-to-use: never scanned (craftRecipes.ts SCANNED_RECIPES), so it has no report.
+    purpose: CraftPurpose = "sell"
 
 
 RECIPES: dict[str, RecipeMeta] = {
@@ -79,6 +82,23 @@ RECIPES: dict[str, RecipeMeta] = {
     "ring_prismatic_catalyst_attack": RecipeMeta(
         "Ring · Prismatic catalysed flat attack damage", "jewellery"
     ),
+    "spear_bleed_abrasion_necro": RecipeMeta(
+        "Spear · bleed Abrasion + desecrated phys/accuracy (craft to use)", "weapon", "use"
+    ),
+    "wand_cold_skills_sorcery_desecrate": RecipeMeta(
+        "Wand · cold spells + Liege elemental damage (craft to use)", "weapon", "use"
+    ),
+    "wand_ilvl80_perfect_orb_lottery": RecipeMeta(
+        "Wand · ilvl-80 Perfect-orb lottery (T1 spell damage)", "weapon"
+    ),
+    "wand_plus4_alloy_fracture": RecipeMeta("Wand · +4 spells, two alloys, fractured", "weapon"),
+    "ring_gold_rarity_opulence": RecipeMeta(
+        "Ring · Gold Ring triple rarity (craft to use)", "jewellery", "use"
+    ),
+    "shield_armour_fracture": RecipeMeta("Shield · fractured flat Armour Tower Shield", "armour"),
+    "jewel_liquid_fear_4mod_budget": RecipeMeta("Emerald · Liquid Fear 4-mod (budget)", "jewel"),
+    "ring_dusk_four_flat": RecipeMeta("Ring · Dusk Ring four flat attack prefixes", "jewellery"),
+    "boots_es_ms_spirit_fracture": RecipeMeta("Boots · ES 35% MS + Spirit, fractured", "armour"),
 }
 
 # craftValuation.ts gate constants.
@@ -153,9 +173,12 @@ class MarginReport(_Stored):
     near_miss: NearMiss | None = None
 
 
+SCANNED_RECIPE_COUNT = sum(1 for meta in RECIPES.values() if meta.purpose == "sell")
+
+
 def report_max_age_minutes(interval_min: int) -> int:
-    """craftReports.ts reportMaxAgeMs: three full round-robin poller cycles over every recipe."""
-    return 3 * interval_min * len(RECIPES)
+    """craftReports.ts reportMaxAgeMs: three full round-robin cycles over the scanned recipes."""
+    return 3 * interval_min * SCANNED_RECIPE_COUNT
 
 
 def gate_reasons(report: MarginReport, base: LegReport, result: LegReport) -> list[str]:

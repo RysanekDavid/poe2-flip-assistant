@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Button } from "../ui/Button";
-import { MatIcon, priceLabel, type RecipeView } from "./craftView";
+import { materialsTotal, MatIcon, priceLabel, pricedMaterials, type RecipeView } from "./craftView";
 
 /** Costs the server could not prefill and asked the user for (409 `needs`). */
 export type CostField = "baseCostDiv" | "matsCostDiv";
@@ -55,7 +55,7 @@ function BaseCard({ r, ex }: { r: RecipeView; ex: number | null }) {
  *  scan cycle. Prices join in from the report where the ids still match. */
 function shoppingRows(r: RecipeView) {
   return r.materialSpecs.map((m) => {
-    const line = r.report?.materials.find((x) => x.id === m.id);
+    const line = pricedMaterials(r)?.find((x) => x.id === m.id);
     return { id: m.id, label: m.label, qty: m.qty, unitDiv: line?.unitDiv ?? null };
   });
 }
@@ -76,7 +76,7 @@ function ShoppingChecklist({ r, ex, icons, bought, toggle }: ChecklistProps) {
         <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
           shopping list — tick off as you buy ({mats.filter((m) => bought.has(m.id)).length}/{mats.length})
         </p>
-        {r.report && <span className="text-xs text-neutral-500">materials ~{priceLabel(r.report.materialsDiv, ex)}</span>}
+        {materialsTotal(r) != null && <span className="text-xs text-neutral-500">materials ~{priceLabel(materialsTotal(r), ex)}</span>}
       </div>
       <ul className="space-y-1">
         {mats.map((m) => (

@@ -1,7 +1,7 @@
 import { getCraftMargins, type CraftMarginRow } from "../db/craftQueries";
 import { timestampAgeMs } from "../lib/sqliteTime";
 import { config } from "../config/env";
-import { RECIPES, RecipeMarginReportSchema, type RecipeMarginReport } from "./craftRecipes";
+import { SCANNED_RECIPES, RecipeMarginReportSchema, type RecipeMarginReport } from "./craftRecipes";
 import type { ReportFreshness } from "./craftValuation";
 
 /**
@@ -28,9 +28,10 @@ export function parseStoredReport(key: string, json: string): RecipeMarginReport
 /**
  * A kept report (newer scans failing transiently) may drive ranking / alerts / prefill
  * for at most 3 full round-robin cycles of the poller; after that its prices are too old to act on.
+ * A cycle covers the scanned (craft-to-sell) recipes only.
  */
 export function reportMaxAgeMs(): number {
-  return 3 * config.craftMargin.intervalMin * RECIPES.length * 60_000;
+  return 3 * config.craftMargin.intervalMin * SCANNED_RECIPES.length * 60_000;
 }
 
 /** Freshness of a stored row's last GOOD scan (scanned_at is only moved by a stored report). */

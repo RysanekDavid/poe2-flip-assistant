@@ -3,9 +3,11 @@ import { getCurrentUser } from "../../../../auth/session";
 import { getCallerCred } from "../../../../auth/tradeCred";
 import { getCraftMargins, getMarginHistory, requestCraftRefresh, getMaterialPrices } from "../../../../db/craftQueries";
 import { ALL_MATERIALS } from "../../../../core/craftMaterials";
+import { priceMaterials } from "../../../../core/craftLegPricing";
+import type { MaterialPrice } from "../../../../db/craftQueries";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { resolveRates } from "../../../../core/rates";
-import { RECIPES, type CraftRecipe } from "../../../../core/craftRecipes";
+import { RECIPES, recipePurpose, type CraftRecipe } from "../../../../core/craftRecipes";
 import { parseStoredReport, rowFreshness } from "../../../../core/craftReports";
 import { rankGate } from "../../../../core/craftValuation";
 import { rankCandidates } from "../../../../core/craftRank";
@@ -23,6 +25,7 @@ function recipeMeta(r: CraftRecipe) {
     key: r.key,
     label: r.label,
     domain: r.domain,
+    purpose: recipePurpose(r),
     heroIcon: r.heroIcon ?? null,
     guide: r.guide,
     baseSpec: { label: r.base.label, note: r.base.note },
@@ -44,9 +47,9 @@ function viewOf(views: ReadonlyMap<string, ProvenanceView>, key: string): Proven
 }
 
 /** Item art for every registered material — chips/checklists render the actual item icons. */
-function materialIcons(league: string): Record<string, string> {
+function materialIcons(prices: ReadonlyMap<string, MaterialPrice>): Record<string, string> {
   const icons: Record<string, string> = {};
-  for (const [id, p] of getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id))) {
+  for (const [id, p] of prices) {
     if (p.icon) icons[id] = p.icon;
   }
   return icons;
@@ -66,6 +69,7 @@ export async function GET(): Promise<Response> {
   const league = getDefaultLeague();
   const stored = new Map(getCraftMargins(league).map((r) => [r.recipe_key, r]));
   const { views, audit } = provenanceViews(RECIPES, calibrationStats(RECIPES));
+  const matPrices = getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id));
   const recipes = RECIPES.map((r) => {
     const row = stored.get(r.key);
     const report = row ? parseStoredReport(r.key, row.report_json) : null;
@@ -79,10 +83,13 @@ export async function GET(): Promise<Response> {
       lastError: row?.last_error ?? null,
       lastErrorAt: row?.last_error_at ?? null,
       evHistory: getMarginHistory(league, r.key).map((h) => h.ev_div),
+      // a craft-to-use recipe has no report, so its shopping list is priced here from the exchange
+      useMaterials: recipePurpose(r) === "use" ? priceMaterials(r, matPrices).lines : null,
     };
   });
 
-  const tiers = rankCandidates(recipes);
+  // a craft-to-use recipe is never scanned, so it has no tier: it is not "unpriced", it has no price
+  const tiers = rankCandidates(recipes.filter((r) => r.purpose === "sell"));
   const keys = (xs: ReadonlyArray<{ key: string }>): string[] => xs.map((x) => x.key);
   const resolved = resolveRates(league);
   return NextResponse.json({
@@ -93,7 +100,7 @@ export async function GET(): Promise<Response> {
     exaltPerDivine: resolved?.rates.exaltPerDivine ?? null,
     ratesSource: resolved?.source ?? null,
     ratesFetchedAt: resolved?.fetchedAt ?? null,
-    icons: materialIcons(league),
+    icons: materialIcons(matPrices),
     audit,
     recipes,
     rank: { picks: keys(tiers.picks), nearMisses: keys(tiers.nearMisses), unpriced: keys(tiers.unpriced) },

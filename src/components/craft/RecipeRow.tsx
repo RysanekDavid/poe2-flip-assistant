@@ -20,7 +20,21 @@ export function isCraftable(r: RecipeView): boolean {
   return rep?.status === "ok" && rep.evDiv >= 0 && r.gate.ok;
 }
 
+const USE_TIP =
+  "Craft to use: gear for your own character. No resale margin is computed and the scanner never prices it; the materials show today's exchange prices.";
+
+/** A craft-to-use recipe has no EV: say so in the EV column instead of a blank or a fake number. */
+function UseCell() {
+  return (
+    <div className="w-28 cursor-help text-right" title={USE_TIP}>
+      <div className="text-xs text-neutral-400">craft to use</div>
+      <div className="text-sm font-medium text-neutral-300">no margin</div>
+    </div>
+  );
+}
+
 function EvCell({ r, ex }: { r: RecipeView; ex: number | null }) {
+  if (r.purpose === "use") return <UseCell />;
   const rep = r.report;
   const ok = rep?.status === "ok";
   // a losing or unconfirmed EV stays readable but muted: it is a number to review, not an offer
@@ -35,9 +49,16 @@ function EvCell({ r, ex }: { r: RecipeView; ex: number | null }) {
 }
 
 function scanLabel(r: RecipeView): string {
+  if (r.purpose === "use") return "";
   const rep = r.report;
   if (!rep) return "not scanned yet";
   return rep.status === "ok" ? "" : rep.status.replace("-", " ");
+}
+
+function buttonTitle(r: RecipeView, craftable: boolean): string {
+  if (craftable) return "open the interactive craft guide — shopping list, step by step, result into P&L";
+  if (r.purpose === "use") return "open the step-by-step guide — craft to use, no margin";
+  return "EV is negative or not confirmed yet — open the numbers before you spend";
 }
 
 interface Props {
@@ -90,10 +111,10 @@ export function RecipeRow({ r, ex, open, onToggle, onOpen, icons, meta, interval
             e.stopPropagation();
             onOpen(); // the session lives at the top of the card
           }}
-          title={craftable ? "open the interactive craft guide — shopping list, step by step, result into P&L" : "EV is negative or not confirmed yet — open the numbers before you spend"}
+          title={buttonTitle(r, craftable)}
         >
           {craftable ? <Hammer aria-hidden className="h-4 w-4" /> : null}
-          {craftable ? "Craft" : "Review"}
+          {craftable ? "Craft" : r.purpose === "use" ? "Guide" : "Review"}
         </Button>
         {open ? <ChevronDown aria-hidden className="h-4 w-4 shrink-0 text-neutral-400" /> : <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-neutral-400" />}
       </div>

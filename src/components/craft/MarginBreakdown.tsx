@@ -11,6 +11,7 @@ import { evLabel, priceLabel, type RecipeView } from "./craftView";
 import { GateNote } from "./GateNote";
 import { basisWord, pct, recipeHitRate } from "./ProvenanceChips";
 import { SourcesList } from "./SourcesList";
+import { DurabilityNote } from "./DurabilityNote";
 import { RETURN_FLAG_MULTIPLE } from "../../core/craftValuation";
 
 /** How a leg's number was derived — a percentile of floor-passing asks or a comparable median,
@@ -127,6 +128,25 @@ function CardActions({ recipeKey }: { recipeKey: string }) {
   );
 }
 
+/** Craft-to-use: what to buy and what you end up with, unpriced on purpose — no margin is computed. */
+function UseSpecs({ r }: { r: RecipeView }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      {[
+        { title: "Base", spec: r.baseSpec },
+        { title: "Result", spec: r.resultSpec },
+      ].map(({ title, spec }) => (
+        <div key={title} className="rounded-md border border-neutral-800 bg-neutral-950/40 p-3">
+          <span className="text-xs uppercase tracking-wide text-neutral-500">
+            {title} — {spec.label}
+          </span>
+          <p className="mt-1 text-xs text-neutral-400">{spec.note}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Full EV derivation for one recipe: session, actions, itemized materials, the literal formula
  *  and both legs. Rendered inside the expanded row of the margin panel. */
 export function MarginBreakdown({ r, ex, icons, intervalMin }: { r: RecipeView; ex: number | null; icons: Record<string, string>; intervalMin: number }) {
@@ -147,8 +167,9 @@ export function MarginBreakdown({ r, ex, icons, intervalMin }: { r: RecipeView; 
 
       {/* the interactive guide IS the card content — everything else is supporting detail below */}
       <CraftSessionInline r={r} ex={ex} icons={icons} />
-      <CardActions recipeKey={r.key} />
+      {r.purpose === "sell" && <CardActions recipeKey={r.key} />}
       <MaterialsTable r={r} ex={ex} icons={icons} />
+      {r.provenance.durability && <DurabilityNote d={r.provenance.durability} />}
 
       {rep?.status === "ok" && rep.base && rep.result && (
         <p className="rounded-md bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">
@@ -169,10 +190,14 @@ export function MarginBreakdown({ r, ex, icons, intervalMin }: { r: RecipeView; 
       {rep?.nearMiss && rep.result && <NearMissLine nm={rep.nearMiss} result={rep.result} gate={r.gate} ex={ex} basis={basisWord(recipeHitRate(r))} />}
       <UnpricedBreakEven r={r} ex={ex} />
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <LegBlock title={`Base — ${r.baseSpec.label}`} leg={rep?.base ?? null} note={r.baseSpec.note} ex={ex} />
-        <LegBlock title={`Result — ${r.resultSpec.label}`} leg={rep?.result ?? null} note={r.resultSpec.note} ex={ex} />
-      </div>
+      {r.purpose === "use" ? (
+        <UseSpecs r={r} />
+      ) : (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <LegBlock title={`Base — ${r.baseSpec.label}`} leg={rep?.base ?? null} note={r.baseSpec.note} ex={ex} />
+          <LegBlock title={`Result — ${r.resultSpec.label}`} leg={rep?.result ?? null} note={r.resultSpec.note} ex={ex} />
+        </div>
+      )}
       <SourcesList p={r.provenance} />
     </div>
   );

@@ -29,7 +29,7 @@
     "test:cx": "tsx src/scripts/runWithTestEnv.ts cx && tsx src/scripts/runWithTestEnv.ts cx-shadow",
     "cx:shadow-report": "tsx src/scripts/cxShadowReport.ts",
     "test:flips": "tsx src/scripts/runWithTestEnv.ts flips",
-    "test:craft": "tsx src/scripts/testCraftRank.ts && tsx src/scripts/testCraftRetry.ts && tsx src/scripts/runWithTestEnv.ts craft && tsx src/scripts/runWithTestEnv.ts craft-valuation && tsx src/scripts/runWithTestEnv.ts craft-guides && tsx src/scripts/runWithTestEnv.ts balance && tsx src/scripts/runWithTestEnv.ts scout-demand",
+    "test:craft": "tsx src/scripts/testCraftRank.ts && tsx src/scripts/testCraftRetry.ts && tsx src/scripts/testCraftWave3.ts && tsx src/scripts/runWithTestEnv.ts craft && tsx src/scripts/runWithTestEnv.ts craft-valuation && tsx src/scripts/runWithTestEnv.ts craft-guides && tsx src/scripts/runWithTestEnv.ts balance && tsx src/scripts/runWithTestEnv.ts scout-demand",
     "test:tools": "npm run test:tools:regex && npm run test:tools:craft-moves && npm run test:tools:boss-ev && npm run test:tools:liquidate",
     "test:tools:regex": "tsx src/scripts/runWithTestEnv.ts tools-regex && tsx src/scripts/tools/testRegexNumbers.ts && tsx src/scripts/tools/testRegexEmulator.ts && tsx src/scripts/tools/testRegexPools.ts && tsx src/scripts/tools/testRegexPropertyTokens.ts && tsx src/scripts/tools/testRegexPoolCompose.ts",
     "test:tools:craft-moves": "tsx src/scripts/runWithTestEnv.ts tools-craft-moves",

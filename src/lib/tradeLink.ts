@@ -30,11 +30,13 @@ export interface TradeQuery {
   category?: string; // trade2 category, e.g. "armour.gloves" | "weapon.wand" — a whole gear slot
   maxPrice?: { amount: number; currency: "divine" | "exalted" | "chaos" }; // price ceiling
   ilvlMin?: number; // minimum item level (comparable gear of similar power)
+  ilvlMax?: number; // maximum item level (a craft base whose value depends on an ilvl cap)
   corrupted?: boolean; // restrict corrupted state; omit = either
   indexedWindow?: "1day" | "3days" | "1week"; // only listings indexed within this window (recency feed)
   pdpsMin?: number; // minimum physical DPS (weapon craft result legs) → equipment_filters.pdps.min
   esMin?: number; // minimum energy shield — selects ES-base armour (caster gear)
   evMin?: number; // minimum evasion rating — selects EV-base armour (attack gear)
+  arMin?: number; // minimum armour rating → equipment_filters.ar.min (Shield Wall shields)
   stats?: StatFilter[]; // explicit/implicit mod thresholds (AND-combined)
   account?: string; // restrict to one seller account (own-stash reads)
 }
@@ -51,7 +53,8 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
   const typeFilters: Record<string, unknown> = {};
   if (q.rarity) typeFilters.rarity = { option: q.rarity };
   if (q.category) typeFilters.category = { option: q.category };
-  if (q.ilvlMin && q.ilvlMin > 0) typeFilters.ilvl = { min: q.ilvlMin };
+  const ilvl = { ...(q.ilvlMin && q.ilvlMin > 0 ? { min: q.ilvlMin } : {}), ...(q.ilvlMax && q.ilvlMax > 0 ? { max: q.ilvlMax } : {}) };
+  if (Object.keys(ilvl).length > 0) typeFilters.ilvl = ilvl;
   if (Object.keys(typeFilters).length > 0) filters.type_filters = { filters: typeFilters };
   const miscFilters: Record<string, unknown> = {};
   if (q.corrupted != null) miscFilters.corrupted = { option: String(q.corrupted) };
@@ -63,6 +66,7 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
   if (q.pdpsMin && q.pdpsMin > 0) equipFilters.pdps = { min: q.pdpsMin };
   if (q.esMin && q.esMin > 0) equipFilters.es = { min: q.esMin };
   if (q.evMin && q.evMin > 0) equipFilters.ev = { min: q.evMin };
+  if (q.arMin && q.arMin > 0) equipFilters.ar = { min: q.arMin };
   if (Object.keys(equipFilters).length > 0) filters.equipment_filters = { filters: equipFilters };
   // trade filters: buyout-only by default (skip "negotiate"/unpriced), plus optional price ceiling.
   // PoE2 uses sale_type option "priced" — the PoE1 value "priceFixed" is rejected ("Unknown sale type").

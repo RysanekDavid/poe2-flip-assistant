@@ -19,7 +19,7 @@ import { getDefaultLeague } from "./leagueState";
 import { resolveRates } from "./rates";
 import { storedReport } from "./craftReports";
 import { BASE_PERCENTILE, computeMargin, computeNearMiss, RETURN_FLAG_MULTIPLE, rankGate } from "./craftValuation";
-import { RECIPES, type CraftRecipe, type LegReport, type RecipeMarginReport } from "./craftRecipes";
+import { RECIPES, SCANNED_RECIPES, type CraftRecipe, type LegReport, type RecipeMarginReport } from "./craftRecipes";
 import type { ExchangeRates } from "./priceEngine";
 import { priceLeg, priceMaterials, tryLeg, isFailure, type LegContext } from "./craftLegPricing";
 import { priceResultLeg } from "./craftResultValuation";
@@ -214,8 +214,8 @@ export function pickStalest(
 }
 
 function stalestRecipe(league: string): CraftRecipe | null {
-  const key = pickStalest(RECIPES.map((r) => r.key), getCraftMargins(league));
-  return RECIPES.find((r) => r.key === key) ?? null;
+  const key = pickStalest(SCANNED_RECIPES.map((r) => r.key), getCraftMargins(league));
+  return SCANNED_RECIPES.find((r) => r.key === key) ?? null;
 }
 
 /** A LegContext before the rates check: rates may be null (no source answered). */
@@ -248,7 +248,7 @@ export async function refreshAllRecipes(cred: TradeCred): Promise<PersistResult[
   const ctx = await scanContext(league, cred);
   const prices = getMaterialPrices(league, ALL_MATERIALS.map((m) => m.id));
   const reports: PersistResult[] = [];
-  for (const recipe of RECIPES) {
+  for (const recipe of SCANNED_RECIPES) {
     reports.push(persist(league, recipe, await buildReport(recipe, ctx, prices)));
   }
   return reports;
