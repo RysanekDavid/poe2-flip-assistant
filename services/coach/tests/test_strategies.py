@@ -315,7 +315,11 @@ def test_claim_note_null_is_rejected_like_zod_optional() -> None:
 
 
 def test_claim_rejects_rmt_shop_sources_like_zod() -> None:
-    for url in ("https://www.poecurrency.com/news/x", "https://iggm.com/news/y"):
+    for url in (
+        "https://www.poecurrency.com/news/x",
+        "https://iggm.com/news/y",
+        "https://www.p2pah.com/blog/path-of-exile-2/x.html",
+    ):
         with pytest.raises(ValidationError):
             Claim.model_validate({"v": "ss", "src": [url]})
     primary = "https://poe2db.tw/us/Omen_of_Light"

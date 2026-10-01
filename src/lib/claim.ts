@@ -66,6 +66,7 @@ export const RMT_DOMAINS = [
   "instant-carry.com",
   "misti.services",
   "conquestcapped.com",
+  "p2pah.com",
 ] as const;
 
 // scheme://[userinfo@]host — a plain match, so the check runs the same in every browser the Learn tab supports

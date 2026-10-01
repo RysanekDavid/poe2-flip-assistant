@@ -9,8 +9,8 @@ import type { CraftGuide } from "./craftRecipes";
  */
 
 // Shown as visible badges on the steps that lean on them.
-const PRE_05_SOURCE =
-  "The only step-by-step write-up (p2pah) is dated 2026-03-28 and names no patch; the 0.5.5 videos by SaVeQ and WesDesu cover the craft, but we have not reviewed their content.";
+const RING_UNSOURCED =
+  "No reviewed source walks this craft step by step (the 0.5.5 videos by SaVeQ and WesDesu cover it, but we have not reviewed their content), so this step rests on the cited game text and KB alone.";
 const RADIUS_FRACTURE =
   "Single secondary source (the Codex summary of Scorpius). RePoE lists 'Upgrades Radius to Large' as an ordinary spawnable prefix (JewelRadiusLargeSize), but an unfetched Reddit snippet says the radius can't be fractured; KB §6 also leaves the rare Time-Lost affix cap open. The source does not say whether the blocker was revealed; leaving it unrevealed is our choice — KB §2 confirms a desecrated mod counts, not that an unrevealed one behaves the same.";
 const COMPILATION_ONLY = "Only the community compilation gives this step (the Mobalytics snippet stops at the essence).";
@@ -22,10 +22,10 @@ const TWO_COLLARBONES = "The compilation desecrates twice; KB §5 allows ONE des
 
 export const GUIDES_5: Record<string, CraftGuide> = {
   ring_breach_mana_stacker: {
-    goal: "Breach Ring for mana stackers: fractured rarity + T1 flat mana + (4–6)% maximum mana + desecrated minion damage + two resistances. 20–40 div in; p2pah values the three core prefixes at '30+ divines to several hundred' and finished rings at 200+ div.",
+    goal: "Breach Ring for mana stackers: fractured rarity + T1 flat mana + (4–6)% maximum mana + desecrated minion damage + two resistances.",
     shopping:
-      "Rare Breach Ring, ilvl 75+ (T1 flat mana +165–179 is modifier level 75; RePoE), with a FRACTURED rarity SUFFIX (~5–10 div). The Breach Ring's '+20% to Maximum Quality' implicit is what allows 40% catalyst quality (KB §8).",
-    marketCheck: "Price finished mana-stacker Breach Rings first. Budget ~300 chaos for the T1 mana alone, plus two Catalysing slams with 40% quality each.",
+      "Rare Breach Ring, ilvl 75+ (T1 flat mana +165–179 is modifier level 75; RePoE), with a FRACTURED rarity SUFFIX. The Breach Ring's '+20% to Maximum Quality' implicit is what allows 40% catalyst quality (KB §8).",
+    marketCheck: "Price finished mana-stacker Breach Rings first. The chaos phase for T1 mana is the big variable cost (our estimate ~200 Chaos Orbs), plus two Catalysing slams with 40% quality each.",
     phases: [
       {
         title: "T1 flat mana",
@@ -35,7 +35,7 @@ export const GUIDES_5: Record<string, CraftGuide> = {
             why: "A Chaos Orb removes one random mod and adds one (KB §1); the fractured rarity can't be removed, so each chaos swaps the one open mod. Lower tiers cut the resale — don't proceed on T2.",
             mats: [MATS.annul, MATS.chaos],
             check: "Fractured rarity suffix + T1 flat mana prefix, nothing else.",
-            unverified: PRE_05_SOURCE,
+            unverified: RING_UNSOURCED,
           },
         ],
       },
@@ -55,11 +55,11 @@ export const GUIDES_5: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Omen of Sinistral Necromancy + Omen of the Liege active, slam a Preserved Collarbone, reveal at the Well of Souls.",
-            why: "Sinistral = the last prefix; the Liege 'will guarantee a random Amanamu modifier' on jewellery (item text). RePoE's Amanamu ring prefixes are minion damage, Remnant effect and Ignite magnitude. Necromancy + Liege + bone is a documented triple (KB §4); p2pah: 'In-game, this interaction yields three Amunamu options'.",
+            why: "Sinistral = the last prefix; the Liege 'will guarantee a random Amanamu modifier' on jewellery (item text). RePoE's Amanamu ring prefixes are minion damage, Remnant effect and Ignite magnitude. Necromancy + Liege + bone is a documented triple (KB §4). A player report (single-source, https://www.pathofexile.com/forum/view-thread/3956293) says influence omens on jewellery normally offer three options of that influence, unless a mod-group conflict blocks them.",
             mats: [MATS.omenSinistralNecromancy, MATS.omenTheLiege, MATS.preservedCollarbone],
             pick: ["Minions deal (15–25)% increased Damage if you've Hit Recently"],
             warning: "Not Omen of the Blackblooded: it forces a Kurgal mod, not Amanamu (item text, https://poe2db.tw/us/Omen_of_the_Blackblooded).",
-            unverified: PRE_05_SOURCE,
+            unverified: RING_UNSOURCED,
           },
           {
             do: "No minion damage among the options → Omen of Abyssal Echoes rerolls them once.",
@@ -74,9 +74,9 @@ export const GUIDES_5: Record<string, CraftGuide> = {
         steps: [
           {
             do: "Elemental catalyst (Xoph's / Tul's / Esh's) to 40% quality, then Omen of Catalysing Exaltation + a Perfect Exalted Orb. Re-catalyse to 40% and repeat for the second suffix.",
-            why: "Catalysing consumes ALL catalyst quality for a 7.5× tag weight at 40% (KB §4) — a bias, not a guarantee. Prefixes are full, so each slam lands a suffix. p2pah allows a Greater Exalt instead.",
+            why: "Catalysing consumes ALL catalyst quality for a 7.5× tag weight at 40% (KB §4) — a bias, not a guarantee. Prefixes are full, so each slam lands a suffix.",
             mats: [MATS.xophsCatalyst, MATS.omenCatalysingExaltation, MATS.perfectExalted],
-            unverified: PRE_05_SOURCE,
+            unverified: RING_UNSOURCED,
           },
           {
             do: "A bad suffix → Omen of Dextral Annulment + Orb of Annulment, then re-slam.",
