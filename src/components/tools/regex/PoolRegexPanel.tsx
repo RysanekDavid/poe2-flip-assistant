@@ -111,7 +111,7 @@ export function PoolRegexPanel(props: PoolPanelProps) {
   const data = usePoolData(props.tab);
   if (data.status === "loading") return <PanelLoading />;
   if (data.status === "error") {
-    return <EmptyState icon={<TriangleAlert className="h-5 w-5 text-bad" />} title="Mod data failed to load" sentence={`${data.message} — reload the page; if it persists the regex dataset is out of date (npm run build:regex-data).`} />;
+    return <EmptyState icon={<TriangleAlert className="h-5 w-5 text-bad" />} title="Mod data failed to load" sentence={`${data.message} — reload the page; if it keeps failing, the mod list needs an update on our side.`} />;
   }
   return <Workspace {...props} pool={data.data} />;
 }

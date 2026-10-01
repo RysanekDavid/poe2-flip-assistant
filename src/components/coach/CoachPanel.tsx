@@ -9,7 +9,8 @@ import { CoachComposer, type ComposeRequest } from "./CoachComposer";
 import { CoachEmptyState } from "./CoachEmptyState";
 import { CoachHistorySidebar } from "./CoachHistorySidebar";
 import { CoachMessage } from "./CoachMessage";
-import { coachAvailability, useCoachHealth } from "./useCoachHealth";
+import { COACH_OFFLINE_NOTICE, coachAvailability, useCoachHealth } from "./useCoachHealth";
+import { useNavMode } from "../shell/NavModeProvider";
 import { useCoachSession } from "./useCoachSession";
 
 export function CoachPanel({ active }: { active: boolean }) {
@@ -18,7 +19,8 @@ export function CoachPanel({ active }: { active: boolean }) {
   const { health, healthError } = useCoachHealth(active);
   const { compose, requestCompose, send, newChat } = useComposeRequest(session.send, session.newChat);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const availability = coachAvailability(health, healthError);
+  const operator = useNavMode().me.role === "owner";
+  const availability = coachAvailability(health, healthError, operator);
   useCoachScroll(active, scrollRef, session.messages.at(-1)?.id ?? null, session.isLoading);
 
   return (
@@ -26,6 +28,7 @@ export function CoachPanel({ active }: { active: boolean }) {
       <CoachHeader
         health={health}
         healthError={healthError}
+        operator={operator}
         onReset={newChat}
       />
 
@@ -119,9 +122,10 @@ function useCoachScroll(
   }, [active, isLoading, latestMessageId, scrollRef]);
 }
 
-function CoachHeader({ health, healthError, onReset }: {
+function CoachHeader({ health, healthError, operator, onReset }: {
   health: CoachHealth | null;
   healthError: boolean;
+  operator: boolean;
   onReset: () => void;
 }) {
   return (
@@ -139,7 +143,7 @@ function CoachHeader({ health, healthError, onReset }: {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <Health health={health} failed={healthError} />
+        <Health health={health} failed={healthError} operator={operator} />
         <button onClick={onReset} className="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-200">
           <RotateCcw className="h-3.5 w-3.5" /> new chat
         </button>
@@ -148,7 +152,15 @@ function CoachHeader({ health, healthError, onReset }: {
   );
 }
 
-function Health({ health, failed }: { health: CoachHealth | null; failed: boolean }) {
+/** Members get one plain "offline" chip for every server-side fault; the cause is only actionable for the operator. */
+function Health({ health, failed, operator }: { health: CoachHealth | null; failed: boolean; operator: boolean }) {
+  if (!operator && (failed || (health !== null && !coachAvailability(health, false, false).ready))) {
+    return <Status label="Coach offline" title={COACH_OFFLINE_NOTICE} tone="error" />;
+  }
+  return <OperatorHealth health={health} failed={failed} />;
+}
+
+function OperatorHealth({ health, failed }: { health: CoachHealth | null; failed: boolean }) {
   if (failed) {
     return <Status label="Coach unavailable" title="The local Coach service is not running." tone="error" />;
   }
