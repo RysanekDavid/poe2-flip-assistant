@@ -11,7 +11,7 @@ import { topFlips } from "../../lib/topFlips";
 import { fmtDivOrEx, fmtSmart } from "../../lib/format";
 import type { OpportunitiesResponse } from "../../lib/opportunitiesContract";
 import type { PatchesResponse } from "../../lib/patchesContract";
-import type { StrategiesResponse, StrategyView } from "../../lib/strategiesContract";
+import { viewsOfKind, type StrategiesResponse, type StrategyView } from "../../lib/strategiesContract";
 import { changeTone, fmtChange, sortStrategies } from "../farm/strategies/strategyCards";
 import { tabRouteHref } from "../shell/tabRegistry";
 
@@ -32,9 +32,12 @@ export const craftPicksSchema = z.object({
 });
 export type CraftPicks = z.infer<typeof craftPicksSchema>;
 
-/** The strategy whose drops rose most this week; a flat or falling week is not a "hot" pick. */
+/**
+ * The farm strategy whose drops rose most this week (Roll & sell and Methods share the route but
+ * are not ways to farm); a flat or falling week is not a "hot" pick.
+ */
 export function hottestStrategy(data: Pick<StrategiesResponse, "strategies">): StrategyView | null {
-  const top = sortStrategies(data.strategies, "hot")[0];
+  const top = sortStrategies(viewsOfKind(data.strategies, "farm"), "hot")[0];
   return top?.trend && changeTone(top.trend.change7d) === "up" ? top : null;
 }
 

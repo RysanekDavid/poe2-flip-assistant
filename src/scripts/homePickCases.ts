@@ -9,6 +9,7 @@ import { loadStrategies } from "../core/strategies/load";
 import type { Candidate } from "../lib/discoverContract";
 import type { OpportunitiesResponse, RisingUnique } from "../lib/opportunitiesContract";
 import type { PatchListItem } from "../lib/patchesContract";
+import { viewsOfKind } from "../lib/strategiesContract";
 
 const ok = (p: HomePick): Extract<HomePick, { kind: "ok" }> => {
   if (p.kind !== "ok") throw new Error(`expected a pick, got: ${p.text}`);
@@ -28,7 +29,7 @@ function candidate(over: Partial<Candidate>): Candidate {
 }
 
 function testStrategyPick(): void {
-  const views = buildStrategyViews(loadStrategies(), "Forbidden Rites", new Map(), Date.now());
+  const views = viewsOfKind(buildStrategyViews(loadStrategies(), "Forbidden Rites", new Map(), Date.now()), "farm");
   assert.equal(pickStrategy({ strategies: views }, () => null).kind, "empty", "no prices → no hot strategy, never a made-up one");
   const [a, b, c] = views;
   if (!a || !b || !c) throw new Error("need three curated strategies");
@@ -43,6 +44,9 @@ function testStrategyPick(): void {
   assert.equal(pick.detail, "drops +18% in price this week");
   assert.equal(pick.href, `?tab=farm&tool=strategies&strategy=${b.id}`, "opens that strategy's drawer");
   assert.equal(pick.art, `art:${b.id}`);
+  const all = buildStrategyViews(loadStrategies(), "Forbidden Rites", new Map(), Date.now());
+  assert.ok(all.some((s) => s.kind !== "farm"), "the route also carries Roll & sell and Methods");
+  assert.equal(hottestStrategy({ strategies: [...all.filter((s) => s.kind !== "farm"), ...trended] })?.kind, "farm", "only a way to farm is Home's farm pick");
   const flat = trended.map((s) => ({ ...s, trend: { change7d: 0.4, counted: 1, total: 1 } }));
   assert.equal(pickStrategy({ strategies: flat }, () => null).kind, "empty", "a flat week is not hot");
 }
