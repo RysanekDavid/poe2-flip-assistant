@@ -18,8 +18,8 @@ Next.js routes.
 
 ## 2. System setup (as root)
 ```bash
-# Node 20.18.1 or newer (NodeSource)
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+# Node 24 LTS (NodeSource). deploy.sh refuses anything older than 20.18.1.
+curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 apt-get install -y nodejs build-essential sqlite3
 
 # uv manages the locked Coach environment and installs Python 3.13 when missing.
@@ -187,12 +187,14 @@ must never be done or shown during a recorded demo.
 cd /opt/poe2flip
 git config --global --add safe.directory /opt/poe2flip
 git fetch origin master
-deploy_script=$(mktemp /root/poe2flip-deploy.XXXXXX)
-trap 'unlink "$deploy_script"' EXIT
-git show origin/master:deploy/deploy.sh > "$deploy_script"
-test -s "$deploy_script"
+# deploy.sh sources deploy-helpers.sh from its own directory, so extract both from the target ref.
+deploy_dir=$(mktemp -d /root/poe2flip-deploy.XXXXXX)
+trap 'rm -rf "$deploy_dir"' EXIT
+git show origin/master:deploy/deploy.sh > "$deploy_dir/deploy.sh"
+git show origin/master:deploy/deploy-helpers.sh > "$deploy_dir/deploy-helpers.sh"
+test -s "$deploy_dir/deploy.sh" && test -s "$deploy_dir/deploy-helpers.sh"
 expected_sha=$(git rev-parse origin/master)
-bash "$deploy_script" origin/master
+bash "$deploy_dir/deploy.sh" origin/master
 # Only move the server checkout after the release passed all health checks.
 git merge --ff-only origin/master
 ```
@@ -232,6 +234,37 @@ unit exposes only its twelve-character build identifier in authenticated `/api/h
 deploy smoke test requires it to equal `${expected_sha:0:12}` before succeeding. Because the file
 lives inside the versioned release, an automatic or manual symlink rollback restores the matching
 identifier as well.
+
+### Upgrading Node on an existing server
+
+better-sqlite3 is a native module compiled for one Node ABI, so every release must be rebuilt
+after a Node major upgrade. Do both steps back to back: a service that restarts in between (crash,
+reboot, the nightly backup timer) would load the old release's module under the new Node and fail.
+
+```bash
+# As root.
+node --version                                   # note the current major (20)
+curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+apt-get install -y nodejs
+node --version                                   # must print v24.x
+```
+
+Then immediately run the manual deploy from [Updating later](#updating-later) (`deploy.sh` from
+`origin/master`). It runs `npm ci` in a fresh release directory, which rebuilds the native modules
+for Node 24, and the CI deploy does the same on the next merge. The Coach is Python and unaffected.
+
+If that deploy fails, `current` still points at (or the automatic rollback restores) the previous
+release, which was built under Node 20. Its web and poller will not start under Node 24, so expect
+the rollback to report failed services. Recover by reinstalling Node 20 and restarting the Node
+services (the backup and maintenance timers pick up the restored Node on their next run):
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get remove -y nodejs && apt-get install -y nodejs   # apt will not downgrade in place
+node --version                                          # must print v20.x
+systemctl restart poe2flip-web poe2flip-poller
+systemctl status poe2flip-web poe2flip-poller poe2flip-coach
+```
 
 ## Automated deploy (GitHub Actions)
 

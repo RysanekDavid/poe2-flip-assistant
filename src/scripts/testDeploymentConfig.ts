@@ -120,7 +120,11 @@ assert.match(deployReadme, /deployment preflight rejects a blank\s+contact/);
 assertAppOriginShapeGate();
 assert.equal(packageConfig.engines?.node, ">=20.18.1");
 assert.match(rootReadme, /Node\.js 20\.18\.1\+/);
-assert.match(deployReadme, /Node 20\.18\.1 or newer/);
+assert.match(deployReadme, /# Node 24 LTS \(NodeSource\)\. deploy\.sh refuses anything older than 20\.18\.1\./);
+assert.match(deployReadme, /deb\.nodesource\.com\/setup_24\.x/);
+// The Node-upgrade rollback recovery must name the real Node units (Coach is Python).
+assert.match(deployReadme, /setup_20\.x[\s\S]*systemctl restart poe2flip-web poe2flip-poller/);
+assert.match(deployReadme, /git show origin\/master:deploy\/deploy-helpers\.sh/);
 assert.doesNotMatch(
   coachEnv,
   /^(?:CHAT_MODEL|COACH_MODEL_TIMEOUT_SECONDS|COACH_TOTAL_TIMEOUT_SECONDS|COACH_MAX_TOOL_ROUNDS)=/m,
@@ -158,6 +162,7 @@ assert.notEqual(runTimeoutValidator(`${validRuntime}\nCHAT_MODEL=gpt-5.4`), 0);
 assert.notEqual(runTimeoutValidator(validRuntime.replace("gpt-5.4-mini", "gpt-5.4")), 0);
 assert.equal(runNodeValidator("v20.18.1"), 0);
 assert.equal(runNodeValidator("v22.0.0"), 0);
+assert.equal(runNodeValidator("v24.0.0"), 0);
 assert.notEqual(runNodeValidator("v20.18.0"), 0);
 assert.notEqual(runNodeValidator("v18.20.8"), 0);
 
