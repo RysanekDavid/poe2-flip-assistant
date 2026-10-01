@@ -78,7 +78,7 @@ export function subsystemSpecs(cfg: SubsystemConfig = config): Record<SubsystemN
     "league-watch": { label: "League watcher", hint: "poe.ninja proposes, poe2scout confirms a new challenge league.", perLeague: false, expectedSec: LEAGUE_WATCH_SEC, enabled: true },
     "scan-drain": { label: "Manual scan queue", hint: "Runs auto-snipe scans the web queued, on the poller's trade2 limiter.", perLeague: false, expectedSec: SCAN_DRAIN_SEC, enabled: true },
     "snipe-outcomes": { label: "Snipe outcomes", hint: `Re-checks alerted snipe listings ~2 h and ~24 h later (gone vs still listed) under the owner's POESESSID; ≤${cfg.snipeOutcomes.maxFetchesPerRun} fetches + ≤${cfg.snipeOutcomes.maxSearchesPerRun} re-searches per run. Red while every fetched listing reads gone and the fetch method is still unverified.`, perLeague: false, expectedSec: SNIPE_OUTCOMES_SEC, enabled: outcomes },
-    reprice: { label: "Reprice checks", hint: "Wealth › Sell: trade2 comparables for a user's own stale listings (on demand, ≤8 searches per user per 6h).", perLeague: false, expectedSec: null, enabled: true },
+    reprice: { label: "Reprice checks", hint: "Stash › Sell: trade2 comparables for a user's own stale listings (on demand, ≤8 searches per user per 6h).", perLeague: false, expectedSec: null, enabled: true },
   };
 }
 

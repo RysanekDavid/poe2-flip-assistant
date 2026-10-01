@@ -37,7 +37,7 @@ function discordPart(view: NotifySettings): string {
 }
 
 /**
- * How alerts leave the feed, in one line. The Alerts tab's Delivery disclosure and the Settings
+ * How alerts leave the feed, in one line. The Alerts page's Delivery disclosure and the Settings
  * link card both show it, so the two can never disagree about the same data.
  */
 export function deliverySummary(perm: PopupPermission, view: NotifySettings): DeliverySummary {

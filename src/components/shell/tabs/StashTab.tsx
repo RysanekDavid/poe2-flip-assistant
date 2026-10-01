@@ -5,6 +5,7 @@ import { SellPanel } from "../../wealth/SellPanel";
 import { useReadStash, type ReadMessage } from "../../wealth/useReadStash";
 import { Button } from "../../ui/Button";
 import { PageHeader } from "../../ui/PageHeader";
+import { TAB_ICONS } from "../tabIcons";
 import { useTabRoute } from "../useTabRoute";
 
 const HEADER = {
@@ -18,8 +19,8 @@ const LEGEND =
 
 const TONE: Record<ReadMessage["tone"], string> = { ok: "text-neutral-400", warn: "text-amber-300", bad: "text-bad" };
 
-/** Wealth: net worth (tool=worth) and the Sell column (tool=sell), both fed by one Read stash. */
-export function WealthTab() {
+/** Stash (Wealth until 2026-10-01): net worth (tool=worth) and the Sell column (tool=sell), both fed by one Read stash. */
+export function StashTab() {
   const { tool } = useTabRoute();
   const stash = useReadStash();
   const sell = tool === "sell";
@@ -30,6 +31,7 @@ export function WealthTab() {
         title={title}
         purpose={purpose}
         legend={LEGEND}
+        art={TAB_ICONS.stash.src}
         action={
           <Button variant="primary" onClick={stash.read} disabled={stash.busy} title="1 trade search + up to 10 fetches">
             {stash.busy ? "Reading…" : "Read stash"}

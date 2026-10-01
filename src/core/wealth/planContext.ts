@@ -8,7 +8,7 @@ import type { ExchangeRates } from "../priceEngine";
 import type { PlanContext, ScoutListing } from "./plan";
 
 /**
- * The planner's inputs, read one way for every caller (Wealth › Sell and Trade › Price check), so
+ * The planner's inputs, read one way for every caller (Stash › Sell and Trade › Price check), so
  * the same item can never be planned against different markets by the two panels.
  */
 

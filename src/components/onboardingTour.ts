@@ -24,15 +24,22 @@ export const TOUR_STEPS: readonly TourStep[] = [
     element: '[data-tour="tabs"]',
     title: "Where things are",
     description:
-      "Flips = Currency Exchange flips at Ange. Trade = prices, price check and what to buy on the trade site now. Farm = what to run. Craft, Wealth and Regex are your tools. Every tab has its own link — bookmark or share it.",
+      "Grouped by what you want to do: earn (Farm, Flips at Ange's Currency Exchange, Craft), prices and your items (Trade, Stash), tools and knowledge (Regex, Learn). Every tab has its own link — bookmark or share it.",
     beginnerDescription:
-      "Learn = what an item is and your atlas route. Farm = what to run at your budget. Trade = what a drop is worth. More tools unlock under Settings › Mode.",
+      "Farm = what to run at your budget. Trade = what a drop is worth. Learn = what an item is and your atlas route. More tools, at the end of the bar, opens the trading tools.",
+  },
+  {
+    tab: "home",
+    element: '[data-tour="home"]',
+    title: "Start here",
+    description: "Pick what you want to do today. Each card shows today's top pick from live prices and opens the page that does the job.",
   },
   {
     tab: "learn",
     element: '[data-tour="learn"]',
-    title: "Start here",
-    description: "Type any item to see what it does, what it is worth right now and where to sell it. The currency primer and atlas checklist sit next to it.",
+    title: "What is this?",
+    description:
+      "Type any item to see what it does, what it is worth right now and where to sell it. The currency primer, atlas checklist and patch notes sit next to it.",
   },
   {
     tab: "farm",
@@ -41,18 +48,18 @@ export const TOUR_STEPS: readonly TourStep[] = [
     description: "Each mechanic shows how the prices of its drops moved this week. Click one to see only its strategies; open a card for the full setup.",
   },
   {
-    tab: "flips",
+    tab: null,
     element: '[data-tour="alerts"]',
     title: "Live alerts",
     description:
-      "Fires when a snipe, craft margin, watched spread or price spike clears its threshold. Sound, desktop popups and Discord are set in Alerts or Settings → Notifications.",
+      "The bell counts alerts you can act on: a snipe, a craft that starts paying, a watched spread. Its 'All alerts & delivery' link sets sound, desktop popups and Discord.",
   },
   {
     tab: null,
     element: '[data-tour="account"]',
     title: "Your account",
     description:
-      "Market data is shared by everyone here, but your Wealth and Flip log are private to you. Reopen this guide anytime via 'Guide'.",
+      "Market data is shared by everyone here, but your Stash and Flip log are private to you. The gear opens Settings; reopen this guide anytime via 'Guide'.",
   },
 ];
 

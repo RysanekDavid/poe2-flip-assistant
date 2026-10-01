@@ -60,7 +60,7 @@
     "test:craft-provenance": "tsx src/scripts/runWithTestEnv.ts craft-provenance",
     "test:strategies": "tsx src/scripts/runWithTestEnv.ts strategies",
     "strategies:check": "tsx src/scripts/checkStrategyStats.ts",
-    "test:learn": "tsx src/scripts/runWithTestEnv.ts learn",
+    "test:learn": "tsx src/scripts/runWithTestEnv.ts learn && tsx src/scripts/runWithTestEnv.ts nav-ia",
     "db:migrate": "tsx src/db/migrate.ts",
     "seed:alerts-demo": "tsx src/scripts/seedAlertsDemo.ts",
     "lint": "tsx src/scripts/lintPolicy.ts",

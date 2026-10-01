@@ -188,8 +188,8 @@ async function main(): Promise<void> {
   testSoldSince();
   testSessionDelta();
   await runWealthDbTests();
-  assertPanelExport("src/components/wealth/SellPanel.tsx", "SellPanel", "src/components/shell/tabs/WealthTab.tsx");
-  assertPanelExport("src/components/wealth/BalancePanel.tsx", "BalancePanel", "src/components/shell/tabs/WealthTab.tsx");
+  assertPanelExport("src/components/wealth/SellPanel.tsx", "SellPanel", "src/components/shell/tabs/StashTab.tsx");
+  assertPanelExport("src/components/wealth/BalancePanel.tsx", "BalancePanel", "src/components/shell/tabs/StashTab.tsx");
   console.log(
     "ALL PASS — cx + trade quotes, stash plan (comps > scout, unpriced null), sellVerdict fixtures, sold-since (relist, truncation), " +
       "session delta, balance_items + migrations, comps retention, reprice queue/cooldown/budget, cred state, sell contract, panel wiring",

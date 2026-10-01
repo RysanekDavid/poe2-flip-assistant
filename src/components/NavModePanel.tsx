@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import { describeError } from "../lib/clientWarn";
-import { BEGINNER_TABS, NAV_MODE_LABEL } from "../lib/navMode";
-import { TABS } from "./shell/tabRegistry";
+import { BEGINNER_TABS, NAV_MODE_LABEL, moreTabs } from "../lib/navMode";
+import { tabMeta } from "./shell/tabRegistry";
 import { useNavMode } from "./shell/NavModeProvider";
 import { Panel } from "./ui/Panel";
 import { Toggle } from "./ui/Toggle";
 import { InfoTip } from "./ui/Tooltip";
 
-const ADVANCED_ONLY = TABS.filter((t) => t.id !== "coach" && !BEGINNER_TABS.includes(t.id)).map((t) => t.label);
+const BEGINNER_LABELS = BEGINNER_TABS.map((id) => tabMeta(id).label);
+const ADVANCED_ONLY = moreTabs("beginner").map((t) => t.label);
 
 const TIP = (
   <>
-    Beginner: Learn, Farm (strategies and bosses), Price check, Alerts. Advanced adds {ADVANCED_ONLY.join(", ")}, Trade › Opportunities and the
-    POESESSID trade connection. Coach is in both.
+    Beginner: {BEGINNER_LABELS.join(", ")} (Trade without Opportunities), with Alerts and Settings in the header. Advanced adds{" "}
+    {ADVANCED_ONLY.join(", ")}, Trade › Opportunities and the POESESSID trade connection; in Beginner they stay one click away under
+    More tools. Coach is in both.
   </>
 );
 

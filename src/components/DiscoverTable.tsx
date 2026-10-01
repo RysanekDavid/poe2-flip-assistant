@@ -10,6 +10,7 @@ import { EmptyState } from "./ui/EmptyState";
 import { edgeSortTier, MarketSourceBadge } from "./FlipEdge";
 import { discoverColumns } from "./DiscoverColumns";
 import { CxRoutesStrip } from "./CxRoutesStrip";
+import { TopFlipCards } from "./flip/TopFlipCards";
 import type { Candidate, FlipSelection } from "./flip/flipTypes";
 
 type CxSummary = NonNullable<DiscoverResponse["cx"]>;
@@ -41,6 +42,8 @@ function send(method: "POST" | "DELETE", body: unknown): Promise<unknown> {
 /** /api/discover (whole market, or a server-side name search) + the ids you watch in this league. */
 function useDiscover(query: string) {
   const [data, setData] = useState<DiscoverResponse>(NO_DATA);
+  // the empty NO_DATA placeholder must not read as "no flip qualifies" before the first answer
+  const [loaded, setLoaded] = useState(false);
   const [watched, setWatched] = useState<Set<string>>(new Set());
   const [err, setErr] = useState<string | null>(null);
   const loadWatched = useCallback(
@@ -58,6 +61,7 @@ function useDiscover(query: string) {
       .then(async (r) => DiscoverResponseSchema.parse(await json(r, "discover")))
       .then((d) => {
         setData(d);
+        setLoaded(true);
         setErr(null);
       })
       .catch((e: unknown) => setErr(String(e)));
@@ -75,7 +79,7 @@ function useDiscover(query: string) {
   }, [load, loadWatched, query]);
   const mutate = (p: Promise<unknown>) =>
     p.then(() => window.dispatchEvent(new Event("watchlist-changed"))).catch((e: unknown) => setErr(String(e)));
-  return { data, watched, err, setErr, mutate };
+  return { data, loaded, watched, err, mutate };
 }
 
 function ageText(fetchedAt: string | null | undefined, now: number): string | null {
@@ -108,29 +112,35 @@ interface Props {
   onSelect: (s: FlipSelection) => void;
 }
 
-/** Market-wide Top Flips: every liquid item scored, the plan opens on row click. */
+function useNow(): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
+
+/** Market-wide Top Flips: the best three as cards, then every liquid item scored; the plan opens on click. */
 export function DiscoverTable({ selectedId, onSelect }: Props) {
   const [query, setQuery] = useState("");
   const [hideFalling, setHideFalling] = useState(false);
   const [topOnly, setTopOnly] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
+  const now = useNow();
   const { sort, onSort } = useSort();
-  const { data, watched, err, setErr, mutate } = useDiscover(query);
+  const { data, loaded, watched, err, mutate } = useDiscover(query);
   // a route chip whose item is not in the list is information, not an error
   const [routeNote, setRouteNote] = useState<string | null>(null);
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 15_000);
-    return () => clearInterval(t);
-  }, []);
   const rows = useMemo(() => data.candidates, [data]);
   const shown = rows
     .filter((r) => (!hideFalling || r.risk !== "DECLINE") && (!topOnly || r.worthScore >= TOP_SCORE))
     .sort((a, b) => cmp(a, b, sort.key, sort.dir));
   const visible = showAll || query.trim() !== "" ? shown : shown.slice(0, PAGE);
+  const gate = data.cx?.rankGate ?? null;
   const columns = discoverColumns({
     watched,
-    gate: data.cx?.rankGate ?? null,
+    gate,
     maxVol: shown.reduce((m, r) => Math.max(m, r.volume), 0),
     onWatch: (r) => mutate(send("POST", { itemId: r.itemId, itemName: r.item, category: r.category })),
     onUnwatch: (r) => mutate(send("DELETE", { itemId: r.itemId })),
@@ -143,30 +153,33 @@ export function DiscoverTable({ selectedId, onSelect }: Props) {
   };
 
   return (
-    <section className="rounded-lg border border-line bg-neutral-900/50 p-4">
-      <TopFlipsHeader rows={rows} cx={data.cx ?? null} age={ageText(data.fetchedAt, now)} query={query} setQuery={setQuery}>
-        <FilterCheck label="top flips only" checked={topOnly} onChange={setTopOnly} title={`score ≥ ${TOP_SCORE}`} />
-        <FilterCheck label="hide falling" checked={hideFalling} onChange={setHideFalling} />
-        <SeedButton onSeeded={() => window.dispatchEvent(new Event("watchlist-changed"))} onError={setErr} />
-      </TopFlipsHeader>
-      <CxRoutesStrip onSelect={selectRoute} />
-      {routeNote && <p role="status" className="mb-2 text-sm text-neutral-400">{routeNote}</p>}
-      {err && <p role="alert" className="mb-2 text-sm text-bad">{err}</p>}
-      <DataTable
-        columns={columns}
-        rows={visible}
-        rowKey={(r) => r.itemId}
-        onRowClick={select}
-        selectedKey={selectedId}
-        sort={{ key: sort.key, dir: sort.dir, onSort }}
-        emptyState={<EmptyState icon={<SearchX className="h-5 w-5" />} sentence={query ? `No flip matches "${query}".` : "No flip candidates yet — prices appear after the next market poll."} />}
-      />
-      {visible.length < shown.length && (
-        <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowAll(true)}>
-          show all {shown.length}
-        </Button>
-      )}
-    </section>
+    <>
+      {/* a search narrows the data to its matches, so the market's top three show only unfiltered */}
+      {loaded && query.trim() === "" && <TopFlipCards rows={rows} gate={gate} selectedId={selectedId} onPlan={select} />}
+      <section className="rounded-lg border border-line bg-neutral-900/50 p-4">
+        <TopFlipsHeader rows={rows} cx={data.cx ?? null} age={ageText(data.fetchedAt, now)} query={query} setQuery={setQuery}>
+          <FilterCheck label="Top flips only" checked={topOnly} onChange={setTopOnly} title={`score ≥ ${TOP_SCORE}`} />
+          <FilterCheck label="Hide falling" checked={hideFalling} onChange={setHideFalling} />
+        </TopFlipsHeader>
+        <CxRoutesStrip onSelect={selectRoute} />
+        {routeNote && <p role="status" className="mb-2 text-sm text-neutral-400">{routeNote}</p>}
+        {err && <p role="alert" className="mb-2 text-sm text-bad">{err}</p>}
+        <DataTable
+          columns={columns}
+          rows={visible}
+          rowKey={(r) => r.itemId}
+          onRowClick={select}
+          selectedKey={selectedId}
+          sort={{ key: sort.key, dir: sort.dir, onSort }}
+          emptyState={<EmptyState icon={<SearchX className="h-5 w-5" />} sentence={query ? `No flip matches "${query}".` : "No flip candidates yet — prices appear after the next market poll."} />}
+        />
+        {visible.length < shown.length && (
+          <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowAll(true)}>
+            Show all {shown.length}
+          </Button>
+        )}
+      </section>
+    </>
   );
 }
 
@@ -199,22 +212,5 @@ function TopFlipsHeader(props: {
       />
       {props.children}
     </header>
-  );
-}
-
-function SeedButton({ onSeeded, onError }: { onSeeded: () => void; onError: (e: string) => void }) {
-  const [seeding, setSeeding] = useState(false);
-  const seed = () => {
-    setSeeding(true);
-    fetch("/api/discover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ perCategory: 2 }) })
-      .then((r) => json(r, "watch top 2 per category"))
-      .then(onSeeded)
-      .catch((e: unknown) => onError(String(e)))
-      .finally(() => setSeeding(false));
-  };
-  return (
-    <Button size="sm" onClick={seed} disabled={seeding} title="add the two best-scoring items of every category to your watchlist">
-      {seeding ? "adding…" : "watch top 2 / category"}
-    </Button>
   );
 }

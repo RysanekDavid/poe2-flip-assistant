@@ -132,7 +132,7 @@ function LiveBoardControls({ view, busy, run }: { view: NotifySettings; busy: bo
 }
 
 /**
- * Alerts tab → routing + Discord. The per-type matrix decides ticker / sound / desktop popup /
+ * Alerts page → routing + Discord. The per-type matrix decides ticker / sound / desktop popup /
  * Discord; Discord is the channel that reaches a player whose game is fullscreen (browser popups
  * don't). The webhook is stored encrypted and only ever shown masked; alerts are batched (≤1
  * message per 30 s, up to 10 alerts each). `popupBlocked` dims the popup column with its reason.

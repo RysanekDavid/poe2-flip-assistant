@@ -112,7 +112,7 @@ function farmFields(s: BoardSection<BoardFarm>): DiscordEmbedField[] {
 function worthField(s: BoardSection<BoardWorth | null>, league: string): DiscordEmbedField {
   if (!s.ok) return { name: "Net worth", value: UNAVAILABLE };
   const w = s.value;
-  if (w == null) return { name: "Net worth", value: "no snapshot yet — record one in the Wealth tab" };
+  if (w == null) return { name: "Net worth", value: "no snapshot yet — record one in Stash › Net worth" };
   const other = w.league !== league ? ` · ${plain(w.league, 60)}` : "";
   return {
     name: "Net worth",

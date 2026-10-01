@@ -321,6 +321,10 @@ assert.equal(empty.pricesFetchedAt, null);
 assert.ok(viewsOfKind(empty.strategies, "farm").every((s) => s.yields.every((y) => y.price === null) && s.trend === null), "no data → every yield unpriced, no trend");
 assert.ok(viewsOfKind(empty.strategies, "trade").every((s) => s.price_refs.every((c) => c.ev.status === "unpriced")), "no data → no EV anywhere");
 const route = readFileSync("src/app/api/farm/strategies/route.ts", "utf8");
-assert.match(route, /getCurrentUser\(\)[\s\S]*status: 401[\s\S]*loadStrategyBoard\(leagueForUser\(user\.id\)/, "auth, then the viewer's league");
-assert.match(route, /strategiesResponseSchema\.parse\(body\)/, "validated on the way out");
+assert.match(
+  route,
+  /getCurrentUser\(\)[\s\S]*status: 401[\s\S]*const league = leagueForUser\(user\.id\)[\s\S]*BOARD_CACHE\.get\(league,[\s\S]*loadStrategyBoard\(league,/,
+  "auth, then the viewer's league (the 90 s board cache is keyed by it)",
+);
+assert.match(route, /strategiesResponseSchema\.parse\(loadStrategyBoard\(/, "validated on the way out (before it is cached)");
 console.log("PASS  route body: seeded prices + rates, empty league unpriced, auth → viewer league → validated");

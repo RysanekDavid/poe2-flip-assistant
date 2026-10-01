@@ -11,7 +11,7 @@ export function sendTestPing(url: string, transport: DiscordTransport = axiosTra
     embedMessage("Test notification from PoE2 Coach", [
       {
         title: "Webhook connected",
-        description: "Alert types switched on for Discord in the Alerts tab will arrive here.",
+        description: "Alert types switched on for Discord on the Alerts page will arrive here.",
         color: 0x22c55e,
         fields: [],
       },

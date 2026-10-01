@@ -33,7 +33,7 @@ function scheduleTones(ctx: AudioContext): void {
 }
 
 function soundBlocked(ctx: AudioContext, why: unknown): void {
-  // A suspended context plays nothing and says nothing — name it, and let the Alerts tab show the fix.
+  // A suspended context plays nothing and says nothing — name it, and let the Alerts page show the fix.
   console.warn("[alerts] chime blocked: the browser keeps audio suspended until the page is clicked", why);
   window.dispatchEvent(new Event(SOUND_BLOCKED_EVENT));
   closeLater(ctx, 0);
@@ -88,7 +88,7 @@ export interface BrowserChannels {
 
 function popup(a: Alert): void {
   new Notification(`PoE2 Coach — ${alertTypeLabel(a.type)}`, {
-    body: `${a.item_name ?? a.item_id}: ${a.message}${a.whisper ? "\n↳ whisper + trade link in the Alerts tab" : ""}`,
+    body: `${a.item_name ?? a.item_id}: ${a.message}${a.whisper ? "\n↳ whisper + trade link on the Alerts page" : ""}`,
     tag: String(a.id),
   });
 }

@@ -6,6 +6,7 @@ import { useAlertCenter } from "./AlertsContext";
 import { AlertActions, LeagueTag, typeTone } from "./AlertBits";
 import { AlertArt, TypeChip, TypeGlyph } from "./AlertTypeBadge";
 import { SnipeCardView, ageLabel } from "./SnipeCardView";
+import { NoAlerts } from "./NoAlerts";
 import { collapseRuns, type Alert, type AlertGroup, type AlertRun } from "../../lib/alertCenter";
 import { alertTypeLabel } from "../../lib/alertLabels";
 import { useSnipeOutcomes } from "../../lib/useSnipeOutcomes";
@@ -74,7 +75,7 @@ function CompactRow({ run }: { run: AlertRun }) {
 
 function FeedList({ alerts, hidden, outcomes }: { alerts: Alert[]; hidden: number; outcomes: SnipeOutcomesResponse | null }) {
   if (alerts.length === 0) {
-    return <p className="py-10 text-center text-sm text-neutral-500">no alerts here yet</p>;
+    return <NoAlerts />;
   }
   return (
     <ul className="space-y-2">
@@ -119,7 +120,7 @@ function MarkSeenButton({ filter, unseen, onClick }: { filter: Filter; unseen: n
   );
 }
 
-/** Alerts tab, main column: the whole feed, filterable by type; snipes render as item cards. */
+/** Alerts page, main column: the whole feed, filterable by type; snipes render as item cards. */
 export function AlertsFeed() {
   const { groups, unseen, error, markSeen } = useAlertCenter();
   const { data: outcomes, error: outcomesError } = useSnipeOutcomes();

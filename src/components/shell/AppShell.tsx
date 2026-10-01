@@ -17,40 +17,42 @@ import { FlipsTab } from "./tabs/FlipsTab";
 import { TradeTab } from "./tabs/TradeTab";
 import { FarmTab } from "./tabs/FarmTab";
 import { CraftTab } from "./tabs/CraftTab";
-import { WealthTab } from "./tabs/WealthTab";
+import { StashTab } from "./tabs/StashTab";
 import { RegexTab } from "./tabs/RegexTab";
-import { PatchesTab } from "./tabs/PatchesTab";
+import { HomeTab } from "./tabs/HomeTab";
 import { LearnTab } from "./tabs/LearnTab";
+import { AdvancedBanner } from "./AdvancedBanner";
+import { canonicalSearch } from "./canonicalUrl";
 import { SettingsTab } from "./tabs/SettingsTab";
 
 /**
- * A mistyped, outdated or mode-hidden link must not silently show another page: warn, then replace
- * (not push) with the canonical URL so Back skips the broken entry. The page itself already renders
- * the fallback route (useTabRoute resolves it), so there is no blank frame while the URL catches up.
+ * A mistyped or outdated link must not silently show another page: warn, then replace (not push)
+ * with the canonical URL so Back skips the broken entry. The page itself already renders the
+ * fallback route (useTabRoute resolves it), so there is no blank frame while the URL catches up.
+ * A page outside the user's nav mode is not rewritten: it renders under AdvancedBanner instead.
  * Lives here only — one shell, one rewrite.
  */
-function useCanonicalRoute(route: TabRoute, rejected: readonly string[], hidden: readonly string[], renamed: readonly string[]): void {
+function useCanonicalRoute(route: TabRoute, rejected: readonly string[], renamed: readonly string[]): void {
   const router = useRouter();
   const pathname = usePathname();
-  const { mode } = useNavMode();
   const unknown = rejected.join(", ");
-  const hiddenText = hidden.join(", ");
   // an old link to a renamed tab or tool is expected, not an error: rewrite it without a warning
   const renamedText = renamed.join(", ");
+  const { tab, tool } = route;
   const href = tabRouteHref(route);
   useEffect(() => {
-    if (unknown === "" && hiddenText === "" && renamedText === "") return;
+    if (unknown === "" && renamedText === "") return;
     if (unknown !== "") console.warn(`[tabs] ignoring unknown ${unknown} — showing ${href}`);
-    if (hiddenText !== "") {
-      console.warn(`[tabs] ${hiddenText} is hidden in ${mode} mode (Settings › Mode) — showing ${href}`);
-    }
-    router.replace(`${pathname}${href}`, { scroll: false });
-  }, [unknown, hiddenText, renamedText, mode, href, pathname, router]);
+    // read live: the other params (open strategy, filter, shared item) ride along unchanged
+    router.replace(`${pathname}${canonicalSearch(window.location.search, { tab, tool })}`, { scroll: false });
+  }, [unknown, renamedText, href, tab, tool, pathname, router]);
 }
 
 /** Coach is kept mounted (below) so an open conversation survives tab switches. */
 function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
   switch (tab) {
+    case "home":
+      return <HomeTab />;
     case "flips":
       return <FlipsTab />;
     case "trade":
@@ -59,12 +61,10 @@ function ActiveTab({ tab }: { tab: Exclude<TabId, "coach"> }) {
       return <FarmTab />;
     case "craft":
       return <CraftTab />;
-    case "wealth":
-      return <WealthTab />;
+    case "stash":
+      return <StashTab />;
     case "regex":
       return <RegexTab />;
-    case "patches":
-      return <PatchesTab />;
     case "learn":
       return <LearnTab />;
     case "alerts":
@@ -98,10 +98,10 @@ export function AppShell() {
 function ShellBody() {
   const { tab, tool, rejected, hidden, renamed } = useTabRoute();
   const { mode } = useNavMode();
-  useCanonicalRoute({ tab, tool }, rejected, hidden, renamed);
+  useCanonicalRoute({ tab, tool }, rejected, renamed);
 
   return (
-    // one alert poll for the TopBar badge, its popover, the Alerts tab and the Flips ticker
+    // one alert poll for the TopBar badge, its popover, the Alerts page and the Flips ticker
     <AlertsProvider>
       <main className="mx-auto w-full max-w-screen-2xl flex-1 space-y-4 p-6">
         {/* stale-league warning — every price below is wrong if this fires */}
@@ -109,6 +109,7 @@ function ShellBody() {
         {/* POESESSID health: beginner mode hides the trade connection it would send them to */}
         {mode === "advanced" && <CredBanner />}
         <ShellHeader />
+        <AdvancedBanner tab={tab} tool={tool} hidden={hidden} />
         {tab !== "coach" && (
           <ToolPanel>
             <ActiveTab tab={tab} />

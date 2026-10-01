@@ -19,7 +19,7 @@ function readSummary(d: ReadResponse): ReadMessage {
 }
 
 /**
- * The Wealth tab's one trade-spending action (1 search + up to 10 fetches). Both tools read from
+ * The Stash tab's one trade-spending action (1 search + up to 10 fetches). Both tools read from
  * the snapshot it stores, so `version` bumps on success and each panel reloads on it.
  */
 export function useReadStash(): { busy: boolean; msg: ReadMessage | null; version: number; read: () => void } {

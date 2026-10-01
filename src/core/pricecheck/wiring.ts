@@ -14,7 +14,7 @@ import type { LiveServices, MarketAges, PriceCheckServices } from "./services";
 
 /**
  * The production services: the caller's league, read from the DB with the same PlanContext builder
- * Wealth › Sell uses, plus the two trade2 calls the live route alone may spend.
+ * Stash › Sell uses, plus the two trade2 calls the live route alone may spend.
  */
 
 const minutes = (ms: number): number => Math.max(0, Math.round(ms / 60_000));

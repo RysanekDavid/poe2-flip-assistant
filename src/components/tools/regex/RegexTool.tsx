@@ -10,6 +10,7 @@ import { readShare } from "../../../lib/tools/regexShareUrl";
 import { PageHeader } from "../../ui/PageHeader";
 import { useTabRoute } from "../../shell/useTabRoute";
 import { tabRouteHref } from "../../shell/tabRegistry";
+import { TAB_ICONS } from "../../shell/tabIcons";
 import { PoolRegexPanel, type PoolUpdater } from "./PoolRegexPanel";
 import { DEFAULT_PRICE_PARAMS, PriceRegexPanel } from "./PriceRegexPanel";
 import { emptyVendorSelection } from "./selectionOps";
@@ -146,7 +147,11 @@ export function RegexTool() {
   const [banner, dismiss] = useShareLink(tool, onSelection);
   return (
     <section className="flex flex-col gap-4">
-      <PageHeader title="Regex" purpose="Build stash-search strings (Ctrl+F in game) that light up the waystones, tablets, relics, jewels or gear you want." />
+      <PageHeader
+        title="Regex"
+        purpose="Build a Ctrl+F stash search that lights up the waystones, tablets or gear you want."
+        art={TAB_ICONS.regex.src}
+      />
       {banner && <ShareBanner message={banner} onDismiss={dismiss} />}
       <ActivePanel tab={tab} state={state} onSelection={onSelection} onUpdatePool={onUpdatePool} onPrice={onPrice} maxChars={maxChars} onMaxChars={setMaxChars} />
     </section>

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /*
- * Wealth › Sell contract, shared by the routes, the pure planner (core/wealth) and the panel, so a
+ * Stash › Sell contract, shared by the routes, the pure planner (core/wealth) and the panel, so a
  * server-side shape change fails the client parse loudly instead of rendering blanks. Every Div
  * figure is PER UNIT unless its name says total. Unpriced is null — never 0.
  */

@@ -83,7 +83,7 @@ export function PositionsPanel() {
       <EmptyState
         icon={<Briefcase className="h-5 w-5" />}
         title="Open Positions"
-        sentence={error ? `could not load positions — ${error}` : "none open — in a Flip Plan, hit “buy → open position” after placing a buy order; mark-to-market shows here until you sell"}
+        sentence={error ? `Could not load positions — ${error}` : "No position is open — after placing a buy order, hit “open position” in its flip plan to track it here until you sell."}
       />
     );
   }

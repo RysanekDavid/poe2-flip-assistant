@@ -6,6 +6,7 @@ import { opportunitiesResponseSchema, type Budget, type OpportunitiesResponse } 
 import { useVisiblePoll } from "../../../lib/useVisiblePoll";
 import { requestJson } from "../../craft/moves/craftMovesClient";
 import { PageHeader } from "../../ui/PageHeader";
+import { TAB_ICONS } from "../../shell/tabIcons";
 import { SkeletonRows } from "../prices/pricesBits";
 import { RisingSection } from "./RisingSection";
 import { SnipeSection } from "./SnipeSection";
@@ -39,7 +40,7 @@ const LEGEND =
 /** The automatic budget: a share of your latest net worth, or an honest "no net worth yet". */
 function budgetText(b: Budget): { label: string; tip: string } {
   if (b.capDiv === null || b.netWorthDiv === null) {
-    return { label: "no budget: no net worth yet", tip: "No net worth on record yet (Wealth › Net worth), so nothing is filtered by budget." };
+    return { label: "no budget: no net worth yet", tip: "No net worth on record yet (Stash › Net worth), so nothing is filtered by budget." };
   }
   return {
     label: `budget ≤ ${fmtDiv(b.capDiv)} Div`,
@@ -66,6 +67,7 @@ export function OpportunitiesTool() {
         title="Opportunities"
         purpose="What to buy on the trade site now."
         legend={LEGEND}
+        art={TAB_ICONS.trade.src}
         action={state.kind === "done" ? <BudgetChip budget={state.data.budget} /> : undefined}
       />
       {state.kind === "loading" && <SkeletonRows label="loading opportunities" />}
