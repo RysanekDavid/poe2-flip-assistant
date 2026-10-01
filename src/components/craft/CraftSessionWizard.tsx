@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RotateCcw } from "lucide-react";
-import { priceLabel, type MatInfoFn, type RecipeView } from "./craftView";
+import { priceLabel, pricedMaterials, type MatInfoFn, type RecipeView } from "./craftView";
 import { PNL_CHANGED_EVENT } from "../CraftPnlPanel";
 import { ShopScreen, type CostField, type ManualCosts } from "./SessionShop";
 import { StepScreen, type Screen } from "./SessionStep";
@@ -190,7 +190,7 @@ export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number
   const steps = useMemo(() => flattenGuide(r.guide), [r.guide]);
   const s = useCraftSession(r);
   const matInfo: MatInfoFn = (id) => {
-    const line = r.report?.materials.find((m) => m.id === id);
+    const line = pricedMaterials(r)?.find((m) => m.id === id);
     return { price: line?.unitDiv != null ? priceLabel(line.unitDiv, ex) : null, icon: icons[id] ?? null };
   };
   const onSave = (brick: boolean, soldDiv: number | null): void => {

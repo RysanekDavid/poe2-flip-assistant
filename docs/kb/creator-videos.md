@@ -6,6 +6,8 @@
 
 **Corrections 2026-09-30 (partial, S11 Spirit):** the S11 "giga" amulet recipe, the Spirit wallet warning and recipe candidate 4 said Spirit only adds while an amulet is Magic and is hunted by repeated desecration. Re-read against the S11 transcript (Chaos Orb spam) and the RePoE snapshot (`IncreasedSpirit1`–`5` are ordinary amulet prefixes). The same S11 entries now name the Gold amulet base the video uses, the Greater Exalted Orb (not the omen) on the suffix-add slam, and quote the "huge break point" as the creator's words about the Spirit he hit (he never mentions Arctic Armour). The rest of the file is unchanged.
 
+**Corrections 2026-10-01 (partial, crafts wave 3):** nine 2026-09 creator videos (S22–S30) were mined from timestamped auto-caption transcripts and independently fact-checked; each new entry below is tagged, and the fact-check's verdicts are logged under "Adversarial verification". New entries only: Source key S22–S30, the S22–S30 recipes (Boots, Wands, Bow / Spear / Quarterstaff, Shields, Rings, Jewels), three wallet warnings and five log entries. The rest of the file is unchanged.
+
 ### Source key
 
 | Tag | Video |
@@ -30,6 +32,7 @@
 | S18 | ZTM Ep 6: The Unkillable Korean Wisp Strat |
 | S19 | ZTM Ep. 7: Can We Take On The Most JUICED Content Of the League!? |
 | S20 | NAUČ SE CRAFTIT NEJLEPŠÍ JEWELY V POE 2 (Czech) |
+| S22–S30 | 2026-09 creator crafts; YouTube titles NOT fetched (oEmbed blocked when added), creators from a search listing. Transcripts: S22 Bosorkana bleed spear (`22-…`), S23 ASaVeQ body/belt/wand (`23-…`), S24 Belton ilvl-80 wand lottery (`24-…`), S25 Belton +4 alloy wand (`25-…`), S26 Diztoh Gold Ring (`26-…`), S27 ASaVeQ Dusk Ring (`27-…`), S28 LilBotQ Tower Shield (`28-…`), S29 LilBotQ jewels (`29-…`), S30 ASaVeQ ES boots (`30-…`), all under docs/kb/sources/transcripts/. Timestamps below are [m:ss] in those files. |
 
 ---
 
@@ -75,6 +78,12 @@
 - Materials: Rare body armour base (~1 exalt), Omen of Putrefaction (~8 exalt), Preserved Rib (~8 exalt), ~14 Armourer's Scrap (~11 exalt), 2× Iron/Resistance Rune (~8 exalt). Total ~36 exalt.
 - Economics: At least ~1 divine average profit per attempt; recorded batch sold at 1, 2, 6, 6, 10, 13 divine; best result (~230 ES/45% elemental res/35% MS/rarity) listed ~18 div.
 
+**35% MS energy shield boots: fracture + Astrid's two crafted suffixes** — [S30] *(app key `boots_es_ms_spirit_fracture`)* [single-source]
+- Base: normal exceptional ES boots at ilvl 82 (35% MS needs 82, KB §3); Luxurious Slippers over pricier Sekhema Sandals [0:03–1:53].
+- Steps: Perfect Transmute → Perfect Aug / Annul loop for two keepers → Divine → Perfect Regal (no essence) → Sinistral Necromancy + Preserved Rib blocker → Fracturing Orb (any useful fracture) → reveal; a miss is annulled away before an Ancient Rib re-desecration (one desecrated mod per item) → Sinistral + Greater Exaltation + Perfect Exalt for prefixes → Astrid's Creativity → Greater Exaltation suffix fill → Essence of Horror ("60% increased effect of Socketed Augment Items") + Mystic Alloy ("+(10—15) to Spirit") → Perfect Iron Runes → optional Omen of Sanctification + Divine [2:25–23:10].
+- Creator claims (dated context, not a margin): earlier pairs sold for 100 and 50 div [1:01–1:24]; five pairs cost ~300–400 div and price at ~100–150 div each unsanctified [21:00–22:17].
+- Unverified: skipping the Crystallisation omen because full prefixes "can't be removed" [9:47–9:58] is creator-only.
+
 ### Gloves
 
 **+2 Projectile Skills Gloves — Method 1 (interleaved prefix/suffix)** — [S5]
@@ -109,6 +118,22 @@
 - Materials: Wand Alloy orb (nerfed version).
 - Economics: Grants 31% cast speed + 11% added extra cold damage — lower than legacy values but much cheaper to produce; makes budget cast-speed wands viable again. No price given.
 
+**ilvl-80 Dueling Wand Perfect-orb lottery** — [S24] *(app key `wand_ilvl80_perfect_orb_lottery`)* [single-source]
+- Base: normal exceptional 2-socket Dueling Wand at item level EXACTLY 80 [0:06–1:08] — RePoE: +4 all spell levels is level 78, T1 Spell Damage and T1 gain-as-extra 80, every +5 element-spell suffix 81.
+- Steps: Etchers to 20% → Perfect Transmute → Perfect Aug; hits = T1 Spell Damage, spell crit, +4, cast speed. Misses can be Vaal Arcanist's Infuser-spammed toward 30% quality (corrupts on a miss) [6:08–15:05].
+- Creator claims: 6 hits from 41 bases [2:41–2:47]; ~70 div spent for ~245 div profit [25:31–26:57]; his videos briefly spike base prices [29:17–30:00]. Unverified: "each 1% over max quality = 5% corrupt chance" [9:47–15:05]. Creator wrong: a "low tier jawbone" before the fracture [16:58–17:03] — a Gnawed Jawbone is refused above ilvl 64 (KB §5), use Preserved.
+
+**+4 wand with two alloys, fractured (Astrid's Creativity)** — [S25] *(app key `wand_plus4_alloy_fracture`)* [single-source]
+- Base: magic ilvl-80 2-socket wand with only +4 to Level of all Spell Skills and an open prefix [0:31–0:40].
+- Steps: Greater Essence of Sorcery (prefix, so a miss isn't stuck) → Astrid's Creativity → Sinistral Crystallisation + **Transcendent Alloy** (crafted SUFFIX: cast speed + elemental damage as extra cold) → prefix exalt → Sinistral Crystallisation + **Celestial Alloy** (crafted PREFIX: +1 spell levels + maximum mana) → Sinistral Necromancy + Omen of the Liege + Preserved Jawbone blocker → Fracturing Orb, 1 in 3 each for +4 / the mana alloy mod / the cast-speed alloy mod [0:44–2:47, 10:02–10:38]. Sell after the fracture or finish (reveal Amanamu elemental damage, Perfect Exalt) [2:50–7:43].
+- Creator claims: fractured +4 ≈ 400 div, fractured +1/mana ≈ 150 div, fractured cast speed ≈ 55 div [25:59–26:58].
+- Unverified: Crystallisation steering an alloy (docs/research/poe2-crafting-knowledge.md §4; forum 3949532); the fracture landing on a crafted mod [1:54–2:47]; the Celestial Alloy refused next to an exalted maximum-mana prefix [24:19–24:30].
+
+**League-start cold-spell wand (Liege elemental damage)** — [S23 14:01–21:17] *(app key `wand_cold_skills_sorcery_desecrate`, craft-to-use)* [single-source]
+- Base: magic wand with + to Level of all Cold Spell Skills and a gain-as-cold prefix [16:39–17:11].
+- Steps: Greater Essence of Sorcery → Omen of the Liege (auto-captions: "leech") + Sinistral Necromancy + Preserved Jawbone + Abyssal Echoes → (74–89)% increased Elemental Damage → two Exalted Orbs [17:39–19:46]. RePoE lists three Amanamu wand prefixes, so the creator's "the Amanamu prefix" is narrower than the data.
+- Creator claim: Grim Pillar DPS 5.2k → 7k [20:34–20:41].
+
 ### Bow / Spear / Quarterstaff
 
 **Bow (or Spear) Amanamu Attack-Speed Craft** — [S9] *(already covered by app key `bow_amanamu`)*
@@ -122,6 +147,17 @@
 - Steps: Greater Essence of Abrasion for flat Fizz → Desecrate FIRST at the Well of Souls (no mod-lock omen exists for staffs — inspect offered options, e.g. ~32% Fizz vs a lesser Fire mod, pick the better) → only continue with 1-2 Greater/regular Exalted Orb slams if the desecration result is already good (observed: Crit Damage Bonus T2) → Artificer's Orb + Greater Iron Rune.
 - Materials: Quarterstaff base (~4 div), Greater Essence of Abrasion, 1-2 Exalted Orb (~7-9 ex each), Artificer's Orb, Greater Iron Rune.
 - Economics: ~4 div base + ~1 div materials → sold 6-9+ div depending on desecration/exalt luck.
+
+**Bleed spear: Abrasion + Sinistral desecrated hybrid** — [S22] *(app key `spear_bleed_abrasion_necro`, craft-to-use)* [single-source]
+- Base: magic spear, +3 melee levels, 150%+ increased Physical Damage [0:30–1:03].
+- Steps: Greater Essence of Abrasion → Sinistral Necromancy + Preserved Jawbone → reveal with Abyssal Echoes for the % Physical + Accuracy hybrid (~3 in 4 per the creator) → Omen of Greater Exaltation + Greater/Perfect Exalt for two suffixes → Whetstones, sockets; optional Vaal Blacksmith's Infuser at max quality [1:07–5:10]. Miss: Omen of Light + Annulment, then desecrate again [5:12–5:47].
+
+### Shields
+
+**2,000 Armour Tawhoan Tower Shield (fractured flat Armour)** — [S28] *(app key `shield_armour_fracture`)* [single-source]
+- Base: normal exceptional 2-socket Tawhoan Tower Shield, ilvl 81 [0:20–0:28, 1:57–2:08]. Shield Wall adds "5 to 7 Physical Damage per 15 Armour on Shield" (RePoE).
+- Steps: quality to 20% → Vaal Armourer's Infusers to 24–26% → Perfect Transmute (T1 flat Armour) → Perfect Aug → Greater Essence of Enhancement → Preserved Rib blocker → Divine the flat Armour → Fracturing Orb → Annul to the fracture → Chaos for T1 % Armour → Sinistral Necromancy + Ancient Rib + Echoes for the % Armour hybrid (Light + Annul loop) → Iron Runes + Masterwork Runes → Greater Exaltation + Perfect Exalts [0:59–10:10]. The "omen of sanctification" at [4:49] is a misspeak.
+- Creator claims: ~20 div all-in on a run he calls unrepeatably lucky [0:29–0:55, 9:21–9:28]; each desecration reroll ~8 div [8:21–8:26].
 
 ### Amulets
 
@@ -175,6 +211,17 @@
 - Materials: Hiveblood, Signet Wombgifts, Fracturing Orb.
 - Economics: Fractured T1 mana-efficiency ring 100+ div; fractured "+1 all Spell Skills" ring 500 div up to mirror-tier (rare gambler-tier outcome).
 
+**Dusk Ring with four flat attack prefixes** — [S27] *(app key `ring_dusk_four_flat`)* [single-source]
+- Base: rare Dusk Ring ilvl 79+ ("+1 Prefix / -1 Suffix Modifier allowed"); NOT a Gloam Ring (captions: "gloom ring"), the mirror [0:12–0:20, 6:13–6:26].
+- Steps: annul to one mod → Chaos for a T1 flat → Sinistral + Greater Exaltation + Exalt → Preserved Collarbone blocker → Fracturing Orb (creator missed 6 in a row, 2 of 8 hit) → annul to the fracture → Chaos for a second T1 flat → suffix exalt → Dextral Crystallisation + Essence of the Breach → Reaver Catalysts to 40% → Sinistral + Catalysing Exaltation + Perfect Exalt → re-quality → Whittling + Chaos off the Breach mod → Sinistral Necromancy + Ancient Collarbone + Echoes for a 4th flat (~10 Light loops) → Dextral Crystallisation + Swift Alloy (attack speed) → Perfect Exalt [4:33–17:25].
+- Creator claims: sold one for 500 div, a normal run costs ~100 div [0:56–1:13]; this run cost 500+ div because of the missed fractures [17:30–19:03].
+- Unverified: Crystallisation on the Swift Alloy; that 40% quality survives losing the Breach mod.
+
+**Gold Ring triple rarity (Opulence)** — [S26] *(app key `ring_gold_rarity_opulence`, craft-to-use)* [single-source]
+- Base: magic Gold Ring (implicit rarity) with rarity on the PREFIX + a resistance [0:42–1:20]; a suffix-rarity base "will not work" with the essence [6:20–6:35] (creator-only).
+- Steps: Greater Essence of Opulence → Dextral Necromancy + Preserved Collarbone + Echoes for a resistance → optional Tul's Catalysts + Catalysing + Greater Exaltation + Greater Exalt on the prefixes; Chilling Flux turns Fire/Lightning res into Cold [1:25–8:40].
+- Creator claim: item rarity 68% → 93% on his character [5:51–5:56].
+
 ### Jewels
 
 **5-Mod (3-suffix/2-prefix) exploit jewel craft** — [S4] *(app key `jewel_fractured_5mod`, S4's step order; `jewel_suffix_push` is the separate Time-Lost/Ancient-Contempt variant)*
@@ -194,6 +241,11 @@
 - Steps: Fracturing Orb immediately (buy several candidate bases in parallel — creator locked 2 of 5) → set the Well of Souls omen to the side OPPOSITE the fractured mod → Cranium bone (~2 div/attempt) for a Desecrated mod on the free side → Exalted Orb for remaining slots, prioritizing Spell Damage (amplified later by buyers' Caster Catalysts; cross-check poe.ninja's top "Adorn" builds for current demand) → Chaos-spam if the wrong mod lands (~50/50 with 2 candidates left) → remove the crafted "+1 modifier" mod with a prefix-restricted removal — Omen of Sinistral Annulment + Annulment, or Omen of Sinistral Erasure + Chaos, whichever is cheaper (skipping the omen here bricks the item). *Corrected 2026-09-29: an earlier summary said Omen of Light; RePoE `OmenOnAnnulRemoveAbyssMod` reads "your next Orb of Annulment will remove only Desecrated modifiers" — Light cannot target a crafted mod. In S20 Light only strips missed desecration reveals.* → finish with Divine Orb(s) (the single most expensive step, described).
 - Materials: Base jewel with 1 perfect roll, Fracturing Orb, Omen of Sinistral/Dextral Necromancy, Cranium bone(s) + Omen of Abyssal Echoes, Exalted/Chaos Orbs, Omen of Light (~1 div), Divine Orb(s).
 - Economics: ~150 div craft cost → sold 200-500 div; comparable real sales cited at 580, 400, and 280 div. Creator's blanket guidance: "have at least tens, better hundreds of divine" before starting.
+
+**Budget Liquid Fear Emerald (4 mods)** — [S29 3:35–9:20] *(app key `jewel_liquid_fear_4mod_budget`)* [single-source]
+- Base: rare Emerald with 3 wanted mods (2 prefixes + 1 suffix) and 1 junk suffix, no crafted mod, not corrupted [4:51–5:08, 7:25–7:39].
+- Steps: Concentrated Liquid Fear → crafted Critical Damage Bonus for Attack Damage suffix; on the creator's footage it removes one of the two suffixes 50/50 [3:08–3:25, 8:12–8:30]. Emerald only — a Sapphire gets spell crit damage, a Ruby warcry speed (poe2db); the creator's "Time-Lost works as well" [4:04] contradicts the item text (KB §6).
+- Creator claims: a 100-exalt base + ~40-exalt liquid → a 6–7 div jewel [8:36–9:11]; budget jewels sold for 2–5 div [22:14–22:21].
 
 ### Gems
 
@@ -341,6 +393,11 @@
 - The Mark of the Abyssal Lord → Jawbone conversion has a known bug that can silently fail — budget spare bones and don't assume one attempt suffices [S8].
 - Prefix/suffix reveals resolve in order (prefixes first) — accepting a low-tier roll of a mod type early can block a better roll of that same type later; save acceptable-but-suboptimal picks for the LAST slot of that group [S10, S20].
 
+**Wave-3 additions (2026-10-01)**
+- Activate an Omen of Crystallisation only AFTER a Greater essence: the omen is consumed by any essence (forum 3851940) [S25].
+- Buy the Dusk Ring, not the Gloam Ring — the creator burned ~50 div of Chaos on two Gloam Rings [S27 6:13–6:26].
+- A second desecration needs the first one gone (Omen of Light + Annulment); re-desecrating over it is refused (KB §5).
+
 **Market / pricing risk**
 - Once a craft becomes commonly known, resale of the finished item can crash fast (an 800-div comparable dropping to ~5-div copies was cited) [S2]. Always check live comparable listings before committing currency, not a remembered or quoted price [S2, S9, S11, S14].
 - Mirror of Kalandra and other top-end currency prices move far faster than a normal farmer's daily income — don't peg a currency budget to a static "divs needed for a mirror" figure [S18, S19].
@@ -427,3 +484,14 @@
   → [cf], left unresolved: GGG 0.3.1 — "You can use up to 3 Tablets with each Map, but the number of slots available is based on how many modifiers the Map has. Running a Map with 6 Modifiers will enable all 3 of the Tablets slots on the Map Device." — and the Industrial Improvements notable — "An additional Tablet may be used on City Maps" — both disagree with 6 normal / 4 city. Not re-checked against 0.5.5; body annotated at both mentions. (https://www.pathofexile.com/forum/view-thread/3862213; https://poe2db.tw/us/Industrial_Improvements)
 - **REFUTED** (2026-09-30) — [S11] Spirit can only be added while an amulet is still Magic; hunt it by repeated desecration before any Rare upgrade
   → The S11 transcript itself chaos-spams the Spirit: "we're going to need a lot of chaos orbs … It'll cost you probably like two or 300 uh chaos orbs. We hit it in like 30." A Chaos Orb "Removes a random modifier and augments a Rare item with a new random modifier" (entity catalog, game data 0.5.5b), so the Spirit landed on a RARE amulet. The RePoE snapshot lists `IncreasedSpirit1`–`IncreasedSpirit5` (+30–33 … +47–50, required level 16–54) as item-domain prefixes that spawn on `amulet` (spawn weights are datamined, not client-exposed), with no rarity condition. Two entries of the fixerpimp-gamer 0.5 compilation (AMULET_001, AMULET_002) also chaos-spam Spirit on rares. The creator's later line "We can't add spirit anymore because it's not a magic item" stays in the body as his quote; the rule behind it is unverified. Body fixed at the recipe, the wallet warning and recipe candidate 4. (docs/kb/sources/transcripts/11-beginner-intermediate-and-expert-level-amulet-craft-guide-fu.txt; src/data/poe2/repoe snapshot; https://github.com/fixerpimp-gamer/POE2_0.5_Craft_Guides)
+
+- **REFUTED** (2026-10-01) — [8boqwYQZv5s, ASaVeQ amulet video] A desecrated amulet can be re-desecrated with another Collarbone without Omen of Light, overwriting the old desecrated mod (0.5 div per try)
+  → The game refuses: "Items with Desecrated Modifiers cannot be Desecrated again"; the 0.5.0 notes limit items "to 1 Desecrated modifier" (https://www.pathofexile.com/forum/view-thread/3932540), per the 2026-10-01 fact-check. Body: docs/research/poe2-crafting-knowledge.md §5 and the wave-3 wallet warning. (https://www.youtube.com/watch?v=8boqwYQZv5s)
+- confirmed (2026-10-01) — [S25] Transcendent Alloy = the wand cast-speed SUFFIX, Celestial Alloy = the +1 spell levels / mana PREFIX
+  → The wave-3 extraction had the two swapped; the fact-check (poe2db) and the creator's own walk-through [10:07–10:34] agree on this mapping. Body: the S25 recipe above.
+- **REFUTED** (2026-10-01) — [S24] A "low tier" (Gnawed) Jawbone is the cheap fracture blocker on an ilvl-80 wand [16:58–17:03]
+  → Gnawed bones answer "Item Level is too high" above ilvl 64 (our in-game test, docs/research/poe2-crafting-knowledge.md §9). Body: the S24 recipe above says Preserved.
+- **REFUTED** (2026-10-01) — [S29] Concentrated Liquid Fear works on Time-Lost jewels too [4:04]
+  → Item text: it "Augments a Rare Basic Jewel"; Time-Lost jewels take only the Ancient liquids (KB §6). Body: the S29 recipe above.
+- confirmed (2026-10-01) — [RIuiA6VOAoA, Mattjestic gem video] "There's no omens of corruption anymore"
+  → Omen of Corruption is still in the 0.5.5b game data, but the 0.5.0 notes say it can no longer be obtained (https://www.pathofexile.com/forum/view-thread/3932540), per the 2026-10-01 fact-check. Body: docs/research/poe2-crafting-knowledge.md §4. (https://www.youtube.com/watch?v=RIuiA6VOAoA)

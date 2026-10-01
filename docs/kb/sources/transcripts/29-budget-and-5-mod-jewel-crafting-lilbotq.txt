@@ -1,0 +1,635 @@
+[YouTube title not fetched] Budget and 5-mod jewel crafting — LilBotQ
+https://www.youtube.com/watch?v=Hcb_HcWDUOA
+
+(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api. The video's own title was not fetched (the oEmbed request was blocked in that session); the creator name is from a search listing.)
+
+[0:03] [screaming]
+[0:04] What's up, YouTube? Today, I'll show you
+[0:05] how you can profit craft jewels. I'll
+[0:07] show a more budget version as well as a
+[0:09] high-end version talking about five
+[0:11] modifier jewels. No more BS. Let's hop
+[0:13] right into it. To start, let's talk
+[0:16] about the basics for any newer players
+[0:18] just so they can understand how the
+[0:19] essentials work for crafting jewels.
+[0:22] Jewels have two prefixes and two
+[0:24] suffixes at a base level, unlike armor
+[0:26] where armor has three prefixes and three
+[0:29] suffixes. However, just like any other
+[0:32] piece of gear, they can only have one
+[0:34] crafted modifier and one desecrated
+[0:36] modifier. Additionally, it is still
+[0:39] possible to use things like fracturing
+[0:41] orbs and any other form of currency like
+[0:43] chaos orbs or exalted orbs. The
+[0:46] difference between armor and jewels is
+[0:48] how you add crafted modifiers. Unlike
+[0:50] armor where you add essences, for jewels
+[0:53] we use delirium emotions. There's a lot
+[0:55] of great crafted modifiers like critical
+[0:58] damage bonus for attack damage as well
+[1:00] as critical damage for spells. We also
+[1:02] have some very high m value emotions
+[1:05] like plus one suffix modifiers and
+[1:08] increased effective suffixes allowing
+[1:10] for those juiced five modded jewels.
+[1:13] Deseecrating and adding a crafted
+[1:15] modifier are just like armor. Some of
+[1:17] these crafted modifiers are only
+[1:18] suffixes, while others are only
+[1:20] prefixes. And it's important to know
+[1:22] which are which when you're adding some
+[1:24] sort of emotion, because that can really
+[1:26] help in determining your outcome when
+[1:28] crafting.
+[1:29] If you're unfamiliar with which
+[1:31] modifiers are suffixes and which
+[1:33] modifiers are prefixes, you can always
+[1:34] head over to PoE2 database and search
+[1:37] for emeralds, sapphires, rubies, or time
+[1:40] loss jewels. And you can see all of the
+[1:42] different modifiers and they're just
+[1:44] range values.
+[1:46] Some of these modifiers can be obtained
+[1:48] through crafting and specific emotions.
+[1:50] However, some of them are strictly
+[1:52] explicit and can only be obtained by
+[1:54] using a regular currency item. And we do
+[1:56] have some specific desecrated modifiers,
+[1:58] but those typically stick for the
+[2:00] prefixes. The last thing to note is that
+[2:02] these modifiers are weighted. Now, while
+[2:05] you might be on Craft of Exile or PoE2
+[2:07] database, they all say that they have an
+[2:09] equal waiting, this is not true. Nobody
+[2:12] knows the exact weightings as it would
+[2:14] take a very large sample size and a lot
+[2:17] of calculations in order to just kind of
+[2:19] test it and it still wouldn't be
+[2:21] absolutely correct. This can be
+[2:23] extremely important to know as the more
+[2:25] you craft these jewels, the more you'll
+[2:26] start to really realize, okay, this
+[2:28] modifier is more common and this
+[2:30] modifier is not that common, which can
+[2:33] be extremely helpful in saving you
+[2:34] currency. But again, you'll have to make
+[2:36] those own extrapulations, and I can't
+[2:38] really give you a definitive, but I did
+[2:41] want to make that call out that these
+[2:42] modifiers are weighted.
+[2:44] That's basically the essentials of
+[2:46] crafting jewels and just the basics in
+[2:48] general. One other important point,
+[2:50] though, is that you can always override
+[2:52] a modifier if it is if an item is
+[2:54] already maxed on modifiers. For example,
+[2:57] I have this jewel here that already has
+[3:00] four modifiers. If I wanted to use a
+[3:02] delirium emotion, since it doesn't have
+[3:04] a crafted modifier yet, I could and it
+[3:06] will overwrite one of the modifiers.
+[3:08] Since this concentrated liquid fear adds
+[3:11] critical damage bonus for attack damage
+[3:13] for emeralds, that is a suffix. So, this
+[3:17] means that I have a 50% chance to either
+[3:20] remove flask effect duration or
+[3:22] increased attack speed.
+[3:25] And just like that, we removed one of
+[3:27] the modifiers. This little trick is
+[3:29] forgotten by most and can be extremely
+[3:31] profitable, so always keep that in mind.
+[3:35] For crafting jewels on a budget, this is
+[3:37] something that you can expect. It's got
+[3:39] four great modifiers. Of course, it's
+[3:41] not a five modded jewel, and the divine
+[3:43] isn't absolutely great on it, but it is
+[3:45] still very strong and can easily be
+[3:48] added to specific builds to extremely
+[3:50] juice them. The real magic for crafting
+[3:53] jewels on a budget really just comes
+[3:55] down to your search filters when on the
+[3:56] trade site. So, you're going to want to
+[3:59] head over to the trade site and then
+[4:00] just type in whichever jewel you're
+[4:02] searching for, emerald, ruby, or
+[4:04] sapphire. Definitely time loss works as
+[4:06] well. The goal here is to buy jewels
+[4:09] that have three modifiers that are
+[4:11] really good for our build. And then we
+[4:13] will add a fourth crafted modifier using
+[4:16] a delirium emotion.
+[4:18] For example, for my build, increased
+[4:20] attack speed, magnitude of ailments you
+[4:22] inflict, and magnitude of damaging
+[4:24] ailments you inflict with critical hits,
+[4:26] and increased attack damage are all
+[4:28] great modifiers for my build, but I
+[4:30] really want critical damage bonus for
+[4:32] attack damage. Critical damage bonus for
+[4:35] attack damage can be obtained from the
+[4:37] concentrated liquid fleer delirium
+[4:39] emotion. Therefore, I just want jewels
+[4:42] that have three of these modifiers. And
+[4:45] because of my search filter, only one of
+[4:47] these are a suffix. The other are my
+[4:49] prefixes.
+[4:51] When creating your own, you want to have
+[4:53] the opposite of whatever the delirium
+[4:55] emotion is. And you want three of those
+[4:57] modifiers or more. Totally up to you.
+[4:59] Whichever modifiers you are willing to
+[5:01] take. And then you only want one suffix
+[5:04] because we're going to be overriding one
+[5:05] of the mods using the delirium emotion.
+[5:08] However, you can definitely add a
+[5:10] weighted sum using the suffixes. So, if
+[5:13] I wanted something like attack speed and
+[5:16] movement speed or something like
+[5:17] critical hit chance for attacks, I could
+[5:19] definitely do that and I would create a
+[5:21] weighted sum, which I'll show a little
+[5:22] bit later. So, now we're just going to
+[5:25] click the search button. And we can see
+[5:27] they're really cheap, only one chaos
+[5:29] orb. And we can see we've got the attack
+[5:31] speed, attack damage, and the magnitude
+[5:33] of ailments you inflict. And then it's
+[5:35] got another modifier that I don't really
+[5:37] want. I don't really want duration of
+[5:39] damaging ailments. So, the hope is when
+[5:41] I purchase this, we'll head into the
+[5:43] game and we'll buy it.
+[5:44] >> What came in for you?
+[5:47] >> Thanks for the chat.
+[5:50] >> So, now we have this jewel. The hope is
+[5:53] when we add a delirium emotion, for
+[5:55] example, the concentrated liquid fear
+[5:57] for this build. This is super cheap.
+[6:00] It's only around 30 to 40 exalts. If I
+[6:02] get lucky and do not remove the attack
+[6:05] speed and remove the duration of
+[6:06] damaging ailments, I have a really,
+[6:08] really good jewel for my build.
+[6:12] So, just like that, we have a really
+[6:14] strong jewel already and I could easily
+[6:17] equip this.
+[6:19] If I look it up on the trade website
+[6:21] with all of these modifiers, we can see
+[6:23] that I took the jewel and there's none
+[6:25] on the market and that's just because
+[6:27] this is a very specific and niche case
+[6:29] scenario. But I'll show a more popular
+[6:31] Emerald. Now, heading back over to the
+[6:34] trade site, let's search for something a
+[6:36] little more more meta. So, currently,
+[6:38] Twister is extremely popular and is used
+[6:41] on a variety of builds and is definitely
+[6:43] in the meta. Let's look for some jewels
+[6:45] for them. So, we have the count again,
+[6:48] and then I have two. And then we just
+[6:50] have a bunch of great prefixes for
+[6:52] Twister related builds. So, projectile
+[6:54] damage, projectile speed, elemental
+[6:56] damage, damage with spears, and
+[6:58] increased attack damage. I then took it
+[7:00] one step further to have the weighted
+[7:02] sum. So, we have the increased critical
+[7:04] damage bonus for attack damage and
+[7:06] critical hit chance for attacks. And
+[7:08] then I just have it set to one. So, this
+[7:10] means we will find emeralds that will
+[7:12] have both critical damage bonus for
+[7:13] attack damage and critical hit chance
+[7:15] for attacks. If I wanted to change the
+[7:17] modifiers to maybe only find these at a
+[7:20] 15% or a 10% value, I could adjust these
+[7:23] numbers accordingly.
+[7:25] You want to scroll down a little bit.
+[7:26] You're going to make sure that there's
+[7:27] no crafted modifiers on it because we
+[7:29] want to add the crafted modifier if it's
+[7:31] fractured. Not really that big of a
+[7:33] deal, and it can be desecrated for us,
+[7:35] but you can always select no if you
+[7:37] would like. And then we need to select
+[7:38] no for corrupted.
+[7:41] So, we can see that this one is already
+[7:42] desecrated, and it already has the
+[7:44] suffix because it's been fractured. So,
+[7:46] this isn't something I could purchase.
+[7:48] However, something like this is totally
+[7:50] fine to purchase. It's definitely a
+[7:52] little bit more pricey to buy these, but
+[7:53] the payoff will be much bigger because
+[7:55] I'll be able having a much more meta
+[7:57] jewel and it will probably turn these
+[7:59] 100 exalts if we win the 50/50 into
+[8:01] roughly five to six divines.
+[8:06] >> I'll tend to the books.
+[8:08] >> So, this one has the critical hit chance
+[8:10] for attacks. And we're going to want to
+[8:12] add another liquid emotion of fear. So,
+[8:15] just head over to the delirium tab. And
+[8:18] it looks like I need to purchase some.
+[8:19] So, I'm going to buy some really quick.
+[8:21] All right, so we had to do a quick edit
+[8:23] just to buy one. And we're just hoping
+[8:25] we win this 50/50. And don't remove
+[8:27] critical hit chance for attacks. We got
+[8:30] lucky. We won the 50/50. Again, it's a
+[8:33] 50% chance. Sometimes you'll miss,
+[8:35] sometimes you'll hit. We purchased this
+[8:38] for 100 exalt. The liquid fear took us
+[8:40] roughly, I think 40 exalts was what it
+[8:42] cost to purchase it. Not too cheap, but
+[8:45] it is fairly affordable. A divine at the
+[8:47] current time of recording is roughly 280
+[8:50] exalts. So this is roughly half a
+[8:52] divine. Obviously it's a 50% chance to
+[8:55] win these. So I could expect one every
+[8:58] divine. If we look it up with these
+[9:00] modifiers now, nothing else on it. Just
+[9:03] we'll remove all of the values.
+[9:07] We can see that now it's roughly worth
+[9:09] six to seven divines. And these are
+[9:11] extremely profitable early league as
+[9:13] players are not targeting five modifier
+[9:16] jewels. So, this is how I crafted all of
+[9:18] my jewels, and you can make it a decent
+[9:20] amount of currency doing this.
+[9:22] Moving on to high-end crafting of jewels
+[9:25] involving five modifiers. This has a lot
+[9:28] more gambling involved. Instead of
+[9:29] winning one 50/50, you have to win a lot
+[9:32] of 50/50s in order to make this a
+[9:34] complete jewel, as well as sometimes
+[9:36] even fracturing, which is a 33% chance
+[9:39] using a desecration. And the currency
+[9:42] for these items are extremely expensive
+[9:44] due to their rise in popularity. With
+[9:46] that being said, if you're playing
+[9:48] something more popular and you don't
+[9:49] really need niche modifiers, I wouldn't
+[9:51] really recommend doing the five modifier
+[9:53] jewels as it's typically just cheaper to
+[9:56] outright buy the jewel because of the
+[9:58] expensive cost of all of these things
+[10:00] that you need. You will need preserved
+[10:03] craniums, fracturing orbs, a lots of
+[10:05] potent liquid contemps, as well as some
+[10:08] of the high value omens like in omen of
+[10:10] sinestral anulment as well as omen of
+[10:12] sinister eraser or dextral eraser or
+[10:14] dextral moment depending if you're going
+[10:17] for three suffixes or three prefixes.
+[10:20] For this video specifically, I'm
+[10:22] crafting for my chaos ignite shield wall
+[10:24] build. And I am going for three
+[10:26] suffixes, not three prefixes. We've got
+[10:29] four emeralds here and four diamonds.
+[10:32] So, there's two ways that you can go
+[10:33] about high-end crafting. You can buy a
+[10:36] jewel that already has two either two
+[10:39] suffixes or two prefixes that you want.
+[10:42] So, for example, this has increased
+[10:44] movement speed and increased critical
+[10:46] damage bonus for attack damage. I want
+[10:48] both of these modifiers on my jewel.
+[10:51] However, on these diamonds, I only have
+[10:54] the increased critical damage bonus for
+[10:56] attack damage. And then I have other
+[10:58] random suffix modifiers that I don't
+[11:00] really want for these emeralds. I don't
+[11:03] have to fracture because I already have
+[11:05] the two suffix modifiers I want. So I
+[11:07] just need to take the potent liquid
+[11:09] contempt and I have to 50/50 gamble
+[11:12] hoping we add a suffix modifier to them.
+[11:16] For these diamonds, I have to add a
+[11:18] preserved cranium and then fracture the
+[11:20] modifier I want and begin chaos
+[11:22] spamming. The reason why I'm showing
+[11:25] both of these different routes is
+[11:26] because a preserved cranium is roughly
+[11:28] seven divines and a fracturing orb is
+[11:30] another seven divines. So to go for this
+[11:32] 33% chance on this diamond, that's going
+[11:35] to cost me 14 divines. And then I have
+[11:37] to go for the 50/50 and do exactly what
+[11:39] I'm doing on these emeralds anyways.
+[11:42] We'll start with the diamonds first as
+[11:44] they will eventually get to the same
+[11:45] point as these emeralds. for these.
+[11:47] Since fracturing orbs are so expensive,
+[11:49] I'm just going to be desecrating a
+[11:51] prefix because I want to go for the
+[11:53] critical damage bonus for attack damage
+[11:55] suffix fractured. So, I'm going to
+[11:57] activate the omen of sinestral
+[11:59] necromancy. And then we're going to use
+[12:01] a preserve cranium to desecrate. For
+[12:03] this one, I do not have to do that. I
+[12:05] can just totally just slam this on
+[12:08] there. But we're going to activate it on
+[12:11] these three. So now the next step is to
+[12:14] hope you win the 33% chance. I have four
+[12:17] diamonds here and my expected value is
+[12:20] to hit at least one of these. Now that's
+[12:22] not always the case. I could miss every
+[12:24] single one, which has been happening
+[12:26] quite frequently this league for me.
+[12:31] So we got lucky. We hit two out of the
+[12:34] four, but we did miss two unfortunately.
+[12:36] And these are pretty much bricked. You
+[12:38] just kind of set them to the side. you
+[12:40] could try to resell them because they're
+[12:41] not necessarily bad, especially since
+[12:43] they're on a diamond base.
+[12:45] Now, the next step is to orb of anulment
+[12:48] off all of the modifiers except for one.
+[12:50] So, I'm going to orb of anulment off the
+[12:53] modifiers.
+[12:56] And then now we're going to chaos spam.
+[12:59] Since I have a suffix fractured, I'm
+[13:01] looking for another great suffix like
+[13:03] critical hit chance for attacks or
+[13:05] movement speed or increased attack
+[13:07] speed. Depending if you fracture a
+[13:09] prefix, then you want to go for another
+[13:11] great prefix as you will have three
+[13:12] prefixes on your item instead of three
+[13:15] suffixes. Since I am using a diamond,
+[13:18] the modifier pool is extremely large as
+[13:20] it takes all of the modifiers from
+[13:21] rubies and sapphires and emeralds. So,
+[13:24] it's going to take a decent amount of
+[13:25] chaos orbs. I'm looking for attack speed
+[13:27] preferably, but I'll settle for whatever
+[13:30] I get.
+[13:34] All right, so I got increased attack
+[13:36] speed, which is totally fine for my
+[13:38] build. If you wanted to go for critical
+[13:40] hit chance for attacks, you definitely
+[13:42] could do that. But again, this is a
+[13:44] niche case scenario. If you're trying to
+[13:46] sell these, I would recommend going for
+[13:48] critical hit chance and critical damage
+[13:49] bonus as that is typically the meta.
+[13:51] However, this point forward, I just have
+[13:54] to add an exalt. And then we pray we hit
+[13:56] win another 50/50. So, you don't have to
+[13:59] activate any sort of omen. You just want
+[14:01] to add one prefix. And then you will
+[14:04] activate the potent liquid of contempt.
+[14:07] And this is the step where we are at for
+[14:08] the emeralds. So, I would activate this.
+[14:11] And we want it to say plus one suffix
+[14:13] modifier.
+[14:16] So, it said plus one suffix modifier,
+[14:18] which is great and what we wanted. So
+[14:20] now we're able to desecrate on a suffix.
+[14:24] So I would activate the omen of dextral
+[14:26] necromancy and then hit it with the
+[14:29] desecration. And now I can omen of light
+[14:32] spam until I get the modifier I want.
+[14:34] And the craft is pretty much
+[14:35] deterministic from this point. If you
+[14:37] have enough currency, like I said, this
+[14:40] is where the emeralds are at. And
+[14:42] instead of going for that fracture and
+[14:44] using that chaos spam, you can just buy
+[14:46] two suffix modifiers that are good for
+[14:48] you and then hope you win the 50/50.
+[14:51] It's still gambling. And if you miss,
+[14:52] you pretty much brick that item. There's
+[14:54] no going back on these. If you miss the
+[14:57] plus one suffix, you just orb of
+[14:59] anulment and go back to chaos spamming.
+[15:01] So let's see if we win any 50/50s on
+[15:03] these. So we lost those three and we got
+[15:07] one. So, these three are pretty much
+[15:09] bricked, and I paid about two to three
+[15:11] divines for each of these. Now, I just
+[15:14] did some rearranging in my inventory.
+[15:15] And the same thing goes for this one.
+[15:17] I'm just going to desecrate on a suffix.
+[15:22] Now, it has critical damage bonus for
+[15:24] attack damage, and increased movement
+[15:26] speed. The next step is to just go to
+[15:28] the Well of Souls and reveal.
+[15:31] Once you're at the Well of Souls, you'll
+[15:32] definitely want to use an Omen of
+[15:34] Abyssal Echoes to get that roll option.
+[15:37] And this is where the waiting of
+[15:38] different modifiers really comes into
+[15:40] play. For example, this diamond since it
+[15:43] can have all of the different modifiers
+[15:45] is going to be really, really hard to
+[15:48] hit what I would like. However, for this
+[15:50] one, the modifier pool isn't as high and
+[15:52] I have increased movement speed, which I
+[15:54] do think personally has a lower waiting
+[15:57] than something like increased attack
+[15:58] speed, and that's my goal. So, we're
+[16:00] going to throw it in and hopefully we
+[16:02] get the increased attack speed. We did
+[16:05] not, unfortunate.
+[16:12] See what we get for this one.
+[16:16] >> We got increased attack speed with
+[16:18] spears, which is unfortunate. So, I
+[16:20] didn't get any modifier that I would
+[16:22] like on these. So, all I do now is omen
+[16:24] of light and then continue desecrating
+[16:27] until I get the modifier I would like.
+[16:30] This step is where I really want to
+[16:31] emphasize that a lot of the times
+[16:33] currently, it's just cheaper to outright
+[16:36] buy the jewel unless you get extremely
+[16:38] lucky. As these waitings are totally
+[16:40] random, you do not know if you're going
+[16:42] to hit. Every roll is costing me roughly
+[16:45] 11 divines to add another desecration
+[16:48] because of how expensive preserved
+[16:50] craniums are. For example, buying a
+[16:53] completed jewel with movement speed,
+[16:55] attack speed, critical damage bonus for
+[16:57] attack damage, as well as the prefixes
+[16:59] that I want was probably going to cost
+[17:01] me roughly 90 to 100 divines. I'm
+[17:04] already at a total cost, including all
+[17:06] of these three of roughly 20 divines.
+[17:10] So, that means I have to hit in around
+[17:12] four to five desecrations. And the jewel
+[17:14] isn't complete from that point. I still
+[17:16] need to remove my prefixes, which is
+[17:19] going to cost me around another 20
+[17:20] divines.
+[17:21] All right. So, I had to go grab some
+[17:23] Omen of Lights and we're going to try to
+[17:25] complete this emerald. I'll save the
+[17:27] diamonds for a little bit later. So,
+[17:29] we're going to activate the Omen of
+[17:31] Light,
+[17:32] remove it, make sure we have our Dextro
+[17:35] necromancy still active, and then use
+[17:37] the preserve cranium, and then keep
+[17:39] throwing it in until we get the modifier
+[17:41] we would like.
+[17:48] So, I got critical hit chance for
+[17:49] attacks and increased attack speed.
+[17:52] Since this will be a profit crafting
+[17:54] video, I'll probably just sell this at
+[17:56] the end. So, I'm going to take the
+[17:57] increased critical hit chance for
+[17:59] attacks here.
+[18:02] This craft is pretty much guaranteed and
+[18:05] complete at this point. Don't really
+[18:07] have to worry about it. All we have to
+[18:08] do is go get an couple omen of sinestral
+[18:11] anulments and then chaos spam and
+[18:13] complete it. The same sort of route can
+[18:15] be taken for time loss jewels. Nothing
+[18:17] has changed. So, let's just finish the
+[18:19] craft.
+[18:21] Now, because on these emeralds, we did
+[18:23] end up buying them that had two prefix
+[18:25] modifiers, we're going to want to use
+[18:28] the omen of sinestral anulment. However,
+[18:30] for something like this diamond, it only
+[18:32] has the prefix plus one suffix
+[18:34] modifiers. I do not need to use the omen
+[18:37] of sinestral anulment. I can use the
+[18:39] omen of sinestral eraser and just change
+[18:41] it. It really just depends which of
+[18:43] these two is cheaper. At the time of
+[18:45] recording, both of these are already
+[18:47] worth 10 divines and are quite
+[18:49] expensive. The next thing that you would
+[18:52] like is the potent liquid of ferocity.
+[18:54] This just gives the increased effect of
+[18:56] suffixes and is completely optional and
+[18:59] not totally necessary. If you're doing
+[19:01] something like time loss jewels, you'll
+[19:03] want the emotion that gives you the
+[19:04] upgrade radius to very large as that is
+[19:07] extremely profitable. So, we're going to
+[19:09] activate the omen of sinestral enulment
+[19:12] and hopefully we remove the plus one
+[19:14] suffix modifier as it will save me 10
+[19:16] divines.
+[19:18] Unfortunately, we missed. But this lets
+[19:21] me show that you can obviously use the
+[19:23] omenous eraser from this point forward
+[19:25] and activate it. Just hit your chaos orb
+[19:28] and it will remove that plus one suffix
+[19:30] modifier.
+[19:32] From here, you just want to spam out the
+[19:34] exalt and just fully complete it with
+[19:37] maximum modifiers. And now you basically
+[19:40] cannot break your item. All you want to
+[19:42] do is chaos spam. As you're chaos
+[19:44] spamming, you cannot remove some of the
+[19:46] suffixes. Every time it tries to though,
+[19:48] it will give you like an error message.
+[19:50] It'll say item has no space for more
+[19:52] mods. This is just because it's trying
+[19:54] to add uh change one of the suffixes,
+[19:56] but can't. This sort of crafting process
+[19:59] may change at the 1.0 no release as I do
+[20:02] expect it to, but you never know. So,
+[20:04] we're just going to spam until we get a
+[20:06] good prefix modifier like increased
+[20:08] attack damage.
+[20:13] All right, so we got the increased
+[20:14] attack damage after spamming. Now, this
+[20:17] is where you can use some sort of potent
+[20:19] liquid emotion. It doesn't really matter
+[20:21] if you're doing time loss. Again, you
+[20:23] can do the upgrades radius to very
+[20:25] large. You just activate it and you have
+[20:27] a 50% chance of removing one of the
+[20:30] prefixes because we're overriding those
+[20:32] modifiers.
+[20:35] We got lucky. We won the 50/50. So now
+[20:37] we have increased attack damage,
+[20:39] effective suffixes, critical damage
+[20:41] bonus, movement speed, critical hit
+[20:43] chance for attacks, and the craft is
+[20:45] absolutely complete. The total cost for
+[20:48] this was 20 divines for these high value
+[20:51] ritual omens. We had to spend three to
+[20:54] four omen of lights which is another
+[20:57] with the preserve cranium another
+[20:59] roughly 40 divines and the base cost for
+[21:02] us was another around 20 divines. So
+[21:05] we're looking at around an 80 divine
+[21:07] cost and I would say that I was very
+[21:09] lucky on this. Each one of these potent
+[21:12] liquid ferocities is also another seven
+[21:14] divines. So I would say roughly 90 to
+[21:17] 100 divines just to craft this. And
+[21:20] again, I do think I got lucky on this
+[21:21] one. I didn't have to completely Omen of
+[21:24] Lightspan. The next step would to be use
+[21:26] divine orbs to divine this up. I
+[21:28] currently just don't have any because I
+[21:30] have them all invested in different
+[21:31] things. But let's take a look at how
+[21:33] much this jewel is worth now after
+[21:35] having all of these modifiers. And we'll
+[21:38] just remove all of these numbers.
+[21:44] We can see it's roughly worth 120
+[21:46] divines. Personally, if you're playing
+[21:48] something that's more popular where
+[21:50] there's an abundancy of these five
+[21:51] modded jewels, I would just recommend
+[21:53] outright purchasing them because it's
+[21:55] typically cheaper to just do so. While
+[21:58] we're heading out here, here is some
+[21:59] sales history of jewels, including the
+[22:01] ones crafted in this video. Here's a
+[22:03] sapphire that sold for 100 divines.
+[22:06] Let's search in emeralds.
+[22:09] So, that delirious, that emerald that we
+[22:11] did create is was worth 150 divines. And
+[22:14] then here are some cheap ones that sold
+[22:16] for the budget value ones. See four
+[22:18] divines, five divines, two divines. And
+[22:21] then if we look up the diamond, I did
+[22:23] end up completing it. I sold the diamond
+[22:25] as a fractured base for the one. So it
+[22:27] had the 20% critical damage bonus. And
+[22:30] we sold it for 99 divines, which is also
+[22:32] a very profitable method. And then the
+[22:34] other diamond, I ended up getting
+[22:36] critical hit chance. The only difference
+[22:38] was it has the increased maximum energy
+[22:40] shield and I was able to divide it up to
+[22:42] where these numbers were really good. So
+[22:44] I did make a decent amount of profit.
+[22:47] Some closing out recommendations is to
+[22:49] only craft these five modules if you
+[22:52] have 100 to 150 divines to spare which
+[22:55] is not affordable for most players. The
+[22:57] budget crafting of this is extremely
+[22:59] profitable and I do recommend it as it
+[23:01] can only take you like three or four
+[23:02] divines to make a little bit of profit.
+[23:05] Personally, crafting five mod jewels
+[23:07] isn't really worth it for me as there
+[23:08] are better profit crafting methods out
+[23:10] there. Diamonds are worth a lot more,
+[23:13] but your cost on average will also be
+[23:15] more due to the modifier pool being so
+[23:17] large. Budget crafting jewels is great
+[23:20] as you only need about three to four
+[23:22] divines to get started and the risk is
+[23:24] very low on them. As always, like and
+[23:27] subscribe. I hope you learned something.
+[23:29] Take it easy, exiles. Is that No. Oh my
+[23:32] god, it's a head hunter. There's no way.
+[23:35] There's no way the remnant for unique
+[23:37] belt actually paid off for once. Let's
+[23:40] go.

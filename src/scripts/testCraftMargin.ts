@@ -90,6 +90,19 @@ const ok = (name: string, cond: boolean, extra = "") => {
   };
   const pdps = raw.filters?.equipment_filters?.filters?.pdps?.min;
   ok("buildTradeQuery emits equipment_filters.pdps.min = 250", pdps === 250, String(pdps));
+  // trade2 data/filters (read 2026-10-01): equipment "ar" = Armour; type "ilvl" is a min/max filter
+  type Filters = { filters?: { equipment_filters?: { filters?: { ar?: { min?: number } } }; type_filters?: { filters?: { ilvl?: { min?: number; max?: number } } } } };
+  const armour = buildTradeQuery({ type: "Tawhoan Tower Shield", arMin: 1900 }) as Filters;
+  ok("buildTradeQuery emits equipment_filters.ar.min = 1900", armour.filters?.equipment_filters?.filters?.ar?.min === 1900, JSON.stringify(armour.filters));
+  const exact80 = buildTradeQuery({ type: "Dueling Wand", ilvlMin: 80, ilvlMax: 80 }) as Filters;
+  const ilvl = exact80.filters?.type_filters?.filters?.ilvl;
+  ok("buildTradeQuery emits type_filters.ilvl {min 80, max 80}", ilvl?.min === 80 && ilvl.max === 80, JSON.stringify(ilvl));
+  const maxOnly = (buildTradeQuery({ ilvlMax: 80 }) as Filters).filters?.type_filters?.filters?.ilvl;
+  ok("an ilvl cap alone sends only max", maxOnly?.max === 80 && maxOnly.min === undefined, JSON.stringify(maxOnly));
+  const shield = RECIPES.find((r) => r.key === "shield_armour_fracture")!;
+  ok("legToQuery carries the shield result's arMin", legToQuery(shield.result, idx).query.arMin === 1900);
+  const lottery = RECIPES.find((r) => r.key === "wand_ilvl80_perfect_orb_lottery")!;
+  ok("legToQuery carries the lottery base's ilvl cap", legToQuery(lottery.base, idx).query.ilvlMax === 80);
 }
 
 
@@ -159,9 +172,9 @@ const ok = (name: string, cond: boolean, extra = "") => {
 // --- result-leg data: every result leg defines its archetype; tiers only on result legs ---
 {
   const undefinedArchetype = RECIPES.filter(
-    (r) => !r.result.stats.some((st) => st.tier !== 2) && r.result.pdpsMin == null && r.result.esMin == null && r.result.evMin == null,
+    (r) => !r.result.stats.some((st) => st.tier !== 2) && r.result.pdpsMin == null && r.result.esMin == null && r.result.evMin == null && r.result.arMin == null,
   );
-  ok("every result leg has a tier-1 stat or a pdps/ES/EV floor", undefinedArchetype.length === 0, undefinedArchetype.map((r) => r.key).join(","));
+  ok("every result leg has a tier-1 stat or a pdps/ES/EV/Armour floor", undefinedArchetype.length === 0, undefinedArchetype.map((r) => r.key).join(","));
   ok("no base leg carries a result tier", RECIPES.every((r) => r.base.stats.every((st) => st.tier == null)));
 }
 
@@ -202,9 +215,9 @@ async function noRatesIsTransient(): Promise<void> {
   ok("near-miss on a zero median → leg-failed, not a throw", zeroMedian.report.status === "leg-failed" && /engine error/.test(zeroMedian.report.error ?? ""));
 }
 
-// --- recipe integrity: 33 recipes, valid hitRate, every material has a positive expected qty ---
+// --- recipe integrity: 42 recipes, valid hitRate, every material has a positive expected qty ---
 {
-  ok("33 curated recipes", RECIPES.length === 33, String(RECIPES.length));
+  ok("42 curated recipes", RECIPES.length === 42, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));

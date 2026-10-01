@@ -204,7 +204,7 @@ const recipe = (key: string): CraftRecipe => {
 
 // --- data integrity survives the edits ---
 {
-  ok("33 curated recipes", RECIPES.length === 33, String(RECIPES.length));
+  ok("42 curated recipes", RECIPES.length === 42, String(RECIPES.length));
   const badRate = RECIPES.filter((r) => !(r.hitRate > 0 && r.hitRate <= 1));
   ok("all hitRates in (0,1]", badRate.length === 0, badRate.map((r) => r.key).join(","));
   const badQty = RECIPES.flatMap((r) => r.materials).filter((m) => !(m.qtyPerAttempt > 0));

@@ -74,6 +74,10 @@ function testProvenanceData(): void {
   const estimateWithN = RECIPES.filter((r) => provenanceFor(r.key).hitRateBasis.basis === "unknown" && provenanceFor(r.key).hitRateBasis.n !== null);
   ok("an estimate never claims a creator sample", estimateWithN.length === 0, estimateWithN.map((r) => r.key).join(","));
   ok("the S9 bow is credited to XTheFarmerX (oEmbed), not Fubgun", provenanceFor("bow_amanamu").sources[0]?.creator === "XTheFarmerX");
+  // only the 33 recipes that predate durability (craftRecipeData 1-7, listed first) may lack it
+  const LEGACY = 33;
+  const noDurability = RECIPES.slice(LEGACY).filter((r) => !provenanceFor(r.key).durability).map((r) => r.key);
+  ok("every recipe after the 33 legacy ones has why_it_works + breaks_when", noDurability.length === 0, noDurability.join(","));
 }
 
 /** Every linked video's creator is the committed oEmbed author_name for that URL. */
@@ -117,6 +121,10 @@ function testFloorsAndRarity(deps: AuditDeps): void {
   ok("Perfect Augmentation on an ilvl 75 magic base → all ok", run([MATS.perfectAug], base(75, "magic")).every((c) => c.verdict === "ok"));
   const exaltLow = run([MATS.perfectExalted], base(45));
   ok("Perfect Exalted below its floor → soft-floor unknown, not a refusal", has(exaltLow, "floor", "unknown") && !has(exaltLow, "floor", "violation"), JSON.stringify(exaltLow));
+  // KB §1 (2026-10-01 fact-check): Perfect Regal floor 50, on a MAGIC item
+  const regalLow = run([MATS.perfectRegal], base(45, "magic"));
+  ok("Perfect Regal below its floor of 50 → soft-floor unknown, not a refusal", has(regalLow, "floor", "unknown") && !has(regalLow, "floor", "violation"), JSON.stringify(regalLow));
+  ok("Perfect Regal on an ilvl 82 magic base → all ok", run([MATS.perfectRegal], base(82, "magic")).every((c) => c.verdict === "ok"));
   ok("Ancient bone below mod level 40 → soft-floor unknown", has(run([MATS.ancientRib], base(30)), "floor", "unknown"));
   ok("Perfect Exalted with the base ilvl unpinned → unknown", has(run([MATS.perfectExalted], base(undefined)), "floor", "unknown"));
   ok("Gnawed Rib on an ilvl 82 base → ilvl violation", has(run([MATS.gnawedRib], base(82)), "ilvl", "violation"));
@@ -130,7 +138,7 @@ function testFloorsAndRarity(deps: AuditDeps): void {
 
 /** VERIFIED_FLOORS rarities (legality's rarity check) accept exactly what each orb's item text targets. */
 function testFloorRaritiesVsItemText(deps: AuditDeps): void {
-  const floored = [MATS.greaterTransmute, MATS.perfectTransmute, MATS.greaterAug, MATS.perfectAug, MATS.greaterExalted, MATS.perfectExalted];
+  const floored = [MATS.greaterTransmute, MATS.perfectTransmute, MATS.greaterAug, MATS.perfectAug, MATS.greaterExalted, MATS.perfectExalted, MATS.perfectRegal];
   for (const m of floored) {
     const want = targetRarities(deps.byExchangeId(m.id)?.directions ?? null);
     const got = TARGET_RARITIES.filter((r) => has(checkStep(step([m]), base(80, r), deps.byExchangeId, deps.gameDataPatch), "rarity", "ok"));

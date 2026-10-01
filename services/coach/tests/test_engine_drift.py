@@ -33,13 +33,22 @@ def _const(source: str, name: str) -> str:
     return match.group(1).strip()
 
 
+def _purpose(source: str, key: str) -> str:
+    """A recipe's `purpose` line inside its own object literal; unset means "sell"."""
+    start = source.index(f'    key: "{key}",')
+    following = source.find("\n    key: ", start + 1)
+    block = source[start : following if following != -1 else len(source)]
+    match = re.search(r'^    purpose: "(sell|use)",$', block, re.MULTILINE)
+    return match.group(1) if match else "sell"
+
+
 def test_recipe_identity_matches_the_typescript_recipe_data() -> None:
     pattern = re.compile(
         r'^    key: "([^"]+)",\n    domain: "([^"]+)",\n(?:    (?!label:)[^\n]*\n)*?'
         r'    label: "([^"]+)",',
         re.MULTILINE,
     )
-    found: dict[str, tuple[str, str]] = {}
+    found: dict[str, tuple[str, str, str]] = {}
     for name in (
         "craftRecipeData.ts",
         "craftRecipeData2.ts",
@@ -48,14 +57,17 @@ def test_recipe_identity_matches_the_typescript_recipe_data() -> None:
         "craftRecipeData5.ts",
         "craftRecipeData6.ts",
         "craftRecipeData7.ts",
+        "craftRecipeData8.ts",
+        "craftRecipeData9.ts",
     ):
         source = _ts(f"src/core/{name}")
         matches = pattern.findall(source)
         # Every recipe object must be parsed; a formatting change must not silently drop one.
         assert len(matches) == len(re.findall(r"^    key: ", source, re.MULTILINE))
-        found.update({key: (label, domain) for key, domain, label in matches})
+        for key, domain, label in matches:
+            found[key] = (label, domain, _purpose(source, key))
 
-    mirrored = {key: (meta.label, meta.domain) for key, meta in craft_gate.RECIPES.items()}
+    mirrored = {key: (m.label, m.domain, m.purpose) for key, m in craft_gate.RECIPES.items()}
     assert mirrored == found
 
 
@@ -69,7 +81,7 @@ def test_craft_gate_constants_match_craft_valuation() -> None:
     ):
         assert int(_const(source, name)) == getattr(craft_gate, name), name
     reports = _ts("src/core/craftReports.ts")
-    assert "return 3 * config.craftMargin.intervalMin * RECIPES.length * 60_000;" in reports
+    assert "return 3 * config.craftMargin.intervalMin * SCANNED_RECIPES.length * 60_000;" in reports
     env = _ts("src/config/env.ts")
     default = re.search(r'num\("CRAFT_MARGIN_INTERVAL_MIN", (\d+)\)', env)
     assert default is not None

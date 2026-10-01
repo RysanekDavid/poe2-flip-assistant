@@ -37,9 +37,13 @@ export interface RecipeLegSpec {
   category?: string; // trade2 category, e.g. "weapon.bow" (when no single base type applies)
   rarity?: Rarity;
   ilvlMin?: number;
+  // Upper item-level bound: an ilvl-80 wand is a different product from an 81+ one (it cannot roll the
+  // ilvl-81 tiers, so later Whittles stay predictable) — set only where the craft depends on it.
+  ilvlMax?: number;
   pdpsMin?: number; // weapon result legs are valued by physical DPS, not just mods
   esMin?: number; // armour legs: select ES (caster) bases
   evMin?: number; // armour legs: select evasion (attack) bases
+  arMin?: number; // armour legs: total Armour floor (a Shield Wall shield is valued by its armour)
   // Absolute ask floor for this leg in EXALTS (converted at scan-time rates). Unset = the default
   // ABS_FLOOR_DIV (0.05 Div); set ONLY for legs whose honest price is ~1 exalt (cheap putrefaction
   // / plain rare bases), or they never price.
@@ -108,10 +112,19 @@ export interface CraftGuide {
  *  because the procedures (and the player's mental model) differ per item class. */
 export type CraftDomain = "jewel" | "weapon" | "jewellery" | "armour";
 
+/**
+ * Why a recipe exists. "sell" recipes are priced by the margin scanner; "use" recipes make gear for
+ * your own character, so a margin would be meaningless — they are never scanned (no trade2 budget
+ * spent) and the Craft tab labels them instead of showing an EV.
+ */
+export const CRAFT_PURPOSES = ["sell", "use"] as const;
+export type CraftPurpose = (typeof CRAFT_PURPOSES)[number];
+
 export interface CraftRecipe {
   key: string;
   label: string;
   domain: CraftDomain;
+  purpose?: CraftPurpose; // unset = "sell"
   heroIcon?: string; // static poecdn art override for the recipe card (else live comparable art)
   // where the method came from lives in craftProvenanceData.ts (provenanceFor(key))
   base: RecipeLegSpec;
@@ -207,14 +220,34 @@ import { RECIPES_4 } from "./craftRecipeData4";
 import { RECIPES_5 } from "./craftRecipeData5";
 import { RECIPES_6 } from "./craftRecipeData6";
 import { RECIPES_7 } from "./craftRecipeData7";
+import { RECIPES_8 } from "./craftRecipeData8";
+import { RECIPES_9 } from "./craftRecipeData9";
 import { assertGuideRetryRefs } from "./craftRetry";
 
 /** All curated recipes — the original batch (craftRecipeData), the creator-video batch
  *  (craftRecipeData2), the Potent-liquid jewels (craftRecipeData3), the 2026-09-30 expansion
  *  (craftRecipeData4 armour/weapons, craftRecipeData5 jewellery/jewel) and its second wave
- *  (craftRecipeData6 armour/weapons, craftRecipeData7 jewellery), split across data files to respect
- *  the 500-line cap. */
-export const RECIPES: CraftRecipe[] = [...CORE_RECIPES, ...RECIPES_2, ...RECIPES_3, ...RECIPES_4, ...RECIPES_5, ...RECIPES_6, ...RECIPES_7];
+ *  (craftRecipeData6 armour/weapons, craftRecipeData7 jewellery), the 2026-10-01 creator-video wave
+ *  (craftRecipeData8 weapons, craftRecipeData9 armour/jewellery/jewel), split across data files to
+ *  respect the 500-line cap. */
+export const RECIPES: CraftRecipe[] = [
+  ...CORE_RECIPES,
+  ...RECIPES_2,
+  ...RECIPES_3,
+  ...RECIPES_4,
+  ...RECIPES_5,
+  ...RECIPES_6,
+  ...RECIPES_7,
+  ...RECIPES_8,
+  ...RECIPES_9,
+];
+
+export function recipePurpose(r: Pick<CraftRecipe, "purpose">): CraftPurpose {
+  return r.purpose ?? "sell";
+}
+
+/** The recipes the margin scanner prices: every craft-to-sell one. */
+export const SCANNED_RECIPES: readonly CraftRecipe[] = RECIPES.filter((r) => recipePurpose(r) === "sell");
 
 // A broken retry jump is a data bug: stop server boot / CI here, not a player's craft mid-session.
 for (const r of RECIPES) assertGuideRetryRefs(r.key, r.guide);

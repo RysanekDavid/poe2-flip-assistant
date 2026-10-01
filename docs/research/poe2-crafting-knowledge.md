@@ -24,6 +24,14 @@ Contempt idea is logged there. The rest of the file is unchanged.
 Orb and Divine Orb facts (§1) were re-sourced from poe2db item text; the jewel affix cap (§6) is now
 single-source (Maxroll) and the Time-Lost 3 + 3 claim is [unverified].
 
+**Corrections 2026-10-01 (partial, crafts wave 3):** from the independent fact-check of nine creator
+crafts — §1 Perfect Regal floor 50; §2 crafted alloy mods fracturable [single-source] and the
+unrevealed-blocker note; §3 Dusk/Gloam Ring affix allowances; §4 Omen of Crystallisation on alloys
+[unverified, creator/player-demonstrated], the omen being consumed by any essence, the Liege on belts,
+Omen of Corruption no longer obtainable, Omen of Sanctification; §5 re-desecrating without Omen of
+Light REFUTED; §7 the Astrid's Creativity exception [verified-primary]; §10 question 1 narrowed. The
+rest of the file is unchanged.
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -40,7 +48,8 @@ explicitly refuted (0-3 and 1-2 adversarial votes).
 | Perfect Orb of Transmutation / Augmentation | **70** | GGG-moderator confirmed |
 | Greater Exalted Orb | **35** | |
 | Perfect Exalted Orb | **50** | stack 20, drop lvl 79 |
-| Greater/Perfect Regal & Chaos | **UNVERIFIED** | no surviving claim — look up per item on poe2db before encoding |
+| Perfect Regal Orb | **50** | [CONFIRMED by the 2026-10-01 independent fact-check against poe2db item data, [Perfect_Regal_Orb](https://poe2db.tw/us/Perfect_Regal_Orb)] |
+| Greater Regal, Greater/Perfect Chaos | **UNVERIFIED** | no surviving claim — look up per item on poe2db before encoding |
 
 Sources: poe2db.tw (data-mined), poe2wiki item pages, GGG 0.5.0 patch notes verbatim,
 GGG moderator forum thread 3863869.
@@ -75,6 +84,12 @@ Sources: identical exception wording on all poe2wiki min-level currency pages; f
 
 - Target must be **RARE with ≥4 modifiers**; never unique/magic/normal/already-fractured.
 - **One fracture per item, ever.**
+- **Crafted mods can be fractured** [single-source — creator-only: a Fracturing Orb landed on a
+  crafted alloy mod (cast speed) on Belton's +4 wand, docs/kb/sources/transcripts/25 at 1:54–2:47
+  and 15:30–15:43]. No item text says so either way; budget a crafted-mod fracture as possible.
+- Creators fracture with the desecrated blocker still UNREVEALED (four 2026 videos,
+  docs/kb/sources/transcripts/25, 27, 28, 30). The "counts toward 4" rule below is confirmed for a
+  desecrated mod; that an unrevealed one behaves the same is creator-demonstrated only.
 - **Desecrated mods can't be fractured but DO count toward the 4-mod minimum** → the
   1/4→1/3 odds trick (keeper + 2 junk + 1 desecrated) is real and optimal.
 - Fractured mod **values are Divine-proof** (bug fixed 0.2.0e). 0.5.1 hotfixes closed every
@@ -97,6 +112,11 @@ Sources: poe2wiki Fracturing_Orb (edit history through 0.5.1), vulkk, mobalytics
 modifiers, base mappings, classes, skills, augments, tags and uniques rather than selected HTML
 pages. Re-run per patch. Prose sources got these wrong repeatedly; the
 earlier "82/70 for all bases" guide claim resolves to 82/65.
+
+**Affix-allowance rings** [verified-primary — RePoE snapshot `base_items` implicits, game data
+0.5.5b]: **Dusk Ring** = "+1 Prefix Modifier allowed" / "-1 Suffix Modifier allowed" (4 prefixes,
+2 suffixes); **Gloam Ring** is the mirror (−1 prefix / +1 suffix; auto-captions spell it "gloom ring"). A four-flat-prefix attack ring
+needs the Dusk Ring.
 
 → ilvl-81 base can top chaos res but never top ele res. PoE2 in-game tier numbers count
 UPWARD — "T1" in this doc = highest tier (PoE1 vernacular). Headline-mod coverage now comes from
@@ -127,12 +147,36 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
 - **Omen of Abyssal Echoes**: ONE reroll of the three offered reveal options (insurance, not
   auto-best-pick). (CONFIRMED 2026-07-13 round; Game8 quote.)
 - **Omen of the Liege**: forces Amanamu desecrated mod, blocks Ulaman/Kurgal; weapons +
-  jewellery only. (2026-07-13 round.)
+  jewellery only. (2026-07-13 round.) **Belts count as jewellery** for it [single-source —
+  creator footage, ASaVeQ, docs/kb/sources/transcripts/23 at 12:58–13:34: Dextral Necromancy +
+  Liege + Preserved Collarbone on a belt revealed fire + chaos resistance; consistent with RePoE's
+  Amanamu belt suffix "+(13—17)% to Fire and Chaos Resistances", not stated in any item text].
+- **Omen of Sinistral/Dextral Crystallisation on ALLOYS** [unverified — creator/player-demonstrated,
+  not documented]: the omen text names only "your next Perfect or Corrupted Essence", yet players
+  and creators steer Verisium alloys with it (forum
+  [3949532](https://www.pathofexile.com/forum/view-thread/3949532); Belton's +4 wand at 0:51–1:20,
+  ASaVeQ's Dusk Ring at 17:12–17:21 — docs/kb/sources/transcripts/25, 27). GGG may treat it as a
+  bug; every recipe that relies on it lists that in its breaks_when.
+- **A Crystallisation omen is consumed by ANY essence**, Greater included [single-source — forum
+  [3851940](https://www.pathofexile.com/forum/view-thread/3851940)]: activate it only after the
+  Greater essence step.
+- **Omen of Corruption** ("your next Vaal Orb will always result in change", entity catalog 0.5.5b)
+  still exists in the game data but **can no longer be obtained** [verified-primary — 0.5.0 patch
+  notes, [forum 3932540](https://www.pathofexile.com/forum/view-thread/3932540), per the 2026-10-01
+  fact-check]. Don't build a recipe on it.
+- **Omen of Sanctification**: "your next Divine Orb used on a Rare item will Sanctify it"
+  [verified-primary — entity catalog 0.5.5b]. Creators use it as an end gamble; values can roll
+  down as well as up (creator footage, docs/kb/sources/transcripts/30 at 22:29–23:10).
 - **Omen of Homogenising Exaltation**: drop-disabled in 0.4.0 — gone for current-league tooling.
 
 ## 5. Desecration (CONFIRMED core + gaps)
 
-- **Max ONE desecrated modifier per item** (exception: Putrefaction's full replacement).
+- **Max ONE desecrated modifier per item** (exception: Putrefaction's full replacement). The game
+  refuses a second: "Items with Desecrated Modifiers cannot be Desecrated again"; the 0.5.0 notes
+  limit items "to 1 Desecrated modifier" [verified-primary — game message and 0.5.0 patch notes
+  ([forum 3932540](https://www.pathofexile.com/forum/view-thread/3932540)) as quoted in the
+  2026-10-01 fact-check]. So **re-desecrating over an existing desecrated mod without Omen of Light
+  does NOT work** — strip it first (Omen of Light + Orb of Annulment).
   A crafted (essence) mod and a desecrated mod CAN coexist.
 - On a full 6-mod rare, a bone REMOVES a random mod (of the matching side) and replaces it.
 - Bone → slot mapping (2026-07-13 round, single-source-ish): Jawbone=weapons/quivers,
@@ -229,8 +273,12 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
 
 ## 7. Essences & crafted-mod slot (CONFIRMED)
 
-- **Max ONE crafted (essence-guaranteed) mod per item** in 0.5.x — Greater then Perfect
-  essence stacking is dead; Essences/Perfect Essences/Imbued Alloys all write the same slot
+- **Max ONE crafted (essence-guaranteed) mod per item** in 0.5.x, **except with Astrid's
+  Creativity**: that augment reads "All Equipment: Can have 1 additional Crafted Modifiers"
+  [verified-primary — [poe2db Astrids_Creativity](https://poe2db.tw/us/Astrids_Creativity), accessed
+  2026-10-01 in the fact-check; entity catalog: "Place into an empty Augment Socket in any
+  Equipment"]. It is replaceable by another augment; whether the second crafted mod survives that
+  swap is untested. Without it, Greater then Perfect essence stacking is dead; Essences/Perfect Essences/Imbued Alloys all write the same slot
   (Perfect/Alloy remove-then-replace). Removable via Annulment/Chaos (list non-exhaustive).
 - **Targets:** Lesser, regular and Greater essences upgrade a MAGIC item to rare, adding their
   guaranteed mod; no essence applies to a normal item. Item text on every one of them: "Upgrades a
@@ -297,7 +345,7 @@ Source: creator league review (single-source, practitioner-grade — the "zero t
 
 ## 10. Open questions (next research round)
 
-1. Greater/Perfect Regal & Chaos floors (poe2db lookup).
+1. Greater Regal and Greater/Perfect Chaos floors (poe2db lookup). Perfect Regal = 50 (§1).
 2. Verify per-base ilvl breakpoints for headline mods against each new RePoE snapshot.
 3. Well of Souls reveal ordering + family-blocking.
 4. Omen compatibility matrix beyond documented pairs.

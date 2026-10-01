@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import type { ProvenanceView, RecipeSource, SourceTier } from "../../core/craftProvenance/schema";
+import type { CreatorClaim, ProvenanceView, RecipeSource, SourceTier } from "../../core/craftProvenance/schema";
 import { Tooltip } from "../ui/Tooltip";
 import { StatusChip, staleText } from "./ProvenanceChips";
 
@@ -31,15 +31,55 @@ function SourceRow({ s }: { s: RecipeSource }) {
         <span className={`cursor-help rounded border px-1 text-xs ${s.tier === "anecdote" ? "border-amber-400/40 text-amber-300" : "border-line text-neutral-400"}`}>{s.tier}</span>
       </Tooltip>
       <span className="text-neutral-200">{who}</span>
-      {s.url ? (
-        <a href={s.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-neutral-300 hover:text-amber-200">
-          {s.title} <ExternalLink aria-hidden className="h-3 w-3 shrink-0" />
-        </a>
-      ) : (
-        <span className="text-neutral-400">{s.title}</span>
-      )}
+      <SourceTitle s={s} />
       <SourceDate s={s} />
     </li>
+  );
+}
+
+/** A source without a link names its committed copy instead, so the reader can still check it. */
+function SourceTitle({ s }: { s: RecipeSource }) {
+  if (s.url) {
+    return (
+      <a href={s.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-neutral-300 hover:text-amber-200">
+        {s.title} <ExternalLink aria-hidden className="h-3 w-3 shrink-0" />
+      </a>
+    );
+  }
+  return (
+    <span className="text-neutral-400">
+      {s.title}
+      {s.ref && <span className="ml-1 break-all text-neutral-500">({s.ref})</span>}
+    </span>
+  );
+}
+
+/** What the creators said (prices, sales, odds): dated, timestamped context — never our margin. */
+function CreatorClaims({ claims, sources }: { claims: CreatorClaim[]; sources: RecipeSource[] }) {
+  if (claims.length === 0) return null;
+  return (
+    <div className="space-y-1 border-t border-neutral-800 pt-1.5">
+      <Tooltip tip="What the video says, with its timestamp. Context only: prices move, and the margin on this card comes from live prices alone.">
+        <span className="cursor-help uppercase tracking-wide text-neutral-500">Creator said</span>
+      </Tooltip>
+      <ul className="space-y-0.5">
+        {claims.map((c) => {
+          const s = sources.find((x) => x.ref === c.sourceRef);
+          return (
+            <li key={`${c.sourceRef}-${c.at}-${c.text}`} className="text-neutral-400">
+              <span className="text-neutral-300">{s?.creator ?? "creator"}</span>
+              {s && (
+                <>
+                  {" · "}
+                  <SourceDate s={s} />
+                </>
+              )}
+              <span className="tabular-nums text-neutral-500"> @ {c.at}</span>: {c.text}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -59,6 +99,7 @@ export function SourcesList({ p }: { p: ProvenanceView }) {
           <SourceRow key={`${s.title}-${s.url ?? s.ref ?? ""}`} s={s} />
         ))}
       </ul>
+      <CreatorClaims claims={p.creatorClaims} sources={p.sources} />
       {p.stale.length > 0 && (
         <ul className="space-y-0.5 text-amber-300">
           {p.stale.map((r) => (
