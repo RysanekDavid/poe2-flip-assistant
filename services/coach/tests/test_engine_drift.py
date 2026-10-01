@@ -234,6 +234,8 @@ _STRATEGY_OBJECTS = {
     "tabletSchema": strategy_models.Tablet,
     "waystoneSchema": strategy_models.Waystone,
     "budgetSchema": strategy_models.Budget,
+    "ratingSchema": strategy_models.Rating,
+    "ratingsSchema": strategy_models.Ratings,
     "patchStampSchema": strategy_models.PatchStamp,
     "measuredSchema": strategy_models.Measured,
     "farmStrategySchema": strategy_models.FarmStrategy,
@@ -267,6 +269,10 @@ def test_strategy_enums_and_claim_rules_match_typescript() -> None:
     assert _ts_string_tuple(schema, "WAYSTONE_TOTALS") == get_args(strategy_models.WaystoneTotal)
     assert "/^explicit\\.stat_\\d+$/" in schema
     assert strategy_models.TRADE_STAT_ID_PATTERN == r"^explicit\.stat_\d+$"
+    assert int(_const(schema, "RATING_MIN")) == strategy_models.RATING_MIN
+    assert int(_const(schema, "RATING_MAX")) == strategy_models.RATING_MAX
+    assert int(_const(schema, "STRATEGY_SCHEMA_VERSION")) == 2
+    assert get_args(strategy_models.FarmStrategy.model_fields["schema_version"].annotation) == (2,)
     claim = _ts("src/lib/claim.ts")
     assert _ts_string_tuple(claim, "CLAIM_VERDICTS") == get_args(strategy_models.ClaimVerdict)
     rules = re.search(r"MIN_SOURCES: Record<ClaimVerdict, number> = \{([^}]+)\}", claim)

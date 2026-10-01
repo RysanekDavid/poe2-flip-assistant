@@ -38,6 +38,9 @@ BUDGET_ORDER: tuple[BudgetTier, ...] = ("league_start", "mid", "high")
 #: A grade whose label counts sources must carry that many (MIN_SOURCES in claim.ts).
 MIN_SOURCES: dict[ClaimVerdict, int] = {"vp": 1, "vs": 2, "ss": 1, "uv": 0, "cf": 0, "syn": 0}
 TRADE_STAT_ID_PATTERN = r"^explicit\.stat_\d+$"
+#: Build and Complexity scale (RATING_MIN / RATING_MAX in schema.ts).
+RATING_MIN = 1
+RATING_MAX = 5
 #: Real-money-trading shops are never a claim source (RMT_DOMAINS in claim.ts; host or subdomain).
 RMT_DOMAINS: tuple[str, ...] = (
     "poecurrency.com",
@@ -188,12 +191,46 @@ class Waystone(_Strict):
     claim: Claim
 
 
+def _require_source(rated: bool, claim: Claim) -> None:
+    """A drawn rating must cite what it rests on (requireSourceWhenRated in schema.ts)."""
+    if rated and not claim.src:
+        raise ValueError("a rating needs at least one source URL")
+
+
 class Budget(_Strict):
-    """Budget tier with what the build must handle."""
+    """Budget tier, why it is that tier, and what the build must handle."""
 
     tier: BudgetTier
+    why: Text
     build_needs: Text
     claim: Claim
+
+    @model_validator(mode="after")
+    def tier_is_sourced(self) -> "Budget":
+        """The tier is always drawn, so its claim always cites a source."""
+        _require_source(True, self.claim)
+        return self
+
+
+class Rating(_Strict):
+    """One curated 1-5 rating; null when the sources support no step."""
+
+    value: int | None = Field(ge=RATING_MIN, le=RATING_MAX)
+    why: Text
+    claim: Claim
+
+    @model_validator(mode="after")
+    def rated_value_is_sourced(self) -> "Rating":
+        """A rated value cites a source; an unrated one may not."""
+        _require_source(self.value is not None, self.claim)
+        return self
+
+
+class Ratings(_Strict):
+    """How demanding the strategy is on the build, and how much there is to set up and decide."""
+
+    build: Rating
+    complexity: Rating
 
 
 class PatchStamp(_Strict):
@@ -214,7 +251,7 @@ class Measured(_Strict):
 class FarmStrategy(_Strict):
     """One curated farm strategy file."""
 
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     id: str = Field(pattern=ENTITY_ID_PATTERN)
     title: Text
     summary: Text
@@ -222,6 +259,7 @@ class FarmStrategy(_Strict):
     patch: PatchStamp
     status: Literal["draft", "reviewed", "stale"]
     budget: Budget
+    ratings: Ratings
     yields: tuple[StrategyYield, ...] = Field(min_length=1)
     atlas_master: AtlasMaster
     atlas_passives: tuple[AtlasPassive, ...]

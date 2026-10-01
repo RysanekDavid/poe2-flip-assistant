@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "boss-rush-overseer",
   "title": "Map boss rush with Overseer tablets",
   "summary": "Make more Map Bosses Powerful and more rare packs into bosses, then stack Map Boss rarity, quantity and waystone mods from Overseer tablets and the atlas tree.",
@@ -16,11 +16,40 @@
   "status": "draft",
   "budget": {
     "tier": "mid",
+    "why": "Waystones rolled for three totals (item rarity, monster effectiveness, waystone drop chance) and one magic Overseer Tablet.",
     "build_needs": "Kills Powerful Map Bosses quickly in T15–T16 maps.",
     "claim": {
       "v": "syn",
-      "src": [],
-      "note": "Editorial estimate from what the setup needs; not measured."
+      "src": [
+        "https://poe2db.tw/us/Waystones",
+        "https://poe2db.tw/us/Overseer_Tablet"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 3,
+      "why": "The loop is killing Powerful Map Bosses, made more common by Hilda's Mighty Prey.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Masters_of_the_Atlas",
+          "https://poe2db.tw/us/Overseer_Tablet"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 2,
+      "why": "One Overseer Tablet; in the map, rush the boss and keep the tablets it drops.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Overseer_Tablet"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [

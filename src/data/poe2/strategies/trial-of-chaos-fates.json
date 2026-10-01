@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "trial-of-chaos-fates",
   "title": "Trial of Chaos: 30-room runs for Trialmaster Fates",
   "summary": "Since 0.5.5 a Trial of Chaos can be paused and resumed, pays a chest per room, and completion rewards are only Currency and Soul Cores. A finished 10-room trial can be continued twice; each subsequent successful run awards a different Trialmaster Fragment, so players who reach later rooms can obtain all three Fates in a single run.",
@@ -16,13 +16,39 @@
   "status": "draft",
   "budget": {
     "tier": "mid",
+    "why": "An Inscribed Ultimatum is consumed to start each trial.",
     "build_needs": "Clears 10 to 30 rooms of stacking modifiers; the elite monsters are more dangerous since 0.5.5.",
     "claim": {
       "v": "syn",
       "src": [
-        "https://www.pathofexile.com/forum/view-thread/4000864"
+        "https://poe2db.tw/us/Inscribed_Ultimatum"
       ],
-      "note": "Editorial estimate from the 0.5.5 changes; not measured."
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 4,
+      "why": "Room modifiers stack over 10 to 30 rooms, and since 0.5.5 the elite monsters are more dangerous.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://www.pathofexile.com/forum/view-thread/4000864",
+          "https://poe2db.tw/us/Inscribed_Ultimatum"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 4,
+      "why": "Choose modifiers before each room, continue a finished trial up to twice (with an optional wager), and resume it later from the same room.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [

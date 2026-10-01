@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "expedition-grand",
   "title": "Expedition: logbooks and Grand Expeditions",
   "summary": "0.5.5 made Expedition a core mechanic: run Expedition tablets for logbooks and rare runic monsters, then open Grand Expeditions, which The Quest Continues pushes to up to 3 modifiers.",
@@ -16,11 +16,39 @@
   "status": "draft",
   "budget": {
     "tier": "mid",
+    "why": "Up to four Expedition Tablets per map (0.5.5 counts) and waystones rolled for two totals (item rarity, monster rarity).",
     "build_needs": "Kills rare runic monsters and ice-encased bosses unearthed together by one explosive chain.",
     "claim": {
       "v": "syn",
-      "src": [],
-      "note": "Editorial estimate from what the setup needs; not measured."
+      "src": [
+        "https://poe2db.tw/us/Expedition_Tablet",
+        "https://www.pathofexile.com/forum/view-thread/4000864"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 4,
+      "why": "Each Remnant an explosive destroys applies its modifiers to every monster unearthed after it, so danger stacks along the chain.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Expedition"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 4,
+      "why": "Plan each explosive chain through the Remnants, then run the logbooks as Grand Expeditions — a second activity the first one feeds.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Expedition"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [

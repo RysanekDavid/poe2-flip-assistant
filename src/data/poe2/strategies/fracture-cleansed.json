@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "fracture-cleansed",
   "title": "Fracturing Orbs from Cleansed maps",
   "summary": "Clear a Corrupted Nexus so the corrupted maps around it turn Cleansed, then run those with Hidden Scars and From Distances Untold: Cleansed monsters and modded Summoning Circle bosses can drop Fracturing Orbs.",
@@ -17,11 +17,39 @@
   "status": "draft",
   "budget": {
     "tier": "mid",
+    "why": "The Corrupted Nexus needs a waystone with at least 4 modifiers, and the Cleansed maps are rolled for four totals.",
     "build_needs": "Beats the Corrupted Nexus boss and clears Cleansed maps, which add extra packs of Cleansed monsters.",
     "claim": {
       "v": "syn",
-      "src": [],
-      "note": "Editorial estimate from what the setup needs; not measured."
+      "src": [
+        "https://poe2db.tw/us/Corrupted_Nexus",
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 3,
+      "why": "The Corrupted Nexus always contains a Beyond boss, and Cleansed maps add packs of Cleansed monsters.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Corrupted_Nexus"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 4,
+      "why": "Clear a Corrupted Nexus first so the maps around it turn Cleansed, then run those maps — a plan across several maps.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Corrupted_Nexus"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [
