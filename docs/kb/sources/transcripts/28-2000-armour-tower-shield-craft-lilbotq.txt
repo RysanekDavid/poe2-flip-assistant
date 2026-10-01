@@ -1,7 +1,7 @@
-[YouTube title not fetched] 2,000 Armour Tower Shield craft — LilBotQ
+Creator: LilBotQ
 https://www.youtube.com/watch?v=4YOSSAa53UU
 
-(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api. The video's own title was not fetched (the oEmbed request was blocked in that session); the creator name is from a search listing.)
+(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api; the creator name is from a search listing.)
 
 [0:00] What's up, YouTube? Here's how you can
 [0:01] craft a 2,000 armor shield and how I

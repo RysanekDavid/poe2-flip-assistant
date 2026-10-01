@@ -8,6 +8,8 @@
 
 **Corrections 2026-10-01 (partial, crafts wave 3):** nine 2026-09 creator videos (S22–S30) were mined from timestamped auto-caption transcripts and independently fact-checked; each new entry below is tagged, and the fact-check's verdicts are logged under "Adversarial verification". New entries only: Source key S22–S30, the S22–S30 recipes (Boots, Wands, Bow / Spear / Quarterstaff, Shields, Rings, Jewels), three wallet warnings and five log entries. The rest of the file is unchanged.
 
+**Corrections 2026-10-01 (partial, S22–S30 source key):** the S22–S30 row was trimmed to its tags, creators and transcript files; no claim changed and nothing else in the file changed.
+
 ### Source key
 
 | Tag | Video |
@@ -32,7 +34,7 @@
 | S18 | ZTM Ep 6: The Unkillable Korean Wisp Strat |
 | S19 | ZTM Ep. 7: Can We Take On The Most JUICED Content Of the League!? |
 | S20 | NAUČ SE CRAFTIT NEJLEPŠÍ JEWELY V POE 2 (Czech) |
-| S22–S30 | 2026-09 creator crafts; YouTube titles NOT fetched (oEmbed blocked when added), creators from a search listing. Transcripts: S22 Bosorkana bleed spear (`22-…`), S23 ASaVeQ body/belt/wand (`23-…`), S24 Belton ilvl-80 wand lottery (`24-…`), S25 Belton +4 alloy wand (`25-…`), S26 Diztoh Gold Ring (`26-…`), S27 ASaVeQ Dusk Ring (`27-…`), S28 LilBotQ Tower Shield (`28-…`), S29 LilBotQ jewels (`29-…`), S30 ASaVeQ ES boots (`30-…`), all under docs/kb/sources/transcripts/. Timestamps below are [m:ss] in those files. |
+| S22–S30 | 2026-09 creator crafts; creators from a search listing. Transcripts: S22 Bosorkana bleed spear (`22-…`), S23 ASaVeQ body/belt/wand (`23-…`), S24 Belton ilvl-80 wand lottery (`24-…`), S25 Belton +4 alloy wand (`25-…`), S26 Diztoh Gold Ring (`26-…`), S27 ASaVeQ Dusk Ring (`27-…`), S28 LilBotQ Tower Shield (`28-…`), S29 LilBotQ jewels (`29-…`), S30 ASaVeQ ES boots (`30-…`), all under docs/kb/sources/transcripts/. Timestamps below are [m:ss] in those files. |
 
 ---
 

@@ -5,13 +5,12 @@ import type { CreatorClaim, RecipeProvenance, RecipeSource } from "./craftProven
  * (craftRecipeData8.ts + craftRecipeData9.ts), merged into craftProvenanceData.ts and validated there.
  *
  * Every step was read off the creator's timestamped auto-caption transcript, committed under
- * docs/kb/sources/transcripts/22–30 (line 2 of each holds the YouTube URL). The sources carry NO
- * link: the YouTube oEmbed request was blocked in the session that added them, so neither the
- * video title nor the channel's author_name is confirmed (test:craft-provenance requires a linked
- * video's creator to match docs/kb/sources/oembed.json). Creators are the names from the
+ * docs/kb/sources/transcripts/22–30 (line 2 of each holds the YouTube URL). The sources carry no
+ * link and no title: test:craft-provenance only accepts a linked video whose creator matches its
+ * oEmbed author_name in docs/kb/sources/oembed.json, which these videos lack, and an untitled
+ * source renders as its creator, date and claim timestamps. Creators are the names from the
  * researcher's search listing (Belton also names himself, video 0:01); dates are that listing's,
- * precision "listing", and null where it showed none. Follow-up: fetch oEmbed, add E7–E15 and link
- * these sources.
+ * precision "listing", and null where it showed none.
  *
  * Grades (src/lib/claim.ts) sit on each recipe's why_it_works at its weakest link: "syn" where every
  * mechanic in it is item text or RePoE, "uv" where it rests on a creator- or player-demonstrated
@@ -21,10 +20,10 @@ import type { CreatorClaim, RecipeProvenance, RecipeSource } from "./craftProven
 
 const TRANSCRIPTS = "docs/kb/sources/transcripts";
 
-function video(file: string, title: string, creator: string, listingDate: string | null): RecipeSource {
+function video(file: string, creator: string, listingDate: string | null): RecipeSource {
   return {
     kind: "video",
-    title: `[YouTube title not fetched] ${title}`,
+    title: null,
     url: null,
     creator,
     date: listingDate,
@@ -34,15 +33,15 @@ function video(file: string, title: string, creator: string, listingDate: string
   };
 }
 
-const SPEAR = video("22-bleed-spear-craft-bosorkana.txt", "Bleed spear craft", "Bosorkana", "2026-09-18");
-const COLD_WAND = video("23-league-start-body-belt-wand-crafts-asaveq.txt", "League-start body armour, belt and wand crafts", "ASaVeQ", "2026-09-06");
-const LOTTERY = video("24-ilvl-80-dueling-wand-perfect-orb-lottery-belton.txt", "ilvl-80 Dueling Wand Perfect-orb lottery", "Belton", null);
-const PLUS4 = video("25-plus-6-to-plus-8-spellslinger-wand-belton.txt", "+6 to +8 spellslinger wand with two alloys", "Belton", null);
-const GOLD_RING = video("26-gold-ring-item-rarity-craft-diztoh.txt", "Gold Ring item rarity craft", "Diztoh", "2026-09-11");
-const DUSK = video("27-dusk-ring-four-flat-damage-craft-asaveq.txt", "Dusk Ring four flat damage craft", "ASaVeQ", null);
-const SHIELD = video("28-2000-armour-tower-shield-craft-lilbotq.txt", "2,000 Armour Tower Shield craft", "LilBotQ", "2026-09-11");
-const JEWELS = video("29-budget-and-5-mod-jewel-crafting-lilbotq.txt", "Budget and 5-mod jewel crafting", "LilBotQ", "2026-09-14");
-const BOOTS = video("30-35-ms-mana-stacker-boots-craft-asaveq.txt", "35% MS mana-stacker boots craft", "ASaVeQ", null);
+const SPEAR = video("22-bleed-spear-craft-bosorkana.txt", "Bosorkana", "2026-09-18");
+const COLD_WAND = video("23-league-start-body-belt-wand-crafts-asaveq.txt", "ASaVeQ", "2026-09-06");
+const LOTTERY = video("24-ilvl-80-dueling-wand-perfect-orb-lottery-belton.txt", "Belton", null);
+const PLUS4 = video("25-plus-6-to-plus-8-spellslinger-wand-belton.txt", "Belton", null);
+const GOLD_RING = video("26-gold-ring-item-rarity-craft-diztoh.txt", "Diztoh", "2026-09-11");
+const DUSK = video("27-dusk-ring-four-flat-damage-craft-asaveq.txt", "ASaVeQ", null);
+const SHIELD = video("28-2000-armour-tower-shield-craft-lilbotq.txt", "LilBotQ", "2026-09-11");
+const JEWELS = video("29-budget-and-5-mod-jewel-crafting-lilbotq.txt", "LilBotQ", "2026-09-14");
+const BOOTS = video("30-35-ms-mana-stacker-boots-craft-asaveq.txt", "ASaVeQ", null);
 
 const POE2DB = "https://poe2db.tw/us/";
 const FORUM_ALLOY = "https://www.pathofexile.com/forum/view-thread/3949532";

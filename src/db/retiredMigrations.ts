@@ -34,3 +34,19 @@ export function dropRetiredHunts(conn: Database.Database): boolean {
   console.warn("[db] removed the retired Hunt tables (hunts, hunt_hits, hunt_runtime) and their alerts");
   return true;
 }
+
+/**
+ * farm_user_speed held each user's manual minutes-per-run / Div-per-run from the removed Farm Div/h
+ * input; nothing has read or written it since. Deleted with the owner's approval — IRREVERSIBLE on
+ * an existing database (restore from a nightly backup if needed). It had no own indexes or
+ * triggers, and DROP TABLE takes any with it anyway.
+ *
+ * Keyed on the table like dropRetiredHunts, so after the drop each boot is one sqlite_master
+ * lookup; IF EXISTS covers the web and poller booting together and both seeing the table.
+ */
+export function dropRetiredFarmSpeed(conn: Database.Database): boolean {
+  if (!tableExists(conn, "farm_user_speed")) return false;
+  conn.exec("DROP TABLE IF EXISTS farm_user_speed");
+  console.warn("[db] removed the retired farm_user_speed table (manual Farm pace input)");
+  return true;
+}

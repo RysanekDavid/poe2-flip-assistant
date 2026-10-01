@@ -16,6 +16,7 @@ import { effectiveHitRate, poolAttempts, type AttemptRow } from "../core/craftPr
 import { calibrationStats } from "../core/craftProvenance/samples";
 import { patchStaleness, PATCH_STALE_TTL_MS, recipePatchStaleness, resetPatchStaleCache } from "../core/craftProvenance/patchStale";
 import { provenanceViews } from "../core/craftProvenance/view";
+import { recipeSourceSchema } from "../core/craftProvenance/schema";
 import { assembleReport } from "../core/craftMargin";
 import type { EntityRow } from "../core/entities/schema";
 import { TARGET_RARITIES, targetRarities } from "./tools/craftMovesTargets";
@@ -93,6 +94,19 @@ function testOembedAttribution(): void {
   // oEmbed carries no date: an exact video date must be the upload date recorded from the watch page
   const badDates = videos.filter((s) => s.date !== null && s.datePrecision !== "listing" && uploaded.get(s.url ?? "") !== s.date);
   ok("video dates are search listings or the recorded watch-page upload date", badDates.length === 0, badDates.map((s) => s.url).join(","));
+}
+
+/** A title we never fetched is null, not placeholder text, and only a creator-named video may lack one. */
+function testUntitledSources(): void {
+  const sources = RECIPES.flatMap((r) => provenanceFor(r.key).sources);
+  const placeholders = sources.filter((s) => s.title !== null && /not fetched|title unknown|untitled/i.test(s.title)).map((s) => s.title);
+  ok("no source carries a placeholder title", placeholders.length === 0, placeholders.join(" | "));
+  ok("untitled videos are in the data (the wave-3 transcripts)", sources.some((s) => s.title === null));
+  const base = { kind: "video", title: null, url: null, creator: "Belton", date: null, datePrecision: null, tier: "primary", ref: "docs/kb/x.txt" } as const;
+  ok("an untitled video with a creator and ref is valid", recipeSourceSchema.safeParse(base).success);
+  ok("an untitled video without a creator is rejected", !recipeSourceSchema.safeParse({ ...base, creator: null }).success);
+  ok("an untitled video without a ref is rejected", !recipeSourceSchema.safeParse({ ...base, ref: null, url: "https://www.youtube.com/watch?v=x" }).success);
+  ok("an untitled guide is rejected", !recipeSourceSchema.safeParse({ ...base, kind: "guide" }).success);
 }
 
 // --- D-2 audit artifact: stamped with the manifest's snapshot, current, and free of violations ---
@@ -305,6 +319,7 @@ function testZeroHitRate(): void {
 
 testProvenanceData();
 testOembedAttribution();
+testUntitledSources();
 const deps = testAuditArtifact();
 testFloorsAndRarity(deps);
 testPairing(deps);
