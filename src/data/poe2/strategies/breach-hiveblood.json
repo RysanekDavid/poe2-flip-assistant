@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "breach-hiveblood",
   "title": "Breach: Wombgifts and Hiveblood",
   "summary": "Juiced Breach maps for Wombgifts and Hiveblood: Breach tablets roll Wombgift level-ups and Hiveblood quantity, Moment of Risk scales Wombgift levels with every map modifier, and Breeding Program picks the Wombgift type.",
@@ -16,11 +16,41 @@
   "status": "draft",
   "budget": {
     "tier": "mid",
+    "why": "Waystones rolled for three totals (monster rarity, monster effectiveness, item rarity) and one magic Breach Tablet.",
     "build_needs": "Clears Unstable Breaches with extra rare waves in juiced T15+ maps.",
     "claim": {
       "v": "syn",
-      "src": [],
-      "note": "Editorial estimate from what the setup needs; not measured."
+      "src": [
+        "https://poe2db.tw/us/Waystones",
+        "https://poe2db.tw/us/Breach_Tablet"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 3,
+      "why": "Stabilised Unstable Breaches spawn Rare monsters (in waves of 5 since 0.5.5), and the tablet suffix can add more of them.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://www.pathofexile.com/forum/view-thread/4000864",
+          "https://poe2db.tw/us/Breach_Tablet"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 3,
+      "why": "Pick a Wombgift type with Breeding Program, then grow Wombgifts at the Genesis Tree with the Hiveblood you bring back — a step outside the map.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Wombgifts",
+          "https://poe2db.tw/us/Breeding_Program"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [

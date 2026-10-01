@@ -137,6 +137,16 @@ a claim grade (`src/lib/claim.ts`): `vp` only for text checked against poe2db, t
 notes; owner notes and our own picks are `syn`; unknowns are `uv` with a note. Never invent a rate,
 node, mod or source.
 
+**Ratings (schema v2).** The card draws three bars, and each is curated data that must show its
+work. `budget.tier` (three steps) carries `why`, and `ratings.build` / `ratings.complexity` (1–5)
+each carry `value`, `why` and a claim. The scales live in `src/core/strategies/ratings.ts`: Build
+is the hardest thing the character must kill or survive, and Complexity is how much there is to set
+up and decide, read off the strategy's own steps. A rating is our reading of cited facts against
+that scale, so it is graded `syn` and its claim must cite the pages those facts come from (the
+schema rejects a rated value or a budget tier with no source). When no source supports a step, set
+`value: null`; the card then shows "—". Never pick a number to fill a bar. Have every new or
+changed rating fact-checked by a second agent against its cited pages before it ships.
+
 The loader throws on any defect (id ≠ filename, unknown yield, a master node poe2db puts elsewhere);
 `npm run test:strategies` pins the evidence floor, and `npm run strategies:check` (network, not CI)
 resolves every stat id, tablet base and unique tablet against the live trade2 data catalog, printing

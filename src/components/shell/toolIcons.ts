@@ -7,6 +7,7 @@ import artTablet from "../../assets/items/regex-tablet.webp";
 import artRelic from "../../assets/items/coffer-relic.png";
 import artJewel from "../../assets/items/emerald-jewel.png";
 import artGold from "../../assets/items/gold.png";
+import artBarya from "../../assets/items/djinn-barya.png";
 import artDivine from "../../assets/items/divine-orb.png";
 import type { TabId } from "./tabRegistry";
 import type { ToolIconKey } from "./toolIconKeys";
@@ -18,7 +19,8 @@ const art = (src: string): ToolIcon => ({ kind: "art", src });
 const glyph = (Icon: LucideIcon): ToolIcon => ({ kind: "glyph", Icon });
 
 // Kept apart from tabRegistry.ts so node test scripts never import PNGs. Vendor shows Gold (what an
-// NPC pays for gear); Price uses the Divine Orb, the unit every price in the app is quoted in.
+// NPC pays for gear); Price uses the Divine Orb, the unit every price in the app is quoted in;
+// Bosses shows the Djinn Barya, a pinnacle entry item the boss table prices.
 // Typed from TOOL_ICON_KEYS: a key missing here, or one not listed there, fails the typecheck.
 const TOOL_ICONS: { [T in TabId]: Record<ToolIconKey<T>, ToolIcon> } = {
   flips: {},
@@ -26,7 +28,7 @@ const TOOL_ICONS: { [T in TabId]: Record<ToolIconKey<T>, ToolIcon> } = {
   alerts: {},
   coach: {},
   trade: { prices: art(artDivine.src), price: glyph(Tag), opportunities: art(artMarket.src) },
-  farm: { board: art(artWaystone.src), strategies: art(artTablet.src) },
+  farm: { strategies: art(artTablet.src), bosses: art(artBarya.src) },
   craft: { recipes: art(CURRENCY_ART.ex), moves: glyph(ClipboardPaste), modpool: art(CURRENCY_ART.chaos) },
   wealth: { worth: art(artWealth.src), sell: art(artGold.src) },
   learn: { what: glyph(ScanSearch), currency: art(artDivine.src), atlas: art(artWaystone.src) },

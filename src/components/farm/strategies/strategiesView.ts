@@ -74,12 +74,6 @@ export function filterStrategies<T extends Pick<StrategyView, "mechanics" | "bud
   );
 }
 
-/** Mechanics that at least one strategy covers, in schema order — only those get a chip. */
-export function presentMechanics(strategies: readonly Pick<StrategyView, "mechanics">[]): Mechanic[] {
-  const seen = new Set(strategies.flatMap((s) => s.mechanics));
-  return (Object.keys(MECHANIC_LABEL) as Mechanic[]).filter((m) => seen.has(m));
-}
-
 /** Distinct yield names for the typeahead, alphabetical. */
 export function yieldNames(strategies: readonly Pick<StrategyView, "yields">[]): string[] {
   return [...new Set(strategies.flatMap((s) => s.yields.map((y) => y.ref.name)))].sort((a, b) => a.localeCompare(b));
@@ -103,9 +97,4 @@ export function evidenceTip(claim: Claim): string {
 /** Where the strategy was verified, when that is not the viewer's league; null when it is. */
 export function leagueMismatch(leagues: readonly string[], league: string): string | null {
   return leagues.includes(league) ? null : `checked in ${leagues.join(", ")}, not in ${league}`;
-}
-
-/** How much of the basket the exchange prices; unit prices are never summed — drop rates are unknown. */
-export function pricedCount(strategy: Pick<StrategyView, "yields">): { priced: number; total: number } {
-  return { priced: strategy.yields.filter((y) => y.price !== null).length, total: strategy.yields.length };
 }

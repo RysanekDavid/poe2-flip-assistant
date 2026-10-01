@@ -36,10 +36,9 @@ export const TOUR_STEPS: readonly TourStep[] = [
   },
   {
     tab: "farm",
-    tool: "board",
     element: '[data-tour="farm"]',
-    title: "What to farm now",
-    description: "In-game activities ranked by how hard their drop basket is pumping. HOT = grind it and sell into the spike.",
+    title: "What to farm",
+    description: "Each mechanic shows how the prices of its drops moved this week. Click one to see only its strategies; open a card for the full setup.",
   },
   {
     tab: "flips",

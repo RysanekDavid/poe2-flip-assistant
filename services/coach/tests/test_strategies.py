@@ -1,6 +1,7 @@
 """Strategy KB store and the find_farm_strategies tool contract."""
 
 import json
+import re
 import shutil
 from collections.abc import Callable
 from pathlib import Path
@@ -107,8 +108,64 @@ def test_store_fails_loudly_on_every_defect(tmp_path: Path) -> None:
         load_strategies(_copy_one(_mk(tmp_path / "c"), "fracture-cleansed.json", one_source_vs))
     with pytest.raises(RuntimeError, match="No strategy files"):
         load_strategies(_mk(tmp_path / "d"))
+    for name, mutate in _RATING_DEFECTS.items():
+        with pytest.raises(RuntimeError, match="invalid"):
+            load_strategies(_copy_one(_mk(tmp_path / name), "fracture-cleansed.json", mutate))
     with pytest.raises(RuntimeError, match="missing"):
         load_strategies(tmp_path / "nowhere")
+
+
+def _ratings(data: dict[str, object]) -> dict[str, dict[str, object]]:
+    ratings = data["ratings"]
+    assert isinstance(ratings, dict)
+    return ratings
+
+
+def _rated_without_source(data: dict[str, object]) -> None:
+    _ratings(data)["build"]["claim"] = {"v": "syn", "src": [], "note": "no source"}
+
+
+def _six_of_five(data: dict[str, object]) -> None:
+    _ratings(data)["complexity"]["value"] = 6
+
+
+def _budget_without_source(data: dict[str, object]) -> None:
+    budget = data["budget"]
+    assert isinstance(budget, dict)
+    budget["claim"] = {"v": "syn", "src": [], "note": "no source"}
+
+
+def _schema_v1(data: dict[str, object]) -> None:
+    data["schema_version"] = 1
+
+
+_RATING_DEFECTS: dict[str, Callable[[dict[str, object]], None]] = {
+    "rated-no-source": _rated_without_source,
+    "six-of-five": _six_of_five,
+    "budget-no-source": _budget_without_source,
+    "schema-v1": _schema_v1,
+}
+
+
+def test_ratings_are_sourced_and_an_unrated_value_needs_none(tmp_path: Path) -> None:
+    for strategy in load_strategies(STRATEGIES_DIR):
+        assert strategy.budget.claim.src, strategy.id
+        for rating in (strategy.ratings.build, strategy.ratings.complexity):
+            assert rating.value is None or rating.claim.src, strategy.id
+
+    def unrated(data: dict[str, object]) -> None:
+        _ratings(data)["build"] = {
+            "value": None,
+            "why": "No source says how hard it is.",
+            "claim": {"v": "uv", "src": [], "note": "unrated"},
+        }
+
+    loaded = load_strategies(_copy_one(_mk(tmp_path / "u"), "fracture-cleansed.json", unrated))
+    assert loaded[0].ratings.build.value is None
+    detail = _invoke(strategy_id="anomaly-lineage")["strategy"]
+    assert set(detail["ratings"]) == {"build", "complexity"}
+    for text in detail["ratings"].values():
+        assert text == "unrated" or re.fullmatch(r"[1-5]/5 \[(vp|vs|ss|uv|cf|syn)\]", text), text
 
 
 def _mk(path: Path) -> Path:

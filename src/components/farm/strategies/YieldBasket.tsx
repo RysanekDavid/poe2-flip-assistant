@@ -6,6 +6,7 @@ import { ItemArt } from "../../ui/ItemArt";
 import { PriceChip } from "../../ui/PriceChip";
 import { InfoTip } from "../../ui/Tooltip";
 import { evidenceTip, showsBadge } from "./strategiesView";
+import { changeTone, fmtChange, TONE_TEXT } from "./strategyCards";
 
 // "main"/"side" rather than the data's primary/secondary: "primary" is already an evidence-grade label.
 const ROLE: Record<YieldView["role"], { label: string; className: string }> = {
@@ -24,7 +25,12 @@ function YieldRow({ item, exPerDiv }: { item: YieldView; exPerDiv: number | null
       </span>
       <InfoTip tip={`${item.why} ${evidenceTip(item.claim)}`.trim()} label={`Why ${item.ref.name}`} />
       {showsBadge(item.claim) && <ClaimBadge claim={item.claim} />}
-      <span className="ml-auto">
+      <span className="ml-auto inline-flex items-center gap-2">
+        {item.price?.change7d != null && (
+          <span className={`text-xs tabular-nums ${TONE_TEXT[changeTone(item.price.change7d)]}`} title="7-day price change on poe.ninja">
+            {fmtChange(item.price.change7d)}
+          </span>
+        )}
         {/* Unpriced shows a dash, never 0: an unknown price is not a worthless item. */}
         <PriceChip div={item.price?.div ?? null} exPerDiv={exPerDiv} source={item.price ? "ninja" : undefined} ageMin={item.price?.ageMin} />
       </span>

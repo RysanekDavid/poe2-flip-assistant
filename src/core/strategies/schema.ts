@@ -8,10 +8,10 @@
  * 4-space keys on purpose: that drift test parses them.
  */
 import { z } from "zod";
-import { claimSchema } from "../../lib/claim";
+import { claimSchema, type Claim } from "../../lib/claim";
 import { ENTITY_ID_PATTERN, POE2DB_URL_PATTERN } from "../entities/schema";
 
-export const STRATEGY_SCHEMA_VERSION = 1;
+export const STRATEGY_SCHEMA_VERSION = 2;
 
 export const MECHANICS = [
   "breach",
@@ -46,6 +46,9 @@ export const STRATEGY_ID_PATTERN = ENTITY_ID_PATTERN;
 /** Only explicit tablet stats: a pseudo or implicit id would search for the wrong thing. */
 export const TRADE_STAT_ID_PATTERN = /^explicit\.stat_\d+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+/** Build and Complexity are rated on this scale; ratings.ts holds what each step means. */
+export const RATING_MIN = 1;
+export const RATING_MAX = 5;
 
 const nonEmpty = z.string().min(1);
 
@@ -123,11 +126,42 @@ export const waystoneSchema = z
   })
   .strict();
 
+/**
+ * A curated rating is a claim the card draws as a bar, so it must cite what it rests on: a rated
+ * value with no source would be a number we made up. An unrated (null) value draws "—".
+ */
+function requireSourceWhenRated(rated: boolean, claim: Claim, ctx: z.RefinementCtx): void {
+  if (rated && claim.src.length === 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["claim", "src"], message: "a rating needs at least one source URL" });
+  }
+}
+
 export const budgetSchema = z
   .object({
     tier: budgetTierSchema,
+    /** Why this tier, against the BUDGET_SCALE in ratings.ts. */
+    why: nonEmpty,
     build_needs: nonEmpty,
     claim: claimSchema,
+  })
+  .strict()
+  .superRefine((budget, ctx) => requireSourceWhenRated(true, budget.claim, ctx));
+
+export const ratingSchema = z
+  .object({
+    /** 1 (easiest) to 5; null when the sources do not support a step — never a guess. */
+    value: z.number().int().min(RATING_MIN).max(RATING_MAX).nullable(),
+    /** One sentence: the sourced fact that puts the strategy on this step of the scale. */
+    why: nonEmpty,
+    claim: claimSchema,
+  })
+  .strict()
+  .superRefine((rating, ctx) => requireSourceWhenRated(rating.value !== null, rating.claim, ctx));
+
+export const ratingsSchema = z
+  .object({
+    build: ratingSchema,
+    complexity: ratingSchema,
   })
   .strict();
 
@@ -156,6 +190,7 @@ export const farmStrategySchema = z
     patch: patchStampSchema,
     status: z.enum(STRATEGY_STATUSES),
     budget: budgetSchema,
+    ratings: ratingsSchema,
     yields: z.array(yieldSchema).min(1),
     atlas_master: atlasMasterSchema,
     atlas_passives: z.array(atlasPassiveSchema),
@@ -174,5 +209,7 @@ export type AtlasPassive = z.infer<typeof atlasPassiveSchema>;
 export type Tablet = z.infer<typeof tabletSchema>;
 export type TabletMod = z.infer<typeof tabletModSchema>;
 export type FarmStrategy = z.infer<typeof farmStrategySchema>;
+export type StrategyRating = z.infer<typeof ratingSchema>;
+export type RatingKey = keyof FarmStrategy["ratings"];
 export type MasterId = FarmStrategy["atlas_master"]["master"];
 export type WaystoneTotal = (typeof WAYSTONE_TOTALS)[number];

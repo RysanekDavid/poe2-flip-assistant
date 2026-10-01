@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "essence-overlord",
   "title": "Essences via Overlord's Domain",
   "summary": "Stack essence content on maps with a Powerful Map Boss: Overlord's Domain and The Chosen Path add essences, Overseer tablets add more, and Hilda's Mighty Prey makes Powerful bosses — which the Domain needs — more common.",
@@ -17,11 +17,40 @@
   "status": "draft",
   "budget": {
     "tier": "league_start",
+    "why": "One magic Overseer Tablet and waystones rolled for pack size only.",
     "build_needs": "Clears T15+ waystones and kills the map boss; no pinnacle damage needed.",
     "claim": {
       "v": "syn",
-      "src": [],
-      "note": "Editorial estimate from what the setup needs; not measured."
+      "src": [
+        "https://poe2db.tw/us/Overseer_Tablet",
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 3,
+      "why": "Overlord's Domain adds its essences only to areas with a Powerful Map Boss, so the strategy runs maps with one.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Overlords_Domain"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 2,
+      "why": "One Overseer Tablet; in the map, kill the boss and open every essence monster.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Overseer_Tablet",
+          "https://poe2db.tw/us/Essence"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [

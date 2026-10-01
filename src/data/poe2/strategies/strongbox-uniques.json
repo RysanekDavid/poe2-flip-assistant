@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "strongbox-uniques",
   "title": "Unique strongboxes with Jado",
   "summary": "Jado's Trove Seekers doubles the chance for strongboxes to be unique and Stolen Relics adds the Twilight Reliquary Key box; Overseer tablets, The Chosen Path and Overlord's Influence add more strongboxes.",
@@ -16,11 +16,40 @@
   "status": "draft",
   "budget": {
     "tier": "league_start",
+    "why": "One magic Overseer Tablet and waystones rolled for item rarity only.",
     "build_needs": "Survives strongbox guard packs and their strongbox modifiers.",
     "claim": {
       "v": "syn",
-      "src": [],
-      "note": "Editorial estimate from what the setup needs; not measured."
+      "src": [
+        "https://poe2db.tw/us/Overseer_Tablet",
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 3,
+      "why": "Opening a strongbox unleashes its guard packs, which strongbox modifiers can make Rare or give extra monster modifiers.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Strongbox"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 3,
+      "why": "Before opening a strongbox, decide whether to use a Cryptic Key on it so it can be opened a second time — a choice in the map.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Strongbox",
+          "https://poe2db.tw/us/Cryptic_Key"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [
@@ -263,7 +292,7 @@
     "Set Jado: Trove Seekers, Mysterious Gifts, Stolen Relics, Keen Appraisal.",
     "Allocate The Chosen Path and Overlord's Influence on Strongboxes, then Hidden Compartments.",
     "Slot an Overseer Tablet with additional strongboxes or strongbox chance; the 'of the Antiquarian' strongbox and the chance mod also roll on any tablet.",
-    "Open every strongbox; use Cryptic Keys to reopen the good ones."
+    "Open every strongbox; before opening one, decide whether to use a Cryptic Key on it so it can be opened a second time."
   ],
   "risks": [
     "Unique strongbox contents are random (for example Ixchel's Torment grants a corrupted unique); the basket prices only the keys.",

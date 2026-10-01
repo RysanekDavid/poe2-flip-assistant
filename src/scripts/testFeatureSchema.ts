@@ -31,7 +31,6 @@ testDoubleRunIdempotent();
 testLegacyNotifySettingsUpgrade();
 testLegacySnipeOutcomesUpgrade();
 testMissingNotifySettingsFailsLoudly();
-testFarmSpeedCascade();
 testChecks();
 testBoardColumns();
 testConfig();
@@ -149,22 +148,6 @@ function testMissingNotifySettingsFailsLoudly(): void {
   bare.exec("CREATE TABLE users (id INTEGER PRIMARY KEY)");
   ok("missing notify_settings throws (wiring bug, not a no-op)", throws(() => ensureFeatureTables(bare), /notify_settings missing/));
   bare.close();
-}
-
-function testFarmSpeedCascade(): void {
-  db.prepare("INSERT INTO users (id, name, password_hash, api_key, role) VALUES (2, 'farm-member', 'x', 'pk_feature_2', 'member')").run();
-  const put = db.prepare(
-    "INSERT INTO farm_user_speed (user_id, kind, key, minutes_per_run, div_per_run, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-  );
-  put.run(1, "boss", "arbiter", 4, null, 1);
-  put.run(2, "boss", "arbiter", 6, null, 1);
-  put.run(2, "mechanic", "breach", 3, 1.5, 1);
-  ok("same boss key per user coexists", count("farm_user_speed WHERE key = 'arbiter'") === 2);
-  ok("duplicate (user, kind, key) rejected", throws(() => put.run(2, "boss", "arbiter", 5, null, 2), /UNIQUE|PRIMARY KEY/i));
-  ok("unknown user rejected by FK", throws(() => put.run(999, "boss", "arbiter", 5, null, 2), /FOREIGN KEY/i));
-  db.prepare("DELETE FROM users WHERE id = 2").run();
-  ok("deleting a user cascades their speeds", count("farm_user_speed WHERE user_id = 2") === 0);
-  ok("other users' speeds survive the cascade", count("farm_user_speed WHERE user_id = 1") === 1);
 }
 
 function count(fromWhere: string): number {

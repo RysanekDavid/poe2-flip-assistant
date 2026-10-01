@@ -41,10 +41,10 @@ export const TABS: readonly TabMeta[] = [
   {
     id: "farm",
     label: "Farm",
-    hint: "what to farm now · pinnacle boss EV · atlas strategies",
+    hint: "ways to farm maps and what their drops sell for · pinnacle bosses per kill",
     tools: [
-      { id: "board", label: "Farm board", hint: "mechanic heat and pinnacle boss net per kill" },
-      { id: "strategies", label: "Strategies", hint: "atlas strategies by mechanic and budget" },
+      { id: "strategies", label: "Strategies", hint: "ways to farm maps: setup, and what the drops sell for today" },
+      { id: "bosses", label: "Bosses", hint: "pinnacle bosses: entry cost vs. what a kill drops" },
     ],
   },
   {
@@ -129,11 +129,13 @@ export const TAB_GROUP: Record<TabId, TabGroup> = {
 
 /**
  * Renamed tools: an old ?tool= keeps working by landing on its replacement (Market board became
- * Opportunities on 2026-09-30). Keyed by today's tab id, since followRenames maps the tab first.
+ * Opportunities on 2026-09-30; Farm board split into Strategies, which took its mechanic heat strip,
+ * and Bosses on 2026-10-01). Keyed by today's tab id, since followRenames maps the tab first.
  * Only renames belong here, never removals.
  */
 export const TOOL_REDIRECTS: Partial<Record<TabId, Readonly<Record<string, string>>>> = {
   trade: { board: "opportunities" },
+  farm: { board: "strategies" },
 };
 
 /**

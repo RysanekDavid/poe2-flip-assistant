@@ -87,7 +87,7 @@ export function EntryCell({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null
   );
 }
 
-export const BOUND_PREFIX: Record<BossRow["netBound"], string> = { exact: "", lower: "≥ ", upper: "≤ ", unknown: "" };
+const BOUND_PREFIX: Record<BossRow["netBound"], string> = { exact: "", lower: "≥ ", upper: "≤ ", unknown: "" };
 
 /** Net per kill; the tooltip carries the verdict and how complete the EV behind it is. */
 function NetValue({ r, exPerDiv }: { r: BossRow; exPerDiv: number | null }) {

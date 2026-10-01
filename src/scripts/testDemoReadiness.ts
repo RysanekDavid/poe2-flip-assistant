@@ -8,14 +8,17 @@ const source = (...segments: string[]): string =>
 
 // The estimated-row caveat lives once, in the Top Flips legend behind the Flips page header.
 const discover = source("src", "components", "DiscoverColumns.tsx");
-const farm = source("src", "components", "farm", "FarmBoard.tsx");
+const strategies = source("src", "components", "farm", "strategies", "StrategiesTool.tsx");
+const bosses = source("src", "components", "farm", "BossesTool.tsx");
 const craft = source("src", "components", "CraftTopPicks.tsx");
 const comparable = source("src", "components", "craft", "MarginBreakdown.tsx");
 const coach = source("src", "components", "coach", "CoachMessage.tsx");
 const composer = source("src", "components", "coach", "CoachComposer.tsx");
 
 assert.match(discover, /heuristic estimate, not executable/);
-assert.match(farm, /basket heat .*not Div\/hour/);
+// Farm never shows a Div/hour: the strategy trend is a price move, and bosses say why none is shown.
+assert.match(strategies, /a price move, not profit per hour/);
+assert.match(bosses, /No Div\/hour/);
 assert.match(craft, /modelled EV · curated hit rates · instant-buyout asks, not sales/);
 assert.match(comparable, /asks, not sales/);
 // Exactly one verify-in-game notice: the composer footer, never repeated per message.

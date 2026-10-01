@@ -4,10 +4,12 @@ import type { ReactNode } from "react";
 import { ExternalLink } from "lucide-react";
 import { breakEvenHeadline, fmtDiv, oneIn } from "../../core/tools/bossEv/headline";
 import { compact } from "../../lib/format";
+import type { Source } from "../../core/tools/bossEv/schema";
 import type { BossView, EntryLineView, TierResult } from "../../lib/tools/bossEvContract";
 import { ItemArt } from "../ui/ItemArt";
 import { Panel } from "../ui/Panel";
 import { PriceChip } from "../ui/PriceChip";
+import { ProvenanceChip } from "../ui/ProvenanceChip";
 import { InfoTip } from "../ui/Tooltip";
 import { TONE_CLASS } from "./farmView";
 import { artSrc } from "./farmArt";
@@ -119,13 +121,37 @@ interface Props {
   tier: TierResult;
   onTier: (tierId: string) => void;
   exPerDiv: number;
+  /** Newest exchange snapshot of the league (SQLite UTC text); null = never polled. */
+  pricesAt: string | null;
+}
+
+/** Every source the boss and this tier's rows cite, each once, so no row needs its own link. */
+function citedSources(boss: BossView, tier: TierResult): Source[] {
+  const all = [...boss.sources, ...tier.loot.flatMap((l) => [l.source, ...(l.rarity ? [l.rarity.source] : [])])];
+  return [...new Map(all.map((s) => [s.url, s])).values()];
+}
+
+function DropsHeader({ pricesAt }: { pricesAt: string | null }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <SectionLabel>Drops</SectionLabel>
+      <ProvenanceChip
+        label="Price"
+        source="poe.ninja (GGG exchange) · poe2scout"
+        at={pricesAt}
+        warnAfterMin={180}
+        title="poe.ninja for exchange items, poe2scout for uniques and lineage gems, trade listings where poe2scout has no price"
+      />
+      <ProvenanceChip label="Drop rates" source="sources listed below" title="hover a rate for the source it comes from" />
+    </div>
+  );
 }
 
 /** Selected boss: how to get in, entry buy-vs-craft, every drop with price, rate and citation. */
-export function BossDetail({ boss, tier, onTier, exPerDiv }: Props) {
+export function BossDetail({ boss, tier, onTier, exPerDiv, pricesAt }: Props) {
   return (
     <Panel>
-      <div className="grid gap-3">
+      <div className="grid min-w-0 grid-cols-1 gap-3">
         <header className="flex flex-wrap items-center gap-3">
           <ItemArt src={artSrc(boss.icon)} size={8} />
           <div className="min-w-0">
@@ -150,12 +176,14 @@ export function BossDetail({ boss, tier, onTier, exPerDiv }: Props) {
             </li>
           )}
         </ul>
-        <SectionLabel>Drops</SectionLabel>
-        <div className="-mt-1.5">
+        <DropsHeader pricesAt={pricesAt} />
+        {/* on a phone the drop table scrolls sideways in its own box, where a sticky head would float
+            over the rows, so it goes static there; `relative` keeps the rows' sr-only text inside the clip */}
+        <div className="relative -mt-1.5 min-w-0 max-md:overflow-x-auto max-md:[&_th]:static">
           <LootTable loot={tier.loot} exPerDiv={exPerDiv > 0 ? exPerDiv : null} />
         </div>
         <footer className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-400">
-          {boss.sources.map((s) => (
+          {citedSources(boss, tier).map((s) => (
             <a key={s.url} href={s.url} target="_blank" rel="noreferrer" title={`checked ${s.accessed}`} className="inline-flex items-center gap-1 hover:text-neutral-100">
               <ExternalLink aria-hidden className="h-3 w-3" />
               {s.title}

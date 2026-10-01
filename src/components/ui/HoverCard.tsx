@@ -84,14 +84,17 @@ function useDismiss(open: boolean, refs: Refs, close: (restore: boolean) => void
     const onPointer = (event: PointerEvent) => {
       if (!inside(event.target as Node)) close(false);
     };
+    // Capture phase + preventDefault: an open card takes this Escape, so a Drawer around it stays open.
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close(inside(document.activeElement));
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      close(inside(document.activeElement));
     };
     document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
     return () => {
       document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey, true);
     };
   }, [open, refs, close]);
 }

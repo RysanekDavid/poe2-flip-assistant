@@ -1,109 +1,132 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CLAIM_LABEL } from "../../../lib/claim";
-import type { StrategyView } from "../../../lib/strategiesContract";
-import { Panel } from "../../ui/Panel";
-import { InfoTip, Tooltip } from "../../ui/Tooltip";
-import { MasterChips, NotableList, WaystoneChips } from "./StrategyParts";
-import { TabletMods } from "./TabletMods";
-import { YieldBasket } from "./YieldBasket";
-import { BUDGET_LABEL, leagueMismatch, MECHANIC_LABEL, pricedCount } from "./strategiesView";
+import { ChevronRight } from "lucide-react";
+import waystoneArt from "../../../assets/items/waystone.png";
+import type { StrategyView, YieldView } from "../../../lib/strategiesContract";
+import { fmtDivOrEx } from "../../../lib/format";
+import { ItemArt } from "../../ui/ItemArt";
+import { StatusBadge, StrategyMeters, TrendPill, WaystoneRegexLink } from "./StrategyBits";
+import { strategyArt } from "./strategyArt";
+import { MECHANIC_LABEL, WAYSTONE_LABEL } from "./strategiesView";
+import { topDrops } from "./strategyCards";
+import { tabletArtSrc } from "./tabletArtImages";
 
-function Section({ title, tip, children }: { title: string; tip?: string; children: ReactNode }) {
-  return (
-    <section className="grid content-start gap-1.5">
-      <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-        {title}
-        {tip && <InfoTip tip={tip} label={`About ${title}`} />}
-      </h4>
-      {children}
-    </section>
-  );
-}
+const ROLE_WORD: Record<YieldView["role"], string> = { primary: "main drop", secondary: "side drop", lottery: "lottery" };
 
-/** Status, patch stamp and the budget grade: kept out of the header chips, one hover away. */
-function titleTip(strategy: StrategyView): string {
-  const { patch, budget } = strategy;
+/** A payout chip: art, name and today's price; an item off the exchange shows no price, never 0. */
+function DropChip({ item, exPerDiv }: { item: YieldView; exPerDiv: number | null }) {
+  const price = item.price;
+  const title = price ? `${ROLE_WORD[item.role]} · poe.ninja exchange price` : `${ROLE_WORD[item.role]} · not on the currency exchange`;
   return (
-    `${strategy.status}: facts checked against ${patch.verified_against} on ${patch.stamped_at} ` +
-    `(${patch.leagues.join(", ")}). Budget tier is ${CLAIM_LABEL[budget.claim.v]}: ${budget.claim.note ?? "no note"}`
-  );
-}
-
-function CardHeader({ strategy, league }: { strategy: StrategyView; league: string }) {
-  const mismatch = leagueMismatch(strategy.patch.leagues, league);
-  return (
-    <header className="grid gap-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <Tooltip tip={titleTip(strategy)} align="start">
-          <h3 tabIndex={0} className="cursor-help text-lg font-semibold text-neutral-100">
-            {strategy.title}
-          </h3>
-        </Tooltip>
-        {strategy.mechanics.map((m) => (
-          <span key={m} className="rounded border border-line px-1.5 text-xs text-neutral-400">
-            {MECHANIC_LABEL[m]}
-          </span>
-        ))}
-        <span className="rounded border border-line px-1.5 text-xs text-neutral-300" title={strategy.budget.build_needs}>
-          budget: {BUDGET_LABEL[strategy.budget.tier]}
+    <span title={title} className="inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md border border-line bg-neutral-900/80 pl-1 pr-2 text-xs text-neutral-200">
+      <ItemArt src={item.icon_url} size={5} />
+      <span className="truncate">{item.ref.name}</span>
+      {price && (
+        <span className="shrink-0 font-semibold tabular-nums text-neutral-100">
+          {fmtDivOrEx(price.div, exPerDiv ?? 0)}
+          <span className="sr-only"> (price)</span>
         </span>
-        {mismatch && <span className="rounded border border-line px-1.5 text-xs text-neutral-400">{mismatch}</span>}
-      </div>
-      <p className="text-sm text-neutral-300">{strategy.summary}</p>
-    </header>
+      )}
+    </span>
   );
 }
 
-function StepsAndRisks({ strategy }: { strategy: StrategyView }) {
+function ArtHeader({ strategy }: { strategy: StrategyView }) {
+  const art = strategyArt(strategy);
   return (
-    <Panel title="Steps and risks" collapsible defaultOpen={false}>
-      <div className="grid gap-3 md:grid-cols-2">
-        <ol className="list-decimal space-y-1 pl-5 text-sm text-neutral-300">
-          {strategy.steps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
-        <ul className="list-disc space-y-1 pl-5 text-sm text-neutral-400">
-          {strategy.risks.length === 0 ? <li>No specific risk recorded.</li> : strategy.risks.map((risk) => <li key={risk}>{risk}</li>)}
-        </ul>
+    <div className="relative h-20 overflow-hidden bg-neutral-900">
+      {art && <img src={art} alt="" aria-hidden className="absolute right-20 top-1/2 h-28 w-28 -translate-y-1/2 object-contain opacity-50" />}
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-neutral-950/10 via-neutral-950/30 to-neutral-950" />
+      <div className="relative flex items-start justify-between gap-2 p-3">
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line bg-neutral-950/80 pl-1 pr-2.5 text-xs text-neutral-200">
+          <ItemArt src={art} size={5} />
+          {strategy.mechanics.map((m) => MECHANIC_LABEL[m]).join(" · ")}
+        </span>
+        <TrendPill trend={strategy.trend} />
       </div>
-    </Panel>
+    </div>
   );
 }
 
-/** One strategy: master nodes, notables, tablets, waystone totals and the live-priced yield basket. */
+/** Tablets ×N and the waystone: what to bring, as art; the details live in the drawer. */
+function SetupStrip({ strategy }: { strategy: StrategyView }) {
+  const prefer = strategy.waystone.prefer.map((t) => WAYSTONE_LABEL[t]).join(" → ");
+  return (
+    <span className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-neutral-300">
+      {strategy.tablets.map((tablet, i) => (
+        <span key={`${i}|${tablet.type}|${tablet.unique ?? ""}`} title={tablet.unique ? `${tablet.unique} (${tablet.type})` : tablet.type} className="inline-flex items-center gap-0.5">
+          <ItemArt src={tabletArtSrc(tablet)} size={5} alt={tablet.unique ?? tablet.type} />
+          {tablet.count !== null && tablet.count > 1 && <span className="tabular-nums">×{tablet.count}</span>}
+        </span>
+      ))}
+      {prefer !== "" && (
+        <span title={`Waystone: roll for ${prefer}`} className="inline-flex">
+          <ItemArt src={waystoneArt.src} size={5} alt={`Waystone: ${prefer}`} />
+        </span>
+      )}
+      <StatusBadge strategy={strategy} />
+    </span>
+  );
+}
+
+/** A button inside the clickable card: opens the drawer once, not again via the card's own click. */
+function OpenButton({ id, onOpen, className, children }: { id: string; onOpen: (id: string) => void; className: string; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen(id);
+      }}
+      className={className}
+    >
+      {children}
+    </button>
+  );
+}
+
 interface CardProps {
   strategy: StrategyView;
   exPerDiv: number | null;
-  /** The viewer's league: a strategy checked elsewhere says so. */
-  league: string;
+  onOpen: (id: string) => void;
 }
 
-export function StrategyCard({ strategy, exPerDiv, league }: CardProps) {
-  const { priced, total } = pricedCount(strategy);
+/** One strategy at a glance: art, 7-day trend of its drops, two priced drops, three bars, its setup. */
+export function StrategyCard({ strategy, exPerDiv, onOpen }: CardProps) {
+  const { shown, more } = topDrops(strategy.yields);
   return (
-    <article aria-label={strategy.title} className="grid gap-4 rounded-lg border border-line bg-surface/60 p-4">
-      <CardHeader strategy={strategy} league={league} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Section title="Atlas master" tip="Four master nodes are active at a time; hover a node for its effect.">
-          <MasterChips master={strategy.atlas_master} />
-        </Section>
-        <Section title="Waystone" tip="0.5 waystone mods bundle difficulty with reward; roll for these totals, in this order.">
-          <WaystoneChips waystone={strategy.waystone} />
-        </Section>
-        <Section title="Atlas notables">
-          <NotableList passives={strategy.atlas_passives} />
-        </Section>
-        <Section title="Tablets" tip="Search opens the official trade site with the tablet base and that mod; nothing is bought for you.">
-          <TabletMods tablets={strategy.tablets} />
-        </Section>
+    <article
+      aria-label={strategy.title}
+      onClick={() => onOpen(strategy.id)}
+      className="flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border border-line bg-neutral-950 transition-colors hover:border-neutral-500"
+    >
+      <ArtHeader strategy={strategy} />
+      <div className="-mt-3 flex flex-1 flex-col gap-3 px-3 pb-3">
+        <h3 className="relative text-base font-semibold leading-snug text-neutral-100">
+          <OpenButton id={strategy.id} onOpen={onOpen} className="text-left hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400">
+            {strategy.title}
+          </OpenButton>
+        </h3>
+        <div className="flex flex-wrap gap-1.5" aria-label="Main drops">
+          {shown.map((item) => (
+            <DropChip key={item.ref.id} item={item} exPerDiv={exPerDiv} />
+          ))}
+          {more > 0 && <span className="inline-flex h-7 items-center rounded-md border border-line px-2 text-xs text-neutral-400" title="more drops in the detail">+{more}</span>}
+        </div>
+        <div onClick={(e) => e.stopPropagation()}>
+          <StrategyMeters strategy={strategy} />
+        </div>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2.5">
+          <SetupStrip strategy={strategy} />
+          <span className="flex items-center gap-1.5">
+            <WaystoneRegexLink waystone={strategy.waystone} compact />
+            <OpenButton id={strategy.id} onOpen={onOpen} className="inline-flex h-7 items-center gap-0.5 rounded-md px-2 text-xs font-semibold text-neutral-100 hover:bg-neutral-800">
+              How to run it <ChevronRight aria-hidden className="h-3.5 w-3.5" />
+            </OpenButton>
+          </span>
+        </div>
       </div>
-      <Section title={`Yield basket · ${priced}/${total} priced`} tip="Live poe.ninja exchange price per item. Unit prices only: drop rates are unknown, so no basket total or Div/hour is claimed.">
-        <YieldBasket yields={strategy.yields} exPerDiv={exPerDiv} />
-      </Section>
-      <StepsAndRisks strategy={strategy} />
     </article>
   );
 }

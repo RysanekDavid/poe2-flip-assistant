@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "abyss-depths-omens",
   "title": "Abyss: Depths, bones and omens",
   "summary": "Push Abysses into Abyssal Depths with Depths-chance tablets and notables, make waystone mods apply down there with Close to the Surface, and sell the desecration currency and abyssal omens.",
@@ -16,11 +16,40 @@
   "status": "draft",
   "budget": {
     "tier": "mid",
+    "why": "Waystones rolled for three totals (monster rarity, monster effectiveness, item rarity) and one magic Abyss Tablet.",
     "build_needs": "Clears Abyss pits whose monsters steal modifiers, and the Abyssal Depths below.",
     "claim": {
       "v": "syn",
-      "src": [],
-      "note": "Editorial estimate from what the setup needs; not measured."
+      "src": [
+        "https://poe2db.tw/us/Waystones",
+        "https://poe2db.tw/us/Abyss_Tablet"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 3,
+      "why": "Abyssal monsters steal some or all of the modifiers of the weakened monsters you slay, and every Rare in the Abyssal Depths carries an Abyssal modifier.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Abyss"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 2,
+      "why": "One Abyss Tablet; in the map, close every pit and take the Abyssal Depths when it opens.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Abyss",
+          "https://poe2db.tw/us/Abyss_Tablet"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [

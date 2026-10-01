@@ -17,13 +17,9 @@ const BOSS_LOOT = loadBossLoot();
 const BOSS_ART = parseBossArt(bossArtRaw);
 const NINJA_IDS = referencedNinjaIds(BOSS_LOOT);
 const COVERAGE_PATCH = patchCoverageSchema.parse(patchCoverageRaw).game_data_patch;
-const BOSS_IDS: ReadonlySet<string> = new Set(BOSS_LOOT.bosses.map((b) => b.id));
 
-/** The farm board as every viewer of `league` sees it — no per-user pace applied (every pace field null). */
+/** The farm board as every viewer of `league` sees it (nothing in it is per user). */
 export type FarmBoardLoad = FarmResponse;
-
-/** A curated boss id — the only keys a boss pace may be saved under. */
-export const isCuratedBossId = (id: string): boolean => BOSS_IDS.has(id);
 
 /**
  * "What to farm now" for one league at `nowMs`: mechanic baskets by 7d heat (rankFarms) and pinnacle

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "ritual-wildwood-blooms",
   "title": "Ritual: Sacred Blooms and the Viridian Wildwood",
   "summary": "Forbidden Rites only: take Sacred Blooms from Ritual rewards, bloom a cluster of maps with the Viridian Wildwood, collect Primal, Vivid and Wild Wisps inside, then clear the empowered map. Two or more Ritual Tablets add an altar and more Wisps.",
@@ -16,13 +16,41 @@
   "status": "draft",
   "budget": {
     "tier": "mid",
+    "why": "A Sacred Bloom is consumed on the map, two Ritual Tablets are slotted, and waystones are rolled for two totals (pack size, monster rarity).",
     "build_needs": "Clears a map whose monsters Wisps made Magic, gave extra modifiers or made more rewarding; GGG calls them considerably more dangerous.",
     "claim": {
       "v": "syn",
       "src": [
-        "https://www.pathofexile.com/forum/view-thread/3999865"
+        "https://poe2db.tw/us/Sacred_Bloom",
+        "https://poe2db.tw/us/Ritual_Tablet"
       ],
-      "note": "Editorial estimate from GGG's description of empowered monsters; not measured."
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 4,
+      "why": "GGG: Wisp-empowered enemies 'become considerably more dangerous', and how much depends on the Wisps you collect.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://www.pathofexile.com/forum/view-thread/3999865",
+          "https://www.pathofexile.com/forum/view-thread/4000864"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 5,
+      "why": "Choose favours at the altars, bloom a cluster of maps with a Sacred Bloom, follow the Wisp trails in the Wildwood before its time runs out, then clear the empowered map.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://www.pathofexile.com/forum/view-thread/3999865",
+          "https://poe2db.tw/us/Sacred_Bloom"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [

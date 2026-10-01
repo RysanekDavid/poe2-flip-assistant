@@ -7,7 +7,7 @@ import type { TabId } from "./tabRegistry";
 export const TOOL_ICON_KEYS = {
   flips: [],
   trade: ["prices", "price", "opportunities"],
-  farm: ["board", "strategies"],
+  farm: ["strategies", "bosses"],
   craft: ["recipes", "moves", "modpool"],
   wealth: ["worth", "sell"],
   regex: ["waystone", "tablet", "relic", "jewel", "vendor", "price"],

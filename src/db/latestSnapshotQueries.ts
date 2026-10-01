@@ -99,3 +99,21 @@ export function latestPriceRowsFor(league: string, itemIds: readonly string[], d
   const stmt = db.prepare(`${GIVEN_ITEM_IDS} ${PRICE_SELECT}`);
   return toPriceRows(stmt.all({ league, itemIds: JSON.stringify(itemIds) }) as RawPriceRow[]);
 }
+
+/** A newest snapshot plus its 7-day change only: no sparkline, so it cannot fail on a bad spark. */
+export interface LatestChangeRow extends LatestSnapshotRow {
+  change7d: number | null;
+}
+
+const CHANGE_SELECT = `SELECT ${SNAPSHOT_COLUMNS}, sp.change_7d AS change7d
+  ${NEWEST_ROW}
+  LEFT JOIN item_spark sp ON sp.league = s.league AND sp.item_id = s.item_id`;
+
+/**
+ * Price + 7-day change for a known id set, for readers that show a change but never draw the
+ * curve (Farm › Strategies): a corrupt spark_7d must not take their whole route down.
+ */
+export function latestChangeRowsFor(league: string, itemIds: readonly string[], db: Db = getDb()): LatestChangeRow[] {
+  if (itemIds.length === 0) return [];
+  return db.prepare(`${GIVEN_ITEM_IDS} ${CHANGE_SELECT}`).all({ league, itemIds: JSON.stringify(itemIds) }) as LatestChangeRow[];
+}

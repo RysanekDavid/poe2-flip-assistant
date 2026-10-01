@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "ritual-omens",
   "title": "Ritual: omen favours",
   "summary": "Run Ritual tablets that tilt favours toward Omens and make deferring cheaper, then buy the omens with tribute. Since 0.5.5 a second Ritual Tablet adds an extra altar.",
@@ -16,11 +16,40 @@
   "status": "draft",
   "budget": {
     "tier": "league_start",
+    "why": "Two magic Ritual Tablets and waystones rolled for pack size only.",
     "build_needs": "Kills revived Ritual waves; no boss requirement.",
     "claim": {
       "v": "syn",
-      "src": [],
-      "note": "Editorial estimate from what the setup needs; not measured."
+      "src": [
+        "https://poe2db.tw/us/Ritual_Tablet",
+        "https://poe2db.tw/us/Waystones"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 2,
+      "why": "The fights are the Ritual's own revived waves; no boss is required.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Ritual"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 3,
+      "why": "At every altar, reroll the favours for Omens and defer the ones you cannot afford yet — a choice loop in the map.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Ritual",
+          "https://poe2db.tw/us/Patient_Devotion"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
     }
   },
   "yields": [

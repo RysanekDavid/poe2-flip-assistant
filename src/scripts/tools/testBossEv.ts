@@ -20,7 +20,6 @@ import { patchCoverageSchema } from "../../sources/patchNotes/contracts";
 import { runCuratedCases, runLineagePricingCase } from "./bossLootCases";
 import { runFarmBoardCases } from "./farmBoardCases";
 import { runFarmOverhaulCases } from "./farmOverhaulCases";
-import { runFarmSpeedCases, runFarmSpeedDbCases } from "./farmSpeedCases";
 import { assertPanelExport, freshToolsDb } from "./toolsTestKit";
 import { runUniqueTradeCases } from "./uniqueTradeCases";
 import { runUniqueTradeDbCases } from "./uniqueTradeDbCases";
@@ -342,14 +341,12 @@ testBreakEvenAndJackpot();
 testEntryEdgeCases();
 testPricing();
 testDbPricing();
-runFarmSpeedDbCases(getDb(), NOW);
 runLineagePricingCase(parseBossLoot(readCurated()));
 testPatchWarning();
 testHeadlines();
 testCuratedEvaluates();
 runFarmBoardCases(TIER, syntheticInputs);
-runFarmSpeedCases(TIER, syntheticInputs);
-assertPanelExport("src/components/farm/FarmBoard.tsx", "FarmBoard", "src/components/shell/tabs/FarmTab.tsx");
+assertPanelExport("src/components/farm/BossesTool.tsx", "BossesTool", "src/components/shell/tabs/FarmTab.tsx");
 assert.deepEqual(TABS.map((t) => t.id), [...TAB_IDS], "tab nav order must match TAB_IDS, each id once");
 assert.equal(new Set(TABS.map((t) => t.label)).size, TABS.length, "tab labels must be distinct");
 runUniqueTradeDbCases(parseBossLoot(readCurated()));
@@ -359,7 +356,6 @@ runUniqueTradeCases(parseBossLoot(readCurated()))
       "ALL PASS — boss-loot strict schema + dated sources + ninja category coverage, 2026-09-29 audit corrections, lineage gems priced from scout's lineage list (0 / absent → unpriced), " +
         "curated poecdn art, omen-pool range, floor fallback + EV confidence wording, loot sort, Tul & Esh + Uhtred rows, " +
         "synthetic EV (guaranteed/point/range/unknown/unpriced/manual), floor/chase/P(lose)/liquidity metrics, farm board order + contract, " +
-        "farm Div/hour by own pace (bounds, nulls, PUT validation, per-user rows, loadFarmBoard), " +
         "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, panel wiring, " +
         "trade2 fallback for scout-unpriced boss uniques (aggregation, candidates, hourly cap, job failures, reader precedence, reasons)",
     ),
