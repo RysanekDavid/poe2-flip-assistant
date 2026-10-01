@@ -12,7 +12,7 @@ import { edgeTooltip, liquidityBar, type RankGate } from "./FlipEdge";
 import type { Candidate } from "./flip/flipTypes";
 
 /** Observed legs keep their precision; estimated ones keep the whole-orb display. */
-function legText(r: Candidate, d: Denom): string {
+export function legText(r: Candidate, d: Denom): string {
   return r.source === "cx" ? formatObservedDenom(d) : formatDenom(d);
 }
 
@@ -35,10 +35,16 @@ function ItemCell({ r }: { r: Candidate }) {
   );
 }
 
-/** Only a RANKED observed edge earns a colour; an estimate reads grey with a "~". */
+/** Only a RANKED observed edge earns a colour; an estimate reads grey. */
+export function edgeTone(r: Candidate, pct: number): string {
+  if (r.source !== "cx" || !r.ranked) return "text-neutral-400";
+  return pct >= 10 ? "text-good" : pct >= 3 ? "text-warn" : pct > 0 ? "text-neutral-200" : "text-bad";
+}
+
+/** An estimate's edge carries a "~" so it never reads as an observed one. */
 function EdgeValue({ r, gate }: { r: Candidate; gate: RankGate | null }) {
   const observed = r.source === "cx";
-  const tone = !observed || !r.ranked ? "text-neutral-400" : r.edgePct >= 10 ? "text-good" : r.edgePct >= 3 ? "text-warn" : r.edgePct > 0 ? "text-neutral-200" : "text-bad";
+  const tone = edgeTone(r, r.edgePct);
   return (
     <span className={`font-semibold tabular-nums ${tone}`} title={edgeTooltip(r, gate)}>
       {observed ? "" : "~"}
@@ -48,7 +54,7 @@ function EdgeValue({ r, gate }: { r: Candidate; gate: RankGate | null }) {
   );
 }
 
-function TrendCell({ r }: { r: Candidate }) {
+export function TrendCell({ r }: { r: Candidate }) {
   const tone = r.change7d == null ? "text-neutral-500" : r.change7d >= 0 ? "text-good" : "text-bad";
   return (
     <span className="inline-flex items-center justify-end gap-1.5">
@@ -158,6 +164,9 @@ export function TopFlipsLegend() {
         and they score half.
       </span>
       <span className="block">Flame = spiking (risky to hold) · down arrow = falling &gt;20% in 7d. Mid, Osc and Div/day are in the flip plan.</span>
+      <span className="block">
+        <b>Ange</b> = the Currency Exchange NPC in town — you place a flip&apos;s buy and sell orders with her.
+      </span>
     </span>
   );
 }

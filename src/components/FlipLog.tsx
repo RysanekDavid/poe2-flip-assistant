@@ -82,7 +82,7 @@ export function FlipLog() {
       <EmptyState
         icon={<History className="h-5 w-5" />}
         title="Flip History"
-        sentence={error ? `could not load flips — ${error}` : "no flips logged — set qty + prices in a Flip Plan and hit “log flip”; P&L and win-rate build here"}
+        sentence={error ? `Could not load flips — ${error}` : "No flip logged yet — set qty and prices in a flip plan and hit “log flip” to build your P&L and win rate here."}
       />
     );
   }

@@ -102,7 +102,7 @@ function applyResult(userId: number, batch: QueueRow[], result: DeliveryResult, 
   if (result.kind === "rejected") {
     markFailed(ids, now, result.detail, deps.db);
     sum.failed += ids.length;
-    console.error(`[notify] user ${userId}: ${result.detail} — gave up on ${ids.length} deliver${ids.length === 1 ? "y" : "ies"} (fix the webhook in the Alerts tab)`);
+    console.error(`[notify] user ${userId}: ${result.detail} — gave up on ${ids.length} deliver${ids.length === 1 ? "y" : "ies"} (fix the webhook on the Alerts page)`);
     return;
   }
   if (result.kind === "rate_limited") {
@@ -146,7 +146,7 @@ async function deliverForUser(userId: number, deps: DrainDeps, sum: DrainSummary
   if (batch.length === 0) return;
   if (webhook.state === "unreadable") {
     const ids = batch.map((r) => r.queue_id);
-    markFailed(ids, now, "stored webhook cannot be decrypted (server key changed?) — paste it again in the Alerts tab", deps.db);
+    markFailed(ids, now, "stored webhook cannot be decrypted (server key changed?) — paste it again on the Alerts page", deps.db);
     sum.failed += ids.length;
     return;
   }

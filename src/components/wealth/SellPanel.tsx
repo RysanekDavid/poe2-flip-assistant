@@ -1,13 +1,18 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { z } from "zod";
+import { PackageOpen } from "lucide-react";
 import type { RepriceStatus, SellResponse } from "../../lib/wealthContract";
 import { fmtDivOrEx } from "../../lib/format";
 import { parseSqliteTimestamp } from "../../lib/sqliteTime";
 import { Button } from "../ui/Button";
+import { EmptyState } from "../ui/EmptyState";
 import { PriceChip } from "../ui/PriceChip";
 import { StaleBadge } from "../ui/StaleBadge";
+import { usePersistedChoice } from "../ui/usePersistedChoice";
 import { PanelLoading } from "../shell/PanelLoading";
+import { SellCards } from "./SellCards";
 import { SellTable } from "./SellTable";
 import { useSell } from "./useSell";
 
@@ -84,19 +89,52 @@ function Summary({ data, children }: { data: SellResponse; children: ReactNode }
   );
 }
 
-/** Wealth › Sell: per stash item, sell on the exchange now, list, reprice or hold. */
+const VIEWS = ["cards", "table"] as const;
+type SellView = (typeof VIEWS)[number];
+const VIEW_SCHEMA = z.enum(VIEWS);
+const VIEW_LABEL: Record<SellView, string> = { cards: "Cards", table: "Table view" };
+
+/** Cards are the default reading; the table stays one click away for scanning many rows. */
+function ViewToggle({ view, onChange }: { view: SellView; onChange: (v: SellView) => void }) {
+  return (
+    <div role="group" aria-label="Sell layout" className="inline-flex rounded-md border border-line p-0.5">
+      {VIEWS.map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-pressed={view === v}
+          onClick={() => onChange(v)}
+          className={`h-7 rounded px-2.5 text-xs font-medium ${view === v ? "bg-neutral-800 text-neutral-100" : "text-neutral-400 hover:text-neutral-100"}`}
+        >
+          {VIEW_LABEL[v]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Stash › Sell: per stash item, sell on the exchange now, list, reprice or hold. */
 export function SellPanel({ reloadKey }: { reloadKey: number }) {
   const { data, error, repriceError, requesting, requestReprice } = useSell(reloadKey);
+  const [view, setView] = usePersistedChoice<SellView>("stash-sell-view", VIEW_SCHEMA, "cards");
   if (error) return <p role="alert" className="text-sm text-bad">Sell plan unavailable: {error}</p>;
   if (!data) return <PanelLoading />;
+  const empty = data.rows.length === 0;
   return (
     <div className="space-y-3">
-      {data.rows.length > 0 && (
-        <Summary data={data}>
-          <RepriceAction r={data.reprice} requesting={requesting} error={repriceError} onRequest={requestReprice} />
-        </Summary>
+      {empty ? (
+        <EmptyState icon={<PackageOpen className="h-5 w-5" />} sentence={data.reason ?? "Nothing to sell in your last read — read your stash to fill this."} />
+      ) : (
+        <>
+          <Summary data={data}>
+            <RepriceAction r={data.reprice} requesting={requesting} error={repriceError} onRequest={requestReprice} />
+          </Summary>
+          <div className="flex justify-end">
+            <ViewToggle view={view} onChange={setView} />
+          </div>
+          {view === "cards" ? <SellCards data={data} /> : <SellTable data={data} />}
+        </>
       )}
-      <SellTable data={data} />
       {data.warnings.length > 0 && (
         <ul className="space-y-0.5 text-xs text-amber-300/90">
           {data.warnings.map((w) => (

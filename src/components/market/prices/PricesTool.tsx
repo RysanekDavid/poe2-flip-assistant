@@ -8,6 +8,7 @@ import { timestampAgeMs } from "../../../lib/sqliteTime";
 import { UNIQUE_CATEGORIES } from "../../../lib/uniqueCategories";
 import { EmptyState } from "../../ui/EmptyState";
 import { PageHeader } from "../../ui/PageHeader";
+import { TAB_ICONS } from "../../shell/tabIcons";
 import { StaleBadge } from "../../ui/StaleBadge";
 import { CategoryRail, type RailGroup, type RailStatus } from "./CategoryRail";
 import { ExchangePane } from "./ExchangePane";
@@ -135,6 +136,7 @@ export function PricesTool() {
         title="Prices"
         purpose={`Every exchange item${data ? ` in ${data.league}` : ""} and every unique: price, 7-day trend and how much trades.`}
         legend={LEGEND}
+        art={TAB_ICONS.trade.src}
         action={data && <StaleBadge ageMin={ageMin} warnAfterMin={180} />}
       />
       <Body exchange={exchange} />

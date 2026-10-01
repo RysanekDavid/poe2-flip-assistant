@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { PageHeader } from "../../ui/PageHeader";
 import { PanelLoading } from "../PanelLoading";
+import { TAB_ICONS } from "../tabIcons";
 import { useTabRoute } from "../useTabRoute";
 
 const PricesTool = dynamic(() => import("../../market/prices/PricesTool").then((m) => m.PricesTool), {
@@ -29,6 +30,7 @@ function PriceView() {
         title="Price check"
         purpose="Paste an item: what it is worth, where that number came from, and how to sell it."
         legend={PRICE_LEGEND}
+        art={TAB_ICONS.trade.src}
       />
       <PriceCheckTool />
     </>
@@ -36,8 +38,8 @@ function PriceView() {
 }
 
 /**
- * What things are worth: every exchange item (tool=prices, the default), a price check of a pasted
- * item (tool=price), or what to buy on the trade site now (tool=opportunities).
+ * What things are worth: a price check of a pasted item (tool=price, the default), every exchange
+ * item (tool=prices), or what to buy on the trade site now (tool=opportunities).
  */
 export function TradeTab() {
   const { tool } = useTabRoute();

@@ -6,6 +6,7 @@ import { useAlertCenter } from "./alerts/AlertsContext";
 import { AlertActions, LeagueTag, MuteToggle, typeTone } from "./alerts/AlertBits";
 import type { AlertGroup } from "../lib/alertCenter";
 import { alertTypeLabel } from "../lib/alertLabels";
+import { NoAlerts } from "./alerts/NoAlerts";
 
 function GroupHeader({ group, open, onToggle }: { group: AlertGroup; open: boolean; onToggle: () => void }) {
   const { markSeen, setMuted } = useAlertCenter();
@@ -63,7 +64,7 @@ function GroupSection({ group }: { group: AlertGroup }) {
 }
 
 /** TopBar popover: the alert center grouped by type — counts, per-type mark-seen and mute. */
-export function AlertsPanel() {
+export function AlertsPanel({ onNavigate }: { onNavigate?: () => void }) {
   const { groups, unseen, error, markSeen } = useAlertCenter();
 
   return (
@@ -80,7 +81,11 @@ export function AlertsPanel() {
         {groups.map((g) => (
           <GroupSection key={g.type} group={g} />
         ))}
-        {groups.length === 0 && <li className="py-3 text-center text-neutral-500">no alerts yet</li>}
+        {groups.length === 0 && (
+          <li>
+            <NoAlerts onNavigate={onNavigate} />
+          </li>
+        )}
       </ul>
     </div>
   );

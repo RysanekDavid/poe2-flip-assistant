@@ -82,7 +82,7 @@ export function MuteToggle({ type, muted, onToggle }: { type: string; muted: boo
   return (
     <button
       onClick={() => onToggle(!muted)}
-      title={muted ? `unmute ${name} — show it in the feed and badge again` : `mute ${name} — hide it from the feed and badge (sound, popup and Discord are set in the Alerts tab)`}
+      title={muted ? `unmute ${name} — show it in the feed and badge again` : `mute ${name} — hide it from the feed and badge (sound, popup and Discord are set on the Alerts page)`}
       aria-label={muted ? `unmute ${name}` : `mute ${name}`}
       className="rounded p-0.5 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
     >

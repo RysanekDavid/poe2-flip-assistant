@@ -10,7 +10,7 @@ import { TAB_ICONS } from "../shell/tabIcons";
 import { tabRouteHref } from "../shell/tabRegistry";
 
 /**
- * Settings › Notifications: read-only delivery status and a way to the Alerts tab, the single place
+ * Settings › Notifications: read-only delivery status and a way to the Alerts page, the single place
  * routing is edited. No toggles here, so there is one source of truth.
  */
 export function NotificationsLink() {
