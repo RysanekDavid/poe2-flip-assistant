@@ -273,4 +273,5 @@ def test_strategy_enums_and_claim_rules_match_typescript() -> None:
     assert rules is not None
     parsed = {k: int(v) for k, v in re.findall(r"(\w+): (\d+)", rules.group(1))}
     assert parsed == strategy_models.MIN_SOURCES
+    assert _ts_string_tuple(claim, "RMT_DOMAINS") == strategy_models.RMT_DOMAINS
     assert set(strategy_models.Claim.model_fields) == {"v", "src", "note"}

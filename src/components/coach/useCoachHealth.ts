@@ -14,24 +14,18 @@ export type CoachAvailability =
 const STALE_MARKET_NOTICE =
   "Market data is stale or unavailable — price answers may be missing; knowledge and item questions still work.";
 
-export function coachAvailability(health: CoachHealth | null, failed: boolean): CoachAvailability {
-  if (failed) return { ready: false, reason: "The local Coach service is not running." };
+/** What a member sees while Coach is down: the operator detail is only actionable on the server. */
+export const COACH_OFFLINE_NOTICE = "Coach is offline — try again later.";
+
+/** Why the composer is locked. `operator` (the owner) gets the server-side cause; members get one plain line. */
+export function coachAvailability(health: CoachHealth | null, failed: boolean, operator: boolean): CoachAvailability {
+  const down = (reason: string): CoachAvailability => ({ ready: false, reason: operator ? reason : COACH_OFFLINE_NOTICE });
+  if (failed) return down("The local Coach service is not running.");
   if (!health) return { ready: false, reason: "Checking Coach service readiness…" };
-  if (!health.model_configured) {
-    return {
-      ready: false,
-      reason: "Configure the isolated Coach process environment, then restart Coach.",
-    };
-  }
-  if (health.agent_ready === false) {
-    return { ready: false, reason: "Coach failed to initialize; check the Coach service log." };
-  }
-  if (!health.item_data_ready) {
-    return { ready: false, reason: "The local PoE2 item catalog is missing or invalid." };
-  }
-  if (!health.knowledge_ready) {
-    return { ready: false, reason: "The Coach knowledge base is unavailable." };
-  }
+  if (!health.model_configured) return down("Configure the isolated Coach process environment, then restart Coach.");
+  if (health.agent_ready === false) return down("Coach failed to initialize; check the Coach service log.");
+  if (!health.item_data_ready) return down("The local PoE2 item catalog is missing or invalid.");
+  if (!health.knowledge_ready) return down("The Coach knowledge base is unavailable.");
   // A poe.ninja outage or stopped poller must not lock out knowledge and item questions; the
   // market tools report their own gap per request.
   return { ready: true, reason: health.market_ready ? null : STALE_MARKET_NOTICE };
@@ -44,7 +38,8 @@ export function coachAvailability(health: CoachHealth | null, failed: boolean): 
 export function useCoachHealth(active: boolean) {
   const [health, setHealth] = useState<CoachHealth | null>(null);
   const [healthError, setHealthError] = useState(false);
-  const ready = coachAvailability(health, healthError).ready;
+  // readiness does not depend on who is asking, only the wording does
+  const ready = coachAvailability(health, healthError, false).ready;
 
   const check = useCallback(async (signal: AbortSignal): Promise<void> => {
     try {

@@ -68,8 +68,10 @@ function testRatesAndDrops(file: BossLootFile): void {
     assert.ok(!src.includes("farmofexile.com"), `${name} is not credited to Farm of Exile`);
   }
   for (const [name, p] of ashRates) assert.deepEqual(rateOf(file, "arbiter-of-ash", name), point(p), `Arbiter of Ash ${name}`);
-  const olRates: Array<[string, number]> = [["Olrovasara", 0.36], ["Keeper of the Arc", 0.34], ["Svalinn", 0.15], ["Heroic Tragedy", 0.11], ["Olroth's Resolve", 0.04]];
+  // poe2wiki community estimates, Difficulty 3 (top since 0.3.0), n=71; Olroth's Resolve is listed there as "<1%"
+  const olRates: Array<[string, number]> = [["Olrovasara", 0.42], ["Keeper of the Arc", 0.32], ["Svalinn", 0.11], ["Heroic Tragedy", 0.125]];
   for (const [name, p] of olRates) assert.deepEqual(rateOf(file, "olroth", name), point(p), `Olroth ${name}`);
+  assert.deepEqual(rateOf(file, "olroth", "Olroth's Resolve"), { kind: "range", lo: 0, hi: 0.01 });
   assert.deepEqual(rateOf(file, "olroth", "Shattered Triskelion"), { kind: "guaranteed" });
   for (const name of ["Uhtred's Exodus", "Uhtred's Omen", "Uhtred's Augury"]) assert.deepEqual(rateOf(file, "olroth", name), { kind: "unknown" });
   assert.deepEqual(rateOf(file, "trialmaster", "Ixchel's Torment"), { kind: "unknown" });
@@ -92,7 +94,7 @@ function testNewBosses(file: BossLootFile): void {
   assert.equal(file.ninjaCategories["djinn-barya"], null, "Djinn Barya is declared not-on-ninja");
   assert.ok(lootOf(file, "zarokh").some((l) => l.priceRef.kind === "ninja" && l.priceRef.itemId === "against-the-darkness"));
   for (const id of ["simulacrum", "aberration", "zarokh"]) {
-    for (const l of lootOf(file, id)) assert.equal(l.source.accessed, AUDIT_DAY, `${id}/${l.name}: new lines are dated ${AUDIT_DAY}`);
+    for (const l of lootOf(file, id)) assert.ok(l.source.accessed >= AUDIT_DAY, `${id}/${l.name}: new lines are dated ${AUDIT_DAY} or later (re-sourced lines carry their re-check day)`);
   }
 }
 

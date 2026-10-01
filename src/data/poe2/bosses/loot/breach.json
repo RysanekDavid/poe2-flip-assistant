@@ -9,10 +9,9 @@
       "id": "tul-and-esh",
       "name": "It That Was Tul & It That Was Esh",
       "mechanic": "Breach",
-      "accessChain": "Using a Breachstone reveals a Breach Stronghold: several Atlas maps inside the Breach domain (Hives, then Hive and Sky Fortresses, with Tul and Esh at the core), each run with its own waystone (0.5.0 notes: \"Using a Breachstone will reveal the maps inside the domain\"; expcarry). The map count is unverified, so only the Breachstone is priced: net is a rough upper bound on value per Stronghold, not per map. The Breachlord Sac — the entry to Xesht — looks guaranteed per Tul & Esh kill (Game8, poe2db). The Stronghold maps' own loot is not counted either.",
+      "accessChain": "Using a Breachstone reveals a Breach Stronghold: several Atlas maps inside the Breach domain (0.5.0 notes: \"Using a Breachstone will reveal the maps inside the domain\" — Breach Hives, Sky Hives with the Breachlords' fortresses, and the Fortress where Tul and Esh wait); each map is assumed to need its own waystone (unverified). The map count is unverified, so only the Breachstone is priced: net is a rough upper bound on value per Stronghold, not per map. The Breachlord Sac — the entry to Xesht — looks guaranteed per Tul & Esh kill (0.5.0 notes: defeating them \"will give you a key\"; Game8, poe2db). The Stronghold maps' own loot is not counted either.",
       "sources": [
         {"title":"Path of Exile 2 — 0.5.0 patch notes","url":"https://www.pathofexile.com/forum/view-thread/3932540","accessed":"2026-09-29"},
-        {"title":"expcarry — Xesht: Breach access, mechanics and rewards","url":"https://expcarry.com/poe-2-xesht-breach-access-mechanics-rewards-guide","accessed":"2026-09-29"},
         {"title":"poe2db — Breachstone (reveals Breach Strongholds)","url":"https://poe2db.tw/us/Breachstone","accessed":"2026-09-29"},
         {"title":"Game8 — Breachlord Sac","url":"https://game8.co/games/Path-of-Exile-2/archives/604463","accessed":"2026-09-29"},
         {"title":"poe2db — Breachlord Sac","url":"https://poe2db.tw/us/Breachlord_Sac","accessed":"2026-09-29"}
@@ -33,12 +32,10 @@
       "id": "xesht",
       "name": "Xesht, We That Are One",
       "mechanic": "Breach",
-      "accessChain": "Kill It That Was Tul and It That Was Esh in a Breach Stronghold (revealed by a Breachstone — see their row) for a Breachlord Sac, and hand it to the Dreamer in the Monastery of the Keepers; each attempt consumes one Sac. The 50/100/150-splinter difficulty tiers are the pre-0.5 model and are not offered here. No drop rates are published. Breach Rings no longer drop (0.5.0).",
+      "accessChain": "Kill It That Was Tul and It That Was Esh in a Breach Stronghold (revealed by a Breachstone — see their row) for a Breachlord Sac, and hand it to the Dreamer in the Monastery of the Keepers; each attempt consumes one Sac. Splinter-count difficulty tiers are not offered here: since 0.5.0 full splinter stacks turn into a wombgift and the key to Xesht comes from Tul and Esh (0.5.0 notes). No drop rates are published.",
       "sources": [
         {"title":"Game8 — Breachlord Sac","url":"https://game8.co/games/Path-of-Exile-2/archives/604463","accessed":"2026-09-29"},
-        {"title":"expcarry — Xesht: Breach access, mechanics and rewards","url":"https://expcarry.com/poe-2-xesht-breach-access-mechanics-rewards-guide","accessed":"2026-09-29"},
         {"title":"Path of Exile 2 — 0.5.0 patch notes","url":"https://www.pathofexile.com/forum/view-thread/3932540","accessed":"2026-09-29"},
-        {"title":"timesaver.gg — Xesht guide (0.5.4c)","url":"https://timesaver.gg/blog/poe2-xesht-guide","accessed":"2026-09-29"},
         {"title":"Maxroll — PoE2 Breach resource (higher difficulty adds items to the pool)","url":"https://maxroll.gg/poe2/resources/breach","accessed":"2026-09-29"},
         {"title":"poe2db — Breachlord Sac","url":"https://poe2db.tw/us/Breachlord_Sac","accessed":"2026-09-29"},
         {"title":"Maxroll — PoE2 Boss Loot Table Cheat Sheet (updated 2026-09-24, drops as of 2026-06-22)","url":"https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet","accessed":"2026-09-29"}

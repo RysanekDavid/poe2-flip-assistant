@@ -8,6 +8,7 @@ import type { RecipeView } from "./craft/craftView";
 import { isCraftable, RecipeRow, type DomainMeta } from "./craft/RecipeRow";
 import { Button } from "./ui/Button";
 import { Panel } from "./ui/Panel";
+import { useNavMode } from "./shell/NavModeProvider";
 import type { CraftDomain } from "../core/craftRecipes";
 
 /** Each craft domain keeps its own art and name — the procedures differ per item class. */
@@ -103,6 +104,18 @@ function useOpenCards() {
   return { open, toggle, add };
 }
 
+/** The recipe checks predate the current game data; the operator step lives in the owner's tooltip only. */
+function StaleAuditNotice({ patch }: { patch: string }) {
+  const { me } = useNavMode();
+  const ownerHint = me.role === "owner" ? "Owner: run npm run craft:audit-recipes and commit recipe-audit.json." : undefined;
+  return (
+    <p role="alert" title={ownerHint} className="mb-3 rounded-md border border-amber-400/40 bg-amber-950/20 px-3 py-2 text-sm text-amber-300">
+      The game data changed since these recipes were last checked (against {patch}) — the legality and &ldquo;stale&rdquo; badges may be off
+      until the next check.
+    </p>
+  );
+}
+
 /**
  * Every recipe in one panel, ranked by modelled EV per attempt, narrowed by filter chips; each row
  * expands to the full derivation + guide and launches an interactive craft session. Read-only
@@ -124,12 +137,7 @@ export function CraftMarginPanel() {
       <FilterChips filter={filter} onFilter={setFilter} counts={counts} />
       {notice && <p className="mb-3 text-sm text-sky-400">{notice}</p>}
       {(error ?? actionErr) && <p role="alert" className="mb-3 text-sm text-bad">error: {error ?? actionErr}</p>}
-      {data && !data.audit.current && (
-        <p role="alert" className="mb-3 rounded-md border border-amber-400/40 bg-amber-950/20 px-3 py-2 text-sm text-amber-300">
-          Recipe audit built on a different game-data snapshot ({data.audit.gameDataPatch}, RePoE {data.audit.repoeVersion}) — legality and stale
-          badges may be wrong until someone re-runs craft:audit-recipes.
-        </p>
-      )}
+      {data && !data.audit.current && <StaleAuditNotice patch={data.audit.gameDataPatch} />}
       <div className="space-y-2">
         {recipes.map((r) => (
           <RecipeRow

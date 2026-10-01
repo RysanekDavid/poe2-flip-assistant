@@ -13,7 +13,8 @@ import type { RecipeProvenance, RecipeSource } from "./craftProvenance/schema";
  * and every step that rests on the ring write-up alone carries an `unverified` badge.
  *
  * Tiers: "primary" = the creator's own video; "secondary" = a write-up of someone's craft (the
- * compilation, Exile Codex, Forge of Exiles, POECurrency, p2pah, Mobalytics). Exile Codex pages print
+ * compilation, Exile Codex, Forge of Exiles, p2pah, Mobalytics). Real-money-trading shops are never cited
+ * (RMT_DOMAINS in src/lib/claim.ts; the schema rejects them). Exile Codex pages print
  * only a "Last updated" date; that printed date is used (precision exact, read from the page).
  *
  * Second wave (2026-09-30, craftRecipeData6.ts + craftRecipeData7.ts): every recipe is one entry of
@@ -46,14 +47,6 @@ const FORGE_HELMET = guide(
   "https://www.forgeofexiles.com/guides/budget-es-helmet-essence-hybrid-es-life-fubgun-0-5",
   "tihyo",
   "2026-07-21",
-  "exact",
-);
-// a VARIANT path (Greater Essence of Opulence + Ancient Rib), listed for comparison — not support for this recipe
-const POECURRENCY_HELMET = guide(
-  "Variant (Opulence + Ancient Rib path): Path of Exile 2 Patch 0.5.0 Helmet Crafting Strategy | From White Bases to High-Value Helmets",
-  "https://www.poecurrency.com/news/poe-2-patch-0-5-0-helmet-crafting-strategy-from-white-bases-to-high-value-helmets",
-  null,
-  "2026-08-12",
   "exact",
 );
 const CODEX_BARCZI = guide("Easy Energy Shield Crafting For Profit | PoE 2 0.5", "https://exile.codex-wiki.com/guides/easy-energy-shield-crafting-for-profit-poe-2-0-5", null, "2026-06-06", "exact");
@@ -173,7 +166,7 @@ export const EXPANSION_PROVENANCE: Record<string, RecipeProvenance> = {
   helmet_tiara_es: {
     patchVerified: "0.5.5b",
     status: "draft",
-    sources: [COMPILATION, FORGE_HELMET, POECURRENCY_HELMET],
+    sources: [COMPILATION, FORGE_HELMET],
     hitRateBasis: { basis: "unknown", n: null, note: `${NO_ODDS} We assume ~1 in 3 white Tiaras land T1 flat ES from a Perfect Transmute or Aug; the rest of the craft is guaranteed.` },
     extraEntityRefs: [],
     kbRuleRefs: ["§1", "§3", "§4", "§5", "§7"],

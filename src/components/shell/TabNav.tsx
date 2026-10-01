@@ -1,21 +1,35 @@
 "use client";
 
-import type { MouseEvent } from "react";
+import { Fragment, type MouseEvent } from "react";
 import Link from "next/link";
 import { AlertsTabBadge } from "../alerts/AlertsTab";
 import { defaultToolFor, visibleTabs, type NavMode } from "../../lib/navMode";
-import { tabMeta, tabRouteHref, type TabId, type TabMeta } from "./tabRegistry";
+import { TAB_GROUP, tabMeta, tabRouteHref, type TabId, type TabMeta } from "./tabRegistry";
 import { useNavMode } from "./NavModeProvider";
 import { TabArt } from "./TabArt";
 import { TAB_ICONS } from "./tabIcons";
 import { useTabRoute } from "./useTabRoute";
 
-// Inactive art stays near full strength: at 60% the dark metal PNGs sank into the header.
-const dimClass = (active: boolean): string => (active ? "opacity-100" : "opacity-85 group-hover:opacity-100");
+/*
+ * Variant A of the 2026-10 header review: the active tab is framed like the league picker (amber
+ * border, dark gradient, amber inset underline) and labels are the owl's bone at 60% / 100%, so the
+ * nav speaks the logo's palette instead of cold grey. The art carries a hard 1px drop so the dark
+ * metal PNGs keep an edge on the translucent header; the active one adds a soft amber glow.
+ */
+// Keyboard focus is a dashed neutral outline set off the box: the app-wide amber outline would draw
+// a second amber frame and read as a second selected tab.
+const TAB_FOCUS = "focus-visible:outline-dashed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-300";
+const TAB_BASE = `group mb-1.5 flex shrink-0 items-center gap-1.5 rounded-md border py-1 pl-1 pr-2.5 text-sm font-semibold transition-colors ${TAB_FOCUS}`;
+const TAB_ACTIVE =
+  "border-amber-500/40 bg-gradient-to-b from-amber-950/30 to-neutral-900/85 text-brand-bone shadow-[0_1px_2px_rgba(0,0,0,.4),inset_0_-2px_0_theme(colors.accent)]";
+const TAB_IDLE = "border-transparent text-brand-bone/60 hover:border-neutral-800 hover:bg-neutral-900/60 hover:text-brand-bone/90";
+const ART_IDLE =
+  "[filter:saturate(.85)_drop-shadow(0_1px_0_rgba(0,0,0,.9))] group-hover:-translate-y-px group-hover:[filter:saturate(1)_drop-shadow(0_1px_0_rgba(0,0,0,.9))]";
+const ART_ACTIVE = "[filter:saturate(1.05)_drop-shadow(0_0_6px_rgba(251,191,36,.35))_drop-shadow(0_1px_0_rgba(0,0,0,.9))]";
 
-function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
-  return <TabArt src={TAB_ICONS[id]} className={`h-7 w-7 object-contain transition-opacity ${dimClass(active)}`} priority={id === "flips"} />;
-}
+const tabClass = (active: boolean): string => `${TAB_BASE} ${active ? TAB_ACTIVE : TAB_IDLE}`;
+const artClass = (active: boolean): string =>
+  `h-8 w-8 object-contain transition-[filter,transform] duration-150 ${active ? ART_ACTIVE : ART_IDLE}`;
 
 /** Plain left-click goes through go() (dedupes history); modified clicks keep open-in-new-tab. */
 export function tabClickHandler(go: (tab: TabId) => void): (e: MouseEvent<HTMLAnchorElement>, id: TabId) => void {
@@ -42,54 +56,73 @@ function TabLink({ meta, mode, active, onClick }: TabLinkProps) {
       onClick={(e) => onClick(e, meta.id)}
       title={meta.hint}
       aria-current={active ? "page" : undefined}
-      className={`group relative -mb-px flex shrink-0 items-center gap-2 rounded-t-md border-b-2 px-2.5 py-1.5 text-sm font-medium transition-colors ${
-        active ? "border-amber-400 text-neutral-100" : "border-transparent text-neutral-400 hover:text-neutral-200"
-      }`}
+      className={tabClass(active)}
     >
-      <TabGlyph id={meta.id} active={active} />
+      <TabArt src={TAB_ICONS[meta.id]} className={artClass(active)} priority={meta.id === "flips"} />
       {meta.label}
       {meta.id === "alerts" && <AlertsTabBadge />}
     </Link>
   );
 }
 
+/** A hairline between two tab groups; decorative, the labels already say what each tab is. */
+function GroupRule() {
+  return <span aria-hidden className="mx-1 my-2 w-px shrink-0 self-stretch bg-line" />;
+}
+
+function CoachLink({ active, onClick }: { active: boolean; onClick: TabLinkProps["onClick"] }) {
+  const coach = tabMeta("coach");
+  // Coach keeps a faint frame even when idle: it is the helper, not a work area, and stays apart
+  const idle = "border-neutral-800 bg-neutral-900/45 text-brand-bone/60 hover:border-amber-500/25 hover:text-brand-bone/90";
+  return (
+    <Link
+      href={tabRouteHref({ tab: "coach", tool: null })}
+      scroll={false}
+      prefetch={false}
+      onClick={(e) => onClick(e, "coach")}
+      title={coach.hint}
+      aria-current={active ? "page" : undefined}
+      className={`${TAB_BASE} ${active ? TAB_ACTIVE : idle}`}
+    >
+      {/* the owl breathes a slow amber glow so the helper reads as present; still for reduced motion */}
+      <TabArt src={TAB_ICONS.coach} className={`${artClass(active)} motion-safe:animate-breathe`} />
+      {coach.label}
+    </Link>
+  );
+}
+
 /**
- * Primary navigation, filtered to the user's nav mode. Coach sits apart on the right in both modes:
- * it is a secondary helper, not a work area.
+ * Primary navigation, filtered to the user's nav mode, with a rule between job groups. Coach sits
+ * apart on the right in both modes: it is a secondary helper, not a work area.
  */
 export function TabNav() {
   const { tab, go } = useTabRoute();
   const { mode } = useNavMode();
   const onClick = tabClickHandler(go);
-  const coach = tabMeta("coach");
+  const tabs = visibleTabs(mode).filter((t) => t.id !== "coach");
+  // Beginner's five tabs are mostly one per group, so rules there would split every tab apart
+  const ruled = mode === "advanced";
   return (
-    // below md the strip bleeds to the screen edges (-mx-4 against the header's px-4) so it scrolls edge to edge
-    <nav aria-label="Sections" className="-mx-4 flex items-end gap-0.5 px-4 max-md:overflow-x-auto max-md:overflow-y-hidden md:mx-0 md:px-0" data-tour="tabs">
-      {visibleTabs(mode)
-        .filter((t) => t.id !== "coach")
-        .map((t) => (
-          <TabLink key={t.id} meta={t} mode={mode} active={tab === t.id} onClick={onClick} />
-        ))}
-      <Link
-        href={tabRouteHref({ tab: "coach", tool: null })}
-        scroll={false}
-        prefetch={false}
-        onClick={(e) => onClick(e, "coach")}
-        title={coach.hint}
-        aria-current={tab === "coach" ? "page" : undefined}
-        className={`group mb-1 ml-auto flex shrink-0 items-center gap-2 rounded-md border px-3 py-1 text-sm font-medium transition-colors ${
-          tab === "coach"
-            ? "border-amber-400/40 bg-amber-950/25 text-amber-100"
-            : "border-neutral-800 bg-neutral-900/45 text-neutral-400 hover:border-amber-400/25 hover:text-neutral-200"
-        }`}
-      >
-        {/* the owl breathes a slow amber glow so the helper reads as present; still for reduced motion */}
-        <TabArt
-          src={TAB_ICONS.coach}
-          className={`h-7 w-7 object-contain transition-opacity motion-safe:animate-breathe ${dimClass(tab === "coach")}`}
-        />
-        {coach.label}
-      </Link>
+    // The strip scrolls sideways whenever it is wider than the header (phones, narrow desktops).
+    // Below md it bleeds to the screen edges (-mx-4 against the header's px-4); pt-1.5/px-1.5 leave
+    // room for the offset focus outline, which the scroll box would otherwise clip.
+    <nav
+      aria-label="Sections"
+      className="-mx-4 flex items-end gap-0.5 overflow-x-auto overflow-y-hidden px-4 pt-1.5 md:-mx-1.5 md:px-1.5"
+      data-tour="tabs"
+    >
+      {tabs.map((t, i) => {
+        const prev = tabs[i - 1];
+        return (
+          <Fragment key={t.id}>
+            {ruled && prev !== undefined && TAB_GROUP[prev.id] !== TAB_GROUP[t.id] && <GroupRule />}
+            <TabLink meta={t} mode={mode} active={tab === t.id} onClick={onClick} />
+          </Fragment>
+        );
+      })}
+      {/* pushes Coach to the right edge, and keeps a gap before it once the strip scrolls */}
+      <span aria-hidden className="ml-auto w-4 shrink-0" />
+      <CoachLink active={tab === "coach"} onClick={onClick} />
     </nav>
   );
 }

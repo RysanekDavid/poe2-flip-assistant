@@ -62,7 +62,7 @@ function ListRows({ hint, ex }: { hint: Hint; ex: number | null }) {
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
       <Row label="list at" div={hint.listAtDiv} ex={ex} title="fair price per unit" />
       <Row label="quick" div={hint.quickDiv} ex={ex} title="undercut to the front of the listings" />
-      <Row label="patient" div={hint.patientDiv} ex={ex} title="what a buyer in a hurry tends to pay" />
+      <Row label="patient" div={hint.patientDiv} ex={ex} title="ask above the fair price and wait: more per unit, but it can sit until a buyer comes" />
       {hint.note && <code className="rounded bg-neutral-900 px-1.5 text-xs text-neutral-200">{hint.note}</code>}
     </div>
   );

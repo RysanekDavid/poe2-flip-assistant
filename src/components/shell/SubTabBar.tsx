@@ -133,7 +133,8 @@ function ToolTab({ tab, meta, active, focusable, onGo, linkRef }: ToolTabProps) 
         onGo();
       }}
       className={`group inline-flex shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400/60 ${
-        active ? "border-amber-400 text-neutral-100" : "border-transparent text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
+        // same bone label tones as the tab row; the underline (not a frame) keeps it a level below
+        active ? "border-amber-400 text-brand-bone" : "border-transparent text-brand-bone/60 hover:border-neutral-600 hover:text-brand-bone/90"
       }`}
     >
       <ToolGlyph tab={tab} tool={meta.id} active={active} />

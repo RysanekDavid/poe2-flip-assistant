@@ -210,6 +210,14 @@ def test_claim_note_null_is_rejected_like_zod_optional() -> None:
     assert Claim.model_validate({"v": "uv", "src": []}).note is None
 
 
+def test_claim_rejects_rmt_shop_sources_like_zod() -> None:
+    for url in ("https://www.poecurrency.com/news/x", "https://iggm.com/news/y"):
+        with pytest.raises(ValidationError):
+            Claim.model_validate({"v": "ss", "src": [url]})
+    primary = "https://poe2db.tw/us/Omen_of_Light"
+    assert Claim.model_validate({"v": "ss", "src": [primary]}).v == "ss"
+
+
 def test_schema_is_strict_with_every_field_required_and_nullable() -> None:
     tool = build_strategy_tool(STRATEGIES_DIR, CATALOG_PATH)
     provider_tool = convert_to_openai_tool(tool, strict=True)["function"]

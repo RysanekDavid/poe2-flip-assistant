@@ -5,6 +5,10 @@ Deep-research report, web-verified 2026-08-20. Cross-checked against
 tag: **verified-multi-source**, **single-source**, or **unresolved**. Nothing here may be promoted
 into Coach recommendations without honoring those tags.
 
+**Corrections 2026-10-01 (sources):** citations to real-money-trading shops were removed. The %phys
+ilvl gate (§2) was re-sourced from the RePoE datamine; the unveil-target conflict (§3), the shop
+Divine-ratio anchor and the guide-stated Jawbone/omen prices (§4) were dropped or marked unresolved.
+
 Patch state: current live patch is **0.5.4 "Return of the Ancients"** (0.5.0 shipped 2026-05-28;
 0.5.5 expected after Gamescom late Aug 2026). Three 0.5 changes invalidate most older bow advice:
 
@@ -50,7 +54,7 @@ Runic Ward only). **Unresolved — the app must not claim a Runeforged bow is be
 
 | Mod | Side | Archetype | ilvl / mod-level gate | Confidence |
 |---|---|---|---|---|
-| `#% increased Physical Damage` (local) | prefix | both phys paths — biggest multiplier | **T1 needs ilvl 82**; ilvl 75+ OK for T2 | guide-consensus (timesaver, aoeah, mmoexp 0.5) — not data-verified |
+| `#% increased Physical Damage` (local) | prefix | both phys paths — biggest multiplier | **T1 needs ilvl 82** (Merciless, 170–179%); ilvl 75+ OK for T2 (Tyrannical, 155–169%) | verified (datamine: RePoE `LocalIncreasedPhysicalDamagePercent7/8`, repoe 4.5.5.2, synced 2026-09-29) |
 | `Adds # to # Physical Damage` | prefix | both phys paths | Greater Essence of Abrasion writes **(16–24)–(28–42)** at mod level 48 (bows use the ONE-HANDED value row) | verified-multi-source |
 | `+(x)% Surpassing chance to fire an additional Arrow Attack` | **suffix** | all bow builds, hardest chase | of Surplus 46 (25–50%), of Splintering 55 (75–100%), of Shards 66 (125–150%), **of Many 82 (175–200%)** | single-source (poe2db `Additional arrow` page) |
 | `+#% to Critical Hit Chance` (local) | suffix | crit | Greater Essence of Seeking guarantees **+(3.11–3.8)%**, mod level 35 | verified-multi-source (matches KB §7) |
@@ -100,8 +104,8 @@ Shared 0.5 constraints (verified-multi-source: Maxroll 0.5.0, bugfree, domistae 
    **Omen of Sinistral/Dextral Erasure** (PoE2 Chaos removes one mod, adds one — not a reroll).
 7. Quality 20% → sockets/runes → **Divine to max** → corrupt last if at all.
 
-Unveil-target conflict: aoeah says "high flat elemental, cold best"; mmoexp says "flat physical
-best". **Report both; decide by the build's conversion.**
+Unveil target: **unresolved** — the only sources that named one disagreed (flat elemental vs flat
+physical) and were gold-seller pages, now dropped. **Decide by the build's conversion.**
 
 ### (b) Physical CRIT — high end
 
@@ -149,8 +153,8 @@ priority: high phys → ele damage roll → additional-arrow → +level projecti
 ## 4. Costs and break-even framing
 
 Live anchors (2026-08-20): poe2scout `/api/poe2/Leagues` → Runes of Aldur DivinePrice = 347.3 ex,
-ChaosDivinePrice = 11.16. Timesaver ~375 ex/div (2026-08-19). dadsofexile board shows 598 ex/div —
-**~60% divergence; use dadsofexile ratios only, never absolutes.**
+ChaosDivinePrice = 11.16. dadsofexile board shows 598 ex/div —
+**~70% divergence; use dadsofexile ratios only, never absolutes.**
 
 Consumables in divine-equivalents within the dadsofexile board (divergence cancels):
 
@@ -162,8 +166,8 @@ Consumables in divine-equivalents within the dadsofexile board (divergence cance
 | Perfect Exalted Orb | 1,708 | ~2.9 |
 | Fracturing Orb | 7,287 | ~12.2 |
 
-Guide-stated (mmoexp 2026-06-18): Preserved Jawbone + Necromancy omens ~3 ex each; Ancient
-Jawbone 1–2 div. ("10+ div league-start essences" figure is stale.)
+Preserved/Ancient Jawbone and Necromancy omen prices: **unresolved** — the only figures came from a
+gold-seller page and were dropped; read them live from poe.ninja.
 
 Tiers:
 
@@ -182,8 +186,8 @@ Tiers:
 p_breakeven = cost_of_one_attempt / (value_if_hit − value_if_miss)
 ```
 
-Safe example phrasing: "A Preserved Jawbone + Omen of Dextral Necromancy attempt costs ~6 ex
-≈ 0.017 div. If hitting Amanamu 12–18% attack speed raises sale value by 15 div, the step pays
+Safe example phrasing (illustrative numbers — plug in live prices): "A Preserved Jawbone + Omen
+of Dextral Necromancy attempt costs ~6 ex ≈ 0.017 div. If hitting Amanamu 12–18% attack speed raises sale value by 15 div, the step pays
 above a ~0.1% hit rate. A Perfect Exalt (~2.9 div) slam on a bow selling 40 vs 25 div needs
 better than roughly 1-in-5."
 
@@ -237,18 +241,17 @@ Database tier:
   /Perfect_Essence_of_Abrasion · /Greater_Essence_of_Seeking · /Perfect_Essence_of_Seeking ·
   /Greater_Essence_of_Battle · /Greater_Essence_of_Ice · /Essence · /Omen ·
   /Omen_of_Sinistral_Crystallisation · /Omen_of_Sanctification · /Desecrated_Modifiers
-- https://www.u4n.com/news/list-of-poe-2-bow-desecrated-modifiers.html (2025-09-03)
 
 Guide tier:
-- https://timesaver.gg/blog/poe2-fractured-phys-crit-bow-crafting-guide (2026-06-12/24, 0.5)
-- https://www.aoeah.com/news/4613--poe-2-05-best-bow-crafting-crit--non-crit (2026-06-02)
-- https://www.mmoexp.com/News/path-of-exile-2-the-complete-guide-to-crafting-your-endgame-crit-bow.html (2026-06-18)
 - https://domistae.github.io/poe2-leveling/poe2_crafting_codex.html (0.5 codex)
 - https://bugfree.gg/guides/poe2-crafting-changes-0-5-0 (2026-05-23)
 - https://dadsofexile.com/recombinator · /prices (ratios only)
 
 Market:
 - https://poe2scout.com/api/poe2/Leagues (2026-08-20)
+
+Datamine (added 2026-10-01):
+- RePoE catalog `src/data/poe2/repoe/` (repoe 4.5.5.2, synced 2026-09-29) — `LocalIncreasedPhysicalDamagePercent1–8`
 
 Rejected as stale/wrong-game:
 - poeaffix.net (PoE1), exile.pub bow page (0.4.0), Steam guide 3415604016 (0.1),

@@ -104,7 +104,6 @@ function ShellBody() {
     // one alert poll for the TopBar badge, its popover, the Alerts tab and the Flips ticker
     <AlertsProvider>
       <main className="mx-auto w-full max-w-screen-2xl flex-1 space-y-4 p-6">
-        <Onboarding />
         {/* stale-league warning — every price below is wrong if this fires */}
         <LeagueBanner />
         {/* POESESSID health: beginner mode hides the trade connection it would send them to */}
@@ -117,6 +116,8 @@ function ShellBody() {
         )}
         <CoachPanel active={tab === "coach"} />
       </main>
+      {/* outside <main>: its welcome is a fixed overlay, and main's space-y would give it (or, first, the header) a stray margin */}
+      <Onboarding />
     </AlertsProvider>
   );
 }

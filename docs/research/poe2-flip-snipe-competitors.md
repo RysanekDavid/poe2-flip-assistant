@@ -71,5 +71,5 @@ https://github.com/Sidekick-Poe/Sidekick/releases · https://github.com/merlin29
 https://maxroll.gg/poe2/resources/flipping-with-the-currency-exchange ·
 https://maxroll.gg/poe2/resources/trade-in-path-of-exile-2 ·
 https://www.switchbladegaming.com/path-of-exile-2/currency-exchange/ ·
-https://timesaver.gg/blog/poe2-trade-guide · https://mobalytics.gg/poe-2/guides/forbidden-rites ·
+https://mobalytics.gg/poe-2/guides/forbidden-rites ·
 https://www.pathofexile.com/developer/docs/reference

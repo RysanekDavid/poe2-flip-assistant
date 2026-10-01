@@ -13,7 +13,6 @@
       "mechanic": "Abyss",
       "accessChain": "Kulemak's Invitation drops from the Abyssal Commanders in level 79+ Abyssal Depths; use it at the Well of Souls to reach the Black Cathedral. Consumed on entry. Grip of Kulemak is guaranteed and exactly one Ancient bone drops per kill; rates below come from one 100-run sample of the empowered fight (the 0.5.3 notes only promise the bones as \"a chance\"). The Master's Reach needs the fully empowered fight (all three Liches, 0.5.0 notes); its rate is unpublished.",
       "sources": [
-        {"title":"timesaver.gg — Vessel of Kulemak guide","url":"https://timesaver.gg/blog/poe2-vessel-of-kulemak-guide","accessed":"2026-09-28"},
         {"title":"Stratlore — Vessel of Kulemak","url":"https://poe2.stratlore.com/en/bosses/vessel-of-kulemak/","accessed":"2026-09-28"},
         {"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"},
         {"title":"Path of Exile 2 — 0.5.3 patch notes (Kulemak bones are \"a chance\")","url":"https://www.pathofexile.com/forum/view-thread/3968601","accessed":"2026-09-29"},
@@ -25,7 +24,7 @@
           "label": "Kulemak's Invitation",
           "entry": [{"itemId":"kulemaks-invitation","qty":1,"icon":"https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvS3VsZW1ha3NJbnZpdGF0aW9uIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c7e6e86681/KulemaksInvitation.png"}],
           "loot": [
-            {"name":"Grip of Kulemak","priceRef":{"kind":"scout","name":"Grip of Kulemak"},"rate":{"kind":"guaranteed"},"confidence":"confirmed","source":{"title":"timesaver.gg — Vessel of Kulemak guide","url":"https://timesaver.gg/blog/poe2-vessel-of-kulemak-guide","accessed":"2026-09-28"}},
+            {"name":"Grip of Kulemak","priceRef":{"kind":"scout","name":"Grip of Kulemak"},"rate":{"kind":"guaranteed"},"confidence":"confirmed","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (Grip of Kulemak guaranteed every kill)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-10-01"}},
             {"name":"Ancient Jawbone","priceRef":{"kind":"ninja","itemId":"ancient-jawbone"},"rate":{"kind":"point","p":0.36},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
             {"name":"Ancient Rib","priceRef":{"kind":"ninja","itemId":"ancient-rib"},"rate":{"kind":"point","p":0.35},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},
             {"name":"Ancient Collarbone","priceRef":{"kind":"ninja","itemId":"ancient-collarbone"},"rate":{"kind":"point","p":0.29},"confidence":"single-source","source":{"title":"Farm of Exile — Vessel of Kulemak, empowered (100-run sample)","url":"https://farmofexile.com/poe2/article/vessel-of-kulemak-empowered","accessed":"2026-09-28"}},

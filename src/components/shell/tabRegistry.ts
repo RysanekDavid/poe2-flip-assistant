@@ -106,6 +106,27 @@ export const TABS: readonly TabMeta[] = [
   { id: "coach", label: "Coach", hint: "market · craft · verified sources" },
 ];
 
+export const TAB_GROUPS = ["market", "earn", "stash", "tools", "account", "helper"] as const;
+export type TabGroup = (typeof TAB_GROUPS)[number];
+
+/**
+ * Which player job a tab serves. The nav draws a thin rule wherever two neighbouring visible tabs
+ * belong to different groups, so the strip reads as a few clusters rather than eleven equal items.
+ */
+export const TAB_GROUP: Record<TabId, TabGroup> = {
+  flips: "market",
+  trade: "market",
+  farm: "earn",
+  craft: "earn",
+  wealth: "stash",
+  regex: "tools",
+  patches: "tools",
+  learn: "tools",
+  alerts: "account",
+  settings: "account",
+  coach: "helper",
+};
+
 /**
  * Renamed tools: an old ?tool= keeps working by landing on its replacement (Market board became
  * Opportunities on 2026-09-30). Keyed by today's tab id, since followRenames maps the tab first.

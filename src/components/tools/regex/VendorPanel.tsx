@@ -92,7 +92,7 @@ export function VendorPanel(props: VendorPanelProps) {
   const data = useVendorData();
   if (data.status === "loading") return <PanelLoading />;
   if (data.status === "error") {
-    return <EmptyState icon={<TriangleAlert className="h-5 w-5 text-bad" />} title="Vendor data failed to load" sentence={`${data.message} — reload the page; if it persists the regex dataset is out of date (npm run build:regex-data).`} />;
+    return <EmptyState icon={<TriangleAlert className="h-5 w-5 text-bad" />} title="Vendor data failed to load" sentence={`${data.message} — reload the page; if it keeps failing, the mod list needs an update on our side.`} />;
   }
   return <VendorWorkspace {...props} data={data.data} />;
 }

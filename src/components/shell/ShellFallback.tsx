@@ -15,10 +15,11 @@ export function ShellFallback() {
             <Brand size="header" />
           </h1>
           <div aria-hidden className="col-start-2 row-start-1 h-[52px]" />
-          <div className="col-span-2 row-start-2 flex items-end gap-0.5 overflow-hidden md:col-span-1 md:col-start-2">
+          {/* same box metrics as TabNav's tabs, so the strip does not shift when the real one mounts */}
+          <div className="col-span-2 row-start-2 flex items-end gap-0.5 overflow-hidden pt-1.5 md:col-span-1 md:col-start-2">
             {[0, 1, 2, 3, 4].map((slot) => (
-              <span key={slot} aria-hidden className="flex shrink-0 items-center gap-2 border-b-2 border-transparent px-2.5 py-1.5">
-                <span className="h-7 w-7 rounded bg-neutral-900" />
+              <span key={slot} aria-hidden className="mb-1.5 flex shrink-0 items-center gap-1.5 rounded-md border border-transparent py-1 pl-1 pr-2.5">
+                <span className="h-8 w-8 rounded bg-neutral-900" />
                 <span className="h-3 w-14 rounded bg-neutral-900" />
               </span>
             ))}

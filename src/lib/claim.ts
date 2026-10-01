@@ -31,8 +31,59 @@ export const CLAIM_MEANING: Record<ClaimVerdict, string> = {
 /** Only an unsettled fact earns the amber border; settled grades stay neutral so amber keeps meaning "check this". */
 export const isUnsettledClaim = (verdict: ClaimVerdict): boolean => verdict === "uv" || verdict === "cf";
 
-// Rendered as links, so only https (no javascript:/data: hrefs out of a data file).
-const sourceUrlSchema = z.string().url().regex(/^https:\/\//, "claim sources must be https URLs");
+/**
+ * Shops that sell PoE2 currency, items or boosting for real money, each confirmed on its own site
+ * (2026-10-01); most also publish SEO "guides". They are never a source: a citation is a link we
+ * send players to. Matched on the host and its subdomains. Python mirror: RMT_DOMAINS in
+ * services/coach/src/strategies/models.py (test_engine_drift pins the two lists together).
+ */
+export const RMT_DOMAINS = [
+  "poecurrency.com",
+  "iggm.com",
+  "u4n.com",
+  "u4gm.com",
+  "mmojugg.com",
+  "mmoexp.com",
+  "mmogah.com",
+  "mmopixel.com",
+  "ezg.com",
+  "eznpc.com",
+  "aoeah.com",
+  "ssegold.com",
+  "rpgstash.com",
+  "timesaver.gg",
+  "boostmatch.gg",
+  "expcarry.com",
+  "epiccarry.com",
+  "grindout.com",
+  "eld.gg",
+  "eldorado.gg",
+  "g2g.com",
+  "playerauctions.com",
+  "overgear.com",
+  "odealo.com",
+  "skycoach.gg",
+  "instant-carry.com",
+  "misti.services",
+  "conquestcapped.com",
+] as const;
+
+// scheme://[userinfo@]host — a plain match, so the check runs the same in every browser the Learn tab supports
+const URL_HOST = /^[a-z][a-z0-9+.-]*:\/\/(?:[^@/?#]*@)?([^/?#:]+)/i;
+
+/** True when the URL's host is an RMT shop or one of its subdomains; a string with no host is not one. */
+export function isRmtUrl(url: string): boolean {
+  const host = URL_HOST.exec(url)?.[1]?.toLowerCase();
+  if (host === undefined) return false;
+  return RMT_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
+}
+
+// Rendered as links, so only https (no javascript:/data: hrefs out of a data file), and never a shop.
+const sourceUrlSchema = z
+  .string()
+  .url()
+  .regex(/^https:\/\//, "claim sources must be https URLs")
+  .refine((url) => !isRmtUrl(url), "claim sources must not be real-money-trading shops (RMT_DOMAINS)");
 
 /** A grade whose label counts sources must carry that many; the others may cite none. */
 const MIN_SOURCES: Record<ClaimVerdict, number> = { vp: 1, vs: 2, ss: 1, uv: 0, cf: 0, syn: 0 };
