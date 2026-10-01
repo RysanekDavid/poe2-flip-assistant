@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "ritual-omens",
   "title": "Ritual: omen favours",
   "summary": "Run Ritual tablets that tilt favours toward Omens and make deferring cheaper, then buy the omens with tribute. Since 0.5.5 a second Ritual Tablet adds an extra altar.",
@@ -50,6 +51,24 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Ritual Altars sell Favours for Tribute, and the tree and tablets make rerolling and deferring cheaper, so more Tribute ends up on Omens.",
+    "breaks_when": [
+      "Ritual reroll or defer nodes or tablet mods are changed",
+      "Omens leave the Ritual favour pool",
+      "Omen prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Ritual",
+        "https://poe2db.tw/us/Patient_Devotion",
+        "https://poe2db.tw/us/Tempting_Offers",
+        "https://www.pathofexile.com/forum/view-thread/4000864"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

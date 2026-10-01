@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "essence-overlord",
   "title": "Essences via Overlord's Domain",
   "summary": "Stack essence content on maps with a Powerful Map Boss: Overlord's Domain and The Chosen Path add essences, Overseer tablets add more, and Hilda's Mighty Prey makes Powerful bosses — which the Domain needs — more common.",
@@ -51,6 +52,22 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Overlord's Domain and The Chosen Path add essences to maps, and Crystalline Patterns gives 100% increased chance to find certain Essence types.",
+    "breaks_when": [
+      "Overlord's Domain, The Chosen Path or Crystalline Patterns is changed",
+      "Perfect Essence prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Overlords_Domain",
+        "https://poe2db.tw/us/The_Chosen_Path",
+        "https://poe2db.tw/us/Crystalline_Patterns"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

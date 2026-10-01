@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "breach-hiveblood",
   "title": "Breach: Wombgifts and Hiveblood",
   "summary": "Juiced Breach maps for Wombgifts and Hiveblood: Breach tablets roll Wombgift level-ups and Hiveblood quantity, Moment of Risk scales Wombgift levels with every map modifier, and Breeding Program picks the Wombgift type.",
@@ -51,6 +52,23 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Moment of Risk raises the Wombgift level-up chance per explicit map modifier and Breeding Program picks the Wombgift type, so juiced Breach maps convert into the Wombgifts you choose.",
+    "breaks_when": [
+      "Moment of Risk or Breeding Program is changed",
+      "Breach Tablet Wombgift mods are cut",
+      "Wombgift prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Moment_of_Risk",
+        "https://poe2db.tw/us/Breeding_Program",
+        "https://poe2db.tw/us/Breach_Tablet"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

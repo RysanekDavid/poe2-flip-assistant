@@ -1,0 +1,186 @@
+{
+  "schema_version": 3,
+  "kind": "roll_and_sell",
+  "id": "temple-tablet-crystals",
+  "title": "Temple Tablets with the extra-Crystal suffix",
+  "summary": "Roll Temple Tablets for the suffix that gives each Vaal Beacon a chance at an extra Crystal, and sell them in threes to players who run Atziri's Temple: a standard map takes up to three tablets.",
+  "mechanics": [
+    "temple"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "league_start",
+    "why": "Temple Tablets and cheap orbs (Transmutation, Augmentation, Alchemy); a Divine Orb only to push a finished roll toward 10%.",
+    "build_needs": "None for the rolling; Temple Tablets come from ordinary maps.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Tablet",
+        "https://poe2db.tw/us/Divine_Orb"
+      ],
+      "note": "Our reading of the method against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": null,
+      "why": "No combat: the method is rolling in the stash and selling.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: the build scale measures map content, and this method has none."
+      }
+    },
+    "complexity": {
+      "value": null,
+      "why": "The complexity scale is written for map setups, not for rolling at the stash.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: no step of the scale describes a rolling loop."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "The extra-Crystal suffix rolls only on Temple Tablets, and Crystals power each Temple run (6 per console), so temple farmers keep buying it.",
+    "breaks_when": [
+      "The suffix is cut or moved off the base",
+      "Crystal payouts or Temple rules change so Crystals stop limiting runs",
+      "Temple farming falls out of use"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Tablet",
+        "https://poe2db.tw/us/Energised_Crystal",
+        "https://poe2db.tw/us/Atziris_Temple"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "target": {
+    "base": "Temple Tablet",
+    "rarity": [
+      "magic",
+      "rare"
+    ],
+    "claim": {
+      "v": "vp",
+      "src": [
+        "https://poe2db.tw/us/Tablet",
+        "https://repoe-fork.github.io/poe2/"
+      ],
+      "note": "Base IncursionAugment: 'Adds Vaal Beacons to a Map', 10 uses."
+    }
+  },
+  "target_mods": [
+    {
+      "text": "(5–10)% chance to gain an additional Crystal from Vaal Beacons in Map",
+      "side": "suffix",
+      "trade_stat_id": "explicit.stat_1940774881",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Tablet",
+          "https://repoe-fork.github.io/poe2/",
+          "https://www.pathofexile.com/api/trade2/data/stats"
+        ],
+        "note": "RePoE mod TowerIncursionTokenChance, a suffix that rolls only on Temple Tablets."
+      }
+    }
+  ],
+  "roll_steps": [
+    {
+      "action": "Magic route: Orb of Transmutation, then Orb of Augmentation; a tablet that misses the suffix can be made rare with an Orb of Alchemy for another chance at it.",
+      "currencies": [
+        {
+          "id": "transmute",
+          "name": "Orb of Transmutation"
+        },
+        {
+          "id": "aug",
+          "name": "Orb of Augmentation"
+        },
+        {
+          "id": "alch",
+          "name": "Orb of Alchemy"
+        }
+      ],
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Orb_of_Transmutation",
+          "https://poe2db.tw/us/Orb_of_Augmentation",
+          "https://poe2db.tw/us/Orb_of_Alchemy"
+        ],
+        "note": "Our route from the currency texts; none of the temple videos we checked shows how its author rolls Temple Tablets."
+      }
+    },
+    {
+      "action": "Rare route: with an Omen of Dextral Erasure active, a Chaos Orb removes only a suffix, so the prefixes stay while the suffix slot rerolls (the added mod is still random).",
+      "currencies": [
+        {
+          "id": "omen-of-dextral-erasure",
+          "name": "Omen of Dextral Erasure"
+        },
+        {
+          "id": "chaos",
+          "name": "Chaos Orb"
+        }
+      ],
+      "claim": {
+        "v": "uv",
+        "src": [
+          "https://poe2db.tw/us/Omen_of_Dextral_Erasure"
+        ],
+        "note": "The omen's poe2db text names no item class, but no source we cite shows it on a tablet: test it on a cheap tablet first."
+      }
+    },
+    {
+      "action": "Divine Orb to reroll the value toward 10%, before anything corrupts the tablet.",
+      "currencies": [
+        {
+          "id": "divine",
+          "name": "Divine Orb"
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Divine_Orb",
+          "https://poe2db.tw/us/Ancient_Infuser"
+        ],
+        "note": "A Divine Orb randomises modifier values; an Ancient Infuser corrupts the tablet, after which it cannot be rerolled."
+      }
+    }
+  ],
+  "sell_unit": "set_of_3",
+  "sell_ref": null,
+  "price_refs": [],
+  "demand": {
+    "why": "Vaal Beacons pay out the Crystals that run Atziri's Temple (a Temple run takes 6 Crystals at the console, and you can store up to 60 with Xopec's Medallions), and temple farmers run three Temple Tablets with this suffix per map, so a matched set of three is what one map uses.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Energised_Crystal",
+        "https://poe2db.tw/us/Vaal_Beacon",
+        "https://www.youtube.com/watch?v=0oMSHBt_nr8",
+        "https://www.youtube.com/watch?v=ssQDwgkJnJw",
+        "https://www.youtube.com/watch?v=yzhgCGTVfZ4"
+      ],
+      "note": "Crystal figures from poe2db. Three per map: DEADRABB1T (2026-06-05, 8:23) and Path of Evening (2026-07-02, 6:44); Diztoh (2026-09-29, 1:08) stacks 'multiple'. Selling in threes is our conclusion, not a creator's."
+    }
+  },
+  "risks": [
+    "A standard map takes up to three tablets (the third slot opens at six waystone modifiers). DEADRABB1T (8:38) says Vaal city maps take four — unverified.",
+    "An Ancient Infuser corrupts a tablet and can destroy it; it never raises a value.",
+    "Tablets are not on the currency exchange: price a set on the trade site with the Search link."
+  ]
+}

@@ -20,6 +20,10 @@ const CraftMovesTool = dynamic(() => import("../../craft/moves/CraftMovesTool").
   loading: PanelLoading,
 });
 
+const RollSellTool = dynamic(() => import("../../craft/rollsell/RollSellTool").then((m) => m.RollSellTool), {
+  loading: PanelLoading,
+});
+
 const ModPoolTool = dynamic(() => import("../../craft/modpool/ModPoolTool").then((m) => m.ModPoolTool), {
   loading: PanelLoading,
 });
@@ -110,10 +114,14 @@ function RecipesView() {
   );
 }
 
-/** Craft tab: recipes that pay today (tool=recipes), an item's next best move (tool=moves) or a base's mod pool (tool=modpool). */
+/**
+ * Craft tab: recipes that pay today (tool=recipes), an item's next best move (tool=moves), a base's
+ * mod pool (tool=modpool) or items worth rolling for one mod and selling (tool=rollsell).
+ */
 export function CraftTab() {
   const { tool } = useTabRoute();
   if (tool === "moves") return <MovesView />;
   if (tool === "modpool") return <ModPoolView />;
+  if (tool === "rollsell") return <RollSellTool />;
   return <RecipesView />;
 }

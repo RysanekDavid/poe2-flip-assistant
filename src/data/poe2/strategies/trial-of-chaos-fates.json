@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "trial-of-chaos-fates",
   "title": "Trial of Chaos: 30-room runs for Trialmaster Fates",
   "summary": "Since 0.5.5 a Trial of Chaos can be paused and resumed, pays a chest per room, and completion rewards are only Currency and Soul Cores. A finished 10-room trial can be continued twice; each subsequent successful run awards a different Trialmaster Fragment, so players who reach later rooms can obtain all three Fates in a single run.",
@@ -51,6 +52,22 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "After a 10-Trial Inscribed Ultimatum, a finished Trial of Chaos can be continued twice, and each successful continuation awards a different Trialmaster Fragment (0.5.5).",
+    "breaks_when": [
+      "The continuation rule or the Fate rewards are changed",
+      "Trialmaster Fragment prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Deadly_Fate",
+        "https://poe2db.tw/us/Inscribed_Ultimatum",
+        "https://www.pathofexile.com/forum/view-thread/4000864"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

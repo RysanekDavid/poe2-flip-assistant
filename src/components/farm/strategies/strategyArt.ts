@@ -14,6 +14,8 @@ const MECHANIC_TABLET: Partial<Record<Mechanic, string>> = {
   ritual: "Ritual Tablet",
   expedition: "Expedition Tablet",
   map_boss: "Overseer Tablet",
+  temple: "Temple Tablet",
+  irradiated: "Irradiated Tablet",
 };
 
 type ArtSource = Pick<StrategyView, "mechanics" | "tablets" | "yields">;

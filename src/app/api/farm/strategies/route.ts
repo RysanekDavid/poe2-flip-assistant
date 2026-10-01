@@ -9,15 +9,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * The board depends only on the league (prices change hourly with the poller), and Home plus Farm
- * both ask for it on a page load, so one build serves every viewer of a league for 90 s.
+ * The board depends only on the league (prices change hourly with the poller), and Home, Farm,
+ * Craft › Roll & sell and Trade › Methods all ask for it, so one build serves every viewer of a
+ * league for 90 s.
  */
 const BOARD_CACHE = createTtlCache<StrategiesResponse>(90_000);
 
 /**
- * GET /api/farm/strategies → every curated farm strategy (master nodes, notables, tablets,
- * waystone totals, claim grades) with its yield basket priced in the viewer's league and a trade2
- * search link per tablet mod. Read-only; filtering by mechanic, budget or yield is client-side.
+ * GET /api/farm/strategies → every curated strategy of every kind (farm, roll_and_sell, trade) with
+ * its catalog items priced in the viewer's league, the live EV of each priced conversion and a
+ * trade2 search link per tablet or target mod. Read-only; Farm › Strategies, Craft › Roll & sell
+ * and Trade › Methods each filter by kind client-side.
  */
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();
