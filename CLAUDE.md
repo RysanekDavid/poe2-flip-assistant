@@ -21,7 +21,7 @@ Flip loop: kup item za Exalted → prodej za Chaos → konvertuj Chaos → Exalt
 
 ## Tech stack
 
-- **Runtime**: Node.js 20+ s TypeScriptem
+- **Runtime**: Node.js 24 (LTS) s TypeScriptem
 - **Frontend**: Next.js 15 + React (jednoduchý dashboard)
 - **DB**: SQLite přes better-sqlite3 (price history, trade log, watchlist)
 - **Styling**: Tailwind CSS

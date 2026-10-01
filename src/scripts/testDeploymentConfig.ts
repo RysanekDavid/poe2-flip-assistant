@@ -25,10 +25,17 @@ const validatorMatch = deploySources.match(
 assert.ok(validatorMatch?.[1], "timeout validator body must remain executable by the test");
 const timeoutValidator = validatorMatch[1];
 const nodeValidatorMatch = deploySources.match(
-  /validate_node_version\(\) \{\s+node -e '\r?\n([\s\S]*?)\r?\n' "\$\(node --version\)" "22\.0\.0"/,
+  /validate_node_version\(\) \{[\s\S]*?\r?\n\s+"\$runtime_node" -e '\r?\n([\s\S]*?)\r?\n' "\$\("\$runtime_node" --version\)" "22\.0\.0"/,
 );
 assert.ok(nodeValidatorMatch?.[1], "Node version validator must remain executable by the test");
 const nodeValidator = nodeValidatorMatch[1];
+// The preflight must check the node the units execute, not whichever node root's PATH finds first.
+assert.match(deployHelpers, /local runtime_node=\/usr\/bin\/node/);
+assert.match(deployHelpers, /if \[\[ "\$\(command -v node\)" != "\$runtime_node" \]\]; then/);
+for (const unit of ["web", "poller", "backup", "maintenance"]) {
+  assert.match(read(`deploy/poe2flip-${unit}.service`), /^Environment=PATH=\/usr\/bin:\/usr\/local\/bin$/m);
+}
+assert.match(webUnit, /^ExecStart=\/usr\/bin\/npm /m);
 
 assert.match(caddy, /\{\$SITE_ADDRESS\}/);
 assert.match(caddy, /reverse_proxy 127\.0\.0\.1:3000/);
@@ -123,7 +130,9 @@ assert.match(rootReadme, /Node\.js 22\+/);
 assert.match(deployReadme, /# Node 24 LTS \(NodeSource\)\. deploy\.sh refuses anything older than 22\./);
 assert.match(deployReadme, /deb\.nodesource\.com\/setup_24\.x/);
 // The Node-upgrade rollback recovery must name the real Node units (Coach is Python).
-assert.match(deployReadme, /setup_20\.x[\s\S]*systemctl restart poe2flip-web poe2flip-poller/);
+assert.match(deployReadme, /dpkg -i \/root\/nodejs_20\*\.deb[\s\S]*systemctl restart poe2flip-web poe2flip-poller/);
+assert.match(deployReadme, /\/api\/auth\/login {3}# 401/, "cutover verification must open the database");
+assert.doesNotMatch(deployReadme, /expect the rollback to report failed services/);
 assert.match(deployReadme, /git show origin\/master:deploy\/deploy-helpers\.sh/);
 assert.doesNotMatch(
   coachEnv,

@@ -239,38 +239,86 @@ identifier as well.
 
 Releases built with better-sqlite3 13 or newer contain only Node-API native modules
 (better-sqlite3, sharp, Next's SWC), so they keep running after a Node major upgrade without a
-rebuild, and a rollback to such a release is safe under the new Node. Older releases compiled
-better-sqlite3 for one Node ABI. better-sqlite3 13 needs Node 22 or newer (it segfaults on Node 20)
-and 12.x and older abort under Node 24.19+, so a server still on Node 20 moves in one cutover:
+rebuild. Older releases compiled better-sqlite3 for one Node ABI: better-sqlite3 11.10 aborted the
+process under Node 24.21 (observed in the full test suite), and 13 segfaults on Node 20. A server
+still on Node 20 therefore moves to Node 24 in a single cutover. Run steps 2 and 3 back to back: in
+between, any restart of a Node service (crash, reboot, the nightly backup timer) loads the old
+release's Node 20 module under Node 24 and fails. The Coach is Python and unaffected.
 
-1. Merge the better-sqlite3 13 change. Its deploy stops at the Node preflight
-   (`Node.js 22.0.0+ is required`) before any service is stopped, so the Node 20 release keeps
-   serving. Every later deploy fails the same way until step 2, so do it promptly.
-2. Install Node 24 and immediately run the manual deploy from [Updating later](#updating-later)
-   (`deploy.sh` from `origin/master`). Do both back to back: a service that restarts in between
-   (crash, reboot, the nightly backup timer) loads the old release's Node 20 module and fails.
+**0. GitHub.** Merge the better-sqlite3 13 change (PR #110). On its Deploy run, `checks` must be
+green and `deploy` must fail with exactly the Node preflight message
+(`Node.js 22.0.0+ is required; found v20.…`). The preflight runs before any service is stopped, so
+the Node 20 release keeps serving. Merge nothing else to `master` until the cutover is done.
+
+**1. Prepare (server, as root).** Record the runtime, keep an offline copy of the installed Node 20
+package for the rollback, and confirm that every service is up:
 
 ```bash
-# As root.
-node --version                                   # note the current major (20)
+node --version && command -v node
+apt-get install -y --download-only --reinstall nodejs && cp /var/cache/apt/archives/nodejs_20*.deb /root/ && ls -l /root/nodejs_20*.deb
+# Fallback if the package is not in the apt cache:
+#   apt-get install -y dpkg-repack && cd /root && dpkg-repack nodejs
+systemctl is-active poe2flip-web poe2flip-poller poe2flip-coach
+```
+
+**2. Upgrade Node. Don't restart anything.**
+
+```bash
 curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 apt-get install -y nodejs
-node --version                                   # must print v24.x
+/usr/bin/node --version   # v24.x
+command -v node           # /usr/bin/node, the binary the systemd units run
 ```
 
-The Coach is Python and unaffected. If that deploy fails, `current` still points at (or the
-automatic rollback restores) the previous release, which was built under Node 20. Its web and
-poller will not start under Node 24, so expect the rollback to report failed services. Recover by
-reinstalling Node 20 and restarting the Node services (the backup and maintenance timers pick up
-the restored Node on their next run):
+**3. Deploy immediately.** Preferred: in GitHub, open the failed Deploy run from step 0 and choose
+**Re-run failed jobs**. It runs the same `/root/ci-deploy.sh`, serialised by the
+`production-deploy` concurrency group. The manual equivalent:
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get remove -y nodejs && apt-get install -y nodejs   # apt will not downgrade in place
-node --version                                          # must print v20.x
-systemctl restart poe2flip-web poe2flip-poller
-systemctl status poe2flip-web poe2flip-poller poe2flip-coach
+cd /opt/poe2flip
+git fetch origin master
+deploy_dir=$(mktemp -d /root/poe2flip-deploy.XXXXXX)
+git show origin/master:deploy/deploy.sh > "$deploy_dir/deploy.sh"
+git show origin/master:deploy/deploy-helpers.sh > "$deploy_dir/deploy-helpers.sh"
+bash "$deploy_dir/deploy.sh" origin/master && git merge --ff-only origin/master
+rm -rf "$deploy_dir"
 ```
+
+**4. Verify.** A login attempt for a user that doesn't exist reads the users table, so it proves
+that better-sqlite3 loads under the new Node. It must return `401`. A `500` means the release is
+broken.
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' -X POST -H 'Content-Type: application/json' \
+  -d '{"name":"node24-cutover-probe","password":"x"}' http://127.0.0.1:3000/api/auth/login   # 401
+systemctl is-active poe2flip-web poe2flip-poller poe2flip-coach
+journalctl -u poe2flip-poller -n 20 --no-pager
+# Optional: one backup through the timer's unit (tsx under the new Node).
+systemctl start poe2flip-backup.service && journalctl -u poe2flip-backup -n 20 --no-pager
+```
+
+**Rollback.** Roll back only if step 3 failed *after* its log printed
+`==> stopping services for migration and atomic switch`. Roll back even if `deploy.sh` reported a
+successful rollback: its readiness probe (`/login`) never opens the database, and the restored
+release's better-sqlite3 11 build cannot load under Node 24.
+
+```bash
+dpkg -i /root/nodejs_20*.deb
+# Fallback without the saved package:
+#   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+#   apt-get install -y --allow-downgrades "nodejs=$(apt-cache madison nodejs | awk '$3 ~ /^20\./ {print $3; exit}')"
+/usr/bin/node --version   # v20.x
+systemctl reset-failed 'poe2flip-*'
+systemctl restart poe2flip-web poe2flip-poller
+```
+
+Then repeat the step 4 login probe and expect `401`.
+
+If step 3 failed *before* that line, no service was stopped and the old release is still serving
+from its in-memory Node 20 processes. Fix the cause and redo step 3 promptly. Don't downgrade.
+
+To retry after a rollback, run `apt-get install -y nodejs` and then step 3. If you used the fallback,
+which switched the repository to Node 20, run the `setup_24.x` line from step 2 first.
 
 ## Automated deploy (GitHub Actions)
 

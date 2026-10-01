@@ -8,10 +8,17 @@ require_command() {
   fi
 }
 
-# better-sqlite3 13 (needed because 12.x and older abort under Node 24.19+) segfaults on Node 20,
-# so refuse before any service is stopped rather than fail the post-switch health check.
+# better-sqlite3 13 (needed because 11.10 aborted the process under Node 24.21) segfaults on Node 20,
+# so refuse before any service is stopped rather than fail the post-switch health check. The units
+# run /usr/bin/npm and tsx with PATH=/usr/bin:/usr/local/bin, so that binary is the one to check:
+# a different node first on root's PATH would pass here and still leave the services on the old one.
 validate_node_version() {
-  node -e '
+  local runtime_node=/usr/bin/node
+  if [[ "$(command -v node)" != "$runtime_node" ]]; then
+    echo "node on PATH is '$(command -v node)', but the systemd units run $runtime_node" >&2
+    exit 1
+  fi
+  "$runtime_node" -e '
 function parse(value) {
   const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(value);
   if (!match) throw new Error(`invalid Node.js version: ${value}`);
@@ -25,7 +32,7 @@ for (let index = 0; index < minimum.length; index += 1) {
     throw new Error(`Node.js ${process.argv[2]}+ is required; found ${process.argv[1]}`);
   }
 }
-' "$(node --version)" "22.0.0"
+' "$("$runtime_node" --version)" "22.0.0"
 }
 
 switch_current() {

@@ -118,9 +118,22 @@ check_rejected_smoke_validator() {
   fi
 }
 
+check_node_preflight_uses_unit_binary() {
+  local fakebin="$work/fakebin" output
+  mkdir -p "$fakebin"
+  printf '#!/bin/sh\necho v24.21.0\n' > "$fakebin/node"
+  chmod +x "$fakebin/node"
+  # A satisfying node earlier on root's PATH must not pass: the units only see /usr/bin/node.
+  if output=$(PATH="$fakebin:$PATH" validate_node_version 2>&1); then
+    fail "a node other than /usr/bin/node on PATH must fail the preflight"
+  fi
+  [[ "$output" == *"the systemd units run /usr/bin/node"* ]] || fail "preflight message: $output"
+}
+
 check_release_pruning
 check_backup_pruning
 check_nonfatal_step_never_rolls_back
 check_health_gate
 check_rejected_smoke_validator
-echo "ALL PASS - deploy pruning, Coach health gate, contract smoke, non-fatal steps"
+check_node_preflight_uses_unit_binary
+echo "ALL PASS - deploy pruning, Coach health gate, contract smoke, non-fatal steps, Node preflight"
