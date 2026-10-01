@@ -85,24 +85,63 @@ function capacityOf(rarity: string, jewel: boolean, timeLost: boolean): Capacity
   return timeLost ? null : { p: 2, s: 2, total: 4 };
 }
 
-/** Contempt's crafted "+1 Suffix Modifier allowed" (sits in a PREFIX slot) and its prefix twin. */
-export const EXTRA_CAPACITY = /^\+?(\d+) (Prefix|Suffix) Modifiers? allowed$/i;
+/**
+ * Signed affix allowances: Contempt's crafted "+1 Suffix Modifier allowed" (sits in a PREFIX slot)
+ * and its prefix twin, and the Dusk / Gloam Ring implicits "+1 Prefix … / -1 Suffix Modifier
+ * allowed" and their mirror (KB §3, RePoE base_items implicits).
+ */
+export const EXTRA_CAPACITY = /^([+-]?\d+) (Prefix|Suffix) Modifiers? allowed$/i;
 
-/** Extra slots granted by every cataloged "+N … Modifier allowed" mod the item carries. */
-function extraCapacity(affixes: readonly Affix[]): { p: number; s: number } {
+interface Allowance {
+  p: number;
+  s: number;
+}
+
+function addAllowance(extra: Allowance, line: string): void {
+  const m = EXTRA_CAPACITY.exec(line);
+  if (!m) return;
+  if (m[2]!.toLowerCase() === "prefix") extra.p += Number(m[1]);
+  else extra.s += Number(m[1]);
+}
+
+/** Extra slots granted by every cataloged "±N … Modifier allowed" mod the item carries. */
+function extraCapacity(affixes: readonly Affix[]): Allowance {
   const extra = { p: 0, s: 0 };
-  for (const a of affixes) {
-    const m = a.modId != null && a.lines.length === 1 ? EXTRA_CAPACITY.exec(a.lines[0]!) : null;
-    if (!m) continue;
-    if (m[2]!.toLowerCase() === "prefix") extra.p += Number(m[1]);
-    else extra.s += Number(m[1]);
-  }
+  for (const a of affixes) if (a.modId != null && a.lines.length === 1) addAllowance(extra, a.lines[0]!);
   return extra;
 }
 
-function withExtraCapacity(cap: Capacity | null, extra: { p: number; s: number }): Capacity | null {
+/**
+ * Allowance a base's own implicits grant (Dusk Ring +1 prefix / -1 suffix, Gloam Ring the mirror).
+ * Read from the catalog, not the paste: affix matching skips the implicit section.
+ */
+export function baseAllowance(cat: CraftCatalog, baseType: string | null): Allowance {
+  const extra = { p: 0, s: 0 };
+  for (const line of (baseType ? cat.bases[baseType]?.implicits : undefined) ?? []) addAllowance(extra, line);
+  return extra;
+}
+
+function withExtraCapacity(cap: Capacity | null, extra: Allowance): Capacity | null {
   if (cap == null) return null;
   return { p: cap.p + extra.p, s: cap.s + extra.s, total: cap.total + extra.p + extra.s };
+}
+
+const MAGIC_BASE_ALLOWANCE =
+  "this base's implicit changes its affix limits, which KB §3 states for rares only — open slots on a magic one are not counted";
+
+/**
+ * The base's implicit allowance on top of the rarity cap. KB §3 gives the rare result (Dusk Ring =
+ * 4 prefixes + 2 suffixes); what it does to a magic item's 1 + 1 is not verified, so that cap is
+ * unknown rather than guessed. A normal item carries no affixes, so its 0 + 0 stays.
+ */
+function applyBaseAllowance(state: ItemState, extra: Allowance): void {
+  if (extra.p === 0 && extra.s === 0) return;
+  if (state.rarity === "Rare") {
+    state.capacity = withExtraCapacity(state.capacity, extra);
+  } else if (state.rarity === "Magic") {
+    state.capacity = null;
+    state.flags.push({ code: "unknown-capacity", message: MAGIC_BASE_ALLOWANCE });
+  }
 }
 
 function emptyState(parsed: ParsedItem, meta: ItemMeta, itemClass: string | null, baseType: string | null): ItemState {
@@ -192,6 +231,7 @@ export function classifyItem(parsed: ParsedItem, meta: ItemMeta, cat: CraftCatal
   if (state.capacity == null && state.timeLost) {
     state.flags.push({ code: "unknown-capacity", message: "rare Time-Lost jewel affix limit is unresolved (KB §6) — open slots are not counted" });
   }
+  applyBaseAllowance(state, baseAllowance(cat, base.baseType));
   if (base.ambiguous) state.flags.push({ code: "ambiguous-base", message: `"${base.baseType}" names bases with different tag sets — tier pools may be off` });
   const combo = base.itemClass && base.baseType ? comboFor(cat, base.itemClass, base.baseType) : null;
   if (!combo) {

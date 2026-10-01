@@ -20,6 +20,8 @@ export function needOpen(s: ItemState, side: "prefix" | "suffix" | "any", count 
   if (open == null) {
     if (s.capacity == null && s.rarity === "Rare") return { block: "the affix limit of this item is unresolved (rare Time-Lost jewels, KB §6) — open slots unknown" };
     if (s.flags.some((f) => f.code === "over-cap-jewel")) return { block: "over-cap jewel: whether the other side can still take a mod is unverified (KB §6 b)" };
+    const unknownCap = s.capacity == null ? s.flags.find((f) => f.code === "unknown-capacity") : undefined;
+    if (unknownCap) return { block: unknownCap.message };
     return { block: OPEN_UNKNOWN };
   }
   if (open >= count) return null;
