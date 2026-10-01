@@ -115,9 +115,9 @@ function ShellBody() {
           </ToolPanel>
         )}
         <CoachPanel active={tab === "coach"} />
-        {/* last: its welcome is a fixed overlay, and as the first child it would push the header down */}
-        <Onboarding />
       </main>
+      {/* outside <main>: its welcome is a fixed overlay, and main's space-y would give it (or, first, the header) a stray margin */}
+      <Onboarding />
     </AlertsProvider>
   );
 }

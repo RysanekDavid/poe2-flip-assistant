@@ -16,8 +16,10 @@ import { useTabRoute } from "./useTabRoute";
  * nav speaks the logo's palette instead of cold grey. The art carries a hard 1px drop so the dark
  * metal PNGs keep an edge on the translucent header; the active one adds a soft amber glow.
  */
-const TAB_BASE =
-  "group mb-1.5 flex shrink-0 items-center gap-1.5 rounded-md border py-1 pl-1 pr-2.5 text-sm font-semibold transition-colors";
+// Keyboard focus is a dashed neutral outline set off the box: the app-wide amber outline would draw
+// a second amber frame and read as a second selected tab.
+const TAB_FOCUS = "focus-visible:outline-dashed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-300";
+const TAB_BASE = `group mb-1.5 flex shrink-0 items-center gap-1.5 rounded-md border py-1 pl-1 pr-2.5 text-sm font-semibold transition-colors ${TAB_FOCUS}`;
 const TAB_ACTIVE =
   "border-amber-500/40 bg-gradient-to-b from-amber-950/30 to-neutral-900/85 text-brand-bone shadow-[0_1px_2px_rgba(0,0,0,.4),inset_0_-2px_0_theme(colors.accent)]";
 const TAB_IDLE = "border-transparent text-brand-bone/60 hover:border-neutral-800 hover:bg-neutral-900/60 hover:text-brand-bone/90";
@@ -98,21 +100,26 @@ export function TabNav() {
   const { mode } = useNavMode();
   const onClick = tabClickHandler(go);
   const tabs = visibleTabs(mode).filter((t) => t.id !== "coach");
+  // Beginner's five tabs are mostly one per group, so rules there would split every tab apart
+  const ruled = mode === "advanced";
   return (
     // The strip scrolls sideways whenever it is wider than the header (phones, narrow desktops).
-    // Below md it bleeds to the screen edges (-mx-4 against the header's px-4); pt-1/px-1 leave room
-    // for the focus outline, which the scroll box would otherwise clip.
+    // Below md it bleeds to the screen edges (-mx-4 against the header's px-4); pt-1.5/px-1.5 leave
+    // room for the offset focus outline, which the scroll box would otherwise clip.
     <nav
       aria-label="Sections"
-      className="-mx-4 flex items-end gap-0.5 overflow-x-auto overflow-y-hidden px-4 pt-1 md:-mx-1 md:px-1"
+      className="-mx-4 flex items-end gap-0.5 overflow-x-auto overflow-y-hidden px-4 pt-1.5 md:-mx-1.5 md:px-1.5"
       data-tour="tabs"
     >
-      {tabs.map((t, i) => (
-        <Fragment key={t.id}>
-          {i > 0 && TAB_GROUP[t.id] !== TAB_GROUP[tabs[i - 1]?.id ?? t.id] && <GroupRule />}
-          <TabLink meta={t} mode={mode} active={tab === t.id} onClick={onClick} />
-        </Fragment>
-      ))}
+      {tabs.map((t, i) => {
+        const prev = tabs[i - 1];
+        return (
+          <Fragment key={t.id}>
+            {ruled && prev !== undefined && TAB_GROUP[prev.id] !== TAB_GROUP[t.id] && <GroupRule />}
+            <TabLink meta={t} mode={mode} active={tab === t.id} onClick={onClick} />
+          </Fragment>
+        );
+      })}
       {/* pushes Coach to the right edge, and keeps a gap before it once the strip scrolls */}
       <span aria-hidden className="ml-auto w-4 shrink-0" />
       <CoachLink active={tab === "coach"} onClick={onClick} />

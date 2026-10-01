@@ -157,6 +157,10 @@ function Health({ health, failed, operator }: { health: CoachHealth | null; fail
   if (!operator && (failed || (health !== null && !coachAvailability(health, false, false).ready))) {
     return <Status label="Coach offline" title={COACH_OFFLINE_NOTICE} tone="error" />;
   }
+  // the patch-review queue is the operator's job; a member only needs to know answers may lag a patch
+  if (!operator && health?.market_ready && !health.recommendations_ready) {
+    return <Status label="new patch" title="A game patch is newer than some advice; Coach marks answers that may be out of date." tone="muted" />;
+  }
   return <OperatorHealth health={health} failed={failed} />;
 }
 
