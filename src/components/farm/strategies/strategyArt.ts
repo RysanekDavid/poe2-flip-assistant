@@ -36,5 +36,7 @@ export function strategyArt(strategy: ArtSource): string | null {
   const tablet = strategy.tablets[0];
   if (tablet) return tabletArtSrc(tablet);
   const first = strategy.mechanics[0];
-  return first ? mechanicArt(first, [strategy]) : mainDropArt(strategy);
+  // the schema requires at least one mechanic, so a missing one is a contract break
+  if (first === undefined) throw new Error("strategy without a mechanic");
+  return mechanicArt(first, [strategy]);
 }

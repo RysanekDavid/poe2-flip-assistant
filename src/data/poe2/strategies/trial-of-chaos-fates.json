@@ -34,18 +34,20 @@
         "v": "syn",
         "src": [
           "https://www.pathofexile.com/forum/view-thread/4000864",
-          "https://poe2db.tw/us/Inscribed_Ultimatum"
+          "https://poe2db.tw/us/Inscribed_Ultimatum",
+          "https://www.pathofexile.com/forum/view-thread/3999865"
         ],
         "note": "Our reading of the cited facts against the build scale; not measured."
       }
     },
     "complexity": {
       "value": 4,
-      "why": "Choose modifiers before each room, continue a finished trial up to twice (with an optional wager), and resume it later from the same room.",
+      "why": "Choose modifiers before each room, continue a finished trial up to twice (with an optional wager) and resume it later; the Trialmaster Fragments it yields open a second activity, the Trialmaster fight.",
       "claim": {
         "v": "syn",
         "src": [
-          "https://www.pathofexile.com/forum/view-thread/4000864"
+          "https://www.pathofexile.com/forum/view-thread/4000864",
+          "https://www.pathofexile.com/forum/view-thread/3999865"
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }

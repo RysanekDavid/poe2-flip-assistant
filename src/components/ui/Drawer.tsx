@@ -29,8 +29,13 @@ function trapTab(e: KeyboardEvent, panel: HTMLElement): void {
 }
 
 /** Escape closes, Tab stays inside, the page behind does not scroll, and focus returns to the opener on close. */
-function useModalBehaviour(mounted: boolean, panel: RefObject<HTMLDivElement | null>, close: RefObject<HTMLButtonElement | null>, onClose: () => void): void {
+function useModalBehaviour(mounted: boolean, panel: RefObject<HTMLDivElement | null>, close: RefObject<HTMLButtonElement | null>, onCloseProp: () => void): void {
+  // Read through a ref: a caller passing a fresh closure each render must not re-run the effect,
+  // which would steal focus back to the close button and re-capture the opener.
+  const onCloseRef = useRef(onCloseProp);
+  onCloseRef.current = onCloseProp;
   useEffect(() => {
+    const onClose = (): void => onCloseRef.current();
     // the panel exists only after the portal mounts; before that there is nothing to focus
     if (!mounted) return;
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -38,7 +43,8 @@ function useModalBehaviour(mounted: boolean, panel: RefObject<HTMLDivElement | n
     document.body.style.overflow = "hidden";
     close.current?.focus();
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onClose();
+      // a tooltip or hover card inside takes its own Escape first (it calls preventDefault)
+      if (e.key === "Escape" && !e.defaultPrevented) onClose();
       else if (e.key === "Tab" && panel.current) trapTab(e, panel.current);
     };
     document.addEventListener("keydown", onKey);
@@ -47,7 +53,7 @@ function useModalBehaviour(mounted: boolean, panel: RefObject<HTMLDivElement | n
       document.body.style.overflow = overflow;
       opener?.focus();
     };
-  }, [mounted, panel, close, onClose]);
+  }, [mounted, panel, close]);
 }
 
 /**

@@ -1,12 +1,16 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { Regex, TrendingDown, TrendingUp } from "lucide-react";
 import { BUDGET_SCALE, BUDGET_STEPS, RATING_LABEL, RATING_STEPS, scaleText } from "../../../core/strategies/ratings";
-import { BUDGET_TIERS, type RatingKey } from "../../../core/strategies/schema";
+import { BUDGET_TIERS, type BudgetTier, type RatingKey } from "../../../core/strategies/schema";
 import type { StrategyView, Trend } from "../../../lib/strategiesContract";
 import { Tooltip } from "../../ui/Tooltip";
 import { BUDGET_LABEL } from "./strategiesView";
 import { fmtChange, statusChip, trendTip, trendTone, waystoneRegexHref } from "./strategyCards";
+
+// Fits beside "BUDGET" in a third of a 390 px card; the full tier name is in the hover.
+const BUDGET_SHORT: Record<BudgetTier, string> = { league_start: "Start", mid: "Mid", high: "High" };
 
 const TONE_CLASS = {
   up: "border-good/40 bg-good/10 text-good",
@@ -20,11 +24,18 @@ export function TrendPill({ trend }: { trend: Trend | null }) {
   const Icon = tone === "down" ? TrendingDown : TrendingUp;
   return (
     <Tooltip tip={trendTip(trend)} align="end">
-      <span tabIndex={0} className={`inline-flex h-7 cursor-help items-center gap-1 rounded-full border px-2.5 text-sm font-semibold tabular-nums ${TONE_CLASS[tone]}`}>
+      <span tabIndex={0} className={`relative inline-flex h-7 cursor-help items-center gap-1 whitespace-nowrap rounded-full border px-2.5 text-sm font-semibold tabular-nums ${TONE_CLASS[tone]}`}>
         {trend ? (
           <>
             {tone !== "flat" && <Icon aria-hidden className="h-4 w-4" />}
             {fmtChange(trend.change7d)} <span className="text-xs font-normal">7d</span>
+            {/* partial coverage stays visible, not only on hover: the move may rest on one drop */}
+            {trend.counted < trend.total && (
+              <span className="text-xs font-normal text-neutral-400">
+                · {trend.counted}/{trend.total}
+                <span className="sr-only"> drops counted</span>
+              </span>
+            )}
           </>
         ) : (
           <span className="text-xs font-normal">no price trend</span>
@@ -50,7 +61,7 @@ function Meter({ label, filled, steps, tip, value }: { label: string; filled: nu
       <span tabIndex={0} className="grid min-w-0 cursor-help">
         <span className="flex items-baseline justify-between gap-1 text-xs uppercase tracking-wide text-neutral-400">
           {label}
-          <span className="normal-case tracking-normal text-neutral-300">{value}</span>
+          <span className="whitespace-nowrap normal-case tracking-normal text-neutral-300">{value}</span>
         </span>
         <Bar filled={filled} steps={steps} />
       </span>
@@ -74,7 +85,7 @@ export function StrategyMeters({ strategy }: { strategy: Pick<StrategyView, "bud
   const budgetTip = `Budget: ${BUDGET_LABEL[tier]} — ${BUDGET_SCALE[tier]}. ${strategy.budget.why}`;
   return (
     <div className="grid grid-cols-3 gap-3">
-      <Meter label="Budget" filled={BUDGET_TIERS.indexOf(tier) + 1} steps={BUDGET_STEPS} value={BUDGET_LABEL[tier]} tip={budgetTip} />
+      <Meter label="Budget" filled={BUDGET_TIERS.indexOf(tier) + 1} steps={BUDGET_STEPS} value={BUDGET_SHORT[tier]} tip={budgetTip} />
       {ratingMeter(strategy, "build")}
       {ratingMeter(strategy, "complexity")}
     </div>
@@ -99,12 +110,20 @@ export function StatusBadge({ strategy }: { strategy: Pick<StrategyView, "status
 
 /** Opens Regex › Waystone with this strategy's waystone totals already selected. */
 export function WaystoneRegexLink({ waystone, compact = false }: { waystone: StrategyView["waystone"]; compact?: boolean }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const href = waystoneRegexHref(waystone.prefer);
   if (href === null) return null;
   return (
     <a
       href={href}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        // a plain click stays in the app (no reload); ctrl/middle click still opens a new tab via href
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        router.push(`${pathname}${href}`);
+      }}
       title="Open the Regex tool with these waystone totals selected; set your minimums there and copy the search"
       className="inline-flex h-7 items-center gap-1 rounded-md border border-line px-2 text-xs text-neutral-300 hover:border-neutral-500 hover:text-neutral-100"
     >

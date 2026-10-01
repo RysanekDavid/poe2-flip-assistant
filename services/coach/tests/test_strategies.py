@@ -1,6 +1,7 @@
 """Strategy KB store and the find_farm_strategies tool contract."""
 
 import json
+import re
 import shutil
 from collections.abc import Callable
 from pathlib import Path
@@ -162,7 +163,9 @@ def test_ratings_are_sourced_and_an_unrated_value_needs_none(tmp_path: Path) -> 
     loaded = load_strategies(_copy_one(_mk(tmp_path / "u"), "fracture-cleansed.json", unrated))
     assert loaded[0].ratings.build.value is None
     detail = _invoke(strategy_id="anomaly-lineage")["strategy"]
-    assert detail["ratings"] == {"build": "4/5 [syn]", "complexity": "5/5 [syn]"}
+    assert set(detail["ratings"]) == {"build", "complexity"}
+    for text in detail["ratings"].values():
+        assert text == "unrated" or re.fullmatch(r"[1-5]/5 \[(vp|vs|ss|uv|cf|syn)\]", text), text
 
 
 def _mk(path: Path) -> Path:

@@ -43,9 +43,7 @@ export const SNIPE_OUTCOME_CHECK_COLUMNS: ReadonlyArray<readonly [string, string
 const checkColumnsSql = SNIPE_OUTCOME_CHECK_COLUMNS.map(([name, def]) => `${name} ${def},`).join("\n    ");
 
 const USER_TABLES_SQL = `
-  -- Retired 2026-10-01: the player's hand-typed clear speed per boss / mechanic. The owner dropped
-  -- every manual Div/hour input (nobody keeps a pace up by hand), so nothing reads or writes this
-  -- table any more. It stays only so existing rows are not deleted without the owner's say-so.
+  -- Retired 2026-10-01 (manual pace input removed; unread), kept pending the owner's decision on deleting its rows.
   CREATE TABLE IF NOT EXISTS farm_user_speed (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     kind TEXT NOT NULL CHECK (kind IN ('boss', 'mechanic')),

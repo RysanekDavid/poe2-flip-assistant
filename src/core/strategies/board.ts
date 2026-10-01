@@ -6,7 +6,7 @@
  * wires the league's stores for GET /api/farm/strategies.
  */
 import { latestFetchedAt } from "../../db/marketQueries";
-import { latestPriceRowsFor } from "../../db/latestSnapshotQueries";
+import { latestChangeRowsFor } from "../../db/latestSnapshotQueries";
 import type { MechanicTrend, StrategiesResponse, StrategyView, Trend, YieldView } from "../../lib/strategiesContract";
 import { parseSqliteTimestamp } from "../../lib/sqliteTime";
 import { tradeSearchUrl } from "../../lib/tradeLink";
@@ -99,7 +99,7 @@ export function mechanicTrends(strategies: readonly FarmStrategy[], markets: Mar
 function loadMarkets(league: string, strategies: readonly FarmStrategy[]): Map<string, YieldMarket> {
   const ids = [...new Set(strategies.flatMap((s) => s.yields.map((y) => exchangeIdOf(y.ref))).filter((id): id is string => id !== null))];
   const markets = new Map<string, YieldMarket>();
-  for (const row of latestPriceRowsFor(league, ids)) {
+  for (const row of latestChangeRowsFor(league, ids)) {
     // a non-positive value is not a price: the yield stays unpriced rather than showing 0
     if (!(row.baseValue > 0)) continue;
     markets.set(row.itemId, {

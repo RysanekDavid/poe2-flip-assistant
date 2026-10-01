@@ -356,7 +356,6 @@ runUniqueTradeCases(parseBossLoot(readCurated()))
       "ALL PASS — boss-loot strict schema + dated sources + ninja category coverage, 2026-09-29 audit corrections, lineage gems priced from scout's lineage list (0 / absent → unpriced), " +
         "curated poecdn art, omen-pool range, floor fallback + EV confidence wording, loot sort, Tul & Esh + Uhtred rows, " +
         "synthetic EV (guaranteed/point/range/unknown/unpriced/manual), floor/chase/P(lose)/liquidity metrics, farm board order + contract, " +
-        "farm Div/hour by own pace (bounds, nulls, PUT validation, per-user rows, loadFarmBoard), " +
         "break-even, headline wording + confidence-capped tone, jackpot, craft-vs-buy entry, per-item price age, patch warning, panel wiring, " +
         "trade2 fallback for scout-unpriced boss uniques (aggregation, candidates, hourly cap, job failures, reader precedence, reasons)",
     ),

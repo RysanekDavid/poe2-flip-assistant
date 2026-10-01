@@ -30,7 +30,7 @@
   "ratings": {
     "build": {
       "value": 4,
-      "why": "GGG: Wisp-empowered enemies 'become considerably more dangerous', and the empowerment grows with the Wisps you collect.",
+      "why": "GGG: Wisp-empowered enemies 'become considerably more dangerous', and how much depends on the Wisps you collect.",
       "claim": {
         "v": "syn",
         "src": [
@@ -42,7 +42,7 @@
     },
     "complexity": {
       "value": 5,
-      "why": "Choose favours at the altars, bloom a map with a Sacred Bloom, follow the Wisp trails in the Wildwood before its time runs out, then clear the empowered map.",
+      "why": "Choose favours at the altars, bloom a cluster of maps with a Sacred Bloom, follow the Wisp trails in the Wildwood before its time runs out, then clear the empowered map.",
       "claim": {
         "v": "syn",
         "src": [

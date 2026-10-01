@@ -20,7 +20,12 @@ export const SORT_HINT: Record<StrategySort, string> = {
 type Sortable = Pick<StrategyView, "id" | "trend" | "budget" | "ratings">;
 
 /** Rising first; a strategy with no priced trend sorts after every one that has a number. */
-const byTrend = (a: Sortable, b: Sortable): number => (b.trend?.change7d ?? -Infinity) - (a.trend?.change7d ?? -Infinity);
+function byTrend(a: Sortable, b: Sortable): number {
+  if (a.trend === null && b.trend === null) return 0;
+  if (a.trend === null) return 1;
+  if (b.trend === null) return -1;
+  return b.trend.change7d - a.trend.change7d;
+}
 
 /** Build + complexity; an unrated half makes the whole sum unknown, which sorts last. */
 function effort(s: Sortable): number {
@@ -73,10 +78,11 @@ export const TONE_TEXT: Record<TrendTone, string> = { up: "text-good", down: "te
 
 /** The trend pill's hover: what the number is, what it is computed from, and what it is not. */
 export function trendTip(trend: Trend | null): string {
-  if (!trend) return "None of these drops has a poe.ninja price with a 7-day change yet, so there is no trend to show.";
+  if (!trend) return "No drop here has a poe.ninja price with a 7-day change and enough trade volume yet, so there is no trend to show.";
   return (
-    `How the prices of these drops moved over 7 days on poe.ninja, weighted by value and trade volume ` +
-    `(${trend.counted} of ${trend.total} drops priced). A price move, not profit per hour: drop rates are unknown.`
+    `How the value of these drops moved over 7 days on poe.ninja, weighted by what each was worth a week ago and how much it trades ` +
+    `(${trend.counted} of ${trend.total} drops have a price with a 7-day change and trade enough to count). ` +
+    `A price move, not profit per hour: drop rates are unknown.`
   );
 }
 

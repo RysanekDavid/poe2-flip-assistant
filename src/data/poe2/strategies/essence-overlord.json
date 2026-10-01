@@ -31,7 +31,7 @@
   "ratings": {
     "build": {
       "value": 3,
-      "why": "Overlord's Domain adds its essences only to areas with a Powerful Map Boss, so the boss must be beaten every map.",
+      "why": "Overlord's Domain adds its essences only to areas with a Powerful Map Boss, so the strategy runs maps with one.",
       "claim": {
         "v": "syn",
         "src": [

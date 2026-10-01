@@ -64,7 +64,11 @@ export function Tooltip({ tip, children, side = "top", align = "center" }: Toolt
       onFocus={() => setOpen(true)}
       onBlur={() => setOpen(false)}
       onKeyDown={(e) => {
-        if (e.key === "Escape") setOpen(false);
+        // an open tip takes this Escape (a Drawer around it checks defaultPrevented); a closed one passes it on
+        if (e.key === "Escape" && open) {
+          e.preventDefault();
+          setOpen(false);
+        }
       }}
     >
       {trigger}

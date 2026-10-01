@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Map as MapIcon, RefreshCw } from "lucide-react";
 import type { BudgetTier, Mechanic } from "../../../core/strategies/schema";
@@ -23,8 +23,10 @@ import { EMPTY_FILTER, filterStrategies, parseBudget, yieldNames, type StrategyF
 // Prices come from poe.ninja (hourly); the curated facts change only with a release.
 const POLL_MS = 15 * 60_000;
 const ROUTE = "/api/farm/strategies";
-/** ?s=<strategy id> opens that strategy's drawer, so a strategy deep-links and Back closes it. */
-const OPEN_PARAM = "s";
+/** ?strategy=<id> opens that strategy's drawer, so a strategy deep-links and Back closes it. */
+const OPEN_PARAM = "strategy";
+/** The first links used ?s=; still read, and rewritten to ?strategy= on the next open or close. */
+const LEGACY_OPEN_PARAM = "s";
 
 function useStrategies() {
   const [data, setData] = useState<StrategiesResponse | null>(null);
@@ -59,30 +61,45 @@ function useFilter() {
   return { filter, update };
 }
 
-/** The open strategy lives in ?s=: opening pushes history (Back closes), closing replaces it. */
+/**
+ * The open strategy lives in ?strategy= (an early ?s= link still opens). Opening pushes history;
+ * closing a drawer opened here goes Back to that entry, and closing one that came in on a deep link
+ * replaces the URL — Back must not leave the app.
+ */
 function useOpenStrategy() {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const openId = params.get(OPEN_PARAM);
-  const go = useCallback(
-    (id: string | null, push: boolean) => {
+  const openedHere = useRef(false);
+  const openId = params.get(OPEN_PARAM) ?? params.get(LEGACY_OPEN_PARAM);
+  const hrefWith = useCallback(
+    (id: string | null) => {
       const url = new URL(window.location.href);
+      url.searchParams.delete(LEGACY_OPEN_PARAM);
       if (id === null) url.searchParams.delete(OPEN_PARAM);
       else url.searchParams.set(OPEN_PARAM, id);
-      const href = `${pathname}${url.search}`;
-      if (push) router.push(href, { scroll: false });
-      else router.replace(href, { scroll: false });
+      return `${pathname}${url.search}`;
     },
-    [pathname, router],
+    [pathname],
   );
-  const open = useCallback((id: string) => go(id, true), [go]);
-  const close = useCallback(() => go(null, false), [go]);
+  const open = useCallback(
+    (id: string) => {
+      openedHere.current = true;
+      router.push(hrefWith(id), { scroll: false });
+    },
+    [hrefWith, router],
+  );
+  const close = useCallback(() => {
+    if (openedHere.current) {
+      openedHere.current = false;
+      router.back();
+    } else router.replace(hrefWith(null), { scroll: false });
+  }, [hrefWith, router]);
   return { openId, open, close };
 }
 
 const LEGEND =
-  "Strategies live in Farm because each one is a way to farm maps. The % is how the prices of a strategy's drops moved over 7 days on poe.ninja — " +
+  "The % is how the value of a strategy's drops moved over 7 days on poe.ninja (n/m = how many of its drops have a price and a trend) — " +
   "a price move, not profit per hour: drop rates are unknown, so no Div/hour is shown. Budget, Build and Complexity are our ratings against a fixed scale; " +
   "hover a bar for the scale and the reason. Cards stay drafts until reviewed.";
 
@@ -159,6 +176,7 @@ export function StrategiesTool() {
           <div className="flex flex-wrap items-center gap-2">
             <ProvenanceChip label="Price" source="poe.ninja (GGG exchange)" at={data.pricesFetchedAt} warnAfterMin={180} title={`league ${data.computedLeague}`} />
             <span className="text-xs text-neutral-400">{shown.length === all.length ? `${all.length} strategies` : `${shown.length} of ${all.length} strategies`}</span>
+            {data.exPerDiv === null && <span className="text-xs text-amber-300">no exchange rate yet — small prices shown in div</span>}
             <Button variant="ghost" size="sm" onClick={reload} aria-label="Refresh strategy prices">
               <RefreshCw aria-hidden className="h-4 w-4" />
             </Button>

@@ -38,7 +38,7 @@ export function ProvenanceChip({ label, source, at, warnAfterMin, title }: Prove
   return (
     <span
       title={hover === "" ? undefined : hover}
-      className={`inline-flex items-center gap-1 rounded border px-1.5 text-xs ${stale ? "border-amber-400/40 text-amber-300" : "border-line text-neutral-400"}`}
+      className={`inline-flex max-w-full flex-wrap items-center gap-x-1 rounded border px-1.5 text-xs ${stale ? "border-amber-400/40 text-amber-300" : "border-line text-neutral-400"}`}
     >
       <span className="text-neutral-300">{label}</span>· {source}
       {when && <span className="tabular-nums">· {when}</span>}

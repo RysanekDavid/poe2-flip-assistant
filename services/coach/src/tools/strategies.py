@@ -17,7 +17,7 @@ from src.entities import EntityCatalog, get_entity_catalog
 from src.errors import ToolInvalidInput, ToolNoResult
 from src.evidence import evidence_id
 from src.strategies import BUDGET_ORDER, BudgetTier, FarmStrategy, Mechanic, get_strategies
-from src.strategies.models import Claim, Rating
+from src.strategies.models import RATING_MAX, Claim, Rating
 from src.tools.engine_common import PAYLOAD_CAP_BYTES
 
 #: One whole strategy, asked for by id, is the answer itself rather than one of many rows, so it
@@ -106,7 +106,7 @@ def _list_row(strategy: FarmStrategy, league: str) -> dict[str, object]:
 
 def _rating_text(rating: Rating) -> str:
     """'3/5 [syn]', or 'unrated' when the sources supported no step."""
-    return "unrated" if rating.value is None else f"{rating.value}/5 [{rating.claim.v}]"
+    return "unrated" if rating.value is None else f"{rating.value}/{RATING_MAX} [{rating.claim.v}]"
 
 
 def _detail_row(strategy: FarmStrategy, league: str) -> dict[str, object]:

@@ -9,7 +9,7 @@ import { BUDGET_TIERS, RATING_MAX, RATING_MIN, type BudgetTier, type RatingKey }
 /** Budget keeps the three curated tiers (cheapest first); the card draws them as a 3-step bar. */
 export const BUDGET_SCALE: Record<BudgetTier, string> = {
   league_start: "magic tablets and plain waystones; nothing consumed beyond the map",
-  mid: "waystones rolled for two or more totals, three or more tablets, or a consumed entry item (Grand Mirror, Sacred Bloom, Ultimatum)",
+  mid: "waystones rolled for two or more totals, three or more tablets, or a consumed entry item (Sacred Bloom, Inscribed Ultimatum)",
   high: "unique tablets or a specific item bought for every run",
 };
 

@@ -30,7 +30,7 @@
   "ratings": {
     "build": {
       "value": 3,
-      "why": "Abyssal monsters steal the modifiers of the monsters you slay, and every Rare in the Abyssal Depths carries an Abyssal modifier.",
+      "why": "Abyssal monsters steal some or all of the modifiers of the weakened monsters you slay, and every Rare in the Abyssal Depths carries an Abyssal modifier.",
       "claim": {
         "v": "syn",
         "src": [

@@ -16,12 +16,12 @@
   "status": "draft",
   "budget": {
     "tier": "mid",
-    "why": "A Grand Mirror is consumed to spread the fog, and waystones are rolled for two totals (monster rarity, pack size).",
+    "why": "Waystones are rolled for two totals (monster rarity, pack size).",
     "build_needs": "Survives rising Deliriousness across a fog cluster and clears Simulacrum waves.",
     "claim": {
       "v": "syn",
       "src": [
-        "https://www.pathofexile.com/forum/view-thread/4000864",
+        "https://poe2db.tw/us/Waystones",
         "https://poe2db.tw/us/Delirium"
       ],
       "note": "Our reading of the setup against the budget scale; not measured."
@@ -30,7 +30,7 @@
   "ratings": {
     "build": {
       "value": 4,
-      "why": "Danger rises with Deliriousness across the fogged maps; 0.5.5 notes that pushing past 100% adds danger, not packs.",
+      "why": "Monsters get stronger the deeper into the fog you go (poe2db Delirium); since 0.5.5, pack counts stop scaling above 100% Deliriousness.",
       "claim": {
         "v": "syn",
         "src": [
@@ -381,7 +381,7 @@
     "Sell Simulacrum Splinters in stacks, or run the Simulacrum."
   ],
   "risks": [
-    "0.5.5: Delirium packs no longer scale above 100% Deliriousness — pushing deliriousness past that adds danger, not packs.",
+    "Monsters get stronger the deeper into the fog you go (poe2db Delirium); since 0.5.5, pack counts stop scaling above 100% Deliriousness.",
     "Liquid Emotion prices differ a lot by type; the basket lists two examples only.",
     "More waystone modifiers mean fewer revives (poe2db Waystones); 0.5.5 fixed Simulacrum of Delusion areas ignoring the Waystone's revives, so they now use them."
   ],

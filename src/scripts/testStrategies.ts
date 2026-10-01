@@ -19,7 +19,6 @@ import {
   filterStrategies,
   leagueMismatch,
   parseBudget,
-  presentMechanics,
   showsBadge,
   yieldNames,
 } from "../components/farm/strategies/strategiesView";
@@ -245,7 +244,6 @@ assert.equal(filterStrategies(views, { mechanics: new Set(["breach"]), budget: "
 assert.equal(parseBudget("mid"), "mid");
 assert.equal(parseBudget("cheap"), null, "unknown ?budget= is ignored, not an empty page");
 assert.equal(parseBudget(null), null);
-assert.ok(presentMechanics(views).includes("anomaly") && !presentMechanics([]).length);
 assert.ok(yieldNames(views).includes("Fracturing Orb"));
 assert.equal(showsBadge({ v: "vp", src: ["https://poe2db.tw/us/Hidden_Scars"] }), false, "primary facts stay unmarked");
 assert.equal(showsBadge({ v: "syn", src: [] }), true);
@@ -264,6 +262,8 @@ const LEAGUE = "Strategy Test League";
 const seed = (itemId: string, baseValue: number, change7d: number | null = null): PricedItem => ({ itemId, itemName: itemId, category: "Currency", baseValue, volume: 50, change7d, spark7d: null, icon: null });
 insertSnapshots(LEAGUE, [seed("fracturing-orb", 0.8, 25), seed("exalted", 0.004), seed("chaos", 0.02)]);
 getDb().prepare("UPDATE price_snapshots SET fetched_at = datetime('now', '-10 minutes') WHERE league = ?").run(LEAGUE);
+// a corrupt sparkline must not take the strategies route down: it reads the 7-day change only
+getDb().prepare("UPDATE item_spark SET spark_7d = 'not json' WHERE league = ? AND item_id = 'fracturing-orb'").run(LEAGUE);
 const body = strategiesResponseSchema.parse(loadStrategyBoard(LEAGUE, Date.now()));
 assert.equal(body.computedLeague, LEAGUE);
 assert.equal(body.strategies.length, EXPECTED_IDS.length, "the route returns every strategy; filtering is client-side");

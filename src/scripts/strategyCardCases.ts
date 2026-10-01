@@ -37,20 +37,34 @@ function testRatingsData(strategies: readonly FarmStrategy[]): void {
 function testTrend(views: readonly StrategyView[], strategies: readonly FarmStrategy[]): void {
   assert.equal(basketTrend([]), null);
   assert.equal(basketTrend([{ div: 1, change7d: null, volume: 100 }]), null, "no 7-day change → no trend, never 0%");
-  const mixed = basketTrend([
+  const skipped = basketTrend([
     { div: 10, change7d: 20, volume: 990 },
-    { div: 1, change7d: -10, volume: 0 },
+    { div: 1, change7d: -10, volume: 49 },
     { div: 0, change7d: 500, volume: 1000 },
+    { div: 1, change7d: -100, volume: 1000 },
   ]);
-  assert.ok(mixed && mixed.counted === 2, "an unpriced item does not count");
-  assert.ok(mixed && Math.abs(mixed.change7d - (20 * 30 - 10) / 31) < 1e-9, "weighted by value × log10(volume + 10)");
+  assert.ok(skipped && skipped.counted === 1, "unpriced, thin (< 50 volume) and impossible (−100%) items do not count");
+  assert.ok(skipped && Math.abs(skipped.change7d - 20) < 1e-9);
+  // The Essence basket the review caught: weighting by TODAY's price let the +483% item dominate
+  // (+336%); weighting by the price a week ago gives the basket's real value change (+194%).
+  const essence = [
+    { div: 0.022, change7d: 54, volume: 100 },
+    { div: 0.0073, change7d: 98, volume: 100 },
+    { div: 0.29, change7d: 483, volume: 100 },
+    { div: 0.12, change7d: 47, volume: 100 },
+  ];
+  const now = essence.reduce((sum, it) => sum + it.div, 0);
+  const then = essence.reduce((sum, it) => sum + it.div / (1 + it.change7d / 100), 0);
+  const real = basketTrend(essence);
+  assert.ok(real && Math.abs(real.change7d - (now / then - 1) * 100) < 1e-9, "equal volumes → exactly the basket's value change");
+  assert.equal(Math.round(real?.change7d ?? 0), 194, "Essence basket: +194%, not the current-price-weighted +336%");
   const markets = new Map([["fracturing-orb", { div: 1.5, fetchedAt: "2026-09-29T11:30:00.000Z", change7d: -8, volume: 50 }]]);
   const rows = mechanicTrends(strategies, markets);
   assert.deepEqual(rows.map((r) => r.mechanic), [...new Set(strategies.flatMap((s) => s.mechanics))].sort((a, b) => order(a) - order(b)), "one row per covered mechanic, schema order");
-  assert.equal(rows.find((r) => r.mechanic === "corruption")?.trend?.change7d, -8);
+  assert.ok(Math.abs((rows.find((r) => r.mechanic === "corruption")?.trend?.change7d ?? 0) + 8) < 1e-9, "corruption chip carries its drop's −8%");
   assert.equal(rows.find((r) => r.mechanic === "breach")?.trend, null);
   assert.ok(views.length > 0);
-  console.log("PASS  trend: weighted 7d move over priced drops, null when none is priced, one per mechanic");
+  console.log("PASS  trend: basket value change (week-ago price × liquidity weights, volume ≥ 50; Essence +194% not +336%), null when none counts, one per mechanic");
 }
 
 const order = (m: Mechanic): number => MECHANICS.indexOf(m);

@@ -5,10 +5,12 @@ import { RefreshCw, TriangleAlert } from "lucide-react";
 import { assertOk, describeError, warnOnFailure } from "../../lib/clientWarn";
 import { farmResponseSchema, type FarmResponse } from "../../lib/farmContract";
 import type { BossView, TierResult } from "../../lib/tools/bossEvContract";
+import { useIsPhone } from "../../lib/useIsPhone";
 import { useVisiblePoll } from "../../lib/useVisiblePoll";
 import { TAB_ICONS } from "../shell/tabIcons";
 import { Button } from "../ui/Button";
 import { detailRowId } from "../ui/DataTable";
+import { Drawer } from "../ui/Drawer";
 import { PageHeader, type HeaderExample } from "../ui/PageHeader";
 import { ProvenanceChip } from "../ui/ProvenanceChip";
 import { BossDetail } from "./BossDetail";
@@ -112,6 +114,7 @@ export function BossesTool() {
   const { expandedId, toggle, open, tierOf, setTier } = useExpansion();
   const exPerDiv = data?.rates?.exaltPerDivine ?? null;
   const best = data?.bosses[0] ?? null;
+  const phone = useIsPhone();
   return (
     <section className="grid grid-cols-1 gap-3">
       <PageHeader
@@ -132,14 +135,21 @@ export function BossesTool() {
         <>
           <DataLine data={data} onRefresh={reload} />
           <PatchWarning warning={data.patchWarning} />
+          {/* on a phone the table scrolls sideways in its own box, which would clip an inline
+              detail, so the open boss goes into a full-screen drawer there instead */}
           <BossTable
             bosses={data.bosses}
-            expandedId={expandedId}
+            expandedId={phone ? null : expandedId}
             onToggle={toggle}
             renderDetail={(id) => <InlineDetail data={data} bossId={id} tierOf={tierOf} setTier={setTier} exPerDiv={exPerDiv ?? 0} />}
             exPerDiv={exPerDiv}
           />
         </>
+      )}
+      {data && phone && expandedId !== null && (
+        <Drawer title={data.bosses.find((b) => b.id === expandedId)?.name ?? "Boss"} onClose={() => toggle(expandedId)}>
+          <InlineDetail data={data} bossId={expandedId} tierOf={tierOf} setTier={setTier} exPerDiv={exPerDiv ?? 0} />
+        </Drawer>
       )}
     </section>
   );

@@ -151,7 +151,7 @@ function DropsHeader({ pricesAt }: { pricesAt: string | null }) {
 export function BossDetail({ boss, tier, onTier, exPerDiv, pricesAt }: Props) {
   return (
     <Panel>
-      <div className="grid gap-3">
+      <div className="grid min-w-0 grid-cols-1 gap-3">
         <header className="flex flex-wrap items-center gap-3">
           <ItemArt src={artSrc(boss.icon)} size={8} />
           <div className="min-w-0">
@@ -177,7 +177,9 @@ export function BossDetail({ boss, tier, onTier, exPerDiv, pricesAt }: Props) {
           )}
         </ul>
         <DropsHeader pricesAt={pricesAt} />
-        <div className="-mt-1.5">
+        {/* on a phone the drop table scrolls sideways in its own box, where a sticky head would float
+            over the rows, so it goes static there; `relative` keeps the rows' sr-only text inside the clip */}
+        <div className="relative -mt-1.5 min-w-0 max-md:overflow-x-auto max-md:[&_th]:static">
           <LootTable loot={tier.loot} exPerDiv={exPerDiv > 0 ? exPerDiv : null} />
         </div>
         <footer className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-400">
