@@ -1761,26 +1761,20 @@
             {
               "kind": "pairing",
               "verdict": "unknown",
-              "detail": "Omen of Light pairing matches only the unverified rule omen-light",
-              "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
+              "detail": "Omen of Sinistral Annulment pairing matches only the unverified rule omen-sinistral-annulment",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §1; docs/kb/currency-core.md §1, §5"
             }
           ]
         },
         {
           "idx": 7,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
               "verdict": "ok",
               "detail": "every material exists in the 0.5.5b game data",
               "source": "entity catalog"
-            },
-            {
-              "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "Omen of Sinistral Annulment pairing matches only the unverified rule omen-sinistral-annulment",
-              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §1; docs/kb/currency-core.md §1, §5"
             }
           ]
         },
@@ -1798,18 +1792,6 @@
         },
         {
           "idx": 9,
-          "verdict": "ok",
-          "checks": [
-            {
-              "kind": "catalog",
-              "verdict": "ok",
-              "detail": "every material exists in the 0.5.5b game data",
-              "source": "entity catalog"
-            }
-          ]
-        },
-        {
-          "idx": 10,
           "verdict": "ok",
           "checks": [
             {
