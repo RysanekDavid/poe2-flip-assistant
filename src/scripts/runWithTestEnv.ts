@@ -5,6 +5,7 @@ const targets = {
   auth: "src/scripts/testAuth.ts",
   craft: "src/scripts/testCraftMargin.ts",
   cx: "src/scripts/testCxHistory.ts",
+  "cx-shadow": "src/scripts/testCxShadow.ts",
   "craft-valuation": "src/scripts/testCraftValuation.ts",
   "craft-guides": "src/scripts/testCraftGuides.ts",
   "craft-provenance": "src/scripts/testCraftProvenance.ts",

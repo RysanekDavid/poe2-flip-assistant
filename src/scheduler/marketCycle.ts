@@ -3,6 +3,7 @@ import { config } from "../config/env";
 import { fireAlert, pruneAlertFeed } from "../core/alertEngine";
 import { loadCxMarketView, type CxMarketView } from "../core/cx/cxItemMarkets";
 import { cxHistoryProblem, pruneCxMarketHistory, syncCxHistory } from "../core/cx/cxIngest";
+import { pruneCxPriceShadow, syncCxPriceShadow } from "../core/cx/cxPriceShadow";
 import { leagueStartProblem, syncLeagueStart } from "../core/cx/leagueStart/backfill";
 import { fireLeagueStartAlerts } from "../core/cx/leagueStart/dailyAlert";
 import { trackCxOutcomes } from "../core/cx/cxOutcomes";
@@ -57,6 +58,7 @@ export async function runCycle(): Promise<void> {
   // Fill gaps in the stored exchange history AFTER the sweeps, so a cold backfill (bounded,
   // 2s between requests) never delays fresh ninja prices. Fail-quiet like the refresh above.
   await syncHistoryTracked(leagues);
+  await priceShadowTracked(leagues);
   await leagueStartTracked(leagues);
   for (const league of leagues) trackOutcomes(league);
 
@@ -71,9 +73,11 @@ function pruneAll(): string {
   pruneMarginHistory(config.retentionDays); // keep craft EV history bounded like everything else
   const cxPruned = pruneCxMarketHistory(); // null = not due (hourly)
   const cxNote = cxPruned == null ? "" : `, ${cxPruned} exchange market-hour(s) older than ${config.cx.historyDays}d`;
+  const shadowPruned = pruneCxPriceShadow(); // null = not due (hourly)
+  const shadowNote = shadowPruned == null ? "" : `, ${shadowPruned} shadow price(s) older than ${config.retentionDays}d`;
   const alerts = pruneAlertFeed(); // null = not due (hourly)
   const alertNote = alerts == null ? "" : `, ${alerts} alert(s) older than ${config.alertRetention.days}d`;
-  return `pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${alertNote}${cxNote}`;
+  return `pruned ${pruned} snapshot(s) older than ${config.retentionDays}d${alertNote}${cxNote}${shadowNote}`;
 }
 
 const errText = (err: unknown): string => (err instanceof Error ? err.message : String(err));
@@ -101,6 +105,18 @@ async function refreshRatesTracked(leagues: readonly string[]): Promise<void> {
 /** The backfill reports its own attempts and failure back-offs; cxHistoryProblem judges them. */
 async function syncHistoryTracked(leagues: readonly string[]): Promise<void> {
   await withHeartbeat("cx-history", "", () => syncCxHistory(leagues), { problem: cxHistoryProblem });
+}
+
+/**
+ * Shadow CX prices for the stored hours (no network). A throw is heartbeat-recorded and logged,
+ * never fatal to the cycle: nothing user-facing depends on it yet.
+ */
+async function priceShadowTracked(leagues: readonly string[]): Promise<void> {
+  try {
+    await withHeartbeat("cx-price-shadow", "", () => syncCxPriceShadow(leagues));
+  } catch (err: unknown) {
+    console.error("[cx-shadow] failed:", errText(err));
+  }
 }
 
 /**
