@@ -1,0 +1,1212 @@
+{
+  "schema_version": 3,
+  "kind": "trade",
+  "id": "reforging-bench-ladders",
+  "title": "Reforging Bench ladders: three into one",
+  "summary": "The Reforging Bench turns three of an item into one of the next step. Runes and Liquid Emotions step up the same way every time, so their margin is simply today's exchange prices; essences, catalysts, soul cores and tablets come out random and get no EV here.",
+  "mechanics": [],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "league_start",
+    "why": "Three of a stackable item per craft; the spend is whatever step of the ladder you pick.",
+    "build_needs": "None: buying, combining at the bench and selling.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Reforging_Bench"
+      ],
+      "note": "Our reading of the method against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": null,
+      "why": "No combat: the method is trading and combining.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: the build scale measures map content, and this method has none."
+      }
+    },
+    "complexity": {
+      "value": null,
+      "why": "The complexity scale is written for map setups, not for trading.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: no step of the scale describes a trade loop."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "The Reforging Bench always turns three runes of a tier into the next tier, and three Liquid Emotions into the next emotion, so one tier's price is tied to three of the one below.",
+    "breaks_when": [
+      "The bench recipes are removed or made random",
+      "The live price gap closes (the card then reads not profitable)"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Reforging_Bench"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "inputs": [
+    {
+      "text": "Three runes of one type and tier (Lesser or normal)",
+      "ref": null,
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "text": "Three Liquid Emotions of one kind (Diluted Ire up to Concentrated Suffering)",
+      "ref": null,
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "text": "Three of one essence, catalyst or soul core",
+      "ref": null,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/reforging-bench-guide"
+        ],
+        "note": "maxroll Reforging Bench guide (ZiggyD, updated 2026-06-15)."
+      }
+    },
+    {
+      "text": "Three identical uniques",
+      "ref": null,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/reforging-bench-guide"
+        ],
+        "note": "maxroll Reforging Bench guide (ZiggyD, updated 2026-06-15)."
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "text": "Runes: the same rune one tier up (Lesser → normal → Greater)",
+      "ref": null,
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ],
+        "note": "Deterministic. The bench lists no Greater → Perfect step."
+      }
+    },
+    {
+      "text": "Liquid Emotions: the next emotion — Ire → Guilt → Greed → Paranoia → Envy → Disgust → Despair → Fear → Suffering → Isolation",
+      "ref": null,
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ],
+        "note": "Deterministic. No Ancient liquid is on the bench."
+      }
+    },
+    {
+      "text": "Essences: treated as random here, so no EV",
+      "ref": null,
+      "claim": {
+        "v": "cf",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench",
+          "https://maxroll.gg/poe2/resources/reforging-bench-guide"
+        ],
+        "note": "poe2db lists a fixed next tier of the same essence; maxroll says 'a random Essence with a very small chance of being Greater Essence'. We follow the random reading until it is tested in game."
+      }
+    },
+    {
+      "text": "Catalysts and soul cores: a random one of the same kind, so no EV",
+      "ref": null,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/reforging-bench-guide"
+        ],
+        "note": "maxroll Reforging Bench guide (ZiggyD, updated 2026-06-15)."
+      }
+    },
+    {
+      "text": "Three identical uniques: that unique again, unidentified and rerolled",
+      "ref": null,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/reforging-bench-guide"
+        ],
+        "note": "maxroll Reforging Bench guide (ZiggyD, updated 2026-06-15)."
+      }
+    },
+    {
+      "text": "Tablets: what three tablets return (a random tablet, or a rare one) is unresolved, so no EV",
+      "ref": null,
+      "claim": {
+        "v": "uv",
+        "src": [
+          "https://maxroll.gg/poe2/resources/reforging-bench-guide"
+        ],
+        "note": "maxroll says three magic tablets give 'a new randomized Precursor Tablet'; whether that tablet is magic or rare is described both ways and not settled."
+      }
+    }
+  ],
+  "odds": {
+    "text": "Runes and Liquid Emotions step up the same way every time and nothing is destroyed. Essences, catalysts, soul cores, uniques and tablets come out random.",
+    "loss_chance": 0,
+    "claim": {
+      "v": "vp",
+      "src": [
+        "https://poe2db.tw/us/Reforging_Bench"
+      ]
+    }
+  },
+  "price_refs": [
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "diluted-liquid-ire",
+            "name": "Diluted Liquid Ire"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "diluted-liquid-guilt",
+            "name": "Diluted Liquid Guilt"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "diluted-liquid-guilt",
+            "name": "Diluted Liquid Guilt"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "diluted-liquid-greed",
+            "name": "Diluted Liquid Greed"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "diluted-liquid-greed",
+            "name": "Diluted Liquid Greed"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "liquid-paranoia",
+            "name": "Liquid Paranoia"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "liquid-paranoia",
+            "name": "Liquid Paranoia"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "liquid-envy",
+            "name": "Liquid Envy"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "liquid-envy",
+            "name": "Liquid Envy"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "liquid-disgust",
+            "name": "Liquid Disgust"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "liquid-disgust",
+            "name": "Liquid Disgust"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "liquid-despair",
+            "name": "Liquid Despair"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "liquid-despair",
+            "name": "Liquid Despair"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "concentrated-liquid-fear",
+            "name": "Concentrated Liquid Fear"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "concentrated-liquid-fear",
+            "name": "Concentrated Liquid Fear"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "concentrated-liquid-suffering",
+            "name": "Concentrated Liquid Suffering"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "concentrated-liquid-suffering",
+            "name": "Concentrated Liquid Suffering"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "concentrated-liquid-isolation",
+            "name": "Concentrated Liquid Isolation"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-desert-rune",
+            "name": "Lesser Desert Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "desert-rune",
+            "name": "Desert Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "desert-rune",
+            "name": "Desert Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-desert-rune",
+            "name": "Greater Desert Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-glacial-rune",
+            "name": "Lesser Glacial Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "glacial-rune",
+            "name": "Glacial Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "glacial-rune",
+            "name": "Glacial Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-glacial-rune",
+            "name": "Greater Glacial Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-storm-rune",
+            "name": "Lesser Storm Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "storm-rune",
+            "name": "Storm Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "storm-rune",
+            "name": "Storm Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-storm-rune",
+            "name": "Greater Storm Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-iron-rune",
+            "name": "Lesser Iron Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "iron-rune",
+            "name": "Iron Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "iron-rune",
+            "name": "Iron Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-iron-rune",
+            "name": "Greater Iron Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-body-rune",
+            "name": "Lesser Body Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "body-rune",
+            "name": "Body Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "body-rune",
+            "name": "Body Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-body-rune",
+            "name": "Greater Body Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-mind-rune",
+            "name": "Lesser Mind Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "mind-rune",
+            "name": "Mind Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "mind-rune",
+            "name": "Mind Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-mind-rune",
+            "name": "Greater Mind Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-rebirth-rune",
+            "name": "Lesser Rebirth Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "rebirth-rune",
+            "name": "Rebirth Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "rebirth-rune",
+            "name": "Rebirth Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-rebirth-rune",
+            "name": "Greater Rebirth Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-inspiration-rune",
+            "name": "Lesser Inspiration Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "inspiration-rune",
+            "name": "Inspiration Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "inspiration-rune",
+            "name": "Inspiration Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-inspiration-rune",
+            "name": "Greater Inspiration Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-stone-rune",
+            "name": "Lesser Stone Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "stone-rune",
+            "name": "Stone Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "stone-rune",
+            "name": "Stone Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-stone-rune",
+            "name": "Greater Stone Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-vision-rune",
+            "name": "Lesser Vision Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "vision-rune",
+            "name": "Vision Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "vision-rune",
+            "name": "Vision Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-vision-rune",
+            "name": "Greater Vision Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-robust-rune",
+            "name": "Lesser Robust Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "robust-rune",
+            "name": "Robust Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "robust-rune",
+            "name": "Robust Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-robust-rune",
+            "name": "Greater Robust Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-adept-rune",
+            "name": "Lesser Adept Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "adept-rune",
+            "name": "Adept Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "adept-rune",
+            "name": "Adept Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-adept-rune",
+            "name": "Greater Adept Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-resolve-rune",
+            "name": "Lesser Resolve Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "resolve-rune",
+            "name": "Resolve Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "resolve-rune",
+            "name": "Resolve Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-resolve-rune",
+            "name": "Greater Resolve Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-ward-rune",
+            "name": "Lesser Ward Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "ward-rune",
+            "name": "Ward Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "ward-rune",
+            "name": "Ward Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-ward-rune",
+            "name": "Greater Ward Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "lesser-charging-rune",
+            "name": "Lesser Charging Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "charging-rune",
+            "name": "Charging Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "charging-rune",
+            "name": "Charging Rune"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "greater-charging-rune",
+            "name": "Greater Charging Rune"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    }
+  ],
+  "steps": [
+    "Pick a step whose margin below is positive and whose input trades in volume.",
+    "Buy three of the input on the exchange, or use your own.",
+    "Combine them at the Reforging Bench; it takes no corrupted item.",
+    "Sell the output on the exchange."
+  ],
+  "risks": [
+    "The margin is from poe.ninja exchange values: the gold fee and the buy/sell spread are not taken off, so a thin margin can be a loss.",
+    "A step whose output trades thinly may not sell at the shown price.",
+    "Tempered Runes are on the bench too but not in our item catalog, so they are not priced here."
+  ]
+}

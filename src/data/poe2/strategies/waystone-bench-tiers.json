@@ -1,0 +1,193 @@
+{
+  "schema_version": 3,
+  "kind": "roll_and_sell",
+  "id": "waystone-bench-tiers",
+  "title": "Waystones: roll them, and bench three into the next tier",
+  "summary": "Roll waystones toward six modifiers, and turn three waystones of one tier into one of the next at the Reforging Bench, up to Tier 15. The bench refuses corrupted items, so combine before you corrupt.",
+  "mechanics": [],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "league_start",
+    "why": "Waystones you already drop, Alchemy and Exalted Orbs; the bench costs three waystones per upgrade.",
+    "build_needs": "None for the bench; the waystones come from mapping.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Reforging_Bench"
+      ],
+      "note": "Our reading of the method against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": null,
+      "why": "No combat: the method is rolling and combining in the stash.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: the build scale measures map content, and this method has none."
+      }
+    },
+    "complexity": {
+      "value": null,
+      "why": "The complexity scale is written for map setups, not for rolling at the stash.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: no step of the scale describes a rolling loop."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "The Reforging Bench turns three waystones of a tier into one of the next, up to Tier 15, so low-tier waystones convert into the tier players run.",
+    "breaks_when": [
+      "The waystone recipe is removed or changed",
+      "The tier-to-tier price gap closes (the live EV shows it)"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Reforging_Bench"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "target": {
+    "base": "Waystone (Tier 15)",
+    "rarity": [
+      "rare"
+    ],
+    "claim": {
+      "v": "vp",
+      "src": [
+        "https://poe2db.tw/us/Reforging_Bench"
+      ],
+      "note": "Tier 15 is the highest tier the bench makes: its waystone recipes run from 3 × Tier 1 → Tier 2 to 3 × Tier 14 → Tier 15."
+    }
+  },
+  "target_mods": [],
+  "roll_steps": [
+    {
+      "action": "Roll waystones toward six modifiers: Orb of Alchemy, then Exalted Orbs.",
+      "currencies": [
+        {
+          "id": "alch",
+          "name": "Orb of Alchemy"
+        },
+        {
+          "id": "exalted",
+          "name": "Exalted Orb"
+        }
+      ],
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://www.youtube.com/watch?v=Rowlyx5glV8"
+        ],
+        "note": "Creator method (aer0, 2026-06-29): six modifiers at 1:04, Alchemy then Exalted at 1:57. He says corrupting can give an eight-modifier map (1:08); that is unverified for 0.5, so it is left out."
+      }
+    },
+    {
+      "action": "Put three waystones of the same tier in the Reforging Bench to get one waystone of the next tier.",
+      "currencies": [],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "action": "Combine before you corrupt: the bench takes no corrupted item, and the waystone it returns is unidentified, with the lowest item level of the three.",
+      "currencies": [],
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/reforging-bench-guide"
+        ],
+        "note": "maxroll Reforging Bench guide (ZiggyD, updated 2026-06-15)."
+      }
+    }
+  ],
+  "sell_unit": "single",
+  "sell_ref": {
+    "id": "waystone-15",
+    "name": "Waystone (Tier 15)"
+  },
+  "price_refs": [
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "waystone-13",
+            "name": "Waystone (Tier 13)"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "waystone-14",
+            "name": "Waystone (Tier 14)"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    },
+    {
+      "inputs": [
+        {
+          "ref": {
+            "id": "waystone-14",
+            "name": "Waystone (Tier 14)"
+          },
+          "qty": 3
+        }
+      ],
+      "outputs": [
+        {
+          "ref": {
+            "id": "waystone-15",
+            "name": "Waystone (Tier 15)"
+          },
+          "qty": 1
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Reforging_Bench"
+        ]
+      }
+    }
+  ],
+  "demand": {
+    "why": "High-tier waystones with many modifiers sell to players who juice maps: modifiers are what open tablet slots and push waystone drop chance.",
+    "claim": {
+      "v": "ss",
+      "src": [
+        "https://www.youtube.com/watch?v=Rowlyx5glV8"
+      ],
+      "note": "Creator claim (aer0, 2026-06-29); his prices are not repeated here. The bench step is poe2db's, not his."
+    }
+  },
+  "risks": [
+    "The exchange price is for any waystone of that tier; a rolled six-modifier waystone sells on the trade site, where asks are not sales.",
+    "The bench returns the lowest item level of the three inputs, so one low waystone drags the result down.",
+    "The bench's EV below is gross: the exchange gold fee and the buy/sell spread are not taken off."
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "schema_version": 3,
+  "kind": "farm",
+  "id": "irradiated-tablet-farm",
+  "title": "Irradiated maps that drop tablets",
+  "summary": "Three Irradiated Tablets with waystone quantity and monster effectiveness, corrupted six-modifier Tier 15 waystones and Jado's Partial Translations: maps that drop Precursor Tablets of varying kinds and sustain their own waystones.",
+  "mechanics": [
+    "irradiated"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "why": "Three Irradiated Tablets per map and Tier 15 waystones rolled to six modifiers and corrupted.",
+    "build_needs": "Clears corrupted six-modifier Tier 15 maps with stacked monster effectiveness.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://maxroll.gg/poe2/currency/tablet-farming-strategy"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 4,
+      "why": "Corrupted six-modifier waystones plus monster effectiveness on each of three tablets: difficulty that stacks as you push it.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://maxroll.gg/poe2/currency/tablet-farming-strategy",
+          "https://poe2db.tw/us/Irradiated"
+        ],
+        "note": "Our reading of the cited facts against the build scale; not measured."
+      }
+    },
+    "complexity": {
+      "value": 4,
+      "why": "Waystones are rolled and corrupted for every map, and the tablets the maps drop feed a second activity: rolling and selling them.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://maxroll.gg/poe2/currency/tablet-farming-strategy"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "Mountain Mastery raises Tablet quantity found by 50%, and the Irradiated Tablets' waystone-quantity suffix sustains the Tier 15 waystones the farm runs on.",
+    "breaks_when": [
+      "Mountain Mastery or Partial Translations is changed",
+      "Tablet drop rates are cut",
+      "Precursor Tablet prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Mountain_Mastery",
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://poe2db.tw/us/Tablet"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "waystone-15",
+        "name": "Waystone (Tier 15)"
+      },
+      "role": "secondary",
+      "why": "The waystone-quantity suffix and high drop-chance waystones keep the farm in Tier 15; the main drop, Precursor Tablets, is not in the item catalog.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://maxroll.gg/poe2/currency/tablet-farming-strategy",
+          "https://poe2db.tw/us/Tablet"
+        ],
+        "note": "Our reading of the setup; drop rates are not measured."
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "jado",
+    "nodes": [
+      {
+        "name": "Partial Translations",
+        "tier": 3,
+        "effect": "Randomly gain between 0 and 40% increased effect of Explicit Modifiers on Tablets",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": null,
+    "claim": {
+      "v": "vs",
+      "src": [
+        "https://maxroll.gg/poe2/currency/tablet-farming-strategy",
+        "https://www.youtube.com/watch?v=Y20qQD2gTkE"
+      ],
+      "note": "maxroll (BawLoch, updated 2026-09-02) and lilbotq (2026-09-28, 4:13–4:27) both run Jado for Partial Translations. The other three Jado picks are free."
+    }
+  },
+  "atlas_passives": [
+    {
+      "name": "Mountain Mastery",
+      "tree": "Mountain Biome",
+      "effect": "50% increased Quantity of Tablets found; 50% increased Quantity of Runes found; 6% increased Rarity of Items found",
+      "priority": "core",
+      "poe2db_url": "https://poe2db.tw/us/Mountain_Mastery",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Mountain_Mastery"
+        ],
+        "note": "Applies to level 75+ areas; requires completing the Burning Monolith. maxroll's setup lists it."
+      }
+    }
+  ],
+  "tablets": [
+    {
+      "type": "Irradiated Tablet",
+      "unique": null,
+      "count": 3,
+      "mods": [
+        {
+          "text": "(30–40)% increased Quantity of Waystones found in Map",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_2777224821",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Suffix 'of the Cartographer'; maxroll's and lilbotq's setup (1:55–2:00) both use it."
+          }
+        },
+        {
+          "text": "Monsters have (10–15)% increased Effectiveness",
+          "side": "prefix",
+          "trade_stat_id": "explicit.stat_2065500219",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Tablet",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ],
+            "note": "Prefix 'Challenger's'; maxroll's and lilbotq's setup (1:55–2:00) both use it."
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [
+      "waystone_drop_chance"
+    ],
+    "notes": "Tier 15, rolled to six modifiers with 90%+ waystone drop chance (Exalted Orbs), then corrupted with a Vaal Orb.",
+    "claim": {
+      "v": "vs",
+      "src": [
+        "https://maxroll.gg/poe2/currency/tablet-farming-strategy",
+        "https://www.youtube.com/watch?v=Y20qQD2gTkE"
+      ],
+      "note": "maxroll (BawLoch, updated 2026-09-02); lilbotq (2026-09-28, 4:00): six-modifier Tier 15 waystones, corrupted."
+    }
+  },
+  "steps": [
+    "Set Jado with Partial Translations (T3); allocate Mountain Mastery on the Mountain Biome tree.",
+    "Roll Tier 15 waystones to six modifiers with 90%+ waystone drop chance, then corrupt them with a Vaal Orb.",
+    "Slot three Irradiated Tablets, each with the waystone-quantity suffix and the monster-effectiveness prefix.",
+    "Pick up the Precursor Tablets the maps drop (Breach, Delirium, Ritual, Abyss and Temple, varying by map) and roll or sell them: see Craft › Roll & sell."
+  ],
+  "risks": [
+    "Precursor Tablets, the main drop, are not in the item catalog: the basket shows waystones only, and tablets sell on the trade site.",
+    "Irradiated adds +1 to Monster Level (poe2db); three tablets are for their mods, not for more levels.",
+    "lilbotq (0:53) says stacking tablets of one type lowers drops of that type (creator claim).",
+    "Which tablets drop varies from map to map (maxroll); no drop rate is claimed.",
+    "Doryani's Disengaged Safeties (T2) also makes maps Irradiated, but this setup uses Jado."
+  ],
+  "measured": null
+}

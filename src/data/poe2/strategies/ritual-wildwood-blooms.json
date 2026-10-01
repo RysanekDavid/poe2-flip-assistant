@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "ritual-wildwood-blooms",
   "title": "Ritual: Sacred Blooms and the Viridian Wildwood",
   "summary": "Forbidden Rites only: take Sacred Blooms from Ritual rewards, bloom a cluster of maps with the Viridian Wildwood, collect Primal, Vivid and Wild Wisps inside, then clear the empowered map. Two or more Ritual Tablets add an altar and more Wisps.",
@@ -51,6 +52,21 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Sacred Blooms from Ritual bloom a cluster of maps with the Viridian Wildwood, and its Wisps empower the map's monsters and rewards.",
+    "breaks_when": [
+      "The Forbidden Rites league ends (Sacred Blooms drop only there)",
+      "The Wildwood or Wisp rewards are changed"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Sacred_Bloom",
+        "https://www.pathofexile.com/forum/view-thread/4000864"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

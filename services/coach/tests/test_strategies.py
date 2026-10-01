@@ -1,4 +1,4 @@
-"""Strategy KB store and the find_farm_strategies tool contract."""
+"""Strategy KB store and the find_strategies tool contract (every kind)."""
 
 import json
 import re
@@ -27,22 +27,43 @@ LEAGUE = "Forbidden Rites"
 EXPECTED_IDS = (
     "abyss-depths-omens",
     "anomaly-lineage",
+    "atziri-temple-rush",
+    "boss-entry-conversion",
     "boss-rush-overseer",
     "breach-hiveblood",
+    "breach-tablet-invasion",
+    "citadel-crisis-fragments",
     "delirium-grand-mirror",
     "essence-overlord",
     "expedition-grand",
     "fracture-cleansed",
+    "gem-double-corruption",
+    "irradiated-tablet-farm",
+    "loreweave-rings",
+    "reforging-bench-ladders",
     "ritual-omens",
+    "ritual-tablet-rerolls",
     "ritual-wildwood-blooms",
     "strongbox-uniques",
+    "temple-tablet-crystals",
     "trial-of-chaos-fates",
+    "waystone-bench-tiers",
 )
+KINDS = {
+    "breach-tablet-invasion": "roll_and_sell",
+    "ritual-tablet-rerolls": "roll_and_sell",
+    "temple-tablet-crystals": "roll_and_sell",
+    "waystone-bench-tiers": "roll_and_sell",
+    "gem-double-corruption": "trade",
+    "loreweave-rings": "trade",
+    "reforging-bench-ladders": "trade",
+}
 
 
 def _invoke(**overrides: object) -> dict[str, object]:
     tool = build_strategy_tool(STRATEGIES_DIR, CATALOG_PATH)
     args: dict[str, object] = {
+        "kind": None,
         "mechanic": None,
         "target_item": None,
         "budget": None,
@@ -58,15 +79,25 @@ def _ids(payload: dict[str, object]) -> list[str]:
         detail = payload["strategy"]
         assert isinstance(detail, dict)
         return [detail["id"]]
+    assert payload["columns"][0] == "id"
     rows = payload["strategies"]
     assert isinstance(rows, list)
-    return [row["id"] for row in rows]
+    return [row[0] for row in rows]
+
+
+def _rows(payload: dict[str, object]) -> dict[str, dict[str, object]]:
+    """List rows keyed by id, each as a column-name dict."""
+    columns = payload["columns"]
+    rows = payload["strategies"]
+    assert isinstance(columns, list) and isinstance(rows, list)
+    return {row[0]: dict(zip(columns, row, strict=True)) for row in rows}
 
 
 def test_committed_strategies_load_and_are_drafts_verified_against_055() -> None:
     strategies = load_strategies(STRATEGIES_DIR)
 
     assert tuple(s.id for s in strategies) == EXPECTED_IDS
+    assert {s.id: s.kind for s in strategies if s.kind != "farm"} == KINDS
     assert all(s.status == "draft" and s.patch.verified_against == "0.5.5" for s in strategies)
     unsettled = [c for s in strategies for c in _claims(s.model_dump()) if c["v"] in ("uv", "cf")]
     assert unsettled and all(c.get("note") for c in unsettled)
@@ -135,15 +166,25 @@ def _budget_without_source(data: dict[str, object]) -> None:
     budget["claim"] = {"v": "syn", "src": [], "note": "no source"}
 
 
-def _schema_v1(data: dict[str, object]) -> None:
-    data["schema_version"] = 1
+def _schema_v2(data: dict[str, object]) -> None:
+    data["schema_version"] = 2
+
+
+def _wrong_kind(data: dict[str, object]) -> None:
+    data["kind"] = "trade"
+
+
+def _no_kind(data: dict[str, object]) -> None:
+    del data["kind"]
 
 
 _RATING_DEFECTS: dict[str, Callable[[dict[str, object]], None]] = {
     "rated-no-source": _rated_without_source,
     "six-of-five": _six_of_five,
     "budget-no-source": _budget_without_source,
-    "schema-v1": _schema_v1,
+    "schema-v2": _schema_v2,
+    "wrong-kind": _wrong_kind,
+    "no-kind": _no_kind,
 }
 
 
@@ -174,7 +215,10 @@ def _mk(path: Path) -> Path:
 
 
 def test_list_mode_returns_every_match_under_the_cap() -> None:
-    assert _ids(_invoke(mechanic="breach")) == ["breach-hiveblood"]
+    assert _ids(_invoke(mechanic="breach", kind="farm")) == [
+        "boss-entry-conversion",
+        "breach-hiveblood",
+    ]
     assert _ids(_invoke(target_item="fracturing orbs")) == ["fracture-cleansed"]
     for filters in ({"budget": "league_start"}, {"mechanic": "map_boss"}, {}):
         payload = _invoke(**filters)
@@ -184,9 +228,8 @@ def test_list_mode_returns_every_match_under_the_cap() -> None:
         assert "trimmed_rows" not in payload
         raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
         assert len(raw.encode("utf-8")) <= PAYLOAD_CAP_BYTES
-    assert all(
-        row["budget"] == "league_start" for row in _invoke(budget="league_start")["strategies"]
-    )
+    cheap = _rows(_invoke(budget="league_start"))
+    assert cheap and all(row["budget"] == "league_start" for row in cheap.values())
     assert len(_ids(_invoke())) == len(EXPECTED_IDS)
     listed = _invoke()
     sources = [EvidenceSource.model_validate(s) for s in listed["sources"]]
@@ -221,7 +264,7 @@ def test_detail_mode_carries_grades_notes_risks_and_bounded_sources() -> None:
 def test_rows_flag_a_league_the_strategy_was_not_checked_in() -> None:
     other = "Runes of Aldur"
     listed = _invoke(budget="mid", league=other)
-    rows = {row["id"]: row for row in listed["strategies"]}
+    rows = _rows(listed)
     assert rows["expedition-grand"]["checked_in_league"] is False
     assert other in listed["league_note"]
     assert _invoke(budget="mid")["league_note"] is None
@@ -238,7 +281,11 @@ def test_trial_of_chaos_is_a_mechanic_without_atlas_setup() -> None:
     assert row["id"] == "trial-of-chaos-fates"
     assert row["master"] == "any" and row["master_nodes"] == [] and row["tablets"] == []
     assert row["waystone_prefer"] == []
-    assert _ids(_invoke(mechanic="ritual")) == ["ritual-omens", "ritual-wildwood-blooms"]
+    assert _ids(_invoke(mechanic="ritual", kind="farm")) == [
+        "boss-entry-conversion",
+        "ritual-omens",
+        "ritual-wildwood-blooms",
+    ]
 
 
 def test_oversized_data_fails_at_tool_build(tmp_path: Path) -> None:
@@ -253,7 +300,7 @@ def test_oversized_data_fails_at_tool_build(tmp_path: Path) -> None:
 
 def test_no_match_and_bad_items_fail_loudly() -> None:
     with pytest.raises(ToolNoResult) as no_match:
-        _invoke(mechanic="breach", budget="league_start")
+        _invoke(mechanic="trial_of_chaos", budget="league_start")
     assert "do not invent" in (no_match.value.public_detail or "")
     with pytest.raises(ToolNoResult):
         _invoke(target_item="Completely Imaginary Widget")
@@ -279,7 +326,7 @@ def test_schema_is_strict_with_every_field_required_and_nullable() -> None:
     tool = build_strategy_tool(STRATEGIES_DIR, CATALOG_PATH)
     provider_tool = convert_to_openai_tool(tool, strict=True)["function"]
     schema = provider_tool["parameters"]
-    visible = {"mechanic", "target_item", "budget", "strategy_id"}
+    visible = {"kind", "mechanic", "target_item", "budget", "strategy_id"}
     assert schema["additionalProperties"] is False
     assert set(schema["required"]) == visible == set(schema["properties"])
     for name in visible:
@@ -289,10 +336,51 @@ def test_schema_is_strict_with_every_field_required_and_nullable() -> None:
 
 def test_tool_is_registered(item_catalog_manifest: Path) -> None:
     settings = Settings(_env_file=None, configured_item_catalog_path=item_catalog_manifest)
-    assert "find_farm_strategies" in {tool.name for tool in get_tools(settings)}
+    assert "find_strategies" in {tool.name for tool in get_tools(settings)}
 
 
 def test_copy_of_real_dir_loads(tmp_path: Path) -> None:
     target = tmp_path / "copy"
     shutil.copytree(STRATEGIES_DIR, target)
     assert tuple(s.id for s in load_strategies(target)) == EXPECTED_IDS
+
+
+def test_every_strategy_says_why_it_keeps_working(tmp_path: Path) -> None:
+    for strategy in load_strategies(STRATEGIES_DIR):
+        assert strategy.durability.why_it_works and strategy.durability.breaks_when, strategy.id
+        assert strategy.durability.claim.src, strategy.id
+
+    def no_durability(data: dict[str, object]) -> None:
+        del data["durability"]
+
+    def unsourced(data: dict[str, object]) -> None:
+        durability = data["durability"]
+        assert isinstance(durability, dict)
+        durability["claim"] = {"v": "syn", "src": [], "note": "none"}
+
+    for name, mutate in {"no-durability": no_durability, "unsourced": unsourced}.items():
+        with pytest.raises(RuntimeError, match="invalid"):
+            load_strategies(_copy_one(_mk(tmp_path / name), "fracture-cleansed.json", mutate))
+    detail = _invoke(strategy_id="temple-tablet-crystals")["strategy"]
+    assert detail["durability"]["breaks_when"] and detail["durability"]["grade"] == "syn"
+
+
+def test_kinds_filter_and_carry_their_own_detail() -> None:
+    assert sorted(_ids(_invoke(kind="roll_and_sell"))) == [
+        "breach-tablet-invasion",
+        "ritual-tablet-rerolls",
+        "temple-tablet-crystals",
+        "waystone-bench-tiers",
+    ]
+    rolled = _invoke(strategy_id="ritual-tablet-rerolls")["strategy"]
+    assert rolled["kind"] == "roll_and_sell" and rolled["sell_unit"] == "single"
+    assert any("Favours (1–3)" in mod for mod in rolled["target_mods"])
+    assert "master" not in rolled and "yields" not in rolled
+    ladder = _invoke(strategy_id="reforging-bench-ladders")["strategy"]
+    assert "3 × Diluted Liquid Ire → Diluted Liquid Guilt" in ladder["conversions"]
+    assert ladder["odds"].endswith("[vp]") and "loss chance 0%" in ladder["odds"]
+    gem = _invoke(strategy_id="gem-double-corruption")["strategy"]
+    assert "loss chance 50%" in gem["odds"] and gem["odds"].endswith("[ss]")
+    # A conversion leg is a ref too: asking for an emotion finds the ladder, alone, in detail mode.
+    found = _invoke(target_item="Liquid Envy")
+    assert found["mode"] == "detail" and found["strategy"]["id"] == "reforging-bench-ladders"

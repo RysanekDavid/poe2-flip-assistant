@@ -1,0 +1,123 @@
+{
+  "schema_version": 3,
+  "kind": "trade",
+  "id": "loreweave-rings",
+  "title": "Loreweave: sixty unique rings",
+  "summary": "Sixty unique rings make a Loreweave (Ornate Ringmail with three random unique-ring modifiers). Cheap unique rings have buyers among players collecting sixty, and a finished Loreweave is a unique of its own to sell.",
+  "mechanics": [],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "why": "Sixty unique rings are consumed per Loreweave.",
+    "build_needs": "None: collecting rings and combining them.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Loreweave"
+      ],
+      "note": "Our reading of the method against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": null,
+      "why": "No combat: the method is collecting rings and trading.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: the build scale measures map content, and this method has none."
+      }
+    },
+    "complexity": {
+      "value": null,
+      "why": "The complexity scale is written for map setups, not for trading.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: no step of the scale describes a trade loop."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "Sixty unique rings make a Loreweave, so cheap unique rings have a use beyond their own mods.",
+    "breaks_when": [
+      "The Loreweave recipe is removed or changed",
+      "Loreweave stops selling above sixty rings (neither is on the exchange, so no live EV)"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Loreweave",
+        "https://poe2db.tw/us/Reforging_Bench"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "inputs": [
+    {
+      "text": "Sixty unique rings",
+      "ref": null,
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Loreweave",
+          "https://poe2db.tw/us/Reforging_Bench"
+        ],
+        "note": "Whether duplicates of the same ring count toward the sixty is unverified."
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "text": "Loreweave (Ornate Ringmail): fixed mods plus three random unique-ring modifiers",
+      "ref": {
+        "id": "unique-loreweave",
+        "name": "Loreweave"
+      },
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Loreweave"
+        ]
+      }
+    },
+    {
+      "text": "Or sell cheap unique rings in bulk to players collecting sixty",
+      "ref": null,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://note.com/mrdagonn/n/n229f2cc00cb6"
+        ],
+        "note": "Community note (だごん, 2026-06-12); its bulk prices are not repeated here."
+      }
+    }
+  ],
+  "odds": {
+    "text": "Sixty rings always make a Loreweave; which three unique-ring modifiers it gets is random.",
+    "loss_chance": 0,
+    "claim": {
+      "v": "vp",
+      "src": [
+        "https://poe2db.tw/us/Loreweave"
+      ]
+    }
+  },
+  "price_refs": [],
+  "steps": [
+    "Keep every unique ring you find, and buy the cheapest ones in bulk on the trade site.",
+    "At sixty, combine them into a Loreweave (poe2db lists the recipe).",
+    "Sell the Loreweave on the trade site, or sell your rings to a player collecting sixty."
+  ],
+  "risks": [
+    "Neither the rings nor Loreweave trade on the currency exchange, so no EV is shown.",
+    "Whether duplicate rings count toward the sixty is unverified."
+  ]
+}

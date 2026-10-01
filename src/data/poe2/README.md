@@ -128,16 +128,33 @@ from a fresh run.
 
 ## Curated data: strategy KB
 
-`strategies/<id>.json` is the hand-curated farm strategy knowledge base behind Farm › Strategies
-and the Coach's `find_farm_strategies` tool (schema: `src/core/strategies/schema.ts`, Python mirror
-`services/coach/src/strategies/models.py`). Each file is one strategy: Atlas Master nodes, atlas
-notables with their poe2db pages, tablet bases (trade2 names) with mods and trade2 stat ids,
-preferred waystone totals, the yield basket (entity-catalog ids) and steps/risks. Every fact carries
+`strategies/<id>.json` is the hand-curated strategy knowledge base behind Farm › Strategies,
+Craft › Roll & sell, Trade › Methods and the Coach's `find_strategies` tool (schema:
+`src/core/strategies/schema.ts`, Python mirror `services/coach/src/strategies/models.py`). Schema v3
+discriminates on `kind`:
+
+- `farm`: Atlas Master nodes, atlas notables with their poe2db pages, tablet bases (trade2 names) with
+  mods and trade2 stat ids, preferred waystone totals, the yield basket (entity-catalog ids) and
+  steps/risks.
+- `roll_and_sell`: the trade2 base and rarities to roll, the target mods (same shape as tablet mods,
+  with stat ids for a search link), the roll steps with the currency each spends, how it is listed
+  (`single` or `set_of_3`), the item sold when it is on the exchange, and why buyers want it.
+- `trade`: input and output legs in words (with a catalog ref when there is one), the odds (with
+  `loss_chance`; community odds are graded as community), and `price_refs`: deterministic
+  conversions whose every leg is an exchange item, so the board computes their EV live.
+- `liquidate`: items to sell and where.
+
+**Durability (owner rule, 2026-10-01).** Every strategy carries `durability`: `why_it_works` (the
+game mechanic that makes it work, cited) and `breaks_when` (the nerfs or price conditions that end
+it). A strategy that only rides a temporary market gap has no mechanic to name and does not belong
+here. Profit is never curated: cards show it only from live prices (a conversion's EV), "—" when a
+leg is unpriced and a muted "not profitable at current prices" when the best live EV is not positive.
+A creator's price or yield may appear only as a dated note in the drawer, never as our number. Every fact carries
 a claim grade (`src/lib/claim.ts`): `vp` only for text checked against poe2db, trade2 data or patch
 notes; owner notes and our own picks are `syn`; unknowns are `uv` with a note. Never invent a rate,
 node, mod or source.
 
-**Ratings (schema v2).** The card draws three bars, and each is curated data that must show its
+**Ratings (schema v2, kept in v3).** The card draws three bars, and each is curated data that must show its
 work. `budget.tier` (three steps) carries `why`, and `ratings.build` / `ratings.complexity` (1–5)
 each carry `value`, `why` and a claim. The scales live in `src/core/strategies/ratings.ts`: Build
 is the hardest thing the character must kill or survive, and Complexity is how much there is to set
@@ -147,7 +164,8 @@ schema rejects a rated value or a budget tier with no source). When no source su
 `value: null`; the card then shows "—". Never pick a number to fill a bar. Have every new or
 changed rating fact-checked by a second agent against its cited pages before it ships.
 
-The loader throws on any defect (id ≠ filename, unknown yield, a master node poe2db puts elsewhere);
+The loader throws on any defect (id ≠ filename, unknown ref, a master node poe2db puts elsewhere, a
+conversion leg that is not an exchange item);
 `npm run test:strategies` pins the evidence floor, and `npm run strategies:check` (network, not CI)
 resolves every stat id, tablet base and unique tablet against the live trade2 data catalog, printing
 every trade2 text filed under each id (pass extra `explicit.stat_<n>` ids after `--` to print those too).

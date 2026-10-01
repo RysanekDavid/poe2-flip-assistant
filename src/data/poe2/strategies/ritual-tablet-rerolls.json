@@ -1,0 +1,183 @@
+{
+  "schema_version": 3,
+  "kind": "roll_and_sell",
+  "id": "ritual-tablet-rerolls",
+  "title": "Ritual Tablets with extra Favour rerolls",
+  "summary": "Roll Ritual Tablets for the 'of Prayers' suffix (Ritual Altars allow rerolling Favours 1–3 additional times), Divine it to +3, and sell to Ritual Omen farmers. Corrupting never makes +4; sanctifying a rare one is the creator's gamble for it.",
+  "mechanics": [
+    "ritual"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "why": "Chaos and Annulment rerolls on rare tablets, then Divine Orbs to push the suffix to +3.",
+    "build_needs": "None for the rolling; Ritual Tablets come from ordinary maps.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Divine_Orb",
+        "https://www.youtube.com/watch?v=lGreSOvRfEk"
+      ],
+      "note": "Our reading of the method against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": null,
+      "why": "No combat: the method is rolling in the stash and selling.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: the build scale measures map content, and this method has none."
+      }
+    },
+    "complexity": {
+      "value": null,
+      "why": "The complexity scale is written for map setups, not for rolling at the stash.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: no step of the scale describes a rolling loop."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "The 'of Prayers' suffix gives every Ritual Altar in the map 1–3 more Favour rerolls, which is how Ritual farmers find Omens.",
+    "breaks_when": [
+      "The suffix range is cut",
+      "Rerolls stop being the way to find Omens",
+      "Omen prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Tablet",
+        "https://poe2db.tw/us/Ritual"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "target": {
+    "base": "Ritual Tablet",
+    "rarity": [
+      "magic",
+      "rare"
+    ],
+    "claim": {
+      "v": "vp",
+      "src": [
+        "https://poe2db.tw/us/Tablet",
+        "https://repoe-fork.github.io/poe2/"
+      ],
+      "note": "Base RitualAugment: 'Adds Ritual Altars to a Map', 10 uses."
+    }
+  },
+  "target_mods": [
+    {
+      "text": "Ritual Altars in Map allow rerolling Favours (1–3) additional times",
+      "side": "suffix",
+      "trade_stat_id": "explicit.stat_120737942",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Tablet",
+          "https://repoe-fork.github.io/poe2/",
+          "https://www.pathofexile.com/api/trade2/data/stats"
+        ],
+        "note": "Suffix 'of Prayers' (RePoE TowerRitualAdditionalReroll). trade2 files the stat under its one-value wording 'an additional time', which RePoE's tablet stat descriptions give the same stat."
+      }
+    }
+  ],
+  "roll_steps": [
+    {
+      "action": "Chaos Orbs on a rare Ritual Tablet until the 'of Prayers' suffix lands; on a magic one you can Annul a mod and add another.",
+      "currencies": [
+        {
+          "id": "chaos",
+          "name": "Chaos Orb"
+        },
+        {
+          "id": "annul",
+          "name": "Orb of Annulment"
+        },
+        {
+          "id": "aug",
+          "name": "Orb of Augmentation"
+        }
+      ],
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://www.youtube.com/watch?v=lGreSOvRfEk"
+        ],
+        "note": "Creator method (Diztoh, 2026-07-09): chaos spam at 0:33 and 7:43; annul and re-add on magic bases at 9:40."
+      }
+    },
+    {
+      "action": "Divine Orb until the suffix reads +3, before any corruption. A +1 roll shows no number ('an additional time').",
+      "currencies": [
+        {
+          "id": "divine",
+          "name": "Divine Orb"
+        }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Divine_Orb",
+          "https://poe2db.tw/us/Ancient_Infuser",
+          "https://repoe-fork.github.io/poe2/"
+        ],
+        "note": "A Divine Orb randomises values; RePoE gives the value-1 roll the wording 'an additional time'. An Ancient Infuser corrupts the tablet and never raises a value. Diztoh (3:31) Divines to +3."
+      }
+    },
+    {
+      "action": "Optional gamble on a rare +3: with an Omen of Sanctification active, a Divine Orb sanctifies the tablet; each value is multiplied by 78–122% and the tablet is then locked, so +3 can become +4 or +2.",
+      "currencies": [
+        {
+          "id": "omen-of-sanctification",
+          "name": "Omen of Sanctification"
+        },
+        {
+          "id": "divine",
+          "name": "Divine Orb"
+        }
+      ],
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://poe2db.tw/us/Omen_of_Sanctification",
+          "https://www.youtube.com/watch?v=lGreSOvRfEk"
+        ],
+        "note": "poe2db: the omen makes the next Divine Orb on a Rare item Sanctify it. The 78–122% range and the +3 → +4 result are Diztoh's (2026-07-09, 4:51–6:12 and 14:00), not checked against game data."
+      }
+    }
+  ],
+  "sell_unit": "single",
+  "sell_ref": null,
+  "price_refs": [],
+  "demand": {
+    "why": "Ritual Omen farms reroll Favours at every altar, and since 0.5.5 each Ritual Tablet beyond the first adds an altar and more Wisps, so farmers slot several.",
+    "claim": {
+      "v": "ss",
+      "src": [
+        "https://www.pathofexile.com/forum/view-thread/4000864",
+        "https://www.youtube.com/watch?v=lGreSOvRfEk"
+      ],
+      "note": "The extra altar per tablet is in the 0.5.5 patch notes; the demand is creator advice (Diztoh 2026-07-09). Whether reroll suffixes on several tablets add up is unverified."
+    }
+  },
+  "risks": [
+    "Corrupting a +3 tablet does not make it +4: an Ancient Infuser never raises a value and can destroy the tablet or change its type.",
+    "Sanctifying is a gamble that can lower the value, and a sanctified tablet cannot be changed again.",
+    "Whether the reroll suffix stacks across several tablets in one map is unverified.",
+    "Tablets are not on the currency exchange: price on the trade site with the Search link."
+  ]
+}

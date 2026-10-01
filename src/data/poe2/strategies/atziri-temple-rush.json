@@ -1,0 +1,166 @@
+{
+  "schema_version": 3,
+  "kind": "farm",
+  "id": "atziri-temple-rush",
+  "title": "Atziri's Temple: rush to Atziri",
+  "summary": "Run maps with Temple Tablets for Vaal Beacon Crystals, then spend them in Atziri's Temple on a straight path to Atziri's Chamber. Atziri, the Red Queen drops the lineage support Atziri's Communion.",
+  "mechanics": [
+    "temple"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "mid",
+    "why": "Three Temple Tablets per map, each with the extra-Crystal suffix.",
+    "build_needs": "Clears the Temple's rooms up to Atziri's Chamber and kills Atziri, the Red Queen.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Tablet",
+        "https://poe2db.tw/us/Atziris_Temple"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": null,
+      "why": "No source we cite says how hard Atziri, the Red Queen is in 0.5.5.",
+      "claim": {
+        "v": "uv",
+        "src": [],
+        "note": "Unrated rather than guessed."
+      }
+    },
+    "complexity": {
+      "value": 4,
+      "why": "Maps feed Crystals into a second activity, the Temple, where rooms are placed and upgraded on the way to Atziri's Chamber.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Atziris_Temple",
+          "https://poe2db.tw/us/Vaal_Beacon"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "Atziri, the Red Queen drops Atziri's Communion, and the Temple is built from Crystals that Temple Tablets' Vaal Beacons pay out.",
+    "breaks_when": [
+      "Atziri loses the Communion drop",
+      "Vaal Beacon Crystal payouts or Temple room rules are changed",
+      "Atziri's Communion falls in price"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Atziris_Communion",
+        "https://poe2db.tw/us/Atziris_Temple",
+        "https://poe2db.tw/us/Vaal_Beacon"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "atziris-communion",
+        "name": "Atziri's Communion"
+      },
+      "role": "primary",
+      "why": "Lineage support gem dropped by Atziri, the Red Queen.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Atziris_Communion",
+          "https://www.youtube.com/watch?v=0oMSHBt_nr8",
+          "https://www.youtube.com/watch?v=yzhgCGTVfZ4"
+        ],
+        "note": "poe2db: dropped by Atziri, the Red Queen. Both temple creators farm Atziri for it (DEADRABB1T 2:19, Diztoh 17:37)."
+      }
+    },
+    {
+      "ref": {
+        "id": "architects-orb",
+        "name": "Architect's Orb"
+      },
+      "role": "secondary",
+      "why": "Vaal currency ('Modifies a Corrupted Equipment or Jewel item unpredictably or destroys it') that temple runs pay out.",
+      "claim": {
+        "v": "vs",
+        "src": [
+          "https://poe2db.tw/us/Architects_Orb",
+          "https://www.youtube.com/watch?v=0oMSHBt_nr8",
+          "https://www.youtube.com/watch?v=Xhmh1Tx9eAw"
+        ],
+        "note": "poe2db ties it to Incursion (Vaal) content. DEADRABB1T (22:51) counts Architect's Orbs from his runs; Path of Evening (Xhmh1Tx9eAw, 6:12) says level-3 rooms give such currency deterministically."
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "any",
+    "nodes": [],
+    "alt": null,
+    "claim": {
+      "v": "vp",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas"
+      ],
+      "note": "No Atlas Master node mentions Vaal Beacons, Crystals, the Temple or Atziri (poe2db node list, checked 2026-10-01), so no master is listed."
+    }
+  },
+  "atlas_passives": [],
+  "tablets": [
+    {
+      "type": "Temple Tablet",
+      "unique": null,
+      "count": 3,
+      "mods": [
+        {
+          "text": "(5–10)% chance to gain an additional Crystal from Vaal Beacons in Map",
+          "side": "suffix",
+          "trade_stat_id": "explicit.stat_1940774881",
+          "claim": {
+            "v": "vp",
+            "src": [
+              "https://poe2db.tw/us/Tablet",
+              "https://repoe-fork.github.io/poe2/",
+              "https://www.pathofexile.com/api/trade2/data/stats"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "waystone": {
+    "prefer": [],
+    "notes": "No source we cite ties a waystone total to Vaal Beacons; the tablets are what add them.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Vaal_Beacon"
+      ],
+      "note": "Our reading: Temple Tablets add the Vaal Beacons, not a waystone total."
+    }
+  },
+  "steps": [
+    "Slot up to three Temple Tablets with the extra-Crystal suffix so each map adds Vaal Beacons, and energise them for Crystals (6 per console, store up to 60).",
+    "Enter the Temple from its Atlas map, not the Vaal Ruins waypoint: both creators say the waypoint gives a lower-level temple.",
+    "Build a straight path to Atziri's Chamber, which unlocks by completing the Royal Access Chamber; keep the Architect's reward rooms on the outer edges.",
+    "Lock your level-3 production rooms (Alchemy Lab, Thaumaturge, Altar of Sacrifice, Smithy); a lock is not fully safe.",
+    "Kill Atziri, the Red Queen, for Atziri's Communion, about every second temple. Diztoh fights Atziri before the Architect, since killing the Architect destabilises the temple; DEADRABB1T kills both in one run."
+  ],
+  "risks": [
+    "Jiquani's Thesis is not an Atziri drop (it comes from a Core Destabiliser on a Soul Core), so it is not in this basket.",
+    "The route, the room locks and the Atziri-every-second-run rhythm are creator advice (DEADRABB1T 2026-06-05, 12:52, 15:37, 16:57–17:43, 21:15; Diztoh 2026-09-29, 0:21, 1:37, 6:31; Path of Evening 2026-07-02).",
+    "Rooms reach Tier 4 only after you unlock it on the Temple Atlas Tree (poe2db)."
+  ],
+  "measured": null
+}

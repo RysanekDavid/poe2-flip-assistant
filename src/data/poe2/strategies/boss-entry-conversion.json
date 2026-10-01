@@ -1,0 +1,182 @@
+{
+  "schema_version": 3,
+  "kind": "farm",
+  "id": "boss-entry-conversion",
+  "title": "Pinnacle entries: Breachstones and An Audience with the King",
+  "summary": "Turn Breach Splinters into Breachstones and watch Ritual windows for An Audience with the King, then sell the entries or run only the bosses: The King in the Mists drops Head of the King.",
+  "mechanics": [
+    "breach",
+    "ritual"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "league_start",
+    "why": "Ordinary Breach and Ritual maps; the entries come out of them, nothing is bought.",
+    "build_needs": "Selling needs no boss kill; running the entries means pinnacle fights (Xesht, The King in the Mists).",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Breach_Splinter",
+        "https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet"
+      ],
+      "note": "Our reading of the setup against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": 5,
+      "why": "Running the entries is a pinnacle fight: Xesht, We That Are One, and The King in the Mists.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet"
+        ],
+        "note": "Our reading of the cited facts against the build scale; selling the entries instead needs no kill."
+      }
+    },
+    "complexity": {
+      "value": 3,
+      "why": "Steps outside the map: splinters become a Revelatory Wombgift that grows into a Breachstone on the Genesis Tree, and the entries go into the Realmgate.",
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://poe2db.tw/us/Breach_Splinter",
+          "https://poe2db.tw/us/Wombgifts"
+        ],
+        "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "Breach Splinters stack into a Revelatory Wombgift that grows into a Breachstone, and An Audience with the King comes from Ritual: entries are made from map content, and the bosses they open drop uniques.",
+    "breaks_when": [
+      "The splinter → Wombgift → Breachstone path or Ritual's Audience offer is changed",
+      "Entry prices fall below what their bosses drop"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Breach_Splinter",
+        "https://poe2db.tw/us/Wombgifts",
+        "https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "yields": [
+    {
+      "ref": {
+        "id": "breachstone",
+        "name": "Breachstone"
+      },
+      "role": "primary",
+      "why": "Opens Xesht, We That Are One at the Realmgate. 300 Breach Splinters make a Revelatory Wombgift, which grows into a Breachstone on the Genesis Tree.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Breach_Splinter",
+          "https://poe2db.tw/us/Wombgifts"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "breach-splinter",
+        "name": "Breach Splinter"
+      },
+      "role": "secondary",
+      "why": "'Combine 300 Splinters to create a Revelatory Wombgift.' Splinters sell on their own if you do not grow them.",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Breach_Splinter"
+        ]
+      }
+    },
+    {
+      "ref": {
+        "id": "an-audience-with-the-king",
+        "name": "An Audience with the King"
+      },
+      "role": "lottery",
+      "why": "Opens The King in the Mists; very rarely offered in Ritual windows.",
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet"
+        ],
+        "note": "maxroll boss loot cheat sheet (Cptn Garbage, updated 2026-09-24)."
+      }
+    },
+    {
+      "ref": {
+        "id": "head-of-the-king",
+        "name": "Head of the King"
+      },
+      "role": "secondary",
+      "why": "Drops from The King in the Mists, so running your own Audience adds it to the boss's uniques.",
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet"
+        ],
+        "note": "We only say it drops; the drop rate is not checked against game data."
+      }
+    }
+  ],
+  "atlas_master": {
+    "master": "doryani",
+    "nodes": [
+      {
+        "name": "Head of the Snake",
+        "tier": 4,
+        "effect": "Pinnacle Bosses have 25% chance to drop an additional Unique item; Powerful Map Bosses have 5% chance when defeated to reveal a nearby Citadel; Pinnacle Bosses have a single Revive",
+        "claim": {
+          "v": "vp",
+          "src": [
+            "https://poe2db.tw/us/Masters_of_the_Atlas"
+          ]
+        }
+      }
+    ],
+    "alt": null,
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas"
+      ],
+      "note": "Our pick for running the entries yourself: an extra unique and a revive at pinnacle bosses. No master node targets Breach Splinters or Ritual windows."
+    }
+  },
+  "atlas_passives": [],
+  "tablets": [],
+  "waystone": {
+    "prefer": [],
+    "notes": "The bosses are entered at the Realmgate, not through a waystone; the Breach and Ritual maps that feed them need nothing specific.",
+    "claim": {
+      "v": "ss",
+      "src": [
+        "https://maxroll.gg/poe2/resources/boss-loot-table-cheat-sheet"
+      ],
+      "note": "maxroll: the entries go 'into the Realmgate at the start of your Atlas'."
+    }
+  },
+  "steps": [
+    "Farm Breaches: 300 Breach Splinters combine into a Revelatory Wombgift, which grows into a Breachstone on the Genesis Tree.",
+    "Watch Ritual windows: An Audience with the King is very rarely offered there.",
+    "Compare each entry's exchange price with what its boss drops (Farm › Bosses prices pinnacle kills).",
+    "Sell the entry, or place it in the Realmgate: a Breachstone opens Xesht, We That Are One; An Audience with the King opens The King in the Mists, which drops Head of the King."
+  ],
+  "risks": [
+    "Head of the King drops from The King in the Mists; we do not claim it always does.",
+    "The bosses' uniques have no exchange price here; the basket prices the entries only."
+  ],
+  "measured": null
+}
