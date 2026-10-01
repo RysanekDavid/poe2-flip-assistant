@@ -273,7 +273,7 @@ export const GUIDES_4: Record<string, CraftGuide> = {
         title: "Suffixes, reveal, finish",
         steps: [
           {
-            do: "Two open suffixes → Omen of Greater Exaltation + one Greater Exalted Orb (one open suffix → the orb alone).",
+            do: "Two open suffixes → Omen of Greater Exaltation + one Greater Exalted Orb (one open suffix → the orb alone; suffixes already full, e.g. back here after a strip → skip).",
             why: "The prefixes are full (the unrevealed mod counts), so the mods land on suffixes. Modifier-level 35 floor (KB §1).",
             mats: [MATS.omenGreaterExaltation, MATS.greaterExalted],
           },
@@ -283,6 +283,7 @@ export const GUIDES_4: Record<string, CraftGuide> = {
             pick: ["+1 to maximum number of Summoned Ballista Totems", "Attacks with this Weapon Penetrate (15–25)% Lightning Resistance (the other Ulaman prefix)"],
             onFail:
               "Penetration only → it still sells as a 350+ pdps crossbow; or strip it with Omen of Light + Orb of Annulment (the Annulment then removes only desecrated mods) and desecrate again.",
+            retryFrom: { phase: "Ulaman prefix", step: 1 },
           },
           {
             do: "Blacksmith's Whetstones to 20% quality, two Artificer's Orbs, Greater Iron Runes.",

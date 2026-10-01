@@ -65,6 +65,7 @@ export const GUIDES_5: Record<string, CraftGuide> = {
             do: "No minion damage among the options → Omen of Abyssal Echoes rerolls them once.",
             mats: [MATS.omenAbyssalEchoes],
             onFail: "Still missing → Omen of Light + Orb of Annulment strips only the desecrated mod; slam a fresh Collarbone.",
+            retryFrom: { phase: "Amanamu minion damage", step: 1 },
           },
         ],
       },

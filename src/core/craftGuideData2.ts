@@ -177,6 +177,7 @@ export const GUIDES_2: Record<string, CraftGuide> = {
             why: "At the Perfect Exalt's mod-level-50 floor with mana blocked, the T1 'gain' mod is ~1-in-3 to 1-in-4.",
             mats: [MATS.omenGreaterExaltation, MATS.perfectExalted],
             onFail: "Off-element/bad hit → Annulment (Sinistral/Dextral) to recover, then re-slam.",
+            retryFrom: { phase: "Perfect-exalt the finish", step: 1 },
           },
           {
             do: "Overwrite the crafted placeholder with a real bench craft, then list.",
