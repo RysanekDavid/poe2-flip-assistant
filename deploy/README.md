@@ -18,8 +18,8 @@ Next.js routes.
 
 ## 2. System setup (as root)
 ```bash
-# Node 20.18.1 or newer (NodeSource)
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+# Node 24 LTS (NodeSource). deploy.sh refuses anything older than 22.
+curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 apt-get install -y nodejs build-essential sqlite3
 
 # uv manages the locked Coach environment and installs Python 3.13 when missing.
@@ -187,12 +187,14 @@ must never be done or shown during a recorded demo.
 cd /opt/poe2flip
 git config --global --add safe.directory /opt/poe2flip
 git fetch origin master
-deploy_script=$(mktemp /root/poe2flip-deploy.XXXXXX)
-trap 'unlink "$deploy_script"' EXIT
-git show origin/master:deploy/deploy.sh > "$deploy_script"
-test -s "$deploy_script"
+# deploy.sh sources deploy-helpers.sh from its own directory, so extract both from the target ref.
+deploy_dir=$(mktemp -d /root/poe2flip-deploy.XXXXXX)
+trap 'rm -rf "$deploy_dir"' EXIT
+git show origin/master:deploy/deploy.sh > "$deploy_dir/deploy.sh"
+git show origin/master:deploy/deploy-helpers.sh > "$deploy_dir/deploy-helpers.sh"
+test -s "$deploy_dir/deploy.sh" && test -s "$deploy_dir/deploy-helpers.sh"
 expected_sha=$(git rev-parse origin/master)
-bash "$deploy_script" origin/master
+bash "$deploy_dir/deploy.sh" origin/master
 # Only move the server checkout after the release passed all health checks.
 git merge --ff-only origin/master
 ```
@@ -232,6 +234,91 @@ unit exposes only its twelve-character build identifier in authenticated `/api/h
 deploy smoke test requires it to equal `${expected_sha:0:12}` before succeeding. Because the file
 lives inside the versioned release, an automatic or manual symlink rollback restores the matching
 identifier as well.
+
+### Upgrading Node on an existing server
+
+Releases built with better-sqlite3 13 or newer contain only Node-API native modules
+(better-sqlite3, sharp, Next's SWC), so they keep running after a Node major upgrade without a
+rebuild. Older releases compiled better-sqlite3 for one Node ABI: better-sqlite3 11.10 aborted the
+process under Node 24.21 (observed in the full test suite), and 13 segfaults on Node 20. A server
+still on Node 20 therefore moves to Node 24 in a single cutover. Run steps 2 and 3 back to back: in
+between, any restart of a Node service (crash, reboot, the nightly backup timer) loads the old
+release's Node 20 module under Node 24 and fails. The Coach is Python and unaffected.
+
+**0. GitHub.** Merge the better-sqlite3 13 change (PR #110). On its Deploy run, `checks` must be
+green and `deploy` must fail with exactly the Node preflight message
+(`Node.js 22.0.0+ is required; found v20.…`). The preflight runs before any service is stopped, so
+the Node 20 release keeps serving. Merge nothing else to `master` until the cutover is done.
+
+**1. Prepare (server, as root).** Record the runtime, keep an offline copy of the installed Node 20
+package for the rollback, and confirm that every service is up:
+
+```bash
+node --version && command -v node
+apt-get install -y --download-only --reinstall nodejs && cp /var/cache/apt/archives/nodejs_20*.deb /root/ && ls -l /root/nodejs_20*.deb
+# Fallback if the package is not in the apt cache:
+#   apt-get install -y dpkg-repack && cd /root && dpkg-repack nodejs
+systemctl is-active poe2flip-web poe2flip-poller poe2flip-coach
+```
+
+**2. Upgrade Node. Don't restart anything.**
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+apt-get install -y nodejs
+/usr/bin/node --version   # v24.x
+command -v node           # /usr/bin/node, the binary the systemd units run
+```
+
+**3. Deploy immediately.** Preferred: in GitHub, open the failed Deploy run from step 0 and choose
+**Re-run failed jobs**. It runs the same `/root/ci-deploy.sh`, serialised by the
+`production-deploy` concurrency group. The manual equivalent:
+
+```bash
+cd /opt/poe2flip
+git fetch origin master
+deploy_dir=$(mktemp -d /root/poe2flip-deploy.XXXXXX)
+git show origin/master:deploy/deploy.sh > "$deploy_dir/deploy.sh"
+git show origin/master:deploy/deploy-helpers.sh > "$deploy_dir/deploy-helpers.sh"
+bash "$deploy_dir/deploy.sh" origin/master && git merge --ff-only origin/master
+rm -rf "$deploy_dir"
+```
+
+**4. Verify.** A login attempt for a user that doesn't exist reads the users table, so it proves
+that better-sqlite3 loads under the new Node. It must return `401`. A `500` means the release is
+broken.
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' -X POST -H 'Content-Type: application/json' \
+  -d '{"name":"node24-cutover-probe","password":"x"}' http://127.0.0.1:3000/api/auth/login   # 401
+systemctl is-active poe2flip-web poe2flip-poller poe2flip-coach
+journalctl -u poe2flip-poller -n 20 --no-pager
+# Optional: one backup through the timer's unit (tsx under the new Node).
+systemctl start poe2flip-backup.service && journalctl -u poe2flip-backup -n 20 --no-pager
+```
+
+**Rollback.** Roll back only if step 3 failed *after* its log printed
+`==> stopping services for migration and atomic switch`. Roll back even if `deploy.sh` reported a
+successful rollback: its readiness probe (`/login`) never opens the database, and the restored
+release's better-sqlite3 11 build cannot load under Node 24.
+
+```bash
+dpkg -i /root/nodejs_20*.deb
+# Fallback without the saved package:
+#   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+#   apt-get install -y --allow-downgrades "nodejs=$(apt-cache madison nodejs | awk '$3 ~ /^20\./ {print $3; exit}')"
+/usr/bin/node --version   # v20.x
+systemctl reset-failed 'poe2flip-*'
+systemctl restart poe2flip-web poe2flip-poller
+```
+
+Then repeat the step 4 login probe and expect `401`.
+
+If step 3 failed *before* that line, no service was stopped and the old release is still serving
+from its in-memory Node 20 processes. Fix the cause and redo step 3 promptly. Don't downgrade.
+
+To retry after a rollback, run `apt-get install -y nodejs` and then step 3. If you used the fallback,
+which switched the repository to Node 20, run the `setup_24.x` line from step 2 first.
 
 ## Automated deploy (GitHub Actions)
 

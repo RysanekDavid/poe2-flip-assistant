@@ -25,10 +25,17 @@ const validatorMatch = deploySources.match(
 assert.ok(validatorMatch?.[1], "timeout validator body must remain executable by the test");
 const timeoutValidator = validatorMatch[1];
 const nodeValidatorMatch = deploySources.match(
-  /validate_node_version\(\) \{\s+node -e '\r?\n([\s\S]*?)\r?\n' "\$\(node --version\)" "20\.18\.1"/,
+  /validate_node_version\(\) \{[\s\S]*?\r?\n\s+"\$runtime_node" -e '\r?\n([\s\S]*?)\r?\n' "\$\("\$runtime_node" --version\)" "22\.0\.0"/,
 );
 assert.ok(nodeValidatorMatch?.[1], "Node version validator must remain executable by the test");
 const nodeValidator = nodeValidatorMatch[1];
+// The preflight must check the node the units execute, not whichever node root's PATH finds first.
+assert.match(deployHelpers, /local runtime_node=\/usr\/bin\/node/);
+assert.match(deployHelpers, /if \[\[ "\$\(command -v node\)" != "\$runtime_node" \]\]; then/);
+for (const unit of ["web", "poller", "backup", "maintenance"]) {
+  assert.match(read(`deploy/poe2flip-${unit}.service`), /^Environment=PATH=\/usr\/bin:\/usr\/local\/bin$/m);
+}
+assert.match(webUnit, /^ExecStart=\/usr\/bin\/npm /m);
 
 assert.match(caddy, /\{\$SITE_ADDRESS\}/);
 assert.match(caddy, /reverse_proxy 127\.0\.0\.1:3000/);
@@ -118,9 +125,15 @@ assert.doesNotMatch(deploy, /PATCH_NOTES_ENABLED|patch_notes_enabled/, "contact 
 assert.ok(deploy.indexOf("DATA_SOURCE_CONTACT is required") < deploy.indexOf("trap rollback ERR"), "contact gate precedes the rollback trap");
 assert.match(deployReadme, /deployment preflight rejects a blank\s+contact/);
 assertAppOriginShapeGate();
-assert.equal(packageConfig.engines?.node, ">=20.18.1");
-assert.match(rootReadme, /Node\.js 20\.18\.1\+/);
-assert.match(deployReadme, /Node 20\.18\.1 or newer/);
+assert.equal(packageConfig.engines?.node, ">=22");
+assert.match(rootReadme, /Node\.js 22\+/);
+assert.match(deployReadme, /# Node 24 LTS \(NodeSource\)\. deploy\.sh refuses anything older than 22\./);
+assert.match(deployReadme, /deb\.nodesource\.com\/setup_24\.x/);
+// The Node-upgrade rollback recovery must name the real Node units (Coach is Python).
+assert.match(deployReadme, /dpkg -i \/root\/nodejs_20\*\.deb[\s\S]*systemctl restart poe2flip-web poe2flip-poller/);
+assert.match(deployReadme, /\/api\/auth\/login {3}# 401/, "cutover verification must open the database");
+assert.doesNotMatch(deployReadme, /expect the rollback to report failed services/);
+assert.match(deployReadme, /git show origin\/master:deploy\/deploy-helpers\.sh/);
 assert.doesNotMatch(
   coachEnv,
   /^(?:CHAT_MODEL|COACH_MODEL_TIMEOUT_SECONDS|COACH_TOTAL_TIMEOUT_SECONDS|COACH_MAX_TOOL_ROUNDS)=/m,
@@ -156,9 +169,10 @@ assert.equal(runTimeoutValidator(validRuntime), 0);
 assert.notEqual(runTimeoutValidator(`${validRuntime}\nCOACH_TOTAL_TIMEOUT_SECONDS=70`), 0);
 assert.notEqual(runTimeoutValidator(`${validRuntime}\nCHAT_MODEL=gpt-5.4`), 0);
 assert.notEqual(runTimeoutValidator(validRuntime.replace("gpt-5.4-mini", "gpt-5.4")), 0);
-assert.equal(runNodeValidator("v20.18.1"), 0);
+assert.notEqual(runNodeValidator("v20.18.1"), 0, "better-sqlite3 13 segfaults on Node 20");
 assert.equal(runNodeValidator("v22.0.0"), 0);
-assert.notEqual(runNodeValidator("v20.18.0"), 0);
+assert.equal(runNodeValidator("v24.0.0"), 0);
+assert.notEqual(runNodeValidator("v21.7.3"), 0);
 assert.notEqual(runNodeValidator("v18.20.8"), 0);
 
 function runTimeoutValidator(runtime: string): number | null {
@@ -204,7 +218,7 @@ function assertAppOriginShapeGate(): void {
 }
 
 function runNodeValidator(version: string): number | null {
-  return spawnSync(process.execPath, ["-e", nodeValidator, version, "20.18.1"], {
+  return spawnSync(process.execPath, ["-e", nodeValidator, version, "22.0.0"], {
     encoding: "utf8",
     stdio: "ignore",
   }).status;
