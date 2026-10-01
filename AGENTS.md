@@ -30,6 +30,7 @@ This is the working contract for coding agents and contributors. `README.md` cov
 | Coach tests / lint | `COACH_DISABLE_DOTENV=1 uv --directory services/coach run pytest` · `uv --directory services/coach run ruff check .` |
 | Game-data sync | `npm run sync:poe2-data` → `npm run verify:poe2-data` → `npm run build:craft-catalog` → `npm run build:regex-data` → `npm run sync:entities` |
 | Recipe audit | `npm run craft:audit-recipes`, then commit `src/data/poe2/craft/recipe-audit.json` |
+| CX price shadow vs ninja | `npm run cx:shadow-report -- [--league "…"] [--hours 168] [--json]` (same data: owner-only `GET /api/system/cx-shadow`) |
 | Patch notes | `npm run patch:sync` · `patch:review` · `patch:summarize` |
 
 CI (`.github/workflows/deploy.yml`) runs the following. Run every one of them before you call a

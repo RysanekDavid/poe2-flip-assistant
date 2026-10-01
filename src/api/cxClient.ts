@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { z } from "zod";
+import { config } from "../config/env";
 
 /**
  * GGG's PUBLIC Currency Exchange digest — no auth, no cookies, no Cloudflare wall.
@@ -12,6 +13,10 @@ import { z } from "zod";
  * (volume_traded[a] / volume_traded[b]), not order-book quotes.
  */
 const BASE = "https://web.poecdn.com/api/currency-exchange/poe2";
+
+/** Identify the tool honestly, like ninjaClient/scoutClient: tool name plus the operator contact. */
+const CX_CONTACT = config.dataSourceContact;
+export const CX_USER_AGENT = `poe2-coach/1.0${CX_CONTACT ? ` (contact: ${CX_CONTACT})` : ""}`;
 
 const HOUR_SECONDS = 3600;
 
@@ -152,7 +157,10 @@ function coversRecentHour(digest: CxDigest, newestHour: number): boolean {
 async function fetchHour(hour: number): Promise<CxDigest> {
   let raw: unknown;
   try {
-    const res = await axios.get(`${BASE}/${hour}`, { signal: AbortSignal.timeout(20_000) });
+    const res = await axios.get(`${BASE}/${hour}`, {
+      signal: AbortSignal.timeout(20_000),
+      headers: { "User-Agent": CX_USER_AGENT },
+    });
     raw = res.data;
   } catch (err) {
     const ax = err as AxiosError;
