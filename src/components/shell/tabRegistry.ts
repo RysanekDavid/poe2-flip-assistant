@@ -36,6 +36,7 @@ export const TABS: readonly TabMeta[] = [
       { id: "prices", label: "Prices", hint: "every exchange item: price, 7-day trend, volume" },
       { id: "price", label: "Price check", hint: "paste an item: what it is worth and how to sell it" },
       { id: "opportunities", label: "Opportunities", hint: "what to buy on the trade site now: snipes, near-misses, rising uniques" },
+      { id: "methods", label: "Methods", hint: "bench ladders, gambles and collections, with the live margin" },
     ],
   },
   {
@@ -55,6 +56,7 @@ export const TABS: readonly TabMeta[] = [
       { id: "recipes", label: "Recipes", hint: "recipes that pay at today's prices" },
       { id: "moves", label: "Paste item", hint: "paste an item: its next best crafting moves" },
       { id: "modpool", label: "Mod pool", hint: "every mod a base rolls, with tier gates and prices" },
+      { id: "rollsell", label: "Roll & sell", hint: "tablets and waystones worth rolling for one mod, and how to sell them" },
     ],
   },
   {

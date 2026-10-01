@@ -115,7 +115,8 @@ function testSubTabs(): void {
   const ids = (mode: "beginner" | "advanced", tab: (typeof TAB_IDS)[number], role: "owner" | "member" = "owner") => subTabsFor(mode, tab, role)?.map((t) => t.id) ?? null;
   assert.deepEqual(ids("beginner", "farm"), ["strategies", "bosses"], "a beginner sees both Farm tools");
   assert.deepEqual(ids("beginner", "trade"), ["prices", "price"], "a beginner's Trade: Prices + Price check");
-  assert.deepEqual(ids("advanced", "trade"), ["prices", "price", "opportunities"]);
+  assert.deepEqual(ids("advanced", "trade"), ["prices", "price", "opportunities", "methods"], "Methods is an advanced Trade tool");
+  assert.ok(ids("advanced", "craft")?.includes("rollsell"), "Roll & sell is a Craft tool");
   assert.equal(ids("advanced", "alerts"), null, "no tools, no bar");
   assert.equal(ids("advanced", "coach"), null);
   assert.deepEqual(ids("advanced", "farm"), ["strategies", "bosses"]);

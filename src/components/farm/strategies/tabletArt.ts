@@ -23,6 +23,11 @@ export const TABLET_UNIQUE_ART = {
 
 export type TabletArtFile = (typeof TABLET_BASE_ART)[keyof typeof TABLET_BASE_ART] | (typeof TABLET_UNIQUE_ART)[keyof typeof TABLET_UNIQUE_ART];
 
+/** True for a trade2 tablet base we hold art for (a rolled target may be a tablet or a waystone). */
+export function isTabletBase(name: string): boolean {
+  return Object.hasOwn(TABLET_BASE_ART, name);
+}
+
 // hasOwn keeps inherited keys ("constructor") from resolving to something that is not a file.
 function lookup(table: Readonly<Record<string, TabletArtFile>>, name: string): TabletArtFile | null {
   return Object.hasOwn(table, name) ? (table[name] ?? null) : null;
