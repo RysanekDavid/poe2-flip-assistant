@@ -23,6 +23,7 @@ const FLOOR_MATERIAL: Record<string, MaterialKey> = {
   "perfect-aug": "perfectAug",
   "greater-exalt": "greaterExalted",
   "perfect-exalt": "perfectExalted",
+  "perfect-regal": "perfectRegal",
 };
 
 interface Floor {

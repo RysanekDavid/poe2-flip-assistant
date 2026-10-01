@@ -131,7 +131,7 @@ export const RECIPES_9: CraftRecipe[] = [
       ilvlMin: 79,
       minAskEx: CHEAP_BASE_FLOOR_EX, // honest price ~1 ex — the default 0.05 floor would reject every real ask
       stats: [],
-      note: "Any RARE Dusk Ring at ilvl 79+ — it gets annulled down to one mod. ~1 exalt each in the video.",
+      note: "Any RARE Dusk Ring at ilvl 79+ — it gets annulled down to one mod.",
     },
     result: {
       label: "Rare Dusk Ring · four prefixes, flat attack damage",

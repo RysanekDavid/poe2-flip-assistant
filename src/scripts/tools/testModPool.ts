@@ -59,7 +59,8 @@ function testGatesVsKb(cat: CraftCatalog): void {
   const at81 = poolGates(cat, { ...RING, ilvl: 81 }).find((g) => g.family === "FireResistance")!;
   assert.equal(at81.topReachable?.level, 71, "ilvl 81 is capped at the level-71 fire res tier");
   const magic = poolGates(cat, { ...RING, rarity: "Magic" })[0]!;
-  assert.deepEqual(magic.floors.map((f) => f.floor), [44, 70], "Magic shows the augmentation floors");
+  // the augmentation floors, then the Perfect Regal (magic → rare, floor 50: KB §1 since 2026-10-01)
+  assert.deepEqual(magic.floors.map((f) => f.floor), [44, 70, 50], "Magic shows the augmentation and Perfect Regal floors");
   assert.throws(() => poolGates(cat, { ...RING, base: "Vaal Gauntlets" }), UnknownBaseError, "a base of another class is refused");
   const rings = poolClasses(cat).find((c) => c.itemClass === "Rings");
   assert.ok(rings?.bases.some((b) => b.name === "Ruby Ring"), "the picker offers Ruby Ring under Rings");

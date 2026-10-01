@@ -47,8 +47,9 @@ function testDurability(): void {
   ok("every wave-3 recipe has why_it_works + breaks_when", noDurability.length === 0, noDurability.join(","));
   const noBugRisk = ALLOY_CRAFTS.filter((k) => !provenanceFor(k).durability?.breaks_when.some((b) => /GGG treats Crystallisation-on-alloys as a bug/.test(b)));
   ok("the alloy crafts name the Crystallisation-on-alloys bug risk", noBugRisk.length === 0, noBugRisk.join(","));
-  const overGraded = ALLOY_CRAFTS.filter((k) => provenanceFor(k).durability?.claim.v !== "uv");
-  ok("alloy crafts rest on a demonstrated, undocumented interaction → graded unverified", overGraded.length === 0, overGraded.join(","));
+  const CREATOR_ONLY_MECHANIC = [...ALLOY_CRAFTS, "jewel_liquid_fear_4mod_budget", "boots_es_ms_spirit_fracture"];
+  const overGraded = CREATOR_ONLY_MECHANIC.filter((k) => provenanceFor(k).durability?.claim.v !== "uv");
+  ok("recipes resting on a creator-only mechanic are graded unverified", overGraded.length === 0, overGraded.join(","));
   const verified = WAVE3.filter((k) => ["vp", "vs"].includes(provenanceFor(k).durability?.claim.v ?? ""));
   ok("no wave-3 mechanic is graded verified/2+ sources (creator-sourced wave)", verified.length === 0, verified.join(","));
 }
@@ -58,8 +59,9 @@ function testCreatorNumbers(): void {
   ok("every wave-3 recipe carries timestamped creator claims", noClaims.length === 0, noClaims.join(","));
   // a creator's price is context, never the headline: no Div/exalt amounts in goal or market check
   const AMOUNT = /\d[\d,.]*\s*(div|divines?|ex|exalts?)\b/i;
-  const headline = WAVE3.filter((k) => AMOUNT.test(recipe(k).guide.goal) || AMOUNT.test(recipe(k).guide.marketCheck) || AMOUNT.test(recipe(k).guide.shopping));
-  ok("no creator price in a wave-3 goal, shopping list or market check", headline.length === 0, headline.join(","));
+  const headlineText = (r: CraftRecipe): string[] => [r.guide.goal, r.guide.marketCheck, r.guide.shopping, r.base.note, r.result.note, ...r.materials.map((m) => m.note ?? "")];
+  const headline = WAVE3.filter((k) => headlineText(recipe(k)).some((t) => AMOUNT.test(t)));
+  ok("no creator price in a wave-3 goal, shopping list, market check, leg or material note", headline.length === 0, headline.join(","));
   const unlinked = WAVE3.flatMap((k) => provenanceFor(k).sources).filter((s) => s.kind === "video" && (s.url !== null || !s.ref || !/title not fetched/.test(s.title)));
   ok("wave-3 videos are cited by their committed transcript until oEmbed is fetched", unlinked.length === 0, unlinked.map((s) => s.title).join(" | "));
 }
@@ -81,6 +83,11 @@ function testAlloysAndBadges(): void {
   ok("the Liquid Fear recipe is Emerald-only", jewel.base.type === "Emerald" && jewel.result.type === "Emerald");
   const rib = steps(recipe("boots_es_ms_spirit_fracture")).find((s) => uses(s, MATS.ancientRib.id));
   ok("a second desecration waits for the first one to be gone", /can't be desecrated again/.test(rib?.warning ?? ""));
+  // video flow (boots 6:42–8:46): a missed reveal is stripped first; the Ancient Rib round is conditional
+  const prefixes = recipe("boots_es_ms_spirit_fracture").guide.phases.find((p) => p.title === "Prefixes")?.steps ?? [];
+  ok("boots: a missed first reveal says how to strip it", /Omen of Light/.test(prefixes[0]?.onFail ?? ""));
+  ok("boots: the slams annul only NON-desecrated prefixes", /NON-desecrated/.test(prefixes[1]?.do ?? ""));
+  ok("boots: the Ancient Rib round is conditional on the first desecration being gone", /^Only when the first desecration was stripped/.test(prefixes[2]?.do ?? ""));
   const shieldRib = steps(recipe("shield_armour_fracture")).find((s) => uses(s, MATS.preservedRib.id));
   ok("the shield's 'omen of sanctification' misspeak is called out, no omen on the blocker", /misspeak/.test(shieldRib?.warning ?? "") && !uses(shieldRib!, MATS.omenSanctification.id));
 }

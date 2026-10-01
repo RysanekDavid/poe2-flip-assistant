@@ -90,6 +90,19 @@ const ok = (name: string, cond: boolean, extra = "") => {
   };
   const pdps = raw.filters?.equipment_filters?.filters?.pdps?.min;
   ok("buildTradeQuery emits equipment_filters.pdps.min = 250", pdps === 250, String(pdps));
+  // trade2 data/filters (read 2026-10-01): equipment "ar" = Armour; type "ilvl" is a min/max filter
+  type Filters = { filters?: { equipment_filters?: { filters?: { ar?: { min?: number } } }; type_filters?: { filters?: { ilvl?: { min?: number; max?: number } } } } };
+  const armour = buildTradeQuery({ type: "Tawhoan Tower Shield", arMin: 1900 }) as Filters;
+  ok("buildTradeQuery emits equipment_filters.ar.min = 1900", armour.filters?.equipment_filters?.filters?.ar?.min === 1900, JSON.stringify(armour.filters));
+  const exact80 = buildTradeQuery({ type: "Dueling Wand", ilvlMin: 80, ilvlMax: 80 }) as Filters;
+  const ilvl = exact80.filters?.type_filters?.filters?.ilvl;
+  ok("buildTradeQuery emits type_filters.ilvl {min 80, max 80}", ilvl?.min === 80 && ilvl.max === 80, JSON.stringify(ilvl));
+  const maxOnly = (buildTradeQuery({ ilvlMax: 80 }) as Filters).filters?.type_filters?.filters?.ilvl;
+  ok("an ilvl cap alone sends only max", maxOnly?.max === 80 && maxOnly.min === undefined, JSON.stringify(maxOnly));
+  const shield = RECIPES.find((r) => r.key === "shield_armour_fracture")!;
+  ok("legToQuery carries the shield result's arMin", legToQuery(shield.result, idx).query.arMin === 1900);
+  const lottery = RECIPES.find((r) => r.key === "wand_ilvl80_perfect_orb_lottery")!;
+  ok("legToQuery carries the lottery base's ilvl cap", legToQuery(lottery.base, idx).query.ilvlMax === 80);
 }
 
 

@@ -4796,13 +4796,25 @@
         },
         {
           "idx": 3,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
               "verdict": "ok",
               "detail": "every material exists in the 0.5.5b game data",
               "source": "entity catalog"
+            },
+            {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Regal cannot roll tiers below modifier level 50; base ilvl 82+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "unknown",
+              "detail": "Perfect Regal needs a magic item; the item's rarity after earlier steps is not simulated",
+              "source": "poe2-crafting-knowledge.md §1"
             }
           ]
         },
@@ -4880,7 +4892,7 @@
         },
         {
           "idx": 7,
-          "verdict": "ok",
+          "verdict": "unknown",
           "checks": [
             {
               "kind": "catalog",
@@ -4895,6 +4907,18 @@
               "source": "poe2-crafting-knowledge.md §5"
             },
             {
+              "kind": "floor",
+              "verdict": "ok",
+              "detail": "Perfect Exalted cannot roll tiers below modifier level 50; base ilvl 82+ clears it",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
+              "kind": "rarity",
+              "verdict": "unknown",
+              "detail": "Perfect Exalted needs a rare item; the item's rarity after earlier steps is not simulated",
+              "source": "poe2-crafting-knowledge.md §1"
+            },
+            {
               "kind": "pairing",
               "verdict": "ok",
               "detail": "Omen of Sinistral Necromancy pairing matches verified rule omen-sinistral-necromancy",
@@ -4904,6 +4928,12 @@
               "kind": "pairing",
               "verdict": "ok",
               "detail": "Omen of Abyssal Echoes pairing matches verified rule omen-abyssal-echoes",
+              "source": "poe2-crafting-knowledge.md §4"
+            },
+            {
+              "kind": "pairing",
+              "verdict": "ok",
+              "detail": "Omen of Sinistral Exaltation pairing matches verified rule omen-sinistral-exaltation",
               "source": "poe2-crafting-knowledge.md §4"
             }
           ]

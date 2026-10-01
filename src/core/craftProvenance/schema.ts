@@ -108,7 +108,7 @@ export const recipeProvenanceSchema = z
     extraEntityRefs: z.array(z.string().regex(ENTITY_ID_PATTERN)),
     /** Sections of docs/research/poe2-crafting-knowledge.md the recipe relies on ("§2", "§9b"). */
     kbRuleRefs: z.array(z.string().regex(/^§\d+b?$/)).min(1),
-    /** Required for every recipe added from 2026-10-01 on (test:craft-provenance); older ones may lack it. */
+    /** Required for every recipe after the 33 legacy ones (test:craft-provenance); only those may lack it. */
     durability: recipeDurabilitySchema.optional(),
     creatorClaims: z.array(creatorClaimSchema).optional(),
   })

@@ -231,6 +231,7 @@ const OTHERS: Record<string, RecipeProvenance> = {
     },
     creatorClaims: [
       said(DUSK, "0:56–1:13", "Sold one for 500 div; a normal run costs about 100 div."),
+      said(DUSK, "4:33–4:40", "Paid about one Exalted Orb per ilvl-79 Dusk Ring base."),
       said(DUSK, "7:36–8:45", "Missed 6 fractures in a row before 2 of 8 hit; his league record is 16 misses."),
       said(DUSK, "17:30–19:03", "Listed this ring at 599 div; perfect ones sell around 1k; fractured T1-flat Dusk bases ~150 div; this run cost 500+ div."),
     ],
@@ -249,9 +250,9 @@ const OTHERS: Record<string, RecipeProvenance> = {
         "A patch changes how many crafted mods Astrid's Creativity allows.",
       ],
       claim: {
-        v: "syn",
+        v: "uv",
         src: [`${POE2DB}Astrids_Creativity`, `${POE2DB}Mystic_Alloy`, `${POE2DB}Essence_of_Horror`],
-        note: "Item texts verified in the 2026-10-01 fact-check; skipping the Crystallisation omen on full prefixes is creator-only.",
+        note: "Item texts verified in the 2026-10-01 fact-check, but the two crafted suffixes rest on the creator's omen-less Mystic Alloy / Essence of Horror on full prefixes — creator-only.",
       },
     },
     creatorClaims: [

@@ -25,6 +25,7 @@ export const VERIFIED_FLOORS: readonly CurrencyFloor[] = [
   { id: "perfect-aug", label: "Perfect Augmentation", floor: 70, rarity: "Magic", source: `${KB} §1` },
   { id: "greater-exalt", label: "Greater Exalted", floor: 35, rarity: "Rare", source: `${KB} §1` },
   { id: "perfect-exalt", label: "Perfect Exalted", floor: 50, rarity: "Rare", source: `${KB} §1` },
+  { id: "perfect-regal", label: "Perfect Regal", floor: 50, rarity: "Magic", source: `${KB} §1` },
 ];
 
 export interface FloorCut {

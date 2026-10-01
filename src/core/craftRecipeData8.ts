@@ -150,7 +150,7 @@ export const RECIPES_8: CraftRecipe[] = [
       ilvlMin: 80,
       stats: [
         { text: "# to Level of all Spell Skills", min: 4, group: "fractured", tier: 1 },
-        { text: "#% increased Cast Speed", tier: 2 },
+        { text: "#% increased Cast Speed", group: "crafted", tier: 2 }, // the Transcendent Alloy's crafted line
       ],
       note: "Valued from instant-buyout comparables: rare wands with a fractured +4 to Level of all Spell Skills, with cast speed when enough are listed. A fractured alloy mod (the other two outcomes) also sells; the EV does not count it.",
     },
