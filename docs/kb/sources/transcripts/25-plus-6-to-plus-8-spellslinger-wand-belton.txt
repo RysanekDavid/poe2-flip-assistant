@@ -1,7 +1,7 @@
-[YouTube title not fetched] +6 to +8 spellslinger wand with two alloys — Belton
+Creator: Belton
 https://www.youtube.com/watch?v=j0FeuX0NZQI
 
-(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api. The video's own title was not fetched (the oEmbed request was blocked in that session); the creator name is from a search listing.)
+(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api; the creator name is from a search listing.)
 
 [0:00] All right. What's up, guys? Hello,
 [0:01] YouTube. Belton here. Um, coming with

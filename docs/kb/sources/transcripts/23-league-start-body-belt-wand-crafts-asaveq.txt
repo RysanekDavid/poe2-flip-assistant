@@ -1,7 +1,7 @@
-[YouTube title not fetched] League-start body armour, belt and wand crafts — ASaVeQ
+Creator: ASaVeQ
 https://www.youtube.com/watch?v=IgQX6EZtUyo
 
-(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api. The video's own title was not fetched (the oEmbed request was blocked in that session); the creator name is from a search listing.)
+(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api; the creator name is from a search listing.)
 
 [0:00] Hello, hello, and welcome back everyone.
 [0:02] Today I want to show you a couple of my

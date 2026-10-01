@@ -23,6 +23,11 @@ function SourceDate({ s }: { s: RecipeSource }) {
   );
 }
 
+/** An untitled video is just its creator: "date unknown" would be the only other text on the row. */
+function showsDate(s: RecipeSource): boolean {
+  return s.date !== null || s.title !== null;
+}
+
 function SourceRow({ s }: { s: RecipeSource }) {
   const who = s.creator ?? (s.kind === "in_game" ? "own test" : "unknown creator");
   return (
@@ -32,13 +37,14 @@ function SourceRow({ s }: { s: RecipeSource }) {
       </Tooltip>
       <span className="text-neutral-200">{who}</span>
       <SourceTitle s={s} />
-      <SourceDate s={s} />
+      {showsDate(s) && <SourceDate s={s} />}
     </li>
   );
 }
 
 /** A source without a link names its committed copy instead, so the reader can still check it. */
 function SourceTitle({ s }: { s: RecipeSource }) {
+  if (s.title === null) return null;
   if (s.url) {
     return (
       <a href={s.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-neutral-300 hover:text-amber-200">
@@ -68,7 +74,7 @@ function CreatorClaims({ claims, sources }: { claims: CreatorClaim[]; sources: R
           return (
             <li key={`${c.sourceRef}-${c.at}-${c.text}`} className="text-neutral-400">
               <span className="text-neutral-300">{s?.creator ?? "creator"}</span>
-              {s && (
+              {s && showsDate(s) && (
                 <>
                   {" · "}
                   <SourceDate s={s} />
@@ -96,7 +102,7 @@ export function SourcesList({ p }: { p: ProvenanceView }) {
       </div>
       <ul className="space-y-1">
         {p.sources.map((s) => (
-          <SourceRow key={`${s.title}-${s.url ?? s.ref ?? ""}`} s={s} />
+          <SourceRow key={`${s.title ?? s.creator ?? ""}-${s.url ?? s.ref ?? ""}`} s={s} />
         ))}
       </ul>
       <CreatorClaims claims={p.creatorClaims} sources={p.sources} />

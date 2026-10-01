@@ -62,8 +62,9 @@ function testCreatorNumbers(): void {
   const headlineText = (r: CraftRecipe): string[] => [r.guide.goal, r.guide.marketCheck, r.guide.shopping, r.base.note, r.result.note, ...r.materials.map((m) => m.note ?? "")];
   const headline = WAVE3.filter((k) => headlineText(recipe(k)).some((t) => AMOUNT.test(t)));
   ok("no creator price in a wave-3 goal, shopping list, market check, leg or material note", headline.length === 0, headline.join(","));
-  const unlinked = WAVE3.flatMap((k) => provenanceFor(k).sources).filter((s) => s.kind === "video" && (s.url !== null || !s.ref || !/title not fetched/.test(s.title)));
-  ok("wave-3 videos are cited by their committed transcript until oEmbed is fetched", unlinked.length === 0, unlinked.map((s) => s.title).join(" | "));
+  const videos = WAVE3.flatMap((k) => provenanceFor(k).sources).filter((s) => s.kind === "video");
+  const unlinked = videos.filter((s) => s.url !== null || s.title !== null || s.creator === null || !s.ref?.startsWith("docs/kb/sources/transcripts/"));
+  ok("wave-3 videos are untitled, unlinked and cited by creator + committed transcript", videos.length > 0 && unlinked.length === 0, unlinked.map((s) => s.ref).join(" | "));
 }
 
 function testAlloysAndBadges(): void {

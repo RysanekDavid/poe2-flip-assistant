@@ -39,7 +39,8 @@ export const patchVersionSchema = z.string().regex(PATCH_VERSION_RE, "expected a
 export const recipeSourceSchema = z
   .object({
     kind: z.enum(SOURCE_KINDS),
-    title: z.string().min(1),
+    /** The source's own title; null for a video whose title was never fetched — never a placeholder. */
+    title: z.string().min(1).nullable(),
     url: httpsUrl.nullable(),
     creator: z.string().min(1).nullable(),
     /** Publication date; null when it could not be confirmed (never guessed). */
@@ -57,6 +58,10 @@ export const recipeSourceSchema = z
     }
     if (s.tier !== "anecdote" && s.url === null && s.ref === null) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["tier"], message: `a ${s.tier} source needs a url or a repo ref` });
+    }
+    // An untitled row renders as its creator alone, so it must name one and keep a checkable copy.
+    if (s.title === null && (s.kind !== "video" || s.creator === null || s.ref === null)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["title"], message: "only a video with a creator and a repo ref may be untitled" });
     }
   });
 export type RecipeSource = z.infer<typeof recipeSourceSchema>;
