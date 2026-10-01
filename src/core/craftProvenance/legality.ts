@@ -188,12 +188,21 @@ function omenCheck(omen: CraftMaterial, present: ReadonlySet<string>, wild: Step
   return { kind: "pairing", verdict: "unknown", detail: `${omen.label} is not paired here as any rule expects (${candidates.map((r) => r.id).join(", ")})`, source: `${KB} §4` };
 }
 
+/**
+ * Whether a Crystallisation omen in this step meets a Perfect or Corrupted essence. The omen is
+ * consumed by the first essence it meets, Greater included (KB §4, single-source), and creators
+ * steer alloys with it too (KB §4, unverified). So only the FIRST essence or alloy in the step's
+ * materials counts: "Crystallisation + Horror essence, then an alloy" pairs, "+ alloy + Perfect
+ * essence" or "+ Greater essence + Perfect essence" does not.
+ */
+function crystallisationConsumer(mats: readonly CraftMaterial[]): boolean {
+  const first = mats.find((m) => m.group === "essence" || m.id.endsWith("-alloy"));
+  return first != null && first.group === "essence" && isPerfectOrCorruptedEssence(first.id);
+}
+
 function pairingChecks(mats: readonly CraftMaterial[], rules: readonly PairingRule[]): LegalityCheck[] {
   const present = new Set(mats.map((m) => PAIRING_ALIAS[m.id] ?? m.id));
-  const wild: StepWildcards = {
-    bone: mats.some((m) => m.group === "bone"),
-    rareEssence: mats.some((m) => m.group === "essence" && isPerfectOrCorruptedEssence(m.id)),
-  };
+  const wild: StepWildcards = { bone: mats.some((m) => m.group === "bone"), rareEssence: crystallisationConsumer(mats) };
   return mats.filter((m) => m.group === "omen").map((omen) => omenCheck(omen, present, wild, rules));
 }
 
