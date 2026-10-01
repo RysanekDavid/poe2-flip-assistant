@@ -1,6 +1,7 @@
 /* Seven-features storage (db/featureMigrations) against a FRESH temp DB: every table and column
  * lands through the real migration chain, a second full run changes nothing, a pre-board
- * notify_settings upgrades in place, FKs cascade, and CHECK constraints reject impossible rows.
+ * notify_settings upgrades in place, CHECK constraints reject impossible rows, and the retired
+ * farm_user_speed table is never created and is dropped from a DB that still has it.
  * Also the new config keys: defaults and loud failure on a bad flag. No network.
  * Run: npm run test:features-schema (runWithTestEnv.ts features-schema sets DB_PATH). */
 import { rmSync } from "node:fs";
@@ -8,6 +9,7 @@ import Database from "better-sqlite3";
 import { config, flag } from "../config/env";
 import { getDb, runMigrations } from "../db/database";
 import { ensureFeatureTables, SNIPE_OUTCOME_CHECK_COLUMNS } from "../db/featureMigrations";
+import { dropRetiredFarmSpeed } from "../db/retiredMigrations";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
   console.error(`refusing to run against ${config.dbPath} — point DB_PATH at a temp file.`);
@@ -22,7 +24,7 @@ const ok = (name: string, cond: boolean, extra = ""): void => {
   if (!cond) fail++;
 };
 
-const KEYED_TABLES = ["farm_user_speed", "mod_value_cache", "snipe_outcomes", "cx_start_days", "cx_start_ingest", "cx_start_meta"];
+const KEYED_TABLES = ["mod_value_cache", "snipe_outcomes", "cx_start_days", "cx_start_ingest", "cx_start_meta"];
 
 const db = getDb();
 
@@ -33,6 +35,7 @@ testLegacySnipeOutcomesUpgrade();
 testMissingNotifySettingsFailsLoudly();
 testChecks();
 testBoardColumns();
+testRetiredFarmSpeedDropped();
 testConfig();
 
 if (fail > 0) {
@@ -70,8 +73,7 @@ function testTablesCreated(): void {
   ok("snipe_outcomes alerted_at index created", index != null);
   const plan = db.prepare("EXPLAIN QUERY PLAN SELECT listing_id FROM snipe_outcomes WHERE alerted_at <= ?").all(0) as Array<{ detail: string }>;
   ok("due-row scan uses the alerted_at index", plan.some((p) => /idx_snipe_outcomes_alerted/.test(p.detail)), JSON.stringify(plan));
-  const fks = db.prepare("PRAGMA foreign_key_list(farm_user_speed)").all() as Array<{ table: string; on_delete: string }>;
-  ok("farm_user_speed → users ON DELETE CASCADE", fks.length === 1 && fks[0]?.table === "users" && fks[0]?.on_delete === "CASCADE");
+  ok("fresh DB has no retired farm_user_speed table", !hasFarmSpeed(db));
 }
 
 function testDoubleRunIdempotent(): void {
@@ -156,15 +158,6 @@ function count(fromWhere: string): number {
 
 function testChecks(): void {
   const CHECK = /CHECK constraint failed/i;
-  const farm = (kind: string, minutes: number, div: number | null) => () =>
-    db
-      .prepare("INSERT INTO farm_user_speed (user_id, kind, key, minutes_per_run, div_per_run, updated_at) VALUES (1, ?, 'k', ?, ?, 1)")
-      .run(kind, minutes, div);
-  ok("farm kind outside boss|mechanic rejected", throws(farm("loot", 4, null), CHECK));
-  ok("farm minutes_per_run = 0 rejected", throws(farm("mechanic", 0, null), CHECK));
-  ok("farm negative div_per_run rejected", throws(farm("mechanic", 4, -1), CHECK));
-  ok("farm div_per_run on a boss rejected", throws(farm("boss", 4, 2), CHECK));
-
   const mod = (value: number | null) => () =>
     db
       .prepare(
@@ -241,4 +234,36 @@ function testConfig(): void {
   ok("flag() is case-insensitive", flag("TEST_FEATURE_FLAG", true) === false);
   delete process.env.TEST_FEATURE_FLAG;
   ok("flag() unset → fallback", flag("TEST_FEATURE_FLAG", true) === true);
+}
+
+function hasFarmSpeed(conn: Database.Database): boolean {
+  return conn.prepare("SELECT 1 FROM sqlite_master WHERE name = 'farm_user_speed'").get() != null;
+}
+
+/** A production DB from before the drop: the table exactly as it last shipped, holding a user's row. */
+function testRetiredFarmSpeedDropped(): void {
+  db.exec(`
+    INSERT OR IGNORE INTO users (id, name, password_hash, api_key) VALUES (1, 'owner', 'x', 'k');
+    CREATE TABLE farm_user_speed (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL CHECK (kind IN ('boss', 'mechanic')),
+      key TEXT NOT NULL,
+      minutes_per_run REAL NOT NULL CHECK (minutes_per_run > 0),
+      div_per_run REAL CHECK (div_per_run IS NULL OR (div_per_run >= 0 AND kind = 'mechanic')),
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, kind, key)
+    ) WITHOUT ROWID;
+    INSERT INTO farm_user_speed (user_id, kind, key, minutes_per_run, div_per_run, updated_at) VALUES (1, 'mechanic', 'breach', 4, 2, 1);
+  `);
+  ok("legacy farm_user_speed seeded", hasFarmSpeed(db));
+  let error = "";
+  try {
+    runMigrations(db);
+  } catch (e) {
+    error = e instanceof Error ? e.message : String(e);
+  }
+  ok("migration chain runs on a DB that still has farm_user_speed", error === "", error);
+  ok("migration chain drops farm_user_speed", !hasFarmSpeed(db));
+  ok("the user row survives the drop", db.prepare("SELECT 1 FROM users WHERE id = 1").get() != null);
+  ok("drop is a no-op once the table is gone", !dropRetiredFarmSpeed(db) && !hasFarmSpeed(db));
 }

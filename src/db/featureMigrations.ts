@@ -1,8 +1,8 @@
 import type Database from "better-sqlite3";
 
 /**
- * Storage for the seven-features plan (farm speed, mod-pool cache, snipe outcomes, league-start
- * curves, Discord live board). Kept out of schema.sql (past the file-size cap) like cxMigrations;
+ * Storage for the seven-features plan (mod-pool cache, snipe outcomes, league-start curves,
+ * Discord live board). Kept out of schema.sql (past the file-size cap) like cxMigrations;
  * every statement is IF NOT EXISTS and the column adds check PRAGMA first, so this is idempotent
  * and safe for the web and poller processes to run on every boot.
  *
@@ -13,7 +13,6 @@ import type Database from "better-sqlite3";
  * WITHOUT ROWID wherever rows are only ever addressed by their composite key.
  */
 export function ensureFeatureTables(conn: Database.Database): void {
-  conn.exec(USER_TABLES_SQL);
   conn.exec(MARKET_TABLES_SQL);
   // a DB whose snipe_outcomes predates the checker gets the checker's columns added in place
   addMissingColumns(conn, "snipe_outcomes", SNIPE_OUTCOME_CHECK_COLUMNS);
@@ -41,19 +40,6 @@ export const SNIPE_OUTCOME_CHECK_COLUMNS: ReadonlyArray<readonly [string, string
 ];
 
 const checkColumnsSql = SNIPE_OUTCOME_CHECK_COLUMNS.map(([name, def]) => `${name} ${def},`).join("\n    ");
-
-const USER_TABLES_SQL = `
-  -- Retired 2026-10-01 (manual pace input removed; unread), kept pending the owner's decision on deleting its rows.
-  CREATE TABLE IF NOT EXISTS farm_user_speed (
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    kind TEXT NOT NULL CHECK (kind IN ('boss', 'mechanic')),
-    key TEXT NOT NULL,
-    minutes_per_run REAL NOT NULL CHECK (minutes_per_run > 0),
-    div_per_run REAL CHECK (div_per_run IS NULL OR (div_per_run >= 0 AND kind = 'mechanic')),
-    updated_at INTEGER NOT NULL,
-    PRIMARY KEY (user_id, kind, key)
-  ) WITHOUT ROWID;
-`;
 
 const MARKET_TABLES_SQL = `
   -- Live "items carrying this mod" valuations, shared by every user (market data, not private).

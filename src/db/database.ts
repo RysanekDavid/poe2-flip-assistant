@@ -10,7 +10,7 @@ import { ensureCxTables } from "./cxMigrations";
 import { CX_EDGE_DETAIL_COLUMNS } from "./cxEdgeDetail";
 import { applicationSchemaSql } from "./schemaFiles";
 import { ensureNotifySchema } from "./notifyMigrations";
-import { dropRetiredHunts } from "./retiredMigrations";
+import { dropRetiredFarmSpeed, dropRetiredHunts } from "./retiredMigrations";
 import { ensureCredColumns } from "./credMigrations";
 import { ensureWealthColumns } from "./wealthMigrations";
 import { ensureFeatureTables } from "./featureMigrations";
@@ -76,6 +76,7 @@ export function runMigrations(conn: Database.Database): void {
     ["popup", "INTEGER"],
   ]);
   dropRetiredHunts(conn); // after ensureNotifySchema: it also clears the retired types' notify_prefs
+  dropRetiredFarmSpeed(conn);
   ensureLearnTables(conn); // references users(id)
 
   // user_id-dependent indexes — created here, post-migration, so the column always exists.
