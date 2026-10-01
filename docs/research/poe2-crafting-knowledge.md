@@ -15,6 +15,11 @@ and poe2db. The rest of the file is unchanged.
 item's mods moved from [unverified] to verified-secondary (Maxroll + the Regal Orb item text); the
 essence-vs-existing-family case stays open. The rest of the file is unchanged.
 
+**Corrections 2026-10-01 (partial):** §6 "Still UNVERIFIED" (a) — Contempt's removal rule now
+quotes GGG's 0.5.0 Liquid Emotions note and poe2db, states the likeliest model as unverified, and
+restates the creator odds as estimates (S4 unsure between 33/66 and 50/50); an untested 3-mod
+Contempt idea is logged there. The rest of the file is unchanged.
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -192,8 +197,19 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   The `jewel_desecrated_liquid` deletion (2026-07-15) rested on the refuted claim; the paths now
   live as `jewel_liquid_5mod_budget` / `jewel_fractured_5mod`.
 - **Still UNVERIFIED** (no primary source, catalog can't settle it): (a) whether the removed mod
-  is chosen first and the crafted mod then takes ITS side (creators report the "+1 Prefix"
-  variant always costs a suffix — 50/50, or ~1-in-3 with a fractured suffix [S4]); (b) that the
+  is chosen first and the crafted mod then takes ITS side, or the other way round — Contempt's
+  removal rule. GGG's 0.5.0 notes only say "Liquid Emotions can now be used to craft additional mods on
+  Jewels. These work similarly to greater essences, each having a set of specific mods that will
+  replace a random existing mod on the item." [verified-primary — [pathofexile.com/forum/view-thread/3932540](https://www.pathofexile.com/forum/view-thread/3932540)
+  (0.5.0 patch notes) and [poe2db Potent_Liquid_Contempt](https://poe2db.tw/us/Potent_Liquid_Contempt),
+  accessed 2026-10-01] — neither says WHICH mod goes. The most likely model [unverified]: the
+  crafted mod is picked ~50/50, then the removed mod comes from that mod's side. Either order,
+  the crafted mod and the removed mod share a side, so the "+1 Prefix" outcome (suffix slot)
+  always costs a loose suffix — the only loose suffix on the fractured path. This matches what creators saw [S4, S20]; their odds are estimates (~50/50; S4
+  is unsure between 33/66 and 50/50). No 0.5.x patch note changed Liquid Emotion removal
+  (0.5.0–0.5.5d, accessed 2026-10-01). UNTESTED idea, not a recipe step: slamming Contempt at 3
+  mods (fractured suffix + 2 prefixes, no loose suffix) might make a miss cheaper, but what
+  happens when "+1 Prefix" is chosen with no removable suffix is unknown; (b) that the
   over-cap 3rd suffix survives removing the "+1 Suffix" mod (creator-demonstrated only — same stop
   condition as docs/kb/desecration-abyss.md "Time-Lost limitation"); (c) the crafted-mod limit:
   both liquids write a [Crafted] mod and §7 allows ONE per item, so Ferocity presumably can't be

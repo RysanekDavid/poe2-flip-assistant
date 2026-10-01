@@ -11,7 +11,7 @@ import type { CraftGuide } from "./craftRecipes";
 
 // Each of these is shown to the player as a visible badge — creator-observed, not primary-sourced.
 const CONTEMPT_SIDE =
-  "Which mod Contempt removes is creator-observed only: the '+1 Prefix' result has always cost a suffix [S4, S20]. RePoE/poe2db confirm the two crafted mods and their slots, not the removal rule.";
+  "Which mod Contempt removes is not primary-sourced. GGG's 0.5.0 notes only say Liquid Emotions 'work similarly to greater essences … replace a random existing mod'; the likeliest model is the crafted mod picked ~50/50, then the removal from its side, so the '+1 Prefix' outcome always costs a loose suffix — what creators saw every time [S4, S20]. No 0.5.x patch changed it. RePoE/poe2db confirm the two crafted mods and their slots, not the removal rule.";
 const OVER_CAP =
   "That the 3rd (over-cap) suffix survives pulling the '+1 Suffix Modifier allowed' mod is creator-demonstrated [S4, S20], not primary-sourced — docs/kb/desecration-abyss.md keeps it as an explicit stop condition.";
 const FEROCITY_SIDE =
@@ -155,7 +155,7 @@ export const GUIDES_3: Record<string, CraftGuide> = {
           },
           {
             do: "Two Exalted Orbs (prefixes don't matter yet).",
-            why: "Contempt then removes one of 3 loose mods — with 2 junk prefixes most removals hit a prefix [S4].",
+            why: "Fills both prefixes so Contempt has junk to eat. Odds of the good '+1 Suffix' outcome are a creator estimate (~50/50; S4 himself is unsure between 33/66 and 50/50) [S4].",
             mats: [MATS.exalted],
             check: "4 mods: 2 suffixes (1 fractured) + 2 prefixes.",
           },
@@ -169,7 +169,7 @@ export const GUIDES_3: Record<string, CraftGuide> = {
             why: "Want '+1 Suffix Modifier allowed' (prefix slot). ~50/50, or ~1-in-3 to fail with a fractured suffix [S4].",
             mats: [MATS.potentLiquidContempt],
             onFail:
-              "'+1 Prefix Modifier allowed' (sits in a suffix slot) took Crit Chance → Orb of Annulment ×2 (the fracture can't be hit) leaves fractured + 1 loose mod = the 'Second caster suffix' start; Chaos-spam to Crit Chance for Spells, 2 Exalts, Contempt again.",
+              "'+1 Prefix Modifier allowed' (it sits in a suffix slot) took Crit Chance → back to 'Second caster suffix': its two Annulments can't touch the fracture (the crafted mod is removable like any other), then Chaos to Crit Chance, 2 Exalts, Contempt again.",
             retryFrom: { phase: "Second caster suffix", step: 1 },
             check: "Fractured + Crit Chance suffixes, '+1 Suffix Modifier allowed' + 1 prefix.",
             unverified: CONTEMPT_SIDE,
@@ -179,13 +179,10 @@ export const GUIDES_3: Record<string, CraftGuide> = {
             why: "Prefixes are full (crafted mod + 1), so the desecration can only land on the suffix side.",
             mats: [MATS.preservedCranium, MATS.omenAbyssalEchoes],
             pick: SPELL_SUFFIX_PICKS,
-            onFail: "Bad options → Omen of Light + Orb of Annulment strips only the desecrated mod; slam a fresh cranium. Worth it on a fractured base [S20].",
+            // The strip used to be its own step, which "done → next" walked into after a GOOD reveal too.
+            onFail:
+              "Bad options → Omen of Light + Orb of Annulment strips only the desecrated mod (one desecrated mod per item, so it must go before the next cranium); then slam a fresh cranium. Worth it on a fractured base [S20].",
             retryFrom: { phase: "Contempt + desecrated suffix", step: 2 },
-          },
-          {
-            do: "Omen of Light + Orb of Annulment (only on a bad reveal).",
-            why: "Removes only the desecrated mod — one desecrated mod per item, so it must go before the next cranium.",
-            mats: [MATS.omenLight, MATS.annul],
           },
         ],
       },

@@ -7,7 +7,7 @@ import { PNL_CHANGED_EVENT } from "../CraftPnlPanel";
 import { ShopScreen, type CostField, type ManualCosts } from "./SessionShop";
 import { StepScreen, type Screen } from "./SessionStep";
 import type { CraftGuide } from "../../core/craftRecipes";
-import { resolveRetry, type RetryTarget } from "../../core/craftRetry";
+import { flattenGuide, resolveRetry, type RetryTarget } from "../../core/craftRetry";
 
 /**
  * Interactive craft session — the guide as a live companion you follow WHILE crafting, not a
@@ -175,17 +175,19 @@ async function saveOutcome(attemptId: number, brick: boolean, soldDiv: number | 
   }
 }
 
-/** A retryFrom that doesn't resolve is a data bug testCraftGuides already blocks — if one ever
- *  ships anyway, break loudly rather than silently drop the way back the guide promises. */
+/** Broken retryFrom refs already stop the server at RECIPES import (and testCraftRetry in CI), so
+ *  one can't reach a guide served here; if it somehow does, log it and keep the craft usable
+ *  without the button rather than crash the player's session mid-craft. */
 function retryTargetFor(guide: CraftGuide, idx: number): RetryTarget | null {
   const resolved = resolveRetry(guide, idx);
   if (!resolved) return null;
-  if (!resolved.ok) throw new Error(`[craft-session] ${resolved.reason}`);
-  return resolved.target;
+  if (resolved.ok) return resolved.target;
+  console.error(`[craft-session] ${resolved.reason}`);
+  return null;
 }
 
 export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number | null; icons: Record<string, string> }) {
-  const steps = useMemo(() => r.guide.phases.flatMap((p) => p.steps.map((step) => ({ phase: p.title, step }))), [r.guide]);
+  const steps = useMemo(() => flattenGuide(r.guide), [r.guide]);
   const s = useCraftSession(r);
   const matInfo: MatInfoFn = (id) => {
     const line = r.report?.materials.find((m) => m.id === id);

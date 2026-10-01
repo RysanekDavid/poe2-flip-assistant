@@ -101,14 +101,15 @@ function FailPanel({ onFail, idx, retry, next, prev, go }: FailPanelProps) {
             onClick={() => go({ kind: "step", idx: retry.idx, failed: false })}
             className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-600"
           >
-            {retry.idx === idx ? `↺ redo this step (${retry.label})` : `↺ back to ${retry.label}`}
+            <span aria-hidden="true">↺ </span>
+            {retry.idx === idx ? `redo this step (${retry.label})` : `back to ${retry.label}`}
           </button>
         )}
         <button onClick={() => go(prev)} className="rounded border border-neutral-600 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-800">
-          ← back
+          <span aria-hidden="true">← </span>back
         </button>
         <button onClick={() => go(next)} className="rounded border border-neutral-600 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-800">
-          continue anyway →
+          continue anyway<span aria-hidden="true"> →</span>
         </button>
         <button onClick={() => go({ kind: "outcome", brick: true })} className="rounded border border-red-900/60 px-2 py-1 text-xs text-red-300 hover:bg-red-950/40">
           abort attempt (brick)

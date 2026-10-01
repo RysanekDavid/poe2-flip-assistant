@@ -33,7 +33,8 @@ function refLabel(ref: RetryRef): string {
 /**
  * Where the step at `fromIdx` sends the player after a failure. Null = the step has no retry
  * target. A reference that names a missing phase/step, or a step AFTER the failing one, is a data
- * bug — reported, never guessed around (testCraftGuides fails on it).
+ * bug — reported, never guessed around (assertGuideRetryRefs throws at RECIPES import;
+ * testCraftRetry fails on it).
  */
 export function resolveRetry(guide: CraftGuide, fromIdx: number): RetryResolution | null {
   const flat = flattenGuide(guide);
@@ -49,4 +50,18 @@ export function resolveRetry(guide: CraftGuide, fromIdx: number): RetryResolutio
   if (idx > fromIdx) return { ok: false, reason: `retryFrom ${refLabel(ref)} is after the failing step` };
   const label = target.phaseSteps > 1 ? `${target.phase} · step ${target.stepInPhase}` : target.phase;
   return { ok: true, target: { idx, label } };
+}
+
+/**
+ * Throws on the first retryFrom in `guide` that doesn't resolve, or on a repeated phase title
+ * (a retry names its phase by title, so a duplicate would silently bind to the first one).
+ */
+export function assertGuideRetryRefs(key: string, guide: CraftGuide): void {
+  const titles = guide.phases.map((p) => p.title);
+  const dupe = titles.find((t, i) => titles.indexOf(t) !== i);
+  if (dupe !== undefined) throw new Error(`craft recipe ${key}: phase title "${dupe}" appears twice`);
+  flattenGuide(guide).forEach((_, idx) => {
+    const res = resolveRetry(guide, idx);
+    if (res && !res.ok) throw new Error(`craft recipe ${key}, step ${idx}: ${res.reason}`);
+  });
 }

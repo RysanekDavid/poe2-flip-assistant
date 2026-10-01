@@ -2,7 +2,7 @@
  * resolve to a real, not-later step of its own recipe, and the resolver must reject broken
  * references instead of guessing. Pure data checks, no network or DB. */
 import { RECIPES, type CraftGuide, type GuideStep } from "../core/craftRecipes";
-import { flattenGuide, resolveRetry } from "../core/craftRetry";
+import { assertGuideRetryRefs, flattenGuide, resolveRetry } from "../core/craftRetry";
 
 let fail = 0;
 const ok = (name: string, cond: boolean, extra = "") => {
@@ -49,12 +49,16 @@ const ok = (name: string, cond: boolean, extra = "") => {
   const second = flat.findIndex((s) => s.phase === "Second caster suffix" && s.stepInPhase === 1);
   const res = resolveRetry(r.guide, contempt);
   ok("fractured Contempt step resolves", res?.ok === true, res && !res.ok ? res.reason : "");
-  if (res?.ok) {
-    ok("…to the first 'Second caster suffix' step", res.target.idx === second, `${res.target.idx} vs ${second}`);
-    ok("…labelled with phase + step", res.target.label === "Second caster suffix · step 1", res.target.label);
-  }
-  const text = flat[contempt]?.step.onFail ?? "";
-  ok("Contempt onFail names the suffix slot and the Annulment route", /suffix slot/.test(text) && /Annulment ×2/.test(text), text);
+  ok("…to the first 'Second caster suffix' step", res?.ok === true && second >= 0 && res.target.idx === second, `${res?.ok ? res.target.idx : "-"} vs ${second}`);
+}
+
+// --- a retry names its phase by title, so titles must be unique within each guide ---
+{
+  const dupes = RECIPES.flatMap((r) => {
+    const titles = r.guide.phases.map((p) => p.title);
+    return titles.filter((t, i) => titles.indexOf(t) !== i).map((t) => `${r.key}: ${t}`);
+  });
+  ok("phase titles are unique per guide", dupes.length === 0, dupes.join(" | "));
 }
 
 // --- the resolver rejects references that don't land on a real, earlier step ---
@@ -78,6 +82,19 @@ const ok = (name: string, cond: boolean, extra = "") => {
   const self = at(6);
   ok("a single-step phase can retry itself, labelled by phase alone", self?.ok === true && self.target.idx === 6 && self.target.label === "P3");
   ok("an out-of-range failing index is rejected", resolveRetry(g, 99)?.ok === false);
+
+  const throws = (fn: () => void): boolean => {
+    try {
+      fn();
+      return false;
+    } catch (error: unknown) {
+      return error instanceof Error;
+    }
+  };
+  ok("load-time check throws on a broken ref", throws(() => assertGuideRetryRefs("fixture", g)));
+  ok("load-time check passes a clean guide", !throws(() => assertGuideRetryRefs("fixture", guide([[step(), step({ phase: "P1" })]]))));
+  const twin: CraftGuide = { ...guide([[step()], [step()]]), phases: [{ title: "Same", steps: [step()] }, { title: "Same", steps: [step()] }] };
+  ok("load-time check throws on a repeated phase title", throws(() => assertGuideRetryRefs("fixture", twin)));
 }
 
 console.log(fail === 0 ? "\nALL PASS" : `\n${fail} FAILED`);

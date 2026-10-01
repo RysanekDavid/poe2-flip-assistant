@@ -60,7 +60,8 @@ export interface RecipeMaterialLine {
 /**
  * A step to return to after a failure: the phase by its exact title and a 1-based step inside it
  * (default 1). It may name the failing step itself ("slam again"). craftRetry.ts resolves it to
- * the session's flat step index; testCraftGuides fails on one that doesn't resolve.
+ * the session's flat step index; one that doesn't resolve throws when RECIPES loads below (and
+ * testCraftRetry fails on it).
  */
 export interface RetryRef {
   phase: string;
@@ -206,6 +207,7 @@ import { RECIPES_4 } from "./craftRecipeData4";
 import { RECIPES_5 } from "./craftRecipeData5";
 import { RECIPES_6 } from "./craftRecipeData6";
 import { RECIPES_7 } from "./craftRecipeData7";
+import { assertGuideRetryRefs } from "./craftRetry";
 
 /** All curated recipes — the original batch (craftRecipeData), the creator-video batch
  *  (craftRecipeData2), the Potent-liquid jewels (craftRecipeData3), the 2026-09-30 expansion
@@ -213,3 +215,6 @@ import { RECIPES_7 } from "./craftRecipeData7";
  *  (craftRecipeData6 armour/weapons, craftRecipeData7 jewellery), split across data files to respect
  *  the 500-line cap. */
 export const RECIPES: CraftRecipe[] = [...CORE_RECIPES, ...RECIPES_2, ...RECIPES_3, ...RECIPES_4, ...RECIPES_5, ...RECIPES_6, ...RECIPES_7];
+
+// A broken retry jump is a data bug: stop server boot / CI here, not a player's craft mid-session.
+for (const r of RECIPES) assertGuideRetryRefs(r.key, r.guide);
