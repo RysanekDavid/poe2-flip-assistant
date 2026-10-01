@@ -53,7 +53,8 @@ class Settings(BaseSettings):
         default=Path("src/data/poe2/entities.json.gz"),
         validation_alias="POE2_ENTITY_CATALOG",
     )
-    # Curated farm strategies (the web app's Farm › Strategies files), read by find_farm_strategies.
+    # Curated strategies of every kind (Farm › Strategies, Craft › Roll & sell, Trade › Methods),
+    # read by find_strategies.
     configured_strategies_dir: Path = Field(
         default=Path("src/data/poe2/strategies"),
         validation_alias="POE2_STRATEGIES_DIR",

@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "anomaly-lineage",
   "title": "Anomaly maps: Jade Isles lineage supports",
   "summary": "Reveal the Jade Isles anomaly and farm its boss for Karui lineage supports; Memories of the Karui adds a 15% extra-lineage chance, and Forest Mastery adds lineage chance on runs with a Forest-roll Mastered Domain. Owner's routine: two unique Irradiated tablets plus an Overseer on the first run.",
@@ -51,6 +52,21 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "The Jade Isles anomaly boss drops Karui lineage supports, and Memories of the Karui adds a 15% chance at an extra one.",
+    "breaks_when": [
+      "The Jade Isles boss loses its lineage-support drops or Memories of the Karui is cut",
+      "Karui lineage supports fall in price"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Memories_of_the_Karui",
+        "https://poe2db.tw/us/Lineage_Supports"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

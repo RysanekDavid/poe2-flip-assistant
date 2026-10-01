@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "abyss-depths-omens",
   "title": "Abyss: Depths, bones and omens",
   "summary": "Push Abysses into Abyssal Depths with Depths-chance tablets and notables, make waystone mods apply down there with Close to the Surface, and sell the desecration currency and abyssal omens.",
@@ -50,6 +51,23 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Abyss pits can lead to Abyssal Depths, and Close to the Surface applies the waystone's explicit mods down there; Vile Treasures turns the extra abyssal finds toward Omens.",
+    "breaks_when": [
+      "Close to the Surface or Vile Treasures is changed or removed",
+      "Abyssal Depths chance or the Depths reward table is cut",
+      "Abyssal Omen prices fall below the cost of rolled waystones and tablets"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Close_to_the_Surface",
+        "https://poe2db.tw/us/Vile_Treasures",
+        "https://poe2db.tw/us/Abyss"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [

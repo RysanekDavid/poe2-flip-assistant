@@ -1,0 +1,165 @@
+{
+  "schema_version": 3,
+  "kind": "trade",
+  "id": "gem-double-corruption",
+  "title": "Gems: Vaal Orb, then Crystallised Corruption",
+  "summary": "Corrupt a finished skill gem with a Vaal Orb, then use Crystallised Corruption for a second, different outcome. The best case is level 21 with 23% quality; the community figure is that about half of the second corruptions destroy the gem.",
+  "mechanics": [
+    "corruption"
+  ],
+  "patch": {
+    "verified_against": "0.5.5",
+    "leagues": [
+      "Forbidden Rites"
+    ],
+    "stamped_at": "2026-10-01"
+  },
+  "status": "draft",
+  "budget": {
+    "tier": "high",
+    "why": "A finished gem is put at risk on every attempt, on top of a Vaal Orb and a Crystallised Corruption.",
+    "build_needs": "None: corrupting happens in the stash.",
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Crystallised_Corruption",
+        "https://maxroll.gg/poe2/resources/corruption-outcomes"
+      ],
+      "note": "Our reading of the method against the budget scale; not measured."
+    }
+  },
+  "ratings": {
+    "build": {
+      "value": null,
+      "why": "No combat: the method is corrupting gems in the stash.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: the build scale measures map content, and this method has none."
+      }
+    },
+    "complexity": {
+      "value": null,
+      "why": "The complexity scale is written for map setups, not for corrupting gems.",
+      "claim": {
+        "v": "syn",
+        "src": [],
+        "note": "Not rated: no step of the scale describes a corruption gamble."
+      }
+    }
+  },
+  "durability": {
+    "why_it_works": "Crystallised Corruption gives an already corrupted gem a second outcome or destroys it — the only route we know to a 21/23 gem.",
+    "breaks_when": [
+      "Crystallised Corruption or the gem corruption outcomes are changed",
+      "21/23 gems stop selling above the expected cost of the attempts"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Crystallised_Corruption",
+        "https://poe2db.tw/us/Vaal_Orb"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+    }
+  },
+  "inputs": [
+    {
+      "text": "A skill gem with its level and quality already done: a corrupted gem's quality and sockets cannot be changed",
+      "ref": null,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/corruption-outcomes"
+        ],
+        "note": "maxroll corruption outcomes (aer0, updated 2026-05-24): add quality and sockets before corrupting."
+      }
+    },
+    {
+      "text": "One Vaal Orb",
+      "ref": {
+        "id": "vaal",
+        "name": "Vaal Orb"
+      },
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Vaal_Orb"
+        ]
+      }
+    },
+    {
+      "text": "One Crystallised Corruption",
+      "ref": {
+        "id": "crystallised-corruption",
+        "name": "Crystallised Corruption"
+      },
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Crystallised_Corruption"
+        ],
+        "note": "'Modifies a Corrupted Skill Gem unpredictably or destroys it.'"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "text": "Vaal Orb: nothing, +1 or −1 level, +1 or −1 socket, or −7% to +3% quality",
+      "ref": null,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/corruption-outcomes"
+        ],
+        "note": "maxroll lists the outcomes without chances."
+      }
+    },
+    {
+      "text": "Crystallised Corruption: a second outcome that is never the first one again, or the gem is destroyed",
+      "ref": null,
+      "claim": {
+        "v": "ss",
+        "src": [
+          "https://maxroll.gg/poe2/resources/corruption-outcomes",
+          "https://poe2db.tw/us/Crystallised_Corruption"
+        ],
+        "note": "poe2db confirms 'unpredictably or destroys it'; 'cannot choose the same one twice' is maxroll's wording."
+      }
+    },
+    {
+      "text": "Best case: level 21 with 23% quality, from +1 level on one corruption and +3% quality on the other",
+      "ref": null,
+      "claim": {
+        "v": "syn",
+        "src": [
+          "https://maxroll.gg/poe2/resources/corruption-outcomes"
+        ],
+        "note": "Our reading of the listed outcomes on a level 20, 20% quality gem."
+      }
+    }
+  ],
+  "odds": {
+    "text": "About half of Crystallised Corruption uses destroy the gem; how the other outcomes split is not published.",
+    "loss_chance": 0.5,
+    "claim": {
+      "v": "ss",
+      "src": [
+        "https://maxroll.gg/poe2/resources/corruption-outcomes"
+      ],
+      "note": "Community figure: maxroll (aer0, updated 2026-05-24) says '50/50 chance to destroy the gem'. Not a datamined number."
+    }
+  },
+  "price_refs": [],
+  "steps": [
+    "Finish the gem first: level and quality, and sockets if it takes them.",
+    "Use a Vaal Orb. Stop if the outcome is a loss you do not want to risk further.",
+    "Use Crystallised Corruption only on a gem whose loss you can take: about half of the attempts destroy it.",
+    "A corrupted gem can still be levelled, and a +1 level outcome stays as it levels (maxroll).",
+    "Sell the result on the trade site."
+  ],
+  "risks": [
+    "Crystallised Corruption destroys the gem about half the time (community figure).",
+    "Corrupted gems sell on the trade site, not the exchange, so no EV is shown: the calculator takes your own gem price."
+  ]
+}

@@ -236,10 +236,27 @@ _STRATEGY_OBJECTS = {
     "budgetSchema": strategy_models.Budget,
     "ratingSchema": strategy_models.Rating,
     "ratingsSchema": strategy_models.Ratings,
+    "durabilitySchema": strategy_models.Durability,
     "patchStampSchema": strategy_models.PatchStamp,
     "measuredSchema": strategy_models.Measured,
     "farmStrategySchema": strategy_models.FarmStrategy,
+    "rollTargetSchema": strategy_models.RollTarget,
+    "rollStepSchema": strategy_models.RollStep,
+    "demandSchema": strategy_models.Demand,
+    "conversionLegSchema": strategy_models.ConversionLeg,
+    "conversionSchema": strategy_models.Conversion,
+    "tradeLegSchema": strategy_models.TradeLeg,
+    "oddsSchema": strategy_models.Odds,
+    "rollAndSellStrategySchema": strategy_models.RollAndSellStrategy,
+    "tradeStrategySchema": strategy_models.TradeStrategy,
 }
+
+
+_STRATEGY_KIND_MODELS = (
+    strategy_models.FarmStrategy,
+    strategy_models.RollAndSellStrategy,
+    strategy_models.TradeStrategy,
+)
 
 
 def _zod_object_keys(source: str, name: str) -> set[str]:
@@ -271,8 +288,22 @@ def test_strategy_enums_and_claim_rules_match_typescript() -> None:
     assert strategy_models.TRADE_STAT_ID_PATTERN == r"^explicit\.stat_\d+$"
     assert int(_const(schema, "RATING_MIN")) == strategy_models.RATING_MIN
     assert int(_const(schema, "RATING_MAX")) == strategy_models.RATING_MAX
-    assert int(_const(schema, "STRATEGY_SCHEMA_VERSION")) == 2
-    assert get_args(strategy_models.FarmStrategy.model_fields["schema_version"].annotation) == (2,)
+    assert _ts_string_tuple(schema, "STRATEGY_KINDS") == get_args(strategy_models.StrategyKind)
+    assert _ts_string_tuple(schema, "ITEM_RARITIES") == get_args(strategy_models.ItemRarity)
+    assert _ts_string_tuple(schema, "SELL_UNITS") == get_args(strategy_models.SellUnit)
+    version = int(_const(schema, "STRATEGY_SCHEMA_VERSION"))
+    assert version == 3
+    for model in _STRATEGY_KIND_MODELS:
+        assert get_args(model.model_fields["schema_version"].annotation) == (version,), model
+    kinds = tuple(get_args(m.model_fields["kind"].annotation)[0] for m in _STRATEGY_KIND_MODELS)
+    assert kinds == get_args(strategy_models.StrategyKind)
+    union = re.search(r'strategySchema = z\.discriminatedUnion\("kind", \[([^\]]+)\]\)', schema)
+    assert union is not None
+    assert [n.strip() for n in union.group(1).split(",")] == [
+        "farmStrategySchema",
+        "rollAndSellStrategySchema",
+        "tradeStrategySchema",
+    ]
     claim = _ts("src/lib/claim.ts")
     assert _ts_string_tuple(claim, "CLAIM_VERDICTS") == get_args(strategy_models.ClaimVerdict)
     rules = re.search(r"MIN_SOURCES: Record<ClaimVerdict, number> = \{([^}]+)\}", claim)

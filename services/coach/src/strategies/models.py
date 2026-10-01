@@ -8,7 +8,7 @@ field names to the zod source).
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, TypeAdapter, model_validator
 
 from src.entities.models import ENTITY_ID_PATTERN, POE2DB_URL_PATTERN
 
@@ -25,8 +25,14 @@ Mechanic = Literal[
     "corruption",
     "anomaly",
     "trial_of_chaos",
+    "temple",
+    "citadel",
+    "irradiated",
 ]
 BudgetTier = Literal["league_start", "mid", "high"]
+StrategyKind = Literal["farm", "roll_and_sell", "trade"]
+ItemRarity = Literal["normal", "magic", "rare"]
+SellUnit = Literal["single", "set_of_3"]
 Master = Literal["jado", "doryani", "hilda", "any"]
 ModSide = Literal["prefix", "suffix", "unique"]
 WaystoneTotal = Literal[
@@ -233,6 +239,20 @@ class Ratings(_Strict):
     complexity: Rating
 
 
+class Durability(_Strict):
+    """The game mechanic that keeps a strategy working until a nerf, and what would end it."""
+
+    why_it_works: Text
+    breaks_when: tuple[Text, ...] = Field(min_length=1)
+    claim: Claim
+
+    @model_validator(mode="after")
+    def mechanic_is_sourced(self) -> "Durability":
+        """The mechanic is always drawn as a claim, so it always cites a source."""
+        _require_source(True, self.claim)
+        return self
+
+
 class PatchStamp(_Strict):
     """Which patch and leagues the facts were checked against, and when."""
 
@@ -251,7 +271,8 @@ class Measured(_Strict):
 class FarmStrategy(_Strict):
     """One curated farm strategy file."""
 
-    schema_version: Literal[2]
+    schema_version: Literal[3]
+    kind: Literal["farm"]
     id: str = Field(pattern=ENTITY_ID_PATTERN)
     title: Text
     summary: Text
@@ -260,6 +281,7 @@ class FarmStrategy(_Strict):
     status: Literal["draft", "reviewed", "stale"]
     budget: Budget
     ratings: Ratings
+    durability: Durability
     yields: tuple[StrategyYield, ...] = Field(min_length=1)
     atlas_master: AtlasMaster
     atlas_passives: tuple[AtlasPassive, ...]
@@ -268,3 +290,148 @@ class FarmStrategy(_Strict):
     steps: tuple[Text, ...] = Field(min_length=1)
     risks: tuple[Text, ...]
     measured: Measured | None
+
+
+class RollTarget(_Strict):
+    """The trade2 base a roll-and-sell method rolls, and the rarities it uses."""
+
+    base: Text
+    rarity: tuple[ItemRarity, ...] = Field(min_length=1)
+    claim: Claim
+
+
+class RollStep(_Strict):
+    """One rolling step and the currency it spends."""
+
+    action: Text
+    currencies: tuple[EntityRef, ...]
+    claim: Claim
+
+
+class Demand(_Strict):
+    """Why buyers want the rolled item; a creator's price stays a dated claim."""
+
+    why: Text
+    claim: Claim
+
+
+class ConversionLeg(_Strict):
+    """A catalog item and how many of it a conversion takes or gives."""
+
+    ref: EntityRef
+    qty: int = Field(ge=1)
+
+
+class Conversion(_Strict):
+    """One deterministic conversion whose legs all trade on the exchange (EV is computed live)."""
+
+    inputs: tuple[ConversionLeg, ...] = Field(min_length=1)
+    outputs: tuple[ConversionLeg, ...] = Field(min_length=1)
+    claim: Claim
+
+
+class TradeLeg(_Strict):
+    """One thing a trade method takes or gives, in words, with a catalog ref when it has one."""
+
+    text: Text
+    ref: EntityRef | None
+    claim: Claim
+
+
+class Odds(_Strict):
+    """How the outcome is decided; loss_chance is the share of attempts that destroy the input."""
+
+    text: Text
+    loss_chance: float | None = Field(ge=0, le=1)
+    claim: Claim
+
+
+class RollAndSellStrategy(_Strict):
+    """An item rolled for target mods and sold."""
+
+    schema_version: Literal[3]
+    kind: Literal["roll_and_sell"]
+    id: str = Field(pattern=ENTITY_ID_PATTERN)
+    title: Text
+    summary: Text
+    mechanics: tuple[Mechanic, ...]
+    patch: PatchStamp
+    status: Literal["draft", "reviewed", "stale"]
+    budget: Budget
+    ratings: Ratings
+    durability: Durability
+    target: RollTarget
+    target_mods: tuple[TabletMod, ...]
+    roll_steps: tuple[RollStep, ...] = Field(min_length=1)
+    sell_unit: SellUnit
+    sell_ref: EntityRef | None
+    price_refs: tuple[Conversion, ...]
+    demand: Demand
+    risks: tuple[Text, ...]
+
+
+class TradeStrategy(_Strict):
+    """Inputs turned into outputs, with graded odds and priced conversions."""
+
+    schema_version: Literal[3]
+    kind: Literal["trade"]
+    id: str = Field(pattern=ENTITY_ID_PATTERN)
+    title: Text
+    summary: Text
+    mechanics: tuple[Mechanic, ...]
+    patch: PatchStamp
+    status: Literal["draft", "reviewed", "stale"]
+    budget: Budget
+    ratings: Ratings
+    durability: Durability
+    inputs: tuple[TradeLeg, ...] = Field(min_length=1)
+    outputs: tuple[TradeLeg, ...] = Field(min_length=1)
+    odds: Odds
+    price_refs: tuple[Conversion, ...]
+    steps: tuple[Text, ...] = Field(min_length=1)
+    risks: tuple[Text, ...]
+
+
+#: One strategy file of any kind (strategySchema, z.discriminatedUnion("kind", ...) in schema.ts).
+Strategy = Annotated[
+    FarmStrategy | RollAndSellStrategy | TradeStrategy,
+    Field(discriminator="kind"),
+]
+STRATEGY_ADAPTER: TypeAdapter[Strategy] = TypeAdapter(Strategy)
+
+
+def _conversion_refs(conversions: tuple[Conversion, ...]) -> tuple[EntityRef, ...]:
+    return tuple(leg.ref for c in conversions for leg in c.inputs + c.outputs)
+
+
+def strategy_refs(strategy: Strategy) -> tuple[EntityRef, ...]:
+    """Every catalog ref a strategy names (strategyRefs in schema.ts)."""
+    match strategy:
+        case FarmStrategy():
+            return tuple(y.ref for y in strategy.yields)
+        case RollAndSellStrategy():
+            sold = (strategy.sell_ref,) if strategy.sell_ref is not None else ()
+            spent = tuple(c for step in strategy.roll_steps for c in step.currencies)
+            return spent + sold + _conversion_refs(strategy.price_refs)
+        case TradeStrategy():
+            legs = strategy.inputs + strategy.outputs
+            named = tuple(leg.ref for leg in legs if leg.ref is not None)
+            return named + _conversion_refs(strategy.price_refs)
+
+
+def _conversion_outputs(conversions: tuple[Conversion, ...]) -> tuple[EntityRef, ...]:
+    return tuple(leg.ref for c in conversions for leg in c.outputs)
+
+
+def strategy_outputs(strategy: Strategy) -> tuple[EntityRef, ...]:
+    """The catalog items a strategy produces: farm yields, the item sold, conversion and trade
+    outputs. Spent currency is not an output: asking for Exalted Orbs finds no roll method."""
+    match strategy:
+        case FarmStrategy():
+            return tuple(y.ref for y in strategy.yields)
+        case RollAndSellStrategy():
+            sold = (strategy.sell_ref,) if strategy.sell_ref is not None else ()
+            return sold + _conversion_outputs(strategy.price_refs)
+        case TradeStrategy():
+            named = tuple(leg.ref for leg in strategy.outputs if leg.ref is not None)
+            return named + _conversion_outputs(strategy.price_refs)

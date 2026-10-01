@@ -17,6 +17,10 @@ const PriceCheckTool = dynamic(() => import("../../market/pricecheck/PriceCheckT
   loading: PanelLoading,
 });
 
+const MethodsTool = dynamic(() => import("../../market/methods/MethodsTool").then((m) => m.MethodsTool), {
+  loading: PanelLoading,
+});
+
 const PRICE_LEGEND =
   "Exchange items: Currency Exchange mid (else poe.ninja) × your stack, sell route after the gold fee. Uniques: poe2scout daily " +
   "price. Rares: price-book reference of recorded asks. Asks are not sales. The live value spends one trade search with your " +
@@ -37,13 +41,16 @@ function PriceView() {
 
 /**
  * What things are worth: every exchange item (tool=prices, the default), a price check of a pasted
- * item (tool=price), or what to buy on the trade site now (tool=opportunities).
+ * item (tool=price), what to buy on the trade site now (tool=opportunities), or ways to turn items into
+ * more value (tool=methods).
  */
 export function TradeTab() {
   const { tool } = useTabRoute();
   switch (tool) {
     case "opportunities":
       return <OpportunitiesTool />;
+    case "methods":
+      return <MethodsTool />;
     case "price":
       return <PriceView />;
     case "prices":

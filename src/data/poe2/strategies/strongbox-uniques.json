@@ -1,5 +1,6 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
+  "kind": "farm",
   "id": "strongbox-uniques",
   "title": "Unique strongboxes with Jado",
   "summary": "Jado's Trove Seekers doubles the chance for strongboxes to be unique and Stolen Relics adds the Twilight Reliquary Key box; Overseer tablets, The Chosen Path and Overlord's Influence add more strongboxes.",
@@ -50,6 +51,22 @@
         ],
         "note": "Our reading of the strategy's own steps against the complexity scale; not measured."
       }
+    }
+  },
+  "durability": {
+    "why_it_works": "Trove Seekers doubles the chance for strongboxes to be unique, Stolen Relics adds the Twilight Reliquary Key box, and the tree and Overseer tablets add more strongboxes.",
+    "breaks_when": [
+      "Trove Seekers or Stolen Relics is changed",
+      "Strongbox content chances are cut",
+      "Twilight Reliquary Key or Cryptic Key prices fall"
+    ],
+    "claim": {
+      "v": "syn",
+      "src": [
+        "https://poe2db.tw/us/Masters_of_the_Atlas",
+        "https://poe2db.tw/us/The_Chosen_Path"
+      ],
+      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "yields": [
