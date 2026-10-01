@@ -10,7 +10,6 @@ from src.strategies.models import (
     Conversion,
     ConversionLeg,
     FarmStrategy,
-    LiquidateStrategy,
     Rating,
     RollAndSellStrategy,
     Strategy,
@@ -61,8 +60,6 @@ def claims(strategy: Strategy) -> list[tuple[str, Claim]]:
             return named + [
                 (f"conversion {conversion_text(c)}", c.claim) for c in strategy.price_refs
             ]
-        case LiquidateStrategy():
-            return named + _leg_claims("item", strategy.items)
 
 
 def conversion_text(conversion: Conversion) -> str:
@@ -163,9 +160,3 @@ def kind_detail(strategy: Strategy) -> dict[str, object]:
             return _roll_detail(strategy)
         case TradeStrategy():
             return _trade_detail(strategy)
-        case LiquidateStrategy():
-            return {
-                "items": _legs(strategy.items),
-                "sell_route": strategy.sell_route,
-                "steps": list(strategy.steps),
-            }

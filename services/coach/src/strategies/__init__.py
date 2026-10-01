@@ -1,4 +1,4 @@
-"""Curated strategy KB (farms, roll-and-sell, trade methods, liquidation): models and the store."""
+"""Curated strategy KB (farms, roll-and-sell, trade methods): models and the store."""
 
 from src.strategies.models import (
     BUDGET_ORDER,

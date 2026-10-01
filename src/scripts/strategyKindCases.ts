@@ -6,9 +6,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { attemptCost, conversionLabel, evText, fmtSignedDivOrEx, ladderSummary, profitHeadline, rankConversions, RARITY_LABEL, SELL_UNIT_LABEL } from "../components/farm/strategies/kindHelpers";
+import { attemptCost, breakEvenResult, conversionLabel, evText, fmtSignedDivOrEx, ladderSummary, profitHeadline, rankConversions, RARITY_LABEL, SELL_UNIT_LABEL } from "../components/farm/strategies/kindHelpers";
 import { buildStrategyViews, type YieldMarket } from "../core/strategies/board";
-import { conversionEv, evMargin } from "../core/strategies/ev";
+import { conversionEv } from "../core/strategies/ev";
 import { entityById } from "../core/entities/load";
 import { STRATEGIES_DIR, strategiesOfKind } from "../core/strategies/load";
 import { ITEM_RARITIES, SELL_UNITS, strategyRefs, type Strategy } from "../core/strategies/schema";
@@ -20,13 +20,11 @@ function testEv(): void {
   assert.equal(priced.status, "priced");
   if (priced.status !== "priced") throw new Error("unreachable");
   assert.ok(Math.abs(priced.cost_div - 0.03) < 1e-12 && Math.abs(priced.ev_div - 0.02) < 1e-12, "EV = output − 3 × input");
-  assert.ok(Math.abs((evMargin(priced) ?? 0) - 2 / 3) < 1e-12, "margin is EV over cost");
   const loss = conversionEv([{ name: "A", qty: 3, div: 1 }], [{ name: "B", qty: 1, div: 2 }]);
   assert.ok(loss.status === "priced" && loss.ev_div === -1, "a losing step is negative, not hidden");
   const unpriced = conversionEv([{ name: "A", qty: 3, div: null }], [{ name: "B", qty: 1, div: null }]);
   assert.deepEqual(unpriced, { status: "unpriced", missing: ["A", "B"] }, "every unpriced leg is named, inputs first");
   assert.deepEqual(conversionEv([{ name: "A", qty: 3, div: 0 }], [{ name: "B", qty: 1, div: 1 }]), { status: "unpriced", missing: ["A"] }, "0 is not a price");
-  assert.equal(evMargin(unpriced), null);
   assert.throws(() => conversionEv([{ name: "A", qty: 0, div: 1 }], [{ name: "B", qty: 1, div: 1 }]), /quantity 0/);
   assert.throws(() => conversionEv([], [{ name: "B", qty: 1, div: 1 }]), /needs inputs and outputs/);
   console.log("PASS  EV: output − inputs at exchange prices; unpriced legs named, never counted as 0; bad quantities throw");
@@ -102,6 +100,11 @@ function testHelpers(): void {
   assert.equal(attemptCost(0.5, 10, [0.1, null]), null, "an unpriced consumable → no number, never a partial sum");
   assert.equal(attemptCost(0.5, 0, [0.1]), null, "no item value → no number");
   assert.equal(attemptCost(1.5, 10, [0.1]), null, "a chance outside 0–1 is rejected");
+  // A 4 div gem, 0.36 div of consumables, half the attempts lose it: 2.36 div per attempt, and the
+  // result must sell for 4 + 2.36 / 0.5 = 8.72 div — not 4 + 2.36, since it only exists half the time.
+  assert.ok(Math.abs((breakEvenResult(0.5, 4, [0.01, 0.35]) ?? 0) - 8.72) < 1e-9, "break-even = item + cost / survival chance");
+  assert.equal(breakEvenResult(1, 4, [0.01]), null, "an item that is always lost has no break-even");
+  assert.equal(breakEvenResult(0.5, 4, [null]), null);
   assert.deepEqual(Object.keys(RARITY_LABEL), [...ITEM_RARITIES]);
   assert.deepEqual(Object.keys(SELL_UNIT_LABEL), [...SELL_UNITS]);
   assert.equal(ladderSummary([]), null);
@@ -115,6 +118,7 @@ function testProfitHeadline(strategies: readonly Strategy[]): void {
   const losing = at(new Map([marketFor("lesser-iron-rune", 0.02), marketFor("iron-rune", 0.05)]));
   const none = at(new Map());
   if (!paying || !losing || !none) throw new Error("bench view missing");
+  assert.equal(profitHeadline(paying.price_refs, 400, "x", "bench").text, `bench +${fmtDivOrEx(0.02, 400)}`, "a roll card labels its bench margin");
   const up = profitHeadline(paying.price_refs, 400, "x");
   assert.equal(up.tone, "profit");
   assert.equal(up.text, `+${fmtDivOrEx(0.02, 400)}`, "the best live EV, signed");
@@ -134,7 +138,13 @@ function testProfitHeadline(strategies: readonly Strategy[]): void {
 /** The independent fact-check's corrections (2026-10-01), pinned so a later edit cannot undo them. */
 function testFactCheck(strategies: readonly Strategy[]): void {
   const text = (id: string): string => readFileSync(join(STRATEGIES_DIR, `${id}.json`), "utf8");
-  assert.doesNotMatch(text("temple-tablet-crystals") + text("atziri-temple-rush"), /city map|four tablets|4 tablets/i, "no fourth tablet slot");
+  const fourth = (text("temple-tablet-crystals") + text("atziri-temple-rush")).match(/[^".]*(city map|four tablets|take four)[^".]*/gi) ?? [];
+  assert.ok(fourth.every((sentence) => /unverified/i.test(sentence)), "a fourth tablet slot appears only as an unverified creator claim");
+  const bench = strategiesOfKind(strategies, "roll_and_sell").find((s) => s.id === "waystone-bench-tiers");
+  assert.match(bench?.roll_steps[0]?.action ?? "", /Reforging Bench/, "waystones: bench first, roll after (the bench drops the inputs' mods)");
+  assert.doesNotMatch(text("loreweave-rings"), /Reforging_Bench/, "Loreweave comes from Journey to the East, not the bench");
+  const mountain = strategiesOfKind(strategies, "farm").find((s) => s.id === "irradiated-tablet-farm")?.atlas_passives.find((p) => p.name === "Mountain Mastery");
+  assert.match(mountain?.effect ?? "", /^Select a bonus within Mountain Areas/, "Mountain Mastery is a choose-one bonus");
   const ritual = strategiesOfKind(strategies, "roll_and_sell").find((s) => s.id === "ritual-tablet-rerolls");
   assert.ok(ritual && !ritual.roll_steps.some((step) => step.currencies.some((c) => c.id === "ancient-infuser" || c.id === "vaal")), "no corruption step");
   assert.ok(ritual.risks.some((r) => /does not make it \+4/.test(r)), "corrupting never makes +4, and the card says so");

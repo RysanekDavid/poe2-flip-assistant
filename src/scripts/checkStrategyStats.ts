@@ -52,7 +52,6 @@ function checkStrategy(strategy: Strategy, catalog: Catalog): number {
     case "roll_and_sell":
       return checkBase(strategy.target.base, null, strategy.target_mods, catalog);
     case "trade":
-    case "liquidate":
       return 0;
   }
 }

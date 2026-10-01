@@ -8,8 +8,8 @@ import { Drawer } from "../../ui/Drawer";
 import { EmptyState } from "../../ui/EmptyState";
 import { PageHeader } from "../../ui/PageHeader";
 import { ProvenanceChip } from "../../ui/ProvenanceChip";
-import { LiquidateCard, RollSellCard, TradeMethodCard } from "./KindCards";
-import { LiquidateDetail, RollSellDetail, TradeMethodDetail } from "./KindDetail";
+import { RollSellCard, TradeMethodCard } from "./KindCards";
+import { RollSellDetail, TradeMethodDetail } from "./KindDetail";
 import { useOpenStrategy, useStrategies } from "./useStrategyBoard";
 
 type NonFarm = Exclude<AnyStrategyView, { kind: "farm" }>;
@@ -21,8 +21,6 @@ function Card({ strategy, exPerDiv, onOpen }: { strategy: NonFarm; exPerDiv: num
       return <RollSellCard strategy={strategy} exPerDiv={exPerDiv} onOpen={onOpen} />;
     case "trade":
       return <TradeMethodCard strategy={strategy} exPerDiv={exPerDiv} onOpen={onOpen} />;
-    case "liquidate":
-      return <LiquidateCard strategy={strategy} exPerDiv={exPerDiv} onOpen={onOpen} />;
   }
 }
 
@@ -32,8 +30,6 @@ function Detail({ strategy, data }: { strategy: NonFarm; data: StrategiesRespons
       return <RollSellDetail strategy={strategy} data={data} />;
     case "trade":
       return <TradeMethodDetail strategy={strategy} data={data} />;
-    case "liquidate":
-      return <LiquidateDetail strategy={strategy} data={data} />;
   }
 }
 

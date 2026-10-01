@@ -249,7 +249,6 @@ _STRATEGY_OBJECTS = {
     "oddsSchema": strategy_models.Odds,
     "rollAndSellStrategySchema": strategy_models.RollAndSellStrategy,
     "tradeStrategySchema": strategy_models.TradeStrategy,
-    "liquidateStrategySchema": strategy_models.LiquidateStrategy,
 }
 
 
@@ -257,7 +256,6 @@ _STRATEGY_KIND_MODELS = (
     strategy_models.FarmStrategy,
     strategy_models.RollAndSellStrategy,
     strategy_models.TradeStrategy,
-    strategy_models.LiquidateStrategy,
 )
 
 
@@ -305,7 +303,6 @@ def test_strategy_enums_and_claim_rules_match_typescript() -> None:
         "farmStrategySchema",
         "rollAndSellStrategySchema",
         "tradeStrategySchema",
-        "liquidateStrategySchema",
     ]
     claim = _ts("src/lib/claim.ts")
     assert _ts_string_tuple(claim, "CLAIM_VERDICTS") == get_args(strategy_models.ClaimVerdict)

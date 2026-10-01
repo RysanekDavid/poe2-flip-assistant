@@ -49,7 +49,7 @@
     }
   },
   "durability": {
-    "why_it_works": "Crystallised Corruption gives an already corrupted gem a second outcome or destroys it, so a 21/23 gem can only be made this way.",
+    "why_it_works": "Crystallised Corruption gives an already corrupted gem a second outcome or destroys it — the only route we know to a 21/23 gem.",
     "breaks_when": [
       "Crystallised Corruption or the gem corruption outcomes are changed",
       "21/23 gems stop selling above the expected cost of the attempts"

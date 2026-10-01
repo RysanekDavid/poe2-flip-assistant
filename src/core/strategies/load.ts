@@ -76,8 +76,6 @@ function checkStrategy(strategy: Strategy): void {
     case "trade":
       checkConversions(strategy, strategy.price_refs);
       return;
-    case "liquidate":
-      return;
   }
 }
 

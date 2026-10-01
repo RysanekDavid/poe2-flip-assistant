@@ -3,7 +3,7 @@
 import { KindBoard } from "../../farm/strategies/KindBoard";
 import { TAB_ICONS } from "../../shell/tabIcons";
 
-const KINDS = ["trade", "liquidate"] as const;
+const KINDS = ["trade"] as const;
 
 const LEGEND =
   "Each card turns items into other items. Where every leg trades on the exchange, the EV is today's poe.ninja price of the output minus " +

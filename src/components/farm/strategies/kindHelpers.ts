@@ -67,13 +67,25 @@ export interface ProfitHeadline {
  * it pays, a muted "not profitable at current prices" when none does, and "—" when nothing is
  * priced. A creator's quoted profit never becomes a headline.
  */
-export function profitHeadline(conversions: readonly ConversionView[], exPerDiv: number | null, unpricedTip: string): ProfitHeadline {
+export function profitHeadline(conversions: readonly ConversionView[], exPerDiv: number | null, unpricedTip: string, label?: string): ProfitHeadline {
+  const named = (text: string): string => (label ? `${label} ${text}` : text);
   const best = rankConversions(conversions)[0] ?? null;
   if (best === null || best.ev.status === "unpriced") {
     return { tone: "unpriced", text: "—", tip: best ? evText(best.ev, exPerDiv).tip : unpricedTip, best: null };
   }
-  if (best.ev.ev_div > 0) return { tone: "profit", text: evText(best.ev, exPerDiv).text, tip: evText(best.ev, exPerDiv).tip, best };
-  return { tone: "loss", text: "not profitable at current prices", tip: `Best step today: ${conversionLabel(best)} ${evText(best.ev, exPerDiv).text}. ${evText(best.ev, exPerDiv).tip}`, best };
+  if (best.ev.ev_div > 0) return { tone: "profit", text: named(evText(best.ev, exPerDiv).text), tip: evText(best.ev, exPerDiv).tip, best };
+  return { tone: "loss", text: named("not profitable at current prices"), tip: `Best step today: ${conversionLabel(best)} ${evText(best.ev, exPerDiv).text}. ${evText(best.ev, exPerDiv).tip}`, best };
+}
+
+/**
+ * The price a gamble's result must sell for to break even: the item and the consumables are spent
+ * on every attempt, but the result exists only when the item survives (1 − lossChance of the time).
+ * Null when it cannot be computed or the item is always lost.
+ */
+export function breakEvenResult(lossChance: number, itemDiv: number, consumables: readonly (number | null)[]): number | null {
+  const cost = attemptCost(lossChance, itemDiv, consumables);
+  if (cost === null || lossChance >= 1) return null;
+  return itemDiv + cost / (1 - lossChance);
 }
 
 /** "4 of 39 priced steps pay today" — the card's headline for a ladder; null when it has no conversion. */

@@ -55,7 +55,7 @@
     }
   },
   "durability": {
-    "why_it_works": "Overlord's Domain and The Chosen Path add essences to maps, and Crystalline Patterns raises the chance of the chosen Greater and Perfect essence group.",
+    "why_it_works": "Overlord's Domain and The Chosen Path add essences to maps, and Crystalline Patterns gives 100% increased chance to find certain Essence types.",
     "breaks_when": [
       "Overlord's Domain, The Chosen Path or Crystalline Patterns is changed",
       "Perfect Essence prices fall"

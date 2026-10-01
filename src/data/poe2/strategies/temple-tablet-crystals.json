@@ -3,7 +3,7 @@
   "kind": "roll_and_sell",
   "id": "temple-tablet-crystals",
   "title": "Temple Tablets with the extra-Crystal suffix",
-  "summary": "Roll Temple Tablets for the suffix that gives each Vaal Beacon a chance at an extra Crystal, and sell them in threes to players who run Atziri's Temple: a map takes at most three tablets.",
+  "summary": "Roll Temple Tablets for the suffix that gives each Vaal Beacon a chance at an extra Crystal, and sell them in threes to players who run Atziri's Temple: a standard map takes up to three tablets.",
   "mechanics": [
     "temple"
   ],
@@ -49,7 +49,7 @@
     }
   },
   "durability": {
-    "why_it_works": "The extra-Crystal suffix rolls only on Temple Tablets, and Crystals are what build Atziri's Temple, so temple farmers keep buying it.",
+    "why_it_works": "The extra-Crystal suffix rolls only on Temple Tablets, and Crystals power each Temple run (6 per console), so temple farmers keep buying it.",
     "breaks_when": [
       "The suffix is cut or moved off the base",
       "Crystal payouts or Temple rules change so Crystals stop limiting runs",
@@ -59,7 +59,7 @@
       "v": "syn",
       "src": [
         "https://poe2db.tw/us/Tablet",
-        "https://poe2db.tw/us/Vaal_Beacon",
+        "https://poe2db.tw/us/Energised_Crystal",
         "https://poe2db.tw/us/Atziris_Temple"
       ],
       "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
@@ -165,10 +165,11 @@
   "sell_ref": null,
   "price_refs": [],
   "demand": {
-    "why": "Vaal Beacons pay out the Crystals that build Atziri's Temple (6 per console, storage cap 60), and temple farmers run three Temple Tablets with this suffix per map, so a matched set of three is what one map uses.",
+    "why": "Vaal Beacons pay out the Crystals that run Atziri's Temple (a Temple run takes 6 Crystals at the console, and you can store up to 60 with Xopec's Medallions), and temple farmers run three Temple Tablets with this suffix per map, so a matched set of three is what one map uses.",
     "claim": {
       "v": "syn",
       "src": [
+        "https://poe2db.tw/us/Energised_Crystal",
         "https://poe2db.tw/us/Vaal_Beacon",
         "https://www.youtube.com/watch?v=0oMSHBt_nr8",
         "https://www.youtube.com/watch?v=ssQDwgkJnJw",
@@ -178,7 +179,7 @@
     }
   },
   "risks": [
-    "A map takes at most three tablets (the 0.3.1 patch notes tie the third slot to waystone modifiers), so a set of three is the most one map uses.",
+    "A standard map takes up to three tablets (the third slot opens at six waystone modifiers). DEADRABB1T (8:38) says Vaal city maps take four — unverified.",
     "An Ancient Infuser corrupts a tablet and can destroy it; it never raises a value.",
     "Tablets are not on the currency exchange: price a set on the trade site with the Search link."
   ]

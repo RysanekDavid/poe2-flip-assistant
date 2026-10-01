@@ -2,7 +2,7 @@
 
 Reads src/data/poe2/strategies/*.json (the same files Farm › Strategies, Craft › Roll & sell and
 Trade › Methods render). Kinds: farm (atlas setups per mechanic), roll_and_sell (an item rolled for
-a mod and sold), trade (inputs turned into outputs) and liquidate. Two modes keep every answer
+a mod and sold) and trade (inputs turned into outputs). Two modes keep every answer
 complete under the shared payload cap: a list of ALL matching strategies (one short row each), and
 the full detail of one strategy by id. Every fact keeps its claim grade and note, so the model can
 tell a datamined fact from a lead; the files are deliberately not in the RAG corpus.
@@ -26,7 +26,7 @@ from src.strategies import (
     StrategyKind,
     get_strategies,
 )
-from src.strategies.models import strategy_refs
+from src.strategies.models import strategy_outputs
 from src.tools.engine_common import PAYLOAD_CAP_BYTES
 from src.tools.strategy_rows import (
     claim_notes,
@@ -202,7 +202,7 @@ def _matches(
         return False
     if budget is not None and BUDGET_ORDER.index(strategy.budget.tier) > BUDGET_ORDER.index(budget):
         return False
-    return entity_id is None or any(ref.id == entity_id for ref in strategy_refs(strategy))
+    return entity_id is None or any(ref.id == entity_id for ref in strategy_outputs(strategy))
 
 
 def _resolve_item(catalog: EntityCatalog, target_item: str) -> str:
@@ -262,15 +262,15 @@ def build_strategy_tool(strategies_dir: Path, entity_catalog_path: Path) -> Base
     ) -> str:
         """Find curated strategies, each fact with its evidence grade. Kinds: farm (Atlas Master
         nodes, notables, tablets, waystone totals, yield basket), roll_and_sell (a tablet or
-        waystone to roll for a mod and sell), trade (inputs turned into outputs, e.g. Reforging
-        Bench ladders, gem corruption) and liquidate.
+        waystone to roll for a mod and sell) and trade (inputs turned into outputs, e.g. Reforging
+        Bench ladders, gem corruption).
 
         Use for "how should I farm X / what can I roll and sell / how do I turn X into Y / what
         can I do with my budget". List mode (strategy_id null): every strategy matching kind,
-        mechanic, target_item (an item it produces, spends or names) and budget (league_start,
-        mid or high = the most you can spend); pass null for any filter you skip. A single match
-        comes back in detail mode directly. Detail mode: strategy_id from a list row, other
-        filters null.
+        mechanic, target_item (an item it produces: a drop, the item sold or an output, never
+        a currency it spends) and budget (league_start, mid or high = the most you can spend);
+        pass null for any filter you skip. A single match comes back in detail mode directly.
+        Detail mode: strategy_id from a list row, other filters null.
         """
         if strategy_id is not None:
             if any(f is not None for f in (kind, mechanic, target_item, budget)):

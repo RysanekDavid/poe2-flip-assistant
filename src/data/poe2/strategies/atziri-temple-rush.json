@@ -63,7 +63,7 @@
       "src": [
         "https://poe2db.tw/us/Atziris_Communion",
         "https://poe2db.tw/us/Atziris_Temple",
-        "https://poe2db.tw/us/Vaal_Beacon"
+        "https://poe2db.tw/us/Energised_Crystal"
       ],
       "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
@@ -100,14 +100,14 @@
           "https://www.youtube.com/watch?v=0oMSHBt_nr8",
           "https://www.youtube.com/watch?v=Xhmh1Tx9eAw"
         ],
-        "note": "poe2db ties it to Incursion (Vaal) content. DEADRABB1T (22:51) counts Architect's Orbs from his runs; Path of Evening (Xhmh1Tx9eAw, 6:12) says level-3 rooms give such currency deterministically."
+        "note": "poe2db ties it to Incursion (Vaal) content. Path of Evening (Xhmh1Tx9eAw, 18:28–18:37): a rank-3 Corruption Chamber guarantees one; DEADRABB1T (22:51) counts Architect's Orbs from his runs."
       }
     }
   ],
   "atlas_master": {
     "master": "any",
     "nodes": [],
-    "alt": null,
+    "alt": "Jado with Untold Histories (T4: 35% increased chance to find Lineage Supports; Pinnacle Bosses take 35% less Damage and have 50% increased chance to drop Lineage Supports) — Diztoh's pick (6:55), a single source; whether Atziri counts as a Pinnacle Boss is unverified.",
     "claim": {
       "v": "vp",
       "src": [
@@ -151,15 +151,15 @@
     }
   },
   "steps": [
-    "Slot up to three Temple Tablets with the extra-Crystal suffix so each map adds Vaal Beacons, and energise them for Crystals (6 per console, store up to 60).",
-    "Enter the Temple from its Atlas map, not the Vaal Ruins waypoint: both creators say the waypoint gives a lower-level temple.",
+    "Slot up to three Temple Tablets with the extra-Crystal suffix so each map adds Vaal Beacons, and energise them for Crystals (a Temple run takes 6 Crystals at the console, and you can store up to 60 with Xopec's Medallions).",
+    "Enter the Temple from its Atlas map: DEADRABB1T (12:52) says the Vaal Ruins waypoint gives an item-level-79 temple, and Diztoh (6:31) also enters from the Atlas.",
     "Build a straight path to Atziri's Chamber, which unlocks by completing the Royal Access Chamber; keep the Architect's reward rooms on the outer edges.",
     "Lock your level-3 production rooms (Alchemy Lab, Thaumaturge, Altar of Sacrifice, Smithy); a lock is not fully safe.",
     "Kill Atziri, the Red Queen, for Atziri's Communion, about every second temple. Diztoh fights Atziri before the Architect, since killing the Architect destabilises the temple; DEADRABB1T kills both in one run."
   ],
   "risks": [
     "Jiquani's Thesis is not an Atziri drop (it comes from a Core Destabiliser on a Soul Core), so it is not in this basket.",
-    "The route, the room locks and the Atziri-every-second-run rhythm are creator advice (DEADRABB1T 2026-06-05, 12:52, 15:37, 16:57–17:43, 21:15; Diztoh 2026-09-29, 0:21, 1:37, 6:31; Path of Evening 2026-07-02).",
+    "The route, the room locks and the Atziri-every-second-run rhythm are creator advice (DEADRABB1T 2026-06-05, 12:52, 15:37, 16:57–17:43, 20:11, 21:15; Diztoh 2026-09-29, 0:21, 1:37, 6:31; Path of Evening 2026-07-02).",
     "Rooms reach Tier 4 only after you unlock it on the Temple Atlas Tree (poe2db)."
   ],
   "measured": null

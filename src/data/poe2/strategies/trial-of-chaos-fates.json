@@ -55,7 +55,7 @@
     }
   },
   "durability": {
-    "why_it_works": "A finished Trial of Chaos can be continued twice, and each successful continuation awards a different Trialmaster Fragment (0.5.5).",
+    "why_it_works": "After a 10-Trial Inscribed Ultimatum, a finished Trial of Chaos can be continued twice, and each successful continuation awards a different Trialmaster Fragment (0.5.5).",
     "breaks_when": [
       "The continuation rule or the Fate rewards are changed",
       "Trialmaster Fragment prices fall"
@@ -64,6 +64,7 @@
       "v": "syn",
       "src": [
         "https://poe2db.tw/us/Deadly_Fate",
+        "https://poe2db.tw/us/Inscribed_Ultimatum",
         "https://www.pathofexile.com/forum/view-thread/4000864"
       ],
       "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."

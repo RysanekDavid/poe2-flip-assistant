@@ -38,8 +38,3 @@ export function conversionEv(inputs: readonly PricedLeg[], outputs: readonly Pri
   const value = total(outputs);
   return { status: "priced", cost_div: cost, value_div: value, ev_div: value - cost };
 }
-
-/** The margin as a share of the cost (0.25 = +25%); null when unpriced. */
-export function evMargin(ev: ConversionEv): number | null {
-  return ev.status === "priced" && ev.cost_div > 0 ? ev.ev_div / ev.cost_div : null;
-}

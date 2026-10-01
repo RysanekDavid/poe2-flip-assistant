@@ -154,9 +154,10 @@
         "v": "ss",
         "src": [
           "https://poe2db.tw/us/Omen_of_Sanctification",
+          "https://poe2db.tw/us/Sanctified_Items",
           "https://www.youtube.com/watch?v=lGreSOvRfEk"
         ],
-        "note": "poe2db: the omen makes the next Divine Orb on a Rare item Sanctify it. The 78–122% range and the +3 → +4 result are Diztoh's (2026-07-09, 4:51–6:12 and 14:00), not checked against game data."
+        "note": "The 78–122% range is on poe2db. That it works on tablets and +3 → +4 is Diztoh's demo (2026-07-09, 4:51–6:12, 14:00)."
       }
     }
   ],
@@ -164,7 +165,7 @@
   "sell_ref": null,
   "price_refs": [],
   "demand": {
-    "why": "Ritual Omen farms reroll Favours at every altar, and since 0.5.5 each Ritual Tablet beyond the first adds an altar and more Wisps, so farmers slot several.",
+    "why": "Ritual Omen farms reroll Favours at every altar, and since 0.5.5 using more than one Ritual Tablet adds an extra Altar (if possible) and more Azmeri Wisps, so farmers slot several.",
     "claim": {
       "v": "ss",
       "src": [
@@ -176,7 +177,7 @@
   },
   "risks": [
     "Corrupting a +3 tablet does not make it +4: an Ancient Infuser never raises a value and can destroy the tablet or change its type.",
-    "Sanctifying is a gamble that can lower the value, and a sanctified tablet cannot be changed again.",
+    "Sanctifying is a gamble that can lower the value, and a sanctified tablet cannot be changed by most crafting methods.",
     "Whether the reroll suffix stacks across several tablets in one map is unverified.",
     "Tablets are not on the currency exchange: price on the trade site with the Search link."
   ]

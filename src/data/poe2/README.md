@@ -142,7 +142,6 @@ discriminates on `kind`:
 - `trade`: input and output legs in words (with a catalog ref when there is one), the odds (with
   `loss_chance`; community odds are graded as community), and `price_refs`: deterministic
   conversions whose every leg is an exchange item, so the board computes their EV live.
-- `liquidate`: items to sell and where.
 
 **Durability (owner rule, 2026-10-01).** Every strategy carries `durability`: `why_it_works` (the
 game mechanic that makes it work, cited) and `breaks_when` (the nerfs or price conditions that end

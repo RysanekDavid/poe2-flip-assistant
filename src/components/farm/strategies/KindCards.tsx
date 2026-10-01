@@ -1,10 +1,10 @@
 "use client";
 
-import type { AnyStrategyView, LiquidateView, PricedRef, RollSellView, TradeMethodView } from "../../../lib/strategiesContract";
+import type { AnyStrategyView, PricedRef, RollSellView, TradeMethodView } from "../../../lib/strategiesContract";
 import { ItemArt } from "../../ui/ItemArt";
 import { CardFrame } from "./CardFrame";
 import { ClaimBadge } from "../../ui/ClaimBadge";
-import { ConversionRow, NotePill, ProfitPill, RefChip, rollBaseArt } from "./KindParts";
+import { ConversionRow, ProfitPill, RefChip, rollBaseArt } from "./KindParts";
 import { ladderSummary, profitHeadline, RARITY_LABEL, rankConversions, SELL_UNIT_LABEL, SELL_UNIT_TIP } from "./kindHelpers";
 import { ModRow } from "./TabletMods";
 import { StatusBadge } from "./StrategyBits";
@@ -30,7 +30,8 @@ function rollCurrencies(strategy: RollSellView): PricedRef[] {
 const ROLL_UNPRICED = "No live price: rolled tablets sell on the trade site, where asks are not sales. Use the Search link on a mod.";
 
 function RollHeadline({ strategy, exPerDiv }: { strategy: RollSellView; exPerDiv: number | null }) {
-  return <ProfitPill headline={profitHeadline(strategy.price_refs, exPerDiv, ROLL_UNPRICED)} />;
+  // labelled, because a roll card's number is the bench step's margin, not the rolled item's price
+  return <ProfitPill headline={profitHeadline(strategy.price_refs, exPerDiv, ROLL_UNPRICED, "bench")} />;
 }
 
 /** Craft › Roll & sell card: what to roll, the mods that sell (with a trade search), how it is listed. */
@@ -136,30 +137,6 @@ export function TradeMethodCard({ strategy, exPerDiv, onOpen }: KindCardProps<Tr
       ) : (
         <LegStrip strategy={strategy} exPerDiv={exPerDiv} />
       )}
-    </CardFrame>
-  );
-}
-
-/** A liquidation list: what to sell, where. */
-export function LiquidateCard({ strategy, exPerDiv, onOpen }: KindCardProps<LiquidateView>) {
-  const refs = strategy.items.flatMap((leg) => (leg.ref ? [leg.ref] : []));
-  return (
-    <CardFrame
-      id={strategy.id}
-      title={strategy.title}
-      art={refs[0]?.icon_url ?? null}
-      label={kindLabel(strategy.mechanics, "Liquidate")}
-      headline={<NotePill text={`${strategy.items.length} items`} tip={strategy.sell_route} />}
-      meters={strategy}
-      footer={<StatusBadge strategy={strategy} />}
-      cta="What to sell"
-      onOpen={onOpen}
-    >
-      <div className="flex flex-wrap gap-1.5">
-        {refs.slice(0, 3).map((ref) => (
-          <RefChip key={ref.id} item={ref} exPerDiv={exPerDiv} />
-        ))}
-      </div>
     </CardFrame>
   );
 }

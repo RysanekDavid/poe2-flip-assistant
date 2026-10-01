@@ -128,16 +128,31 @@
         }
       }
     ],
-    "alt": null,
+    "alt": "Jado with Partial Translations or Unexpected Missions (maxroll's setup).",
     "claim": {
       "v": "syn",
       "src": [
         "https://poe2db.tw/us/Masters_of_the_Atlas"
       ],
-      "note": "Our pick: Head of the Snake is the one master node that reveals Citadels. maxroll's guide (updated 2026-06-06, before 0.5.5) names Jado's Spycraft instead; not measured."
+      "note": "Our pick: Head of the Snake is the one master node that reveals Citadels. maxroll uses Jado instead (Partial Translations or Unexpected Missions); not measured."
     }
   },
-  "atlas_passives": [],
+  "atlas_passives": [
+    {
+      "name": "Bring Me Your Leader",
+      "tree": "Atlas",
+      "effect": "Summoning Circles in City Areas have 5% chance to instead summon a random Citadel Boss",
+      "priority": "optional",
+      "poe2db_url": "https://poe2db.tw/us/Bring_Me_Your_Leader",
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Bring_Me_Your_Leader"
+        ],
+        "note": "An alternative route to Citadel bosses through City-area Summoning Circles."
+      }
+    }
+  ],
   "tablets": [],
   "waystone": {
     "prefer": [
@@ -155,6 +170,7 @@
   },
   "steps": [
     "Set Doryani with Head of the Snake (T4): Powerful Map Bosses can reveal a nearby Citadel.",
+    "Optional route: Bring Me Your Leader gives Summoning Circles in City areas a 5% chance to summon a random Citadel Boss instead.",
     "Look for Citadel beams in the Atlas fog: red for the Stone Citadel (Doryani), blue for the Iron Citadel (Count Geonor), orange for the Copper Citadel (Jamanra).",
     "Run the Citadel with a high waystone-drop-chance waystone and kill its boss for a Crisis Fragment.",
     "Sell the fragments on the exchange, or place Ancient, Faded and Weathered in The Burning Monolith to fight The Arbiter of Ash."

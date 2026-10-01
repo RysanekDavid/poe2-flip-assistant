@@ -3,7 +3,7 @@
  * src/data/poe2/strategies/<id>.json, discriminated by `kind`: a farm (which Atlas Master nodes,
  * atlas notables, tablets and waystone totals a mechanic wants, and what the basket sells), a
  * roll-and-sell (an item rolled for target mods and sold), a trade method (inputs turned into
- * outputs, priced live where every leg trades on the exchange) or a liquidation list. Every fact
+ * outputs, priced live where every leg trades on the exchange). Every fact
  * carries a claim grade so the UI and the Coach can tell a datamined fact from a lead. Keys are
  * snake_case because the Python Coach reads the same files (services/coach/src/strategies/models.py mirrors this schema;
  * tests/test_engine_drift.py pins the keys). Object shapes are written `z\n  .object({` with
@@ -16,7 +16,7 @@ import { ENTITY_ID_PATTERN, POE2DB_URL_PATTERN } from "../entities/schema";
 export const STRATEGY_SCHEMA_VERSION = 3;
 
 /** What a strategy is for; each kind has its own shape below and its own place in the app. */
-export const STRATEGY_KINDS = ["farm", "roll_and_sell", "trade", "liquidate"] as const;
+export const STRATEGY_KINDS = ["farm", "roll_and_sell", "trade"] as const;
 export type StrategyKind = (typeof STRATEGY_KINDS)[number];
 
 export const MECHANICS = [
@@ -345,27 +345,7 @@ export const tradeStrategySchema = z
   })
   .strict();
 
-export const liquidateStrategySchema = z
-  .object({
-    schema_version: z.literal(STRATEGY_SCHEMA_VERSION),
-    kind: z.literal("liquidate"),
-    id: z.string().regex(STRATEGY_ID_PATTERN),
-    title: nonEmpty,
-    summary: nonEmpty,
-    mechanics: z.array(mechanicSchema),
-    patch: patchStampSchema,
-    status: z.enum(STRATEGY_STATUSES),
-    budget: budgetSchema,
-    ratings: ratingsSchema,
-    durability: durabilitySchema,
-    items: z.array(tradeLegSchema).min(1),
-    sell_route: nonEmpty,
-    steps: z.array(nonEmpty).min(1),
-    risks: z.array(nonEmpty),
-  })
-  .strict();
-
-export const strategySchema = z.discriminatedUnion("kind", [farmStrategySchema, rollAndSellStrategySchema, tradeStrategySchema, liquidateStrategySchema]);
+export const strategySchema = z.discriminatedUnion("kind", [farmStrategySchema, rollAndSellStrategySchema, tradeStrategySchema]);
 
 export type EntityRef = z.infer<typeof entityRefSchema>;
 export type StrategyYield = z.infer<typeof yieldSchema>;
@@ -376,7 +356,6 @@ export type TabletMod = z.infer<typeof tabletModSchema>;
 export type FarmStrategy = z.infer<typeof farmStrategySchema>;
 export type RollAndSellStrategy = z.infer<typeof rollAndSellStrategySchema>;
 export type TradeStrategy = z.infer<typeof tradeStrategySchema>;
-export type LiquidateStrategy = z.infer<typeof liquidateStrategySchema>;
 export type Strategy = z.infer<typeof strategySchema>;
 export type Conversion = z.infer<typeof conversionSchema>;
 export type TradeLeg = z.infer<typeof tradeLegSchema>;
@@ -400,8 +379,6 @@ export function strategyRefs(strategy: Strategy): EntityRef[] {
       return [...strategy.roll_steps.flatMap((s) => s.currencies), ...(strategy.sell_ref ? [strategy.sell_ref] : []), ...conversionRefs(strategy.price_refs)];
     case "trade":
       return [...legRefs(strategy.inputs), ...legRefs(strategy.outputs), ...conversionRefs(strategy.price_refs)];
-    case "liquidate":
-      return legRefs(strategy.items);
   }
 }
 

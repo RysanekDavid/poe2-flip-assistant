@@ -139,8 +139,6 @@ function strategyView(strategy: Strategy, league: string, markets: Markets, nowM
         outputs: strategy.outputs.map((leg) => legView(leg, markets, nowMs)),
         price_refs: conversions(strategy.price_refs),
       };
-    case "liquidate":
-      return { ...strategy, items: strategy.items.map((leg) => legView(leg, markets, nowMs)) };
   }
 }
 

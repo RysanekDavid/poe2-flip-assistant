@@ -64,20 +64,11 @@ const PROFIT_CLASS: Record<ProfitHeadline["tone"], string> = {
 export function ProfitPill({ headline }: { headline: ProfitHeadline }) {
   return (
     <Tooltip tip={headline.tip} align="end">
-      <span tabIndex={0} className={`inline-flex h-7 cursor-help items-center whitespace-nowrap rounded-full border px-2.5 tabular-nums ${PROFIT_CLASS[headline.tone]}`}>
+      <span tabIndex={0} className={`inline-flex min-h-7 cursor-help items-center rounded-full border px-2.5 py-0.5 text-right leading-tight tabular-nums ${PROFIT_CLASS[headline.tone]}`}>
         {headline.text}
         <span className="sr-only"> ({headline.tip})</span>
       </span>
     </Tooltip>
-  );
-}
-
-/** A plain header pill for a card whose headline is not a number. */
-export function NotePill({ text, tip }: { text: string; tip: string }) {
-  return (
-    <span title={tip} className="inline-flex h-7 items-center whitespace-nowrap rounded-full border border-line bg-neutral-900/80 px-2.5 text-xs text-neutral-300">
-      {text}
-    </span>
   );
 }
 
@@ -95,7 +86,7 @@ export function ConversionRow({ conversion, exPerDiv }: { conversion: Conversion
           <ItemArt key={leg.ref.id} src={leg.ref.icon_url} size={5} />
         ))}
       </span>
-      <span className="min-w-0 flex-1 truncate text-sm text-neutral-300" title={label}>
+      <span className="min-w-0 flex-1 break-words text-sm text-neutral-300" title={label}>
         {label}
       </span>
       <EvPill ev={conversion.ev} exPerDiv={exPerDiv} />

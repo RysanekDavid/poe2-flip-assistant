@@ -53,20 +53,20 @@
     }
   },
   "durability": {
-    "why_it_works": "Mountain Mastery raises Tablet quantity found by 50%, and the Irradiated Tablets' waystone-quantity suffix sustains the Tier 15 waystones the farm runs on.",
+    "why_it_works": "Tablets of one type suppress drops of that type; Irradiated Tablets suppress none, and monster effectiveness plus waystone quantity raise tablet drops. Mountain Mastery's Tablets bonus adds 50% in Mountain areas.",
     "breaks_when": [
+      "Tablet drop suppression or tablet drop rates are changed",
       "Mountain Mastery or Partial Translations is changed",
-      "Tablet drop rates are cut",
       "Precursor Tablet prices fall"
     ],
     "claim": {
-      "v": "syn",
+      "v": "vs",
       "src": [
-        "https://poe2db.tw/us/Mountain_Mastery",
-        "https://poe2db.tw/us/Masters_of_the_Atlas",
-        "https://poe2db.tw/us/Tablet"
+        "https://maxroll.gg/poe2/currency/tablet-farming-strategy",
+        "https://www.youtube.com/watch?v=Y20qQD2gTkE",
+        "https://poe2db.tw/us/Mountain_Mastery"
       ],
-      "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
+      "note": "maxroll (BawLoch, 2026-09-02) and lilbotq (2026-09-28, 0:53–1:47, 2:18) on suppression; Mountain Mastery from poe2db. Whether it pays today is only what live prices show."
     }
   },
   "yields": [
@@ -109,14 +109,14 @@
         "https://maxroll.gg/poe2/currency/tablet-farming-strategy",
         "https://www.youtube.com/watch?v=Y20qQD2gTkE"
       ],
-      "note": "maxroll (BawLoch, updated 2026-09-02) and lilbotq (2026-09-28, 4:13–4:27) both run Jado for Partial Translations. The other three Jado picks are free."
+      "note": "maxroll (BawLoch, updated 2026-09-02) and lilbotq (2026-09-28, 4:13–4:30) both run Jado for Partial Translations. The other three Jado picks are free."
     }
   },
   "atlas_passives": [
     {
       "name": "Mountain Mastery",
       "tree": "Mountain Biome",
-      "effect": "50% increased Quantity of Tablets found; 50% increased Quantity of Runes found; 6% increased Rarity of Items found",
+      "effect": "Select a bonus within Mountain Areas: 50% increased Quantity of Tablets found, 50% increased Quantity of Runes found, or 6% increased Rarity of Items found",
       "priority": "core",
       "poe2db_url": "https://poe2db.tw/us/Mountain_Mastery",
       "claim": {
@@ -124,7 +124,7 @@
         "src": [
           "https://poe2db.tw/us/Mountain_Mastery"
         ],
-        "note": "Applies to level 75+ areas; requires completing the Burning Monolith. maxroll's setup lists it."
+        "note": "One bonus is chosen, and it applies in Mountain areas (level 75+); Cultivate the Sea makes Ocean areas count too."
       }
     }
   ],
@@ -178,15 +178,14 @@
     }
   },
   "steps": [
-    "Set Jado with Partial Translations (T3); allocate Mountain Mastery on the Mountain Biome tree.",
+    "Set Jado with Partial Translations (T3); allocate Mountain Mastery and pick its Tablets bonus, which applies only in Mountain-biome maps.",
     "Roll Tier 15 waystones to six modifiers with 90%+ waystone drop chance, then corrupt them with a Vaal Orb.",
     "Slot three Irradiated Tablets, each with the waystone-quantity suffix and the monster-effectiveness prefix.",
-    "Pick up the Precursor Tablets the maps drop (Breach, Delirium, Ritual, Abyss and Temple, varying by map) and roll or sell them: see Craft › Roll & sell."
+    "Pick up the Precursor Tablets the maps drop (any Precursor Tablet type, varying by map) and roll or sell them: see Craft › Roll & sell."
   ],
   "risks": [
     "Precursor Tablets, the main drop, are not in the item catalog: the basket shows waystones only, and tablets sell on the trade site.",
     "Irradiated adds +1 to Monster Level (poe2db); three tablets are for their mods, not for more levels.",
-    "lilbotq (0:53) says stacking tablets of one type lowers drops of that type (creator claim).",
     "Which tablets drop varies from map to map (maxroll); no drop rate is claimed.",
     "Doryani's Disengaged Safeties (T2) also makes maps Irradiated, but this setup uses Jado."
   ],

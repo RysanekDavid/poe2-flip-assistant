@@ -378,9 +378,24 @@ def test_kinds_filter_and_carry_their_own_detail() -> None:
     assert "master" not in rolled and "yields" not in rolled
     ladder = _invoke(strategy_id="reforging-bench-ladders")["strategy"]
     assert "3 × Diluted Liquid Ire → Diluted Liquid Guilt" in ladder["conversions"]
-    assert ladder["odds"].endswith("[vp]") and "loss chance 0%" in ladder["odds"]
+    assert ladder["odds"].endswith("[cf]") and "loss chance 0%" in ladder["odds"]
     gem = _invoke(strategy_id="gem-double-corruption")["strategy"]
     assert "loss chance 50%" in gem["odds"] and gem["odds"].endswith("[ss]")
-    # A conversion leg is a ref too: asking for an emotion finds the ladder, alone, in detail mode.
+    # A conversion output is what the strategy produces: asking for an emotion finds the ladder.
     found = _invoke(target_item="Liquid Envy")
     assert found["mode"] == "detail" and found["strategy"]["id"] == "reforging-bench-ladders"
+
+
+def _ids_or_none(target_item: str) -> list[str]:
+    try:
+        return _ids(_invoke(target_item=target_item))
+    except ToolNoResult:
+        return []
+
+
+def test_target_item_matches_what_a_strategy_produces_not_what_it_spends() -> None:
+    rolled = {"waystone-bench-tiers", "temple-tablet-crystals", "ritual-tablet-rerolls"}
+    assert not rolled & set(_ids_or_none("Exalted Orb")), "Exalted Orbs are spent, not made"
+    for spent in ("Divine Orb", "Chaos Orb"):
+        assert not rolled & set(_ids_or_none(spent)), spent
+    assert "waystone-bench-tiers" in _ids_or_none("Waystone (Tier 15)"), "the sold item matches"

@@ -11,7 +11,6 @@ import {
   conversionSchema,
   entityRefSchema,
   farmStrategySchema,
-  liquidateStrategySchema,
   mechanicSchema,
   rollAndSellStrategySchema,
   rollStepSchema,
@@ -110,9 +109,7 @@ export const tradeMethodViewSchema = tradeStrategySchema.extend({
   price_refs: z.array(conversionViewSchema),
 });
 
-export const liquidateViewSchema = liquidateStrategySchema.extend({ items: z.array(tradeLegViewSchema).min(1) });
-
-export const anyStrategyViewSchema = z.discriminatedUnion("kind", [strategyViewSchema, rollSellViewSchema, tradeMethodViewSchema, liquidateViewSchema]);
+export const anyStrategyViewSchema = z.discriminatedUnion("kind", [strategyViewSchema, rollSellViewSchema, tradeMethodViewSchema]);
 
 export const strategiesResponseSchema = z
   .object({
@@ -132,7 +129,6 @@ export type StrategyView = z.infer<typeof strategyViewSchema>;
 export type AnyStrategyView = z.infer<typeof anyStrategyViewSchema>;
 export type RollSellView = z.infer<typeof rollSellViewSchema>;
 export type TradeMethodView = z.infer<typeof tradeMethodViewSchema>;
-export type LiquidateView = z.infer<typeof liquidateViewSchema>;
 export type ConversionView = z.infer<typeof conversionViewSchema>;
 export type TradeLegView = z.infer<typeof tradeLegViewSchema>;
 export type PricedRef = z.infer<typeof pricedRefSchema>;

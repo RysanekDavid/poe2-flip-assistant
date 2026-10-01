@@ -1,14 +1,14 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
-import type { LiquidateView, RollSellView, StrategiesResponse, TradeMethodView } from "../../../lib/strategiesContract";
+import type { RollSellView, StrategiesResponse, TradeMethodView } from "../../../lib/strategiesContract";
 import { fmtDivOrEx } from "../../../lib/format";
 import { ClaimBadge } from "../../ui/ClaimBadge";
 import { ItemArt } from "../../ui/ItemArt";
 import { PriceChip } from "../../ui/PriceChip";
 import { ProvenanceChip } from "../../ui/ProvenanceChip";
 import { ConversionList, LegList, RefChip, rollBaseArt } from "./KindParts";
-import { attemptCost, RARITY_LABEL, rankConversions, SELL_UNIT_LABEL, SELL_UNIT_TIP } from "./kindHelpers";
+import { attemptCost, breakEvenResult, RARITY_LABEL, rankConversions, SELL_UNIT_LABEL, SELL_UNIT_TIP } from "./kindHelpers";
 import { DurabilityNote } from "./Durability";
 import { StatusBadge, StrategyMeters } from "./StrategyBits";
 import { RatingReasons, Section } from "./StrategyDetail";
@@ -118,9 +118,17 @@ export function RollSellDetail({ strategy, data }: { strategy: RollSellView; dat
   );
 }
 
+/** What the calculator says under its input, or why it says nothing yet. */
+function calculatorHint(raw: string, itemDiv: number, unpriced: readonly string[]): string | null {
+  if (raw.trim() === "") return null;
+  if (!(itemDiv > 0)) return "enter a value above 0";
+  return unpriced.length > 0 ? `no exchange price for ${unpriced.join(", ")}` : null;
+}
+
 /**
- * For a gamble with a known loss chance: the player types what their item is worth, and the
- * expected cost of one attempt is the priced consumables plus that chance of losing the item.
+ * For a gamble with a known loss chance: the player types what their item is worth. The expected
+ * cost of one attempt is the priced consumables plus that chance of losing the item; the result
+ * only pays when it survives, so its break-even price is that cost over the survival chance.
  */
 function LossCalculator({ strategy, exPerDiv }: { strategy: TradeMethodView; exPerDiv: number | null }) {
   const inputId = useId();
@@ -129,8 +137,10 @@ function LossCalculator({ strategy, exPerDiv }: { strategy: TradeMethodView; exP
   if (loss === null || loss === 0) return null;
   const consumables = strategy.inputs.flatMap((leg) => (leg.ref ? [leg.ref] : []));
   const itemDiv = Number(raw);
-  const cost = raw.trim() === "" ? null : attemptCost(loss, itemDiv, consumables.map((ref) => ref.price?.div ?? null));
-  const unpriced = consumables.filter((ref) => !ref.price).map((ref) => ref.name);
+  const prices = consumables.map((ref) => ref.price?.div ?? null);
+  const cost = raw.trim() === "" ? null : attemptCost(loss, itemDiv, prices);
+  const floor = raw.trim() === "" ? null : breakEvenResult(loss, itemDiv, prices);
+  const hint = calculatorHint(raw, itemDiv, consumables.filter((ref) => !ref.price).map((ref) => ref.name));
   return (
     <Section title="Cost per attempt" tip={`Consumables at today's exchange prices plus a ${Math.round(loss * 100)}% chance (the graded odds above) of losing your item.`}>
       <label htmlFor={inputId} className="flex flex-wrap items-center gap-2 text-sm text-neutral-300">
@@ -151,11 +161,11 @@ function LossCalculator({ strategy, exPerDiv }: { strategy: TradeMethodView; exP
       <p className="flex flex-wrap items-center gap-2 text-sm text-neutral-200">
         Expected cost of one attempt:
         {cost !== null ? <PriceChip div={cost} exPerDiv={exPerDiv} /> : <span className="text-neutral-400">—</span>}
-        {cost === null && raw.trim() !== "" && unpriced.length > 0 && <span className="text-xs text-neutral-400">no exchange price for {unpriced.join(", ")}</span>}
+        {cost === null && hint && <span className="text-xs text-neutral-400">{hint}</span>}
       </p>
-      {cost !== null && (
+      {cost !== null && floor !== null && (
         <p className="text-xs text-neutral-400">
-          Only worth trying if the result you want sells for at least {fmtDivOrEx(cost, exPerDiv ?? 0)} more than your item — and the real bar is higher, since not every attempt that survives hits that result.
+          Only worth trying if the result you want sells for at least {fmtDivOrEx(floor, exPerDiv ?? 0)} ({fmtDivOrEx(floor - itemDiv, exPerDiv ?? 0)} more than your item), since it only pays when the item survives — and the real bar is higher, as not every surviving attempt hits that result.
         </p>
       )}
     </Section>
@@ -186,28 +196,6 @@ export function TradeMethodDetail({ strategy, data }: { strategy: TradeMethodVie
           <ConversionList conversions={rankConversions(strategy.price_refs)} exPerDiv={data.exPerDiv} />
         </Section>
       )}
-      <Closing strategy={strategy}>
-        <Section title="Steps">
-          <ol className="list-decimal space-y-1 pl-5 text-sm text-neutral-300">
-            {strategy.steps.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-        </Section>
-      </Closing>
-    </div>
-  );
-}
-
-/** A liquidation list's drawer: the items with their prices, where to sell them, and the steps. */
-export function LiquidateDetail({ strategy, data }: { strategy: LiquidateView; data: Board }) {
-  return (
-    <div className="grid gap-6">
-      <Overview strategy={strategy} league={data.computedLeague} />
-      <Section title="What to sell" right={<PriceProvenance data={data} />}>
-        <LegList legs={strategy.items} exPerDiv={data.exPerDiv} label="Items to sell" />
-        <p className="text-sm text-neutral-300">{strategy.sell_route}</p>
-      </Section>
       <Closing strategy={strategy}>
         <Section title="Steps">
           <ol className="list-decimal space-y-1 pl-5 text-sm text-neutral-300">

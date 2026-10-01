@@ -3,7 +3,7 @@
   "kind": "trade",
   "id": "loreweave-rings",
   "title": "Loreweave: sixty unique rings",
-  "summary": "Sixty unique rings make a Loreweave (Ornate Ringmail with three random unique-ring modifiers). Cheap unique rings have buyers among players collecting sixty, and a finished Loreweave is a unique of its own to sell.",
+  "summary": "Sixty unique rings make a Loreweave (Ornate Ringmail with three random unique-ring modifiers) through the Journey to the East quest. Cheap unique rings have buyers among players collecting sixty, and a finished Loreweave is a unique of its own to sell.",
   "mechanics": [],
   "patch": {
     "verified_against": "0.5.5",
@@ -20,6 +20,7 @@
     "claim": {
       "v": "syn",
       "src": [
+        "https://poe2db.tw/us/Journey_to_the_East",
         "https://poe2db.tw/us/Loreweave"
       ],
       "note": "Our reading of the method against the budget scale; not measured."
@@ -46,7 +47,7 @@
     }
   },
   "durability": {
-    "why_it_works": "Sixty unique rings make a Loreweave, so cheap unique rings have a use beyond their own mods.",
+    "why_it_works": "Dannig turns sixty unique rings into a Loreweave through the Journey to the East quest, so cheap unique rings have a use beyond their own mods.",
     "breaks_when": [
       "The Loreweave recipe is removed or changed",
       "Loreweave stops selling above sixty rings (neither is on the exchange, so no live EV)"
@@ -54,21 +55,31 @@
     "claim": {
       "v": "syn",
       "src": [
-        "https://poe2db.tw/us/Loreweave",
-        "https://poe2db.tw/us/Reforging_Bench"
+        "https://poe2db.tw/us/Journey_to_the_East",
+        "https://poe2db.tw/us/Loreweave"
       ],
       "note": "Our reading of the cited mechanic. Whether it pays today is only what live prices show."
     }
   },
   "inputs": [
     {
+      "text": "The Journey to the East quest item (from Expedition)",
+      "ref": null,
+      "claim": {
+        "v": "vp",
+        "src": [
+          "https://poe2db.tw/us/Journey_to_the_East"
+        ]
+      }
+    },
+    {
       "text": "Sixty unique rings",
       "ref": null,
       "claim": {
         "v": "vp",
         "src": [
-          "https://poe2db.tw/us/Loreweave",
-          "https://poe2db.tw/us/Reforging_Bench"
+          "https://poe2db.tw/us/Journey_to_the_East",
+          "https://poe2db.tw/us/Loreweave"
         ],
         "note": "Whether duplicates of the same ring count toward the sixty is unverified."
       }
@@ -106,6 +117,7 @@
     "claim": {
       "v": "vp",
       "src": [
+        "https://poe2db.tw/us/Journey_to_the_East",
         "https://poe2db.tw/us/Loreweave"
       ]
     }
@@ -113,7 +125,7 @@
   "price_refs": [],
   "steps": [
     "Keep every unique ring you find, and buy the cheapest ones in bulk on the trade site.",
-    "At sixty, combine them into a Loreweave (poe2db lists the recipe).",
+    "Get the Journey to the East quest item from Expedition and bring it to Dannig (Act 4, Ruins of Kingsmarch); give him sixty unique rings for a Loreweave.",
     "Sell the Loreweave on the trade site, or sell your rings to a player collecting sixty."
   ],
   "risks": [

@@ -161,7 +161,7 @@
       }
     },
     {
-      "text": "Tablets: what three tablets return (a random tablet, or a rare one) is unresolved, so no EV",
+      "text": "Tablets (the inputs must be magic, per maxroll): whether the result is a random magic tablet or a rare one is unresolved, so no EV",
       "ref": null,
       "claim": {
         "v": "uv",
@@ -176,10 +176,12 @@
     "text": "Runes and Liquid Emotions step up the same way every time and nothing is destroyed. Essences, catalysts, soul cores, uniques and tablets come out random.",
     "loss_chance": 0,
     "claim": {
-      "v": "vp",
+      "v": "cf",
       "src": [
-        "https://poe2db.tw/us/Reforging_Bench"
-      ]
+        "https://poe2db.tw/us/Reforging_Bench",
+        "https://maxroll.gg/poe2/resources/reforging-bench-guide"
+      ],
+      "note": "Runes and Liquid Emotions step up the same way on poe2db. Essence outputs conflict (poe2db a fixed next tier, maxroll random); the other random outputs are per maxroll."
     }
   },
   "price_refs": [

@@ -30,7 +30,7 @@ Mechanic = Literal[
     "irradiated",
 ]
 BudgetTier = Literal["league_start", "mid", "high"]
-StrategyKind = Literal["farm", "roll_and_sell", "trade", "liquidate"]
+StrategyKind = Literal["farm", "roll_and_sell", "trade"]
 ItemRarity = Literal["normal", "magic", "rare"]
 SellUnit = Literal["single", "set_of_3"]
 Master = Literal["jado", "doryani", "hilda", "any"]
@@ -392,29 +392,9 @@ class TradeStrategy(_Strict):
     risks: tuple[Text, ...]
 
 
-class LiquidateStrategy(_Strict):
-    """A list of items to sell and where."""
-
-    schema_version: Literal[3]
-    kind: Literal["liquidate"]
-    id: str = Field(pattern=ENTITY_ID_PATTERN)
-    title: Text
-    summary: Text
-    mechanics: tuple[Mechanic, ...]
-    patch: PatchStamp
-    status: Literal["draft", "reviewed", "stale"]
-    budget: Budget
-    ratings: Ratings
-    durability: Durability
-    items: tuple[TradeLeg, ...] = Field(min_length=1)
-    sell_route: Text
-    steps: tuple[Text, ...] = Field(min_length=1)
-    risks: tuple[Text, ...]
-
-
 #: One strategy file of any kind (strategySchema, z.discriminatedUnion("kind", ...) in schema.ts).
 Strategy = Annotated[
-    FarmStrategy | RollAndSellStrategy | TradeStrategy | LiquidateStrategy,
+    FarmStrategy | RollAndSellStrategy | TradeStrategy,
     Field(discriminator="kind"),
 ]
 STRATEGY_ADAPTER: TypeAdapter[Strategy] = TypeAdapter(Strategy)
@@ -437,5 +417,21 @@ def strategy_refs(strategy: Strategy) -> tuple[EntityRef, ...]:
             legs = strategy.inputs + strategy.outputs
             named = tuple(leg.ref for leg in legs if leg.ref is not None)
             return named + _conversion_refs(strategy.price_refs)
-        case LiquidateStrategy():
-            return tuple(leg.ref for leg in strategy.items if leg.ref is not None)
+
+
+def _conversion_outputs(conversions: tuple[Conversion, ...]) -> tuple[EntityRef, ...]:
+    return tuple(leg.ref for c in conversions for leg in c.outputs)
+
+
+def strategy_outputs(strategy: Strategy) -> tuple[EntityRef, ...]:
+    """The catalog items a strategy produces: farm yields, the item sold, conversion and trade
+    outputs. Spent currency is not an output: asking for Exalted Orbs finds no roll method."""
+    match strategy:
+        case FarmStrategy():
+            return tuple(y.ref for y in strategy.yields)
+        case RollAndSellStrategy():
+            sold = (strategy.sell_ref,) if strategy.sell_ref is not None else ()
+            return sold + _conversion_outputs(strategy.price_refs)
+        case TradeStrategy():
+            named = tuple(leg.ref for leg in strategy.outputs if leg.ref is not None)
+            return named + _conversion_outputs(strategy.price_refs)
