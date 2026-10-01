@@ -31,8 +31,37 @@ export const CLAIM_MEANING: Record<ClaimVerdict, string> = {
 /** Only an unsettled fact earns the amber border; settled grades stay neutral so amber keeps meaning "check this". */
 export const isUnsettledClaim = (verdict: ClaimVerdict): boolean => verdict === "uv" || verdict === "cf";
 
-// Rendered as links, so only https (no javascript:/data: hrefs out of a data file).
-const sourceUrlSchema = z.string().url().regex(/^https:\/\//, "claim sources must be https URLs");
+/**
+ * Real-money-trading shops that publish SEO "guides" to sell currency. They are never a source: a
+ * citation is a link we send players to, and their facts are copied from elsewhere anyway. Matched
+ * on the host and its subdomains. Python mirror: RMT_DOMAINS in services/coach/src/strategies/models.py.
+ */
+export const RMT_DOMAINS = [
+  "poecurrency.com",
+  "iggm.com",
+  "u4n.com",
+  "u4gm.com",
+  "mmojugg.com",
+  "mmoexp.com",
+  "ezg.com",
+  "eznpc.com",
+  "poe-store.com",
+  "ign-store.com",
+] as const;
+
+/** True when the URL's host is an RMT shop or one of its subdomains; an unparsable URL is not one. */
+export function isRmtUrl(url: string): boolean {
+  if (!URL.canParse(url)) return false;
+  const host = new URL(url).hostname.toLowerCase();
+  return RMT_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
+}
+
+// Rendered as links, so only https (no javascript:/data: hrefs out of a data file), and never a shop.
+const sourceUrlSchema = z
+  .string()
+  .url()
+  .regex(/^https:\/\//, "claim sources must be https URLs")
+  .refine((url) => !isRmtUrl(url), "claim sources must not be real-money-trading shops (RMT_DOMAINS)");
 
 /** A grade whose label counts sources must carry that many; the others may cite none. */
 const MIN_SOURCES: Record<ClaimVerdict, number> = { vp: 1, vs: 2, ss: 1, uv: 0, cf: 0, syn: 0 };

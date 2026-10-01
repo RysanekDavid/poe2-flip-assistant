@@ -14,10 +14,9 @@
         "v": "vs",
         "src": [
           "https://poe2db.tw/us/Scroll_of_Wisdom",
-          "https://boostmatch.gg/blog/poe-2/articles/poe-2-0-5-scroll-wisdom-guide",
-          "https://www.u4n.com/news/scroll-of-wisdom-in-poe-2-simple-tips-every-player-should-know.html"
+          "https://boostmatch.gg/blog/poe-2/articles/poe-2-0-5-scroll-wisdom-guide"
         ],
-        "note": "Effect from poe2db. The free Hooded One identify is from boostmatch; u4n only says NPCs identify for free later. Pickup bucket from poe.ninja/poe2scout prices on 2026-09-29 (~0.02–0.06 Ex)."
+        "note": "Effect from poe2db. The free Hooded One identify is from boostmatch. Pickup bucket from poe.ninja/poe2scout prices on 2026-09-29 (~0.02–0.06 Ex)."
       }
     },
     {
@@ -330,10 +329,10 @@
         "src": [
           "https://poe2db.tw/us/Omen_of_Light",
           "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Forbidden%20Rites&type=Ritual",
-          "https://www.poecurrency.com/news/poe-2-patch-0-5-5-abyss-farming-changed-omen-of-light-moved-to-abyssal-depths",
-          "https://timesaver.gg/blog/poe2-amanamu-farming-guide"
+          "https://timesaver.gg/blog/poe2-amanamu-farming-guide",
+          "https://www.reddit.com/r/PathOfExile2/comments/1wb7crm/omen_of_liege_dropping_even_though_im_killing/"
         ],
-        "note": "Item text from poe2db; price from poe.ninja only (~9 Div on 2026-09-29). Drop source per search results: any rare in Abyssal Depths in 0.5.5; in normal maps only Amanamu-faction rares."
+        "note": "Item text from poe2db; price from poe.ninja only (~9 Div on 2026-09-29). Drop source: timesaver (a 0.5.4 guide) has Amanamu rares killed outside their void cloud drop it; a 0.5.5 Reddit report says rares of other factions now drop it too. Neither poe2db nor the patch notes we read state the drop source."
       }
     },
     {

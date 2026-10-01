@@ -40,13 +40,11 @@
       ],
       "strategy_ids": [],
       "claim": {
-        "v": "vs",
+        "v": "ss",
         "src": [
-          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/",
-          "https://www.iggm.com/news/poe-2-0-5-5-atlas-progression-guide-how-to-complete-passive-tree-avoid-traps",
-          "https://www.poecurrency.com/news/poe-2-0-5-5-forbidden-rites-event-league-endgame-strategy-fast-atlas-unlocks-high-profit-farming"
+          "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
         ],
-        "note": "Three guides agree on boss-rushing and running maps magic while unlocking."
+        "note": "Routing advice from Fubgun's guide (Exile Codex write-up): boss-rush and run maps magic while unlocking. Two currency-shop pages that repeated it were dropped as sources on 2026-10-01; no primary source states advice like this."
       }
     },
     {
@@ -100,10 +98,9 @@
           "https://poe2db.tw/us/Atlas_passive_skill",
           "https://poe2db.tw/us/Survival_of_the_Fittest",
           "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/",
-          "https://www.iggm.com/news/poe-2-0-5-5-atlas-progression-guide-how-to-complete-passive-tree-avoid-traps",
           "https://www.pathofexile.com/forum/view-thread/4000864"
         ],
-        "note": "Node texts are primary (poe2db): Man Trap '10% chance for Essence Monsters to be Rogue Exiles'; Survival of the Fittest turns extra-rare packs in Desert maps into 'a single Rare Monster with doubled Effectiveness'. The 'avoid' advice is Fubgun's; IGGM repeats it, likely from the same video. 0.5.5 fixed a Survival of the Fittest drop bug; the merge itself is by design."
+        "note": "Node texts are primary (poe2db): Man Trap '10% chance for Essence Monsters to be Rogue Exiles'; Survival of the Fittest turns extra-rare packs in Desert maps into 'a single Rare Monster with doubled Effectiveness'. The 'avoid' advice is Fubgun's. 0.5.5 fixed a Survival of the Fittest drop bug; the merge itself is by design."
       }
     },
     {
@@ -243,7 +240,6 @@
         "v": "vs",
         "src": [
           "https://game8.co/games/Path-of-Exile-2/archives/603213",
-          "https://www.poecurrency.com/news/poe-2-0-5-5-forbidden-rites-event-league-endgame-strategy-fast-atlas-unlocks-high-profit-farming",
           "https://exile.codex-wiki.com/guides/how-to-quickly-progress-your-atlas-in-0-5-5-forbidden-rites/"
         ],
         "note": "Game8 (updated 2026-06-06): 'Defeat 4 Deadly Map Bosses in Any Order'. Other guides call these Anomaly maps; one search snippet spells two names differently (Derelict Manor, Sealed Reservoir)."

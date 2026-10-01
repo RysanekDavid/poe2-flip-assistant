@@ -6,6 +6,7 @@ field names to the zod source).
 """
 
 from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
@@ -37,6 +38,25 @@ BUDGET_ORDER: tuple[BudgetTier, ...] = ("league_start", "mid", "high")
 #: A grade whose label counts sources must carry that many (MIN_SOURCES in claim.ts).
 MIN_SOURCES: dict[ClaimVerdict, int] = {"vp": 1, "vs": 2, "ss": 1, "uv": 0, "cf": 0, "syn": 0}
 TRADE_STAT_ID_PATTERN = r"^explicit\.stat_\d+$"
+#: Real-money-trading shops are never a claim source (RMT_DOMAINS in claim.ts; host or subdomain).
+RMT_DOMAINS: tuple[str, ...] = (
+    "poecurrency.com",
+    "iggm.com",
+    "u4n.com",
+    "u4gm.com",
+    "mmojugg.com",
+    "mmoexp.com",
+    "ezg.com",
+    "eznpc.com",
+    "poe-store.com",
+    "ign-store.com",
+)
+
+
+def is_rmt_url(url: str) -> bool:
+    """True when the URL's host is an RMT shop or one of its subdomains (isRmtUrl in claim.ts)."""
+    host = (urlsplit(url).hostname or "").lower()
+    return any(host == d or host.endswith(f".{d}") for d in RMT_DOMAINS)
 Text = Annotated[str, StringConstraints(min_length=1)]
 
 
@@ -61,12 +81,14 @@ class Claim(_Strict):
 
     @model_validator(mode="after")
     def sources_match_grade(self) -> "Claim":
-        """Reject a grade that promises more sources than it cites, or a non-https source."""
+        """Reject too few sources for the grade, a non-https source or an RMT shop."""
         if len(self.src) < MIN_SOURCES[self.v]:
             raise ValueError(f"a {self.v!r} claim needs at least {MIN_SOURCES[self.v]} source(s)")
         for url in self.src:
             if not url.startswith("https://") or any(ch.isspace() for ch in url):
                 raise ValueError(f"claim source {url!r} must be an https URL")
+            if is_rmt_url(url):
+                raise ValueError(f"claim source {url!r} is a real-money-trading shop")
         return self
 
     @property

@@ -4,6 +4,7 @@
  * schemas on every read, so a hand edit that drifts from the shape fails loudly instead of rendering.
  */
 import { z } from "zod";
+import { isRmtUrl } from "../../lib/claim";
 import { PATCH_VERSION_RE } from "../../sources/patchNotes/contracts";
 import { ENTITY_ID_PATTERN } from "../entities/schema";
 
@@ -25,8 +26,12 @@ const isoDay = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, "expected YYYY-MM-DD")
   .refine((s) => new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s, "not a real calendar date");
 
-// Rendered as links, so https only (no javascript:/data: hrefs out of a data file).
-const httpsUrl = z.string().url().regex(/^https:\/\//, "source URLs must be https");
+// Rendered as links, so https only (no javascript:/data: hrefs out of a data file), and never an RMT shop.
+const httpsUrl = z
+  .string()
+  .url()
+  .regex(/^https:\/\//, "source URLs must be https")
+  .refine((url) => !isRmtUrl(url), "source URLs must not be real-money-trading shops (RMT_DOMAINS)");
 
 export const patchVersionSchema = z.string().regex(PATCH_VERSION_RE, "expected a patch version like 0.5.5b");
 
