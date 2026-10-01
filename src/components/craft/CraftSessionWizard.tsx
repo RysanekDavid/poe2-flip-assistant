@@ -7,6 +7,7 @@ import { PNL_CHANGED_EVENT } from "../CraftPnlPanel";
 import { ShopScreen, type CostField, type ManualCosts } from "./SessionShop";
 import { StepScreen, type Screen } from "./SessionStep";
 import type { CraftGuide } from "../../core/craftRecipes";
+import { resolveRetry, type RetryTarget } from "../../core/craftRetry";
 
 /**
  * Interactive craft session — the guide as a live companion you follow WHILE crafting, not a
@@ -174,6 +175,15 @@ async function saveOutcome(attemptId: number, brick: boolean, soldDiv: number | 
   }
 }
 
+/** A retryFrom that doesn't resolve is a data bug testCraftGuides already blocks — if one ever
+ *  ships anyway, break loudly rather than silently drop the way back the guide promises. */
+function retryTargetFor(guide: CraftGuide, idx: number): RetryTarget | null {
+  const resolved = resolveRetry(guide, idx);
+  if (!resolved) return null;
+  if (!resolved.ok) throw new Error(`[craft-session] ${resolved.reason}`);
+  return resolved.target;
+}
+
 export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number | null; icons: Record<string, string> }) {
   const steps = useMemo(() => r.guide.phases.flatMap((p) => p.steps.map((step) => ({ phase: p.title, step }))), [r.guide]);
   const s = useCraftSession(r);
@@ -215,6 +225,7 @@ export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number
           matInfo={matInfo}
           go={s.setScreen}
           legality={r.provenance.steps.find((l) => l.idx === screen.idx) ?? null}
+          retry={retryTargetFor(r.guide, screen.idx)}
         />
       )}
       {screen.kind === "outcome" && (

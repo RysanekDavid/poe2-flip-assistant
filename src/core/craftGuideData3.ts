@@ -68,6 +68,7 @@ export const GUIDES_3: Record<string, CraftGuide> = {
             pick: SPELL_SUFFIX_PICKS,
             onFail:
               "Nothing usable → discard the base while it costs under half an Omen of Light [S20]. Pricier base: strip just the desecrated mod with Omen of Light + Orb of Annulment and slam a fresh cranium.",
+            retryFrom: { phase: "Desecrated 3rd suffix", step: 1 },
             check: "3 caster suffixes + '+1 Suffix Modifier allowed'.",
           },
         ],
@@ -100,6 +101,7 @@ export const GUIDES_3: Record<string, CraftGuide> = {
             mats: [MATS.potentLiquidFerocity],
             warning: FEROCITY_SUFFIX_ROLL,
             onFail: `It took Spell Damage → Chaos-spam the prefixes (suffixes can't be hit) until Spell Damage returns, then slam Ferocity again. ${FEROCITY_STOP}`,
+            retryFrom: { phase: "Ferocity finish", step: 1 },
             check: "3 suffixes + Spell Damage + 'increased Effect of Suffixes'.",
             unverified: FEROCITY_SIDE,
           },
@@ -166,7 +168,9 @@ export const GUIDES_3: Record<string, CraftGuide> = {
             do: "Slam Potent Liquid Contempt.",
             why: "Want '+1 Suffix Modifier allowed' (prefix slot). ~50/50, or ~1-in-3 to fail with a fractured suffix [S4].",
             mats: [MATS.potentLiquidContempt],
-            onFail: "'+1 Prefix' took Crit Chance → the fracture protects the key mod: Annul/Chaos back to the second-suffix step and repeat.",
+            onFail:
+              "'+1 Prefix Modifier allowed' (sits in a suffix slot) took Crit Chance → Orb of Annulment ×2 (the fracture can't be hit) leaves fractured + 1 loose mod = the 'Second caster suffix' start; Chaos-spam to Crit Chance for Spells, 2 Exalts, Contempt again.",
+            retryFrom: { phase: "Second caster suffix", step: 1 },
             check: "Fractured + Crit Chance suffixes, '+1 Suffix Modifier allowed' + 1 prefix.",
             unverified: CONTEMPT_SIDE,
           },
@@ -176,6 +180,7 @@ export const GUIDES_3: Record<string, CraftGuide> = {
             mats: [MATS.preservedCranium, MATS.omenAbyssalEchoes],
             pick: SPELL_SUFFIX_PICKS,
             onFail: "Bad options → Omen of Light + Orb of Annulment strips only the desecrated mod; slam a fresh cranium. Worth it on a fractured base [S20].",
+            retryFrom: { phase: "Contempt + desecrated suffix", step: 2 },
           },
           {
             do: "Omen of Light + Orb of Annulment (only on a bad reveal).",

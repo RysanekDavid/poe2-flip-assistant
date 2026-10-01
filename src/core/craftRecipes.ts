@@ -58,6 +58,16 @@ export interface RecipeMaterialLine {
 }
 
 /**
+ * A step to return to after a failure: the phase by its exact title and a 1-based step inside it
+ * (default 1). It may name the failing step itself ("slam again"). craftRetry.ts resolves it to
+ * the session's flat step index; testCraftGuides fails on one that doesn't resolve.
+ */
+export interface RetryRef {
+  phase: string;
+  step?: number;
+}
+
+/**
  * One step of the craft playbook. `mats` lists the materials touched in the step so the UI can
  * show live prices inline; `warning` marks the get-this-wrong-and-it-bricks checks; `onFail`
  * says what to do when the step doesn't proc (discard base, sell as-is, continue anyway…).
@@ -68,6 +78,9 @@ export interface GuideStep {
   mats?: CraftMaterial[];
   warning?: string;
   onFail?: string;
+  // Set exactly when `onFail` sends the player back to an earlier (or this) step — the failure
+  // panel turns it into a one-click jump.
+  retryFrom?: RetryRef;
   pick?: string[]; // at reveal/unveil steps: the exact mods to look for, best first
   check?: string; // what the item must look like after this step — the player's verification
   // Set when a step's mechanic could NOT be confirmed against the KB / RePoE catalog. The UI must

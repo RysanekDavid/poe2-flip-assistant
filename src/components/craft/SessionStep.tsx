@@ -2,6 +2,7 @@
 
 import { Check, ChevronLeft, AlertTriangle, ClipboardCheck, FlaskConical } from "lucide-react";
 import type { GuideStep } from "../../core/craftRecipes";
+import type { RetryTarget } from "../../core/craftRetry";
 import type { StepLegality } from "../../core/craftProvenance/schema";
 import { LegalityChip } from "./ProvenanceChips";
 import type { MatInfoFn } from "./craftView";
@@ -79,37 +80,62 @@ function StepNotes({ step }: { step: GuideStep }) {
   );
 }
 
+interface FailPanelProps {
+  onFail: string;
+  idx: number;
+  retry: RetryTarget | null;
+  next: Screen;
+  prev: Screen;
+  go: (s: Screen) => void;
+}
+
+/** The failure branch: what the guide says to do, plus a one-click jump to the step it names. */
+function FailPanel({ onFail, idx, retry, next, prev, go }: FailPanelProps) {
+  return (
+    <div className="rounded-md border border-amber-900/60 bg-amber-950/30 p-3 text-sm text-amber-300">
+      <p className="mb-2 font-medium">it failed — now what:</p>
+      <p>{onFail}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {retry && (
+          <button
+            onClick={() => go({ kind: "step", idx: retry.idx, failed: false })}
+            className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-600"
+          >
+            {retry.idx === idx ? `↺ redo this step (${retry.label})` : `↺ back to ${retry.label}`}
+          </button>
+        )}
+        <button onClick={() => go(prev)} className="rounded border border-neutral-600 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-800">
+          ← back
+        </button>
+        <button onClick={() => go(next)} className="rounded border border-neutral-600 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-800">
+          continue anyway →
+        </button>
+        <button onClick={() => go({ kind: "outcome", brick: true })} className="rounded border border-red-900/60 px-2 py-1 text-xs text-red-300 hover:bg-red-950/40">
+          abort attempt (brick)
+        </button>
+      </div>
+    </div>
+  );
+}
+
 interface StepNavProps {
   step: GuideStep;
   idx: number;
   last: boolean;
   failed: boolean;
+  retry: RetryTarget | null;
   go: (s: Screen) => void;
 }
 
 /** Done / back / failed controls, or the failure branch once "it failed" was pressed. */
-function StepNav({ step, idx, last, failed, go }: StepNavProps) {
+function StepNav({ step, idx, last, failed, retry, go }: StepNavProps) {
   const next: Screen = last ? { kind: "outcome", brick: false } : { kind: "step", idx: idx + 1, failed: false };
-  if (failed && step.onFail) {
-    return (
-      <div className="rounded-md border border-amber-900/60 bg-amber-950/30 p-3 text-sm text-amber-300">
-        <p className="mb-2 font-medium">it failed — now what:</p>
-        <p>{step.onFail}</p>
-        <div className="mt-3 flex gap-2">
-          <button onClick={() => go(next)} className="rounded border border-neutral-600 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-800">
-            continue anyway →
-          </button>
-          <button onClick={() => go({ kind: "outcome", brick: true })} className="rounded border border-red-900/60 px-2 py-1 text-xs text-red-300 hover:bg-red-950/40">
-            abort attempt (brick)
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const prev: Screen = idx === 0 ? { kind: "shop" } : { kind: "step", idx: idx - 1, failed: false };
+  if (failed && step.onFail) return <FailPanel onFail={step.onFail} idx={idx} retry={retry} next={next} prev={prev} go={go} />;
   return (
     <div className="flex items-center gap-2 pt-1">
       <button
-        onClick={() => go(idx === 0 ? { kind: "shop" } : { kind: "step", idx: idx - 1, failed: false })}
+        onClick={() => go(prev)}
         className="inline-flex items-center gap-1 rounded border border-neutral-700 px-2.5 py-1.5 text-sm text-neutral-400 hover:bg-neutral-800"
       >
         <ChevronLeft className="h-4 w-4" /> back
@@ -139,9 +165,11 @@ interface StepScreenProps {
   go: (s: Screen) => void;
   /** Audit verdict for this step's materials; null for a step that spends none. */
   legality: StepLegality | null;
+  /** Where the failure panel's retry button jumps; null when the guide names no retry step. */
+  retry: RetryTarget | null;
 }
 
-export function StepScreen({ step, idx, total, failed, matInfo, go, legality }: StepScreenProps) {
+export function StepScreen({ step, idx, total, failed, matInfo, go, legality, retry }: StepScreenProps) {
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center justify-center gap-2 text-xs text-neutral-500">
@@ -154,7 +182,7 @@ export function StepScreen({ step, idx, total, failed, matInfo, go, legality }: 
       <p className="text-center text-lg font-medium text-neutral-100">{step.do}</p>
       {step.why && <p className="text-center text-sm text-neutral-500">{step.why}</p>}
       <StepNotes step={step} />
-      <StepNav step={step} idx={idx} last={idx === total - 1} failed={failed} go={go} />
+      <StepNav step={step} idx={idx} last={idx === total - 1} failed={failed} retry={retry} go={go} />
     </div>
   );
 }

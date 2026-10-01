@@ -47,6 +47,7 @@ export const GUIDES: Record<string, CraftGuide> = {
             ],
             onFail:
               "Both option sets bad → Omen of Light + Orb of Annulment strips JUST the revealed desecrated mod (rest of the item untouched), then desecrate again with a fresh cranium.",
+            retryFrom: { phase: "Desecrated suffix", step: 1 },
             check: "3 caster suffixes + the +1-suffix mod.",
           },
         ],
@@ -191,6 +192,7 @@ export const GUIDES: Record<string, CraftGuide> = {
             // strip, not a reroll; the reveal reroll is Abyssal Echoes (KB §4).
             onFail:
               "Junk reveal → Omen of Light + Orb of Annulment strips only the desecrated mod, re-desecrate with a fresh Collarbone (+Echoes) — only worth it with filled suffixes.",
+            retryFrom: { phase: "Prefix desecration (hits only)", step: 1 },
           },
           {
             do: "Re-catalyse to 20% before listing.",
@@ -282,6 +284,7 @@ export const GUIDES: Record<string, CraftGuide> = {
             mats: [MATS.vaalCultivation],
             warning: "On a NON-corrupted unique the orb instead transforms it into a random different corrupted unique of the class — documented 2-div+ losses. Corrupted Vaal unique ONLY.",
             onFail: "Bad cultivated roll → slam again or sell the husk; the orb cost dominates, so decide per copy how deep you gamble.",
+            retryFrom: { phase: "The gamble", step: 1 },
             check: "Both “per 100 maximum Mana” lines present, NO “costs an additional % of maximum Life” line.",
           },
         ],

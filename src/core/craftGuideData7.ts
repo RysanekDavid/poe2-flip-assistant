@@ -65,6 +65,7 @@ function resOpening(slot: "belt" | "ring"): GuidePhase[] {
           ],
           unverified: slot === "belt" ? BELT_BOSS : RING_BOSS,
           onFail: "Attribute or utility line instead → keep it (the item still sells on life + two res), or strip it with Omen of Light + an Orb of Annulment and try again.",
+          retryFrom: { phase: "Elemental + chaos hybrid (suffix)", step: 1 },
         },
       ],
     },
