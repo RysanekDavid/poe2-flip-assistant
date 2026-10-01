@@ -3,7 +3,7 @@
 
 **Corrections 2026-09-29 (Zarokh rings):** the Sekhema's Resolve name in the Unique Relic reward pairs (§6) and the pinnacle-boss table (§8) was re-checked against poe2db and replaced with the rings' 0.5.0 names. Everything else is still the 0.5.4-era research.
 
-**Corrections 2026-10-01 (sources):** citations to real-money-trading shops were removed. Facts that lost their only independent source were re-sourced from poe2db, maxroll, mobalytics and fextralife (Sagas, Fluxes, corrupted essences, corruption altars, Arbiter of Divinity, gambling, level-20 gem odds) or downgraded to [single-source] / [unverified]; shop-only prices were dropped, and the refuted Uhtred value, 87% Lightning and Temple of Atzoatl claims were corrected in the body.
+**Corrections 2026-10-01 (sources):** citations to real-money-trading shops were removed. Facts that lost their only independent source were re-sourced from poe2db, maxroll, mobalytics and fextralife (Sagas, Fluxes, corrupted essences, corruption altars, Arbiter of Divinity, gambling, level-20 gem odds) or downgraded to [single-source] / [unverified]; shop-only prices were dropped, and the refuted Uhtred value, 87% Lightning and Temple of Atzoatl claims were corrected in the body; a snippet-level conquestcapped.com (currency seller) corroboration on the Trial of the Sekhemas section was removed too.
 
 ---
 
@@ -95,7 +95,7 @@ Acquisition: Aldur's Saga is "Exclusively obtained through specific runewords fr
 ## 6. Trials (Sekhemas + Chaos) — trade-relevant loot
 
 ### Trial of the Sekhemas
-[single-source, one deep fetch — [maxroll](https://maxroll.gg/poe2/resources/trial-of-the-sekhemas), corroborated at title/topic level by conquestcapped in search snippets]
+[single-source, one deep fetch — [maxroll](https://maxroll.gg/poe2/resources/trial-of-the-sekhemas)]
 - **Access**: Djinn Barya (drops from monsters starting Act 2). Floors scale with area level: lvl 24–44 → 1 floor, 45–59 → 2, 60–74 → 3, 75+ → 4 floors.
 - **Honour**: a secondary "health" bar; hitting 0 ends the run. Armour reduces Honour loss, Evasion prevents it outright; Shrines inside the Trial restore it; "Honour Resistance" stat mitigates loss.
 - **Sacred Water**: run-scoped currency spent at Merchants on Boons and Relics; unspent Sacred Water converts to extra Keys at the Keth Forge.

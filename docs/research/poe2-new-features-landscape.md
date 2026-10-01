@@ -56,8 +56,8 @@ risk, but don't make new features load-bearing on them without need.
 ## Sources (accessed 2026-09-26)
 
 pathofexile.com/developer/docs (+/reference) · forum 4000864, 3999366 · craftofexile.com/weightings?game=poe2 ·
-poe2db.tw · repoe-fork.github.io/poe2 · github.com/Dboire9/POE2_HTC · timesaver.gg (crafting, 50 div/hr,
-1.0 guide) · exiledtools.com/farming · github.com/DoofDilla/dillapoe2stat · github.com/exilence-ce/exilence-ce ·
+poe2db.tw · repoe-fork.github.io/poe2 · github.com/Dboire9/POE2_HTC ·
+exiledtools.com/farming · github.com/DoofDilla/dillapoe2stat · github.com/exilence-ce/exilence-ce ·
 github.com/ugimser/mapwatch · igodspy.github.io/PoE2MT · poeregex.cz/poe2 · poe2.re ·
 github.com/NeverSinkDev/NeverSink-Filter-for-PoE2 · github.com/eason1305/POE2-Price-Oracle ·
 github.com/ImpliedThreat/GigaTrade-PoE2 · maxroll.gg (waystones, 1.0 date)

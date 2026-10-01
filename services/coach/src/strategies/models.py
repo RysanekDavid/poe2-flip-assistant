@@ -67,6 +67,7 @@ RMT_DOMAINS: tuple[str, ...] = (
     "skycoach.gg",
     "instant-carry.com",
     "misti.services",
+    "conquestcapped.com",
 )
 
 

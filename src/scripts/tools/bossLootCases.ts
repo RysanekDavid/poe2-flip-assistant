@@ -68,7 +68,7 @@ function testRatesAndDrops(file: BossLootFile): void {
     assert.ok(!src.includes("farmofexile.com"), `${name} is not credited to Farm of Exile`);
   }
   for (const [name, p] of ashRates) assert.deepEqual(rateOf(file, "arbiter-of-ash", name), point(p), `Arbiter of Ash ${name}`);
-  // poe2wiki's 0.3.0 estimates; Olroth's Resolve is listed there as "<1%"
+  // poe2wiki community estimates, Difficulty 3 (top since 0.3.0), n=71; Olroth's Resolve is listed there as "<1%"
   const olRates: Array<[string, number]> = [["Olrovasara", 0.42], ["Keeper of the Arc", 0.32], ["Svalinn", 0.11], ["Heroic Tragedy", 0.125]];
   for (const [name, p] of olRates) assert.deepEqual(rateOf(file, "olroth", name), point(p), `Olroth ${name}`);
   assert.deepEqual(rateOf(file, "olroth", "Olroth's Resolve"), { kind: "range", lo: 0, hi: 0.01 });
