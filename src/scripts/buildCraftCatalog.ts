@@ -67,10 +67,14 @@ const isSide = (g: string): g is "prefix" | "suffix" => g === "prefix" || g === 
 function toCatalogMod(m: RepoeMod, family: string, side: "prefix" | "suffix", domain: "item" | "desecrated"): CatalogMod | null {
   const text = m.text ? cleanTemplate(m.text) : "";
   if (!text) return null; // hidden mods have no display line to match against
+  // every RePoE 4.5 mod carries implicit_tags (often empty); a missing key is a snapshot shape change
+  if (!m.implicit_tags) throw new Error(`mod "${m.name ?? text}" has no implicit_tags — RePoE shape changed`);
   return {
     text,
     name: m.name?.trim() ?? "",
     family,
+    groups: m.groups,
+    tags: m.implicit_tags,
     side,
     domain,
     level: m.required_level,

@@ -33,7 +33,7 @@ jewellery, or armour.
 `craft/craft-catalog.json.gz` is the slim catalog the Tools → Craft moves panel reads. The web
 process must never load the ~60 MB RePoE payload, so this file carries only what the tool needs:
 every item-domain prefix/suffix mod (jewel pools are RePoE domain `misc`), every desecrated mod and
-every crafted-only mod (essence mods, and the liquid-emotion `CraftedJewel*` jewel mods) a craftable class can carry — text template, affix name, tier family, side,
+every crafted-only mod (essence mods, and the liquid-emotion `CraftedJewel*` jewel mods) a craftable class can carry — text template, affix name, tier family, every RePoE mod group and `implicit_tags`, side,
 modifier level, value ranges — plus the per-class/per-tag-combo tier pools and base identities.
 It is generated from the committed snapshot by:
 
@@ -45,8 +45,8 @@ The build refuses to run when the artifact does not match `repoe/manifest.json` 
 `patch-coverage.json` describes a different snapshot, and stamps the result with the source
 `artifact_sha256`, RePoE version and game-data patch. `test:tools:craft-moves` fails while that
 stamp differs from the manifest, so **re-run the build after every `npm run sync:poe2-data`** and
-commit both. The JSON (~3.4 MB, mostly tier pools repeated across base-type combos) is gzipped
-(~160 KB); Node's gzip writes mtime 0, so an unchanged snapshot rebuilds to identical bytes. Like
+commit both. The JSON (~3.6 MB, mostly tier pools repeated across base-type combos) is gzipped
+(~175 KB); Node's gzip writes mtime 0, so an unchanged snapshot rebuilds to identical bytes. Like
 the snapshot it comes from, it holds no spawn weights the tool could turn into probabilities.
 
 ## Derived artifact: regex datasets
