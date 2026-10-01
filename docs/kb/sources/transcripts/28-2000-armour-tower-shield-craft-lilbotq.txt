@@ -1,0 +1,299 @@
+[YouTube title not fetched] 2,000 Armour Tower Shield craft — LilBotQ
+https://www.youtube.com/watch?v=4YOSSAa53UU
+
+(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api. The video's own title was not fetched (the oEmbed request was blocked in that session); the creator name is from a search listing.)
+
+[0:00] What's up, YouTube? Here's how you can
+[0:01] craft a 2,000 armor shield and how I
+[0:03] crafted my own. No BS, let's hop into
+[0:06] it.
+[0:07] High armor shields are extremely
+[0:08] valuable on builds that revolve around
+[0:10] the skill shield wall, like you see for
+[0:12] mine, as their damage scales directly
+[0:14] with the armor value of their shield.
+[0:16] Therefore, the more armor they have, the
+[0:18] more damage they do. For this method,
+[0:20] you're going to want a Taula tower
+[0:22] shield, as this is the highest armor
+[0:24] base, and you'll want an exceptional
+[0:26] base with two augmentable sockets.
+[0:29] Future Loquacious here, wanted to put
+[0:31] this disclaimer in as I got extremely
+[0:33] lucky with this craft and I do not want
+[0:35] any of you viewers to sort of expect
+[0:36] these types of outcomes. This was an
+[0:39] absolutely spoon-fed craft and this is
+[0:41] not something you can expect. However,
+[0:43] the process and the route and as well as
+[0:45] the expected values that I show are all
+[0:47] of the same. I was just on the extremely
+[0:50] lucky side of the bell curve on this
+[0:52] one. So, please keep that in mind if you
+[0:54] try to replicate that craft. All right,
+[0:56] I've said what I said. I'll see you on
+[0:57] the other side.
+[0:59] The first step you'll want to do is
+[1:00] quality up the item. We can see it's
+[1:02] already at 20% quality, and then you're
+[1:04] going to want to add Val armorer's
+[1:06] infusers. You're looking for 30%
+[1:08] quality, however, your chances of
+[1:10] hitting that are about one in eight or
+[1:12] one in nine. So, if you're trying to
+[1:14] profit craft these, I recommend just
+[1:16] aiming for anywhere between 24 to 26%.
+[1:22] So, we got 26%. That's totally fine.
+[1:26] And we did it one more time. 28, I think
+[1:28] is fine. I'm not really needing 30%. I'm
+[1:31] taking the 28%. We got lucky with a
+[1:33] couple of doubles. Now, the next step is
+[1:35] to use a perfect orb of transmutation
+[1:38] and turn it into a magic base, and we
+[1:40] got exactly what we're looking for,
+[1:42] which is T1 armor.
+[1:45] To calculate the expected value of the
+[1:47] cost, head over to Craft of Exile. Make
+[1:49] sure you're in PoE 2, and then you're
+[1:51] just going to select off-hands for
+[1:53] shields, shin strength shields, cuz
+[1:56] that's what we're doing. You're going to
+[1:57] want to input your item level. Mine is
+[2:00] item level 81, which is what I recommend
+[2:02] because you can get all of the good tier
+[2:04] one suffixes except for the high
+[2:06] elemental resistances. If the item is at
+[2:09] a rare value and only has one modifier
+[2:12] on it, you can just select chaos orbs
+[2:14] and then you can select the modifiers
+[2:16] that you would want. I would want tier
+[2:17] one armor flat as well as tier one
+[2:20] increased armor, so we can select both
+[2:22] of those and it tells us that the
+[2:24] expected amount of chaos orbs is 51.
+[2:27] This is an easy calculation that anybody
+[2:29] can do.
+[2:30] As for the perfect orbs of augmentation,
+[2:32] if you were to have it at a rare level
+[2:34] like mine and just keep spamming an orb
+[2:37] of annulment and then adding a perfect
+[2:39] orb of augmentation with each time, you
+[2:41] can just select orb of augmentation and
+[2:44] then you can select the perfect and then
+[2:47] it says choose which type of affixes
+[2:49] opened. Now, if you select none, you're
+[2:51] kind of just it just doesn't work that
+[2:53] way. For example, it'll just say NA if
+[2:57] you did it for the same thing for
+[2:58] increased armor. So, it doesn't
+[3:00] necessarily calculate it exactly how you
+[3:02] want it. If you were to select this to
+[3:04] say prefix, then it will say that it
+[3:07] takes roughly three perfect orbs of
+[3:09] augmentations. However, that's assuming
+[3:11] you cannot add a suffix if you're orb of
+[3:14] annulment spamming and there is no
+[3:16] modifiers on your magic item. It is not
+[3:19] three, it's actually roughly about eight
+[3:21] for an item level 81.
+[3:23] Please feel free to check out my
+[3:25] in-depth crafting guide about how you
+[3:27] can use these different weightings to
+[3:28] make perform these calculations and just
+[3:30] see how these numbers easily populate
+[3:33] for you.
+[3:34] However, that's the essentials of it and
+[3:36] just to determining the expected cost.
+[3:37] Again, it's about eight perfected orbs
+[3:39] of augmentation, so that would take me
+[3:41] roughly seven orbs of annulment with one
+[3:44] perfect orb of transmutation versus the
+[3:46] 51 chaos orbs. So, it's definitely
+[3:49] better to just chaos spam, but it really
+[3:51] just depends on how much divines are
+[3:52] worth at the time of the league. You
+[3:54] will also have to take into
+[3:55] consideration that if you are orb of
+[3:57] annulment spamming, you can get lucky
+[3:59] and get a great suffix combined with
+[4:01] your really good prefix, guaranteeing
+[4:04] your fracture doesn't absolutely destroy
+[4:06] your item.
+[4:07] I got extremely lucky with this one, so
+[4:09] we're just going to add a perfect orb of
+[4:11] augmentation. We got plus three maximum
+[4:13] fire resistance, not really that big of
+[4:16] a deal.
+[4:17] Now, the next step is to turn it into a
+[4:19] rare. If you aren't using it from a
+[4:21] magic base and you're just chaos
+[4:22] spamming, you're obviously just going
+[4:24] for a fracture. However, for this one, I
+[4:26] happen to have the magic base here, so
+[4:28] we're going to use the greater essence
+[4:30] of enhancement. This just gives the
+[4:32] increased armor evasion or energy
+[4:33] shield, so it will give it a T3 T4
+[4:36] value, which isn't ideal for what we're
+[4:39] going for. However, if we happen to miss
+[4:41] our fracture, the item isn't completely
+[4:43] bricked.
+[4:45] So, we've got T4 increased armor now, so
+[4:47] we're just going to want to activate an
+[4:49] omen of sanctification, and then I just
+[4:51] need to find a preserved rib.
+[4:53] So, we've got one here.
+[4:56] And now, we're just going for a
+[4:57] fracture. You'll want to divine the
+[4:59] armor value up before you fracture, so
+[5:01] I'm going to hit it with a couple of
+[5:02] divines until it gets a decent value.
+[5:07] And we got 277. So, the next time now
+[5:10] all we do is hit it with a fracturing
+[5:12] orb and hope it hits the flat armor.
+[5:15] It did hit the flat armor, so that's
+[5:17] super super good. This might be the
+[5:20] luckiest craft of my entire life, boys.
+[5:22] Holy
+[5:24] Oh my god. Well, from this point, you're
+[5:27] pretty much guaranteed the craft. Um
+[5:30] sorry, boys, I wasn't expecting that. I
+[5:32] did end up doing this craft earlier and
+[5:34] going for an omen of sanctification.
+[5:36] I'll leave that at the end for a clip,
+[5:38] but we totally missed and it bricked the
+[5:39] item. This definitely just made up for
+[5:41] it. The next step is to use orbs of
+[5:44] annulment
+[5:47] until it only has one modifier left.
+[5:49] Now, you're pretty familiar with this
+[5:51] step. You're just going to chaos spam.
+[5:53] Now, you do not go for the hybrid armor.
+[5:55] I go for the increased tier one armor
+[5:57] because the waiting is much lower on it,
+[5:58] and you're more likely to hit the
+[5:59] desecration on the hybrid.
+[6:02] So, that is T1. You can desecrate here
+[6:05] if you would like. It's not necessarily
+[6:07] bad to hit it with a desecrate.
+[6:10] And typically, I do if I have the
+[6:11] currency for it. I'll just go for one
+[6:13] and see if we end up getting lucky.
+[6:16] Now, the next step is to head to the
+[6:17] Well of Souls. Again, you're wanting the
+[6:19] tier one increased armor. You do not
+[6:21] want the hybrid. However, if you get it,
+[6:23] you can desecrate like I'm about to. But
+[6:25] again, it's totally optional. I
+[6:27] typically just go with the flow.
+[6:28] However, if you do plan to profit craft
+[6:30] these, I would just advise going for the
+[6:32] tier one increased armor because you're
+[6:34] just going to save money in the long
+[6:35] run. But we're just going to make sure
+[6:37] our Sinistral Necromancy is active,
+[6:39] Ancient Rib, activate the Abyssal
+[6:41] Echoes, and throw it in.
+[6:44] And we're looking for increased armor of
+[6:46] 100%.
+[6:48] And as you can see, we got like tier
+[6:50] four, which is not ideal.
+[6:52] Now, you could definitely Omen of Light
+[6:54] spam from here and guarantee it. But
+[6:55] however, the chances aren't really that
+[6:57] big. So, I'm just going to hit it with a
+[6:59] regular Orb of Annulment. If it removes
+[7:01] the desecrator modifier, I'll go for
+[7:03] another desecrate. Again, like I said, I
+[7:04] kind of go with the flow along on a lot
+[7:06] of these crafts.
+[7:07] And it didn't hit. So, that's totally
+[7:09] fine. We go back to chaos spamming until
+[7:11] we get one of the tier ones.
+[7:23] All right. And we got the tier one
+[7:25] increased armor. Now, this is the ideal.
+[7:28] From here, you would Omen of Light spam.
+[7:30] So, I'm just going to hit it with an
+[7:31] Omen of Sinistral Necromancy, and we're
+[7:33] going to use that Ancient Rib.
+[7:37] The chances of you hitting T1 hybrid are
+[7:39] actually very high when using an Abyssal
+[7:41] Echoes. So, it's not totally uncommon.
+[7:44] It might take you a couple omen of
+[7:45] lights.
+[7:49] Now again, if you are profit crafting,
+[7:51] you can settle for whatever tier you
+[7:53] get. That's totally a viable option.
+[7:56] However, I am using this for my own
+[7:58] build, so I am not settling. So, we're
+[8:00] going to be using the omen of light to
+[8:03] remove it. Hit it with that.
+[8:06] Boom.
+[8:09] And then we just keep throwing it back
+[8:10] in.
+[8:12] And we got it on the second try. Again,
+[8:14] it's very likely that you get the hybrid
+[8:16] increased armor, especially when you're
+[8:18] using an ancient rib. Every single
+[8:21] re-roll currently is about eight
+[8:23] divines. So, you do need to take that
+[8:24] into consideration if you're trying to
+[8:26] profit craft these.
+[8:28] From this point forward, you just socket
+[8:30] it and now we have a complete armor
+[8:32] 2,000 armor shield. So, if I go to my
+[8:35] runes and I activate the runes, we're
+[8:37] just going to throw in two iron runes
+[8:39] really quick.
+[8:43] All right, two iron runes. We're going
+[8:45] to make sure they're perfected. So,
+[8:47] we've got some masterwork runes.
+[8:52] And now we have 1987. All we have to do
+[8:54] is divine this up and because we have
+[8:56] the flat armor fractured, it's going to
+[8:59] be quite easy to divine.
+[9:03] And just like that, we have an 2,000
+[9:05] armor shield. Now, you could obviously
+[9:07] sanctify. The next step is to just
+[9:09] basically yolo slam the suffixes. For my
+[9:12] build, they don't really matter. You can
+[9:14] omen of witto and use omen of dextrals
+[9:16] if you're going for things like physical
+[9:17] damage reduction, but that's a
+[9:19] completely different craft. I just want
+[9:21] the 2,000 armor shield. The total cost
+[9:24] of this craft because we were absolutely
+[9:25] spooned was around 20 divines. And if we
+[9:29] check the price of it now, it's worth
+[9:33] 228 divines.
+[9:37] However, theirs has all complete
+[9:39] resistances. We haven't even used our
+[9:41] suffixes. So, just something to keep in
+[9:43] mind.
+[9:44] For me, I'm just going to activate the
+[9:46] omen of greater exaltation, slam it with
+[9:49] a perfected exalt, and see what it hits.
+[9:51] Hopefully, we hit physical damage
+[9:52] reduction, but it is what it is.
+[9:56] So, we hit double resistances, which is
+[9:58] great. Not really necessary for my build
+[10:00] again, but it's not necessarily bad.
+[10:05] Let's just slam it with one more
+[10:06] perfected exalt.
+[10:08] And we hit the 8% additional physical
+[10:10] damage reduction. Well, this has been an
+[10:12] absolute spoon-feeding, boys.
+[10:14] Appreciate you guys watching. That's how
+[10:16] I made my 2,000 armor shield. Absolutely
+[10:19] spooned. I'm not a streamer, but I think
+[10:21] we accessed the streamer client. So,
+[10:22] thank you, GGG. I really appreciate it.
+[10:25] As always, I hope you learned something.
+[10:27] Take it easy, exiles.
+[10:30] Current value, roughly 300 divines for
+[10:32] this thing. It's got 30% quality,
+[10:34] please. Just Just please. I just need
+[10:37] the sanctified hit. Like, oh my, please.
+[10:39] Come on. GGG, please. Please.
+[10:42] What the
+[10:45] Bro.

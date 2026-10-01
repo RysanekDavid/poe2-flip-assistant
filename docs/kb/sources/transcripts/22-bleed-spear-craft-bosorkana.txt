@@ -1,0 +1,183 @@
+[YouTube title not fetched] Bleed spear craft — Bosorkana
+https://www.youtube.com/watch?v=7V0WBMOGbPg
+
+(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api. The video's own title was not fetched (the oEmbed request was blocked in that session); the creator name is from a search listing.)
+
+[0:00] All right. I'm going to show you how to
+[0:02] make a super simplistic, fairly
+[0:05] deterministic bleed spear craft. Damage
+[0:09] range is going to be between 4 and 500
+[0:11] max hit with plus levels and takes about
+[0:14] uh maybe 2 minutes of crafting. All
+[0:16] right, let's get into it. Just to
+[0:18] quickly show you what the market looks
+[0:20] like for a spear of similar damage,
+[0:21] you're looking at 50 divs plus. So, even
+[0:24] if you have to use omens of light, it's
+[0:26] still going to be significantly cheaper
+[0:28] than buying from the open market. Now,
+[0:30] to look for our base uh for the first
+[0:32] part of the craft, you're just going to
+[0:34] put in a spear in the category.
+[0:37] Item rarity, magic.
+[0:41] You're going to add the stat filter of
+[0:43] plus melee levels. Um I like to do a
+[0:45] minimum of three.
+[0:47] And then, you are going to search for uh
+[0:50] increased physical damage. I like to do
+[0:53] minimum 150. That's T3, which goes as
+[0:57] low as 135.
+[0:59] Um I just don't want to roll divines on
+[1:00] it later, so I just start at 150.
+[1:03] Uh that one looks like a keeper, so
+[1:05] we'll start with that.
+[1:07] Now, the first thing you're going to do
+[1:09] is you are going to use a greater
+[1:11] essence of abrasion.
+[1:13] Um and that is going to add flat
+[1:15] physical damage and it will make it a
+[1:17] rare.
+[1:20] After that, we are going to turn on the
+[1:25] omen of sinistral necromancy um for the
+[1:29] desecration, so that it only add prefix
+[1:31] modifiers. I like to do this, so if you
+[1:33] mess it up,
+[1:35] you can uh I think you freaking turn it
+[1:38] on, you can omen of light it it
+[1:39] potentially later
+[1:42] as opposed to being stuck with random
+[1:43] modifiers. And then, you're just going
+[1:45] to desecrate this with a preserved
+[1:48] jawbone. You can also use an ancient
+[1:50] jawbone, but that's way more expensive.
+[1:52] And then, after this, for the final
+[1:55] suffixes, you're going to turn on an
+[1:57] omen of greater exaltation.
+[2:00] And then you are either going to use a
+[2:01] greater exalted orb or a perfect exalted
+[2:04] orb. And then these are the only two
+[2:06] random RNG rolls in the entire thing.
+[2:09] Uh and so if you don't like them,
+[2:12] you could always just grab a new base
+[2:14] and remake it until you get one. Um you
+[2:16] just keep making spears basically until
+[2:17] you get rolls you really like.
+[2:20] Now, at the Well of Souls for the
+[2:22] desecration, just make sure the omen of
+[2:24] abyssal echoes is turned on.
+[2:27] And so what we're going to do here is we
+[2:30] are looking for the dual mod of
+[2:33] increased physical and accuracy.
+[2:37] Now, there is not it's not a 100% chance
+[2:39] you will get this. Um
+[2:42] I usually get it out of every like three
+[2:44] to three out of four crafts. You can get
+[2:46] really unlucky and keep not getting it.
+[2:49] Um at which point decide whether or not
+[2:52] you want to just if it's cheaper to buy
+[2:54] a new base as opposed to omen of
+[2:56] lighting over and over, but uh as long
+[2:58] as you get this mod,
+[3:00] then you're golden.
+[3:02] Now, you don't have to keep the one you
+[3:04] have. You can obviously just omen of
+[3:06] lighting and keep trying for a new one,
+[3:08] but that can get very expensive later
+[3:09] on.
+[3:10] I recommend doing is making two spears.
+[3:13] Um and basically if you want to keep
+[3:15] increasing the damage on them, you can
+[3:17] just shift between them and
+[3:19] progressively omen and light them up.
+[3:22] Um
+[3:23] Again, this is assuming the market is
+[3:24] really bad for spears and you just you
+[3:26] can't find anything that's really worth
+[3:28] it. Now, for the finishing touches,
+[3:30] you're just going to throw on the
+[3:33] uh whetstones, increase the quality, and
+[3:35] then socket it.
+[3:37] And in terms of sockets, there's three
+[3:39] options. Uh one is for rules for rules
+[3:42] rune of the hunt, and that is increased
+[3:44] damage against rare and uniques.
+[3:46] Uh the soul core of appalati, which is
+[3:48] increased magnitude of bleeding. And
+[3:50] then greater iron rune, which I don't
+[3:52] advise. It is the worst choice for like
+[3:55] actual damage increase. I like the soul
+[3:58] core of
+[3:59] Opal audio lot.
+[4:01] Uh if you want more rare and boss
+[4:05] damage, you could go with the rune of
+[4:07] the hunt if you really wanted to.
+[4:09] And yeah, that is a decent spear.
+[4:14] Now, if you want to go further with the
+[4:16] craft,
+[4:17] and let's say you got in the exact
+[4:21] desecration that you want,
+[4:24] and you've rolled it up with divs to get
+[4:27] like the max damage that you really
+[4:29] want, that you feel is worth that amount
+[4:31] of divs, then you can apply a blacksmith
+[4:34] infuser. Um and the valve blacksmith
+[4:36] infuser basically just quality it up
+[4:38] until it gets corrupted. It is a
+[4:40] do-nothing corrupt. Um and even if you
+[4:43] have that soul core, the new soul core
+[4:46] on where all corrupts end in
+[4:49] change, it does not affect it
+[4:51] whatsoever. Luckily, if you have that
+[4:52] equipped, um this always potentially get
+[4:56] up to 30% quality and not corrupt as
+[4:59] well.
+[5:00] Um but it can increase the damage by a
+[5:02] lot. It's the safest craft possible just
+[5:05] to increase damage on like a finished
+[5:07] piece as opposed to the very risky valve
+[5:10] orb obviously.
+[5:12] Now, if you're fairly new to crafting
+[5:15] and you're unfamiliar with how the omen
+[5:17] of light process works for re-rolling
+[5:20] the desecration mod, I'm just going to
+[5:22] quickly show you how to do it. Um so
+[5:24] you're just going to turn on your omen
+[5:25] of light.
+[5:27] You're going to use an orb of annulment,
+[5:29] and that'll get rid of your desecration.
+[5:31] Then you are going to re-desecrate with
+[5:33] your jawbone.
+[5:35] Then you're going to turn on your omen
+[5:37] of abyssal echoes for a re-roll, and
+[5:39] you're just going to try all over again.
+[5:44] And you can just keep repeating this
+[5:45] process over and over again till you get
+[5:47] a mod that is what you want.
+[5:50] Um and you then if you want a really
+[5:52] really high tier one, you have to keep
+[5:54] trying it with an ancient jawbone, which
+[5:56] will be
+[5:57] significantly more expensive.
+[5:59] Um but yeah, you can just keep keep
+[6:01] repeating it. Um spend however much you
+[6:03] want on it. Uh it's totally up to you.
+[6:06] Um if it seems like it's going to cost
+[6:08] way too much, then just buy a new base
+[6:10] and try over again. It could be a lot
+[6:12] cheaper than more and more omens of
+[6:14] blight and ancient jawbones.
+[6:17] That is pretty much it.
+[6:19] Now, uh that exact craft is what I've
+[6:21] been using for the entire end game this
+[6:23] league cuz the market's been so bad. Um
+[6:25] it's going to vary like league to league
+[6:27] if what how good the market will be for
+[6:30] bleed spears. Um so I just come up with
+[6:32] the craft every time it changes or the
+[6:35] market's bad. Um
+[6:37] but I'm going to leave a written guide
+[6:39] in the description down below. And if
+[6:42] you have any questions, just hit me up
+[6:44] in the comments or
+[6:46] um hit me up in my Discord.
+[6:48] All right.

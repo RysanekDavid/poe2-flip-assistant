@@ -1,0 +1,465 @@
+[YouTube title not fetched] League-start body armour, belt and wand crafts — ASaVeQ
+https://www.youtube.com/watch?v=IgQX6EZtUyo
+
+(YouTube auto-captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api. The video's own title was not fetched (the oEmbed request was blocked in that session); the creator name is from a search listing.)
+
+[0:00] Hello, hello, and welcome back everyone.
+[0:02] Today I want to show you a couple of my
+[0:04] currency makers when it comes to league.
+[0:07] If you don't know me, I'm Savage. I'm
+[0:08] making tons of currency every single
+[0:10] week. But before we do start with the
+[0:12] video, I would like you to invite you to
+[0:14] my Twitch and Discord channel. All the
+[0:16] links will be down in the description.
+[0:18] If you could also leave a like and a
+[0:20] comment so the YouTube algorithm could
+[0:22] pick up and we could reach bigger
+[0:24] audience, I would greatly appreciate
+[0:26] that. Okay, so let's start with making
+[0:28] some currency. So, first of all items
+[0:32] that kind of have been always working
+[0:34] out for me will be body armors. And for
+[0:36] the sake of the video, we're going to be
+[0:38] crafting onto the V rope, which is the
+[0:40] best base where it comes to energy
+[0:42] shieldbased body armors. But you can
+[0:45] also apply this method to any other body
+[0:48] armor type such as an armor body armor
+[0:51] based uh bases or evasion body armor
+[0:54] bases too. So first of all, we need to
+[0:56] understand what modifiers are we aiming
+[0:58] for, what are the weights, what are the
+[1:00] item levels that we're going to be
+[1:02] requiring to hit them modifiers, and
+[1:05] also um what are the essences that we
+[1:08] can take an advantage of. So for the
+[1:10] sake of the video, we're going to move
+[1:12] to P2DB link will be down in the
+[1:14] description uh below. You can also use
+[1:17] scrap.exile.
+[1:18] So either of these two websites. So when
+[1:21] it comes to prefixes if you are
+[1:23] unfamiliar with this website on your
+[1:25] left hand side you will see all the list
+[1:27] uh the whole list of the prefixes on
+[1:29] your right hand side you will have all
+[1:31] the suffixes. So when it comes to
+[1:33] prefixes, flat ES percentages to ES
+[1:36] hybrid ES also spirit, but spirit is
+[1:40] kind of an a premium stat. It will be
+[1:42] pretty difficult to get early on. But if
+[1:44] you can get it, baby, you're going to be
+[1:47] rich. You will be swimming in currency
+[1:49] with some good suffixes. Of course, when
+[1:52] it comes to suffixes, fireless,
+[1:54] coldless, writing letters, any kind of
+[1:56] resistances wouldn't be bad. I mean,
+[1:58] would be perfect. Intelligence wouldn't
+[2:00] be bad. and increase energy shield
+[2:03] recharge rate wouldn't also be bad, but
+[2:06] it it is not such a good of an modifier.
+[2:09] So, we're going to be aiming for triple
+[2:12] resistances. If you can get double with
+[2:15] intelligence, it wouldn't be bad as
+[2:17] well. Okay, so what are the essences
+[2:19] that we can take advantage of? When it
+[2:21] comes to body armors, we're going to be
+[2:24] mostly like 99% of the times we're going
+[2:26] to be using with a greater essence of
+[2:28] enhancer. will grant us T4 percentages
+[2:32] to ES. When it comes to maybe when it
+[2:35] comes to um suffixes, we're going to be
+[2:38] crafting with um resistances essences.
+[2:41] So, we have essence for fire, cold,
+[2:43] lightning, and chaos.
+[2:46] But most of the times, I mean 99% of the
+[2:49] times when I profit craft early on, I'm
+[2:51] using I'm crafting with greater essence
+[2:53] of enhancement. It is pretty OP early
+[2:57] on. So, what item levels and uh what
+[3:00] bases are we going to be studying with?
+[3:02] So, we kind of know that we're going to
+[3:04] be taking advantage of greater essence
+[3:07] of enhancement, which means we cannot
+[3:09] pick bases with percentages to use
+[3:12] because it wouldn't allow us to apply
+[3:14] the essence. So, most of the times we're
+[3:16] going to be starting with flood ES armor
+[3:19] or evasion depends on what body armor
+[3:22] base you're going to be crafting on. So
+[3:24] when it comes to what item levels, so T1
+[3:26] will be uh for T1, we will need to get
+[3:30] item level 79 or above body armor. And
+[3:33] it is between 91 and 96. The weight of
+[3:36] this is 1,000. So it is not um like
+[3:40] super rare to get T1, T2 or T3.
+[3:44] So for the sake of the video, I think we
+[3:46] can start with T2. This wouldn't be hard
+[3:49] to get or maybe with T3. This would be
+[3:52] pretty much a day one um simulation. So
+[3:56] let's start with D3 which will be
+[3:58] between 70 uh 4 and 80. So we're going
+[4:01] to go and type uh 74 here.
+[4:06] So we can start with T3. And when it
+[4:09] comes to suffixes, if we're going to
+[4:11] have enough currency, we can start with
+[4:12] any kind of resistances. But early
+[4:15] league, they tend to be pretty
+[4:17] expensive. But
+[4:20] um but we could we could start with in
+[4:23] it wouldn't be bad. But let's start with
+[4:25] lightning rest because why the heck not.
+[4:29] All righty. So we will uh pick up our
+[4:32] base just like so for one exalted drop.
+[4:36] We're going to go to our hideout
+[4:39] and like I mentioned before we have
+[4:41] couple of essences that we could use. So
+[4:43] right now we could use um lightning. I
+[4:46] mean we already have lightning grass so
+[4:48] we cannot we could use fire rest to make
+[4:51] it d and it would grant us fire rest. We
+[4:53] could use cold rest or we could use um
+[4:56] greater res of enhancement will grant us
+[4:58] T4
+[5:00] uh T4 energy shield percentage to
+[5:03] energy. So in my case we will be using
+[5:06] greater essence of enhancement. This is
+[5:07] a pretty OP early league. Hopefully you
+[5:10] will be luckier with me when it comes to
+[5:13] uh getting um the percentages up. So you
+[5:17] want to get you know as much ES as you
+[5:20] can get on this body armors. So we know
+[5:23] that there are um what what what are the
+[5:27] other good prefixes that we could get
+[5:29] right now? Let's go back to uh our
+[5:32] website. Yeah, let's go back to our
+[5:35] website.
+[5:37] So the other good prefixes that we could
+[5:39] get right now is spirit or or hybrids.
+[5:45] When it comes to suffixes, we already
+[5:47] have lightning rest. So we will be kind
+[5:49] kind of aiming for any other
+[5:51] resistances. So what would be next step
+[5:54] that we can do? We need to fill our
+[5:56] prefixes. Is it worth to desecrate? We
+[5:59] already have kind of two good prefixes
+[6:01] and one good suffix. So I would save the
+[6:05] desecration for suffixes. And right now
+[6:07] we'll need to fill the prefixes. And we
+[6:09] are very likely to hit either hybrid or
+[6:12] spirit. But spirit is a very low
+[6:15] weighted modifier. So it is not as
+[6:17] likely as getting hybrid. Uh physical
+[6:20] turns is the only brick. Life wouldn't
+[6:23] be bad as well. A live early league is
+[6:25] pretty pretty uh damn good. Okay. So how
+[6:30] do we fill our prefixes? We can use
+[6:34] omen of sinister exaltation. This will
+[6:36] only
+[6:38] um uh with this omen we will only uh
+[6:42] apply exalted or onto our prefix. So
+[6:45] apply uh or use our omen of sinister
+[6:48] exaltation. Right now our exalted will
+[6:51] grant us only a prefix modifier. Since
+[6:54] we have two prefixes we will fill we
+[6:56] will fill our prefixes. What did we got?
+[6:59] We got T3 hybrid which isn't bad. As you
+[7:02] can see we are having pretty OP uh
+[7:06] prefixes. So right now we going to have
+[7:09] to desecrate with preserve. If we will
+[7:11] have enough currency always use Omen of
+[7:14] Aal Echo. They are not that expensive
+[7:16] early on. So we're going to desecrate.
+[7:18] If you have enough currency you use Omen
+[7:20] of Abyssal Echo. Uh it also depends what
+[7:23] would be the first prefix that you would
+[7:26] have gotten. If it would be like a dead
+[7:28] prefix, I wouldn't use almond of absol.
+[7:30] But if it was something good, I would
+[7:32] for sure invest into absol. So right
+[7:35] now, we are looking for our second
+[7:38] resistances.
+[7:41] Okay, we did not get it. Uh, which is
+[7:43] pretty uh unlucky, but you know, it is
+[7:45] what it is. And this is how we're going
+[7:48] to be crafting onto it
+[7:50] onto them body armors. Sometimes you get
+[7:53] lucky, sometimes you don't.
+[7:56] And then we would finish it with exalted
+[7:59] sum and we got chaos dress. So this
+[8:02] would be uh how um this will be how uh I
+[8:06] craft how I will be crafting onto my
+[8:08] body armors. So remember to quality it
+[8:10] up, use um use uh iron runes to get um
+[8:15] more uh energy shield and then we would
+[8:18] be ready to sell. This is how I'm always
+[8:22] making my first couple uh divines. Um
+[8:25] and this will work great for you. The
+[8:29] amount of people we going to have
+[8:30] playing and um most of them will use uh
+[8:35] energy shield body armor base. So this
+[8:37] will be very very good to go for. Okay,
+[8:39] let's go with the next craft. So next on
+[8:42] our list will be beltcraft. I kind of
+[8:44] did couple of beltcraft videos every
+[8:47] single week because they are super OP
+[8:49] when it comes to uh crafting on them.
+[8:52] Why? What is the first thing that you're
+[8:54] going to be looking to do after you will
+[8:57] get two maps and you will be struggling
+[8:59] with pushing forwards with your I don't
+[9:01] know T14s, T15s, T16s. You will want to
+[9:05] upgrade and fix your resistances. What
+[9:08] is the easiest way to do so? through
+[9:10] belts and the modifiers are super uh
+[9:15] super easy and they are pretty
+[9:17] deterministic to get. This is why I'll
+[9:20] always craft onto belts with the Genesis
+[9:22] tree. The supply is also great. This is
+[9:25] also my plan to high blood spending. I
+[9:30] will be spending my first high plot uh
+[9:33] onto some belts and crafting onto them.
+[9:35] So, what modifiers are we going to be uh
+[9:38] looking for? When it comes to prefixes,
+[9:40] mana and life, and this is pretty much
+[9:42] it. When it comes to suffixes, fire,
+[9:44] cold, lightning, and chaos, you know,
+[9:47] any kind of resistances would be very
+[9:50] good. Do we have any powerful essences?
+[9:53] When it comes to prefixes, I wouldn't
+[9:55] say so. we have greater essence of body
+[9:58] but you know since we're going to
+[9:59] already start with um maximum life when
+[10:02] it comes to magic base like we don't use
+[10:05] any essences when it comes to prefixes
+[10:07] when it comes to suffixes we we have
+[10:09] super powerful essences where are they
+[10:12] okay they are here so we have fire rest
+[10:14] we have coral rest we have lightning and
+[10:16] chaos rest I barely craft with chaos
+[10:20] rest so most likely we will use uh any
+[10:23] of them three when it comes to Our third
+[10:26] and the last uh step would be
+[10:29] desecrating. We can kind of guarantee
+[10:32] ourself uh some kind of a resistance
+[10:35] with Amanamu, with Kural and with
+[10:40] Ulaman. As you can see, um there are
+[10:44] four of each type. So we have four
+[10:46] Ulaman, four Kulgar, and four Amunamo
+[10:49] modifiers, which means we kind of will
+[10:51] need Omen of Abyssal Echo to hit them.
+[10:55] there is a slight chance we won't be
+[10:57] getting it with the desecration. So,
+[10:59] always use Abyssal Echos, but it's not
+[11:02] that expensive early on. Okay, so let's
+[11:05] pick one of the belts. So, I will show
+[11:07] you. Next thing that we also have to
+[11:10] remember is to have at least two charm
+[11:12] swords. So, let's pick this one. Let's
+[11:14] pick this one up.
+[11:17] So, we have our belt.
+[11:23] So, we have a life. We have lightning
+[11:25] grass. So right now we cannot choose
+[11:27] lightning grass essence. But we can use
+[11:29] either fire, cold or chaos. For the sake
+[11:32] of the video, we're going to use cold.
+[11:34] Next up, what we need to grab? We need
+[11:36] to grab ourself a collar bone. And we
+[11:38] need to grab common of dexter
+[11:40] necromancy. So the most expensive thing
+[11:44] when it comes to this craft, it won't be
+[11:46] the base itself, but it will be color
+[11:47] bone. Preserve color bone tend to be
+[11:50] expensive.
+[11:51] So if you want to guarantee yourself
+[11:54] having third prefix through either uh
+[11:57] omen of black blooded, omen of sovereign
+[12:00] or omen of leech, you kind of will
+[12:03] calculate how much you can get for
+[12:05] finished craft with your modifiers that
+[12:07] you will already have. So it depends
+[12:10] what magic base you will start with. uh
+[12:12] you will add uh weighted sum of your
+[12:15] resistances and you will know okay um uh
+[12:19] preserve color bone cost me this and
+[12:20] that but if I going to have guaranteed
+[12:23] um you know um resistances through omen
+[12:27] of either black blooded sovereign or
+[12:29] leech and I can sell it for maybe 50 50
+[12:32] exalted dorps profit then I would for
+[12:35] sure use preserve color bone it it will
+[12:38] be it if it will be a risky I wouldn't
+[12:42] go for it, but for the sake of the
+[12:43] video, we're going to go for it. So, we
+[12:46] have um two suffixes. We have one
+[12:48] prefix. We want to desecrate onto the
+[12:50] suffix. So, we're going to use omen of
+[12:52] dexter necromancy. This will only
+[12:55] desecrate onto the suffix. Next up, what
+[12:58] um omen should you use? The cheapest the
+[13:01] cheapest the cheapest one. So, we're
+[13:04] going to use of leech for this for the
+[13:06] sake of the video. So, we will desecrate
+[13:08] it. Always uh grab on echos if you can
+[13:12] afford color bone early on then you can
+[13:15] also afford on echos. Go to our wall of
+[13:20] souls.
+[13:22] Um I mean always it depends on the if
+[13:25] it's going to be super expensive then
+[13:26] don't use it. Take the risk. So we're
+[13:29] going to desecrate it. As you can see we
+[13:31] got fire and chaos rest and we are done.
+[13:34] We have triple rest to our belt.
+[13:37] Next up, what we have to do is is just
+[13:40] we will just have to, you know, slam
+[13:42] exot. We got mana and we got increase
+[13:46] flask uh life recovery rate. So, pretty
+[13:50] pretty damn easy and pretty damn OP
+[13:53] craft early early league and it al
+[13:57] always been working super super great
+[13:59] for me.
+[14:01] Okay, so next and last on our list will
+[14:04] be a want/ staffcraft. They are pretty
+[14:07] much the same. So, we can apply same
+[14:09] methods to the stuffcraft. But if you
+[14:13] enjoyed this video, let me know in the
+[14:15] comment section below. Maybe we can do a
+[14:16] part two uh before we will see the uh
+[14:20] release of the league. But we will see
+[14:23] how it goes. So, once again, we need to
+[14:25] go to POE2DB to kind of understand what
+[14:28] modifiers, what item levels we're going
+[14:30] to be looking for. So when it comes to
+[14:32] prefixes, increase spell damage gains of
+[14:35] any sort would be very good. And then uh
+[14:38] specific if you if if you are playing
+[14:41] with entangle or plants, entangle is
+[14:44] like physical um physical based skill.
+[14:48] So increased uh spell physical damage
+[14:50] would be good. And you know every single
+[14:53] build has a different um scaling uh
+[14:57] options. So, you know, you need to pick
+[15:00] up the modifiers that you're going to be
+[15:02] aiming for. So, for my build, I planning
+[15:05] to play with grim pillar. So, I'm fine
+[15:07] with spell damage and increased cold
+[15:09] damage. And this is something that I
+[15:11] going to be aiming for. When it comes to
+[15:13] suffixes, so we want
+[15:16] any kind of levels. So, for um in my
+[15:19] case, I will go for a level of all cold
+[15:22] spell skills. You are fine with level of
+[15:24] all spell skills. When it comes to
+[15:26] profing, crafting, what are other good
+[15:29] suffixes? Pretty mandatory. Caspit, uh,
+[15:32] critical hit transport spell is very
+[15:34] good. Critical SP damage bonus is very
+[15:36] good. But what is the best when it comes
+[15:39] to crafting onto wands and stuffs is how
+[15:43] many crazy good alloys and essences we
+[15:45] have. So when it comes to prefix
+[15:48] essence, we hit we have increased spell
+[15:51] damage. Uh, I think it is T3 or T4. I'm
+[15:56] not really sure, but it's pretty pretty
+[15:58] d. Then we have alloy that will grant us
+[16:02] um plus one level to all spell skills.
+[16:06] And then when it comes to suffixes, we
+[16:08] uh have essences that will grant us
+[16:11] casit critical hit chance for spells.
+[16:14] And then we have also an alloy that will
+[16:16] grant us even more caspit and some extra
+[16:21] uh gain us extra cold uh damage. So for
+[16:26] and also we can desecrate elemental
+[16:28] damage which we will kind of go for. So
+[16:32] we know what are the modifiers and what
+[16:35] are the essences that we can take
+[16:37] advantage of. Right now let's pick up
+[16:39] the base. So for the sake of this video,
+[16:42] I will pick up base with level of cold
+[16:44] spell skills and then maybe on prefix I
+[16:47] will get the gain as code
+[16:52] and
+[16:56] uh something like it maybe not T2 but
+[16:59] let's say for instance T4 again asold
+[17:11] There we go.
+[17:18] So next what we can do we can either use
+[17:22] um we cannot use caspid because I mean
+[17:26] we can use caspit uh we can use uh we
+[17:29] cannot use level of all spell skills but
+[17:31] it is also pretty damn good essence if
+[17:35] you're going to ask me early on but it
+[17:36] is also kind of expensive early on we
+[17:39] can use uh critical hit transfer spells
+[17:41] but in my case I will use greater
+[17:44] essence of sorcery which will grant me
+[17:46] increased spell damage. So, we just got
+[17:50] T3 increased spell damage, which is
+[17:52] pretty OP early early uh league. And
+[17:56] right now, we want to desecrate for the
+[18:01] elemental damage, which is let's double
+[18:05] check.
+[18:07] So, we want increase elemental damage,
+[18:09] which is ammon modifier, and it is a
+[18:11] prefix modifier. So we need to grab our
+[18:14] yourself an ammo modifier
+[18:18] which will be Oman of the leech. So grab
+[18:21] yourself Omen of the leech. Grab
+[18:23] yourself uh Omen of sinister necromancy
+[18:26] which will be super cheap and then
+[18:28] preserve javone. And we can also grab
+[18:31] also omen of a echos. Why? Because if we
+[18:35] going to uh lower it super uh if if
+[18:38] we're going to roll it super uh low, we
+[18:40] can also reroll together to get the
+[18:44] better rolls. So activate your omen of
+[18:48] leech, activate your omen of sinister
+[18:51] necromancy and you're going to shoot
+[18:53] preserve javon onto it just like so.
+[18:56] Activate your omen of of a leos and we
+[18:59] will desecrate it.
+[19:02] We have increased elemental damage. Let
+[19:04] me Let's see. Um let's see what the role
+[19:08] is it if it's good. It's between 74 and
+[19:12] 89. So we can kind of um use a echos to
+[19:16] reroll.
+[19:18] Okay. And we got 88 increase elemental
+[19:20] damage which is very very good.
+[19:30] So, as you can see, as you can see, we
+[19:33] are having crazy good prefixes where it
+[19:36] comes to our want. Lastly, we can just
+[19:38] shoot two exalted orbs. Uh, we got
+[19:41] increased critical hit chance for spells
+[19:43] and some gain mana per enemy killed. uh
+[19:46] later on with some more currency, we
+[19:49] could use um another crafted modifier
+[19:52] rune and maybe uh get ourself or you
+[19:55] know have like 33% chances uh to get
+[19:59] ourselves some caspirit with the alloy
+[20:01] but we could also remove level of all
+[20:03] coal skills but this would be maybe like
+[20:06] day two day three of a craft but as day
+[20:11] one um day one this this is as good as
+[20:15] it gets. Let's compare it to my to the
+[20:18] one I'm having right now. So, I need to
+[20:20] grab an essence.
+[20:22] Uh,
+[20:27] okay, there we go. Let's see if if it
+[20:30] would be an upgrade. We don't have cast
+[20:32] speed onto it, but let's see. So, on our
+[20:34] spell totems, we have 5.2.
+[20:38] This would be a 7k. So, this would be
+[20:41] great upgrade uh for my build.
+[20:45] So, this is how I going to be crafting
+[20:47] onto my wand. As you could see, it is it
+[20:49] is pretty easy and pretty OP. So, I just
+[20:53] got like 2k damage to my green pillars,
+[20:56] which would be absolutely great day one
+[21:00] or day two. So, you can also apply the
+[21:03] same method to stuffs. If you like this
+[21:06] video, leave a like, comment, and
+[21:08] subscribe. Let me know in the comment
+[21:09] section below if you would like to see
+[21:12] part two. Uh, good luck. Have a
+[21:15] wonderful league start and see you next
+[21:17] ones.
