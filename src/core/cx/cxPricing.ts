@@ -83,20 +83,29 @@ function sides(row: CxMarketRow): Array<{ item: string; other: string; vItem: nu
   ];
 }
 
-/** Divine per unit of `id` from its own Divine market, or null when that market had no fills. */
-function divPer(rows: readonly CxMarketRow[], id: string): number | null {
+/** The filled Divine leg of `id` (its own Div market), or null when that market had no fills. */
+function divineLeg(rows: readonly CxMarketRow[], id: string): CxPriceLeg | null {
   for (const row of rows) {
     for (const s of sides(row)) {
-      if (s.item === id && s.other === CX_CURRENCY_IDS.divine && s.vItem > 0 && s.vOther > 0) return s.vOther / s.vItem;
+      if (s.item === id && s.other === CX_CURRENCY_IDS.divine && s.vItem > 0 && s.vOther > 0) {
+        return { quote: "divine", units: s.vItem, quoteUnits: s.vOther };
+      }
     }
   }
   return null;
 }
 
+const rateOf = (leg: CxPriceLeg | null): number | null => (leg == null ? null : leg.quoteUnits / leg.units);
+
 /** The hour's volume-weighted Divine value of one Exalted and one Chaos, from their Divine markets. */
 export function cxBridgeRates(rows: readonly CxMarketRow[]): CxBridgeRates {
-  return { divPerExalt: divPer(rows, CX_CURRENCY_IDS.exalted), divPerChaos: divPer(rows, CX_CURRENCY_IDS.chaos) };
+  return {
+    divPerExalt: rateOf(divineLeg(rows, CX_CURRENCY_IDS.exalted)),
+    divPerChaos: rateOf(divineLeg(rows, CX_CURRENCY_IDS.chaos)),
+  };
 }
+
+const BRIDGE_IDS: ReadonlySet<string> = new Set([CX_CURRENCY_IDS.exalted, CX_CURRENCY_IDS.chaos]);
 
 /** Every non-base item's filled legs against Divine/Exalted/Chaos. Item-vs-item markets are ignored. */
 function legsByItem(rows: readonly CxMarketRow[]): Map<string, CxPriceLeg[]> {
@@ -169,6 +178,21 @@ function carried(
 }
 
 /**
+ * Exalted and Chaos are pinned to their own Divine market, the exact rate every bridged item is
+ * converted with this hour, so the shadow's Ex/Chaos prices and its bridge can never disagree.
+ * Null when that market did not fill; the generic leg rule then applies (e.g. Exalted via Chaos).
+ */
+function bridgeCurrencyPrice(
+  rows: readonly CxMarketRow[],
+  digestId: string,
+  legCount: number,
+): Pick<CxShadowPrice, "priceDiv" | "method" | "units" | "volumeDiv" | "legs"> | null {
+  const leg = divineLeg(rows, digestId);
+  if (leg == null) return null;
+  return { priceDiv: leg.quoteUnits / leg.units, method: "direct", units: leg.units, volumeDiv: leg.quoteUnits, legs: legCount };
+}
+
+/**
  * Price one league-hour.
  *
  * `exchangeIdByDigestId` maps GGG metadata ids to catalog exchange ids, so nothing is keyed by
@@ -188,18 +212,15 @@ export function priceCxHour(
   const bridge = cxBridgeRates(rows);
   const prices: CxShadowPrice[] = [];
   const unmapped: string[] = [];
-  const divineId = exchangeIdByDigestId.get(CX_CURRENCY_IDS.divine);
-  if (divineId != null && bridge.divPerExalt != null) {
-    // The unit itself: priced only in an hour whose Div/Ex market filled, like ninja's 1.0 row.
-    prices.push({ exchangeId: divineId, priceDiv: 1, method: "direct", units: 0, volumeDiv: 0, legs: 0, tradedHour: hour });
-  }
+  // Divine is the unit, never a priced row: comparing its 1 with ninja's 1 would only pad the stats.
   for (const [digestId, legs] of legsByItem(rows)) {
     const exchangeId = exchangeIdByDigestId.get(digestId);
     if (exchangeId == null) {
       unmapped.push(digestId);
       continue;
     }
-    const price = priceFromLegs(legs, bridge);
+    const pinned = BRIDGE_IDS.has(digestId) ? bridgeCurrencyPrice(rows, digestId, legs.length) : null;
+    const price = pinned ?? priceFromLegs(legs, bridge);
     if (price != null) prices.push({ exchangeId, ...price, tradedHour: hour });
   }
   const priced = new Set(prices.map((p) => p.exchangeId));

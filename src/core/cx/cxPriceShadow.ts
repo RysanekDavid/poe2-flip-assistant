@@ -1,4 +1,4 @@
-import { CX_HOUR_SECONDS, isPrivateLeague } from "../../api/cxClient";
+import { CX_CURRENCY_IDS, CX_HOUR_SECONDS, isPrivateLeague } from "../../api/cxClient";
 import { config } from "../../config/env";
 import { cxItemNames, cxMarketsAt, ingestedCxHours } from "../../db/cxMarketQueries";
 import {
@@ -15,7 +15,7 @@ import { toSqliteTime } from "../../db/priceAtQueries";
 import { parseSqliteTimestamp } from "../../lib/sqliteTime";
 import { entityByExchangeId, loadEntityCatalog } from "../entities/load";
 import type { EntityCatalog } from "../entities/schema";
-import { priceCxHour } from "./cxPricing";
+import { CX_MAX_CARRY_HOURS, priceCxHour } from "./cxPricing";
 import { buildCxShadowReport, NINJA_PAIR_WINDOW_SECONDS, type CxShadowReport } from "./cxShadowReport";
 
 /**
@@ -26,8 +26,10 @@ import { buildCxShadowReport, NINJA_PAIR_WINDOW_SECONDS, type CxShadowReport } f
  *
  * Hours are priced from the stored cx_markets rows (the existing hourly digest ingest), never from
  * a second fetch. They are priced oldest-first, so each hour carries forward from the one before.
- * Known gap: a hole the history backfill fills AFTER a newer hour was priced does not re-price
- * that newer hour's carried rows; only the first backfill day after a deploy is affected.
+ * The history backfill can still store an hour AFTER newer hours were priced (it walks newest
+ * first, and a failed hour is retried later). Pricing such a late hour forgets the priced hours in
+ * the next CX_MAX_CARRY_HOURS, since their carries skipped it, and they are re-priced on top of it
+ * in the following runs, within the same per-run cap.
  */
 
 /** Bounds one cycle's work on a cold start (≈14 days of stored history drains in a few cycles). */
@@ -57,6 +59,8 @@ export interface CxShadowSyncResult {
   rows: number;
   /** League-hours still waiting after this run's cap. */
   pending: number;
+  /** Priced later hours forgotten because an older hour arrived late (re-priced in later runs). */
+  forgotten: number;
 }
 
 /** Ingested-but-unpriced hours of one league inside the retention window, oldest first. */
@@ -66,36 +70,41 @@ function pendingHours(league: string, nowMs: number): number[] {
   return [...ingestedCxHours(league, from)].filter((h) => !done.has(h)).sort((a, b) => a - b);
 }
 
-/** Price one stored league-hour and store it. Returns rows written. */
-function priceStoredHour(league: string, hour: number, idMap: ReadonlyMap<string, string>): number {
+/** Price one stored league-hour, store it and forget the priced hours its trades should feed. */
+function priceStoredHour(league: string, hour: number, idMap: ReadonlyMap<string, string>): { rows: number; forgotten: number } {
   const pricing = priceCxHour(cxMarketsAt(league, hour), hour, idMap, shadowPricesBefore(league, hour));
-  storeShadowHour(league, hour, pricing.prices, { unmappedIds: pricing.unmapped });
-  return pricing.prices.length;
+  const through = hour + CX_MAX_CARRY_HOURS * CX_HOUR_SECONDS;
+  const forgotten = storeShadowHour(league, hour, pricing.prices, { unmappedIds: pricing.unmapped }, through);
+  return { rows: pricing.prices.length, forgotten };
 }
 
 /**
  * Poller hook: price every polled league's stored digest hours that have no shadow yet, oldest
- * first, at most CX_SHADOW_MAX_HOURS_PER_RUN per run. A DB or catalog error throws — the
- * heartbeat records it; this never feeds a user-facing view, so there is nothing to keep alive.
+ * first, at most CX_SHADOW_MAX_HOURS_PER_RUN per run. The queue is re-read after every hour, since
+ * a late hour sends later ones back into it. A DB or catalog error throws: the heartbeat records
+ * it, and this never feeds a user-facing view, so there is nothing to keep alive.
  */
 export function syncCxPriceShadow(
   leagues: readonly string[],
   nowMs: number = Date.now(),
   idMap: ReadonlyMap<string, string> = exchangeIdsByDigestId(),
 ): CxShadowSyncResult {
-  const result: CxShadowSyncResult = { hours: 0, rows: 0, pending: 0 };
-  let budget = CX_SHADOW_MAX_HOURS_PER_RUN;
+  const result: CxShadowSyncResult = { hours: 0, rows: 0, pending: 0, forgotten: 0 };
   for (const league of new Set(leagues)) {
     if (isPrivateLeague(league)) continue;
-    const pending = pendingHours(league, nowMs);
-    const now = pending.slice(0, budget);
-    for (const hour of now) result.rows += priceStoredHour(league, hour, idMap);
-    result.hours += now.length;
-    result.pending += pending.length - now.length;
-    budget -= now.length;
+    let pending = pendingHours(league, nowMs);
+    while (pending.length > 0 && result.hours < CX_SHADOW_MAX_HOURS_PER_RUN) {
+      const done = priceStoredHour(league, pending[0]!, idMap);
+      result.rows += done.rows;
+      result.forgotten += done.forgotten;
+      result.hours++;
+      pending = pendingHours(league, nowMs);
+    }
+    result.pending += pending.length;
   }
   if (result.hours > 0) {
-    console.log(`[cx-shadow] priced ${result.hours} digest hour(s), ${result.rows} row(s)${result.pending > 0 ? `, ${result.pending} pending` : ""}`);
+    const tail = `${result.forgotten > 0 ? `, ${result.forgotten} later hour(s) queued for re-pricing` : ""}${result.pending > 0 ? `, ${result.pending} pending` : ""}`;
+    console.log(`[cx-shadow] priced ${result.hours} digest hour(s), ${result.rows} row(s)${tail}`);
   }
   return result;
 }
@@ -147,7 +156,8 @@ export function loadCxShadowReport(league: string, hours: number, nowMs: number 
     shadow,
     ninja,
     unmapped: unmappedRefs(stats.unmappedIds),
-    hoursComputed: stats.hours,
+    hours: { computed: stats.hours, fromHour: stats.fromHour, toHour: stats.toHour },
+    unitExchangeId: exchangeIdsByDigestId().get(CX_CURRENCY_IDS.divine) ?? null,
     nameOf: (id) => entityByExchangeId(id)?.name ?? ninjaNames.get(id) ?? id,
   });
 }

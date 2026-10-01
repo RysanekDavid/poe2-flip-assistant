@@ -49,19 +49,23 @@ export interface ShadowHourSummary {
   unmappedIds: readonly string[];
 }
 
-/** Store one league-hour's shadow prices and mark it computed, in ONE transaction (idempotent). */
+/**
+ * Store one league-hour's shadow prices and mark it computed, and forget every priced hour in
+ * (hour, invalidateThrough], all in ONE transaction. Those later hours carried forward without
+ * this hour's trades; forgetting them puts them back in the queue to be re-priced on top of it.
+ * Returns the number of later hours forgotten.
+ */
 export function storeShadowHour(
   league: string,
   hour: number,
   prices: readonly CxShadowPrice[],
   summary: ShadowHourSummary,
+  invalidateThrough: number,
   db: Db = getDb(),
-): void {
-  const upsert = db.prepare(
+): number {
+  const insert = db.prepare(
     `INSERT INTO cx_price_shadow (league, ${SHADOW_COLUMNS})
-     VALUES (@league, @hour, @exchangeId, @priceDiv, @method, @units, @volumeDiv, @legs, @tradedHour)
-     ON CONFLICT(league, hour, exchange_id) DO UPDATE SET price_div = excluded.price_div, method = excluded.method,
-       units = excluded.units, volume_div = excluded.volume_div, legs = excluded.legs, traded_hour = excluded.traded_hour`,
+     VALUES (@league, @hour, @exchangeId, @priceDiv, @method, @units, @volumeDiv, @legs, @tradedHour)`,
   );
   const mark = db.prepare(
     `INSERT INTO cx_price_shadow_hours (league, hour, priced, carried, unmapped_ids) VALUES (?, ?, ?, ?, ?)
@@ -69,10 +73,13 @@ export function storeShadowHour(
        unmapped_ids = excluded.unmapped_ids, computed_at = CURRENT_TIMESTAMP`,
   );
   const carried = prices.filter((p) => p.method === "carried").length;
-  db.transaction(() => {
+  return db.transaction(() => {
     db.prepare("DELETE FROM cx_price_shadow WHERE league = ? AND hour = ?").run(league, hour);
-    for (const p of prices) upsert.run({ ...p, league, hour }); // a StoredShadowPrice carries its own hour: never let it win
+    for (const p of prices) insert.run({ ...p, league, hour }); // a StoredShadowPrice carries its own hour: never let it win
     mark.run(league, hour, prices.length - carried, carried, JSON.stringify(summary.unmappedIds));
+    db.prepare("DELETE FROM cx_price_shadow WHERE league = ? AND hour > ? AND hour <= ?").run(league, hour, invalidateThrough);
+    return db.prepare("DELETE FROM cx_price_shadow_hours WHERE league = ? AND hour > ? AND hour <= ?").run(league, hour, invalidateThrough)
+      .changes;
   })();
 }
 
@@ -106,15 +113,20 @@ export function shadowPricesBetween(league: string, fromHour: number, toHour: nu
 
 const UnmappedIdsSchema = z.array(z.string().min(1));
 
-/** Computed hours and the distinct unmapped digest ids of a league in [fromHour, toHour]. */
-export function shadowHourStats(
-  league: string,
-  fromHour: number,
-  toHour: number,
-  db: Db = getDb(),
-): { hours: number; unmappedIds: string[] } {
+export interface ShadowHourStats {
+  /** Computed hours in the range. */
+  hours: number;
+  /** Oldest and newest computed hour, or null when none. */
+  fromHour: number | null;
+  toHour: number | null;
+  /** Distinct unmapped digest ids over those hours. */
+  unmappedIds: string[];
+}
+
+/** What the shadow computed for a league in [fromHour, toHour]. */
+export function shadowHourStats(league: string, fromHour: number, toHour: number, db: Db = getDb()): ShadowHourStats {
   const rows = db
-    .prepare("SELECT hour, unmapped_ids AS ids FROM cx_price_shadow_hours WHERE league = ? AND hour BETWEEN ? AND ?")
+    .prepare("SELECT hour, unmapped_ids AS ids FROM cx_price_shadow_hours WHERE league = ? AND hour BETWEEN ? AND ? ORDER BY hour")
     .all(league, fromHour, toHour) as Array<{ hour: number; ids: string }>;
   const ids = new Set<string>();
   for (const row of rows) {
@@ -122,7 +134,12 @@ export function shadowHourStats(
     if (!parsed.success) throw new Error(`cx_price_shadow_hours ${league}@${row.hour}: unmapped_ids is not a string array`);
     for (const id of parsed.data) ids.add(id);
   }
-  return { hours: rows.length, unmappedIds: [...ids].sort() };
+  return {
+    hours: rows.length,
+    fromHour: rows[0]?.hour ?? null,
+    toHour: rows[rows.length - 1]?.hour ?? null,
+    unmappedIds: [...ids].sort(),
+  };
 }
 
 /** Drop shadow hours older than `beforeHour`, one league at a time (key-range deletes). Returns price rows removed. */

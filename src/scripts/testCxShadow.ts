@@ -2,7 +2,7 @@
  * retention and the owner endpoint, against a TEMP DB.
  * Run: npm run test:cx (src/scripts/runWithTestEnv.ts sets DB_PATH). NO NETWORK. */
 import assert from "node:assert/strict";
-import { CX_HOUR_SECONDS } from "../api/cxClient";
+import { CX_HOUR_SECONDS, CX_USER_AGENT } from "../api/cxClient";
 import { config } from "../config/env";
 import { CX_SHADOW_MAX_HOURS_PER_RUN, loadCxShadowReport, pruneCxPriceShadow, syncCxPriceShadow } from "../core/cx/cxPriceShadow";
 import { buildCxShadowReport, ninjaAt, percentile } from "../core/cx/cxShadowReport";
@@ -41,7 +41,9 @@ async function main(): Promise<void> {
   runCxPricingTests();
   testReportMaths();
   testSyncOrderAndIdempotence();
+  testLateHourRepricesLaterCarries();
   testSyncCap();
+  assert.match(CX_USER_AGENT, /^poe2-coach\/1\.0( \(contact: [^)]+\))?$/, "digest requests identify the tool, no browser UA");
   testLoadReport();
   testRetention();
   await testEndpointGate();
@@ -65,7 +67,8 @@ function testReportMaths(): void {
   const report = buildCxShadowReport({
     league: FR,
     hoursRequested: 2,
-    hoursComputed: 2,
+    hours: { computed: 2, fromHour: HP - H, toHour: HP },
+    unitExchangeId: "u",
     unmapped: [{ digestId: "X", name: "Ex" }],
     nameOf: (id) => id.toUpperCase(),
     shadow: [shadow("a", HP - H, 1.1), shadow("a", HP, 0.9), shadow("b", HP, 2, "bridge"), shadow("c", HP, 5, "carried"), shadow("d", HP, 1)],
@@ -75,15 +78,17 @@ function testReportMaths(): void {
       { itemId: "b", itemName: "B", priceDiv: 1, fetchedAt: at(HP + 120) },
       { itemId: "c", itemName: "C", priceDiv: 4, fetchedAt: at(HP) },
       { itemId: "n", itemName: "N", priceDiv: 7, fetchedAt: at(HP) },
+      { itemId: "u", itemName: "Unit", priceDiv: 1, fetchedAt: at(HP) },
     ],
   });
   assert.deepEqual(
     [report.coverage.cxTraded, report.coverage.cxCarriedOnly, report.coverage.ninja, report.coverage.both],
-    [3, 1, 4, 3],
+    [4, 1, 5, 4],
+    "the Divine unit counts as present on both sides",
   );
   assert.deepEqual(report.coverage.ninjaOnly, [{ exchangeId: "n", name: "N" }]);
   assert.deepEqual(report.coverage.cxOnly, [{ exchangeId: "d", name: "D" }]);
-  assert.equal(report.traded.n, 3, "carried and unmatched rows stay out of the traded stats");
+  assert.equal(report.traded.n, 3, "carried, unmatched and unit rows stay out of the traded stats");
   assert.ok(Math.abs((report.traded.medianAbsPct ?? 0) - 10) < 1e-9);
   assert.equal(report.byMethod.carried.n, 1);
   assert.ok(Math.abs((report.byMethod.carried.medianSignedPct ?? 0) - 25) < 1e-9);
@@ -104,7 +109,7 @@ function testSyncOrderAndIdempotence(): void {
   ingest(HP - 2 * H, true);
   ingest(HP - H, false);
   const first = syncCxPriceShadow([FR, "Some League (PL123)"], NOW, ID_MAP);
-  assert.deepEqual([first.hours, first.pending], [3, 0], "private leagues are never priced");
+  assert.deepEqual([first.hours, first.pending, first.forgotten], [3, 0, 0], "private leagues are never priced");
   const mid = new Map(shadowPricesBetween(FR, HP - H, HP - H).map((p) => [p.exchangeId, p]));
   assert.equal(mid.get("essence-of-the-abyss")?.method, "carried", "the quiet hour carried from the hour before it");
   assert.equal(mid.get("essence-of-the-abyss")?.tradedHour, HP - 2 * H);
@@ -113,7 +118,28 @@ function testSyncOrderAndIdempotence(): void {
   const again = syncCxPriceShadow([FR], NOW, ID_MAP);
   assert.deepEqual([again.hours, again.rows], [0, 0], "priced hours are never recomputed");
   const hourRow = db.prepare("SELECT priced, carried, unmapped_ids AS ids FROM cx_price_shadow_hours WHERE league = ? AND hour = ?").get(FR, HP);
-  assert.deepEqual(hourRow, { priced: 9, carried: 0, ids: JSON.stringify([PIDS.shard]) });
+  assert.deepEqual(hourRow, { priced: 8, carried: 0, ids: JSON.stringify([PIDS.shard]) });
+}
+
+/** An older hour stored AFTER newer hours were priced re-queues them, so their carries include it. */
+function testLateHourRepricesLaterCarries(): void {
+  const league = "Late League";
+  const store = (hour: number, full: boolean): void =>
+    storeCxHour(league, hour, rowsAt(full ? PRICING_DIGEST.markets : baseMarkets(), hour).map((r) => ({ ...r, league })));
+  store(HP - 2 * H, false);
+  store(HP, false);
+  assert.equal(syncCxPriceShadow([league], NOW, ID_MAP).hours, 2);
+  const essenceAt = (hour: number): StoredShadowPrice | undefined =>
+    shadowPricesBetween(league, hour, hour).find((p) => p.exchangeId === "essence-of-the-abyss");
+  assert.equal(essenceAt(HP), undefined, "nothing to carry yet");
+
+  store(HP - H, true); // the backfill fills the gap late
+  const late = syncCxPriceShadow([league], NOW, ID_MAP);
+  assert.deepEqual([late.hours, late.forgotten, late.pending], [2, 1, 0], "the late hour, then the newer hour it re-queued");
+  assert.deepEqual([essenceAt(HP)?.method, essenceAt(HP)?.tradedHour], ["carried", HP - H]);
+  assert.equal(essenceAt(HP - 2 * H), undefined, "older hours are never touched");
+  db.exec(`DELETE FROM cx_markets WHERE league = 'Late League'; DELETE FROM cx_ingest WHERE league = 'Late League';
+    DELETE FROM cx_price_shadow WHERE league = 'Late League'; DELETE FROM cx_price_shadow_hours WHERE league = 'Late League';`);
 }
 
 function testSyncCap(): void {

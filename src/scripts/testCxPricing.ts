@@ -72,9 +72,11 @@ function testRealHour(): void {
   near(cxBridgeRates(rows).divPerChaos ?? undefined, DIV_PER_CHAOS);
   const { prices, unmapped } = priceCxHour(rows, HP, ID_MAP);
   const p = byId(prices);
-  assert.deepEqual([p.get("divine")?.priceDiv, p.get("divine")?.method], [1, "direct"]);
-  near(p.get("exalted")?.priceDiv, DIV_PER_EX);
-  near(p.get("chaos")?.priceDiv, DIV_PER_CHAOS);
+  assert.equal(p.has("divine"), false, "Divine is the unit, never a priced row");
+  // Exalted/Chaos are pinned to the exact bridge rate of the hour, with their Div market's volume.
+  assert.equal(p.get("exalted")?.priceDiv, cxBridgeRates(rows).divPerExalt);
+  assert.equal(p.get("chaos")?.priceDiv, cxBridgeRates(rows).divPerChaos);
+  assert.deepEqual([p.get("exalted")?.method, p.get("exalted")?.units, p.get("exalted")?.volumeDiv], ["direct", 1_657_448, 2392]);
   // The leg with the most item units wins: here the Divine leg (587 vs 391 Ex, 334 Chaos units).
   near(p.get("essence-of-the-abyss")?.priceDiv, 175 / 587);
   assert.deepEqual(
@@ -123,11 +125,10 @@ function testOneSidedAndMissingBridge(): void {
   // No Ex/Div fills this hour: the Exalted bridge is gone, Chaos still works.
   const noExDiv = PRICING_DIGEST.markets.filter((m) => !(m.market_pair.includes(PIDS.exalted) && m.market_pair.includes(PIDS.divine)));
   const q = byId(priceCxHour(rowsAt(noExDiv, HP), HP, ID_MAP).prices);
-  assert.equal(q.has("divine"), false, "the unit row needs a filled Div/Ex market");
   assert.equal(q.has("uncut-skill-gem-10"), false, "Exalted-only item has no bridge left");
   assert.deepEqual([q.get("ailiths-chimes")?.units, q.get("ailiths-chimes")?.method], [9, "bridge"]);
   near(q.get("ailiths-chimes")?.priceDiv, (18 * DIV_PER_CHAOS) / 9); // its bigger Exalted leg has no rate now
-  near(q.get("exalted")?.priceDiv, (5309 * DIV_PER_CHAOS) / 359_075); // Exalted itself via its Chaos market
+  near(q.get("exalted")?.priceDiv, (5309 * DIV_PER_CHAOS) / 359_075); // unpinned: no Div fill, so the leg rule takes its Chaos market
 }
 
 /** The live failure the leg rule exists for: a thin integer-ratio Divine overpay must not set the price. */

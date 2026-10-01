@@ -177,7 +177,13 @@ export interface ShadowReportInput {
   shadow: readonly StoredShadowPrice[];
   ninja: readonly NinjaPricePoint[];
   unmapped: Array<{ digestId: string; name: string }>;
-  hoursComputed: number;
+  /** Computed digest hours of the window (from cx_price_shadow_hours, so an hour that priced nothing still counts). */
+  hours: { computed: number; fromHour: number | null; toHour: number | null };
+  /**
+   * Catalog id of Divine, the unit. It is never a priced row (1 vs ninja's 1 would only pad the
+   * stats), so coverage counts it as present on the CX side whenever the window computed an hour.
+   */
+  unitExchangeId: string | null;
   nameOf: (exchangeId: string) => string;
 }
 
@@ -191,6 +197,10 @@ function refs(ids: Iterable<string>, nameOf: (id: string) => string): ShadowItem
 function coverage(input: ShadowReportInput): CxShadowReport["coverage"] {
   const traded = new Set(input.shadow.filter((r) => r.method !== "carried").map((r) => r.exchangeId));
   const anyCx = new Set(input.shadow.map((r) => r.exchangeId));
+  if (input.unitExchangeId != null && input.hours.computed > 0) {
+    traded.add(input.unitExchangeId);
+    anyCx.add(input.unitExchangeId);
+  }
   const ninja = new Set(input.ninja.filter((p) => p.priceDiv > 0).map((p) => p.itemId));
   return {
     cxTraded: traded.size,
@@ -206,7 +216,6 @@ function coverage(input: ShadowReportInput): CxShadowReport["coverage"] {
 /** Pure: the whole comparison from already-loaded rows. */
 export function buildCxShadowReport(input: ShadowReportInput): CxShadowReport {
   const pairs = pairRows(input.shadow, ninjaSeries(input.ninja));
-  const hours = [...new Set(input.shadow.map((r) => r.hour))].sort((a, b) => a - b);
   const devsOf = (methods: readonly CxPriceMethod[]): number[] =>
     pairs.filter((p) => methods.includes(p.row.method)).map((p) => p.dev);
   const byMethod = Object.fromEntries(CX_PRICE_METHODS.map((m) => [m, deviationStats(devsOf([m]))])) as Record<
@@ -216,9 +225,9 @@ export function buildCxShadowReport(input: ShadowReportInput): CxShadowReport {
   return {
     league: input.league,
     hoursRequested: input.hoursRequested,
-    fromHour: hours[0] ?? null,
-    toHour: hours[hours.length - 1] ?? null,
-    hoursComputed: input.hoursComputed,
+    fromHour: input.hours.fromHour,
+    toHour: input.hours.toHour,
+    hoursComputed: input.hours.computed,
     coverage: coverage(input),
     traded: deviationStats(devsOf(["direct", "bridge"])),
     byMethod,
