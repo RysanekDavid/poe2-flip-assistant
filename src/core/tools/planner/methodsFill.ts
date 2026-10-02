@@ -1,0 +1,209 @@
+import type { AffixSide } from "../craftmoves/catalog";
+import { QUALITY_PER_CATALYST_SOURCE } from "./catalystTags";
+import { attemptsOf, solveChain, useOf } from "./expectation";
+import { EXALT_TIERS, makeMove, mat, S, sideOmen, step, targetText, usableTier } from "./methodKit";
+import { addOdds, catalysingMultiplier, CATALYSING_SOURCE } from "./odds";
+import { buildChain, NoAimError, slamScope, stateAt, type Chain, type SlamScope, type SlamVariant } from "./slamChain";
+import { isJunk, openOf, present, removable, SIDES, targetAffix, withAffixes, without } from "./state";
+import type { MaterialUse, Method, Move, PlanCtx, PlanState, StepText } from "./types";
+
+/**
+ * Random adds: the anchored Chaos loop (one removable mod → every Chaos swaps exactly it) and the
+ * side slam-fill (Exalt until the side's targets land; a steered Annulment fixes a miss — solved as
+ * an absorbing chain in slamChain.ts because that Annulment can also take a good mod).
+ */
+
+/** Junk that stays on the item while the add rolls: each blocks one family of unknown identity. */
+function junkBlocking(state: PlanState, sides: readonly AffixSide[]): number {
+  return state.affixes.filter((a) => isJunk(a) && a.kind !== "desecrated" && (a.side === "any" ? sides.length === 2 : sides.includes(a.side))).length;
+}
+
+function chaosLoop(state: PlanState, ctx: PlanCtx): Move[] {
+  const loose = removable(state);
+  if (state.rarity !== "Rare" || loose.length !== 1 || !isJunk(loose[0]!)) return [];
+  const after = withAffixes(state, without(state, loose[0]!));
+  const immune = state.affixes.some((a) => a.kind === "fractured") ? `; the fractured mod is immune (${S.kb2})` : "";
+  const out: Move[] = [];
+  for (const t of ctx.targets) {
+    if (t.source !== "natural" || present(state, t.idx) || openOf(ctx, after, t.side) < 1) continue;
+    const sides = SIDES.filter((s) => openOf(ctx, after, s) > 0);
+    const odds = addOdds(ctx, after, { sides, floor: null, catalyst: null, quality: 0, junkAfter: junkBlocking(after, sides) }, [t.idx]);
+    if ((odds.p.get(t.idx) ?? 0) <= 0) continue;
+    const e = odds.estimate(t.idx);
+    const move = makeMove(ctx, {
+      methodId: "chaos-loop",
+      title: targetText(t.text),
+      next: withAffixes(after, [...after.affixes, targetAffix(t.side, t.idx, "explicit")]),
+      steps: [
+        step({
+          do: `Chaos Orb until ${targetText(t.text)}.`,
+          why: `A Chaos Orb removes one random mod and adds one (${S.kb1}). The loose mod is the only removable one${immune} — each Chaos swaps exactly it and rolls a fresh mod.`,
+          mats: [mat("chaos")],
+          check: `${targetText(t.text)} (or a better tier) is on the item.`,
+        }),
+      ],
+      uses: [useOf(mat("chaos"), attemptsOf(e))],
+      odds: e,
+      grade: "vp",
+      adds: true,
+      checks: [{ state, rules: ["chaos"] }],
+    });
+    if (move) out.push(move);
+  }
+  return out;
+}
+
+/**
+ * Side-steered Chaos loop: the side's only removable mod is a throwaway and the other side is full,
+ * so Erasure + Chaos removes exactly it and the new mod can only land on this side (KB §1, §4).
+ */
+function erasureLoop(state: PlanState, ctx: PlanCtx): Move[] {
+  if (state.rarity !== "Rare" || state.affixes.some((a) => a.side === "any")) return [];
+  const out: Move[] = [];
+  for (const t of ctx.targets) {
+    const loose = removable(state).filter((a) => a.side === t.side);
+    if (t.source !== "natural" || present(state, t.idx) || loose.length !== 1 || !isJunk(loose[0]!) || loose[0]!.special) continue;
+    if (openOf(ctx, state, t.side === "prefix" ? "suffix" : "prefix") > 0) continue;
+    const after = withAffixes(state, without(state, loose[0]!));
+    const odds = addOdds(ctx, after, { sides: [t.side], floor: null, catalyst: null, quality: 0, junkAfter: junkBlocking(after, [t.side]) }, [t.idx]);
+    if ((odds.p.get(t.idx) ?? 0) <= 0) continue;
+    const e = odds.estimate(t.idx);
+    const omen = sideOmen(t.side, "Erasure");
+    const move = makeMove(ctx, {
+      methodId: `erasure-loop-${t.side}`,
+      title: targetText(t.text),
+      next: withAffixes(after, [...after.affixes, targetAffix(t.side, t.idx, "explicit")]),
+      steps: [
+        step({
+          do: `${mat(omen.key).label} + Chaos Orb until ${targetText(t.text)}.`,
+          why: `The omen makes the Chaos remove a ${t.side} (${S.kb4}) — the throwaway is the only removable one — and only ${t.side} slots are open, so the new mod lands there too.`,
+          mats: [mat(omen.key), mat("chaos")],
+          check: `${targetText(t.text)} (or a better tier) is on the item.`,
+        }),
+      ],
+      uses: [useOf(mat(omen.key), attemptsOf(e)), useOf(mat("chaos"), attemptsOf(e))],
+      odds: e,
+      grade: "vp",
+      adds: true,
+      checks: [{ state, rules: [omen.rule] }],
+    });
+    if (move) out.push(move);
+  }
+  return out;
+}
+
+/** Expected material use of the chain with its band (×2 / ×½ every hit chance). */
+function chainUses(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, point: Chain): MaterialUse[] {
+  const start = `${scope.missing0}:${scope.j0}`;
+  const cheap = buildChain(state, ctx, scope, v, 2);
+  const dear = buildChain(state, ctx, scope, v, 0.5);
+  const mats = new Map<string, MaterialUse["mat"]>();
+  for (const c of [point, cheap, dear]) {
+    for (const n of c.nodes) for (const id of Object.keys(n.cost)) mats.set(id, materialById(id, c));
+  }
+  const ids = [...mats.keys()];
+  const [p, lo, hi] = [point, cheap, dear].map((c) => solveChain(c.nodes, start, ids));
+  return ids.map((id) => useOf(mats.get(id)!, { point: p![id]!, low: lo![id]!, high: hi![id]! }));
+}
+
+function materialById(id: string, chain: Chain): MaterialUse["mat"] {
+  const cat = chain.catalysts.find((c) => c.mat.id === id);
+  if (cat) return cat.mat;
+  const keys = ["exalted", "greaterExalted", "perfectExalted", "annul", "omenCatalysingExaltation", "omenSinistralExaltation", "omenDextralExaltation", "omenSinistralAnnulment", "omenDextralAnnulment"] as const;
+  const key = keys.find((k) => mat(k).id === id);
+  if (!key) throw new Error(`planner bug: unknown chain material ${id}`);
+  return mat(key);
+}
+
+function slamSteps(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, chain: Chain): StepText[] {
+  const side = scope.side;
+  const wanted = scope.chain.filter((t, i) => (scope.missing0 >> i) & 1).map((t) => targetText(t.text));
+  const cap = ctx.base.qualityCap ?? 0;
+  const omen = scope.steerExalt ? `${mat(sideOmen(side, "Exaltation").key).label} + ` : "";
+  const cata = v.catalysing ? `${mat("omenCatalysingExaltation").label} + ` : "";
+  const out: StepText[] = [];
+  if (v.catalysing) {
+    const which = chain.catalysts.map((c) => c.mat.label).join(" / ");
+    out.push(step({
+      do: `${which} → quality to ${cap}% (the catalyst of the mod you aim at).`,
+      why: `Catalysing Exaltation consumes ALL catalyst quality for a ×${catalysingMultiplier(cap)} tag bias (${CATALYSING_SOURCE}) — re-catalyse before every slam. ${QUALITY_PER_CATALYST_SOURCE}.`,
+      mats: chain.catalysts.map((c) => c.mat),
+    }));
+  }
+  out.push(step({
+    do: `${omen}${cata}${v.tier.label} → a ${side}, until ${wanted.join(" and ")}.`,
+    why: `${scope.steerExalt ? `The omen forces a ${side} (${S.kb4})` : `Only ${side} slots are open, so the mod lands there`}${v.tier.floor ? `; the ${v.tier.floor} floor keeps lower tiers out (${S.kb1})` : ""}.`,
+    mats: [...(v.catalysing ? [mat("omenCatalysingExaltation")] : []), ...(scope.steerExalt ? [mat(sideOmen(side, "Exaltation").key)] : []), mat(v.tier.key)],
+    check: `${wanted.join(" and ")} on the item.`,
+  }));
+  if (chain.annuls) {
+    const steer = scope.steerAnnul ? `${mat(sideOmen(side, "Annulment").key).label} + ` : "";
+    out.push(step({
+      do: `A ${side} you don't want → ${steer}Orb of Annulment, then slam again.`,
+      why: `The Annulment removes a random ${side}${scope.steerAnnul ? ` (the omen keeps it off the ${side === "prefix" ? "suffixes" : "prefixes"}, ${S.kb4})` : ""} — it can also take a good one; that re-slam is in the cost.`,
+      mats: [...(scope.steerAnnul ? [mat(sideOmen(side, "Annulment").key)] : []), mat("annul")],
+      onFail: "Back to the slam.",
+      retry: "self",
+    }));
+  }
+  return out;
+}
+
+function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant): Move | null {
+  let chain: Chain;
+  try {
+    chain = buildChain(state, ctx, scope, v, 1);
+  } catch (e: unknown) {
+    if (e instanceof NoAimError) return null;
+    throw e;
+  }
+  const start = stateAt(state, scope, scope.missing0, scope.j0);
+  const quality = ctx.base.qualityCap ?? 0;
+  const firstRule = scope.steerExalt ? sideOmen(scope.side, "Exaltation").rule : v.tier.rule;
+  const checks = [{ state: start, rules: [firstRule, v.tier.rule] }];
+  if (v.catalysing) {
+    checks.push({ state: { ...start, quality: 0, catalyst: null }, rules: ["catalyst"] });
+    checks.push({ state: { ...start, quality, catalyst: chain.first.catalyst?.mat.id ?? null }, rules: ["omen-catalysing-exaltation"] });
+  }
+  if (chain.annuls) {
+    const full = stateAt(state, scope, scope.missing0, scope.j0 + countBits(scope.missing0));
+    checks.push({ state: full, rules: [scope.steerAnnul ? sideOmen(scope.side, "Annulment").rule : "annul"] });
+  }
+  return makeMove(ctx, {
+    methodId: `slam-${scope.side}-${v.tier.rule}${v.catalysing ? "-catalysing" : ""}`,
+    title: `${scope.side === "prefix" ? "Prefix" : "Suffix"} slams`,
+    // Catalysing Exaltation consumes ALL catalyst quality (KB §4): a quality goal must come after
+    next: v.catalysing ? { ...stateAt(state, scope, 0, scope.j0), quality: 0, catalyst: null } : stateAt(state, scope, 0, scope.j0),
+    steps: slamSteps(ctx, scope, v, chain),
+    uses: chainUses(state, ctx, scope, v, chain),
+    odds: chain.first.est,
+    grade: "vp",
+    adds: true,
+    facts: v.catalysing ? ["catalyst → tag mapping is our reading of the catalyst text (uv)", `catalyst use per % quality: ${QUALITY_PER_CATALYST_SOURCE}`] : [],
+    checks,
+  });
+}
+
+const countBits = (mask: number): number => mask.toString(2).replace(/0/g, "").length;
+
+function slamFill(state: PlanState, ctx: PlanCtx): Move[] {
+  const out: Move[] = [];
+  for (const side of SIDES) {
+    const scope = slamScope(state, ctx, side);
+    if (!scope) continue;
+    for (const tier of EXALT_TIERS.filter((t) => usableTier(ctx, t))) {
+      for (const catalysing of [false, true]) {
+        if (catalysing && (ctx.base.qualityCap == null || scope.steerExalt)) continue;
+        const move = slamMove(state, ctx, scope, { tier, catalysing });
+        if (move) out.push(move);
+      }
+    }
+  }
+  return out;
+}
+
+export const FILL_METHODS: readonly Method[] = [
+  { id: "chaos-loop", order: 30, moves: chaosLoop },
+  { id: "erasure-loop", order: 31, moves: erasureLoop },
+  { id: "slam-fill", order: 70, moves: slamFill },
+];

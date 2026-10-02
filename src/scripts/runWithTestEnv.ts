@@ -32,6 +32,7 @@ const targets = {
   system: "src/scripts/testSystem.ts",
   "tools-regex": "src/scripts/tools/testRegexTool.ts",
   "tools-craft-moves": "src/scripts/tools/testCraftMoves.ts",
+  "tools-craft-planner": "src/scripts/tools/testCraftPlanner.ts",
   "tools-boss-ev": "src/scripts/tools/testBossEv.ts",
   "tools-liquidate": "src/scripts/tools/testLiquidate.ts",
   "user-league": "src/scripts/testUserLeague.ts",

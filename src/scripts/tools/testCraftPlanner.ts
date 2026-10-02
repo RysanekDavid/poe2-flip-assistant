@@ -1,0 +1,179 @@
+/* Craft planner: golden plans, rule-violation refusals, odds basis, the expectation math, search
+ * determinism + cap, the legality projection, the essence table vs the catalog, and the contract.
+ * Run: npm run test:tools:craft-planner */
+import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { isRmtUrl } from "../../lib/claim";
+import { loadCraftCatalog, type CraftCatalog } from "../../core/tools/craftmoves/catalog";
+import { ESSENCE_OUTCOMES } from "../../core/tools/planner/essenceOutcomes";
+import { solveChain, type ChainNode } from "../../core/tools/planner/expectation";
+import { planCraft, PlanRejectedError, buildCtx } from "../../core/tools/planner/plan";
+import { searchPlan, SearchCappedError } from "../../core/tools/planner/search";
+import { slotIssues } from "../../core/tools/planner/targets";
+import { planRequestSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
+import { BREACH_RING, fixturePrices, target } from "./plannerFixtures";
+import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
+import { runPlannerStateCases } from "./craftPlannerStateCases";
+
+function rejected(cat: CraftCatalog, req: PlanRequest): PlanRejectedError {
+  try {
+    planCraft(req, { cat, prices: fixturePrices(), exaltPerDivine: null, league: "Test", now: NOW });
+  } catch (e: unknown) {
+    if (e instanceof PlanRejectedError) return e;
+    throw e;
+  }
+  assert.fail(`expected a refusal for ${JSON.stringify(req.targets)}`);
+}
+
+const ring = (base: string, ilvl: number, targets: PlanRequest["targets"], extra: Partial<PlanRequest> = {}): PlanRequest => ({ itemClass: "Rings", base, ilvl, targets, includeUnverified: false, quality: null, ...extra });
+const ruleOf = (e: PlanRejectedError): string[] => e.issues.filter((i) => i.severity === "impossible").map((i) => i.rule);
+
+function testViolations(cat: CraftCatalog): void {
+  const sameGroup = rejected(cat, { itemClass: "Amulets", base: "Stellar Amulet", ilvl: 82, targets: [target("GlobalIncreaseSpellSkillGemLevel", "suffix", "GlobalSpellGemsLevel3"), target("GlobalIncreaseMinionSpellSkillGemLevel", "suffix", "GlobalMinionSpellSkillGemLevel3")], includeUnverified: false, quality: null });
+  assert.deepEqual(ruleOf(sameGroup), ["mod-group"], "two IncreaseSocketedGemLevel mods can't coexist");
+  const fourPrefixes = [target("IncreasedLife", "prefix", "IncreasedLife1"), target("IncreasedMana", "prefix", "IncreasedMana1"), target("FireDamage", "prefix", "AddedFireDamage1"), target("ColdDamage", "prefix", "AddedColdDamage1")];
+  assert.deepEqual(ruleOf(rejected(cat, ring("Ruby Ring", 82, fourPrefixes))), ["affix-cap"], "4 prefixes on a Ruby Ring");
+  const dusk = buildCtx(ring("Dusk Ring", 82, fourPrefixes), { cat, prices: fixturePrices(), exaltPerDivine: null, league: "Test", now: NOW });
+  assert.ok(!dusk.issues.some((i) => i.severity === "impossible"), "a Dusk Ring holds 4 prefixes (+1 prefix implicit)");
+  assert.ok(plan(cat, ring("Dusk Ring", 82, fourPrefixes)).steps.length > 1, "and the planner finds a way");
+  const lowIlvl = rejected(cat, ring("Ruby Ring", 75, [target("FireResistance", "suffix", "FireResist8")]));
+  assert.deepEqual(ruleOf(lowIlvl), ["ilvl-gate"]);
+  assert.match(lowIlvl.issues[0]!.message, /needs item level 82/);
+  const twoDesecrated = rejected(cat, ring("Breach Ring", 82, [target("IncreasedMinionDamageIfYouHitEnemy", "prefix", "AbyssModRingAmuletAmanamuPrefixMinionDamageIfYou'veHitRecently"), target("RemnantEffect", "prefix", "AbyssModRingAmuletAmanamuPrefixRemnantEffect")]));
+  assert.deepEqual(ruleOf(twoDesecrated), ["one-desecrated"]);
+  assert.match(twoDesecrated.issues[0]!.message, /Putrefaction/);
+  const timeLost = rejected(cat, { itemClass: "Jewels", base: "Time-Lost Sapphire", ilvl: 82, targets: threePrefixes(cat, "Jewels", "Time-Lost Sapphire"), includeUnverified: true, quality: null });
+  assert.deepEqual(ruleOf(timeLost), ["affix-cap"], "rare Time-Lost jewels hold 2 + 2");
+  assert.equal(timeLost.issues[0]!.grade, "vs");
+  const notCrafted = rejected(cat, ring("Ruby Ring", 82, [target("MaximumLifeIncreasePercent", "prefix", "EssenceIncreasedLifePercent1")]));
+  assert.deepEqual(ruleOf(notCrafted), ["essence-table"], "no curated essence writes % life on a ring");
+  const quality = rejected(cat, ring("Ruby Ring", 82, [target("IncreasedMana", "prefix", "IncreasedMana12")], { quality: { catalyst: "neural-catalyst", pct: 60 } }));
+  assert.deepEqual(ruleOf(quality), ["quality-cap"], "a Ruby Ring tops out at 40% (20% + the Breach essence's 20%)");
+  testTwoCrafted(cat);
+  testJewelOverCap(cat);
+}
+
+function threePrefixes(cat: CraftCatalog, cls: string, base: string): PlanRequest["targets"] {
+  const combo = Object.values(cat.classes[cls]!).find((c) => c.bases.includes(base))!;
+  return Object.entries(combo.prefix).slice(0, 3).map(([family, tiers]) => target(family, "prefix", Object.keys(tiers)[0]!));
+}
+
+/** Two essence-only targets: the curated table holds one per MVP class, so the rule is driven directly. */
+function testTwoCrafted(cat: CraftCatalog): void {
+  const ctx = buildCtx(BREACH_RING, { cat, prices: fixturePrices(), exaltPerDivine: null, league: "Test", now: NOW }).ctx;
+  const crafted = ctx.targets.find((t) => t.source === "essence")!;
+  const issues = slotIssues(ctx.base, [crafted, { ...crafted, idx: 9 }]);
+  assert.ok(issues.some((i) => i.rule === "one-crafted" && /Astrid's Creativity/.test(i.message)), "two crafted-only mods name Astrid's Creativity");
+}
+
+/**
+ * jewel_liquid_5mod_budget: 3 suffixes + 2 prefixes on a basic Sapphire. The over-cap Contempt route
+ * ends with an Exalt onto an over-cap jewel (KB §6 b, unverified): no plan by default, a badged plan
+ * with "include unverified methods". 4 suffixes stays impossible.
+ */
+function testJewelOverCap(cat: CraftCatalog): void {
+  const combo = Object.values(cat.classes.Jewels!).find((c) => c.bases.includes("Sapphire"))!;
+  const pick = (side: "prefix" | "suffix", n: number) => Object.entries(combo[side]).slice(0, n).map(([family, tiers]) => target(family, side, Object.keys(tiers)[0]!));
+  const req: PlanRequest = { itemClass: "Jewels", base: "Sapphire", ilvl: 82, targets: [...pick("suffix", 3), ...pick("prefix", 2)], includeUnverified: false, quality: null };
+  const e = rejected(cat, req);
+  assert.deepEqual(ruleOf(e), [], "feasible on paper (over-cap route) …");
+  assert.match(e.message, /include unverified methods/, "… but no plan with verified + creator-demonstrated methods");
+  assert.ok(e.issues.some((i) => i.rule === "over-cap-jewel" && i.severity === "warn"));
+  const p = plan(cat, { ...req, includeUnverified: true });
+  const ids = p.steps.map((s) => s.method);
+  assert.ok(ids.includes("contempt-suffix") && ids.includes("strip-contempt"), `Contempt route planned: ${ids.join(", ")}`);
+  const contempt = p.steps.find((s) => s.method === "contempt-suffix")!;
+  assert.equal(contempt.odds.basis, "estimate");
+  assert.deepEqual(contempt.instructions[0]!.retryTo, { phase: p.steps[0]!.phase, step: 1 }, "the wrong Contempt mod restarts on a new base");
+  assert.ok(p.steps.some((s) => s.grade === "uv" && /over-cap/.test(s.unverified ?? "")), "the over-cap add is badged unverified");
+  assert.deepEqual(ruleOf(rejected(cat, { ...req, targets: [...pick("suffix", 4)] })), ["affix-cap"], "4 suffixes: never");
+}
+
+function testOddsBasis(cat: CraftCatalog): void {
+  for (const req of [BREACH_RING]) {
+    const p = plan(cat, req);
+    for (const s of p.steps) {
+      assert.ok(s.odds.formula.length > 0, `${s.method} carries its formula`);
+      if (/^(chaos-loop|slam-|magic-loop|desecrate)/.test(s.method)) assert.equal(s.odds.basis, "estimate", `${s.method}: an add is an estimate`);
+      if (/^(acquire|plant-junk|essence|fracture|strip|blocker)/.test(s.method)) assert.equal(s.odds.basis, "exact", `${s.method}: count-based`);
+      for (const m of s.materials) assert.ok(m.qty.low <= m.qty.point && m.qty.point <= m.qty.high, `${s.method} ${m.id} band`);
+    }
+  }
+}
+
+/** Geometric closed form vs the chain solver, and the two-slot chain with a 1/2 wrong Annulment by hand. */
+function testExpectation(): void {
+  const p = 0.2;
+  const geo: ChainNode[] = [
+    { id: "s", terminal: false, cost: { slam: 1 }, edges: [{ to: "t", p }, { to: "j", p: 1 - p }] },
+    { id: "j", terminal: false, cost: { annul: 1 }, edges: [{ to: "s", p: 1 }] },
+    { id: "t", terminal: true, cost: {}, edges: [] },
+  ];
+  const g = solveChain(geo, "s", ["slam", "annul"]);
+  assert.ok(Math.abs(g.slam! - 1 / p) < 1e-9 && Math.abs(g.annul! - (1 - p) / p) < 1e-9, "geometric: 1/p slams, (1−p)/p fixes");
+  const q = 0.2;
+  const two: ChainNode[] = [
+    { id: "A", terminal: false, cost: { slam: 1 }, edges: [{ to: "B", p }, { to: "A'", p: 1 - p }] },
+    { id: "A'", terminal: false, cost: { annul: 1 }, edges: [{ to: "A", p: 1 }] },
+    { id: "B", terminal: false, cost: { slam: 1 }, edges: [{ to: "T", p: q }, { to: "B'", p: 1 - q }] },
+    { id: "B'", terminal: false, cost: { annul: 1 }, edges: [{ to: "B", p: 0.5 }, { to: "A'", p: 0.5 }] },
+    { id: "T", terminal: true, cost: {}, edges: [] },
+  ];
+  // E_B = (1 + r/p)/q with r = (1−q)/2; E_A = 1/p + E_B → 5 + 15 = 20 slams at p = q = 0.2
+  assert.ok(Math.abs(solveChain(two, "A", ["slam"]).slam! - 20) < 1e-9, "two-res chain = 20 slams by hand");
+}
+
+function testDeterminismAndCap(cat: CraftCatalog): void {
+  assert.equal(JSON.stringify(plan(cat, BREACH_RING)), JSON.stringify(plan(cat, BREACH_RING)), "same request → byte-identical plan");
+  const { ctx } = buildCtx(BREACH_RING, { cat, prices: fixturePrices(), exaltPerDivine: null, league: "Test", now: NOW });
+  assert.throws(() => searchPlan(ctx, () => 0, 2), SearchCappedError);
+}
+
+function testEssenceTable(cat: CraftCatalog): void {
+  const norm = (s: string) => s.replace(/—/g, "-");
+  for (const r of ESSENCE_OUTCOMES) {
+    const mod = cat.mods[r.modId];
+    assert.ok(mod, `${r.essenceId} → ${r.modId} exists`);
+    assert.equal(mod.text, norm(r.poe2dbText), `${r.essenceId} ${r.itemClass}: catalog text = poe2db text`);
+    assert.match(r.source, /^https:\/\/poe2db\.tw\/us\//);
+    assert.equal(isRmtUrl(r.source), false);
+    if (!mod.craftedOnly) {
+      for (const combo of Object.values(cat.classes[r.itemClass]!)) assert.ok(combo[mod.side][mod.family]?.[r.modId] != null, `${r.modId} rolls on ${r.itemClass}`);
+    }
+  }
+  assert.ok(!ESSENCE_OUTCOMES.some((r) => (r.itemClass as string) === "Jewels"), "no essence row for jewels (no poe2db page lists them)");
+}
+
+/** Owner rules the library must never break: no Gnawed bones, no Greater Exaltation, no Whittling (unplanned). */
+function testLibraryNeverUses(): void {
+  const dir = join(process.cwd(), "src", "core", "tools", "planner");
+  const src = readdirSync(dir).map((f) => readFileSync(join(dir, f), "utf8")).join("\n");
+  for (const banned of ["gnawedCollarbone", "gnawedJawbone", "gnawedRib", "omenGreaterExaltation", "greaterChaos", "perfectChaos"]) {
+    assert.ok(!src.includes(`"${banned}"`), `the planner never plans ${banned}`);
+  }
+}
+
+function testContract(): void {
+  assert.equal(planRequestSchema.safeParse({ ...BREACH_RING, targets: [] }).success, false, "at least one target");
+  assert.equal(planRequestSchema.safeParse({ ...BREACH_RING, targets: [...BREACH_RING.targets, BREACH_RING.targets[0]!] }).success, false, "no duplicate mod");
+  assert.equal(planRequestSchema.safeParse({ ...BREACH_RING, itemClass: "Boots" }).success, false, "MVP classes only");
+  const parsed = planRequestSchema.parse({ itemClass: "Rings", base: "Breach Ring", ilvl: 82, targets: [{ family: "IncreasedMana", side: "prefix", minModId: "IncreasedMana12" }] });
+  assert.equal(parsed.includeUnverified, false, "unverified methods are opt-in");
+  assert.equal(parsed.targets[0]!.fractured, false);
+}
+
+const cat = loadCraftCatalog();
+runGoldenCases(cat);
+testViolations(cat);
+testOddsBasis(cat);
+testExpectation();
+testDeterminismAndCap(cat);
+testEssenceTable(cat);
+testLibraryNeverUses();
+testContract();
+runPlannerStateCases(cat);
+console.log(
+  `ALL PASS — craft-planner: golden plans (Breach mana stacker, fractured-flat res ring, fractured +3 amulet), violations (mod group, caps incl. Dusk/Time-Lost, ilvl gate, one crafted/desecrated, essence table, quality cap, over-cap jewel), ` +
+    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, state/projection cases`,
+);
