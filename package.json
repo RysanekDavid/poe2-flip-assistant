@@ -51,6 +51,7 @@
     "build:craft-catalog": "tsx src/scripts/buildCraftCatalog.ts",
     "build:regex-data": "tsx src/scripts/buildRegexData.ts",
     "sync:entities": "tsx src/scripts/syncEntities.ts",
+    "sync:base-art": "tsx src/scripts/syncBaseArt.ts",
     "patch:sync": "tsx src/scripts/syncPatchNotes.ts",
     "patch:review": "tsx src/scripts/reviewPatch.ts",
     "patch:summarize": "tsx src/scripts/summarizePatches.ts",
