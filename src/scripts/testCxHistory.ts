@@ -37,6 +37,7 @@ import {
 } from "./cxTestFixtures";
 import { runCxModelTests } from "./testCxMarkets";
 import { runAbsentLeagueTests, runCxOutcomeTests } from "./testCxOutcomes";
+import { runLeagueActivityTests } from "./testLeagueActivity";
 import { runLeagueStartTests } from "./testLeagueStart";
 
 if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
@@ -45,7 +46,7 @@ if (!/scratchpad|tmp|temp/.test(config.dbPath)) {
 }
 
 const db = getDb();
-db.exec("DELETE FROM cx_markets; DELETE FROM cx_ingest; DELETE FROM cx_items;");
+db.exec("DELETE FROM cx_markets; DELETE FROM cx_ingest; DELETE FROM cx_items; DELETE FROM cx_league_activity;");
 
 /** "Now" = ten minutes into the hour after the captured digest, so its hour is the newest one. */
 const NOW = H0 * 1000 + 10 * 60_000;
@@ -71,10 +72,11 @@ async function main(): Promise<void> {
   testLeagueViewAndStaleness();
   testRouteView();
   testRetention();
+  runLeagueActivityTests(NOW);
   runCxOutcomeTests(); // appends hours after H0 — keep last among the stored-history tests
   await runAbsentLeagueTests(NOW);
   await runLeagueStartTests(); // rewrites league_registry in this temp DB — keep last
-  console.log("  ok — ingest, backfill, league view, retention, outcome loop, absent leagues, league start");
+  console.log("  ok — ingest, backfill, league view, retention, league activity, outcome loop, absent leagues, league start");
 }
 
 function count(sql: string, ...args: unknown[]): number {

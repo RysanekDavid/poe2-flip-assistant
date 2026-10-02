@@ -22,7 +22,7 @@
     "test:demo-user": "tsx src/scripts/testAddUser.ts",
     "test:demo": "tsx src/scripts/testDemoReadiness.ts",
     "test:deploy-config": "tsx src/scripts/testDeploymentConfig.ts && tsx src/scripts/testDeployShell.ts && tsx src/scripts/testDeploySmoke.ts && tsx src/scripts/testLegalNotice.ts",
-    "test:league": "tsx src/scripts/testLeague.ts && tsx src/scripts/testLeagueMigration.ts && tsx src/scripts/testLeagueEmblem.ts",
+    "test:league": "tsx src/scripts/testLeague.ts && tsx src/scripts/testLeagueList.ts && tsx src/scripts/testLeagueMigration.ts && tsx src/scripts/testLeagueEmblem.ts",
     "test:user-league": "tsx src/scripts/runWithTestEnv.ts user-league && tsx src/scripts/runWithTestEnv.ts watchlist-prices",
     "test:market-league": "tsx src/scripts/runWithTestEnv.ts market && tsx src/scripts/runWithTestEnv.ts market-prices && tsx src/scripts/runWithTestEnv.ts market-uniques && tsx src/scripts/runWithTestEnv.ts opportunities",
     "test:rates": "tsx src/scripts/runWithTestEnv.ts rates",

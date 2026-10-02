@@ -2,59 +2,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import Database from "better-sqlite3";
-import { parseNinjaLeagues } from "../api/ninjaClient";
-import { parseScoutLeagues } from "../api/scoutClient";
-import type { LeagueOption } from "../api/types";
 import { config } from "../config/env";
+import { pickBusiestChallengeLeague, type DerivedLeague } from "../core/leagueDerivation";
+import type { LeagueListSnapshot } from "../core/leagueList";
 import { clearLeagueCache, getDefaultLeague, setActiveLeague } from "../core/leagueState";
+import type { LeagueActivityTotal } from "../db/cxActivityQueries";
 import { readLeagueState } from "../db/leagueQueries";
-import {
-  agreeOnLeague,
-  checkLeagueOnce,
-  currentChallengeLeagues,
-  detectCurrentLeague,
-  pickOrderedLeague,
-  type LeagueSources,
-} from "../scheduler/leagueWatcher";
+import { checkLeagueOnce, detectCurrentLeague, type LeagueSources } from "../scheduler/leagueWatcher";
 
-/**
- * Captured from the live poe.ninja endpoint (2026-09): a flat list with NO current/active flag
- * of any kind, ordered newest league first. That ordering is the only signal ninja gives.
- */
-const NINJA_RAW: unknown = [
-  { id: "Forbidden Rites", name: "Forbidden Rites" },
-  { id: "Runes of Aldur", name: "Runes of Aldur" },
-  { id: "HC Forbidden Rites", name: "HC Forbidden Rites" },
-  { id: "HC Runes of Aldur", name: "HC Runes of Aldur" },
-  { id: "Standard", name: "Standard" },
-  { id: "Hardcore", name: "Hardcore" },
-];
-
-/**
- * Captured verbatim from https://api.poe2scout.com/poe2/Leagues (2026-09). Note the two traps
- * this fixture exists to pin: HC variants are their OWN `Value` (not a shared one), and FOUR
- * leagues carry IsCurrent — the new league and the previous one — so "the flagged league" is
- * not a single answer. Extra keys are included on purpose; the schema must tolerate them.
- */
-const SCOUT_RAW: unknown = [
-  {
-    Value: "Forbidden Rites",
-    ShortName: "forbiddenrites",
-    IsCurrent: true,
-    DivinePrice: 453.9403608264729,
-    ChaosDivinePrice: 9.600850488995723,
-    BaseCurrencyText: "Exalted Orb",
-    BaseCurrencyIconUrl: "https://web.poecdn.com/exalted.png",
-    DefaultCurrency: { Text: "Exalted Orb", ApiId: "exalted" },
-  },
-  { Value: "HC Forbidden Rites", ShortName: "forbiddenriteshc", IsCurrent: true, DivinePrice: 173.28, ChaosDivinePrice: 8.53 },
-  { Value: "Dawn of the Hunt", ShortName: "hunt", IsCurrent: false, DivinePrice: 1828.43, ChaosDivinePrice: 20.31 },
-  { Value: "Rise of the Abyssal", ShortName: "abyssal", IsCurrent: false, DivinePrice: 1000, ChaosDivinePrice: 25.64 },
-  { Value: "Standard", ShortName: "standard", IsCurrent: false, DivinePrice: 178.97, ChaosDivinePrice: 2.23 },
-  { Value: "Hardcore", ShortName: "hardcore", IsCurrent: false, DivinePrice: 80, ChaosDivinePrice: 2 },
-  { Value: "Runes of Aldur", ShortName: "runes", IsCurrent: true, DivinePrice: 509.41, ChaosDivinePrice: 11.28 },
-  { Value: "HC Runes of Aldur", ShortName: "runeshc", IsCurrent: true, DivinePrice: 472, ChaosDivinePrice: 21.45 },
-];
+/** GGG's list as trade2 /data/leagues returns it (see fixtures/trade2-leagues.json). */
+const GGG_LIST = ["Forbidden Rites", "HC Forbidden Rites", "Runes of Aldur", "HC Runes of Aldur", "Standard", "Hardcore"];
 
 // Deliberately not a real league name: the fixture must differ from LEAGUE_NAME in .env.local,
 // whatever the developer running this has configured.
@@ -75,7 +32,7 @@ db.prepare(`
 main()
   .then(() => {
     db.close();
-    console.log("ALL PASS — league detection agreement, alert dedupe and runtime league switching");
+    console.log("ALL PASS — league derivation, detection, alert dedupe and runtime league switching");
   })
   .catch((error: unknown) => {
     db.close();
@@ -84,10 +41,8 @@ main()
   });
 
 async function main(): Promise<void> {
-  testRealResponseShapes();
-  testAgreementRule();
-  testNameFiltering();
-  await testSourceAgreement();
+  testDerivationRule();
+  await testDetection();
   await testAlertDedupe();
   await testActiveLeagueResolution();
   testSwitchRetainsMarketHistory();
@@ -95,109 +50,82 @@ async function main(): Promise<void> {
   testCacheIsNotPoisonedByAnExplicitDb();
 }
 
-function leagues(...rows: Array<[string, boolean | null]>): LeagueOption[] {
-  return rows.map(([name, current]) => ({ name, current }));
+function activity(league: string, divineVolume: number, markets = 10, hours = 24): LeagueActivityTotal {
+  return { league, divineVolume, markets, hours };
 }
 
-/** Both network sources faked — this test suite never touches poe.ninja or poe2scout. */
-function sources(scout: LeagueOption[] | Error, ninja: LeagueOption[] | Error): LeagueSources {
-  const source =
-    (rows: LeagueOption[] | Error) =>
-    async (): Promise<LeagueOption[]> => {
-      if (rows instanceof Error) throw rows;
-      return rows;
-    };
-  return { scout: source(scout), ninja: source(ninja) };
+/**
+ * Both GGG inputs faked — this suite never touches the network or the CX tables. `derived` is
+ * what the stored exchange history would rank first among the listed leagues.
+ */
+function sources(list: string[] | Error, derived: string | null, staleReason: string | null = null): LeagueSources {
+  return {
+    leagueList: async (): Promise<LeagueListSnapshot> => {
+      if (list instanceof Error) throw list;
+      return { names: list, fetchedAt: Date.UTC(2026, 9, 2), staleReason };
+    },
+    derive: (listed): DerivedLeague | null =>
+      derived == null ? null : pickBusiestChallengeLeague(listed, [activity(derived, 5000)]),
+    start: () => Date.UTC(2026, 8, 20) / 1000,
+  };
 }
 
-/** The real payloads, through the real parsers, through the real pickers. */
-function testRealResponseShapes(): void {
-  const ninja = parseNinjaLeagues(NINJA_RAW);
-  assert.equal(ninja.length, 6);
-  assert.deepEqual(ninja[0], { name: "Forbidden Rites", current: null }); // ninja has NO flag
-  assert.equal(pickOrderedLeague(ninja), "Forbidden Rites");
-  // Nothing in a ninja payload is ever flagged — a flag-based read of it finds nothing at all.
-  assert.deepEqual(currentChallengeLeagues(ninja), []);
+/** The ranking: most Divine traded among GGG-listed SOFTCORE CHALLENGE leagues, nothing else. */
+function testDerivationRule(): void {
+  const live = [activity("Forbidden Rites", 250_000, 900), activity("Runes of Aldur", 40_000, 700), activity("Standard", 3_000, 300)];
+  assert.equal(pickBusiestChallengeLeague(GGG_LIST, live)?.league, "Forbidden Rites");
 
-  const scout = parseScoutLeagues(SCOUT_RAW);
-  assert.equal(scout.length, 8);
-  assert.equal(scout[0]?.current, true);
-  // Scout flags the new league AND the previous one; HC variants drop out by name.
-  assert.deepEqual(currentChallengeLeagues(scout), ["Forbidden Rites", "Runes of Aldur"]);
-
-  // ninja proposes the newest, scout confirms it is live → this is the alerting case.
-  assert.equal(agreeOnLeague(pickOrderedLeague(ninja), currentChallengeLeagues(scout)), "Forbidden Rites");
-
-  // Garbage (an HTML error page, a moved host) fails loud rather than reporting "no league".
-  assert.throws(() => parseNinjaLeagues({ error: "not found" }), /shape mismatch/);
-  assert.throws(() => parseScoutLeagues([{ Value: "X" }]), /shape mismatch/);
-}
-
-function testAgreementRule(): void {
-  // ninja names a league scout does not flag as live → no agreement, no alert.
-  assert.equal(agreeOnLeague("Ghost League", ["Forbidden Rites", "Runes of Aldur"]), null);
-  // Scout's spelling wins, because scoutClient matches leagues on that exact `Value`.
-  assert.equal(agreeOnLeague("forbidden rites", ["Forbidden Rites"]), "Forbidden Rites");
-  // Either source silent → nothing to agree on.
-  assert.equal(agreeOnLeague(null, ["Forbidden Rites"]), null);
-  assert.equal(agreeOnLeague("Forbidden Rites", []), null);
-}
-
-function testNameFiltering(): void {
-  // Permanent + parallel leagues are never the current challenge league, however they are flagged.
-  assert.deepEqual(
-    currentChallengeLeagues(
-      leagues(
-        ["Standard", true],
-        ["Hardcore", true],
-        ["HC Forbidden Rites", true],
-        ["SSF Forbidden Rites", true],
-        ["Ruthless Forbidden Rites", true],
-        ["Forbidden Rites", true],
-      ),
-    ),
-    ["Forbidden Rites"],
-  );
-  // The order-based read skips the same permanent/parallel names.
+  // Standard / Hardcore / HC / SSF / Ruthless never win, however busy.
+  const permanentBusier = [activity("Standard", 9e9), activity("HC Forbidden Rites", 9e9), activity("SSF Forbidden Rites", 9e9), activity("Runes of Aldur", 1)];
   assert.equal(
-    pickOrderedLeague(leagues(["Standard", null], ["HC Forbidden Rites", null], ["Forbidden Rites", null])),
-    "Forbidden Rites",
+    pickBusiestChallengeLeague([...GGG_LIST, "SSF Forbidden Rites", "Ruthless Forbidden Rites"], permanentBusier)?.league,
+    "Runes of Aldur",
   );
-  // Unflagged rows are not "current" — scout must say so explicitly.
-  assert.deepEqual(currentChallengeLeagues(leagues(["Forbidden Rites", null], ["Runes of Aldur", null])), []);
-  assert.deepEqual(currentChallengeLeagues([]), []);
-  assert.equal(pickOrderedLeague(leagues(["Standard", null], ["Hardcore", null])), null);
-  assert.equal(pickOrderedLeague([]), null);
+
+  // A league GGG does not list (ended, private, typo) never wins, even with the most volume.
+  assert.equal(pickBusiestChallengeLeague(GGG_LIST, [activity("Dawn of the Hunt", 9e9), activity("Runes of Aldur", 5)])?.league, "Runes of Aldur");
+
+  // Launch day: the new league overtakes the old one as soon as more Divine trades there.
+  const launch = [activity("Runes of Aldur", 40_000), activity("Brand New League", 41_000, 50, 3)];
+  assert.equal(pickBusiestChallengeLeague([...GGG_LIST, "Brand New League"], launch)?.league, "Brand New League");
+
+  // No evidence → no claim.
+  assert.equal(pickBusiestChallengeLeague(GGG_LIST, []), null);
+  assert.equal(pickBusiestChallengeLeague(GGG_LIST, [activity("Forbidden Rites", 0, 0, 0)]), null);
+  assert.equal(pickBusiestChallengeLeague(GGG_LIST, [activity("Standard", 100)]), null);
+
+  // Digest names match case-insensitively; GGG's trade2 spelling is returned.
+  assert.equal(pickBusiestChallengeLeague(GGG_LIST, [activity("forbidden rites", 10)])?.league, "Forbidden Rites");
+  // Equal Divine volume: the league with more traded markets wins.
+  const tie = [activity("Forbidden Rites", 100, 5), activity("Runes of Aldur", 100, 9)];
+  assert.equal(pickBusiestChallengeLeague(GGG_LIST, tie)?.league, "Runes of Aldur");
+  console.log("PASS  derived current league = most CX Divine volume among listed softcore challenge leagues");
 }
 
-async function testSourceAgreement(): Promise<void> {
-  const agree = await detectCurrentLeague(sources(leagues([DETECTED, true]), leagues([DETECTED.toLowerCase(), null])));
-  assert.equal(agree.agreed, DETECTED); // scout spelling wins — it is the one scout matches on
+async function testDetection(): Promise<void> {
+  const found = await detectCurrentLeague(sources([...GGG_LIST, DETECTED], DETECTED));
+  assert.equal(found.agreed, DETECTED);
+  assert.match(found.reports.trade2 ?? "", /^7 leagues, fetched 2026-10-02/);
+  assert.match(found.reports.cxVolume ?? "", /5000 Divine over 24 digest hour\(s\), first traded 2026-09-20/);
 
-  const disagree = await detectCurrentLeague(sources(leagues([DETECTED, true]), leagues(["Runes of Aldur", null])));
-  assert.equal(disagree.agreed, null);
-  assert.deepEqual(disagree.reports, { poe2scout: DETECTED, ninja: "Runes of Aldur" });
+  // Exchange activity for a league GGG no longer lists → no detection.
+  const unlisted = await detectCurrentLeague(sources(GGG_LIST, DETECTED));
+  assert.equal(unlisted.agreed, null);
+  assert.equal(unlisted.reports.cxVolume, null);
 
-  // One source down → no agreement, and no throw.
-  const halfDown = await detectCurrentLeague(sources(leagues([DETECTED, true]), new Error("poe.ninja 403")));
-  assert.equal(halfDown.agreed, null);
-  assert.equal(halfDown.reports.ninja, null);
+  // A stale list still detects, and says it is stale.
+  const stale = await detectCurrentLeague(sources([...GGG_LIST, DETECTED], DETECTED, "HTTP 503"));
+  assert.equal(stale.agreed, DETECTED);
+  assert.match(stale.reports.trade2 ?? "", /STALE: HTTP 503/);
 
-  const bothDown = await detectCurrentLeague(sources(new Error("scout down"), new Error("ninja down")));
-  assert.equal(bothDown.agreed, null);
-
-  // The real-world case: scout flags the new league AND the previous one, ninja's ordering
-  // breaks the tie. Both flagged names are recorded so the stored sources_json stays honest.
-  const overlap = await detectCurrentLeague(
-    sources(leagues([DETECTED, true], ["Runes of Aldur", true]), leagues([DETECTED, null], ["Runes of Aldur", null])),
-  );
-  assert.equal(overlap.agreed, DETECTED);
-  assert.equal(overlap.reports.poe2scout, `${DETECTED} | Runes of Aldur`);
+  // No list at all (nothing cached) → detection throws; the watcher pass survives it.
+  await assert.rejects(detectCurrentLeague(sources(new Error("nothing cached"), DETECTED)), /nothing cached/);
+  console.log("PASS  detection = GGG list x stored exchange activity; stale and missing lists handled");
 }
 
 async function testAlertDedupe(): Promise<void> {
   clearLeagueCache();
-  const agreeing = sources(leagues([DETECTED, true]), leagues([DETECTED, null]));
+  const agreeing = sources([...GGG_LIST, DETECTED], DETECTED);
 
   const first = await checkLeagueOnce(agreeing, db);
   assert.equal(first.agreed, DETECTED);
@@ -212,7 +140,7 @@ async function testAlertDedupe(): Promise<void> {
   assert.equal(alertCount(), 2);
 
   // A failed check leaves the recorded detection untouched and fires nothing.
-  const down = await checkLeagueOnce(sources(new Error("scout down"), new Error("ninja down")), db);
+  const down = await checkLeagueOnce(sources(new Error("trade2 down, nothing cached"), DETECTED), db);
   assert.equal(down.agreed, null);
   assert.equal(readLeagueState(db)?.detected_current, DETECTED);
   assert.equal(alertCount(), 2);
@@ -230,7 +158,7 @@ async function testActiveLeagueResolution(): Promise<void> {
   assert.equal(readLeagueState(db)?.alerted_league, DETECTED);
   // …and detection of the now-tracked league is no longer news.
   clearLeagueCache();
-  const after = await checkLeagueOnce(sources(leagues([DETECTED, true]), leagues([DETECTED, null])), db);
+  const after = await checkLeagueOnce(sources([...GGG_LIST, DETECTED], DETECTED), db);
   assert.equal(after.alerted, false);
   assert.equal(alertCount(), 2);
 }
