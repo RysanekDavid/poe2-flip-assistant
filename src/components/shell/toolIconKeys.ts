@@ -9,7 +9,7 @@ export const TOOL_ICON_KEYS = {
   flips: [],
   trade: ["prices", "price", "opportunities", "methods"],
   farm: ["strategies", "bosses"],
-  craft: ["recipes", "moves", "modpool", "rollsell"],
+  craft: ["recipes", "moves", "modpool", "planner", "rollsell"],
   stash: ["worth", "sell"],
   regex: ["waystone", "tablet", "relic", "jewel", "vendor", "price"],
   learn: ["what", "currency", "atlas", "patches"],

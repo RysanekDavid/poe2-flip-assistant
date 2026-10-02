@@ -39,8 +39,8 @@ export const BEGINNER_TABS: readonly TabId[] = ["home", "farm", "trade", "learn"
 export const BEGINNER_TOOLS: Partial<Record<TabId, readonly string[]>> = {
   farm: ["strategies", "bosses"],
   trade: ["price", "prices"],
-  // Craft is not a beginner tab today; Roll & sell stays advanced even if it becomes one, since it
-  // ends in selling on the trade site.
+  // Craft is not a beginner tab today; Roll & sell and Planner stay advanced even if it becomes one:
+  // the first ends in selling on the trade site, the second plans multi-omen crafts with estimated odds.
   craft: ["recipes", "moves", "modpool"],
   settings: ["account", "notify", "mode", "system"],
 };

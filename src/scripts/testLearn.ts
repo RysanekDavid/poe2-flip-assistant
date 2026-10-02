@@ -118,6 +118,8 @@ function testSubTabs(): void {
   assert.deepEqual(ids("advanced", "trade"), ["price", "prices", "opportunities", "methods"], "Methods is an advanced Trade tool");
   assert.ok(ids("advanced", "craft")?.includes("rollsell"), "Roll & sell is a Craft tool");
   assert.ok(!visibleTools("beginner", "craft")?.some((t) => t.id === "rollsell"), "Roll & sell stays hidden from beginners");
+  assert.ok(ids("advanced", "craft")?.includes("planner"), "Planner is a Craft tool");
+  assert.ok(!visibleTools("beginner", "craft")?.some((t) => t.id === "planner"), "Planner stays hidden from beginners");
   assert.ok(!visibleTools("beginner", "trade")?.some((t) => t.id === "methods"), "Methods stays hidden from beginners");
   assert.equal(ids("advanced", "alerts"), null, "no tools, no bar");
   assert.equal(ids("advanced", "coach"), null);
