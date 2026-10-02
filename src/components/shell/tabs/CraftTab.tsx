@@ -32,6 +32,10 @@ const RECIPES_LEGEND =
   "Modelled EV per attempt = curated hit rate × result price (median of comparable instant-buyout asks) − base − materials. " +
   "Asks are not sales. Only well-sampled recipes are ranked or alerted; the rest show Review. Read-only — you craft by hand.";
 
+const PlannerTool = dynamic(() => import("../../craft/planner/PlannerTool").then((m) => m.PlannerTool), {
+  loading: PanelLoading,
+});
+
 const MOVES_LEGEND =
   "Moves are legal by the verified 0.5.x rules. No odds: PoE2 mod weights are not public, so cards rank by what the move does " +
   "and link Craft of Exile / poe2htc for estimates. Valuing an outcome spends one trade search with your POESESSID.";
@@ -116,12 +120,15 @@ function RecipesView() {
 
 /**
  * Craft tab: recipes that pay today (tool=recipes), an item's next best move (tool=moves), a base's
- * mod pool (tool=modpool) or items worth rolling for one mod and selling (tool=rollsell).
+ * mod pool (tool=modpool), a plan for the item you want (tool=planner) or items worth rolling for
+ * one mod and selling (tool=rollsell).
  */
 export function CraftTab() {
   const { tool } = useTabRoute();
   if (tool === "moves") return <MovesView />;
   if (tool === "modpool") return <ModPoolView />;
+  // the planner owns its header: its "Try:" examples fill the item it builds
+  if (tool === "planner") return <PlannerTool />;
   if (tool === "rollsell") return <RollSellTool />;
   return <RecipesView />;
 }

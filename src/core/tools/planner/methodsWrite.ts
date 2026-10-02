@@ -1,7 +1,8 @@
 import type { CraftMaterial, MaterialKey } from "../../craftMaterials";
 import type { AffixSide } from "../craftmoves/catalog";
 import { attemptsOf, failuresOf, scaleBand, useOf } from "./expectation";
-import { makeMove, mat, once, S, sideOmen, step, targetText } from "./methodKit";
+import { makeMove, mat, once, sideOmen, step, targetText } from "./methodKit";
+import { linkSource, sources, type SourceId, type SourceRef } from "./sources";
 import { exact, revealOdds } from "./odds";
 import { anyJunkCount, craftedSlotUsed, hasKind, isJunk, junk, openOf, otherSide, present, removable, removableOn, SIDES, targetAffix, withAffixes, without } from "./state";
 import type { EssenceWrite, Method, Move, PlanAffix, PlanCtx, PlanState, ResolvedTarget } from "./types";
@@ -33,7 +34,8 @@ function essenceGreater(state: PlanState, ctx: PlanCtx): Move[] {
         steps: [
           step({
             do: `${w.label} → rare with ${targetText(ctxModText(ctx, w.modId))}.`,
-            why: `Upgrades the magic item to rare, keeps its mods and writes the essence's guaranteed mod into the one crafted slot (${S.kb7}; ${w.source}). A magic mod of the same family makes it fail ("already has a mod of this type", not consumed) — Annul that mod first.`,
+            why: `Upgrades the magic item to rare, keeps its mods and writes the essence's guaranteed mod into the one crafted slot. A magic mod of the same family makes it fail ("already has a mod of this type", not consumed) — Annul that mod first.`,
+            sources: essenceSources(w, false),
             mats: [essenceMat(w)],
             check: `Rare, ${targetText(ctxModText(ctx, w.modId))} present.`,
           }),
@@ -90,7 +92,8 @@ function perfectMove(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, w: Essen
     steps: [
       step({
         do: `${omen ? `${mat(omen.key).label} + ` : ""}${w.label} → ${targetText(t.text)}.`,
-        why: `The essence removes a random ${where ? `${where} ` : ""}mod — the only removable one${where ? ` on that side` : ""} is a throwaway, so nothing you want goes — then writes its guaranteed mod into the crafted slot (${S.kb7}; ${steer ? `${S.kb4}; ` : ""}${w.source}).${omen ? " A Crystallisation omen is consumed by ANY essence (single-source) — activate it right before this one." : ""}`,
+        why: `The essence removes a random ${where ? `${where} ` : ""}mod — the only removable one${where ? ` on that side` : ""} is a throwaway, so nothing you want goes — then writes its guaranteed mod into the crafted slot.${omen ? " A Crystallisation omen is used up by ANY essence (one source says so) — activate it right before this one." : ""}`,
+        sources: essenceSources(w, steer != null),
         mats,
         check: `${targetText(t.text)} present; the throwaway is gone.`,
       }),
@@ -102,8 +105,14 @@ function perfectMove(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, w: Essen
   });
 }
 
-const BONE: Record<string, MaterialKey> = { Rings: "preservedCollarbone", Amulets: "preservedCollarbone", Belts: "preservedCollarbone", Jewels: "preservedCranium" };
-const TIME_LOST_DESECRATION = "desecrating a Time-Lost jewel: no source names Time-Lost jewels (KB §6)";
+/** The bone that desecrates each planner class (the UI shows its art on desecrated-pool mods). */
+export const BONE: Readonly<Record<string, MaterialKey>> = { Rings: "preservedCollarbone", Amulets: "preservedCollarbone", Belts: "preservedCollarbone", Jewels: "preservedCranium" };
+const TIME_LOST_DESECRATION = "Desecrating a Time-Lost jewel: no source names Time-Lost jewels.";
+
+/** The essence's poe2db page, the essence rules, and the omen rules when an omen steers it. */
+function essenceSources(w: EssenceWrite, steered: boolean): SourceRef[] {
+  return [...sources("kb-essences", ...(steered ? (["kb-omens"] as SourceId[]) : [])), linkSource(`poe2db — ${w.label}`, w.source)];
+}
 
 interface Desecration {
   bone: CraftMaterial;
@@ -141,7 +150,7 @@ function desecrateMove(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, d: Des
   const unrevealed = withAffixes(state, [...state.affixes, { ...targetAffix(t.side, t.idx, "desecrated"), unrevealed: true }]);
   const revealedJunk = withAffixes(state, [...state.affixes, junk(t.side, "desecrated")]);
   const facts = [
-    ...(ctx.base.itemClass === "Belts" && liege ? ["Omen of the Liege on belts: creator footage only (KB §4, single-source)"] : []),
+    ...(ctx.base.itemClass === "Belts" && liege ? ["Omen of the Liege on belts: seen in one creator video only."] : []),
     ...(d.coreUnknown ? [TIME_LOST_DESECRATION] : []),
   ];
   return makeMove(ctx, {
@@ -151,13 +160,15 @@ function desecrateMove(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, d: Des
     steps: [
       step({
         do: `${slam.map((m) => m.label).join(" + ")} on the open ${t.side}, then reveal at the Well of Souls.`,
-        why: `${d.omen ? `Necromancy puts the desecrated mod on the ${t.side} (${S.kb4}); ` : ""}${liege ? `the Liege forces an Amanamu mod (${S.kb4}); ` : ""}an open slot means nothing is removed (${S.kb5}).`,
+        why: `${d.omen ? `Necromancy puts the desecrated mod on the ${t.side}; ` : ""}${liege ? "the Liege forces an Amanamu mod; " : ""}an open slot means nothing is removed.`,
+        sources: sources(...(d.omen || liege ? (["kb-omens"] as SourceId[]) : []), "kb-desecration"),
         mats: slam,
         pick: [targetText(t.text)],
       }),
       step({
         do: "Not offered → Omen of Abyssal Echoes rerolls the three options once.",
-        why: `One reroll, not a guarantee (${S.kb4}). Keep the Well open: re-opening it may consume the omen (forum 3861139, single-source).`,
+        why: "One reroll, not a guarantee. Keep the Well open: re-opening it may use up the omen (one forum report).",
+        sources: sources("kb-omens", "forum"),
         mats: [mat("omenAbyssalEchoes")],
         pick: [targetText(t.text)],
       }),
@@ -202,13 +213,13 @@ function blocker(state: PlanState, ctx: PlanCtx): Move[] {
       methodId: `blocker-${side}`,
       title: "Fracture blocker",
       next: withAffixes(state, [...state.affixes, { ...junk(side, "desecrated"), unrevealed: true }]),
-      steps: [step({ do: `${mats.map((m) => m.label).join(" + ")} → a desecrated ${side}; leave it UNREVEALED.`, why: `It counts toward the Fracturing Orb's 4 mods but can't be fractured, so the fracture odds improve (${S.kb2}).`, mats })],
+      steps: [step({ do: `${mats.map((m) => m.label).join(" + ")} → a desecrated ${side}; leave it UNREVEALED.`, why: "It counts toward the Fracturing Orb's 4 mods but can't be fractured, so the fracture odds improve.", mats, sources: sources("kb-fracture", "creators") })],
       uses: mats.map(once),
       odds: exact(1, "any desecrated mod blocks"),
       grade: "ss",
       adds: true,
       coreUnknown: d.coreUnknown,
-      facts: ["an UNREVEALED desecrated mod counting toward the 4 is creator-demonstrated (KB §2)"],
+      facts: ["An unrevealed desecrated mod counting toward the 4 is shown in creator videos, not confirmed by game data."],
       checks: [{ state, rules: ["bone-preserved", ...(d.omen ? [d.omen.rule] : [])] }],
     });
     if (move) out.push(move);

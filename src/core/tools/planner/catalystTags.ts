@@ -38,7 +38,8 @@ export const CATALYST_TAG_GRADE = "uv" as const;
  * GDLDxn6yxEs 4:26–4:47; theory-gaps 2a). Used ONLY inside the cost estimate — steps say "to 40%".
  */
 export const QUALITY_PER_CATALYST = 1;
-export const QUALITY_PER_CATALYST_SOURCE = "~1% quality per catalyst at ilvl 75+ (creator footage, theory-gaps 2a) — cost estimate only";
+/** Player prose for the step text and badge; its evidence is creator footage (sources.ts "creators"). */
+export const QUALITY_PER_CATALYST_NOTE = "About 1% quality per catalyst on item level 75+ (seen in creator videos) — the cost counts that, the step just says the target quality.";
 
 export function catalystById(id: string): CatalystInfo {
   const hit = CATALYSTS.find((c) => c.mat.id === id);

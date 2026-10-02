@@ -53,11 +53,12 @@ export const TABS: readonly TabMeta[] = [
   {
     id: "craft",
     label: "Craft",
-    hint: "profitable recipes · next move for an item · mod pool with prices",
+    hint: "profitable recipes · next move for an item · mod pool with prices · plan a craft",
     tools: [
       { id: "recipes", label: "Recipes", hint: "recipes that pay at today's prices" },
       { id: "moves", label: "Paste item", hint: "paste an item: its next best crafting moves" },
       { id: "modpool", label: "Mod pool", hint: "every mod a base rolls, with tier gates and prices" },
+      { id: "planner", label: "Planner", hint: "build the item you want: every step, its odds and what it costs" },
       { id: "rollsell", label: "Roll & sell", hint: "tablets and waystones worth rolling for one mod, and how to sell them" },
     ],
   },

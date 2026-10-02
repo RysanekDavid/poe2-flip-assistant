@@ -1,5 +1,4 @@
 import type { AffixSide } from "../craftmoves/catalog";
-import { KB } from "../craftmoves/ruleTypes";
 import { matchesCatalyst, type CatalystInfo } from "./catalystTags";
 import type { Estimate, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
@@ -15,7 +14,7 @@ import type { Estimate, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /** The estimate band: ×½ … ×2 of the prior, clamped to a probability. */
 export const ESTIMATE_BAND = { down: 0.5, up: 2 } as const;
-export const PRIOR_NOTE = "prior: equal weight per eligible family, equal per reachable tier — PoE2 publishes no spawn weights";
+export const PRIOR_NOTE = "assumes every eligible mod family and every reachable tier is equally likely — PoE2 publishes no mod weights";
 
 export function exact(p: number, formula: string, inputs: Estimate["inputs"] = {}): Estimate {
   if (!(p > 0 && p <= 1)) throw new Error(`exact odds out of range: ${p} (${formula})`);
@@ -52,7 +51,8 @@ export function catalysingMultiplier(quality: number): number | null {
   if (quality >= 20) return 5;
   return null;
 }
-export const CATALYSING_SOURCE = `${KB} §4 (×5 at 20%, ×7.5 at 40%; nothing documented above 40% — counted as ×7.5)`;
+/** Player prose for the catalyst bias in a formula (×5 at 20%, ×7.5 at 40%, crafting rules — omens). */
+export const CATALYSING_NOTE = "Catalysing Exaltation weighs them ×5 at 20% quality, ×7.5 at 40%; nothing is documented above 40%";
 
 function presentGroups(ctx: PlanCtx, state: PlanState): Set<string> {
   return new Set(state.affixes.flatMap((a) => (a.target == null ? [] : ctx.targets[a.target]!.groups)));
@@ -123,10 +123,16 @@ export function addOdds(ctx: PlanCtx, state: PlanState, pool: AddPool, targetIdx
     const pi = pf * share.share;
     p.set(idx, pi);
     if (pi <= 0) continue;
-    const bias = pool.catalyst && w.weightOf(t) > 1 ? ` (${pool.catalyst.mat.label} ×${w.mult} on ${w.tagged} tagged famil${w.tagged === 1 ? "y" : "ies"}, ${CATALYSING_SOURCE})` : "";
-    const floorTxt = pool.floor != null ? ` at floor ${pool.floor}` : "";
+    const bias = pool.catalyst && w.weightOf(t) > 1 ? ` (${pool.catalyst.mat.label} favours ${w.tagged} famil${w.tagged === 1 ? "y" : "ies"} ×${w.mult}: ${CATALYSING_NOTE})` : "";
+    const floorTxt = pool.floor != null ? ` at currency floor ${pool.floor}` : "";
     const formula = `P = ${w.weightOf(t)}/${round(w.total)} family weight × ${share.good}/${share.of} reachable tiers${floorTxt}${bias} — ${PRIOR_NOTE}`;
-    formulas.set(idx, estimate(pi, formula, { families: w.families, tiersGood: share.good, tiersEligible: share.of, ...(pool.floor != null ? { floor: pool.floor } : {}) }));
+    const inputs = {
+      "eligible mod families": w.families,
+      "good tiers": share.good,
+      "reachable tiers": share.of,
+      ...(pool.floor != null ? { "currency floor level": pool.floor } : {}),
+    };
+    formulas.set(idx, estimate(pi, formula, inputs));
   }
   return {
     p,
@@ -155,6 +161,6 @@ export function revealOdds(ctx: PlanCtx, state: PlanState, t: ResolvedTarget, fa
   const first = Math.min(1, 3 / Math.max(pool, 1));
   const both = 1 - (1 - first) ** 2;
   const scope = faction ? `${t.faction} ${t.side}es` : `${t.side} desecrated mods`;
-  const formula = `P(offered) = min(1, 3/${pool} ${scope}) = ${first.toFixed(2)}; with one Echoes reroll 1 − (1 − p)² = ${both.toFixed(2)} — reveal draws assumed uniform and distinct (${KB} §5 OPEN; faction-pool rule secondary)`;
-  return { first, withEchoes: estimate(both, formula, { pool, faction: faction ? t.faction ?? "none" : "none" }) };
+  const formula = `P(offered) = min(1, 3/${pool} ${scope}) = ${first.toFixed(2)}; with one Echoes reroll 1 − (1 − p)² = ${both.toFixed(2)} — assumes the Well offers three different mods, each equally likely (the game doesn't say)`;
+  return { first, withEchoes: estimate(both, formula, { "mods the Well can offer": pool, faction: faction ? t.faction ?? "none" : "none" }) };
 }

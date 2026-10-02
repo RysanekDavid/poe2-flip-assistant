@@ -28,6 +28,18 @@ export interface PlanDeps {
   exaltPerDivine: number | null;
   league: string;
   now: Date;
+  /** Material id → art URL; materials without art are simply left out. */
+  iconOf?: (materialId: string) => string | null;
+}
+
+function iconsFor(ids: Iterable<string>, iconOf: PlanDeps["iconOf"]): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!iconOf) return out;
+  for (const id of ids) {
+    const icon = iconOf(id);
+    if (icon) out[id] = icon;
+  }
+  return out;
 }
 
 export function buildCtx(req: PlanRequest, deps: PlanDeps): { ctx: PlanCtx; issues: FeasibilityIssue[] } {
@@ -54,6 +66,16 @@ function search(ctx: PlanCtx, issues: FeasibilityIssue[]): ReturnType<typeof sea
   }
 }
 
+/** Every material the plan names: the bill, each step, the session wizard's per-step mats, the catalyst. */
+function planMaterialIds(out: ReturnType<typeof unrollPlan>, req: PlanRequest): Set<string> {
+  return new Set([
+    ...out.bill.map((l) => l.id),
+    ...out.steps.flatMap((s) => s.materials.map((m) => m.id)),
+    ...out.guide.phases.flatMap((p) => p.steps.flatMap((s) => (s.mats ?? []).map((m) => m.id))),
+    ...(req.quality ? [req.quality.catalyst] : []),
+  ]);
+}
+
 /** Throws UnknownPlannerBaseError (404) and PlanRejectedError (422, with the graded reasons). */
 export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
   const { ctx, issues } = buildCtx(req, deps);
@@ -71,6 +93,8 @@ export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
     bill: out.bill,
     totals: out.totals,
     unpriced: out.unpriced,
+    exaltPerDivine: deps.exaltPerDivine != null && deps.exaltPerDivine > 0 ? deps.exaltPerDivine : null,
+    icons: iconsFor(planMaterialIds(out, req), deps.iconOf),
     patch: { rules: RULES_PATCH, data: deps.cat.gameDataPatch, repoe: deps.cat.repoeVersion, reverifyAfter: RULES_REVERIFY_AFTER },
     rulesStale: rulesStale(deps.now),
     expanded: found.expanded,

@@ -1,8 +1,9 @@
 import type { AffixSide } from "../craftmoves/catalog";
-import { catalystById, QUALITY_PER_CATALYST, QUALITY_PER_CATALYST_SOURCE } from "./catalystTags";
+import { catalystById, QUALITY_PER_CATALYST, QUALITY_PER_CATALYST_NOTE } from "./catalystTags";
 import { band, useOf } from "./expectation";
 import { BREACH_ESSENCE_ID, ESSENCE_OUTCOMES } from "./essenceOutcomes";
-import { makeMove, mat, once, sideOmen, step, S } from "./methodKit";
+import { makeMove, mat, once, sideOmen, step } from "./methodKit";
+import { sources } from "./sources";
 import { essenceMat, junkRemoval } from "./methodsWrite";
 import { exact } from "./odds";
 import { craftedSlotUsed, junk, openOf, removable, SIDES, withAffixes, without } from "./state";
@@ -34,7 +35,7 @@ function catalyseFinish(state: PlanState, ctx: PlanCtx): Move[] {
     methodId: "catalyse-finish",
     title: "Quality",
     next: { ...state, quality: goal.pct, catalyst: goal.catalyst },
-    steps: [step({ do: `${c.mat.label} → quality to ${goal.pct}%.`, why: `Quality raises the magnitude of matching mods (${S.kb8}); a different catalyst type wipes the old quality. ${QUALITY_PER_CATALYST_SOURCE}.`, mats: [c.mat] })],
+    steps: [step({ do: `${c.mat.label} → quality to ${goal.pct}%.`, why: `Quality raises the magnitude of matching mods; a different catalyst type wipes the old quality. ${QUALITY_PER_CATALYST_NOTE}`, mats: [c.mat], sources: sources("kb-catalysts", "creators") })],
     uses: [useOf(c.mat, band(catalystUnits(goal.pct - from)))],
     odds: exact(1, "catalysts always add quality"),
     costBasis: "estimate",
@@ -80,7 +81,7 @@ function breachMove(state: PlanState, ctx: PlanCtx, steer: AffixSide | null, top
     next: { ...after, quality: top, catalyst: goal.catalyst },
     steps: [
       step({ do: `${first.map((m) => m.label).join(" + ")} → "+20% to Maximum Quality".`, why: `It removes the throwaway (the only removable mod${steer ? ` on that side` : ""}) and writes the quality mod into the crafted slot (poe2db Essence_of_the_Breach).`, mats: first }),
-      step({ do: `${c.mat.label} → quality to ${top}%.`, why: `Cap ${ctx.base.qualityCap}% + the essence's 20%. ${QUALITY_PER_CATALYST_SOURCE}.`, mats: [c.mat] }),
+      step({ do: `${c.mat.label} → quality to ${top}%.`, why: `Cap ${ctx.base.qualityCap}% + the essence's 20%. ${QUALITY_PER_CATALYST_NOTE}`, mats: [c.mat], sources: sources("kb-catalysts", "creators") }),
       step({ do: `${last.map((m) => m.label).join(" + ")} → removes the "+20% to Maximum Quality" mod.`, why: "The quality stays above the cap; the crafted slot is free again.", mats: last, check: `${top}% quality, no "+20% to Maximum Quality" mod.` }),
     ],
     uses: [...first.map(once), useOf(c.mat, band(catalystUnits(top))), ...last.map(once)],

@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RotateCcw } from "lucide-react";
 import { priceLabel, pricedMaterials, type MatInfoFn, type RecipeView } from "./craftView";
 import { PNL_CHANGED_EVENT } from "../CraftPnlPanel";
+import { GuideRunner } from "./GuideRunner";
 import { ShopScreen, type CostField, type ManualCosts } from "./SessionShop";
-import { StepScreen, type Screen } from "./SessionStep";
-import type { CraftGuide } from "../../core/craftRecipes";
-import { flattenGuide, resolveRetry, type RetryTarget } from "../../core/craftRetry";
+import type { Screen } from "./SessionStep";
 
 /**
  * Interactive craft session — the guide as a live companion you follow WHILE crafting, not a
@@ -98,40 +96,6 @@ function useCraftSession(r: RecipeView) {
   return { screen, setScreen, attemptId, bought, toggleBought, needs, msg, setMsg, start, reset };
 }
 
-/** Phase stepper — shopping first, guide phases with ✓ once passed, result last. */
-function SessionStepper({ guide, screen, curPhase, onReset }: { guide: CraftGuide; screen: Screen; curPhase: string | null; onReset: (() => void) | null }) {
-  const curIdx = screen.kind === "outcome" ? guide.phases.length : curPhase ? guide.phases.findIndex((p) => p.title === curPhase) : -1;
-  const pill = "rounded-full px-2 py-0.5 text-[11px]";
-  return (
-    <div className="flex flex-wrap items-center gap-1 rounded-t-md border-b border-neutral-800/70 bg-neutral-950/40 px-3 py-2">
-      <span className={`${pill} ${screen.kind === "shop" ? "bg-sky-900/60 font-medium text-sky-200" : "bg-neutral-800/60 text-emerald-500"}`}>
-        {screen.kind === "shop" ? "shopping" : "✓ shopping"}
-      </span>
-      {guide.phases.map((p, i) => (
-        <span key={p.title} className="flex items-center gap-1">
-          <span className="text-neutral-700">›</span>
-          <span
-            className={`${pill} ${
-              curPhase === p.title ? "bg-emerald-900/60 font-medium text-emerald-200" : i < curIdx ? "bg-neutral-800/60 text-emerald-500" : "bg-neutral-800/60 text-neutral-500"
-            }`}
-          >
-            {i < curIdx ? `✓ ${p.title}` : p.title}
-          </span>
-        </span>
-      ))}
-      <span className="flex items-center gap-1">
-        <span className="text-neutral-700">›</span>
-        <span className={`${pill} ${screen.kind === "outcome" ? "bg-fuchsia-900/60 font-medium text-fuchsia-200" : "bg-neutral-800/60 text-neutral-500"}`}>result</span>
-      </span>
-      {onReset && (
-        <button onClick={onReset} title="reset the session (nothing is logged)" className="ml-auto inline-flex items-center gap-1 text-[11px] text-neutral-600 hover:text-neutral-400">
-          <RotateCcw className="h-3 w-3" /> reset
-        </button>
-      )}
-    </div>
-  );
-}
-
 /** Hit/brick + optional sale price. An empty sale = kept/pending, not a loss (P&L treats it so). */
 function OutcomeScreen(props: { brick: boolean; brickText: string; msg: string | null; onSave: (brick: boolean, soldDiv: number | null) => void; onSkip: () => void }) {
   const [sold, setSold] = useState("");
@@ -175,19 +139,7 @@ async function saveOutcome(attemptId: number, brick: boolean, soldDiv: number | 
   }
 }
 
-/** Broken retryFrom refs already stop the server at RECIPES import (and testCraftRetry in CI), so
- *  one can't reach a guide served here; if it somehow does, log it and keep the craft usable
- *  without the button rather than crash the player's session mid-craft. */
-function retryTargetFor(guide: CraftGuide, idx: number): RetryTarget | null {
-  const resolved = resolveRetry(guide, idx);
-  if (!resolved) return null;
-  if (resolved.ok) return resolved.target;
-  console.error(`[craft-session] ${resolved.reason}`);
-  return null;
-}
-
 export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number | null; icons: Record<string, string> }) {
-  const steps = useMemo(() => flattenGuide(r.guide), [r.guide]);
   const s = useCraftSession(r);
   const matInfo: MatInfoFn = (id) => {
     const line = pricedMaterials(r)?.find((m) => m.id === id);
@@ -199,14 +151,17 @@ export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number
       .then(() => s.reset(true))
       .catch((e: unknown) => s.setMsg(`⚠ ${e instanceof Error ? e.message : String(e)}`));
   };
-  const screen = s.screen;
-  const cur = screen.kind === "step" ? steps[screen.idx] : undefined;
-  const inProgress = screen.kind !== "shop" || s.attemptId != null;
+  const inProgress = s.screen.kind !== "shop" || s.attemptId != null;
 
   return (
-    <div className="rounded-md border border-neutral-800 bg-neutral-900">
-      <SessionStepper guide={r.guide} screen={screen} curPhase={cur?.phase ?? null} onReset={inProgress ? () => s.reset(false) : null} />
-      {screen.kind === "shop" && (
+    <GuideRunner
+      guide={r.guide}
+      screen={s.screen}
+      go={s.setScreen}
+      matInfo={matInfo}
+      legality={(idx) => r.provenance.steps.find((l) => l.idx === idx) ?? null}
+      onReset={inProgress ? () => s.reset(false) : null}
+      shop={
         <ShopScreen
           r={r}
           ex={ex}
@@ -217,22 +172,8 @@ export function CraftSessionInline({ r, ex, icons }: { r: RecipeView; ex: number
           msg={s.msg}
           onStart={(manual) => void s.start(manual).catch((e: unknown) => s.setMsg(e instanceof Error ? e.message : String(e)))}
         />
-      )}
-      {screen.kind === "step" && cur && (
-        <StepScreen
-          step={cur.step}
-          idx={screen.idx}
-          total={steps.length}
-          failed={screen.failed}
-          matInfo={matInfo}
-          go={s.setScreen}
-          legality={r.provenance.steps.find((l) => l.idx === screen.idx) ?? null}
-          retry={retryTargetFor(r.guide, screen.idx)}
-        />
-      )}
-      {screen.kind === "outcome" && (
-        <OutcomeScreen brick={screen.brick} brickText={r.guide.brick} msg={s.msg} onSave={onSave} onSkip={() => s.reset(false)} />
-      )}
-    </div>
+      }
+      outcome={(brick) => <OutcomeScreen brick={brick} brickText={r.guide.brick} msg={s.msg} onSave={onSave} onSkip={() => s.reset(false)} />}
+    />
   );
 }

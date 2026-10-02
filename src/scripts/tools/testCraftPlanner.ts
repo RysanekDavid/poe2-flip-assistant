@@ -11,8 +11,9 @@ import { solveChain, type ChainNode } from "../../core/tools/planner/expectation
 import { planCraft, PlanRejectedError, buildCtx } from "../../core/tools/planner/plan";
 import { searchPlan, SearchCappedError } from "../../core/tools/planner/search";
 import { slotIssues } from "../../core/tools/planner/targets";
-import { planRequestSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
-import { BREACH_RING, fixturePrices, target } from "./plannerFixtures";
+import { plannerCatalog, plannerPool } from "../../core/tools/planner/load";
+import { plannerCatalogSchema, plannerPoolSchema, planRequestSchema, planResponseSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
+import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, fixturePrices, target } from "./plannerFixtures";
 import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
 import { runPlannerStateCases } from "./craftPlannerStateCases";
 
@@ -163,7 +164,58 @@ function testContract(): void {
   assert.equal(parsed.targets[0]!.fractured, false);
 }
 
+/** What the planner UI reads: the item after each step, material art, catalog/pool art. */
+function testUiFields(cat: CraftCatalog): void {
+  const icon = (id: string) => `https://web.poecdn.com/gen/image/x/0123456789/${id}.png`;
+  const p = planResponseSchema.parse(planCraft(BREACH_RING, { cat, prices: fixturePrices(), exaltPerDivine: 400, league: "Test", now: NOW, iconOf: icon }));
+  const last = p.steps.at(-1)!.after;
+  const met = new Set(last.affixes.map((a) => a.target).filter((t) => t != null));
+  assert.equal(met.size, BREACH_RING.targets.length, "the last step's item carries every target");
+  assert.ok(p.steps[0]!.after.affixes.some((a) => a.kind === "fractured"), "the anchored base shows its fractured anchor");
+  for (const line of p.bill) assert.equal(p.icons[line.id], icon(line.id), `bill art for ${line.id}`);
+  assert.equal(p.exaltPerDivine, 400);
+  assert.deepEqual(plan(cat, BREACH_RING).icons, {}, "no art source → no icons, never a guess");
+  const catalog = plannerCatalogSchema.parse(plannerCatalog(cat));
+  assert.ok(catalog.catalysts.every((c) => c.icon == null || c.icon.startsWith("https://web.poecdn.com/")), "catalyst art is poecdn (CSP)");
+  const pool = plannerPoolSchema.parse(plannerPool("Rings", "Breach Ring", cat));
+  assert.equal(pool.bone.id, "preserved-collarbone", "rings desecrate with a Collarbone");
+  assert.equal(plannerPoolSchema.parse(plannerPool("Jewels", "Emerald", cat)).bone.id, "preserved-cranium", "jewels with a Cranium");
+}
+
+/** Every string in a value, depth-first (object keys too: odds inputs are shown by key). */
+function strings(v: unknown): string[] {
+  if (typeof v === "string") return [v];
+  if (Array.isArray(v)) return v.flatMap(strings);
+  if (v && typeof v === "object") return Object.entries(v).flatMap(([k, x]) => [k, ...strings(x)]);
+  return [];
+}
+
+const DEV_REF = /\.md\b|§|\bsrc\/|\bdocs\/|theory-gaps|\bKB\b/;
+
+/** Players read every planner string: no file names, section signs or research-note ids. */
+function testNoDeveloperReferences(cat: CraftCatalog): void {
+  const combo = Object.values(cat.classes.Jewels!).find((c) => c.bases.includes("Sapphire"))!;
+  const pick = (side: "prefix" | "suffix", n: number) => Object.entries(combo[side]).slice(0, n).map(([family, tiers]) => target(family, side, Object.keys(tiers)[0]!));
+  const jewel: PlanRequest = { itemClass: "Jewels", base: "Sapphire", ilvl: 82, targets: [...pick("suffix", 3), ...pick("prefix", 2)], includeUnverified: true, quality: null };
+  const quality: PlanRequest = { ...BREACH_RING, quality: { catalyst: "xophs-catalyst", pct: 40 } };
+  const golden = [BREACH_RING, FRACTURED_T1RES_RING, FRACTURE_PLUS3_AMULET, { ...BREACH_RING, includeUnverified: true }, jewel, quality];
+  const shown = golden.flatMap((req) => {
+    const p = plan(cat, req);
+    // patch/method/rule ids are not shown as prose; everything else is
+    return strings({ steps: p.steps.map((s) => ({ ...s, method: "", rules: [] })), guide: p.guide, feasibility: p.feasibility, targets: p.targets });
+  });
+  const refusals = [
+    ring("Ruby Ring", 60, [target("FireResistance", "suffix", "FireResist8")]),
+    ring("Ruby Ring", 82, [target("FireResistance", "suffix", "FireResist8", true), target("ColdResistance", "suffix", "ColdResist8", true)]),
+  ].flatMap((req) => strings(rejected(cat, req).issues));
+  const leaks = [...shown, ...refusals].filter((s) => DEV_REF.test(s));
+  assert.deepEqual([...new Set(leaks)], [], "no developer references in player-facing planner text");
+  assert.ok(plan(cat, BREACH_RING).steps.some((s) => s.instructions.some((i) => i.sources.length > 0)), "sources travel beside the why");
+}
+
 const cat = loadCraftCatalog();
+testUiFields(cat);
+testNoDeveloperReferences(cat);
 runGoldenCases(cat);
 testViolations(cat);
 testOddsBasis(cat);
@@ -175,5 +227,5 @@ testContract();
 runPlannerStateCases(cat);
 console.log(
   `ALL PASS — craft-planner: golden plans (Breach mana stacker, fractured-flat res ring, fractured +3 amulet), violations (mod group, caps incl. Dusk/Time-Lost, ilvl gate, one crafted/desecrated, essence table, quality cap, over-cap jewel), ` +
-    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, state/projection cases`,
+    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases`,
 );

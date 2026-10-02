@@ -195,7 +195,8 @@ function StatusChip({
   if (error) return <Chip tone="bad" title={error} text="switch failed" />;
   if (pending) return <Chip tone="muted" title={`switching to ${pending}`} text="switching…" />;
   if (settings.availableError) {
-    return <Chip tone="bad" title={settings.availableError} text="league list unavailable" />;
+    // the picker still works (current and polled leagues), so this is a muted note, not an alarm
+    return <Chip tone="muted" title={`the full league list could not be loaded (${settings.availableError}) — the current and collected leagues still work`} text="list offline" />;
   }
   if (!settings.polled.some((l) => l.toLowerCase() === settings.league.toLowerCase())) {
     return (

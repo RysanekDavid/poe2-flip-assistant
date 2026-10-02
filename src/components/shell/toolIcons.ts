@@ -11,6 +11,7 @@ import artJewel from "../../assets/items/emerald-jewel.png";
 import artGold from "../../assets/items/gold.png";
 import artBarya from "../../assets/items/djinn-barya.png";
 import artDivine from "../../assets/items/divine-orb.png";
+import artBreachRing from "../../assets/items/bases/breach-ring.webp";
 import type { TabId } from "./tabRegistry";
 import type { ToolIconKey } from "./toolIconKeys";
 
@@ -27,7 +28,7 @@ const glyph = (Icon: LucideIcon): ToolIcon => ({ kind: "glyph", Icon });
 // Kept apart from tabRegistry.ts so node test scripts never import PNGs. Vendor shows Gold (what an
 // NPC pays for gear); Price uses the Divine Orb, the unit every price in the app is quoted in;
 // Bosses shows the Djinn Barya, a pinnacle entry item the boss table prices; Patch notes keeps the
-// owner's art from when it was a tab of its own.
+// owner's art from when it was a tab of its own; Planner shows the Breach Ring, its worked example.
 // Typed from TOOL_ICON_KEYS: a key missing here, or one not listed there, fails the typecheck.
 const TOOL_ICONS: { [T in TabId]: Record<ToolIconKey<T>, ToolIcon> } = {
   home: {},
@@ -36,7 +37,7 @@ const TOOL_ICONS: { [T in TabId]: Record<ToolIconKey<T>, ToolIcon> } = {
   coach: {},
   trade: { prices: art(artDivine.src), price: glyph(Tag), opportunities: art(artMarket.src), methods: art(VAAL_ORB_ART) },
   farm: { strategies: art(artTablet.src), bosses: art(artBarya.src) },
-  craft: { recipes: art(CURRENCY_ART.ex), moves: glyph(ClipboardPaste), modpool: art(CURRENCY_ART.chaos), rollsell: art(artTempleTablet.src) },
+  craft: { recipes: art(CURRENCY_ART.ex), moves: glyph(ClipboardPaste), modpool: art(CURRENCY_ART.chaos), planner: art(artBreachRing.src), rollsell: art(artTempleTablet.src) },
   stash: { worth: art(artWealth.src), sell: art(artGold.src) },
   learn: { what: glyph(ScanSearch), currency: art(artDivine.src), atlas: art(artWaystone.src), patches: art(artPatches.src) },
   regex: {
