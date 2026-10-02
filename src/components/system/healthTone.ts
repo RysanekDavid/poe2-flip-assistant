@@ -81,3 +81,13 @@ export function tradeTone(gov: SystemHealth["trade2"][number], nowMs: number): T
   if (gov.blockedUntil != null && Date.parse(gov.blockedUntil) > nowMs) return "bad";
   return gov.windows.some((w) => w.limit > 0 && w.used / w.limit >= 0.8) ? "warn" : "ok";
 }
+
+/**
+ * GGG's league list: red with no list at all or one older than a day (refreshes keep failing),
+ * amber while the last good list is being served after a failed refresh.
+ */
+export function leagueListTone(list: SystemHealth["leagueList"]): Tone {
+  if (list.fetchedAt == null || (list.ageSec != null && list.ageSec > 86_400)) return "bad";
+  const failedSince = list.lastErrorAt != null && Date.parse(list.lastErrorAt) >= Date.parse(list.fetchedAt);
+  return failedSince ? "warn" : "ok";
+}

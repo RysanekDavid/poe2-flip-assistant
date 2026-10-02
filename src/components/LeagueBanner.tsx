@@ -9,6 +9,8 @@ interface LeagueStatus {
   defaultLeague: string;
   detected: string | null;
   detectedAt: string | null;
+  /** First exchange hour the detected league traded in (derived), null when our record starts later. */
+  detectedStart: string | null;
   /** Only ever true for users who FOLLOW the default — a deliberate pin is not a mistake. */
   mismatch: boolean;
   defaultMismatch: boolean;
@@ -97,6 +99,12 @@ function SwitchButton({
  * dropdown performs — a view preference), while only the owner can move the app default, which is
  * what the poller, the Coach and the shared trade2 pipelines run under for everybody else.
  */
+/** GGG states neither which league is current nor when it began — say how we know. */
+function derivationNote(status: LeagueStatus): string {
+  const start = status.detectedStart == null ? "start predates our exchange record" : `first traded ${status.detectedStart}`;
+  return `Derived, not announced by GGG: listed on GGG's trade site and the most Divine traded on the Currency Exchange over 24h · ${start}`;
+}
+
 export function LeagueBanner() {
   const { status, reload } = useLeagueStatus();
   const detected = status?.detected ?? null;
@@ -113,7 +121,7 @@ export function LeagueBanner() {
     >
       <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
       <span>
-        New league <strong>{detected}</strong> detected —{" "}
+        New league <strong title={derivationNote(status)}>{detected}</strong> detected —{" "}
         {status.mismatch ? (
           <>
             you are viewing <strong>{status.tracked}</strong>.

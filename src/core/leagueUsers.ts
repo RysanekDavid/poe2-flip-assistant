@@ -57,7 +57,7 @@ function heldLeagues(database?: Database.Database): HeldLeague[] {
  * League names reach SQL as exact values (`WHERE league = ?`), so two spellings of one league are
  * two separate markets: the poller would sweep "standard" while a user's panels read "Standard"
  * and found nothing, forever. That is not hypothetical — LEAGUE_NAME comes from .env and the
- * stored names come from poe2scout, and the two disagree on case sooner or later.
+ * stored names come from GGG's trade2 league list, and the two disagree on case sooner or later.
  *
  * The app default's spelling always wins its key; for any other league the longest-held spelling
  * does, so every process resolves the same string for the same market.

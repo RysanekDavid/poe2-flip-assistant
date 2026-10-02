@@ -8,7 +8,9 @@ import { dbRateStore } from "../db/tradeRateQueries";
 import { buildIdentifier } from "../lib/buildInfo";
 import { coachHealthSchema } from "../lib/coachContract";
 import { coachEndpoint } from "../lib/coachServer";
-import type { CoachSummary, SystemHealth, TradeGovernorView } from "../lib/systemHealthContract";
+import type { CoachSummary, LeagueListHealth, SystemHealth, TradeGovernorView } from "../lib/systemHealthContract";
+import { readLeagueState } from "../db/leagueQueries";
+import { leagueListStatus } from "./leagueList";
 import { getPolledLeagues } from "./leagueUsers";
 import { buildHeartbeatViews, subsystemSpecs, type SubsystemName, type SubsystemSpec } from "./subsystems";
 
@@ -111,5 +113,21 @@ export async function buildSystemHealth(deps: SystemHealthDeps = liveDeps()): Pr
     disk: diskState(deps),
     coach,
     trade2: tradeGovernorState(deps.rateStore, deps.nowMs),
+    leagueList: leagueListHealth(deps.db, deps.nowMs),
+  };
+}
+
+const isoOrNull = (ms: number | null): string | null => (ms == null ? null : new Date(ms).toISOString());
+
+/** The league list's age and last refresh failure, plus the league detection last derived. */
+export function leagueListHealth(db: Database.Database, nowMs: number): LeagueListHealth {
+  const status = leagueListStatus(db);
+  return {
+    fetchedAt: isoOrNull(status.fetchedAt),
+    ageSec: status.fetchedAt == null ? null : Math.max(0, Math.round((nowMs - status.fetchedAt) / 1000)),
+    leagues: status.leagues,
+    lastError: status.lastError,
+    lastErrorAt: isoOrNull(status.lastErrorAt),
+    derivedCurrent: readLeagueState(db)?.detected_current ?? null,
   };
 }

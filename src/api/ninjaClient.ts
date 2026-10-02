@@ -3,7 +3,6 @@ import { z } from "zod";
 import {
   CATEGORIES,
   NinjaResponseSchema,
-  type LeagueOption,
   type NinjaCategory,
   type NinjaResponse,
   type PricedItem,
@@ -117,51 +116,6 @@ export function normalize(resp: NinjaResponse, category: string): PricedItem[] {
       icon: iconUrl(item?.image),
     };
   });
-}
-
-/**
- * Verified live shape: a flat array of `{ id, name }` and NOTHING else — no current/active
- * flag, e.g. [{"id":"Forbidden Rites",...},{"id":"Runes of Aldur",...},{"id":"HC Forbidden
- * Rites",...},{"id":"Standard",...}]. Order carries the signal (newest league first).
- */
-const NinjaLeaguesSchema = z.array(
-  z
-    .object({
-      id: z.string().min(1).nullish(),
-      name: z.string().min(1).nullish(),
-    })
-    .passthrough(),
-);
-
-/**
- * Map a raw `/economy/leagues` payload to league options, ORDER PRESERVED — `current` stays
- * null because ninja exposes no such flag. Exported so detection tests run the real response
- * shape through the real parser without touching the network.
- */
-export function parseNinjaLeagues(raw: unknown): LeagueOption[] {
-  const parsed = NinjaLeaguesSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new Error(`poe.ninja league list shape mismatch: ${JSON.stringify(raw).slice(0, 300)}`);
-  }
-  return parsed.data
-    .map((r) => ({ name: (r.name ?? r.id ?? "").trim(), current: null }))
-    .filter((l) => l.name !== "");
-}
-
-/** Leagues poe.ninja indexes, newest first — the ninja half of league-switch detection. */
-export async function fetchNinjaLeagues(): Promise<LeagueOption[]> {
-  // Resolved outside the try: a DB failure here must not be reported as a poe.ninja fetch failure.
-  const league = getDefaultLeague();
-  const raw = await ninjaLimiter.schedule(async () => {
-    try {
-      const res = await axios.get(`${BASE}/leagues`, { timeout: 20_000, headers: ninjaHeaders(league) });
-      return res.data as unknown;
-    } catch (err) {
-      const ax = err as AxiosError;
-      throw new Error(`poe.ninja league fetch failed (${ax.response?.status ?? "no-status"}): ${ax.message}`);
-    }
-  });
-  return parseNinjaLeagues(raw);
 }
 
 /**
