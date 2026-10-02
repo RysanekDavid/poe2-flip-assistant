@@ -84,7 +84,7 @@ export interface EssenceWrite {
   essenceId: string;
   label: string;
   modId: string;
-  tier: "greater" | "perfect" | "corrupted";
+  tier: "greater" | "perfect" | "corrupted" | "special";
   source: string;
 }
 

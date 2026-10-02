@@ -12,11 +12,14 @@ import type { EssenceWrite } from "./types";
  *     into a jewel with an essence.
  *   - Greater / Perfect Essence of the Infinite: "Strength, Dexterity or Intelligence" — which
  *     attribute is not a guaranteed choice, so it is not a guaranteed write of one target.
- *   - Essence of Hysteria: one mod per class on poe2db but no proof it is guaranteed per class.
+ *   - Essence of Hysteria: poe2db lists one mod per class with the Perfect-style text ("Removes a
+ *     random modifier and augments a Rare item with a new guaranteed modifier"); not added yet.
  *   - Essence of the Abyss (a "Mark" to desecrate, not a target) and Essence of Insanity (needs
  *     corruption, out of scope).
- * poe2db shows an essence's own level (e.g. 48) beside the mod; the mod's RePoE level (e.g. 60) is
- * what the planner gates on. The independent fact-check of this table is a merge gate.
+ * poe2db's "Required Level" column is the character requirement the mod adds (floor(0.8 x mod
+ * level), e.g. 48 for a level-60 mod); the planner gates on the RePoE mod level. Whether applying an
+ * essence needs item level >= mod level is unverified. Essence of the Breach is a "special" essence on
+ * poe2db (not corrupted) but writes like a Perfect one. Independently fact-checked 2026-10-02 (24 rows ok).
  */
 
 export interface EssenceOutcomeRow {
@@ -69,7 +72,7 @@ export const ESSENCE_OUTCOMES: readonly EssenceOutcomeRow[] = [
   ...rows("perfect-essence-of-the-mind", "Perfect Essence of the Mind", "perfect", "Perfect_Essence_of_the_Mind", [
     ["Rings", "EssenceIncreasedManaPercent1", "(4-6)% increased maximum Mana"],
   ]),
-  ...rows("essence-of-the-breach", "Essence of the Breach", "corrupted", "Essence_of_the_Breach", [
+  ...rows("essence-of-the-breach", "Essence of the Breach", "special", "Essence_of_the_Breach", [
     ["Rings", "EssenceBreach", "+20% to Maximum Quality"],
     ["Amulets", "EssenceBreach", "+20% to Maximum Quality"],
   ]),
