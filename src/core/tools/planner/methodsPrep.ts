@@ -45,7 +45,7 @@ function startAnchored(ctx: PlanCtx, side: AffixSide): Move | null {
     next,
     steps: [
       step({
-        do: `Buy a rare ${ctx.base.name}, item level ${ctx.base.ilvl}+, with a FRACTURED ${side} that is not one of your targets and no crafted or desecrated mod.`,
+        do: `Buy a rare ${ctx.base.name}, item level ${ctx.base.ilvl}+, with a FRACTURED ${side} that is not a tier of any mod you want (${ctx.targets.map((t) => targetText(t.text)).join("; ")}), and no crafted or desecrated mod.`,
         why: `The fractured mod can't be removed (${S.kb2}), so every later removal lands on the loose mods — and it fills a ${side} slot you don't need.`,
       }),
       step({

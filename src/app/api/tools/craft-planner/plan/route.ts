@@ -16,12 +16,12 @@ const PLAN_CACHE = createTtlCache<PlanResponse>(10 * 60_000, 64);
 
 const keyOf = (league: string, req: PlanRequest): string => `${league}|${createHash("sha256").update(JSON.stringify(req)).digest("hex")}`;
 
-async function readBody(req: Request): Promise<unknown> {
+/** The parsed JSON body, or a 400 naming the parse error (the client's mistake, never a 500). */
+async function readBody(req: Request): Promise<{ ok: true; body: unknown } | { ok: false; res: Response }> {
   try {
-    return await req.json();
+    return { ok: true, body: await req.json() };
   } catch (e: unknown) {
-    // an unparseable body is the client's error: answered as 400 below, never a 500
-    return { __invalidJson: e instanceof Error ? e.message : String(e) };
+    return { ok: false, res: NextResponse.json({ error: `invalid JSON body: ${e instanceof Error ? e.message : String(e)}` }, { status: 400 }) };
   }
 }
 
@@ -38,7 +38,9 @@ async function readBody(req: Request): Promise<unknown> {
 export async function POST(req: Request): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = planRequestSchema.safeParse(await readBody(req));
+  const raw = await readBody(req);
+  if (!raw.ok) return raw.res;
+  const body = planRequestSchema.safeParse(raw.body);
   if (!body.success) return NextResponse.json({ error: body.error.issues[0]?.message ?? "bad request" }, { status: 400 });
   const league = getDefaultLeague();
   try {

@@ -98,13 +98,13 @@ function stepView(move: Move, index: number, title: string, first: string, scale
 
 function guideHeader(moves: readonly Move[], ctx: PlanCtx): Pick<CraftGuide, "goal" | "shopping" | "marketCheck" | "brick"> {
   const goal = ctx.targets.map((t) => `${t.fractured ? "FRACTURED " : ""}${targetText(t.text)}`).join("; ");
-  const restart = moves.find((m) => m.restartP != null);
+  const restarts = moves.filter((m) => m.restartP != null);
   return {
     goal: `Rare ${ctx.base.name} (item level ${ctx.base.ilvl}+) with ${goal}${ctx.quality ? `; ${ctx.quality.pct}% catalyst quality` : ""}.`,
     shopping: moves[0]!.steps[0]!.do,
     marketCheck: "Price the finished item before you start: the bill is the expected spend without the base, and every add-a-mod figure is an estimate.",
-    brick: restart
-      ? `${restart.title}: a miss can't be repaired — start over on a new base (1 in ${Math.round(1 / restart.restartP!)} succeeds; the bill already counts the extra bases' work).`
+    brick: restarts.length > 0
+      ? `${restarts.map((r) => `${r.title} (1 in ${Math.round(1 / r.restartP!)} succeeds)`).join(", ")}: a miss can't be repaired — start over on a new base; the bill already counts the extra bases' work.`
       : "No step bricks the item: every miss has its retry inside the step.",
   };
 }

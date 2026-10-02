@@ -10,7 +10,7 @@ import { buildCtx } from "../../core/tools/planner/plan";
 import { canonical, junk, projectToItemState, targetAffix } from "../../core/tools/planner/state";
 import type { PlanCtx, PlanState } from "../../core/tools/planner/types";
 import { planResponseSchema, plannerCatalogSchema, plannerPoolSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
-import { BREACH_RING, FRACTURE_PLUS3_AMULET, fixturePrices, target } from "./plannerFixtures";
+import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, fixturePrices, target } from "./plannerFixtures";
 import { freshToolsDb } from "./toolsTestKit";
 import { NOW, plan } from "./testCraftPlannerGolden";
 
@@ -64,6 +64,25 @@ function testBreachQuality(cat: CraftCatalog): void {
   assert.ok(at40.steps.some((s) => s.method === "catalyse-finish") && !at40.steps.some((s) => s.method.startsWith("breach-quality")), "40% on a Breach Ring is plain catalysts");
 }
 
+/** Review regressions: Catalysing consumes the quality; a slam chain never rebuilds special junk. */
+function testSlamTransitions(cat: CraftCatalog): void {
+  const req: PlanRequest = { itemClass: "Rings", base: "Breach Ring", ilvl: 82, targets: [target("FireResistance", "suffix", "FireResist7"), target("ColdResistance", "suffix", "ColdResist7")], includeUnverified: false, quality: { catalyst: "neural-catalyst", pct: 60 } };
+  const ctx = ctxOf(cat, req);
+  const full: PlanState = canonical({ rarity: "Rare", affixes: [junk("prefix", "fractured"), junk("prefix"), junk("prefix"), junk("suffix")], quality: 60, catalyst: "neural-catalyst" });
+  const slams = movesFrom(full, ctx).filter((m) => m.move.methodId.endsWith("-catalysing"));
+  assert.ok(slams.length > 0, "a catalysed slam is offered");
+  for (const m of slams) assert.deepEqual([m.move.next.quality, m.move.next.catalyst], [0, null], "Catalysing Exaltation consumes all quality");
+  const p = plan(cat, req);
+  const methods = p.steps.map((s) => s.method);
+  const lastOf = (pred: (m: string) => boolean): number => methods.reduce((at, m, i) => (pred(m) ? i : at), -1);
+  const last = lastOf((m) => m.endsWith("-catalysing"));
+  const quality = lastOf((m) => m.startsWith("breach-quality") || m === "catalyse-finish");
+  assert.ok(quality > last, `the quality goal is reached after the last catalysed slam: ${methods.join(", ")}`);
+  const t1 = ctxOf(cat, FRACTURED_T1RES_RING);
+  const blocked = canonical({ rarity: "Rare", affixes: [targetAffix("prefix", 0, "fractured"), junk("prefix"), junk("prefix"), { ...junk("suffix", "desecrated"), unrevealed: true }], quality: 0, catalyst: null });
+  assert.ok(!movesFrom(blocked, t1).some((m) => m.move.methodId.startsWith("slam-suffix")), "no slam chain over a side holding the desecrated blocker");
+}
+
 function testTimeLostDesecration(cat: CraftCatalog): void {
   const combo = Object.values(cat.classes.Jewels!).find((c) => c.bases.includes("Time-Lost Sapphire"))!;
   const [family, tiers] = Object.entries(combo.desecrated).find(([, t]) => cat.mods[Object.keys(t)[0]!]!.side === "suffix")!;
@@ -93,6 +112,7 @@ export function runPlannerStateCases(cat: CraftCatalog): void {
   testBreachProjection(cat);
   testGating(cat);
   testBreachQuality(cat);
+  testSlamTransitions(cat);
   testTimeLostDesecration(cat);
   testLoadPaths(cat);
 }

@@ -16,9 +16,9 @@ export const SEARCH_CAP = 5000;
 export const RISK_LAMBDA = 0.25;
 /**
  * Ranking-only stand-in for a material with no live price (never shown: totals with an unpriced
- * material are null). High enough that a plan never prefers what we can't price.
+ * material are null). Above every material price we have seen, so an unpriced route is ranked last.
  */
-export const UNPRICED_RANK_DIV = 1;
+export const UNPRICED_RANK_DIV = 10;
 
 export class SearchCappedError extends Error {
   constructor(expanded: number) {

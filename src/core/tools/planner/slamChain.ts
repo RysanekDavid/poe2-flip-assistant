@@ -31,7 +31,10 @@ export interface SlamVariant {
 
 export const bits = (mask: number, n: number): number[] => [...Array(n).keys()].filter((i) => (mask >> i) & 1);
 
-const okOnSide = (ctx: PlanCtx, a: PlanAffix): boolean => isJunk(a) || (ctx.targets[a.target!]!.source === "natural" && a.kind === "explicit");
+// plain explicit junk only: stateAt re-creates the side's junk, so a desecrated blocker or a Contempt
+// mod there would lose its identity (and the chain's Annulment could take it)
+const okOnSide = (ctx: PlanCtx, a: PlanAffix): boolean =>
+  isJunk(a) ? a.kind === "explicit" && a.special == null && !a.unrevealed : ctx.targets[a.target!]!.source === "natural" && a.kind === "explicit";
 
 /** Null unless the side's removable mods are all junk or natural targets and its open slots = its missing targets. */
 export function slamScope(state: PlanState, ctx: PlanCtx, side: AffixSide): SlamScope | null {

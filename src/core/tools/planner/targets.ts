@@ -160,6 +160,8 @@ export function slotIssues(base: BaseInfo, targets: readonly ResolvedTarget[]): 
   if (fractured.length > 1) out.push({ severity: "impossible", rule: "one-fracture", message: "two fractured mods: one fracture per item, ever", grade: "vs", source: `${KB} §2`, target: fractured[1]!.idx });
   for (const t of desecrated) {
     if (base.timeLost) out.push({ severity: "warn", rule: "time-lost-desecration", message: `desecrating a Time-Lost jewel is unverified — planned only with "include unverified methods"`, grade: "uv", source: TIME_LOST_DESECRATION, target: t.idx });
+    const rolled = targets.filter((x) => x.source === "natural" && x.side === t.side).length;
+    if (rolled >= 2) out.push({ severity: "warn", rule: "desecrated-side", message: `"${t.text}" shares its side with ${rolled} rolled mods — no planned method fills such a side yet (a later Annulment could take the desecrated mod)`, grade: "syn", source: "craft planner method library", target: t.idx });
     if (t.faction !== "amanamu" || base.itemClass === "Jewels") out.push({ severity: "warn", rule: "reveal-pool", message: `no faction omen steers "${t.text}" here — the reveal odds are an estimate over the whole ${t.side} pool`, grade: "ss", source: `${KB} §5 (reveal draw rules OPEN)`, target: t.idx });
   }
   return out;

@@ -172,7 +172,8 @@ function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVaria
   return makeMove(ctx, {
     methodId: `slam-${scope.side}-${v.tier.rule}${v.catalysing ? "-catalysing" : ""}`,
     title: `${scope.side === "prefix" ? "Prefix" : "Suffix"} slams`,
-    next: stateAt(state, scope, 0, scope.j0),
+    // Catalysing Exaltation consumes ALL catalyst quality (KB §4): a quality goal must come after
+    next: v.catalysing ? { ...stateAt(state, scope, 0, scope.j0), quality: 0, catalyst: null } : stateAt(state, scope, 0, scope.j0),
     steps: slamSteps(ctx, scope, v, chain),
     uses: chainUses(state, ctx, scope, v, chain),
     odds: chain.first.est,
