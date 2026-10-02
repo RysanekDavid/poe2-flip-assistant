@@ -6,6 +6,8 @@ Patch stamp: **0.5.0 "Runes of Aldur"** (released 2026‑05‑29) through **0.5.
 
 **Corrections 2026-10-01 (sources):** citations to real-money-trading shops were removed; facts that lost their only independent source were re-sourced from poe2db (Breach, Xesht, Uul-Netol's Embrace, Hiveblood, Rathpith Globe), maxroll and poe-vault (accessed 2026-10-01), or downgraded to [single-source] / [unverified]; RMT-only price and Divine/hour figures were deleted.
 
+**Corrections 2026-10-02 (partial, catalysts and quality):** §1.1 the Catalysing multiplier is now graded as a community model (not GGG); §1.2 adds the community per-catalyst quality formula; §1.3 adds the infuser item text and the 60% Breach Ring path (owner trade observation + creator footage); §2.4 step 2, the Catalysing wallet warning and the §8 open question follow. Independent fact-check (2026-10-02): infuser fail model scoped to armour observations, CZepweLtKwA citation narrowed to the Dusk Ring pattern (the 60% sum is inferred). The rest of the file is unchanged.
+
 ---
 
 ## 0. Correction to the brief — read this first
@@ -31,7 +33,7 @@ Source: https://www.poe2wiki.net/wiki/Catalyst , https://poe2db.tw/us/Catalysts 
 **Weight bias exists only via Omen of Catalysing Exaltation** — this confirms the brief's suspicion exactly. Right-clicking this Ritual Omen arms it; your next Exalted Orb then **consumes all Catalyst Quality on the item** and multiplies the weight of modifiers matching that catalyst's tag:
 - At 20% quality: **5x weight** multiplier for the tagged mod family.
 - At 40% quality: **7.5x weight** multiplier.
-[CONFIRMED] — poe2wiki Omen of Catalysing Exaltation page, corroborated by Game8 and Mobalytics omen guides.
+[unverified — community model, corrected 2026-10-02] — poe2wiki Omen of Catalysing Exaltation page, repeated by Game8 and Mobalytics omen guides; none of them cites GGG, and the omen's own text gives no number: "your next Exalted Orb will consume all Catalyst Quality to increase the chance of the corresponding type of Modifier" [verified-primary — entity catalog `src/data/poe2/entities.json.gz`, game data 0.5.5b]. Craft of Exile's model, ×(1 + 0.2·Q) up to Q = 20 then +0.12 per quality point above 20, gives ×5 at 20%, ×7.4 at 40% and ×8.0 at 45% — it agrees at 20% and differs by 0.1 at 40% [unverified — community model].
 Source: https://www.poe2wiki.net/wiki/Omen_of_Catalysing_Exaltation
 
 Acquisition: Omen of Catalysing Exaltation drops from the endgame variant of The King in the Mists, or can be bought with Ritual Tributes. [single-source] Source: Game8.
@@ -64,6 +66,8 @@ All catalysts stack to 10. Applying a **different** catalyst type wipes/replaces
 **Item-level interaction**: the higher the item's ilvl, the less quality each application grants — lower-ilvl bases are cheaper to catalyst to max quality. [CONFIRMED] — poe2wiki Quality page: "When applying Quality to an item using Currency, the Equipment's Item Level will determine how much Quality you get. The higher the Item Level, the less Quality each Currency Item will apply."
 Source: https://www.poe2wiki.net/wiki/Quality
 
+GGG publishes no per-use number. A community formula — Craft of Exile's, as reproduced in [huythinh2507/poe2crafting PR 6](https://github.com/huythinh2507/poe2crafting/pull/6), which notes GGG does not publish it — is gain = round(clamp(30·e^(−ilvl/30) − 0.3, 1, 20)), with a 1 becoming 2 about one time in five: roughly 4%+ per catalyst at ilvl ≤61, 3% at 62–71, 2% at 72–84 and 1% at 85+ [unverified — community model]. Creator counts roughly fit it (Diztoh bought 18 Tul's Catalysts to reach 20%, [GDLDxn6yxEs](https://www.youtube.com/watch?v=GDLDxn6yxEs) 4:26–4:47). Pages claiming a flat "5% per catalyst" are wrong.
+
 **0.5.0 source change**: Catalysts can no longer drop from monsters at all — they are now obtained **solely from the Genesis Tree** (Currency Womb, birthed from Lavish Wombgifts). [CONFIRMED] — multiple 0.5.0 patch summaries (poebuilds.net, poe2wiki Catalyst page confirms Genesis-Tree-only sourcing).
 Source: https://www.poe2wiki.net/wiki/Catalyst
 
@@ -75,6 +79,8 @@ Source: https://www.poe2wiki.net/wiki/Catalyst
 - Jewels: same 20% default, raised via Refined catalysts' own mechanic (jewels normally can't take quality at all outside catalysts — poe2wiki Quality page lists Jewels among the item types that need Refined Catalysts specifically to get quality).
 - Other ways past 20% that stack with the above: **Essence of the Breach** (Genesis Tree Currency Womb output) crafts a guaranteed "+20% to Maximum Quality" modifier onto a Rare piece of jewellery — meaning even a *non*-Breach-Ring rare ring/amulet can reach a 40% *effective* cap by combining default 20% + this essence's +20%. Infusers add a further +10% (stacks, chance to corrupt). [CONFIRMED] — poe2wiki Quality page.
 Source: https://www.poe2wiki.net/wiki/Breach_Ring , https://www.poe2wiki.net/wiki/Quality
+- **Infuser text**: "Improves the quality of a ring or amulet, exceeding maximum quality by up to 10% with a chance of Corrupting it … Can only be used on items at or above maximum quality." (Vaal Catalysing Infuser) [verified-primary — entity catalog, game data 0.5.5b]; 0.5.0: "All Infusers can only be used on items at or above 20% Quality." [verified-primary — [0.5.0 patch notes](https://www.pathofexile.com/forum/view-thread/3932540), accessed 2026-10-02]. The failure model — each 1% above the item's max adds ~5% fail (corrupt) chance, so the first infuser at exactly max never fails, and about one use in five gives +2% — is a creator estimate [creator, observed on armour infusers; assumed to carry over to Catalysing — Belton [c86fCKMMShI](https://www.youtube.com/watch?v=c86fCKMMShI) 12:30–13:00, 14:41–15:01].
+- **Breach Ring + Essence of the Breach = 60%**: 20% default + the ring's +20% implicit + the essence's +20% mod. The essence mod can then be removed and the quality stays [owner trade observation 2026-10-02 — 60% Breach Rings are common (several listings at 1–2 Divine) and show no Essence of the Breach mod; ASaVeQ [CZepweLtKwA](https://www.youtube.com/watch?v=CZepweLtKwA) 11:33–13:05 shows the pattern on a Dusk Ring (Essence of the Breach, catalyse to 40, infuser to 41, Whittling strips the essence mod); 60% on a Breach Ring = 20+20 implicit+20 essence is inferred, seen in the owner's T12 trade listings, not shown by the creator]. The highest seen is **70%** (2 listings) ≈ 60% + the infusers' +10% [owner trade observation 2026-10-02]. Essence of the Breach is a Rare-only "Removes a random modifier and augments a Rare item with a new guaranteed modifier" essence [verified-primary — entity catalog] and holds the item's one crafted-mod slot until removed.
 
 ---
 
@@ -117,7 +123,7 @@ Note: an earlier web summary claimed a special node "Otherworldly Clutch" gives 
 ### 2.4 Crafting route (community-consensus, single-source aggregation)
 
 1. Farm/buy an ilvl 75–78 Breach Ring base (lower ilvl = more quality per catalyst application, keep it below the point where "too much high-level mod pool clutter" appears). [single-source] Source: mobalytics.gg attack-breach-ring-craft guide.
-2. Apply the matching catalyst (e.g. Reaver Catalyst for attack-damage rings) up to the 40/45% cap.
+2. Apply the matching catalyst (e.g. Reaver Catalyst for attack-damage rings) up to the 40/45% cap (60% with Essence of the Breach, §1.3).
 3. Fracture a T1 damage/defence mod to lock it in.
 4. Use Omen-controlled Exalted Orbs (Omen of Catalysing Exaltation, burning the built-up quality) to bias in a second/third complementary high-tier mod of the same tag family.
 5. Manage risk with targeted Annulment Orbs if an unwanted mod lands.
@@ -174,7 +180,7 @@ Source: https://www.poe2wiki.net/wiki/Breachstone (navbox)
 
 - **Don't apply catalysts to high-ilvl bases if you're chasing max quality cheaply.** Higher ilvl = less quality per application; you'll burn far more catalyst stock hitting 40% on an ilvl 84 base than an ilvl 75 one. [CONFIRMED mechanic, poe2wiki Quality page]
 - **Applying a different catalyst type wipes your existing quality outright.** There's no partial conversion — switching from Reaver to Sibilant on the same ring zeroes your invested currency's quality progress. Decide your damage-type/stat family before you start catalysing.
-- **Omen of Catalysing Exaltation consumes ALL catalyst quality on the item in one shot**, whether or not the resulting Exalted mod is the one you wanted. It only biases weight (5x at 20%, 7.5x at 40%) — it does not guarantee the mod. Don't fire it on a ring you haven't otherwise finished prefixes/suffixes on, and don't fire it if you're not prepared to lose all accumulated quality on a miss.
+- **Omen of Catalysing Exaltation consumes ALL catalyst quality on the item in one shot**, whether or not the resulting Exalted mod is the one you wanted. It only biases weight (~5x at 20%, ~7.4–7.5x at 40% per community models, §1.1) — it does not guarantee the mod. Don't fire it on a ring you haven't otherwise finished prefixes/suffixes on, and don't fire it if you're not prepared to lose all accumulated quality on a miss.
 - **Breach Rings stopped dropping from Breach encounters and from Xesht in 0.5.0.** If you're valuing/pricing based on old encounter-drop assumptions (pre-0.5 guides, or bots scraping stale wiki caches), your model is wrong — the only 0.5.x source is the Genesis Tree Signet Wombgift + Otherworldly Clutch node, at a 10% birth chance.
 - **Many web guides (0.2-era, uncorrected) still state Breach Ring quality caps at 50%.** The live cap is 40% (45% for Refined Breach Ring). This single number difference is enough to break an automated flip-value calculator that hard-codes an old cap.
 - **Genesis Tree Hiveblood cost scales steeply with Wombgift level** (poe2db: 210 at level 68 rising to a 1,297 plateau from level 82, see §3) — birthing at max ilvl to "save time" can be a currency sink if you haven't unlocked the Womb's passive nodes yet; low-ilvl gifts are far cheaper for the mandatory ~10 birthings needed just to unlock a Womb's node tree.
@@ -195,7 +201,7 @@ Source: https://www.poe2wiki.net/wiki/Breachstone (navbox)
 
 ## 8. Open questions
 
-- Exact numeric magnitude bonus curve per catalyst application (how many % quality per use at a given ilvl) — not found; only the qualitative "higher ilvl = less per use" relationship is confirmed.
+- Exact quality per catalyst application at a given ilvl — no GGG figure; a community formula exists (§1.2) but has not been tested in game.
 - The "relative catalyst weights" estimate that poe2wiki's own Catalyst page links to (an external resource) was not retrieved in this pass — would clarify how contested/rare each catalyst-tag mod family is within the ring/amulet affix pool.
 - Whether Flawless Breachstone's "cannot drop un-upgraded Breach uniques" claim is accurate for 0.5.x — sourced from a search-engine synthesis, not independently confirmed on poe2wiki.net directly.
 - Exact mechanic/cost of the "Grasping Orchid" (60 Breach Rings → Grasping Mail) — only single-sourced from one WebSearch synthesis; not confirmed against poe2wiki's own Grasping Mail article text directly.
@@ -211,8 +217,10 @@ Source: https://www.poe2wiki.net/wiki/Breachstone (navbox)
 
 - confirmed — Breach Ring quality cap is 40% (45% for Refined Breach Ring) in current 0.5.x, not the 50% many guides quote
   → Correct as stated. Breach Rings carry an innate implicit that caps maximum quality at 40%; the Genesis Tree's Refined Breach Ring variant raises that cap to 45%. Any guide quoting a flat 50% cap for a standard Breach Ring is wrong (that figure may be bleeding over from generic PoE2 quality-cap discussion, e.g. Infuser-boosted items). (https://www.poewiki.net/wiki/poe2wiki:Breach_Ring)
+  → 2026-10-02 re-check: the implicit cap stands; with Essence of the Breach the ring reaches 60% and keeps it after the essence mod is removed (owner trade observation 2026-10-02; ASaVeQ CZepweLtKwA 11:33–13:05 shows the Dusk Ring pattern, the 60% sum is inferred), up to 70% with infusers. §1.3.
 - confirmed — Catalyst quality scales only modifier magnitude; weight/chance bias comes exclusively from Omen of Catalysing Exaltation (5x at 20% quality, 7.5x at 40% quality) which consumes all quality on use
   → Correct. Catalyst quality on rings/amulets/jewels normally only scales the magnitude of matching modifiers (it stopped affecting roll chance/weight before this era of the game). Omen of Catalysing Exaltation is the sole mechanism that converts that stored quality into a weight bias on your next Exalted Orb: 5x multiplier at 20% quality, 7.5x at 40% quality, and it consumes all Catalyst quality on the item when used. (https://www.poe2wiki.net/wiki/Omen_of_Catalysing_Exaltation)
+  → 2026-10-02 re-check: the magnitude-only and consume-all parts stand (the omen's item text says it "will consume all Catalyst Quality"). The 5x/7.5x figures are poe2wiki's, not GGG's — the item text has no number — so §1.1 now grades them [unverified — community model] beside Craft of Exile's ×7.4 at 40%. (entity catalog `src/data/poe2/entities.json.gz`, game data 0.5.5b)
 - confirmed — There is no Chayula, Who Dreamt boss fight in PoE2 — the Breach pinnacle boss is Xesht, We That Are One, reached via Breachstone -> Breach Domain -> defeating Esh and Tul -> Realmgate
   → The 'no Chayula boss fight, Xesht is the pinnacle' part is correct — in PoE2 Chayula was demoted from a fightable Breachlord (as she was in original PoE1 as 'Chayula, Who Dreamt') to 'The Dreamer', a lore NPC/questgiver you talk to at the Genesis Tree, not a boss encounter. However, the described access chain has the order and terminology wrong: you first defeat the Hive Colony boss pair 'It That Was Tul' and 'It That Was Esh' to obtain the Breachlord Sac, hand it to the Dreamer to unlock the Genesis Tree/Twisted Domain, then place a Breachstone (built from Breach Splinters via the Genesis Tree) into the Realmgate near the Ziggurat Refuge to open the Twisted Domain and fight Xesht. There is no separate area called 'Breach Domain', and Esh/Tul are defeated before the Breachstone/Realmgate step, not after. (https://www.poe2wiki.net/wiki/The_Dreamer)
 - confirmed — Rathpith Globe's 'per 100 max Mana' spell damage/crit mods are Vaal Cultivation Orb rerolls on a corrupted item, not innate, and are not Breach Ring mods at all
