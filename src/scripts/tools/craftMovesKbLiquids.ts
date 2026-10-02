@@ -17,9 +17,9 @@ export const KB6_FACTS: ReadonlyArray<{ rule: string; text: string }> = [
   { rule: "ancient contempt", text: "Ancient Potent Liquid **Contempt** (rare Time-Lost jewels): the same \"+1 Suffix Modifier allowed\" (prefix slot) / \"+1 Prefix Modifier allowed\" (suffix slot) pair" },
   { rule: "ancient ferocity", text: "\"Notable Passive Skills in Radius also grant +(5–7)% to Fire/Cold/Lightning Resistance\" (Diamond: +(4–5)% Chaos" },
   { rule: "jewel caps", text: "rare basic jewel = 2 prefixes + 2 suffixes, magic = 1 + 1" },
-  { rule: "time-lost cap", text: "Rare Time-Lost cap is UNRESOLVED" },
-  { rule: "still unverified", text: "(a) whether the removed mod is chosen first and the crafted mod then takes ITS side" },
-  { rule: "crafted limit", text: "(c) the crafted-mod limit" },
+  { rule: "time-lost cap", text: "**Rare Time-Lost jewel = 2 + 2**" },
+  { rule: "liquid removal side", text: "**Liquid removal side = the crafted mod's side.**" },
+  { rule: "crafted limit", text: "**Liquids obey the one-crafted-mod rule**" },
   { rule: "cranium", text: "Cranium exists ONLY as the Preserved tier" },
   { rule: "bones rare-only", text: "→ bones are rare-only" },
 ];
