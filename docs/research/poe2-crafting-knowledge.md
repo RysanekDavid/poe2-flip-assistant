@@ -36,6 +36,16 @@ rest of the file is unchanged.
 changes the prefix/suffix limits (not only Dusk/Gloam Rings); §8 adds the Refined Breach Ring's
 "+25% to Maximum Quality" implicit and its literal 45% catalyst cap. The rest of the file is unchanged.
 
+**Corrections 2026-10-02 (partial, craft theory + owner in-game tests):** §1 Chaos "no space" and
+Greater Exaltation refusals; §2 fracture pick, fractured crafted mods; §4 Whittling ties/unrevealed
+(owner-tested), Catalysing multiplier + Greater dispute, Erasure, Homogenising (0.5.0), Greater
+Annulment (0.3.0), Echoes bug; §5 full-rare bone removal ("of the matching side" dropped), Ancient
+floor, Well options, faction omens; §6 liquid removal side (owner-tested), fractured-liquid block,
+Time-Lost 2 + 2 (gold-seller 3 + 3 dropped); §7 essence family conflict (owner-tested), Perfect side;
+§8 catalyst gain, infusers, 60% Breach Ring; §9, §10, wallet rules. The rest is unchanged. Grades:
+[owner in-game test] (owner clicked it, n given), [owner trade observation], [owner recall] (not
+re-tested), [creator-demonstrated] (video + timestamp), [community] (forum link + n).
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -70,6 +80,14 @@ Sources: identical exception wording on all poe2wiki min-level currency pages; f
   reroll. Targeted removal side: Omen of Sinistral (prefix) / Dextral (suffix) Erasure.
   Item text: "Removes a random modifier and augments a Rare item with a new random modifier"
   (CONFIRMED; poe2db Chaos_Orb accessed 2026-10-01, Fextralife.)
+- **Chaos "no space"**: on a 5-mod jewel with 3 suffixes over a 2-suffix cap, a Chaos Orb that picks
+  a suffix is refused — "item has no space for more mods", item unchanged; a prefix pick rerolls
+  normally [creator-demonstrated — LilBotQ [Hcb_HcWDUOA](https://www.youtube.com/watch?v=Hcb_HcWDUOA)
+  19:42–19:56 (S29); also S4, S20]. The refused orb is NOT consumed [owner recall 2026-10-02, 5-mod
+  Sapphire craft, not re-tested] → a planner prices refused clicks at 0.
+- **Omen of Greater Exaltation + one open slot**: the Exalt is refused, "Item has no space for more
+  mods when still have empty suffix" [community — [forum 3956903](https://www.pathofexile.com/forum/view-thread/3956903),
+  n=1]. Whether anything is consumed is not stated [unverified].
 - **Divine Orb** rerolls numeric values of ALL existing mods within their current tiers —
   cannot change tiers, cannot target a subset. Item text: "Randomises the numeric values of
   modifiers on an item" (CONFIRMED; game8, poe2db Divine_Orb accessed 2026-10-01.)
@@ -86,11 +104,18 @@ Sources: identical exception wording on all poe2wiki min-level currency pages; f
 
 ## 2. Fracturing Orb (CONFIRMED, unanimous)
 
-- Target must be **RARE with ≥4 modifiers**; never unique/magic/normal/already-fractured.
+- Target must be **RARE with ≥4 modifiers**; never unique/magic/normal/already-fractured. Item
+  text: "Fracture a random modifier on a rare item with at least 4 modifiers" [verified-primary —
+  entity catalog, game data 0.5.5b]. A uniform pick among the eligible (non-desecrated) mods is the
+  standard community assumption, never tested [unverified]; 1-in-3-style odds rest on it.
 - **One fracture per item, ever.**
 - **Crafted mods can be fractured** [single-source — creator-only: a Fracturing Orb landed on a
   crafted alloy mod (cast speed) on Belton's +4 wand, docs/kb/sources/transcripts/25 at 1:54–2:47
   and 15:30–15:43]. No item text says so either way; budget a crafted-mod fracture as possible.
+- **A fractured crafted mod still counts as the crafted mod**: Liquid Contempt was refused, "This
+  item already has a crafted mod.", because the fractured mod had been crafted by Concentrated Liquid
+  Fear [community — [forum 3967316](https://www.pathofexile.com/forum/view-thread/3967316), 2026-06-17,
+  n=1]. Fracturing a crafted mod uses up the one crafted-mod slot (§7) for good.
 - Creators fracture with the desecrated blocker still UNREVEALED (four 2026 videos,
   docs/kb/sources/transcripts/25, 27, 28, 30). The "counts toward 4" rule below is confirmed for a
   desecrated mod; that an unrevealed one behaves the same is creator-demonstrated only.
@@ -140,25 +165,42 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
 - **Sinistral = prefix, Dextral = suffix** — applies to Exaltation, Annulment, Erasure,
   Crystallisation, Necromancy families. (CONFIRMED both rounds.)
 - **Omen of Greater Exaltation**: next Exalt adds TWO mods.
-- **Omen of Catalysing Exaltation**: next Exalt consumes ALL catalyst quality → tag-weight
-  multiplier **5× at 20% quality, 7.5× at 40%** (40% only on Breach Rings). Weighted bias,
-  NOT a guarantee. Counter-claim "figures unknown" refuted 0-3. Base catalyst quality alone
-  only buffs mod MAGNITUDE, never roll weights.
+- **Omen of Catalysing Exaltation**: "your next Exalted Orb will consume all Catalyst Quality to
+  increase the chance of the corresponding type of Modifier" [verified-primary — entity catalog
+  0.5.5b] — no number. The multiplier is a **community model, not GGG**: poe2wiki 5× at 20%, 7.5× at
+  40%; Craft of Exile ×(1 + 0.2·Q) to Q = 20, +0.12 per point above → ×5 / ×7.4 / ×8.0 at 20 / 40 / 45
+  [unverified]. Weighted bias, NOT a guarantee. Catalyst quality alone only buffs mod MAGNITUDE.
 - **Omens of the same action family STACK** (medium confidence, 2-1 vote): Dextral Exaltation +
-  Greater Exaltation on one Perfect Exalt → two suffixes, both floor-50. Same documented for
-  Sinistral + Greater Annulment. Reddit round adds: Whittling works ONLY with Chaos Orb (not
-  Annulment); Whittling + Sinistral/Dextral Erasure stack; Necromancy+Liege+bone triple works;
-  Necromancy does NOT pair with Essence of the Abyss (that wants Crystallisation — naming trap).
-  **DISPUTE**: Catalysing + Greater Exaltation — wiki says the bias hits both added mods, multiple
-  player reports say FIRST ONLY. Budget as first-only. See docs/kb/community-reddit.md §2.
-- **Omen of Whittling — WALLET-KILLER (CONFIRMED, unanimous)**: removes the mod with the lowest
-  **modifier LEVEL** (hidden in-game), NOT the lowest displayed tier. Unrevealed desecrated
-  mods count as level 1 → always whittled first. Since 0.1.1: hovering the item with the omen
-  active PREVIEWS the removal target — always check the preview.
+  Greater Exaltation on one Perfect Exalt → two suffixes, both floor-50. Sinistral + Greater
+  Annulment too, but **Omen of Greater Annulment can no longer be obtained** — 0.3.0: "The following
+  Omens can no longer be obtained: Omen of Greater Annulment, …" [verified-primary — [forum
+  3826682](https://www.pathofexile.com/forum/view-thread/3826682), accessed 2026-10-02; absent from the
+  0.5.5b entity catalog]. Reddit round adds: Whittling works ONLY with Chaos Orb (not Annulment);
+  Whittling + Sinistral/Dextral Erasure stack; Necromancy+Liege+bone triple works; Necromancy does
+  NOT pair with Essence of the Abyss (that wants Crystallisation — naming trap).
+- **Catalysing + Greater Exaltation** can be armed together [creator-demonstrated — Diztoh
+  [GDLDxn6yxEs](https://www.youtube.com/watch?v=GDLDxn6yxEs) 5:01–5:36 (S26), n=1; community — [forum
+  3849100](https://www.pathofexile.com/forum/view-thread/3849100), anecdotal]. Bias on BOTH mods is
+  **[cf], no data**: "the Omen's apply to both rolls" ([forum 3864526](https://www.pathofexile.com/forum/view-thread/3864526),
+  n=1, untested) vs reddit "first only" (docs/kb/community-reddit.md §2). Budget **first-mod-only**.
+- **Sinistral/Dextral Erasure** limits only the REMOVAL: "your next Chaos Orb will remove only prefix
+  [suffix] modifiers" [verified-primary — entity catalog 0.5.5b]; the added mod can land on either side.
+- **Omen of Whittling — WALLET-KILLER (CONFIRMED, unanimous)**: "your next Chaos Orb will remove
+  the lowest level modifier" [verified-primary — entity catalog 0.5.5b] — lowest **modifier LEVEL**
+  (hidden), NOT lowest tier; Chaos only. Since 0.1.1 the hover preview (omen active) shows the target.
+  **Ties**: every tied lowest-level mod is highlighted yellow, footer "Modifiers in Yellow may be
+  removed" — any of them can go [owner in-game test 2026-10-02: T15 Waystone, 6 same-level mods, all
+  6 yellow; screenshot]. Uniform pick assumed [unverified] → P = 1 / (tied removable mods).
+  **Unrevealed desecrated** = lowest: on a rare Prismatic Ring (ilvl 82) with an unrevealed Preserved
+  Collarbone suffix, only that mod was highlighted [owner in-game test 2026-10-02, n=1]; guides say
+  level 1 [single-source — dadsofexile].
 - **Omen of Putrefaction**: next desecration replaces ALL mods with up to 6 unrevealed
   (desecrated-pool) mods **AND CORRUPTS the item** — quality + sockets must go on BEFORE.
-- **Omen of Abyssal Echoes**: ONE reroll of the three offered reveal options (insurance, not
-  auto-best-pick). (CONFIRMED 2026-07-13 round; Game8 quote.)
+- **Omen of Abyssal Echoes**: "you can reroll the options once" [verified-primary — entity catalog
+  0.5.5b] — one fresh set of three, not six options; insurance, not auto-best-pick. **Bug**: arm it
+  after a reveal, re-reveal, and taking the item out "will eat up the omen even though you never got
+  to actually use it" [community — [forum 3861139](https://www.pathofexile.com/forum/view-thread/3861139),
+  2025-09-28, n=1]. Arm it before the first reveal.
 - **Omen of the Liege**: forces Amanamu desecrated mod, blocks Ulaman/Kurgal; weapons +
   jewellery only. (2026-07-13 round.) **Belts count as jewellery** for it [single-source —
   creator footage, ASaVeQ, docs/kb/sources/transcripts/23 at 12:58–13:34: Dextral Necromancy +
@@ -180,7 +222,10 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
 - **Omen of Sanctification**: "your next Divine Orb used on a Rare item will Sanctify it"
   [verified-primary — entity catalog 0.5.5b]. Creators use it as an end gamble; values can roll
   down as well as up (creator footage, docs/kb/sources/transcripts/30 at 22:29–23:10).
-- **Omen of Homogenising Exaltation**: drop-disabled in 0.4.0 — gone for current-league tooling.
+- **Omen of Homogenising Exaltation / Coronation**: 0.5.0 — "The following items only appear on the
+  Currency Exchange in Standard Leagues: Omen of Corruption, Omen of Homogenising Coronation, and Omen
+  of Homogenising Exaltation." [verified-primary — [forum 3932540](https://www.pathofexile.com/forum/view-thread/3932540),
+  accessed 2026-10-02]. Not obtainable in the current league (poe2wiki: drops off since 0.4.0).
 
 ## 5. Desecration (CONFIRMED core + gaps)
 
@@ -191,16 +236,31 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   2026-10-01 fact-check]. So **re-desecrating over an existing desecrated mod without Omen of Light
   does NOT work** — strip it first (Omen of Light + Orb of Annulment).
   A crafted (essence) mod and a desecrated mod CAN coexist.
-- On a full 6-mod rare, a bone REMOVES a random mod (of the matching side) and replaces it.
-- Bone → slot mapping (2026-07-13 round, single-source-ish): Jawbone=weapons/quivers,
-  Rib=armour, Collarbone=amulet/ring/belt, Cranium=jewels.
+- On a full 6-mod rare, a bone removes a random mod: "If modifiers are full then a random modifier
+  is also removed" [community — [forum 3854165](https://www.pathofexile.com/forum/view-thread/3854165),
+  n=1]; no same-side rule is documented. With Sinistral Necromancy the removed mod was a prefix
+  [creator-demonstrated — [qATcKacI83o](https://www.youtube.com/watch?v=qATcKacI83o) 2:54–2:59, n=1].
+- Bone → slot mapping: Jawbone=weapons/quivers, Rib=armour, Collarbone=amulet/ring/belt,
+  Cranium=jewels [verified-primary — poe2db item text, docs/kb/desecration-abyss.md].
 - Bone tiers (LIVE-CONFIRMED in-game 2026-07-13 + guides): **Gnawed = item level ≤64**
-  ("Item Level is too high" on higher), Preserved = any ilvl, Ancient = min mod level 40.
+  ("Item Level is too high" on higher), Preserved = any ilvl, Ancient = "Minimum Modifier Level: 40"
+  [verified-primary — [poe2db Ancient_Jawbone](https://poe2db.tw/us/Ancient_Jawbone), 2026-10-02].
+- **Well of Souls**: "selecting one of three different options" [verified-primary — 0.3.0 notes,
+  [forum 3826682](https://www.pathofexile.com/forum/view-thread/3826682)]; distinct families is not
+  stated [unverified]. Mod-group exclusion applies — Belton reveals elemental damage to block
+  fire/lightning/chaos % [creator-demonstrated — [j0FeuX0NZQI](https://www.youtube.com/watch?v=j0FeuX0NZQI) 2:50–3:06].
+- **Faction omens**: all three options come from that Lich's pool [single-source secondary —
+  [Gamerant](https://gamerant.com/path-of-exile-2-ulaman-amanamu-kurgal-modifiers-explained/), 2025-09-02;
+  consistent with ASaVeQ [IgQX6EZtUyo](https://www.youtube.com/watch?v=IgQX6EZtUyo) 10:44–10:57,
+  [hQm2IwebFws](https://www.youtube.com/watch?v=hQm2IwebFws) 7:09–7:48]. **Existing mods can block the
+  pool**: Liege on a wand with spell + physical spell damage offered no Amanamu mod — "Amanamu's mods
+  shared the same mod group as spell dmg and phy spell dmg" [community — [forum 3956293](https://www.pathofexile.com/forum/view-thread/3956293), n=1].
 - Boss pools: **Amanamu bow Attack Speed = 12–18%** (Ulaman = 8–13%; a transcription mixed
   them up once). Amanamu suffix pool on bows: Attack Speed, Pierce (spirit-reservation
   unattested). (2026-07-13 round, medium.)
 - **OPEN**: Well of Souls reveal ordering; whether picking a mod blocks its family from later
-  reveals (do NOT bank on either behaviour — test on cheap bases).
+  reveals (do NOT bank on either behaviour). Creators loop Light → re-desecrate until the mod shows
+  (LilBotQ S29 16:22–17:41) — fits "no lasting block", proves nothing.
 
 ## 6. Liquid Emotions (medium confidence)
 
@@ -251,32 +311,36 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   / _Melancholy accessed 2026-09-28 + RePoE `CraftedJewelRadius*Resistance` /
   `CraftedJewelRadiusExtraLargeSize`.)
 - **Affix caps**: rare basic jewel = 2 prefixes + 2 suffixes, magic = 1 + 1 [single-source:
-  Maxroll 0.5.2 jewel guide; researcher pass accessed 2026-09-29]. Rare Time-Lost cap is
-  UNRESOLVED (a 3 + 3 claim came only from a gold-seller guide — [unverified]).
+  Maxroll 0.5.2 jewel guide; researcher pass accessed 2026-09-29]. **Rare Time-Lost jewel = 2 + 2**
+  too [owner trade observation 2026-10-02: rare Time-Lost Sapphires listed at 2 + 2, none at 3 + 3;
+  creator-demonstrated — [qATcKacI83o](https://www.youtube.com/watch?v=qATcKacI83o) 2:25–2:34,
+  8:13–9:00; LilBotQ S29 18:13]; no primary text. A 3rd suffix only via the over-cap Ancient Contempt
+  route (one 3S + 2P listing, a prefix being crafted Ancient Melancholy). The gold-seller 3 + 3 is dropped.
 - **5-mod basic jewel is possible**: basic jewels cap at 2 prefixes + 2 suffixes, but Contempt's
   crafted mod raises one side's cap by 1 while sitting on the other. Creator crafts [S4, S20 in
   docs/kb/creator-videos.md] then strip the crafted mod with Omen of Sinistral Annulment and
-  keep 3 suffixes + 2 prefixes (chaos then shows "no space for modifiers" on the suffix side).
+  keep 3 suffixes + 2 prefixes (chaos then shows "no space for more mods" on the suffix side, §1).
   The `jewel_desecrated_liquid` deletion (2026-07-15) rested on the refuted claim; the paths now
   live as `jewel_liquid_5mod_budget` / `jewel_fractured_5mod`.
-- **Still UNVERIFIED** (no primary source, catalog can't settle it): (a) whether the removed mod
-  is chosen first and the crafted mod then takes ITS side, or the other way round — Contempt's
-  removal rule. GGG's 0.5.0 notes only say "Liquid Emotions can now be used to craft additional mods on
-  Jewels. These work similarly to greater essences, each having a set of specific mods that will
-  replace a random existing mod on the item." [verified-primary — [pathofexile.com/forum/view-thread/3932540](https://www.pathofexile.com/forum/view-thread/3932540)
-  (0.5.0 patch notes) and [poe2db Potent_Liquid_Contempt](https://poe2db.tw/us/Potent_Liquid_Contempt),
-  accessed 2026-10-01] — neither says WHICH mod goes. The most likely model [unverified]: the
-  crafted mod is picked ~50/50, then the removed mod comes from that mod's side. Either order,
-  the crafted mod and the removed mod share a side, so the "+1 Prefix" outcome (suffix slot)
-  always costs a loose suffix — the only loose suffix on the fractured path. This matches what creators saw [S4, S20]; their odds are estimates (~50/50; S4
-  is unsure between 33/66 and 50/50). No 0.5.x patch note changed Liquid Emotion removal
-  (0.5.0–0.5.5d, accessed 2026-10-01). UNTESTED idea, not a recipe step: slamming Contempt at 3
-  mods (fractured suffix + 2 prefixes, no loose suffix) might make a miss cheaper, but what
-  happens when "+1 Prefix" is chosen with no removable suffix is unknown; (b) that the
-  over-cap 3rd suffix survives removing the "+1 Suffix" mod (creator-demonstrated only — same stop
-  condition as docs/kb/desecration-abyss.md "Time-Lost limitation"); (c) the crafted-mod limit:
-  both liquids write a [Crafted] mod and §7 allows ONE per item, so Ferocity presumably can't be
-  added while the Contempt mod is present — every documented path strips Contempt first; untested.
+- **Liquid removal side = the crafted mod's side.** 0.5.0: "Liquid Emotions can now be used to craft
+  additional mods on Jewels. These work similarly to greater essences, each having a set of specific
+  mods that will replace a random existing mod on the item." [verified-primary — [forum
+  3932540](https://www.pathofexile.com/forum/view-thread/3932540), poe2db] — not WHICH mod. In play the
+  crafted mod is picked among the sides that can take it, then a random removable mod goes from THAT
+  side [owner in-game test, craft of 2026-10-01: 6× Potent Contempt on a Sapphire (fractured suffix,
+  crit-chance suffix, 2 prefixes) — 5× "+1 Prefix" removed the crit suffix, 1× "+1 Suffix" removed a
+  prefix, 6/6; creator-demonstrated ~8/8 — LilBotQ [Hcb_HcWDUOA](https://www.youtube.com/watch?v=Hcb_HcWDUOA)
+  3:08–3:22, 20:21–20:32; S4; qATcKacI83o 2:25]. So "+1 Prefix" always costs the loose suffix. Odds
+  ~50/50 [unverified estimate]; streaks of "10 or 11 in a row … + 1 Prefix every time" [community —
+  [forum 3958506](https://www.pathofexile.com/forum/view-thread/3958506), 3 posters, mod lists not
+  given] hint that some item states force an outcome [unverified inference].
+- **UNKNOWN — Contempt at 3 mods, no removable suffix** (fractured suffix + 2 prefixes): untested
+  (owner test T7). Not a recipe step.
+- **Over-cap 3rd suffix survives removing "+1 Suffix"**: creator-demonstrated [S4, S20]; same stop
+  condition as docs/kb/desecration-abyss.md "Time-Lost limitation".
+- **Liquids obey the one-crafted-mod rule**: refused with "This item already has a crafted mod.",
+  even by a FRACTURED liquid-crafted mod [community — forum 3967316, n=1, §2]. Strip Contempt before
+  Ferocity.
 - Desecration DOES work on regular rare jewels (Preserved Cranium targets any rare jewel).
   Cranium exists ONLY as the Preserved tier ("Desecrates a Rare Jewel" — RePoE
   `AbyssalBenchTicketJewel`; no Gnawed/Ancient Cranium in the catalog), and every bone's
@@ -308,8 +372,19 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   Greater Essence of Ruin ([maxroll](https://maxroll.gg/poe2/resources/how-to-craft-in-path-of-exile-2),
   accessed 2026-09-30); the Regal Orb item text it is compared to: "Current modifiers are retained
   and a new one is added" (entity catalog, game data 0.5.5b; [poe2db Regal_Orb](https://poe2db.tw/us/Regal_Orb),
-  accessed 2026-09-30)]. The essence's own item text does not say so. NOT covered: what happens
-  when the essence's guaranteed mod shares a family with a mod already on the item [unverified].
+  accessed 2026-09-30)]. The essence's own item text does not say so.
+- **Same family on the item → Greater essence refused**: "Failed to apply item: This item already
+  has a mod of this type.", item unchanged [owner in-game test 2026-10-02: magic Amethyst Ring with an
+  18% rarity suffix + Greater Essence of Opulence, screenshots; community — [forum
+  3860648](https://www.pathofexile.com/forum/view-thread/3860648), same message, n=1; Diztoh S26
+  6:20–6:33]. The thread's "suffix slot taken" reading loses to the Maxroll example above (Ruin adds a
+  suffix next to a resistance suffix). Essence consumed? "Failed to apply" suggests not [unverified].
+- **UNKNOWN — Perfect/corrupted essence on an item with that family**: untested (owner test T3).
+- **Perfect essence removal side**: by default the side it adds to — "They remove either a suffix or
+  prefix, depending on what they can add." [community — [forum 3853903](https://www.pathofexile.com/forum/view-thread/3853903),
+  n=1]. Sinistral/Dextral Crystallisation overrides it: "your next Perfect or Corrupted Essence will
+  remove only Prefix [Suffix] modifiers" [verified-primary — entity catalog 0.5.5b]; ASaVeQ: Dextral
+  Crystallisation + Essence of the Breach (prefix) removes a suffix [creator-demonstrated — S27 11:40–11:49].
 - Essence of **Insulation = FIRE resistance** (not generic/cold). Check each essence's actual
   mod before buying.
 - Greater Essence of Seeking: guaranteed crit, magnitude scales by base (martial weapon
@@ -325,8 +400,26 @@ buffs matching-tag mod magnitude (e.g. +60 life @20% Flesh → ~+72 effective) �
 bias exists ONLY via Omen of Catalysing Exaltation (see §4). The Breach Ring's extra 20% is its
 implicit "+20% to Maximum Quality"; the **Refined Breach Ring** carries "+25% to Maximum Quality"
 [verified-primary — RePoE snapshot `base_items` implicits, game data 0.5.5b], so its cap reads as
-45% [single-source — the implicit text read literally, not tested in game]. Nothing documents the
-Catalysing multiplier above 40% quality [unverified].
+45% [single-source — the implicit text read literally, not tested in game]. Above 40% quality only
+the community Catalysing models exist (§4: ×7.4–7.5 at 40, ×8.0 at 45) [unverified].
+
+- **Quality per catalyst** falls with item level (poe2wiki); GGG publishes no curve. Community
+  formula (Craft of Exile via [huythinh2507/poe2crafting PR 6](https://github.com/huythinh2507/poe2crafting/pull/6)):
+  round(clamp(30·e^(−ilvl/30) − 0.3, 1, 20)), a 1 becoming 2 about one time in five → ilvl ≤61 4%+,
+  62–71 3%, 72–84 2%, 85+ 1% [unverified]. Creator counts roughly fit (Diztoh S26 4:26–4:47, 18 Tul's
+  to 20%; ASaVeQ [8boqwYQZv5s](https://www.youtube.com/watch?v=8boqwYQZv5s) 21:03–21:14). "5% per use"
+  sites are wrong. Don't show catalyst counts as facts.
+- **Infusers**: "exceeding maximum quality by up to 10% with a chance of Corrupting it … Can only be
+  used on items at or above maximum quality." (Vaal Catalysing Infuser) [verified-primary — entity
+  catalog 0.5.5b]; 0.5.0: "All Infusers can only be used on items at or above 20% Quality."
+  [verified-primary — forum 3932540]. Risk model: each 1% over max ≈ +5% failure (first use at max
+  never fails), ~1 use in 5 gives +2% [creator-demonstrated — Belton [c86fCKMMShI](https://www.youtube.com/watch?v=c86fCKMMShI)
+  12:30–13:00, 14:41–15:01, his estimate]; ASaVeQ's "it will never corrupt" at exactly max (S27 12:39–12:46) fits it.
+- **Breach Ring 60% path**: 20% + the +20% implicit + Essence of the Breach's +20% mod = **60%**; the
+  essence mod can then be removed and the quality stays [owner trade observation 2026-10-02: 60% Breach
+  Rings common (1–2 div), no essence mod shown; creator-demonstrated on a Dusk Ring (40%, +1% infuser,
+  then Whittling + Chaos took the Breach mod off, quality kept) — ASaVeQ [CZepweLtKwA](https://www.youtube.com/watch?v=CZepweLtKwA)
+  12:30–13:05]. Max seen **70%** (2 listings) ≈ 60% + infusers [owner trade observation 2026-10-02].
 
 ## 9. In-game-confirmed burns (our own testing)
 
@@ -335,6 +428,8 @@ Catalysing multiplier above 40% quality [unverified].
   a MAGIC item with an open affix. Buy ilvl 75+ magic bases.
 - Putrefaction bases: existing mods are wiped — never pay for good mods on a putrefaction base;
   desecrated prefix pools follow the base's defence type (ES base → ES-flavoured prefixes).
+- 2026-10-01/02: same-family Greater essence refused (§7); Whittling preview ties and unrevealed
+  desecrated mods (§4); 6 Contempt slams, removal always on the crafted mod's side (§6).
 
 ## 9b. League economy & farm meta — 0.5 retrospective (XTheFarmerX league review, 2026-07)
 
@@ -364,8 +459,10 @@ Source: creator league review (single-source, practitioner-grade — the "zero t
 
 1. Greater Regal and Greater/Perfect Chaos floors (poe2db lookup). Perfect Regal = 50 (§1).
 2. Verify per-base ilvl breakpoints for headline mods against each new RePoE snapshot.
-3. Well of Souls reveal ordering + family-blocking.
-4. Omen compatibility matrix beyond documented pairs.
+3. Well of Souls reveal ordering + family-blocking; distinct-family options (owner test T8).
+4. Omen compatibility matrix beyond documented pairs; Catalysing on both Greater mods (T10). Owner
+   tests also open: 3-mod Contempt (T7), Perfect essence same family + essence consumption (T3),
+   catalyst gain by ilvl (T4), fracture pick distribution (T9).
 5. Vaal corruption outcome table; rune tiers/values; soul cores (nothing survived verification).
 6. Creator tricks (Fubgun/XTheFarmerX/CzechCloud) — none verified yet; YouTube transcripts
    are the source material.
@@ -375,7 +472,7 @@ Source: creator league review (single-source, practitioner-grade — the "zero t
 ## TOP wallet-saving rules (ranked)
 
 1. **Check the hover preview before Omen of Whittling** — it removes lowest modifier LEVEL,
-   not lowest tier; the preview (since 0.1.1) shows the victim. Repeat reddit wallet-killer.
+   not lowest tier; if SEVERAL mods are yellow, any one can go (owner-tested, §4).
 2. **Key currency floors by exact item**: Perfect Aug=70, Greater Aug/Transmute=44,
    Perfect Exalt=50, Greater Exalt=35. Floors are soft (family top-tier survives).
 3. **ilvl gates**: ele res T1 needs 82, chaos res top needs 81, ele T2 needs 71 — an ilvl-81
@@ -392,7 +489,9 @@ Source: creator league review (single-source, practitioner-grade — the "zero t
 9. **One crafted mod + one desecrated mod per item** — plan the whole sequence around those
    two slots before the first click.
 10. **Divine rerolls everything** — only divine when every mod on the item deserves a reroll.
-11. **Catalyst weight bias exists only through Omen of Catalysing Exaltation** (5×/7.5×);
-    raw quality just inflates numbers (still worth 20 ex before listing — better filter hits).
-12. **Abyssal Echoes = one reroll, not a guarantee** — budget it as insurance on already-good
-    items, not as a per-reveal staple.
+11. **Catalyst weight bias exists only through Omen of Catalysing Exaltation** (~5× at 20%,
+    ~7.4–7.5× at 40%, community models); raw quality just inflates numbers (still worth 20 ex).
+12. **Abyssal Echoes = one reroll, not a guarantee** — insurance on already-good items, not a
+    per-reveal staple; arm it before the first reveal (§4).
+13. **Same-family Greater essence = refused**; a fractured liquid-crafted mod blocks further
+    liquids (§2, §6, §7).
