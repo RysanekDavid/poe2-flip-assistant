@@ -92,6 +92,8 @@ export const instructionSchema = z.object({
   pick: z.array(z.string()),
   onFail: z.string().nullable(),
   retryTo: retryRefSchema.nullable(),
+  /** Where the why comes from, as player-readable labels (the why itself carries no citations). */
+  sources: z.array(z.object({ label: z.string().min(1), url: z.string().url().nullable() })),
 });
 
 /** The abstract item after a step: which slots hold a wanted mod (target index) and which hold junk. */

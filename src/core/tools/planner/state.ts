@@ -13,8 +13,8 @@ import type { PlanAffix, PlanCtx, PlanSide, PlanState } from "./types";
 export const SIDES: readonly AffixSide[] = ["prefix", "suffix"];
 export const otherSide = (side: AffixSide): AffixSide => (side === "prefix" ? "suffix" : "prefix");
 
-/** Owner-tested 2026-10-02 (theory-gaps T6: trade listings + creator qATcKacI83o): rare Time-Lost 2 + 2. */
-export const TIME_LOST_CAP_SOURCE = "rare Time-Lost jewels cap at 2 prefixes + 2 suffixes (owner trade check T6 2026-10-02 + creator footage)";
+// Rare Time-Lost jewels cap at 2 + 2: owner-tested 2026-10-02 (theory-gaps T6: trade listings +
+// creator qATcKacI83o). The player-facing evidence label lives in targets.ts.
 
 const SIDE_ORDER: Record<PlanSide, number> = { prefix: 0, suffix: 1, any: 2 };
 const KIND_ORDER = { fractured: 0, explicit: 1, crafted: 2, desecrated: 3 } as const;
@@ -201,7 +201,8 @@ export function legality(ctx: PlanCtx, state: PlanState, ruleIds: readonly strin
       const block = ev.blocked.find((b) => b.id === id);
       return { ok: false, blocked: block ? `${id}: ${block.reason}` : `${id}: not a legal move here`, unverified: [] };
     }
-    if (!move.verified) unverified.push(`${move.label} — ${move.notes.find((n) => n.startsWith("unverified:")) ?? `rule not KB-verified (${move.source})`}`);
+    // the rule's source names KB files: keep it for developers, show the player plain words
+    if (!move.verified) unverified.push(`${move.label} isn't confirmed by game data or patch notes yet.`);
   }
   return { ok: true, blocked: null, unverified };
 }

@@ -1,6 +1,7 @@
 import type { PlannerCatalog } from "../../../lib/tools/craftPlannerContract";
 import { Toggle } from "../../ui/Toggle";
 import { InfoTip } from "../../ui/Tooltip";
+import { NumberField } from "./NumberField";
 import type { CatalogBase, PlannerInput } from "./plannerModel";
 
 /** Plan options: unverified methods (off by default) and, on rings/amulets, the finished catalyst quality. */
@@ -37,18 +38,7 @@ function QualityPicker({ catalog, base, input, onChange }: Props) {
       </label>
       {q && (
         <label className="flex items-center gap-1">
-          <input
-            type="number"
-            min={1}
-            max={cap}
-            value={q.pct}
-            aria-label="quality percent"
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              if (Number.isInteger(n) && n >= 1 && n <= cap) onChange({ quality: { ...q, pct: n } });
-            }}
-            className={`${FIELD} w-16 tabular-nums`}
-          />
+          <NumberField value={q.pct} min={1} max={cap} onCommit={(n) => onChange({ quality: { ...q, pct: n } })} label="quality percent" className={`${FIELD} w-16 tabular-nums`} />
           % <span className="text-xs text-neutral-500">(max {cap}%)</span>
         </label>
       )}

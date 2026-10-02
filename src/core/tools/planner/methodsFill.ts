@@ -1,8 +1,9 @@
 import type { AffixSide } from "../craftmoves/catalog";
-import { QUALITY_PER_CATALYST_SOURCE } from "./catalystTags";
+import { QUALITY_PER_CATALYST_NOTE } from "./catalystTags";
 import { attemptsOf, solveChain, useOf } from "./expectation";
-import { EXALT_TIERS, makeMove, mat, S, sideOmen, step, targetText, usableTier } from "./methodKit";
-import { addOdds, catalysingMultiplier, CATALYSING_SOURCE } from "./odds";
+import { EXALT_TIERS, makeMove, mat, sideOmen, step, targetText, usableTier } from "./methodKit";
+import { sources, type SourceId } from "./sources";
+import { addOdds, catalysingMultiplier } from "./odds";
 import { buildChain, NoAimError, slamScope, stateAt, type Chain, type SlamScope, type SlamVariant } from "./slamChain";
 import { isJunk, openOf, present, removable, SIDES, targetAffix, withAffixes, without } from "./state";
 import type { MaterialUse, Method, Move, PlanCtx, PlanState, StepText } from "./types";
@@ -22,7 +23,8 @@ function chaosLoop(state: PlanState, ctx: PlanCtx): Move[] {
   const loose = removable(state);
   if (state.rarity !== "Rare" || loose.length !== 1 || !isJunk(loose[0]!)) return [];
   const after = withAffixes(state, without(state, loose[0]!));
-  const immune = state.affixes.some((a) => a.kind === "fractured") ? `; the fractured mod is immune (${S.kb2})` : "";
+  const fractured = state.affixes.some((a) => a.kind === "fractured");
+  const immune = fractured ? "; the fractured mod is immune" : "";
   const out: Move[] = [];
   for (const t of ctx.targets) {
     if (t.source !== "natural" || present(state, t.idx) || openOf(ctx, after, t.side) < 1) continue;
@@ -37,7 +39,8 @@ function chaosLoop(state: PlanState, ctx: PlanCtx): Move[] {
       steps: [
         step({
           do: `Chaos Orb until ${targetText(t.text)}.`,
-          why: `A Chaos Orb removes one random mod and adds one (${S.kb1}). The loose mod is the only removable one${immune} — each Chaos swaps exactly it and rolls a fresh mod.`,
+          why: `A Chaos Orb removes one random mod and adds one. The loose mod is the only removable one${immune} — each Chaos swaps exactly it and rolls a fresh mod.`,
+          sources: sources("kb-currency", ...(fractured ? (["kb-fracture"] as SourceId[]) : [])),
           mats: [mat("chaos")],
           check: `${targetText(t.text)} (or a better tier) is on the item.`,
         }),
@@ -76,7 +79,8 @@ function erasureLoop(state: PlanState, ctx: PlanCtx): Move[] {
       steps: [
         step({
           do: `${mat(omen.key).label} + Chaos Orb until ${targetText(t.text)}.`,
-          why: `The omen makes the Chaos remove a ${t.side} (${S.kb4}) — the throwaway is the only removable one — and only ${t.side} slots are open, so the new mod lands there too.`,
+          why: `The omen makes the Chaos remove a ${t.side} — the throwaway is the only removable one — and only ${t.side} slots are open, so the new mod lands there too.`,
+          sources: sources("kb-omens", "kb-currency"),
           mats: [mat(omen.key), mat("chaos")],
           check: `${targetText(t.text)} (or a better tier) is on the item.`,
         }),
@@ -126,13 +130,15 @@ function slamSteps(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, chain: Chain)
     const which = chain.catalysts.map((c) => c.mat.label).join(" / ");
     out.push(step({
       do: `${which} → quality to ${cap}% (the catalyst of the mod you aim at).`,
-      why: `Catalysing Exaltation consumes ALL catalyst quality for a ×${catalysingMultiplier(cap)} tag bias (${CATALYSING_SOURCE}) — re-catalyse before every slam. ${QUALITY_PER_CATALYST_SOURCE}.`,
+      why: `Catalysing Exaltation consumes ALL catalyst quality for a ×${catalysingMultiplier(cap)} bias toward the catalyst's mods — re-catalyse before every slam. ${QUALITY_PER_CATALYST_NOTE}`,
+      sources: sources("kb-omens", "kb-catalysts", "creators"),
       mats: chain.catalysts.map((c) => c.mat),
     }));
   }
   out.push(step({
     do: `${omen}${cata}${v.tier.label} → a ${side}, until ${wanted.join(" and ")}.`,
-    why: `${scope.steerExalt ? `The omen forces a ${side} (${S.kb4})` : `Only ${side} slots are open, so the mod lands there`}${v.tier.floor ? `; the ${v.tier.floor} floor keeps lower tiers out (${S.kb1})` : ""}.`,
+    why: `${scope.steerExalt ? `The omen forces a ${side}` : `Only ${side} slots are open, so the mod lands there`}${v.tier.floor ? `; the ${v.tier.floor} floor keeps lower tiers out` : ""}.`,
+    sources: sources(...(scope.steerExalt ? (["kb-omens"] as SourceId[]) : []), ...(v.tier.floor ? (["kb-currency"] as SourceId[]) : [])),
     mats: [...(v.catalysing ? [mat("omenCatalysingExaltation")] : []), ...(scope.steerExalt ? [mat(sideOmen(side, "Exaltation").key)] : []), mat(v.tier.key)],
     check: `${wanted.join(" and ")} on the item.`,
   }));
@@ -140,7 +146,8 @@ function slamSteps(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, chain: Chain)
     const steer = scope.steerAnnul ? `${mat(sideOmen(side, "Annulment").key).label} + ` : "";
     out.push(step({
       do: `A ${side} you don't want → ${steer}Orb of Annulment, then slam again.`,
-      why: `The Annulment removes a random ${side}${scope.steerAnnul ? ` (the omen keeps it off the ${side === "prefix" ? "suffixes" : "prefixes"}, ${S.kb4})` : ""} — it can also take a good one; that re-slam is in the cost.`,
+      why: `The Annulment removes a random ${side}${scope.steerAnnul ? ` (the omen keeps it off the ${side === "prefix" ? "suffixes" : "prefixes"})` : ""} — it can also take a good one; that re-slam is in the cost.`,
+      sources: sources(...(scope.steerAnnul ? (["kb-omens"] as SourceId[]) : [])),
       mats: [...(scope.steerAnnul ? [mat(sideOmen(side, "Annulment").key)] : []), mat("annul")],
       onFail: "Back to the slam.",
       retry: "self",
@@ -179,7 +186,7 @@ function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVaria
     odds: chain.first.est,
     grade: "vp",
     adds: true,
-    facts: v.catalysing ? ["catalyst → tag mapping is our reading of the catalyst text (uv)", `catalyst use per % quality: ${QUALITY_PER_CATALYST_SOURCE}`] : [],
+    facts: v.catalysing ? ["Which mods a catalyst favours is our reading of the catalyst's text.", QUALITY_PER_CATALYST_NOTE] : [],
     checks,
   });
 }

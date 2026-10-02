@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { PlannerCatalog, PlannerPool } from "../../../lib/tools/craftPlannerContract";
-import { emptySlots, findFamily, refitSlots, type ItemClass, type PlannerInput, type Side, type SlotPick } from "./plannerModel";
+import { carryQuality, emptySlots, findFamily, refitSlots, type ItemClass, type PlannerInput, type Side, type SlotPick } from "./plannerModel";
 
 /** The input item's state: base, item level, the slot picks and the plan options. */
 
@@ -45,11 +45,13 @@ export const PLANNER_EXAMPLES: readonly PlannerExample[] = [
 
 const DEFAULT = { itemClass: "Rings" as ItemClass, base: "Breach Ring", ilvl: 82 };
 
-function capsOf(catalog: PlannerCatalog, itemClass: ItemClass, base: string): { p: number; s: number } {
+function baseOf(catalog: PlannerCatalog, itemClass: ItemClass, base: string) {
   const b = catalog.classes.find((c) => c.itemClass === itemClass)?.bases.find((x) => x.name === base);
   if (!b) throw new Error(`planner: base ${base} is not in the ${itemClass} catalog`);
-  return b.caps;
+  return b;
 }
+
+const capsOf = (catalog: PlannerCatalog, itemClass: ItemClass, base: string) => baseOf(catalog, itemClass, base).caps;
 
 function initial(catalog: PlannerCatalog): PlannerInput {
   const cls = catalog.classes.find((c) => c.itemClass === DEFAULT.itemClass) ?? catalog.classes[0];
@@ -69,10 +71,11 @@ export function usePlannerInput(catalog: PlannerCatalog) {
   const pickBase = useCallback(
     (itemClass: ItemClass, base: string) =>
       setInput((cur) => {
-        const caps = capsOf(catalog, itemClass, base);
+        const b = baseOf(catalog, itemClass, base);
         // another class rolls other families: start clean; the same class keeps what still fits
-        const slots = cur.itemClass === itemClass ? refitSlots(cur.slots, caps) : emptySlots(caps);
-        return { ...cur, itemClass, base, slots, quality: cur.itemClass === itemClass ? cur.quality : null };
+        const same = cur.itemClass === itemClass;
+        const slots = same ? refitSlots(cur.slots, b.caps) : emptySlots(b.caps);
+        return { ...cur, itemClass, base, slots, quality: same ? carryQuality(cur.quality, b.qualityCap) : null };
       }),
     [catalog],
   );

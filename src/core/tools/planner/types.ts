@@ -1,6 +1,7 @@
 import type { ClaimVerdict } from "../../../lib/claim";
 import type { CraftMaterial } from "../../craftMaterials";
 import type { AffixSide, CatalogCombo, CraftCatalog } from "../craftmoves/catalog";
+import type { SourceRef } from "./sources";
 
 /**
  * Shared vocabulary of the craft planner (src/core/tools/planner/*). The planner works on an
@@ -135,6 +136,8 @@ export interface StepText {
   pick: readonly string[];
   onFail: string | null;
   retry: RetryScope | null;
+  /** Where the why comes from (sources.ts); the why itself is plain player prose. */
+  sources: readonly SourceRef[];
 }
 
 /** One application of a macro method to a state: the plan graph's edge. */

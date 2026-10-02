@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import type { PlannerPool } from "../../../lib/tools/craftPlannerContract";
 import { Drawer } from "../../ui/Drawer";
@@ -114,59 +114,82 @@ function usePickerState(props: Props) {
   return { query, setQuery, open, setOpen, fractured, setFractured, groups };
 }
 
+/** The search box; it takes focus once the Drawer has mounted (the Drawer focuses its close button first). */
+function PickerSearch({ side, query, onQuery, list }: { side: Side; query: string; onQuery: (q: string) => void; list: RefObject<HTMLDivElement | null> }) {
+  const focusOnMount = useCallback((el: HTMLInputElement | null) => {
+    if (el) requestAnimationFrame(() => el.focus());
+  }, []);
+  return (
+    <label className="flex items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-2 focus-within:border-amber-400">
+      <Search aria-hidden className="h-4 w-4 text-neutral-500" />
+      <input
+        ref={focusOnMount}
+        type="search"
+        value={query}
+        onChange={(e) => onQuery(e.target.value)}
+        onKeyDown={(e) => e.key === "ArrowDown" && moveFocus(e, list.current)}
+        placeholder={`search ${side}es — "mana", "fire res", "essence"…`}
+        aria-label={`search ${side}es`}
+        className="h-9 min-w-0 flex-1 bg-transparent text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none"
+      />
+    </label>
+  );
+}
+
+type PickerState = ReturnType<typeof usePickerState>;
+
+function FamilyGroups({ props, s, onPick }: { props: Props; s: PickerState; onPick: (f: PoolFamily, modId: string) => void }) {
+  return (
+    <>
+      {s.groups.length === 0 && <p className="text-sm text-neutral-400">No {props.side} on this base matches “{s.query}”.</p>}
+      {s.groups.map((g) => (
+        <section key={g.source} aria-label={g.title}>
+          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-400" title={g.hint}>
+            {g.title} <span className="font-normal normal-case text-neutral-500">· {g.hint}</span>
+          </h3>
+          <ul className="space-y-0.5">
+            {g.families.map((f) => {
+              const key = familyKey(f);
+              return (
+                <FamilyRow
+                  key={key}
+                  f={f}
+                  pool={props.pool}
+                  ilvl={props.ilvl}
+                  open={s.open === key}
+                  taken={props.taken.has(key)}
+                  current={props.current}
+                  onToggle={() => s.setOpen(s.open === key ? null : key)}
+                  onTier={(modId) => onPick(f, modId)}
+                />
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </>
+  );
+}
+
 export function ModPicker(props: Props) {
   const s = usePickerState(props);
   const list = useRef<HTMLDivElement>(null);
-  // the Drawer focuses its close button once its portal mounts; the search box takes focus right after
-  const search = useCallback((el: HTMLInputElement | null) => {
-    if (el) requestAnimationFrame(() => el.focus());
-  }, []);
+  const openDesecrated = s.open?.split("|")[1] === "desecrated";
   const pick = (f: PoolFamily, modId: string) =>
     props.onPick({ family: f.family, side: f.side, source: f.source, minModId: modId, fractured: s.fractured && f.source !== "desecrated" });
   return (
     <Drawer title={`Choose a ${props.side}`} onClose={props.onClose}>
       <div className="space-y-3">
-        <label className="flex items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-2 focus-within:border-amber-400">
-          <Search aria-hidden className="h-4 w-4 text-neutral-500" />
-          <input
-            ref={search}
-            type="search"
-            value={s.query}
-            onChange={(e) => s.setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "ArrowDown" && moveFocus(e, list.current)}
-            placeholder={`search ${props.side}es — "mana", "fire res", "essence"…`}
-            aria-label={`search ${props.side}es`}
-            className="h-9 min-w-0 flex-1 bg-transparent text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none"
-          />
-        </label>
-        <Toggle checked={s.fractured} onChange={s.setFractured} label="must be fractured on the finished item" />
+        <PickerSearch side={props.side} query={s.query} onQuery={s.setQuery} list={list} />
+        <Toggle
+          checked={s.fractured && !openDesecrated}
+          onChange={s.setFractured}
+          label="must be fractured on the finished item"
+          disabled={openDesecrated}
+          disabledReason="a desecrated mod can't be fractured"
+        />
         <div ref={list} onKeyDown={(e) => moveFocus(e, list.current)} className="space-y-4">
-          {s.groups.length === 0 && <p className="text-sm text-neutral-400">No {props.side} on this base matches “{s.query}”.</p>}
-          {s.groups.map((g) => (
-            <section key={g.source} aria-label={g.title}>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-400" title={g.hint}>
-                {g.title} <span className="font-normal normal-case text-neutral-500">· {g.hint}</span>
-              </h3>
-              <ul className="space-y-0.5">
-                {g.families.map((f) => {
-                  const key = familyKey(f);
-                  return (
-                    <FamilyRow
-                      key={key}
-                      f={f}
-                      pool={props.pool}
-                      ilvl={props.ilvl}
-                      open={s.open === key}
-                      taken={props.taken.has(key)}
-                      current={props.current}
-                      onToggle={() => s.setOpen(s.open === key ? null : key)}
-                      onTier={(modId) => pick(f, modId)}
-                    />
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
+          <FamilyGroups props={props} s={s} onPick={pick} />
         </div>
       </div>
     </Drawer>

@@ -4,11 +4,13 @@ import { useState } from "react";
 import { Ban, Hammer, RefreshCw } from "lucide-react";
 import type { PlanResponse } from "../../../lib/tools/craftPlannerContract";
 import { Button } from "../../ui/Button";
+import { flattenGuide } from "../../../core/craftRetry";
 import { readStored } from "../GuideRunner";
+import { planSessionId, type QtyOverrides } from "./plannerModel";
 import { IssueLine } from "./IssueLine";
 import type { PlanState } from "./plannerClient";
-import { PlanSession, PLAN_SESSION_KEY, planSessionId } from "./PlanSession";
-import { PlanSummary, type QtyOverrides } from "./PlanSummary";
+import { PlanSession, PLAN_SESSION_KEY } from "./PlanSession";
+import { PlanSummary } from "./PlanSummary";
 import { PlanTimeline, TimelineSkeleton } from "./PlanTimeline";
 
 /**
@@ -24,20 +26,16 @@ interface Props {
   onReplan: () => void;
 }
 
-function savedStep(sessionId: string): number | null {
-  try {
-    const s = readStored(PLAN_SESSION_KEY, sessionId);
-    return s?.kind === "step" ? s.idx + 1 : null;
-  } catch (e: unknown) {
-    console.error("[planner] saved plan session unreadable", e);
-    return null;
-  }
+/** The step a saved run of this plan stopped at (1-based), for the "Resume" label. */
+function savedStep(sessionId: string, plan: PlanResponse): number | null {
+  const s = readStored(PLAN_SESSION_KEY, sessionId, flattenGuide(plan.guide).length);
+  return s?.kind === "step" ? s.idx + 1 : null;
 }
 
 function PlanView({ plan, baseArt, sessionId }: { plan: PlanResponse; baseArt: string | null; sessionId: string }) {
   const [over, setOver] = useState<QtyOverrides>({});
   const [running, setRunning] = useState(false);
-  const resume = running ? null : savedStep(sessionId);
+  const resume = running ? null : savedStep(sessionId, plan);
   const onQty = (id: string, n: number | null) =>
     setOver((cur) => {
       const next = { ...cur };
@@ -80,12 +78,7 @@ function Rejected({ error, issues }: { error: string; issues: PlanResponse["feas
 }
 
 function Failed({ status, error }: { status: number | null; error: string }) {
-  const text =
-    status === 503
-      ? "Live prices or exchange rates aren't available right now — the price poller fills them within a few minutes. Try again shortly."
-      : status === 401
-        ? "Your session ended — sign in again to plan."
-        : `The planner failed${status ? ` (${status})` : ""}: ${error}`;
+  const text = status === 401 ? "Your session ended — sign in again to plan." : `The planner failed${status ? ` (${status})` : ""}: ${error}`;
   return (
     <p role="alert" className="rounded-lg border border-red-500/40 bg-red-950/20 p-4 text-sm text-red-200">
       {text}
@@ -113,7 +106,7 @@ export function PlanResult({ state, stale, baseArt, onReplan }: Props) {
           </Button>
         </p>
       )}
-      {state.kind === "plan" && <PlanView key={planSessionId(JSON.stringify(state.req))} plan={state.data} baseArt={baseArt} sessionId={planSessionId(JSON.stringify(state.req))} />}
+      {state.kind === "plan" && <PlanView key={planSessionId(state.req, state.data.guide)} plan={state.data} baseArt={baseArt} sessionId={planSessionId(state.req, state.data.guide)} />}
       {state.kind === "rejected" && <Rejected error={state.data.error} issues={state.data.feasibility} />}
       {state.kind === "error" && <Failed status={state.status} error={state.error} />}
     </div>

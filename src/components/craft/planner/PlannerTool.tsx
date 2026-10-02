@@ -82,7 +82,7 @@ function useBuilder(catalog: PlannerCatalog) {
     issues,
     base,
     stale,
-    art: baseArt(input.itemClass, input.base),
+    art: baseArt(input.base),
     check: liveCheck(input.slots, base.caps, input.ilvl, pool),
     qualityLine: input.quality ? `Quality: +${input.quality.pct}% (${catalystLabel})` : null,
     run: () => plan.run(request),
@@ -103,7 +103,7 @@ interface ChooserProps {
 function ChooserPanel({ catalog, input, base, onPick, onOptions }: ChooserProps) {
   const phone = useIsPhone();
   const [open, setOpen] = useState(false);
-  const art = baseArt(input.itemClass, input.base);
+  const art = baseArt(input.base);
   return (
     <section aria-label="choose a base" className="space-y-3 rounded-lg border border-line bg-surface/60 p-3 md:p-4">
       {phone && (

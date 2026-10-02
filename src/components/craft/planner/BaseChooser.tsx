@@ -13,9 +13,9 @@ import type { CatalogBase, ItemClass } from "./plannerModel";
 
 const CLASS_ART_BASE: Record<ItemClass, string> = { Rings: "Ruby Ring", Amulets: "Gold Amulet", Belts: "Heavy Belt", Jewels: "Emerald" };
 
-/** Self-hosted base art; a base the CDN had no art for falls back to its class's picture. */
-export function baseArt(itemClass: ItemClass, base: string): string | null {
-  return BASE_ART[base] ?? BASE_ART[CLASS_ART_BASE[itemClass]] ?? null;
+/** Self-hosted base art; null for a base the CDN had no art for (ItemArt then draws a neutral box). */
+export function baseArt(base: string): string | null {
+  return BASE_ART[base] ?? null;
 }
 
 const FRAME_ON = "border-amber-500/50 bg-gradient-to-b from-amber-950/40 to-neutral-900/90 shadow-[inset_0_-2px_0_theme(colors.accent)]";
@@ -43,7 +43,7 @@ function ClassPills({ catalog, itemClass, onPick }: Omit<Props, "base">) {
             onClick={() => first && onPick(c.itemClass, first.name)}
             className={`inline-flex items-center gap-1.5 rounded-md border py-1 pl-1 pr-2.5 text-sm font-semibold transition-colors ${on ? `${FRAME_ON} text-brand-bone` : `${FRAME_OFF} text-neutral-300`}`}
           >
-            <ItemArt src={baseArt(c.itemClass, CLASS_ART_BASE[c.itemClass])} size={6} />
+            <ItemArt src={baseArt(CLASS_ART_BASE[c.itemClass])} size={6} />
             {c.itemClass}
           </button>
         );
@@ -70,7 +70,7 @@ function onGridKey(e: KeyboardEvent<HTMLDivElement>, grid: HTMLDivElement | null
   }
 }
 
-function BaseTile({ itemClass, b, on, onPick }: { itemClass: ItemClass; b: CatalogBase; on: boolean; onPick: () => void }) {
+function BaseTile({ b, on, onPick }: { b: CatalogBase; on: boolean; onPick: () => void }) {
   const caps = capsLabel(b);
   const implicit = b.implicits.join(" · ");
   return (
@@ -85,7 +85,7 @@ function BaseTile({ itemClass, b, on, onPick }: { itemClass: ItemClass; b: Catal
       className={`relative flex flex-col items-center gap-1 rounded-md border px-1 pb-1.5 pt-2 text-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-300 ${on ? FRAME_ON : FRAME_OFF}`}
     >
       <span className="drop-shadow-[0_2px_3px_rgba(0,0,0,.8)]">
-        <ItemArt src={baseArt(itemClass, b.name)} size={12} />
+        <ItemArt src={baseArt(b.name)} size={12} />
       </span>
       <span className={`line-clamp-2 text-xs leading-tight ${on ? "text-brand-bone" : "text-neutral-300"}`}>{b.name}</span>
       {caps && <span className="absolute right-1 top-1 rounded bg-amber-400/15 px-1 text-xs tabular-nums text-amber-200">{caps}</span>}
@@ -107,7 +107,7 @@ export function BaseChooser({ catalog, itemClass, base, onPick }: Props) {
         className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6"
       >
         {bases.map((b) => (
-          <BaseTile key={b.name} itemClass={itemClass} b={b} on={b.name === base} onPick={() => onPick(itemClass, b.name)} />
+          <BaseTile key={b.name} b={b} on={b.name === base} onPick={() => onPick(itemClass, b.name)} />
         ))}
       </div>
     </div>

@@ -13,7 +13,7 @@ import { searchPlan, SearchCappedError } from "../../core/tools/planner/search";
 import { slotIssues } from "../../core/tools/planner/targets";
 import { plannerCatalog, plannerPool } from "../../core/tools/planner/load";
 import { plannerCatalogSchema, plannerPoolSchema, planRequestSchema, planResponseSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
-import { BREACH_RING, fixturePrices, target } from "./plannerFixtures";
+import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, fixturePrices, target } from "./plannerFixtures";
 import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
 import { runPlannerStateCases } from "./craftPlannerStateCases";
 
@@ -182,8 +182,40 @@ function testUiFields(cat: CraftCatalog): void {
   assert.equal(plannerPoolSchema.parse(plannerPool("Jewels", "Emerald", cat)).bone.id, "preserved-cranium", "jewels with a Cranium");
 }
 
+/** Every string in a value, depth-first (object keys too: odds inputs are shown by key). */
+function strings(v: unknown): string[] {
+  if (typeof v === "string") return [v];
+  if (Array.isArray(v)) return v.flatMap(strings);
+  if (v && typeof v === "object") return Object.entries(v).flatMap(([k, x]) => [k, ...strings(x)]);
+  return [];
+}
+
+const DEV_REF = /\.md\b|§|\bsrc\/|\bdocs\/|theory-gaps|\bKB\b/;
+
+/** Players read every planner string: no file names, section signs or research-note ids. */
+function testNoDeveloperReferences(cat: CraftCatalog): void {
+  const combo = Object.values(cat.classes.Jewels!).find((c) => c.bases.includes("Sapphire"))!;
+  const pick = (side: "prefix" | "suffix", n: number) => Object.entries(combo[side]).slice(0, n).map(([family, tiers]) => target(family, side, Object.keys(tiers)[0]!));
+  const jewel: PlanRequest = { itemClass: "Jewels", base: "Sapphire", ilvl: 82, targets: [...pick("suffix", 3), ...pick("prefix", 2)], includeUnverified: true, quality: null };
+  const quality: PlanRequest = { ...BREACH_RING, quality: { catalyst: "xophs-catalyst", pct: 40 } };
+  const golden = [BREACH_RING, FRACTURED_T1RES_RING, FRACTURE_PLUS3_AMULET, { ...BREACH_RING, includeUnverified: true }, jewel, quality];
+  const shown = golden.flatMap((req) => {
+    const p = plan(cat, req);
+    // patch/method/rule ids are not shown as prose; everything else is
+    return strings({ steps: p.steps.map((s) => ({ ...s, method: "", rules: [] })), guide: p.guide, feasibility: p.feasibility, targets: p.targets });
+  });
+  const refusals = [
+    ring("Ruby Ring", 60, [target("FireResistance", "suffix", "FireResist8")]),
+    ring("Ruby Ring", 82, [target("FireResistance", "suffix", "FireResist8", true), target("ColdResistance", "suffix", "ColdResist8", true)]),
+  ].flatMap((req) => strings(rejected(cat, req).issues));
+  const leaks = [...shown, ...refusals].filter((s) => DEV_REF.test(s));
+  assert.deepEqual([...new Set(leaks)], [], "no developer references in player-facing planner text");
+  assert.ok(plan(cat, BREACH_RING).steps.some((s) => s.instructions.some((i) => i.sources.length > 0)), "sources travel beside the why");
+}
+
 const cat = loadCraftCatalog();
 testUiFields(cat);
+testNoDeveloperReferences(cat);
 runGoldenCases(cat);
 testViolations(cat);
 testOddsBasis(cat);
@@ -195,5 +227,5 @@ testContract();
 runPlannerStateCases(cat);
 console.log(
   `ALL PASS — craft-planner: golden plans (Breach mana stacker, fractured-flat res ring, fractured +3 amulet), violations (mod group, caps incl. Dusk/Time-Lost, ilvl gate, one crafted/desecrated, essence table, quality cap, over-cap jewel), ` +
-    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), state/projection cases`,
+    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases`,
 );

@@ -1,6 +1,7 @@
 import type { AffixSide } from "../craftmoves/catalog";
 import { band, useOf } from "./expectation";
-import { makeMove, mat, once, S, sideOmen, step } from "./methodKit";
+import { makeMove, mat, once, sideOmen, step } from "./methodKit";
+import { sources, type SourceId } from "./sources";
 import { junkRemoval } from "./methodsWrite";
 import { estimate, exact } from "./odds";
 import { canonical, craftedSlotUsed, isJunk, junk, otherSide, removable, removableOn, sideCount, SIDES, withAffixes, without } from "./state";
@@ -50,7 +51,8 @@ function contempt(state: PlanState, ctx: PlanCtx): Move[] {
       steps: [
         step({
           do: `Potent Liquid Contempt → "+1 ${word(grow)} Modifier allowed" (it sits in a ${host} slot).`,
-          why: `A liquid removes a mod from the side its crafted mod lands on (owner-tested T5 6/6 + creators) — your ${host}s are throwaways (${S.kb6}).`,
+          why: `A liquid removes a mod from the side its crafted mod lands on (6 of 6 in our own test, and in creator videos) — your ${host}s are throwaways.`,
+          sources: sources("kb-liquids", "owner-test-2026-10-01", "creators"),
           mats: [mat("potentLiquidContempt")],
           check: `"+1 ${word(grow)} Modifier allowed" on the item.`,
           onFail: `"+1 ${word(host)} Modifier allowed" instead (it took a ${grow}) → start over on a new base.`,
@@ -58,7 +60,7 @@ function contempt(state: PlanState, ctx: PlanCtx): Move[] {
         }),
       ],
       uses: [once(mat("potentLiquidContempt"))],
-      odds: estimate(p, "which Contempt mod lands ~50/50 — creator counts, no published weight", { outcomes: 2 }),
+      odds: estimate(p, "which Contempt mod lands is about 50/50 — counted from creator videos, no published weight", { "possible Contempt mods": 2 }),
       restartP: p,
       grade: "vs",
       checks: [{ state, rules: ["liquid-potent-contempt"] }],
@@ -82,11 +84,11 @@ function stripContempt(state: PlanState, ctx: PlanCtx): Move[] {
       methodId: "strip-contempt",
       title: "Strip the +1 mod",
       next: withAffixes(state, without(state, a)),
-      steps: [step({ do: `${mats.map((m) => m.label).join(" + ")} → removes "+1 ${word(grow)} Modifier allowed".`, why: `It is the only removable ${host}${steer ? ` and the omen keeps the Annulment on the ${host}s (${S.kb4})` : ""}; the 3rd ${grow} stays.`, mats, check: `3 ${grow}es, no "+1 … allowed" mod.` })],
+      steps: [step({ do: `${mats.map((m) => m.label).join(" + ")} → removes "+1 ${word(grow)} Modifier allowed".`, why: `It is the only removable ${host}${steer ? ` and the omen keeps the Annulment on the ${host}s` : ""}; the 3rd ${grow} stays.`, mats, sources: sources("kb-liquids", ...(steer ? (["kb-omens"] as SourceId[]) : [])), check: `3 ${grow}es, no "+1 … allowed" mod.` })],
       uses: mats.map(once),
       odds: exact(1, `the only removable ${host}`),
       grade: "ss",
-      facts: ["the over-cap 3rd mod surviving the strip is creator-demonstrated (KB §6 b)"],
+      facts: ["The over-cap 3rd mod surviving the strip is shown in creator videos, not confirmed by game data."],
       checks: [{ state, rules: [steer ? steer.rule : "annul"] }],
     });
     if (move) out.push(move);
@@ -107,7 +109,7 @@ function stripSide(state: PlanState, ctx: PlanCtx): Move[] {
       methodId: `strip-${side}`,
       title: `Clear the ${side}es`,
       next: withAffixes(state, state.affixes.filter((a) => !loose.includes(a))),
-      steps: [step({ do: `${mat(omen.key).label} + Orb of Annulment until no throwaway ${side} remains.`, why: `Every removable ${side} is a throwaway and the omen keeps the Annulment off the ${otherSide(side)}es (${S.kb4}).`, mats: [mat(omen.key), mat("annul")] })],
+      steps: [step({ do: `${mat(omen.key).label} + Orb of Annulment until no throwaway ${side} remains.`, why: `Every removable ${side} is a throwaway and the omen keeps the Annulment off the ${otherSide(side)}es.`, mats: [mat(omen.key), mat("annul")], sources: sources("kb-omens") })],
       uses: [useOf(mat(omen.key), band(loose.length)), useOf(mat("annul"), band(loose.length))],
       odds: exact(1, `every removable ${side} is a throwaway`),
       grade: "vp",

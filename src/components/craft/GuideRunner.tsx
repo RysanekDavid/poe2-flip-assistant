@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
-import { z } from "zod";
 import type { CraftGuide } from "../../core/craftRecipes";
 import { flattenGuide, resolveRetry, type RetryTarget } from "../../core/craftRetry";
 import type { StepLegality } from "../../core/craftProvenance/schema";
 import type { MatInfoFn } from "./craftView";
+import { parseStoredScreen, serializeScreen } from "./guideSession";
 import { StepScreen, type Screen } from "./SessionStep";
 
 /**
@@ -30,7 +30,8 @@ function SessionStepper({ guide, screen, curPhase, onReset }: { guide: CraftGuid
         <span key={p.title} className="flex items-center gap-1">
           <span aria-hidden className="text-neutral-500">›</span>
           <span
-            className={`${PILL} ${
+            title={p.title}
+            className={`${PILL} max-w-[14rem] truncate ${
               curPhase === p.title ? "bg-emerald-900/60 font-medium text-emerald-200" : i < curIdx ? "bg-neutral-800/60 text-emerald-500" : "bg-neutral-800/60 text-neutral-400"
             }`}
           >
@@ -101,23 +102,29 @@ export function GuideRunner({ guide, screen, go, matInfo, legality, onReset, sho
   );
 }
 
-const screenSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("shop") }),
-  z.object({ kind: z.literal("step"), idx: z.number().int().nonnegative(), failed: z.boolean() }),
-  z.object({ kind: z.literal("outcome"), brick: z.boolean() }),
-]);
-const storedSchema = z.object({ key: z.string(), screen: screenSchema });
-
-/** The saved screen of `sessionKey`, or null (none saved, another session's, or invalid — logged). */
-export function readStored(storageKey: string, sessionKey: string): Screen | null {
-  const raw = localStorage.getItem(storageKey);
-  if (raw == null) return null;
-  const parsed = storedSchema.safeParse(JSON.parse(raw));
-  if (!parsed.success) {
-    console.error(`[guide-runner] ${storageKey} holds an invalid session — starting fresh`, parsed.error.issues);
+/** The saved screen of `sessionKey` in `storageKey`; null when none fits (an unusable one is logged). */
+export function readStored(storageKey: string, sessionKey: string, stepCount: number): Screen | null {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(storageKey);
+  } catch (e: unknown) {
+    console.error(`[guide-runner] could not read ${storageKey}`, e);
     return null;
   }
-  return parsed.data.key === sessionKey ? parsed.data.screen : null;
+  const stored = parseStoredScreen(raw, sessionKey, stepCount);
+  if (stored.ok) return stored.screen;
+  console.error(`[guide-runner] ${storageKey}: ${stored.reason} — starting at the shopping list`);
+  return null;
+}
+
+/** A failed write (storage full, private mode) costs only the resume — said loudly, never thrown mid-craft. */
+function writeStored(storageKey: string, value: string | null): void {
+  try {
+    if (value == null) localStorage.removeItem(storageKey);
+    else localStorage.setItem(storageKey, value);
+  } catch (e: unknown) {
+    console.error(`[guide-runner] could not save ${storageKey} — a refresh will not resume this step`, e);
+  }
 }
 
 /**
@@ -125,24 +132,19 @@ export function readStored(storageKey: string, sessionKey: string): Screen | nul
  * alt-tab to the game or a refresh resumes the same step. A different session key starts fresh; an
  * idle shopping screen never writes, so opening a guide can't overwrite another one's progress.
  */
-export function useGuideScreen(storageKey: string, sessionKey: string): { screen: Screen; go: (s: Screen) => void; reset: () => void } {
+export function useGuideScreen(storageKey: string, sessionKey: string, guide: CraftGuide): { screen: Screen; go: (s: Screen) => void; reset: () => void } {
+  const stepCount = useMemo(() => flattenGuide(guide).length, [guide]);
   const [state, setState] = useState<{ key: string; screen: Screen }>({ key: sessionKey, screen: { kind: "shop" } });
   useEffect(() => {
-    let restored: Screen | null = null;
-    try {
-      restored = readStored(storageKey, sessionKey);
-    } catch (e: unknown) {
-      console.error(`[guide-runner] could not read ${storageKey}`, e);
-    }
-    setState({ key: sessionKey, screen: restored ?? { kind: "shop" } });
-  }, [storageKey, sessionKey]);
+    setState({ key: sessionKey, screen: readStored(storageKey, sessionKey, stepCount) ?? { kind: "shop" } });
+  }, [storageKey, sessionKey, stepCount]);
   const screen = state.key === sessionKey ? state.screen : { kind: "shop" as const };
   const go = (next: Screen): void => {
     setState({ key: sessionKey, screen: next });
-    localStorage.setItem(storageKey, JSON.stringify({ key: sessionKey, screen: next }));
+    writeStored(storageKey, serializeScreen(sessionKey, next));
   };
   const reset = (): void => {
-    localStorage.removeItem(storageKey);
+    writeStored(storageKey, null);
     setState({ key: sessionKey, screen: { kind: "shop" } });
   };
   return { screen, go, reset };

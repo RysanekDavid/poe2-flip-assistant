@@ -2,10 +2,9 @@ import type { ClaimVerdict } from "../../../lib/claim";
 import { PLANNER_CLASSES } from "../../../lib/tools/craftPlannerContract";
 import { comboFor, type AffixSide, type CatalogCombo, type CraftCatalog } from "../craftmoves/catalog";
 import { baseAllowance, catalystQualityCap } from "../craftmoves/classify";
-import { KB } from "../craftmoves/ruleTypes";
 import { CATALYSTS } from "./catalystTags";
 import { ESSENCE_OUTCOMES, BREACH_ESSENCE_ID, essenceWritesFor } from "./essenceOutcomes";
-import { TIME_LOST_CAP_SOURCE } from "./state";
+import { sourceLine, sources } from "./sources";
 import type { BaseInfo, Faction, QualityGoal, ResolvedTarget } from "./types";
 
 /**
@@ -38,8 +37,23 @@ export class UnknownPlannerBaseError extends Error {
   }
 }
 
-const GROUP_RULE_SOURCE = "docs/kb/desecration-abyss.md (standard affix-group exclusion, single-source; fail closed)";
-const TIME_LOST_DESECRATION = `${KB} §6 says a Preserved Cranium targets any rare jewel, but no source names Time-Lost jewels`;
+// Feasibility evidence as the player reads it: labels from sources.ts, never file names.
+const SRC = {
+  group: sourceLine(sources("group-rule")),
+  gameData: sourceLine(sources("game-data")),
+  essences: sourceLine(sources("kb-essences", "poe2db")),
+  ilvl: sourceLine(sources("game-data", "kb-ilvl")),
+  fracture: sourceLine(sources("kb-fracture")),
+  timeLostCap: sourceLine(sources("owner-test-2026-10-02", "creators")),
+  jewelCap: sourceLine(sources("kb-liquids")),
+  baseCap: sourceLine(sources("game-data", "kb-ilvl")),
+  overCap: sourceLine(sources("kb-liquids", "poe2db", "creators")),
+  crafted: sourceLine(sources("kb-essences")),
+  desecration: sourceLine(sources("kb-desecration")),
+  library: sourceLine(sources("planner-prior")),
+  catalysts: sourceLine(sources("kb-catalysts")),
+  qualityCap: sourceLine(sources("kb-catalysts", "owner-test-2026-10-02")),
+} as const;
 
 export function resolveBase(cat: CraftCatalog, itemClass: string, name: string, ilvl: number): { base: BaseInfo; combo: CatalogCombo } {
   const row = cat.bases[name];
@@ -77,21 +91,21 @@ function sourceOf(cat: CraftCatalog, combo: CatalogCombo, spec: TargetSpec): Res
 
 function resolveOne(cat: CraftCatalog, combo: CatalogCombo, base: BaseInfo, spec: TargetSpec, idx: number): Resolution {
   const mod = cat.mods[spec.minModId];
-  if (!mod) return impossible(idx, "catalog", `unknown modifier id "${spec.minModId}"`, "vp", "craft catalog (RePoE)");
+  if (!mod) return impossible(idx, "catalog", `unknown modifier id "${spec.minModId}"`, "vp", SRC.gameData);
   if (mod.family !== spec.family || mod.side !== spec.side) {
-    return impossible(idx, "catalog", `${spec.minModId} is a ${mod.side} of family ${mod.family}, not ${spec.side} ${spec.family}`, "vp", "craft catalog (RePoE)");
+    return impossible(idx, "catalog", `"${mod.text}" is a ${mod.side}, not the ${spec.side} you picked`, "vp", SRC.gameData);
   }
   const source = sourceOf(cat, combo, spec);
-  if (!source) return impossible(idx, "base-pool", `"${mod.text}" does not roll on a ${base.name}`, "vp", "RePoE mods_by_base (craft catalog)");
+  if (!source) return impossible(idx, "base-pool", `"${mod.text}" does not roll on a ${base.name}`, "vp", SRC.gameData);
   const essences = essenceWritesFor(cat, base.itemClass, spec.family, mod.level, spec.minModId);
   if (source === "essence" && essences.length === 0) {
-    return impossible(idx, "essence-table", `no curated essence writes "${mod.text}" on ${base.itemClass}`, "vp", "src/core/tools/planner/essenceOutcomes.ts (poe2db)");
+    return impossible(idx, "essence-table", `no essence we know of writes "${mod.text}" on ${base.itemClass.toLowerCase()}`, "vp", SRC.essences);
   }
   if (source !== "essence" && mod.level > base.ilvl) {
-    return impossible(idx, "ilvl-gate", `"${mod.text}" is modifier level ${mod.level} — needs item level ${mod.level}, the base is ${base.ilvl}`, "vp", `RePoE required_level; ${KB} §3`);
+    return impossible(idx, "ilvl-gate", `"${mod.text}" needs item level ${mod.level}; the base is ${base.ilvl}`, "vp", SRC.ilvl);
   }
   if (spec.fractured && source === "desecrated") {
-    return impossible(idx, "fracture", "a desecrated mod can't be fractured", "vs", `${KB} §2`);
+    return impossible(idx, "fracture", "a desecrated mod can't be fractured", "vs", SRC.fracture);
   }
   const target: ResolvedTarget = {
     idx,
@@ -112,12 +126,10 @@ function resolveOne(cat: CraftCatalog, combo: CatalogCombo, base: BaseInfo, spec
 
 /** Rare caps for the finished item, with the rule's grade. */
 function finishedCaps(base: BaseInfo): { p: number; s: number; grade: ClaimVerdict; source: string } {
-  if (base.timeLost) return { p: 2, s: 2, grade: "vs", source: TIME_LOST_CAP_SOURCE };
-  if (base.jewel) return { p: 2, s: 2, grade: "ss", source: `${KB} §6 (Maxroll jewel guide)` };
-  return { p: 3 + base.allowance.p, s: 3 + base.allowance.s, grade: "vp", source: `game rules; base implicits (RePoE base_items, ${KB} §3)` };
+  if (base.timeLost) return { p: 2, s: 2, grade: "vs", source: SRC.timeLostCap };
+  if (base.jewel) return { p: 2, s: 2, grade: "ss", source: SRC.jewelCap };
+  return { p: 3 + base.allowance.p, s: 3 + base.allowance.s, grade: "vp", source: SRC.baseCap };
 }
-
-const OVER_CAP_SOURCE = `${KB} §6 (Contempt "+1 … allowed": poe2db + RePoE; the stripped over-cap end state: creator-demonstrated)`;
 
 function capIssues(base: BaseInfo, targets: readonly ResolvedTarget[]): FeasibilityIssue[] {
   const caps = finishedCaps(base);
@@ -130,7 +142,7 @@ function capIssues(base: BaseInfo, targets: readonly ResolvedTarget[]): Feasibil
     const other = count(side === "prefix" ? "suffix" : "prefix");
     // a basic jewel can end one over on ONE side: the over-cap Liquid Contempt route
     if (base.jewel && !base.timeLost && n === cap + 1 && other <= cap) {
-      out.push({ severity: "warn", rule: "over-cap-jewel", message: `${n} ${side}es on a basic jewel: the over-cap Liquid Contempt route — adding to the other side afterwards is unverified`, grade: "ss", source: OVER_CAP_SOURCE, target: null });
+      out.push({ severity: "warn", rule: "over-cap-jewel", message: `${n} ${side}es on a basic jewel: the over-cap Liquid Contempt route — adding to the other side afterwards is untested`, grade: "ss", source: SRC.overCap, target: null });
       continue;
     }
     out.push({ severity: "impossible", rule: "affix-cap", message: `${n} ${side}es wanted, a rare ${base.name} holds ${cap}`, grade: caps.grade, source: caps.source, target: null });
@@ -144,7 +156,7 @@ function pairIssues(targets: readonly ResolvedTarget[]): FeasibilityIssue[] {
     for (const b of targets) {
       if (b.idx <= a.idx) continue;
       const shared = a.groups.find((g) => b.groups.includes(g));
-      if (shared) out.push({ severity: "impossible", rule: "mod-group", message: `"${a.text}" and "${b.text}" share mod group ${shared} — an item holds one mod per group`, grade: "ss", source: GROUP_RULE_SOURCE, target: b.idx });
+      if (shared) out.push({ severity: "impossible", rule: "mod-group", message: `"${a.text}" and "${b.text}" belong to the same mod group — an item holds one mod per group`, grade: "ss", source: SRC.group, target: b.idx });
     }
   }
   return out;
@@ -153,16 +165,16 @@ function pairIssues(targets: readonly ResolvedTarget[]): FeasibilityIssue[] {
 export function slotIssues(base: BaseInfo, targets: readonly ResolvedTarget[]): FeasibilityIssue[] {
   const out: FeasibilityIssue[] = [];
   const crafted = targets.filter((t) => t.source === "essence");
-  if (crafted.length > 1) out.push({ severity: "impossible", rule: "one-crafted", message: "two essence-only mods: one crafted mod per item — a second needs Astrid's Creativity, which this planner does not plan", grade: "vp", source: `${KB} §7`, target: crafted[1]!.idx });
+  if (crafted.length > 1) out.push({ severity: "impossible", rule: "one-crafted", message: "two essence-only mods: one crafted mod per item — a second needs Astrid's Creativity, which this planner does not plan", grade: "vp", source: SRC.crafted, target: crafted[1]!.idx });
   const desecrated = targets.filter((t) => t.source === "desecrated");
-  if (desecrated.length > 1) out.push({ severity: "impossible", rule: "one-desecrated", message: "two desecrated mods: one per item — only Omen of Putrefaction exceeds it, and it corrupts the item (not planned)", grade: "vp", source: `${KB} §5`, target: desecrated[1]!.idx });
+  if (desecrated.length > 1) out.push({ severity: "impossible", rule: "one-desecrated", message: "two desecrated mods: one per item — only Omen of Putrefaction exceeds it, and it corrupts the item (not planned)", grade: "vp", source: SRC.desecration, target: desecrated[1]!.idx });
   const fractured = targets.filter((t) => t.fractured);
-  if (fractured.length > 1) out.push({ severity: "impossible", rule: "one-fracture", message: "two fractured mods: one fracture per item, ever", grade: "vs", source: `${KB} §2`, target: fractured[1]!.idx });
+  if (fractured.length > 1) out.push({ severity: "impossible", rule: "one-fracture", message: "two fractured mods: one fracture per item, ever", grade: "vs", source: SRC.fracture, target: fractured[1]!.idx });
   for (const t of desecrated) {
-    if (base.timeLost) out.push({ severity: "warn", rule: "time-lost-desecration", message: `desecrating a Time-Lost jewel is unverified — planned only with "include unverified methods"`, grade: "uv", source: TIME_LOST_DESECRATION, target: t.idx });
+    if (base.timeLost) out.push({ severity: "warn", rule: "time-lost-desecration", message: `desecrating a Time-Lost jewel is unverified — planned only with "include unverified methods" (bones target any rare jewel, but no source names Time-Lost ones)`, grade: "uv", source: SRC.desecration, target: t.idx });
     const rolled = targets.filter((x) => x.source === "natural" && x.side === t.side).length;
-    if (rolled >= 2) out.push({ severity: "warn", rule: "desecrated-side", message: `"${t.text}" shares its side with ${rolled} rolled mods — no planned method fills such a side yet (a later Annulment could take the desecrated mod)`, grade: "syn", source: "craft planner method library", target: t.idx });
-    if (t.faction !== "amanamu" || base.itemClass === "Jewels") out.push({ severity: "warn", rule: "reveal-pool", message: `no faction omen steers "${t.text}" here — the reveal odds are an estimate over the whole ${t.side} pool`, grade: "ss", source: `${KB} §5 (reveal draw rules OPEN)`, target: t.idx });
+    if (rolled >= 2) out.push({ severity: "warn", rule: "desecrated-side", message: `"${t.text}" shares its side with ${rolled} rolled mods — no planned method fills such a side yet (a later Annulment could take the desecrated mod)`, grade: "syn", source: SRC.library, target: t.idx });
+    if (t.faction !== "amanamu" || base.itemClass === "Jewels") out.push({ severity: "warn", rule: "reveal-pool", message: `no faction omen steers "${t.text}" here — the reveal odds are an estimate over the whole ${t.side} pool (how the Well draws its offers isn't documented)`, grade: "ss", source: SRC.desecration, target: t.idx });
   }
   return out;
 }
@@ -170,13 +182,13 @@ export function slotIssues(base: BaseInfo, targets: readonly ResolvedTarget[]): 
 function qualityIssues(cat: CraftCatalog, base: BaseInfo, quality: QualityGoal | null): FeasibilityIssue[] {
   if (!quality) return [];
   if (!CATALYSTS.some((c) => c.mat.id === quality.catalyst)) {
-    return [{ severity: "impossible", rule: "catalyst", message: `unknown catalyst "${quality.catalyst}"`, grade: "vp", source: "entity catalog (game data 0.5.5b)", target: null }];
+    return [{ severity: "impossible", rule: "catalyst", message: `unknown catalyst "${quality.catalyst}"`, grade: "vp", source: SRC.gameData, target: null }];
   }
-  if (base.qualityCap == null) return [{ severity: "impossible", rule: "catalyst-class", message: "catalysts only apply to rings and amulets", grade: "vp", source: `${KB} §8`, target: null }];
+  if (base.qualityCap == null) return [{ severity: "impossible", rule: "catalyst-class", message: "catalysts only apply to rings and amulets", grade: "vp", source: SRC.catalysts, target: null }];
   const breach = ESSENCE_OUTCOMES.some((r) => r.essenceId === BREACH_ESSENCE_ID && r.itemClass === base.itemClass) && cat.mods.EssenceBreach != null;
   const max = base.qualityCap + (breach ? 20 : 0);
   if (quality.pct <= max) return [];
-  return [{ severity: "impossible", rule: "quality-cap", message: `${quality.pct}% quality is above this base's ${max}% (cap ${base.qualityCap}%${breach ? " + 20% via Essence of the Breach" : ""})`, grade: "ss", source: `${KB} §8; theory-gaps T12`, target: null }];
+  return [{ severity: "impossible", rule: "quality-cap", message: `${quality.pct}% quality is above this base's ${max}% (cap ${base.qualityCap}%${breach ? " + 20% via Essence of the Breach" : ""})`, grade: "ss", source: SRC.qualityCap, target: null }];
 }
 
 export interface TargetResolution {

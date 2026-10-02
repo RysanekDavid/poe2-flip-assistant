@@ -51,16 +51,6 @@ export const sideOmen = (side: AffixSide, family: "Exaltation" | "Annulment" | "
 const GRADE_RANK: Record<ClaimVerdict, number> = { vp: 0, vs: 1, syn: 2, ss: 3, cf: 4, uv: 5 };
 export const worstGrade = (...grades: ClaimVerdict[]): ClaimVerdict => grades.reduce((a, b) => (GRADE_RANK[b] > GRADE_RANK[a] ? b : a), "vp");
 
-export const S = {
-  kb1: `${KB} §1`,
-  kb2: `${KB} §2`,
-  kb4: `${KB} §4`,
-  kb5: `${KB} §5`,
-  kb6: `${KB} §6`,
-  kb7: `${KB} §7`,
-  kb8: `${KB} §8`,
-} as const;
-
 export interface Check {
   state: PlanState;
   rules: readonly string[];
@@ -85,7 +75,7 @@ export interface MoveSpec {
   adds?: boolean;
 }
 
-const OVER_CAP_FACT = "adding a mod to an over-cap jewel: whether the other side can still take one is unverified (KB §6 b)";
+const OVER_CAP_FACT = "Adding a mod to an over-cap jewel: whether the other side can still take one is untested.";
 
 /** The Move, or null when a click is illegal or the macro's core is unknown and not admitted. */
 export function makeMove(ctx: PlanCtx, spec: MoveSpec): Move | null {
@@ -121,7 +111,7 @@ export function makeMove(ctx: PlanCtx, spec: MoveSpec): Move | null {
 }
 
 export function step(partial: Partial<StepText> & Pick<StepText, "do" | "why">): StepText {
-  return { mats: [], check: null, pick: [], onFail: null, retry: null, ...partial };
+  return { mats: [], check: null, pick: [], onFail: null, retry: null, sources: [], ...partial };
 }
 
 /** Short label for a target: its catalog text, ranges kept, joined onto one line. */

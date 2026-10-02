@@ -8,6 +8,8 @@ import { fmtDivOrEx, fmtDivOrExRange } from "../../../lib/format";
 import { Button } from "../../ui/Button";
 import { ItemArt } from "../../ui/ItemArt";
 import { Tooltip } from "../../ui/Tooltip";
+import { NumberField } from "./NumberField";
+import { adjustedTotal, type QtyOverrides } from "./plannerModel";
 import { qtyText } from "./StepCard";
 
 /**
@@ -15,23 +17,6 @@ import { qtyText } from "./StepCard";
  * and live prices, and the one action — run the plan step by step. Catalyst counts are an
  * assumption (~1% quality per catalyst), so they are editable and the total follows.
  */
-
-export type QtyOverrides = Readonly<Record<string, number>>;
-
-/** The total with every overridden line's contribution replaced by override × unit price. */
-export function adjustedTotal(plan: PlanResponse, over: QtyOverrides): BandView | null {
-  const t = plan.totals.div;
-  if (!t) return null;
-  let { point, low, high } = t;
-  for (const line of plan.bill) {
-    const o = over[line.id];
-    if (o == null || line.unitDiv == null || line.totalDiv == null) continue;
-    point += o * line.unitDiv - line.totalDiv.point;
-    low += o * line.unitDiv - line.totalDiv.low;
-    high += o * line.unitDiv - line.totalDiv.high;
-  }
-  return { point: Math.max(0, point), low: Math.max(0, low), high: Math.max(0, high) };
-}
 
 const BASIS_WORD = { exact: "exact", estimate: "estimate", unknown: "bounds only" } as const;
 
@@ -67,17 +52,14 @@ function QtyCell({ line, over, onQty }: { line: PlanMaterialView; over: QtyOverr
   return (
     <label className="inline-flex items-center gap-1" title="assumption: about 1% quality per catalyst — type what yours take">
       <span className="text-xs text-amber-200">assumed</span>
-      <input
-        type="number"
-        min={0}
-        inputMode="numeric"
+      <NumberField
         value={value}
-        aria-label={`${line.label} quantity (assumption)`}
-        onChange={(e) => {
-          const n = Number(e.target.value);
-          onQty(line.id, e.target.value === "" || !Number.isFinite(n) || n < 0 ? null : n);
-        }}
-        className="h-6 w-14 rounded border border-amber-400/40 bg-neutral-950 text-right text-sm tabular-nums text-neutral-100 focus:border-amber-400 focus:outline-none"
+        min={0}
+        max={100_000}
+        onCommit={(n) => onQty(line.id, n)}
+        label={`${line.label} quantity (assumption)`}
+        title="assumption: about 1% quality per catalyst — type what yours take"
+        className="h-6 w-16 rounded border border-amber-400/40 bg-neutral-950 text-right text-sm tabular-nums text-neutral-100 focus:border-amber-400 focus:outline-none"
       />
     </label>
   );

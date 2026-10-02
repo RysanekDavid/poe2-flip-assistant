@@ -1,6 +1,7 @@
 import type { AffixSide } from "../craftmoves/catalog";
 import { band, failuresOf, useOf } from "./expectation";
-import { AUG_TIERS, makeMove, mat, once, S, sideOmen, step, targetText, TRANSMUTE_FOR_AUG, usableTier, type MoveSpec } from "./methodKit";
+import { AUG_TIERS, makeMove, mat, once, sideOmen, step, targetText, TRANSMUTE_FOR_AUG, usableTier, type MoveSpec } from "./methodKit";
+import { sources } from "./sources";
 import { addOdds, exact } from "./odds";
 import { anyJunkCount, canonical, isJunk, isMet, junk, openOf, otherSide, present, removable, SIDES, targetAffix, withAffixes } from "./state";
 import { startJunkRare } from "./methodsJewel";
@@ -46,11 +47,13 @@ function startAnchored(ctx: PlanCtx, side: AffixSide): Move | null {
     steps: [
       step({
         do: `Buy a rare ${ctx.base.name}, item level ${ctx.base.ilvl}+, with a FRACTURED ${side} that is not a tier of any mod you want (${ctx.targets.map((t) => targetText(t.text)).join("; ")}), and no crafted or desecrated mod.`,
-        why: `The fractured mod can't be removed (${S.kb2}), so every later removal lands on the loose mods — and it fills a ${side} slot you don't need.`,
+        why: `The fractured mod can't be removed, so every later removal lands on the loose mods — and it fills a ${side} slot you don't need.`,
+        sources: sources("kb-fracture"),
       }),
       step({
         do: "Orb of Annulment until only the fractured mod and one other mod remain.",
-        why: `Each Annulment removes a random mod; the fractured one is immune (${S.kb2}).`,
+        why: "Each Annulment removes a random mod; the fractured one is immune.",
+        sources: sources("kb-fracture"),
         mats: [mat("annul")],
         check: `The fractured ${side} plus exactly one loose mod.`,
       }),
@@ -89,7 +92,8 @@ function magicLoop(state: PlanState, ctx: PlanCtx): Move[] {
           step({ do: `${trans.label} on the Normal base.`, why: "Normal → magic with one random mod.", mats: [mat(trans.key)] }),
           step({
             do: `Orb of Annulment + ${aug.label} until ${targetText(t.text)}.`,
-            why: `Annulment removes the magic item's only mod, the Augmentation adds a new one (${S.kb1})${aug.floor ? `; the ${aug.floor} floor keeps lower tiers out` : ""}.`,
+            why: `Annulment removes the magic item's only mod, the Augmentation adds a new one${aug.floor ? `; the ${aug.floor} floor keeps lower tiers out` : ""}.`,
+            sources: sources("kb-currency"),
             mats: [mat("annul"), mat(aug.key)],
             check: `Magic, ${targetText(t.text)} (or a better tier) and nothing else.`,
           }),
@@ -117,7 +121,7 @@ function magicFiller(state: PlanState, ctx: PlanCtx): Move[] {
     methodId: "magic-aug-filler",
     title: "Second magic mod",
     next: withAffixes(state, [...state.affixes, junk(side)]),
-    steps: [step({ do: `Orb of Augmentation → any ${side}.`, why: `A magic item holds one prefix + one suffix; the only open slot is the ${side}, so the new mod lands there (${S.kb1}).`, mats: [mat("aug")] })],
+    steps: [step({ do: `Orb of Augmentation → any ${side}.`, why: `A magic item holds one prefix + one suffix; the only open slot is the ${side}, so the new mod lands there.`, mats: [mat("aug")], sources: sources("kb-currency") })],
     uses: [once(mat("aug"))],
     odds: exact(1, `only the ${side} slot is open`),
     grade: "vp",
@@ -155,7 +159,7 @@ function plantJunk(state: PlanState, ctx: PlanCtx): Move[] {
       methodId: `plant-junk-${side}`,
       title: `Throwaway ${side}`,
       next: withAffixes(state, [...state.affixes, junk(side)]),
-      steps: [step({ do: `${steer ? `${mat(omen.key).label} + ` : ""}Exalted Orb → any ${side} (a throwaway).`, why: steer ? `The omen makes the Exalt add a ${side} (${S.kb4}).` : `Only a ${side} slot is open.`, mats })],
+      steps: [step({ do: `${steer ? `${mat(omen.key).label} + ` : ""}Exalted Orb → any ${side} (a throwaway).`, why: steer ? `The omen makes the Exalt add a ${side}.` : `Only a ${side} slot is open.`, mats, sources: steer ? sources("kb-omens") : [] })],
       uses: mats.map(once),
       odds: exact(1, `the added mod is a throwaway ${side}`),
       grade: "vp",
@@ -193,7 +197,7 @@ function stripJunk(state: PlanState, ctx: PlanCtx): Move[] {
     methodId: "strip-junk",
     title: "Strip to the fractured mod",
     next: withAffixes(state, keep),
-    steps: [step({ do: "Orb of Annulment until only the fractured mod remains.", why: `Every removable mod is a throwaway and the fractured one is immune (${S.kb2}).`, mats: [mat("annul")], check: "Only the fractured mod is left." })],
+    steps: [step({ do: "Orb of Annulment until only the fractured mod remains.", why: "Every removable mod is a throwaway and the fractured one is immune.", mats: [mat("annul")], check: "Only the fractured mod is left.", sources: sources("kb-fracture") })],
     uses: [useOf(mat("annul"), band(loose.length))],
     odds: exact(1, "every removable mod is a throwaway"),
     grade: "vp",
@@ -212,8 +216,8 @@ function fracture(state: PlanState, ctx: PlanCtx): Move[] {
     if (!t.fractured || !a || a.unrevealed || isMet(ctx, state, t.idx) || (a.kind !== "explicit" && a.kind !== "crafted")) continue;
     const p = 1 / eligible;
     const facts = [
-      ...(a.kind === "crafted" ? ["a crafted mod can be fractured — creator footage only (KB §2, single-source)"] : []),
-      ...(state.affixes.some((x) => x.unrevealed) ? ["an UNREVEALED desecrated blocker counting toward the 4 is creator-demonstrated (KB §2)"] : []),
+      ...(a.kind === "crafted" ? ["A crafted mod can be fractured — seen in one creator video only."] : []),
+      ...(state.affixes.some((x) => x.unrevealed) ? ["An unrevealed desecrated mod counting toward the 4 is shown in creator videos, not confirmed by game data."] : []),
     ];
     const next = withAffixes(state, state.affixes.map((x) => (x === a ? { ...x, kind: "fractured" as const, special: x.kind === "crafted" ? ("fractured-crafted" as const) : x.special } : x)));
     const spec: MoveSpec = {
@@ -223,7 +227,8 @@ function fracture(state: PlanState, ctx: PlanCtx): Move[] {
       steps: [
         step({
           do: "Fracturing Orb.",
-          why: `Locks one random mod for good; desecrated mods count toward the 4 but can't be picked (${S.kb2}) — 1 in ${eligible} lands ${targetText(t.text)}.`,
+          why: `Locks one random mod for good; desecrated mods count toward the 4 but can't be picked — 1 in ${eligible} lands ${targetText(t.text)}.`,
+          sources: sources("kb-fracture"),
           mats: [mat("fracturing")],
           check: `${targetText(t.text)} is FRACTURED.`,
           onFail: "Wrong mod fractured → one fracture per item, ever: start over on a new base (sell this one as it is).",
@@ -231,7 +236,7 @@ function fracture(state: PlanState, ctx: PlanCtx): Move[] {
         }),
       ],
       uses: [once(mat("fracturing"))],
-      odds: exact(p, `P = 1/${eligible} — ${state.affixes.length} mods, ${state.affixes.length - eligible} desecrated can't be fractured (${S.kb2}; uniform pick assumed)`, { mods: state.affixes.length, eligible }),
+      odds: exact(p, `P = 1/${eligible} — ${state.affixes.length} mods, ${state.affixes.length - eligible} desecrated can't be fractured; each other mod equally likely`, { "mods on the item": state.affixes.length, "mods it can lock": eligible }),
       restartP: p,
       grade: facts.length > 0 ? "ss" : "vs",
       facts,

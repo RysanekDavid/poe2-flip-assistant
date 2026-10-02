@@ -5,10 +5,15 @@ import { ChevronDown, FlaskConical, RotateCcw, Skull } from "lucide-react";
 import type { ItemStateView, PlanResponse, PlanStepView } from "../../../lib/tools/craftPlannerContract";
 import { ClaimBadge } from "../../ui/ClaimBadge";
 import { ItemArt } from "../../ui/ItemArt";
-import { InfoTip, Tooltip } from "../../ui/Tooltip";
+import { Tooltip } from "../../ui/Tooltip";
 import { claimOf } from "./IssueLine";
 import { bandText, OddsChip } from "./OddsChip";
 import { StepItemPreview } from "./StepItemPreview";
+import { WhyCard } from "./WhyCard";
+
+/** The step's evidence for its grade chip: the sources its instructions name, as readable labels. */
+const stepEvidence = (step: PlanStepView): string =>
+  [...new Set(step.instructions.flatMap((i) => i.sources.map((s) => s.label)))].join("; ") || "The rules behind this step are not all confirmed by game data.";
 
 /**
  * One bench step: the materials as large art, the action written as a target, the why in one line
@@ -57,16 +62,32 @@ function MatArt({ step, plan }: { step: PlanStepView; plan: PlanResponse }) {
 function RetryChip({ ins, stepNo, self }: { ins: Instruction; stepNo: StepCardProps["stepNo"]; self: number }) {
   if (!ins.retryTo) return null;
   const n = stepNo(ins.retryTo.phase);
-  const text = n == null ? `↺ back to ${ins.retryTo.phase}` : n === self ? "↺ repeat this step" : `↺ back to step ${n}`;
+  const text = n == null ? `back to ${ins.retryTo.phase}` : n === self ? "repeat this step" : `back to step ${n}`;
+  const target = n == null || n === self ? null : n;
   return (
-    <Tooltip tip={ins.onFail ?? "a miss sends you back"} align="start">
-      <button type="button" className="inline-flex items-center gap-1 rounded border border-sky-800/60 bg-sky-950/30 px-1.5 py-0.5 text-xs text-sky-200">
+    <Tooltip tip={`${ins.onFail ?? "A miss sends you back."}${target ? " Click to jump there." : ""}`} align="start">
+      <button
+        type="button"
+        onClick={target ? () => jumpToStep(target) : undefined}
+        aria-disabled={target ? undefined : true}
+        className={`inline-flex items-center gap-1 rounded border border-sky-800/60 bg-sky-950/30 px-1.5 py-0.5 text-xs text-sky-200 ${target ? "hover:border-sky-600" : "cursor-default"}`}
+      >
         <RotateCcw aria-hidden className="h-3 w-3" />
         <span className="sr-only">on a miss: </span>
-        {text.replace("↺ ", "")}
+        {text}
       </button>
     </Tooltip>
   );
+}
+
+export const stepAnchor = (n: number): string => `plan-step-${n}`;
+
+/** Scroll the bench to step n and move focus there, so the retry chip is a real jump. */
+function jumpToStep(n: number): void {
+  const el = document.getElementById(stepAnchor(n));
+  if (!el) throw new Error(`planner: step ${n} is not on the bench`);
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  el.focus({ preventScroll: true });
 }
 
 const LONG = 140;
@@ -96,14 +117,14 @@ function Instructions({ step, stepNo, self }: { step: PlanStepView; stepNo: Step
       {first.why && (
         <p className="flex items-start gap-1.5 text-sm text-neutral-400">
           <span className="line-clamp-2 min-w-0 flex-1">{firstSentence(first.why)}</span>
-          <InfoTip tip={first.why} label="why this step" align="end" />
+          <WhyCard ins={first} label="why this step" />
         </p>
       )}
       {rest.length > 0 && (
         <ol className="space-y-1 border-l border-neutral-800 pl-3">
-          {rest.map((ins) => (
-            <li key={ins.do} className="text-sm text-neutral-300">
-              <span>{ins.do}</span> {ins.why && <InfoTip tip={ins.why} label="why" align="end" />} <RetryChip ins={ins} stepNo={stepNo} self={self} />
+          {rest.map((ins, i) => (
+            <li key={i} className="text-sm text-neutral-300">
+              <span>{ins.do}</span> {ins.why && <WhyCard ins={ins} label="why" />} <RetryChip ins={ins} stepNo={stepNo} self={self} />
             </li>
           ))}
         </ol>
@@ -127,7 +148,7 @@ function Chips({ step, plan }: { step: PlanStepView; plan: PlanResponse }) {
           <Skull aria-hidden className="h-3 w-3" /> miss = new base
         </span>
       )}
-      {step.grade !== "vp" && <ClaimBadge claim={claimOf(step.grade, `rules this step rests on: ${step.rules.join(", ")}`)} />}
+      {step.grade !== "vp" && <ClaimBadge claim={claimOf(step.grade, stepEvidence(step))} />}
       {step.unverified && (
         <Tooltip tip={`${step.unverified} Test it on a cheap base first.`} align="start">
           <button type="button" className="inline-flex items-center gap-1 rounded border border-fuchsia-800/60 bg-fuchsia-950/30 px-1.5 py-0.5 text-xs text-fuchsia-200">
@@ -148,7 +169,12 @@ export function StepCard({ step, plan, before, baseArt, stepNo }: StepCardProps)
       <span className="absolute left-0 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-amber-600/60 bg-gradient-to-b from-amber-900/60 to-neutral-950 text-sm font-semibold tabular-nums text-amber-100 shadow-[0_0_0_3px_theme(colors.bg)] md:h-12 md:w-12 md:text-base">
         {self}
       </span>
-      <article aria-label={`step ${self}: ${step.phase}`} className="rounded-lg border border-line bg-surface/70 p-3 md:p-4">
+      <article
+        id={stepAnchor(self)}
+        tabIndex={-1}
+        aria-label={`step ${self}: ${step.phase}`}
+        className="scroll-mt-[calc(var(--shell-h,0px)+1rem)] rounded-lg border border-line bg-surface/70 p-3 outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 md:p-4"
+      >
         <p className="mb-2 truncate text-xs uppercase tracking-wide text-neutral-500" title={step.phase}>
           {step.phase}
         </p>

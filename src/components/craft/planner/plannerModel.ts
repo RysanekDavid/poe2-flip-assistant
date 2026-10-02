@@ -1,4 +1,4 @@
-import type { PlannerCatalog, PlannerPool, PlanRequest } from "../../../lib/tools/craftPlannerContract";
+import type { BandView, PlannerCatalog, PlannerPool, PlanRequest, PlanResponse } from "../../../lib/tools/craftPlannerContract";
 
 /**
  * Pure model of the planner's input item: the base, its slot caps and what the player put in each
@@ -107,6 +107,12 @@ export interface PlannerInput {
   quality: { catalyst: string; pct: number } | null;
 }
 
+/** The quality goal carried to a new base: clamped to its cap, dropped where catalysts don't apply. */
+export function carryQuality(quality: PlannerInput["quality"], qualityCap: number | null): PlannerInput["quality"] {
+  if (!quality || qualityCap == null) return null;
+  return { ...quality, pct: Math.min(quality.pct, qualityCap) };
+}
+
 export function toRequest(input: PlannerInput): PlanRequest {
   return {
     itemClass: input.itemClass,
@@ -124,4 +130,33 @@ export function targetIndex(slots: Slots, side: Side, slot: number): number | nu
   if (list[slot] == null) return null;
   const before = side === "prefix" ? 0 : slots.prefix.filter(Boolean).length;
   return before + list.slice(0, slot).filter(Boolean).length;
+}
+
+export type QtyOverrides = Readonly<Record<string, number>>;
+
+/** The total with every overridden line's contribution replaced by override × unit price. */
+export function adjustedTotal(plan: Pick<PlanResponse, "totals" | "bill">, over: QtyOverrides): BandView | null {
+  const t = plan.totals.div;
+  if (!t) return null;
+  let { point, low, high } = t;
+  for (const line of plan.bill) {
+    const o = over[line.id];
+    if (o == null || line.unitDiv == null || line.totalDiv == null) continue;
+    point += o * line.unitDiv - line.totalDiv.point;
+    low += o * line.unitDiv - line.totalDiv.low;
+    high += o * line.unitDiv - line.totalDiv.high;
+  }
+  return { point: Math.max(0, point), low: Math.max(0, low), high: Math.max(0, high) };
+}
+
+/**
+ * A short stable id of one plan: the request AND the guide's shape (phase titles + step counts),
+ * so a saved run never resumes into a guide the planner has since rewritten.
+ */
+export function planSessionId(req: PlanRequest, guide: Pick<PlanResponse["guide"], "phases">): string {
+  const shape = guide.phases.map((p) => `${p.title}#${p.steps.length}`).join("|");
+  const text = `${JSON.stringify(req)}\n${shape}`;
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0;
+  return `plan-${(h >>> 0).toString(36)}`;
 }

@@ -3,6 +3,7 @@
 import { Minus, Plus, X } from "lucide-react";
 import type { FeasibilityIssueView, PlannerPool } from "../../../lib/tools/craftPlannerContract";
 import { IssueLine } from "./IssueLine";
+import { NumberField } from "./NumberField";
 import { findFamily, tierOf, type CatalogBase, type Side, type SlotPick, type Slots } from "./plannerModel";
 import { ArtBadge, MOD_TONE, Separator, SideChip, TooltipFrame } from "./tooltipParts";
 
@@ -37,18 +38,13 @@ function IlvlStepper({ ilvl, onIlvl }: { ilvl: number; onIlvl: (n: number) => vo
       <button type="button" aria-label="lower item level" className={STEP_BTN} disabled={ilvl <= 1} onClick={() => set(ilvl - 1)}>
         <Minus aria-hidden className="h-3 w-3" />
       </button>
-      <input
-        type="number"
-        inputMode="numeric"
+      <NumberField
+        value={ilvl}
         min={1}
         max={100}
-        value={ilvl}
-        aria-label="item level"
+        onCommit={set}
+        label="item level"
         title="item level gates the tiers the base can roll"
-        onChange={(e) => {
-          const n = Number(e.target.value);
-          if (Number.isInteger(n) && n >= 1 && n <= 100) set(n);
-        }}
         className="h-6 w-12 rounded border border-neutral-700 bg-neutral-950 text-center text-sm tabular-nums text-neutral-100 focus:border-amber-400 focus:outline-none"
       />
       <button type="button" aria-label="raise item level" className={STEP_BTN} disabled={ilvl >= 100} onClick={() => set(ilvl + 1)}>

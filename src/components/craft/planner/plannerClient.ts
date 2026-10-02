@@ -21,15 +21,29 @@ export type Load<T> = { kind: "loading" } | { kind: "error"; error: string } | {
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
+/**
+ * Answers per URL for this page view: the catalog and each base's pool are static between deploys
+ * (the server caches them by catalog sha), so switching back to a base never re-fetches it.
+ */
+const SESSION_CACHE = new Map<string, unknown>();
+
 /** One GET that reports its failure loudly (console + state), never a silent empty view. */
 function useGet<T>(url: string | null, schema: z.ZodType<T>, label: string): Load<T> | null {
   const [state, setState] = useState<{ url: string; load: Load<T> } | null>(null);
   useEffect(() => {
     if (url == null) return;
+    const hit = SESSION_CACHE.get(url);
+    if (hit !== undefined) {
+      setState({ url, load: { kind: "done", data: schema.parse(hit) } });
+      return;
+    }
     let live = true;
     setState({ url, load: { kind: "loading" } });
     requestJson(url, { method: "GET" }, schema)
-      .then((r) => live && setState({ url, load: r.ok ? { kind: "done", data: r.data } : { kind: "error", error: r.error } }))
+      .then((r) => {
+        if (r.ok) SESSION_CACHE.set(url, r.data);
+        if (live) setState({ url, load: r.ok ? { kind: "done", data: r.data } : { kind: "error", error: r.error } });
+      })
       .catch((e: unknown) => {
         console.error(`[planner] ${label} read failed`, e);
         if (live) setState({ url, load: { kind: "error", error: errText(e) } });

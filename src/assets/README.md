@@ -44,10 +44,11 @@ emblem cut the same way, a line in `leagueEmblem.ts` and a line in `components/L
 Time-Lost jewels): 63 files, 2–13 KB each. `npm run sync:base-art` (`src/scripts/syncBaseArt.ts`)
 takes each base's RePoE 0.5.5b `visual_identity.dds_file` from the committed snapshot, fetches
 `https://cdn.poe2db.tw/image/<dds path, .dds → .webp>` once (one request at a time, 400 ms apart,
-descriptive User-Agent), keeps the original webp, and writes the static-import map
+User-Agent with the operator contact), keeps the original webp, and writes the static-import map
 `src/components/craft/planner/baseArtMap.ts`. Downloaded 2026-10-02. Existing files are kept, so a
 re-run fetches only new bases. Distorted Amulet and Twisted Amulet have no file on that CDN (HTTP
-403): they show the class picture (Gold Amulet) until one appears.
+403): they show a neutral box until one appears. The script needs `DATA_SOURCE_CONTACT` (or
+`POE_CONTACT`): its User-Agent carries the operator contact, like every other data request.
 
 ## Owner-supplied art
 

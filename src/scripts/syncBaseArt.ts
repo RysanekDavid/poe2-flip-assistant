@@ -8,6 +8,7 @@
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { config } from "../config/env";
 import { loadCraftCatalog } from "../core/tools/craftmoves/catalog";
 import { plannerCatalog } from "../core/tools/planner/load";
 import { loadSnapshot } from "./repoe/snapshot";
@@ -15,7 +16,12 @@ import { loadSnapshot } from "./repoe/snapshot";
 const ART_DIR = join(process.cwd(), "src", "assets", "items", "bases");
 const MAP_PATH = join(process.cwd(), "src", "components", "craft", "planner", "baseArtMap.ts");
 const CDN = "https://cdn.poe2db.tw/image/";
-const USER_AGENT = "poe2-coach-asset-sync/1.0 (one-time base art download)";
+/** The tool plus the operator contact (AGENTS.md: identify honestly); no contact, no request. */
+function userAgent(): string {
+  const contact = config.dataSourceContact.trim();
+  if (!contact) throw new Error("DATA_SOURCE_CONTACT (or POE_CONTACT) is required to download base art — set it in .env.local");
+  return `poe2-coach-asset-sync/1.0 one-time base art download (+${contact})`;
+}
 const DELAY_MS = 400;
 // a base icon is a few KB; anything far larger is not the icon we asked for
 const MAX_BYTES = 64 * 1024;
@@ -60,10 +66,10 @@ function jobs(): ArtJob[] {
   return out;
 }
 
-/** false when the CDN has no such file (403/404): that base keeps the class art, listed at the end. */
-async function download(dds: string, file: string): Promise<boolean> {
+/** false when the CDN has no such file (403/404): that base shows a neutral box, listed at the end. */
+async function download(dds: string, file: string, ua: string): Promise<boolean> {
   const url = `${CDN}${dds.replace(/\.dds$/, ".webp")}`;
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(30_000) });
+  const res = await fetch(url, { headers: { "User-Agent": ua }, signal: AbortSignal.timeout(30_000) });
   if (res.status === 403 || res.status === 404) {
     console.warn(`[base-art] MISSING ${url} → HTTP ${res.status}`);
     return false;
@@ -102,12 +108,13 @@ async function main(): Promise<void> {
   const list = jobs();
   const pending = new Map(list.filter((j) => !existsSync(join(ART_DIR, j.file))).map((j) => [j.file, j.dds]));
   const missing: string[] = [];
+  const ua = pending.size > 0 ? userAgent() : "";
   for (const [file, dds] of pending) {
-    if (!(await download(dds, file))) missing.push(dds);
+    if (!(await download(dds, file, ua))) missing.push(dds);
     await new Promise((r) => setTimeout(r, DELAY_MS));
   }
   writeMap(list);
-  if (missing.length > 0) console.warn(`[base-art] ${missing.length} art file(s) not on the CDN — those bases show the class art:\n  ${missing.join("\n  ")}`);
+  if (missing.length > 0) console.warn(`[base-art] ${missing.length} art file(s) not on the CDN — those bases show a neutral box:\n  ${missing.join("\n  ")}`);
 }
 
 main().catch((e: unknown) => {

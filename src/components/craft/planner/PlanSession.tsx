@@ -18,13 +18,6 @@ import { qtyText } from "./StepCard";
 
 export const PLAN_SESSION_KEY = "craft-plan-session";
 
-/** A short stable id of a plan request: the saved session belongs to exactly that plan. */
-export function planSessionId(requestJson: string): string {
-  let h = 5381;
-  for (let i = 0; i < requestJson.length; i++) h = ((h << 5) + h + requestJson.charCodeAt(i)) | 0;
-  return `plan-${(h >>> 0).toString(36)}`;
-}
-
 function ShopList({ plan, onStart }: { plan: PlanResponse; onStart: () => void }) {
   const ex = plan.exaltPerDivine ?? 0;
   return (
@@ -75,7 +68,7 @@ interface Props {
 }
 
 export function PlanSession({ plan, sessionId, onClose }: Props) {
-  const { screen, go, reset } = useGuideScreen(PLAN_SESSION_KEY, sessionId);
+  const { screen, go, reset } = useGuideScreen(PLAN_SESSION_KEY, sessionId, plan.guide);
   const ex = plan.exaltPerDivine ?? 0;
   const matInfo: MatInfoFn = (id) => {
     const unit = plan.bill.find((m) => m.id === id)?.unitDiv ?? null;

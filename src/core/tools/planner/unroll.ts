@@ -85,7 +85,7 @@ function stepView(move: Move, index: number, title: string, first: string, scale
     index,
     phase: title,
     method: move.methodId,
-    instructions: move.steps.map((s) => ({ do: s.do, why: s.why, check: s.check, pick: [...s.pick], onFail: s.onFail, retryTo: retryRef(s, title, first) })),
+    instructions: move.steps.map((s) => ({ do: s.do, why: s.why, check: s.check, pick: [...s.pick], onFail: s.onFail, retryTo: retryRef(s, title, first), sources: s.sources.map((r) => ({ ...r })) })),
     odds: move.odds,
     cost: { div: sumTotals(materials), basis: move.costBasis },
     restartP: move.restartP,
