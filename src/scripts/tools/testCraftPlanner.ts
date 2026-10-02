@@ -11,7 +11,8 @@ import { solveChain, type ChainNode } from "../../core/tools/planner/expectation
 import { planCraft, PlanRejectedError, buildCtx } from "../../core/tools/planner/plan";
 import { searchPlan, SearchCappedError } from "../../core/tools/planner/search";
 import { slotIssues } from "../../core/tools/planner/targets";
-import { planRequestSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
+import { plannerCatalog, plannerPool } from "../../core/tools/planner/load";
+import { plannerCatalogSchema, plannerPoolSchema, planRequestSchema, planResponseSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
 import { BREACH_RING, fixturePrices, target } from "./plannerFixtures";
 import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
 import { runPlannerStateCases } from "./craftPlannerStateCases";
@@ -163,7 +164,26 @@ function testContract(): void {
   assert.equal(parsed.targets[0]!.fractured, false);
 }
 
+/** What the planner UI reads: the item after each step, material art, catalog/pool art. */
+function testUiFields(cat: CraftCatalog): void {
+  const icon = (id: string) => `https://web.poecdn.com/gen/image/x/0123456789/${id}.png`;
+  const p = planResponseSchema.parse(planCraft(BREACH_RING, { cat, prices: fixturePrices(), exaltPerDivine: 400, league: "Test", now: NOW, iconOf: icon }));
+  const last = p.steps.at(-1)!.after;
+  const met = new Set(last.affixes.map((a) => a.target).filter((t) => t != null));
+  assert.equal(met.size, BREACH_RING.targets.length, "the last step's item carries every target");
+  assert.ok(p.steps[0]!.after.affixes.some((a) => a.kind === "fractured"), "the anchored base shows its fractured anchor");
+  for (const line of p.bill) assert.equal(p.icons[line.id], icon(line.id), `bill art for ${line.id}`);
+  assert.equal(p.exaltPerDivine, 400);
+  assert.deepEqual(plan(cat, BREACH_RING).icons, {}, "no art source → no icons, never a guess");
+  const catalog = plannerCatalogSchema.parse(plannerCatalog(cat));
+  assert.ok(catalog.catalysts.every((c) => c.icon == null || c.icon.startsWith("https://web.poecdn.com/")), "catalyst art is poecdn (CSP)");
+  const pool = plannerPoolSchema.parse(plannerPool("Rings", "Breach Ring", cat));
+  assert.equal(pool.bone.id, "preserved-collarbone", "rings desecrate with a Collarbone");
+  assert.equal(plannerPoolSchema.parse(plannerPool("Jewels", "Emerald", cat)).bone.id, "preserved-cranium", "jewels with a Cranium");
+}
+
 const cat = loadCraftCatalog();
+testUiFields(cat);
 runGoldenCases(cat);
 testViolations(cat);
 testOddsBasis(cat);
@@ -175,5 +195,5 @@ testContract();
 runPlannerStateCases(cat);
 console.log(
   `ALL PASS — craft-planner: golden plans (Breach mana stacker, fractured-flat res ring, fractured +3 amulet), violations (mod group, caps incl. Dusk/Time-Lost, ilvl gate, one crafted/desecrated, essence table, quality cap, over-cap jewel), ` +
-    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, state/projection cases`,
+    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), state/projection cases`,
 );

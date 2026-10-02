@@ -93,6 +93,12 @@ function stepView(move: Move, index: number, title: string, first: string, scale
     rules: [...move.ruleIds],
     grade: move.grade,
     unverified: move.unverified,
+    after: {
+      rarity: move.next.rarity,
+      quality: move.next.quality,
+      catalyst: move.next.catalyst,
+      affixes: move.next.affixes.map((a) => ({ side: a.side, kind: a.kind, target: a.target, unrevealed: a.unrevealed })),
+    },
   };
 }
 

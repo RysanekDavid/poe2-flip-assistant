@@ -1,10 +1,12 @@
 import { getMaterialPrices } from "../../../db/craftQueries";
-import { ALL_MATERIALS } from "../../craftMaterials";
+import { ALL_MATERIALS, MATS } from "../../craftMaterials";
+import { entityByExchangeId } from "../../entities/load";
 import type { PlanRequest, PlanResponse, PlannerCatalog, PlannerPool } from "../../../lib/tools/craftPlannerContract";
 import { resolveRates } from "../../rates";
 import { comboFor, loadCraftCatalog, type CraftCatalog } from "../craftmoves/catalog";
 import { CATALYSTS } from "./catalystTags";
 import { ESSENCE_OUTCOMES, essencesFor } from "./essenceOutcomes";
+import { BONE } from "./methodsWrite";
 import { planCraft } from "./plan";
 import { factionOf, PLANNER_CLASSES, resolveBase } from "./targets";
 
@@ -18,17 +20,25 @@ export const PLANNER_MATERIAL_IDS: readonly string[] = [
   ...new Set([...ALL_MATERIALS.map((m) => m.id), ...CATALYSTS.map((c) => c.mat.id), ...ESSENCE_OUTCOMES.map((r) => r.essenceId)]),
 ];
 
-function livePrices(league: string): Map<string, number> {
-  const out = new Map<string, number>();
+/** Entity-catalog art (always a poecdn URL the CSP allows); null for a material it lacks. */
+export const catalogIcon = (materialId: string): string | null => entityByExchangeId(materialId)?.icon_url ?? null;
+
+function livePrices(league: string): { prices: Map<string, number>; icons: Map<string, string> } {
+  const prices = new Map<string, number>();
+  const icons = new Map<string, string>();
   for (const [id, p] of getMaterialPrices(league, PLANNER_MATERIAL_IDS)) {
-    if (Number.isFinite(p.priceDiv) && p.priceDiv > 0) out.set(id, p.priceDiv);
+    if (Number.isFinite(p.priceDiv) && p.priceDiv > 0) prices.set(id, p.priceDiv);
+    if (p.icon) icons.set(id, p.icon);
   }
-  return out;
+  return { prices, icons };
 }
 
 export function planForLeague(req: PlanRequest, league: string, now: Date): PlanResponse {
   const rates = resolveRates(league, now.getTime());
-  return planCraft(req, { cat: loadCraftCatalog(), prices: livePrices(league), exaltPerDivine: rates?.rates.exaltPerDivine ?? null, league, now });
+  const live = livePrices(league);
+  // catalog art first: a ninja snapshot icon is only the fallback for a material the catalog lacks
+  const iconOf = (id: string): string | null => catalogIcon(id) ?? live.icons.get(id) ?? null;
+  return planCraft(req, { cat: loadCraftCatalog(), prices: live.prices, exaltPerDivine: rates?.rates.exaltPerDivine ?? null, league, now, iconOf });
 }
 
 export function plannerCatalog(cat: CraftCatalog = loadCraftCatalog()): PlannerCatalog {
@@ -43,7 +53,7 @@ export function plannerCatalog(cat: CraftCatalog = loadCraftCatalog()): PlannerC
       })
       .sort((a, b) => a.name.localeCompare(b.name)),
   }));
-  return { kind: "catalog", classes, catalysts: CATALYSTS.map((c) => ({ id: c.mat.id, label: c.mat.label })) };
+  return { kind: "catalog", classes, catalysts: CATALYSTS.map((c) => ({ id: c.mat.id, label: c.mat.label, icon: catalogIcon(c.mat.id) })) };
 }
 
 const tiersOf = (cat: CraftCatalog, tiers: Record<string, number>) =>
@@ -62,7 +72,7 @@ export function plannerPool(itemClass: PlanRequest["itemClass"], baseName: strin
       source: "natural" as const,
       faction: null,
       tiers: tiersOf(cat, tiers),
-      essences: essences.filter((e) => cat.mods[e.modId]?.family === family && !cat.mods[e.modId]?.craftedOnly).map((e) => ({ id: e.essenceId, label: e.label, modId: e.modId })),
+      essences: essences.filter((e) => cat.mods[e.modId]?.family === family && !cat.mods[e.modId]?.craftedOnly).map((e) => ({ id: e.essenceId, label: e.label, modId: e.modId, icon: catalogIcon(e.essenceId) })),
     })),
   );
   const desecrated = Object.entries(combo.desecrated).map(([family, tiers]) => {
@@ -73,7 +83,17 @@ export function plannerPool(itemClass: PlanRequest["itemClass"], baseName: strin
     .filter((e) => cat.mods[e.modId]?.craftedOnly)
     .map((e) => {
       const mod = cat.mods[e.modId]!;
-      return { family: mod.family, side: mod.side, source: "essence" as const, faction: null, tiers: [{ modId: e.modId, level: mod.level, text: mod.text }], essences: [{ id: e.essenceId, label: e.label, modId: e.modId }] };
+      return { family: mod.family, side: mod.side, source: "essence" as const, faction: null, tiers: [{ modId: e.modId, level: mod.level, text: mod.text }], essences: [{ id: e.essenceId, label: e.label, modId: e.modId, icon: catalogIcon(e.essenceId) }] };
     });
-  return { kind: "pool", itemClass, base: baseName, families: [...natural, ...crafted, ...desecrated], patch: { data: cat.gameDataPatch, repoe: cat.repoeVersion } };
+  const boneKey = BONE[itemClass];
+  if (!boneKey) throw new Error(`planner: no desecration bone for ${itemClass}`);
+  const bone = MATS[boneKey];
+  return {
+    kind: "pool",
+    itemClass,
+    base: baseName,
+    families: [...natural, ...crafted, ...desecrated],
+    bone: { id: bone.id, label: bone.label, icon: catalogIcon(bone.id) },
+    patch: { data: cat.gameDataPatch, repoe: cat.repoeVersion },
+  };
 }

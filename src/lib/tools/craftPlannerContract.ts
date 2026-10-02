@@ -94,6 +94,23 @@ export const instructionSchema = z.object({
   retryTo: retryRefSchema.nullable(),
 });
 
+/** The abstract item after a step: which slots hold a wanted mod (target index) and which hold junk. */
+export const itemStateSchema = z.object({
+  rarity: z.enum(["Normal", "Magic", "Rare"]),
+  quality: z.number().nonnegative(),
+  catalyst: z.string().nullable(),
+  affixes: z.array(
+    z.object({
+      /** "any": a junk mod whose side the plan can't know in advance. */
+      side: z.enum(["prefix", "suffix", "any"]),
+      kind: z.enum(["explicit", "fractured", "crafted", "desecrated"]),
+      target: z.number().int().nonnegative().nullable(),
+      unrevealed: z.boolean(),
+    }),
+  ),
+});
+export type ItemStateView = z.infer<typeof itemStateSchema>;
+
 export const planStepSchema = z.object({
   index: z.number().int().nonnegative(),
   phase: z.string().min(1),
@@ -107,6 +124,7 @@ export const planStepSchema = z.object({
   rules: z.array(z.string()),
   grade: claimVerdictSchema,
   unverified: z.string().nullable(),
+  after: itemStateSchema,
 });
 export type PlanStepView = z.infer<typeof planStepSchema>;
 
@@ -152,6 +170,10 @@ export const planResponseSchema = z.object({
   /** Expected spend without the base; null while any material is unpriced. */
   totals: z.object({ div: bandSchema.nullable(), exalt: bandSchema.nullable(), basis: basisSchema }),
   unpriced: z.array(z.string()),
+  /** null while the exchange rate is not loaded: amounts then show in Divine only. */
+  exaltPerDivine: z.number().positive().nullable(),
+  /** Material id → poecdn art, for every material the plan names. */
+  icons: z.record(z.string(), z.string()),
   patch: z.object({ rules: z.string(), data: z.string(), repoe: z.string(), reverifyAfter: z.string() }),
   rulesStale: z.boolean(),
   expanded: z.number().int().nonnegative(),
@@ -172,7 +194,7 @@ export const plannerCatalogSchema = z.object({
       bases: z.array(z.object({ name: z.string(), implicits: z.array(z.string()), caps: z.object({ p: z.number().int(), s: z.number().int() }), qualityCap: z.number().nullable() })),
     }),
   ),
-  catalysts: z.array(z.object({ id: z.string(), label: z.string() })),
+  catalysts: z.array(z.object({ id: z.string(), label: z.string(), icon: z.string().nullable() })),
 });
 export type PlannerCatalog = z.infer<typeof plannerCatalogSchema>;
 
@@ -187,9 +209,11 @@ export const plannerPoolSchema = z.object({
       source: z.enum(["natural", "essence", "desecrated"]),
       faction: z.enum(["amanamu", "ulaman", "kurgal"]).nullable(),
       tiers: z.array(tierSchema).min(1),
-      essences: z.array(z.object({ id: z.string(), label: z.string(), modId: z.string() })),
+      essences: z.array(z.object({ id: z.string(), label: z.string(), modId: z.string(), icon: z.string().nullable() })),
     }),
   ),
+  /** The bone that desecrates this class: the desecrated-pool badges show its art. */
+  bone: z.object({ id: z.string(), label: z.string(), icon: z.string().nullable() }),
   patch: z.object({ data: z.string(), repoe: z.string() }),
 });
 export type PlannerPool = z.infer<typeof plannerPoolSchema>;

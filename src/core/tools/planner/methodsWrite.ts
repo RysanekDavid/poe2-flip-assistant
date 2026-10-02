@@ -102,7 +102,8 @@ function perfectMove(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, w: Essen
   });
 }
 
-const BONE: Record<string, MaterialKey> = { Rings: "preservedCollarbone", Amulets: "preservedCollarbone", Belts: "preservedCollarbone", Jewels: "preservedCranium" };
+/** The bone that desecrates each planner class (the UI shows its art on desecrated-pool mods). */
+export const BONE: Readonly<Record<string, MaterialKey>> = { Rings: "preservedCollarbone", Amulets: "preservedCollarbone", Belts: "preservedCollarbone", Jewels: "preservedCranium" };
 const TIME_LOST_DESECRATION = "desecrating a Time-Lost jewel: no source names Time-Lost jewels (KB §6)";
 
 interface Desecration {
