@@ -18,6 +18,7 @@ import {
   diskTone,
   formatBytes,
   formatSeconds,
+  leagueListTone,
   tradeTone,
   type Tone,
 } from "./healthTone";
@@ -83,7 +84,18 @@ function tradeChip(gov: SystemHealth["trade2"][number], nowMs: number): { text: 
   return { text: `${Math.round(peak * 100)}%`, title: `busiest window share (shared by web + poller)\n${windows}` };
 }
 
+function leagueListChip(list: SystemHealth["leagueList"]): { text: string; title: string } {
+  const derived = `derived current league: ${list.derivedCurrent ?? "none yet"} (most exchange Divine volume over 24h — not stated by GGG)`;
+  if (list.fetchedAt == null) {
+    return { text: "none", title: `GGG trade2 league list never loaded${list.lastError ? ` — ${list.lastError}` : ""}\n${derived}` };
+  }
+  const age = list.ageSec == null ? "—" : formatSeconds(list.ageSec);
+  const failure = list.lastError ? `\nlast refresh failed ${list.lastErrorAt ?? ""}: ${list.lastError}` : "";
+  return { text: `${list.leagues} · ${age} old`, title: `GGG trade2 league list, fetched ${list.fetchedAt}${failure}\n${derived}` };
+}
+
 function SummaryChips({ health, nowMs }: { health: SystemHealth; nowMs: number }) {
+  const leagues = leagueListChip(health.leagueList);
   const { db, disk } = health;
   const freelistPct = db.pageCount > 0 ? Math.round((db.freelistCount / db.pageCount) * 100) : 0;
   const coach = coachChip(health.coach);
@@ -105,6 +117,9 @@ function SummaryChips({ health, nowMs }: { health: SystemHealth; nowMs: number }
       <Chip label="coach" tone={coachTone(health.coach)} title={coach.title}>
         {coach.text}
       </Chip>
+      <Chip label="leagues" tone={leagueListTone(health.leagueList)} title={leagues.title}>
+        {leagues.text}
+      </Chip>
       {health.trade2.map((gov) => {
         const chip = tradeChip(gov, nowMs);
         return (
@@ -117,7 +132,7 @@ function SummaryChips({ health, nowMs }: { health: SystemHealth; nowMs: number }
   );
 }
 
-/** Owner-only ops view in the Settings tab: poller heartbeats, Coach, DB/disk, trade2 governor. */
+/** Owner-only ops view in the Settings tab: poller heartbeats, Coach, DB/disk, league list, trade2 governor. */
 export function SystemHealthPanel() {
   const { data, hidden, error, reload } = useSystemHealth();
   if (hidden) return null;

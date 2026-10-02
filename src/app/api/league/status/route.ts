@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../auth/session";
+import { deriveLeagueStart } from "../../../../core/leagueDerivation";
 import { getDefaultLeague } from "../../../../core/leagueState";
 import { leagueForUser, ownLeague, sameLeague } from "../../../../core/leagueUsers";
 import { readLeagueState } from "../../../../db/leagueQueries";
@@ -25,12 +26,18 @@ export async function GET(): Promise<Response> {
   const detected = state?.detected_current ?? null;
   const differs = (league: string): boolean => detected != null && !sameLeague(detected, league);
 
+  const startHour = detected == null ? null : deriveLeagueStart(detected);
+
   return NextResponse.json({
     tracked,
     defaultLeague,
     pinned,
+    // Derived, not GGG-stated: GGG's trade2 list has no "current" flag and no dates. `detected`
+    // is the listed softcore challenge league with the most exchange Divine volume over 24h;
+    // `detectedStart` is the first exchange hour it traded in, null when our record starts later.
     detected,
     detectedAt: state?.detected_at ?? null,
+    detectedStart: startHour == null ? null : new Date(startHour * 1000).toISOString(),
     // Only users who FOLLOW the default are told their view is stale — someone deliberately
     // sitting in Standard chose that, and nagging them about it forever is not a warning, it is
     // furniture. They still switch whenever they like from the header dropdown.

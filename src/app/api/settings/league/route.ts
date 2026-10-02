@@ -12,9 +12,10 @@ export const dynamic = "force-dynamic";
  * GET /api/settings/league → this user's league, the app default, what they can switch to, and
  * which leagues the poller actually collects (a just-picked league has no data until it dwells).
  *
- * A scout outage returns an EMPTY `available` plus the reason rather than a 503: the caller is
- * the header dropdown, and losing the whole header because a list could not be refreshed is
- * worse than a disabled picker that says why.
+ * The list is GGG's (trade2 /data/leagues). A failed refresh serves the last good list; only with
+ * nothing cached does this return an EMPTY `available` plus the reason rather than a 503: the
+ * caller is the header dropdown, and losing the whole header because a list could not be loaded
+ * is worse than a disabled picker that says why.
  */
 export async function GET(): Promise<Response> {
   const user = await getCurrentUser();

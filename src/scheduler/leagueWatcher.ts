@@ -1,86 +1,70 @@
 import type Database from "better-sqlite3";
-import { fetchNinjaLeagues } from "../api/ninjaClient";
-import { fetchScoutLeagues } from "../api/scoutClient";
-import type { LeagueOption } from "../api/types";
 import { getDb } from "../db/database";
 import { markLeagueAlerted, readLeagueState, recordLeagueDetection } from "../db/leagueQueries";
 import { fireLeagueAlert } from "../core/leagueAlerts";
-import { clearLeagueListCache } from "../core/leagueSwitch";
+import { deriveCurrentLeague, deriveLeagueStart, type DerivedLeague } from "../core/leagueDerivation";
+import { getLeagueList, type LeagueListSnapshot } from "../core/leagueList";
 import { getDefaultLeague } from "../core/leagueState";
 import { withHeartbeat } from "../core/heartbeat";
 
 /** A new PoE2 league drops a few times a year — 6h is timely without being noise. */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
-/** Permanent/parallel leagues are never "the current challenge league". */
-const PERMANENT = /\b(standard|hardcore|hc|ssf|solo self-?found|ruthless)\b/i;
-
-/** Source name → the league it reports as current (null = it could not tell us). */
+/** Evidence name → what it reported (null = it could not tell us). Stored as league_state.sources_json. */
 export type LeagueReports = Record<string, string | null>;
 
 export interface LeagueDetection {
   reports: LeagueReports;
-  /** The league BOTH sources named, or null when they disagreed or either one failed. */
+  /** The derived current challenge league, or null without evidence. */
   agreed: string | null;
 }
 
-/** The network half, injectable so tests never touch poe.ninja or poe2scout. */
+/**
+ * The two inputs, both from GGG and injectable so tests touch neither the network nor the CX
+ * tables: the trade2 league list (does the league exist?) and our stored exchange activity
+ * (where are players actually trading?).
+ */
 export interface LeagueSources {
-  scout: () => Promise<LeagueOption[]>;
-  ninja: () => Promise<LeagueOption[]>;
+  leagueList: () => Promise<LeagueListSnapshot>;
+  derive: (listed: readonly string[]) => DerivedLeague | null;
+  start: (league: string) => number | null;
 }
 
-const LIVE_SOURCES: LeagueSources = { scout: fetchScoutLeagues, ninja: fetchNinjaLeagues };
+const LIVE_SOURCES: LeagueSources = {
+  leagueList: () => getLeagueList(),
+  derive: (listed) => deriveCurrentLeague(listed),
+  start: (league) => deriveLeagueStart(league),
+};
 
-/** A challenge league is any league that isn't permanent/parallel (Standard, HC, SSF, Ruthless). */
-function isChallengeLeague(name: string): boolean {
-  return name.trim() !== "" && !PERMANENT.test(name);
+function describeList(list: LeagueListSnapshot): string {
+  const age = new Date(list.fetchedAt).toISOString();
+  return `${list.names.length} leagues, fetched ${age}${list.staleReason ? ` (STALE: ${list.staleReason})` : ""}`;
 }
 
-/**
- * poe2scout's reading: every challenge league it flags `IsCurrent`. This is a SET, not one
- * league — live data flags the new league AND the one before it (Forbidden Rites and Runes of
- * Aldur were both IsCurrent in Sep 2026), so scout alone cannot say which is newest.
- */
-export function currentChallengeLeagues(rows: LeagueOption[]): string[] {
-  return [...new Set(rows.filter((r) => r.current === true && isChallengeLeague(r.name)).map((r) => r.name.trim()))];
-}
-
-/**
- * poe.ninja's reading: the FIRST challenge league in the list. ninja exposes no current flag at
- * all (the payload is a flat [{id,name}]), only newest-first ordering, so this is a heuristic
- * and the weaker of the two signals — which is why it never alerts on its own.
- */
-export function pickOrderedLeague(rows: LeagueOption[]): string | null {
-  return rows.find((r) => isChallengeLeague(r.name))?.name.trim() ?? null;
+function describeDerived(derived: DerivedLeague, startHour: number | null): string {
+  const start = startHour == null ? "start before our exchange record" : `first traded ${new Date(startHour * 1000).toISOString()}`;
+  return `${derived.league}: ${Math.round(derived.divineVolume)} Divine over ${derived.hours} digest hour(s), ${start}`;
 }
 
 /**
- * The agreement rule: ninja's ordering PROPOSES the newest league, scout's IsCurrent flag must
- * CONFIRM it is live. Either source failing, or ninja naming a league scout does not flag,
- * means no agreement and no alert. The returned spelling is scout's `Value`, because that is
- * the exact string scoutClient matches leagues on.
+ * Which league is current: GGG's list says it exists, our CX history says it is where the
+ * trading is. Throws only when the list itself is unavailable with nothing cached.
  */
-export function agreeOnLeague(candidate: string | null, confirmed: string[]): string | null {
-  if (candidate == null) return null;
-  return confirmed.find((name) => name.toLowerCase() === candidate.toLowerCase()) ?? null;
-}
-
-/** Ask both sources what the current league is; ninja proposes, scout confirms. */
 export async function detectCurrentLeague(sources: LeagueSources = LIVE_SOURCES): Promise<LeagueDetection> {
-  const [confirmed, candidate] = await Promise.all([
-    askSource(sources.scout, currentChallengeLeagues),
-    askSource(sources.ninja, pickOrderedLeague),
-  ]);
+  const list = await sources.leagueList();
+  const derived = sources.derive(list.names);
   return {
-    reports: { poe2scout: confirmed == null ? null : confirmed.join(" | ") || null, ninja: candidate },
-    agreed: agreeOnLeague(candidate ?? null, confirmed ?? []),
+    reports: {
+      trade2: describeList(list),
+      cxVolume: derived == null ? null : describeDerived(derived, sources.start(derived.league)),
+    },
+    agreed: derived?.league ?? null,
   };
 }
 
 /**
- * One detection pass. Never throws: a source that is down, rate-limited or reshaped must not
- * stall the poller, so the whole network path logs one line and gives up until the next tick.
+ * One detection pass. A list outage with nothing cached is reported (heartbeat + log) and the
+ * pass gives up until the next tick; it never stalls the poller.
  */
 export async function checkLeagueOnce(
   sources: LeagueSources = LIVE_SOURCES,
@@ -95,9 +79,7 @@ export async function checkLeagueOnce(
   }
 
   if (detection.agreed == null) {
-    console.warn(
-      `[league] sources disagree or unavailable — ${JSON.stringify(detection.reports)}; keeping current league`,
-    );
+    console.warn(`[league] no exchange activity for any listed challenge league — ${JSON.stringify(detection.reports)}`);
     return { agreed: null, alerted: false };
   }
 
@@ -111,9 +93,6 @@ export async function checkLeagueOnce(
     return { agreed: detection.agreed, alerted: false };
   }
 
-  // A league nobody has announced before is exactly when the memoized scout league list is
-  // wrong; drop it so the header dropdown offers the new league now, not up to ten minutes later.
-  clearLeagueListCache();
   fireLeagueAlert(
     detection.agreed,
     `New PoE2 league detected: ${detection.agreed} — app is tracking ${tracked}`,
@@ -125,35 +104,38 @@ export async function checkLeagueOnce(
 }
 
 /**
- * Live sources that also report failures — askSource deliberately swallows a dead source, so the
- * heartbeat would otherwise record "ok" while detection is blind.
+ * Live sources that also report a failed or stale list — checkLeagueOnce deliberately survives
+ * them, so the heartbeat would otherwise record "ok" while detection runs on an old list.
  */
-function observedSources(onFailure: (message: string) => void): LeagueSources {
-  const observe =
-    (source: string, fetchLeagues: () => Promise<LeagueOption[]>) => async (): Promise<LeagueOption[]> => {
+function observedSources(onProblem: (message: string) => void): LeagueSources {
+  return {
+    ...LIVE_SOURCES,
+    leagueList: async () => {
       try {
-        return await fetchLeagues();
+        const list = await LIVE_SOURCES.leagueList();
+        if (list.staleReason != null) onProblem(`trade2 leagues stale since ${new Date(list.fetchedAt).toISOString()}: ${list.staleReason}`);
+        return list;
       } catch (err: unknown) {
-        onFailure(`${source}: ${err instanceof Error ? err.message : String(err)}`);
+        onProblem(`trade2 leagues: ${err instanceof Error ? err.message : String(err)}`);
         throw err;
       }
-    };
-  return { scout: observe("poe2scout", LIVE_SOURCES.scout), ninja: observe("poe.ninja", LIVE_SOURCES.ninja) };
+    },
+  };
 }
 
 /** Start the 6h detection loop. Returns a stop handle, like the patch-notes watcher. */
 export function startLeagueWatcher(): () => void {
-  console.log("[league] checking poe.ninja + poe2scout for a new league every 6h");
+  console.log("[league] checking GGG's trade2 league list + exchange activity for the current league every 6h");
   let running = false;
   const run = (): void => {
-    if (running) return; // previous check still draining through the ninja limiter
+    if (running) return;
     running = true;
-    const failures: string[] = [];
-    const sources = observedSources((m) => failures.push(m));
-    const problem = (): string | null => (failures.length > 0 ? `source unavailable — ${failures.join("; ")}` : null);
+    const problems: string[] = [];
+    const sources = observedSources((m) => problems.push(m));
+    const problem = (): string | null => (problems.length > 0 ? problems.join("; ") : null);
     void withHeartbeat("league-watch", "", () => checkLeagueOnce(sources), { problem })
       .catch((err: unknown) => {
-        // checkLeagueOnce swallows source failures itself; anything here is a DB/programming bug.
+        // checkLeagueOnce survives source failures itself; anything here is a DB/programming bug.
         console.error("[league] check failed:", err instanceof Error ? err.message : err);
       })
       .finally(() => {
@@ -163,17 +145,4 @@ export function startLeagueWatcher(): () => void {
   run();
   const timer = setInterval(run, CHECK_INTERVAL_MS);
   return () => clearInterval(timer);
-}
-
-/** One source's answer, or null when it failed — a dead source must not veto the other. */
-async function askSource<T>(
-  fetchLeagues: () => Promise<LeagueOption[]>,
-  pick: (rows: LeagueOption[]) => T,
-): Promise<T | null> {
-  try {
-    return pick(await fetchLeagues());
-  } catch (err) {
-    console.warn(`[league] source unavailable: ${err instanceof Error ? err.message : err}`);
-    return null;
-  }
 }

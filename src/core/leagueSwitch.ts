@@ -1,24 +1,22 @@
-import { fetchScoutLeagues } from "../api/scoutClient";
 import type { UserRole } from "../db/userQueries";
 import { fireLeagueAlert } from "./leagueAlerts";
+import { getLeagueList } from "./leagueList";
 import { getDefaultLeague, setActiveLeague } from "./leagueState";
 import { clearUserLeague, leagueForUser, ownLeague, sameLeague, setUserLeague } from "./leagueUsers";
 import { bootstrapRatesForLeague } from "./rateSync";
-import { baseLeagueName, leagueFirstSeen, registerLeagues } from "../db/leagueQueries";
+import { baseLeagueName, leagueFirstSeen } from "../db/leagueQueries";
 
 /**
  * The two league switches, as functions rather than route bodies: one that moves the CALLER's
  * own view (any member) and one that moves the app default for everyone (owner only).
  *
- * They live here so the rules — scout validation, the bootstrap-rates budget, who may do what —
- * are testable without standing up HTTP and a session cookie. The routes are thin wrappers.
+ * They live here so the rules — validation against GGG's league list, the bootstrap-rates
+ * budget, who may do what — are testable without standing up HTTP and a session cookie. The
+ * routes are thin wrappers.
  */
 
 /** How long a switch waits for bootstrap rates before answering without them. */
 const BOOTSTRAP_BUDGET_MS = 8_000;
-
-/** poe2scout's league list changes at most once a league — an in-process cache is plenty. */
-const LEAGUE_LIST_TTL_MS = 10 * 60_000;
 
 export type SwitchOutcome =
   | { ok: true; league: string; ratesSource: string | null }
@@ -35,23 +33,14 @@ const LIVE_DEPS: SwitchDeps = {
   bootstrap: bootstrapRatesForLeague,
 };
 
-let listCache: { at: number; names: string[] } | null = null;
-
 /**
- * League names poe2scout knows, memoized, in NEWEST-FIRST order. Scout's own list order is
- * arbitrary (Standard mid-list, the second-newest league last), so ordering comes from our
- * league_registry chronology — seeded history plus first-sighting stamps for new leagues.
- * A FAILED fetch is not cached: the dropdown and the validator both depend on this list, and
- * serving an empty one for ten minutes because of a single timeout would look like "your
- * league no longer exists".
+ * League names GGG's trade2 list knows (core/leagueList: shared cache, last good list on a
+ * failed refresh, throws only with nothing cached), in NEWEST-FIRST order. GGG's list carries no
+ * dates, so ordering comes from our league_registry chronology — seeded history plus first-sighting
+ * stamps for new leagues.
  */
 export async function cachedLeagueNames(): Promise<string[]> {
-  if (listCache && Date.now() - listCache.at < LEAGUE_LIST_TTL_MS) return listCache.names;
-  const fetched = (await fetchScoutLeagues()).map((l) => l.name);
-  registerLeagues(fetched);
-  const names = orderNewestFirst(fetched);
-  listCache = { at: Date.now(), names };
-  return names;
+  return orderNewestFirst((await getLeagueList()).names);
 }
 
 /**
@@ -68,24 +57,16 @@ export function orderNewestFirst(
   return [...names].sort((a, b) => stamp(b).localeCompare(stamp(a)));
 }
 
-/**
- * Drop the memoized league list. Called by the league watcher the moment detection agrees on a
- * league nobody has seen before: that is exactly when a ten-minute-old list is wrong, and the
- * header dropdown must offer the new league immediately rather than after the TTL.
- */
-export function clearLeagueListCache(): void {
-  listCache = null;
-}
-
 type Resolved = { league: string } | { error: string; status: 400 | 503 };
 
 /**
- * Canonical scout spelling for the requested league, or a reason we refuse to store it.
+ * GGG's spelling of the requested league, or a reason we refuse to store it.
  *
- * scoutClient matches `Value` CASE-SENSITIVELY, so storing "forbidden rites" would 502 every
- * scout-backed panel until someone re-set it. We store scout's spelling or refuse.
+ * League names reach URLs and SQL as exact values (poe2scout and the exchange digest match them
+ * case-sensitively), so storing "forbidden rites" would empty every panel. We store GGG's
+ * trade2 id or refuse.
  */
-async function resolveAgainstScout(requested: string, deps: SwitchDeps): Promise<Resolved> {
+async function resolveAgainstList(requested: string, deps: SwitchDeps): Promise<Resolved> {
   let known: string[];
   try {
     known = await deps.leagueNames();
@@ -93,14 +74,14 @@ async function resolveAgainstScout(requested: string, deps: SwitchDeps): Promise
     // Fail loud: an unvalidated switch would point every price source at a league that may not
     // exist, and start accumulating market history under a name nothing else will ever match.
     return {
-      error: `could not reach poe2scout to verify the league: ${err instanceof Error ? err.message : String(err)}`,
+      error: `could not load GGG's league list to verify the league: ${err instanceof Error ? err.message : String(err)}`,
       status: 503,
     };
   }
 
   const match = known.find((name) => name.toLowerCase() === requested.toLowerCase());
   if (!match) {
-    return { error: `unknown league "${requested}". poe2scout knows: ${known.join(", ")}`, status: 400 };
+    return { error: `unknown league "${requested}". GGG lists: ${known.join(", ")}`, status: 400 };
   }
   return { league: match };
 }
@@ -159,7 +140,7 @@ export async function switchViewLeague(
     return { ok: true, league: leagueForUser(userId), ratesSource: null };
   }
 
-  const resolved = await resolveAgainstScout(requested, deps);
+  const resolved = await resolveAgainstList(requested, deps);
   if ("error" in resolved) return { ok: false, error: resolved.error, status: resolved.status };
 
   const { league } = setUserLeague(userId, resolved.league);
@@ -183,7 +164,7 @@ export async function switchDefaultLeague(
     return { ok: true, league: current, ratesSource: null };
   }
 
-  const resolved = await resolveAgainstScout(requested, deps);
+  const resolved = await resolveAgainstList(requested, deps);
   if ("error" in resolved) return { ok: false, error: resolved.error, status: resolved.status };
 
   const { league, changed } = setActiveLeague(resolved.league);

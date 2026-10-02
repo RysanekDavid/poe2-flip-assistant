@@ -109,9 +109,15 @@ npm run sync:entities   # entity catalog: item art + game text behind the Coach'
 ### Active league
 
 The tracked PoE2 league resolves as: `app_settings.league` (database, set by the owner in the
-UI) > `LEAGUE_NAME` env > built-in default. A poller job checks poe.ninja and poe2scout every
-six hours; when both sources agree a new challenge league is live, an alert fires and the
-dashboard banner offers the owner a one-click switch — no redeploy or env edit required.
+UI) > `LEAGUE_NAME` env > built-in default. A poller job runs every six hours: the league LIST
+comes from GGG's public trade2 `/data/leagues` (cached 1h and shared by web + poller; a failed
+refresh keeps the last good list and shows its age in System; no list at all fails loudly).
+GGG flags no current league and publishes no dates, so both are **derived** from our stored
+Currency Exchange history: the current league is the listed softcore challenge league with the
+most Divine traded over the last 24h, and its start is the first exchange hour it traded in (when
+our record reaches back that far). When the derived league differs from the tracked one, an alert
+fires and the dashboard banner offers the owner a one-click switch — no redeploy or env edit
+required. poe.ninja and poe2scout are not consulted for leagues.
 `LEAGUE_NAME` is only the cold-start fallback for a fresh database.
 
 Market data is league-scoped, so switching **deletes nothing**: every league keeps its own

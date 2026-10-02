@@ -17,6 +17,8 @@ import {
   upsertCxItemNames,
   type CxMarketRow,
 } from "../../db/cxMarketQueries";
+import { pruneLeagueActivity, recordLeagueActivity } from "../../db/cxActivityQueries";
+import { summarizeLeagueActivity } from "./leagueActivity";
 import { resolveBaseItemNames } from "./repoeNames";
 
 /**
@@ -133,7 +135,8 @@ export interface IngestResult {
 }
 
 /**
- * Store one digest for the given leagues (private ones refused even if asked).
+ * Store one digest for the given leagues (private ones refused even if asked), plus the per-league
+ * activity summary of every public league in it.
  *
  * A league the digest does not list is NOT marked ingested: GGG dropping a league from one
  * hour's payload is indistinguishable from a glitch, and marking it would bake a silent hole
@@ -147,6 +150,9 @@ export function ingestCxDigest(
 ): IngestResult {
   if (digest.markets.length === 0) throw new Error(`digest ${digest.next_change_id} has no markets`);
   const hour = digest.next_change_id;
+  // Every public league's activity, not only the polled ones: the default-league derivation
+  // must see a new league's trading before anyone is polling it.
+  recordLeagueActivity(summarizeLeagueActivity(digest));
   const listed = new Set(cxLeagues(digest));
   const result: IngestResult = { written: {}, absent: [] };
   const all: CxMarketRow[] = [];
@@ -306,5 +312,6 @@ export function pruneCxMarketHistory(nowMs: number = Date.now(), force = false):
   if (!force && nowMs - lastPruneAt < PRUNE_EVERY_MS) return null;
   lastPruneAt = nowMs;
   const cutoff = Math.floor(nowMs / 1000) - config.cx.historyDays * 24 * CX_HOUR_SECONDS;
+  pruneLeagueActivity(cutoff);
   return pruneCxHistory(cutoff);
 }

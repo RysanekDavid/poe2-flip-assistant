@@ -65,6 +65,21 @@ export const tradeGovernorSchema = z.object({
 });
 export type TradeGovernorView = z.infer<typeof tradeGovernorSchema>;
 
+/**
+ * GGG's league list cache (trade2 /data/leagues) and what detection derived from it. `lastError`
+ * newer than `fetchedAt` means the app is serving the last good list, `ageSec` old.
+ */
+export const leagueListHealthSchema = z.object({
+  fetchedAt: z.string().nullable(),
+  ageSec: z.number().nullable(),
+  leagues: z.number().int(),
+  lastError: z.string().nullable(),
+  lastErrorAt: z.string().nullable(),
+  /** Derived (most exchange Divine volume over 24h), not stated by GGG. */
+  derivedCurrent: z.string().nullable(),
+});
+export type LeagueListHealth = z.infer<typeof leagueListHealthSchema>;
+
 export const systemHealthSchema = z.object({
   generatedAt: z.string(),
   build: z.string(),
@@ -73,5 +88,6 @@ export const systemHealthSchema = z.object({
   disk: diskHealthSchema,
   coach: coachSummarySchema,
   trade2: z.array(tradeGovernorSchema),
+  leagueList: leagueListHealthSchema,
 });
 export type SystemHealth = z.infer<typeof systemHealthSchema>;

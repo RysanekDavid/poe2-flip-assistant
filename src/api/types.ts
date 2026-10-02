@@ -49,7 +49,7 @@ export type NinjaResponse = z.infer<typeof NinjaResponseSchema>;
 export interface LeagueOption {
   name: string;
   current: boolean | null;
-  /** Rates poe2scout publishes alongside its league list. Absent from poe.ninja's list. */
+  /** Rates poe2scout publishes on its league rows (rate-bootstrap fallback only). */
   exaltPerDivine?: number | null;
   chaosPerDivine?: number | null;
 }

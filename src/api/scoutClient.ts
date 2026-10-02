@@ -113,8 +113,9 @@ function pickLeague(rows: ScoutLeague[], league: string): ScoutLeague {
 }
 
 /**
- * Map a raw `/{realm}/Leagues` payload to league options. Exported so the detection tests can
- * run the real response shape through the real parser without touching the network.
+ * Map a raw `/{realm}/Leagues` payload to league rows carrying scout's published rates. Used ONLY
+ * as the rate fallback when a just-switched league has no exchange rates yet (core/rateSync) —
+ * the league LIST comes from GGG's trade2 endpoint (api/tradeLeagues), never from here.
  */
 export function parseScoutLeagues(raw: unknown): LeagueOption[] {
   const parsed = ScoutLeaguesSchema.safeParse(raw);
@@ -130,7 +131,7 @@ export function parseScoutLeagues(raw: unknown): LeagueOption[] {
     .filter((l) => l.name !== "");
 }
 
-/** Leagues poe2scout tracks — the scout half of league-switch detection (it DOES flag IsCurrent). */
+/** poe2scout league rows with their rates — the rate-bootstrap fallback, not a league list source. */
 export async function fetchScoutLeagues(): Promise<LeagueOption[]> {
   const rows = await scoutGet(`/${SCOUT_REALM}/Leagues`, ScoutLeaguesSchema);
   return parseScoutLeagues(rows);

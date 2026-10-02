@@ -1,4 +1,7 @@
 import type Database from "better-sqlite3";
+import { CX_CURRENCY_IDS } from "../api/cxClient";
+
+const CX_DIVINE_ID = CX_CURRENCY_IDS.divine;
 
 /**
  * Tables for GGG's currency-exchange market history and the trend-alert state machine.
@@ -13,6 +16,26 @@ export function ensureCxTables(conn: Database.Database): void {
   conn.exec(MARKET_HISTORY_SQL);
   conn.exec(DERIVED_STATE_SQL);
   conn.exec(PRICE_SHADOW_SQL);
+  conn.exec(LEAGUE_ACTIVITY_SQL);
+  seedLeagueActivity(conn);
+}
+
+/**
+ * First boot with the activity table: derive it from the market history already stored, so the
+ * default-league derivation has the polled leagues' recent hours immediately instead of after a
+ * day of fresh digests. Runs only while the table is empty; afterwards every ingest writes it.
+ */
+function seedLeagueActivity(conn: Database.Database): void {
+  const any = conn.prepare("SELECT 1 FROM cx_league_activity LIMIT 1").get();
+  if (any != null) return;
+  conn
+    .prepare(
+      `INSERT OR IGNORE INTO cx_league_activity (league, hour, markets, divine_volume)
+       SELECT league, hour, COUNT(*),
+              SUM(CASE WHEN item_a = @divine THEN volume_a WHEN item_b = @divine THEN volume_b ELSE 0 END)
+       FROM cx_markets GROUP BY league, hour`,
+    )
+    .run({ divine: CX_DIVINE_ID });
 }
 
 const MARKET_HISTORY_SQL = `
@@ -115,4 +138,20 @@ const PRICE_SHADOW_SQL = `
       computed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (league, hour)
     ) WITHOUT ROWID;
+`;
+
+const LEAGUE_ACTIVITY_SQL = `
+    -- Per-league trade activity of EVERY public league in each digest we fetch (not just polled
+    -- ones): the evidence the default-league derivation ranks on (core/leagueDerivation). Tiny —
+    -- a dozen leagues per hour. hour = next_change_id, like cx_markets. divine_volume = Divine
+    -- Orbs traded across the league's markets that have Divine on one side, a unit every league
+    -- shares, unlike summing raw units of different items.
+    CREATE TABLE IF NOT EXISTS cx_league_activity (
+      league TEXT NOT NULL,
+      hour INTEGER NOT NULL,
+      markets INTEGER NOT NULL CHECK (markets >= 0),
+      divine_volume REAL NOT NULL CHECK (divine_volume >= 0),
+      PRIMARY KEY (league, hour)
+    ) WITHOUT ROWID;
+    CREATE INDEX IF NOT EXISTS idx_cx_league_activity_hour ON cx_league_activity(hour);
 `;

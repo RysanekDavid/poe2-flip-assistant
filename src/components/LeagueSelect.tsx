@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LeagueEmblem } from "./LeagueEmblem";
 
-/** GET /api/settings/league. `available` is empty (with a reason) when poe2scout is unreachable. */
+/** GET /api/settings/league. `available` is empty (with a reason) when GGG's league list is unavailable and nothing is cached. */
 interface LeagueSettings {
   league: string;
   default: string;
@@ -29,8 +29,8 @@ export interface LeagueGroups {
 }
 
 /**
- * Bucket for the dropdown's optgroups. Within each bucket the API order is KEPT — poe2scout
- * lists leagues newest-first, and an alphabetical sort would shuffle league history (this put
+ * Bucket for the dropdown's optgroups. Within each bucket the API order is KEPT — the API
+ * orders GGG's leagues newest-first, and an alphabetical sort would shuffle league history (this put
  * Runes of Aldur in the middle of the list once; never again).
  */
 export function groupLeagues(names: readonly string[], current: string): LeagueGroups {
