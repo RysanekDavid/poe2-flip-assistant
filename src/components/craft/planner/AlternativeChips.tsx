@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { ArrowDownRight } from "lucide-react";
 import type { AlternativeView, PlanResponse } from "../../../lib/tools/craftPlannerContract";
 import { fmtDivOrEx } from "../../../lib/format";
@@ -27,11 +30,12 @@ function Chip({ alt, ex, onPick }: { alt: AlternativeView; ex: number; onPick: (
   return (
     <li>
       <Tooltip tip={tip} align="start">
+        {/* aria-disabled, not disabled: a disabled button gets no hover or focus, so its tooltip would be unreachable */}
         <button
           type="button"
-          disabled={!onPick}
+          aria-disabled={!onPick}
           onClick={onPick ? () => onPick(alt) : undefined}
-          className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-amber-400/50 bg-amber-950/30 px-2.5 py-1 text-left text-sm text-amber-100 hover:border-amber-300 hover:bg-amber-900/40 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-amber-400/50 bg-amber-950/30 px-2.5 py-1 text-left text-sm text-amber-100 hover:border-amber-300 hover:bg-amber-900/40 aria-disabled:cursor-not-allowed aria-disabled:opacity-70"
         >
           <ArrowDownRight aria-hidden className="h-3.5 w-3.5 shrink-0 text-amber-300" />
           <span className="min-w-0 break-words">{alternativeLabel(alt)}</span>
@@ -44,15 +48,33 @@ function Chip({ alt, ex, onPick }: { alt: AlternativeView; ex: number; onPick: (
 }
 
 export function AlternativeChips({ plan, onPick }: { plan: PlanResponse; onPick: ((alt: AlternativeView) => void) | null }) {
+  const [error, setError] = useState<string | null>(null);
   if (plan.alternatives.length === 0) return null;
+  // the chip edits the item's slots: if they no longer match what the server costed, say so here
+  const pick = onPick
+    ? (alt: AlternativeView) => {
+        setError(null);
+        try {
+          onPick(alt);
+        } catch (e: unknown) {
+          console.error("planner: applying a cheaper-targets chip failed", e);
+          setError(e instanceof Error ? e.message : String(e));
+        }
+      }
+    : null;
   return (
     <section aria-label="cheaper targets" className="space-y-2 rounded-md border border-amber-400/40 bg-amber-950/20 p-3">
       <p className="text-sm font-medium text-amber-100">Cheaper targets</p>
       <ul className="flex flex-wrap gap-2">
         {plan.alternatives.map((alt) => (
-          <Chip key={alt.changes.map((c) => `${c.kind}:${c.target}`).join("|")} alt={alt} ex={plan.exaltPerDivine ?? 0} onPick={onPick} />
+          <Chip key={alt.changes.map((c) => `${c.kind}:${c.target}`).join("|")} alt={alt} ex={plan.exaltPerDivine ?? 0} onPick={pick} />
         ))}
       </ul>
+      {error && (
+        <p role="alert" className="text-sm text-red-300">
+          That change couldn&apos;t be applied ({error}). Plan the item again, then pick a chip.
+        </p>
+      )}
       {!onPick && <p className="text-xs text-amber-200">You changed the item since this plan — plan it again to use these.</p>}
     </section>
   );
