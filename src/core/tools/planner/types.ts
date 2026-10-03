@@ -159,6 +159,8 @@ export interface Move {
   coreUnknown: boolean;
   /** Visible badge text when any fact under the macro is below "verified". */
   unverified: string | null;
+  /** A miss's repair can remove a target the macro already landed (a steered Annulment on a side of several targets). */
+  undoRisk: boolean;
 }
 
 export interface Method {

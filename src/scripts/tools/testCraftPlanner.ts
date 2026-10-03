@@ -13,9 +13,10 @@ import { searchPlan, SearchCappedError } from "../../core/tools/planner/search";
 import { slotIssues } from "../../core/tools/planner/targets";
 import { plannerCatalog, plannerPool } from "../../core/tools/planner/load";
 import { plannerCatalogSchema, plannerPoolSchema, planRequestSchema, planResponseSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
-import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, fixturePrices, target } from "./plannerFixtures";
+import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, fixturePrices, target } from "./plannerFixtures";
 import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
 import { runPlannerStateCases } from "./craftPlannerStateCases";
+import { runSanityCases } from "./craftPlannerSanityCases";
 
 function rejected(cat: CraftCatalog, req: PlanRequest): PlanRejectedError {
   try {
@@ -198,11 +199,11 @@ function testNoDeveloperReferences(cat: CraftCatalog): void {
   const pick = (side: "prefix" | "suffix", n: number) => Object.entries(combo[side]).slice(0, n).map(([family, tiers]) => target(family, side, Object.keys(tiers)[0]!));
   const jewel: PlanRequest = { itemClass: "Jewels", base: "Sapphire", ilvl: 82, targets: [...pick("suffix", 3), ...pick("prefix", 2)], includeUnverified: true, quality: null };
   const quality: PlanRequest = { ...BREACH_RING, quality: { catalyst: "xophs-catalyst", pct: 40 } };
-  const golden = [BREACH_RING, FRACTURED_T1RES_RING, FRACTURE_PLUS3_AMULET, { ...BREACH_RING, includeUnverified: true }, jewel, quality];
+  const golden = [BREACH_RING, FRACTURED_T1RES_RING, FRACTURE_PLUS3_AMULET, { ...BREACH_RING, includeUnverified: true }, jewel, quality, OWNER_FLAT_RING];
   const shown = golden.flatMap((req) => {
     const p = plan(cat, req);
     // patch/method/rule ids are not shown as prose; everything else is
-    return strings({ steps: p.steps.map((s) => ({ ...s, method: "", rules: [] })), guide: p.guide, feasibility: p.feasibility, targets: p.targets });
+    return strings({ steps: p.steps.map((s) => ({ ...s, method: "", rules: [] })), guide: p.guide, feasibility: p.feasibility, targets: p.targets, alternatives: p.alternatives });
   });
   const refusals = [
     ring("Ruby Ring", 60, [target("FireResistance", "suffix", "FireResist8")]),
@@ -225,7 +226,8 @@ testEssenceTable(cat);
 testLibraryNeverUses();
 testContract();
 runPlannerStateCases(cat);
+runSanityCases(cat);
 console.log(
   `ALL PASS — craft-planner: golden plans (Breach mana stacker, fractured-flat res ring, fractured +3 amulet), violations (mod group, caps incl. Dusk/Time-Lost, ilvl gate, one crafted/desecrated, essence table, quality cap, over-cap jewel), ` +
-    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases`,
+    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases, cost sanity (owner's 13,201-slam ring flagged + cheaper alternatives, partial hits by hand, goldens unflagged)`,
 );

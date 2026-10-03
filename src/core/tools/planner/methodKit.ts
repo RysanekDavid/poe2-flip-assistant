@@ -73,6 +73,7 @@ export interface MoveSpec {
   checks: readonly Check[];
   /** The macro adds a mod: on an over-cap jewel that is unverified (KB §6 b), so its core is unknown. */
   adds?: boolean;
+  undoRisk?: boolean;
 }
 
 const OVER_CAP_FACT = "Adding a mod to an over-cap jewel: whether the other side can still take one is untested.";
@@ -107,6 +108,7 @@ export function makeMove(ctx: PlanCtx, spec: MoveSpec): Move | null {
     grade: coreUnknown ? "uv" : grade,
     coreUnknown,
     unverified: facts.length > 0 ? [...new Set(facts)].join(" · ") : null,
+    undoRisk: spec.undoRisk ?? false,
   };
 }
 
