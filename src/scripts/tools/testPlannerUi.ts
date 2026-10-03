@@ -4,6 +4,8 @@
 import assert from "node:assert/strict";
 import type { PlannerPool, PlanResponse } from "../../lib/tools/craftPlannerContract";
 import { parseStoredScreen, serializeScreen } from "../../components/craft/guideSession";
+import { alternativeLabel, changeText, IMPRACTICAL_CLICKS, severityOf, withAlternative } from "../../components/craft/planner/alternativesModel";
+import type { AlternativeView } from "../../lib/tools/craftPlannerContract";
 import {
   adjustedTotal,
   carryQuality,
@@ -106,6 +108,43 @@ function testSession(): void {
   assert.deepEqual(parseStoredScreen(null, id, 3), { ok: true, screen: null });
 }
 
+const tier = (modId: string, k: number, text: string, level: number) => ({ modId, text, level, k, n: 9 });
+const PHYS9 = tier("AddedPhysicalDamage9", 9, "Adds (12-19) to (22-32) Physical Damage to Attacks", 75);
+const LIGHT9 = tier("AddedLightningDamage9", 9, "Adds (1-4) to (60-71) Lightning damage to Attacks", 75);
+const totals = { div: { point: 668.6, low: 300, high: 1500 }, basis: "estimate" as const };
+
+/** Chip words, the input a chip produces (exactly the targets the server costed), and the banner tone. */
+function testAlternatives(): void {
+  const phys = p("PhysicalDamage", "prefix", PHYS9.modId);
+  const light = p("LightningDamage", "prefix", LIGHT9.modId);
+  const input = { itemClass: "Rings" as const, base: "Breach Ring", ilvl: 82, slots: { prefix: [phys, null, light], suffix: [FIRE, null, null] }, includeUnverified: true, quality: null };
+  const both: AlternativeView = {
+    changes: [
+      { kind: "relax", target: 0, side: "prefix", family: "PhysicalDamage", from: PHYS9, to: tier("AddedPhysicalDamage7", 7, "Adds (7-11) to (14-20) Physical Damage to Attacks", 60) },
+      { kind: "relax", target: 1, side: "prefix", family: "LightningDamage", from: LIGHT9, to: tier("AddedLightningDamage7", 7, "Adds (1-2) to (41-47) Lightning damage to Attacks", 60) },
+    ],
+    targets: [
+      { family: "PhysicalDamage", side: "prefix", minModId: "AddedPhysicalDamage7", fractured: false },
+      { family: "LightningDamage", side: "prefix", minModId: "AddedLightningDamage7", fractured: false },
+      { family: "FireResistance", side: "suffix", minModId: "FireResist7", fractured: false },
+    ],
+    totals,
+    impractical: false,
+  };
+  assert.equal(alternativeLabel(both), "2 prefixes → P7+");
+  assert.equal(changeText(both.changes[1]!), "Adds # to # Lightning damage to Attacks: P9+ → P7+ (Adds (1-2) to (41-47) Lightning damage to Attacks)");
+  const next = withAlternative(input, both);
+  assert.deepEqual(next.slots.prefix.map((x) => x?.minModId ?? null), ["AddedPhysicalDamage7", null, "AddedLightningDamage7"], "each slot keeps its place");
+  const dropTargets = [{ ...both.targets[1]!, minModId: LIGHT9.modId }, both.targets[2]!];
+  const drop: AlternativeView = { changes: [{ kind: "drop", target: 0, side: "prefix", family: "PhysicalDamage", from: PHYS9 }], targets: dropTargets, totals, impractical: true };
+  assert.equal(alternativeLabel(drop), "without Adds # to # Physical Damage to Attacks");
+  assert.deepEqual(toRequest(withAlternative(input, drop)).targets.map((t) => t.minModId), [LIGHT9.modId, "FireResist7"], "a dropped mod leaves its slot empty");
+  assert.throws(() => withAlternative({ ...input, slots: { ...input.slots, prefix: [light, null, phys] } }, both), /no longer holds/, "a chip for another item refuses loudly");
+  const imp = { materialId: "greater-exalted-orb", label: "Greater Exalted Orb", clicks: { point: 13_201, low: 1_830, high: 100_318 }, perClick: 1 / 65, undoRisk: true };
+  assert.equal(severityOf(imp), "red");
+  assert.equal(severityOf({ ...imp, clicks: { point: IMPRACTICAL_CLICKS + 1, low: 600, high: 4000 } }), "amber");
+}
+
 /** readStored over a stub localStorage: a stale step is logged and dropped, a valid one restored. */
 async function testReadStored(): Promise<void> {
   const store = new Map<string, string>();
@@ -132,8 +171,9 @@ async function main(): Promise<void> {
   testText();
   testTotals();
   testSession();
+  testAlternatives();
   await testReadStored();
-  console.log("ALL PASS — planner UI logic: slots/targetIndex/refit, live check, family names, quality carry, catalyst-override total, session id + saved-step guard, readStored");
+  console.log("ALL PASS — planner UI logic: slots/targetIndex/refit, live check, family names, quality carry, catalyst-override total, session id + saved-step guard, cheaper-target chips, readStored");
 }
 
 main().catch((e: unknown) => {

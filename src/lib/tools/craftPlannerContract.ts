@@ -113,6 +113,22 @@ export const itemStateSchema = z.object({
 });
 export type ItemStateView = z.infer<typeof itemStateSchema>;
 
+/**
+ * A step no player would click through: one material's expected uses pass the planner's sanity
+ * limit. The numbers are the same model's — the flag only says them out loud.
+ */
+export const impracticalSchema = z.object({
+  materialId: z.string(),
+  label: z.string(),
+  /** Expected uses of that material on this step, retries included. */
+  clicks: bandSchema,
+  /** The step's headline odds for one click (the mod it aims at), null when unknown. */
+  perClick: prob.nullable(),
+  /** Repairing a miss can remove a mod the step already landed (the main reason such a count explodes). */
+  undoRisk: z.boolean(),
+});
+export type ImpracticalView = z.infer<typeof impracticalSchema>;
+
 export const planStepSchema = z.object({
   index: z.number().int().nonnegative(),
   phase: z.string().min(1),
@@ -127,8 +143,36 @@ export const planStepSchema = z.object({
   grade: claimVerdictSchema,
   unverified: z.string().nullable(),
   after: itemStateSchema,
+  /** Set when the step is not realistic as planned; null otherwise. */
+  impractical: impracticalSchema.nullable(),
 });
 export type PlanStepView = z.infer<typeof planStepSchema>;
+
+/** A tier of one family: k of n counts up from the lowest level, like the picker and the item tooltip. */
+const tierRefSchema = z.object({ modId: z.string(), text: z.string(), level: z.number().int(), k: z.number().int().positive(), n: z.number().int().positive() });
+
+const changeBase = z.object({
+  /** Index into the request's targets. */
+  target: z.number().int().nonnegative(),
+  side: sideSchema,
+  family: z.string(),
+  from: tierRefSchema,
+});
+
+/** One edit to the request: accept a lower minimum tier, or give the mod up. */
+export const targetChangeSchema = z.discriminatedUnion("kind", [changeBase.extend({ kind: z.literal("relax"), to: tierRefSchema }), changeBase.extend({ kind: z.literal("drop") })]);
+export type TargetChangeView = z.infer<typeof targetChangeSchema>;
+
+/** A cheaper version of the request, costed by the same model (never a shortcut estimate). */
+export const alternativeSchema = z.object({
+  changes: z.array(targetChangeSchema).min(1),
+  /** The request's targets with the changes applied: planning them gives exactly these totals. */
+  targets: z.array(targetSpecSchema).min(1),
+  totals: z.object({ div: bandSchema.nullable(), basis: basisSchema }),
+  /** The cheaper plan still has a step past the sanity limit. */
+  impractical: z.boolean(),
+});
+export type AlternativeView = z.infer<typeof alternativeSchema>;
 
 const guideStepSchema = z.object({
   do: z.string(),
@@ -179,6 +223,8 @@ export const planResponseSchema = z.object({
   patch: z.object({ rules: z.string(), data: z.string(), repoe: z.string(), reverifyAfter: z.string() }),
   rulesStale: z.boolean(),
   expanded: z.number().int().nonnegative(),
+  /** Up to 3 cheaper requests, only when a step is impractical; cheapest realistic first. */
+  alternatives: z.array(alternativeSchema).max(3),
 });
 export type PlanResponse = z.infer<typeof planResponseSchema>;
 

@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { ChevronDown, Hammer } from "lucide-react";
-import type { FeasibilityIssueView, PlannerCatalog, PlannerPool } from "../../../lib/tools/craftPlannerContract";
+import type { AlternativeView, FeasibilityIssueView, PlannerCatalog, PlannerPool } from "../../../lib/tools/craftPlannerContract";
 import { useIsPhone } from "../../../lib/useIsPhone";
 import { TAB_ICONS } from "../../shell/tabIcons";
 import { Button } from "../../ui/Button";
 import { PageHeader } from "../../ui/PageHeader";
+import { withAlternative } from "./alternativesModel";
 import { BaseChooser, baseArt } from "./BaseChooser";
 import { FeasibilityLine } from "./FeasibilityLine";
 import { ItemTooltip } from "./ItemTooltip";
@@ -86,6 +87,11 @@ function useBuilder(catalog: PlannerCatalog) {
     check: liveCheck(input.slots, base.caps, input.ilvl, pool),
     qualityLine: input.quality ? `Quality: +${input.quality.pct}% (${catalystLabel})` : null,
     run: () => plan.run(request),
+    applyAlternative: (alt: AlternativeView) => {
+      const next = withAlternative(input, alt);
+      io.setSlots(next.slots);
+      plan.run(toRequest(next));
+    },
   };
 }
 
@@ -190,7 +196,7 @@ function Builder({ catalog }: { catalog: PlannerCatalog }) {
         </div>
         <YourItem b={b} />
       </div>
-      <PlanResult state={b.plan.state} stale={b.stale} baseArt={b.art} onReplan={b.run} />
+      <PlanResult state={b.plan.state} stale={b.stale} baseArt={b.art} onReplan={b.run} onAlternative={b.applyAlternative} />
       <Picker b={b} />
     </>
   );

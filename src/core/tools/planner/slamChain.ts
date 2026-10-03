@@ -149,6 +149,8 @@ export interface Chain {
   first: Aim;
   catalysts: CatalystInfo[];
   annuls: boolean;
+  /** Some Annulment in the chain can remove a target that already landed (progress can be undone). */
+  undoes: boolean;
 }
 
 export function buildChain(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, scale: number): Chain {
@@ -158,6 +160,7 @@ export function buildChain(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: 
   const catalysts: CatalystInfo[] = [];
   let first: Aim | null = null;
   let annuls = false;
+  let undoes = false;
   while (queue.length > 0) {
     const [mask, j] = queue.shift()!;
     const id = nodeId(mask, j);
@@ -176,10 +179,13 @@ export function buildChain(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: 
       nodes.push(built.node);
     } else {
       annuls = true;
-      nodes.push(annulNode(scope, mask, j));
+      const node = annulNode(scope, mask, j);
+      // an edge back to a node with more missing targets = the Annulment took a landed one
+      undoes ||= node.edges.some((e) => parseId(e.to)[0] !== mask);
+      nodes.push(node);
     }
     for (const e of nodes[nodes.length - 1]!.edges) queue.push(parseId(e.to));
   }
   if (!first) throw new Error("planner bug: slam chain never slams");
-  return { nodes, first, catalysts, annuls };
+  return { nodes, first, catalysts, annuls, undoes };
 }

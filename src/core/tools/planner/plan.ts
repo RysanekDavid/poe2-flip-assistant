@@ -1,7 +1,8 @@
 import { RULES_PATCH, RULES_REVERIFY_AFTER, rulesStale } from "../../../lib/tools/craftMovesContract";
 import type { PlanRequest, PlanResponse } from "../../../lib/tools/craftPlannerContract";
 import type { CraftCatalog } from "../craftmoves/catalog";
-import { NoPlanError, searchPlan, SearchCappedError } from "./search";
+import { suggestAlternatives, type Costed } from "./alternatives";
+import { NoPlanError, searchPlan, SearchCappedError, type SearchResult } from "./search";
 import { isFeasible, resolveBase, resolveTargets, type FeasibilityIssue } from "./targets";
 import type { PlanCtx } from "./types";
 import { unrollPlan } from "./unroll";
@@ -76,12 +77,35 @@ function planMaterialIds(out: ReturnType<typeof unrollPlan>, req: PlanRequest): 
   ]);
 }
 
-/** Throws UnknownPlannerBaseError (404) and PlanRejectedError (422, with the graded reasons). */
-export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
+interface Planned extends Costed {
+  issues: FeasibilityIssue[];
+  found: SearchResult;
+}
+
+function planCore(req: PlanRequest, deps: PlanDeps): Planned {
   const { ctx, issues } = buildCtx(req, deps);
   if (!isFeasible(issues)) throw new PlanRejectedError("these targets can't all be on one item", issues);
   const found = search(ctx, issues);
-  const out = unrollPlan(found.moves, ctx, deps.exaltPerDivine);
+  return { ctx, issues, found, out: unrollPlan(found.moves, ctx, deps.exaltPerDivine) };
+}
+
+/** Cheaper target sets, only when some step is past the sanity limit; a candidate with no plan is just not offered. */
+function alternativesFor(req: PlanRequest, deps: PlanDeps, planned: Planned): PlanResponse["alternatives"] {
+  if (!planned.out.steps.some((s) => s.impractical)) return [];
+  return suggestAlternatives(req, planned, (r) => {
+    try {
+      return planCore(r, deps);
+    } catch (e: unknown) {
+      if (e instanceof PlanRejectedError) return null;
+      throw e;
+    }
+  });
+}
+
+/** Throws UnknownPlannerBaseError (404) and PlanRejectedError (422, with the graded reasons). */
+export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
+  const planned = planCore(req, deps);
+  const { ctx, issues, found, out } = planned;
   return {
     kind: "plan",
     league: deps.league,
@@ -98,5 +122,6 @@ export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
     patch: { rules: RULES_PATCH, data: deps.cat.gameDataPatch, repoe: deps.cat.repoeVersion, reverifyAfter: RULES_REVERIFY_AFTER },
     rulesStale: rulesStale(deps.now),
     expanded: found.expanded,
+    alternatives: alternativesFor(req, deps, planned),
   };
 }

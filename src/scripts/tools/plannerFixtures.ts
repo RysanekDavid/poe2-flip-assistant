@@ -109,3 +109,30 @@ export const FRACTURE_PLUS3_AMULET: PlanRequest = {
 };
 
 export { target };
+
+/**
+ * The owner's refused prod plan (2026-10-04): three top-tier flat attack-damage prefixes + Cast Speed
+ * + Rarity on a Breach Ring, "include unverified methods" on. With catalysts unpriced it rebuilds the
+ * prod bill exactly (13,201 Greater Exalted Orbs + Sinistral Exaltations in one prefix chain).
+ */
+export const OWNER_FLAT_RING: PlanRequest = {
+  itemClass: "Rings",
+  base: "Breach Ring",
+  ilvl: 82,
+  targets: [
+    target("PhysicalDamage", "prefix", "AddedPhysicalDamage9"),
+    target("LightningDamage", "prefix", "AddedLightningDamage9"),
+    target("ColdDamage", "prefix", "AddedColdDamage9"),
+    target("IncreasedCastSpeed", "suffix", "CastSpeedJewellery5"),
+    target("ItemFoundRarityIncrease", "suffix", "ItemFoundRarityIncrease3"),
+  ],
+  includeUnverified: true,
+  quality: null,
+};
+
+/** fixturePrices() with every catalyst unpriced: the table that rebuilds the owner's prod route and bill. */
+export function pricesWithoutCatalysts(): Map<string, number> {
+  const out = fixturePrices();
+  for (const c of CATALYSTS) out.delete(c.mat.id);
+  return out;
+}

@@ -3,6 +3,7 @@ import { assertGuideRetryRefs } from "../../craftRetry";
 import type { CraftGuide, GuideStep, RetryRef } from "../../craftRecipes";
 import { combineBasis, mergeUses, scaleBand } from "./expectation";
 import { targetText } from "./methodKit";
+import { impracticalOf } from "./sanity";
 import type { Band, Basis, MaterialUse, Move, PlanCtx, StepText } from "./types";
 
 /**
@@ -99,6 +100,7 @@ function stepView(move: Move, index: number, title: string, first: string, scale
       catalyst: move.next.catalyst,
       affixes: move.next.affixes.map((a) => ({ side: a.side, kind: a.kind, target: a.target, unrevealed: a.unrevealed })),
     },
+    impractical: impracticalOf(move, materials),
   };
 }
 

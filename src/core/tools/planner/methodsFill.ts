@@ -188,6 +188,7 @@ function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVaria
     adds: true,
     facts: v.catalysing ? ["Which mods a catalyst favours is our reading of the catalyst's text.", QUALITY_PER_CATALYST_NOTE] : [],
     checks,
+    undoRisk: chain.undoes,
   });
 }
 

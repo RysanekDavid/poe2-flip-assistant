@@ -85,13 +85,14 @@ export function usePlannerInput(catalog: PlannerCatalog) {
     [],
   );
   const setIlvl = useCallback((ilvl: number) => setInput((cur) => ({ ...cur, ilvl })), []);
+  const setSlots = useCallback((slots: PlannerInput["slots"]) => setInput((cur) => ({ ...cur, slots })), []);
   const setOptions = useCallback((patch: Partial<Pick<PlannerInput, "includeUnverified" | "quality">>) => setInput((cur) => ({ ...cur, ...patch })), []);
   const applyExample = useCallback(
     (ex: PlannerExample) =>
       setInput((cur) => ({ ...cur, itemClass: ex.itemClass, base: ex.base, ilvl: ex.ilvl, quality: null, slots: withPicks(capsOf(catalog, ex.itemClass, ex.base), ex.picks) })),
     [catalog],
   );
-  return { input, pickBase, setSlot, setIlvl, setOptions, applyExample };
+  return { input, pickBase, setSlot, setSlots, setIlvl, setOptions, applyExample };
 }
 
 /** A pick the new base can't carry (another base of the class rolls other families) is dropped. */
