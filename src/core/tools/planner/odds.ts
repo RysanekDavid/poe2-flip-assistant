@@ -146,6 +146,31 @@ export function addOdds(ctx: PlanCtx, state: PlanState, pool: AddPool, targetIdx
 
 const round = (n: number): string => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
+export interface LevelOutcome {
+  side: AffixSide;
+  family: string;
+  /** Modifier level of the rolled tier (what Omen of Whittling compares). */
+  level: number;
+  p: number;
+}
+
+/**
+ * Every (family, tier) one plain random add (no floor, no catalyst) can roll, under the same prior
+ * as addOdds: equal weight per eligible family, equal per reachable tier. Sums to 1 over the pool.
+ */
+export function addLevelOutcomes(ctx: PlanCtx, state: PlanState, sides: readonly AffixSide[]): LevelOutcome[] {
+  const blocked = presentGroups(ctx, state);
+  const families: Array<{ side: AffixSide; family: string; levels: number[] }> = [];
+  for (const side of sides) {
+    for (const family of Object.keys(ctx.combo[side])) {
+      if (familyGroups(ctx, side, family).some((g) => blocked.has(g))) continue;
+      const levels = eligibleTierLevels(ctx, side, family, null);
+      if (levels.length > 0) families.push({ side, family, levels });
+    }
+  }
+  return families.flatMap((f) => f.levels.map((level) => ({ side: f.side, family: f.family, level, p: 1 / families.length / f.levels.length })));
+}
+
 /**
  * Reveal odds at the Well of Souls: three DIFFERENT options (0.3.0 notes); with a faction omen all
  * three come from that faction's pool for the side (theory-gaps round 2 (1), secondary + creators).

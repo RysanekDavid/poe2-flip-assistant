@@ -1,5 +1,5 @@
 /* Craft planner cost sanity: the owner's refused prod plan (three top-tier flat attack prefixes on a
- * Breach Ring) is flagged impractical and offers cheaper target sets costed by the same model; the
+ * Breach Ring) is whittled instead of slammed, its last long step flagged with cheaper target sets costed by the same model; the
  * slam chain keeps partial hits (checked by hand); golden plans stay unflagged. Imported by
  * testCraftPlanner.ts. */
 import assert from "node:assert/strict";
@@ -37,28 +37,41 @@ function assertAlternatives(cat: CraftCatalog, p: PlanResponse, prices: Map<stri
   }
 }
 
-/** Before: 13,201 Greater Exalted Orbs (the prod bill to the unit). After: flagged, with a realistic alternative ~9× cheaper. */
+/**
+ * The owner's ring before the whittle loop (PR #123 prod bill): 13,201 Greater Exalted Orbs +
+ * Sinistral Exaltations + Annulments in one prefix slam chain, 5,834.53 div at these test prices.
+ */
+const OWNER_BEFORE_DIV = 5834.53;
+
+/**
+ * After: the planner whittles the second and third flat prefix instead (a Whittle takes the lowest
+ * level, so landed level-75 flats only go on a tie) — the slam chain is gone and the plan costs
+ * ~3,321 div. The third flat still averages ~2,013 Chaos (level-75 throwaways tie with the two kept
+ * flats), so that step stays flagged, with a realistic alternative.
+ */
 function testOwnerCase(cat: CraftCatalog): void {
   const prices = pricesWithoutCatalysts();
   const p = planWith(cat, OWNER_FLAT_RING, prices);
-  const slam = p.steps.find((s) => s.method === "slam-prefix-exalt-greater");
-  assert.ok(slam, `the prod route: ${p.steps.map((s) => s.method).join(", ")}`);
-  const greater = slam.materials.find((m) => m.id === mat("greaterExalted").id)!;
-  assert.ok(near(greater.qty.point, 13_200.8, 1), `13,201 Greater Exalted Orbs as in prod, got ${greater.qty.point}`);
-  assert.ok(slam.impractical, "the 13,201-slam step is flagged");
-  assert.equal(slam.impractical.materialId, greater.id);
-  assert.ok(near(slam.impractical.perClick!, 1 / 65, 1e-12), "per slam: 1/13 families × 1/5 tiers at the Greater floor");
-  assert.equal(slam.impractical.undoRisk, true, "the Annulment can take a landed prefix");
-  assert.equal(p.steps.filter((s) => s.impractical).length, 1, "only the prefix chain is past the limit");
+  const route = p.steps.map((s) => s.method);
+  assert.ok(!route.includes("slam-prefix-exalt-greater"), `the 13,201-slam chain is gone: ${route.join(", ")}`);
+  assert.equal(route.filter((m) => m === "whittle-loop").length, 3, `two flat prefixes and the rarity are whittled: ${route.join(", ")}`);
+  assert.ok(near(p.totals.div!.point, 3321.38, 0.05), `≈ 3,321 div, got ${p.totals.div!.point}`);
+  assert.ok(p.totals.div!.point * 1.7 < OWNER_BEFORE_DIV, "well under the slam plan");
+  const flagged = p.steps.filter((s) => s.impractical);
+  assert.equal(flagged.length, 1, "only the third flat prefix is past the limit");
+  const imp = flagged[0]!.impractical!;
+  assert.equal(flagged[0]!.method, "whittle-loop");
+  assert.equal(imp.materialId, mat("chaos").id);
+  assert.ok(near(imp.clicks.point, 2013.1, 0.5), `~2,013 Chaos Orbs, got ${imp.clicks.point}`);
+  assert.equal(imp.undoRisk, true, "a level-75 throwaway can tie with a kept flat");
   assertAlternatives(cat, p, prices);
   const best = p.alternatives[0]!;
-  assert.deepEqual(best.changes.map((c) => [c.kind, c.target, c.kind === "relax" ? c.to.k : null]), [["relax", 0, 7], ["relax", 1, 7], ["relax", 2, 7]], "all three flat prefixes to tier 7 of 9");
-  assert.ok(best.totals.div!.point * 5 < p.totals.div!.point, `≥ 5× cheaper: ${best.totals.div!.point} vs ${p.totals.div!.point}`);
-  assert.ok(p.alternatives.some((a) => a.changes.length === 1 && a.changes[0]!.kind === "drop"), "dropping one prefix is offered");
-  // with live catalyst prices the planner catalyses instead — and 16k catalysts are flagged too
+  assert.deepEqual(best.changes.map((c) => [c.kind, c.target]), [["drop", 1]], "leave one flat prefix off");
+  assert.ok(best.totals.div!.point * 4 < p.totals.div!.point, `≥ 4× cheaper: ${best.totals.div!.point} vs ${p.totals.div!.point}`);
+  // with live catalyst prices the catalysed slam still beats whittling — and 16k catalysts are flagged
   const cat2 = planWith(cat, OWNER_FLAT_RING, fixturePrices());
-  const flagged = cat2.steps.filter((s) => s.impractical);
-  assert.ok(flagged.length === 1 && flagged[0]!.impractical!.materialId.endsWith("-catalyst"), "the catalyst count is past the limit");
+  const catFlagged = cat2.steps.filter((s) => s.impractical);
+  assert.ok(catFlagged.length === 1 && catFlagged[0]!.impractical!.materialId.endsWith("-catalyst"), "the catalyst count is past the limit");
   assertAlternatives(cat, cat2, fixturePrices());
 }
 

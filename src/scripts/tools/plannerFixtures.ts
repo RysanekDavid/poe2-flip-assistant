@@ -112,8 +112,9 @@ export { target };
 
 /**
  * The owner's refused prod plan (2026-10-04): three top-tier flat attack-damage prefixes + Cast Speed
- * + Rarity on a Breach Ring, "include unverified methods" on. With catalysts unpriced it rebuilds the
- * prod bill exactly (13,201 Greater Exalted Orbs + Sinistral Exaltations in one prefix chain).
+ * + Rarity on a Breach Ring, "include unverified methods" on. With catalysts unpriced it rebuilt the
+ * prod bill exactly (13,201 Greater Exalted Orbs + Sinistral Exaltations in one prefix chain) until
+ * the whittle loop replaced that chain.
  */
 export const OWNER_FLAT_RING: PlanRequest = {
   itemClass: "Rings",
