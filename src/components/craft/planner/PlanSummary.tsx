@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { ChevronDown, Play } from "lucide-react";
 import { useIsPhone } from "../../../lib/useIsPhone";
-import type { BandView, PlanMaterialView, PlanResponse } from "../../../lib/tools/craftPlannerContract";
+import type { AlternativeView, BandView, PlanMaterialView, PlanResponse } from "../../../lib/tools/craftPlannerContract";
 import { fmtDivOrEx, fmtDivOrExRange } from "../../../lib/format";
 import { Button } from "../../ui/Button";
 import { ItemArt } from "../../ui/ItemArt";
 import { Tooltip } from "../../ui/Tooltip";
+import { AlternativeChips } from "./AlternativeChips";
+import { IMPRACTICAL_CLICKS } from "./alternativesModel";
 import { NumberField } from "./NumberField";
 import { adjustedTotal, type QtyOverrides } from "./plannerModel";
 import { qtyText } from "./StepCard";
@@ -46,8 +48,20 @@ function Total({ plan, total }: { plan: PlanResponse; total: BandView | null }) 
   );
 }
 
+const count = (n: number): string => Math.round(n).toLocaleString("en");
+
+/** A quantity past the sanity limit, with what it means: an average over many tries, not a shopping list. */
+function LargeQty({ line }: { line: PlanMaterialView }) {
+  return (
+    <Tooltip tip={`About ${count(line.qty.point)} on average across many tries (band ${count(line.qty.low)} – ${count(line.qty.high)}) — a step of this plan is not realistic as planned; see its warning.`} align="end">
+      <span className="font-semibold tabular-nums text-red-300">{qtyText(line.qty)}</span>
+    </Tooltip>
+  );
+}
+
 function QtyCell({ line, over, onQty }: { line: PlanMaterialView; over: QtyOverrides; onQty: (id: string, n: number | null) => void }) {
-  if (line.group !== "catalyst") return <span className="tabular-nums text-neutral-300">{qtyText(line.qty)}</span>;
+  // catalyst counts stay an editable assumption, however large
+  if (line.group !== "catalyst") return line.qty.point > IMPRACTICAL_CLICKS ? <LargeQty line={line} /> : <span className="tabular-nums text-neutral-300">{qtyText(line.qty)}</span>;
   const value = over[line.id] ?? Math.round(line.qty.point);
   return (
     <label className="inline-flex items-center gap-1" title="assumption: about 1% quality per catalyst — type what yours take">
@@ -93,15 +107,18 @@ interface Props {
   onRun: () => void;
   /** "Resume (step 3)" when a saved session of this plan exists. */
   runLabel: string;
+  /** Apply a cheaper target set and re-plan; null while the item differs from this plan's request. */
+  onAlternative: ((alt: AlternativeView) => void) | null;
 }
 
-export function PlanSummary({ plan, over, onQty, onRun, runLabel }: Props) {
+export function PlanSummary({ plan, over, onQty, onRun, runLabel, onAlternative }: Props) {
   // on a phone the summary sits above the bench, so the long bill folds away until asked for
   const phone = useIsPhone();
   const [billOpen, setBillOpen] = useState(false);
   return (
     <aside aria-label="plan summary" className="space-y-3 rounded-lg border border-amber-900/50 bg-gradient-to-b from-amber-950/20 to-surface/80 p-4">
       <Total plan={plan} total={adjustedTotal(plan, over)} />
+      <AlternativeChips plan={plan} onPick={onAlternative} />
       <Button variant="primary" className="w-full" onClick={onRun}>
         <Play aria-hidden className="h-4 w-4" /> {runLabel}
       </Button>

@@ -7,6 +7,7 @@ import { ClaimBadge } from "../../ui/ClaimBadge";
 import { ItemArt } from "../../ui/ItemArt";
 import { Tooltip } from "../../ui/Tooltip";
 import { claimOf } from "./IssueLine";
+import { ImpracticalBanner } from "./ImpracticalBanner";
 import { bandText, OddsChip } from "./OddsChip";
 import { StepItemPreview } from "./StepItemPreview";
 import { WhyCard } from "./WhyCard";
@@ -51,7 +52,7 @@ function MatArt({ step, plan }: { step: PlanStepView; plan: PlanResponse }) {
             <span className="flex h-12 w-12 items-center justify-center rounded-md border border-neutral-800 bg-gradient-to-b from-neutral-900 to-neutral-950">
               <ItemArt src={plan.icons[m.id] ?? null} size={12} alt={m.label} />
             </span>
-            <span className="text-xs tabular-nums text-neutral-300">{qtyText(m.qty)}</span>
+            <span className={`text-xs tabular-nums ${m.id === step.impractical?.materialId ? "font-semibold text-red-300" : "text-neutral-300"}`}>{qtyText(m.qty)}</span>
           </li>
         );
       })}
@@ -182,6 +183,7 @@ export function StepCard({ step, plan, before, baseArt, stepNo }: StepCardProps)
           <MatArt step={step} plan={plan} />
           <Instructions step={step} stepNo={stepNo} self={self} />
         </div>
+        {step.impractical && <ImpracticalBanner imp={step.impractical} plan={plan} />}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <Chips step={step} plan={plan} />
           <button type="button" aria-expanded={showItem} onClick={() => setShowItem((v) => !v)} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-white/5 hover:text-neutral-200">
