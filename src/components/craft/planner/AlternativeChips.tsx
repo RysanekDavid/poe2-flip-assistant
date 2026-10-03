@@ -31,7 +31,7 @@ function Chip({ alt, ex, onPick }: { alt: AlternativeView; ex: number; onPick: (
           type="button"
           disabled={!onPick}
           onClick={onPick ? () => onPick(alt) : undefined}
-          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-950/30 px-2.5 py-1 text-left text-sm text-amber-100 hover:border-amber-300 hover:bg-amber-900/40 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-amber-400/50 bg-amber-950/30 px-2.5 py-1 text-left text-sm text-amber-100 hover:border-amber-300 hover:bg-amber-900/40 disabled:cursor-not-allowed disabled:opacity-70"
         >
           <ArrowDownRight aria-hidden className="h-3.5 w-3.5 shrink-0 text-amber-300" />
           <span className="min-w-0 break-words">{alternativeLabel(alt)}</span>
