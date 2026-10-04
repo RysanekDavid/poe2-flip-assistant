@@ -1,8 +1,8 @@
 import { RULES_PATCH, RULES_REVERIFY_AFTER, rulesStale } from "../../../lib/tools/craftMovesContract";
 import type { PlanRequest, PlanResponse } from "../../../lib/tools/craftPlannerContract";
 import type { CraftCatalog } from "../craftmoves/catalog";
-import { suggestAlternatives, type Costed } from "./alternatives";
-import { NoPlanError, searchPlan, SearchCappedError, type SearchResult } from "./search";
+import { suggestAlternatives, type Costed, type Suggested } from "./alternatives";
+import { NoPlanError, searchPlan, SearchCappedError, SearchTimeoutError, SEARCH_CAP, type Deadline, type SearchResult } from "./search";
 import { isFeasible, resolveBase, resolveTargets, type FeasibilityIssue } from "./targets";
 import type { PlanCtx } from "./types";
 import { unrollPlan } from "./unroll";
@@ -22,6 +22,28 @@ export class PlanRejectedError extends Error {
   }
 }
 
+/** The search took longer than the server allows (503: the planner shares the web server's thread). */
+export class PlanTimeoutError extends Error {
+  constructor(readonly elapsedMs: number) {
+    super("Working this plan out took too long, so the planner stopped. Try fewer targets, or a lower minimum tier on the mods you want.");
+    this.name = "PlanTimeoutError";
+  }
+}
+
+/**
+ * Wall-clock limits. The planner is synchronous on the web server's only thread, so a slow plan
+ * stalls every other request: the main search fails loudly past `searchMs`, and the cheaper-target
+ * search stops at `alternativesMs` with what it found (alternativesTruncated).
+ */
+export interface PlanBudget {
+  searchMs: number;
+  alternativesMs: number;
+  now: () => number;
+}
+
+/** What the server route uses. */
+export const SERVER_PLAN_BUDGET: PlanBudget = { searchMs: 3000, alternativesMs: 1200, now: () => performance.now() };
+
 export interface PlanDeps {
   cat: CraftCatalog;
   /** ninja id → Divine per unit (only positive, finite prices). */
@@ -31,7 +53,11 @@ export interface PlanDeps {
   now: Date;
   /** Material id → art URL; materials without art are simply left out. */
   iconOf?: (materialId: string) => string | null;
+  /** Wall-clock limits; absent = none (tests and offline scripts want byte-identical output). */
+  budget?: PlanBudget;
 }
+
+const deadlineIn = (budget: PlanBudget | undefined, ms: (b: PlanBudget) => number): Deadline | null => (budget ? { at: budget.now() + ms(budget), now: budget.now } : null);
 
 function iconsFor(ids: Iterable<string>, iconOf: PlanDeps["iconOf"]): Record<string, string> {
   const out: Record<string, string> = {};
@@ -58,9 +84,9 @@ export function buildCtx(req: PlanRequest, deps: PlanDeps): { ctx: PlanCtx; issu
   return { ctx, issues };
 }
 
-function search(ctx: PlanCtx, issues: FeasibilityIssue[]): ReturnType<typeof searchPlan> {
+function search(ctx: PlanCtx, issues: FeasibilityIssue[], deadline: Deadline | null): ReturnType<typeof searchPlan> {
   try {
-    return searchPlan(ctx);
+    return searchPlan(ctx, () => 0, SEARCH_CAP, deadline);
   } catch (e: unknown) {
     if (e instanceof NoPlanError || e instanceof SearchCappedError) throw new PlanRejectedError(e.message, issues);
     throw e;
@@ -82,30 +108,44 @@ interface Planned extends Costed {
   found: SearchResult;
 }
 
-function planCore(req: PlanRequest, deps: PlanDeps): Planned {
+function planCore(req: PlanRequest, deps: PlanDeps, deadline: Deadline | null): Planned {
   const { ctx, issues } = buildCtx(req, deps);
   if (!isFeasible(issues)) throw new PlanRejectedError("these targets can't all be on one item", issues);
-  const found = search(ctx, issues);
+  const found = search(ctx, issues, deadline);
   return { ctx, issues, found, out: unrollPlan(found.moves, ctx, deps.exaltPerDivine) };
 }
 
 /** Cheaper target sets, only when some step is past the sanity limit; a candidate with no plan is just not offered. */
-function alternativesFor(req: PlanRequest, deps: PlanDeps, planned: Planned): PlanResponse["alternatives"] {
-  if (!planned.out.steps.some((s) => s.impractical)) return [];
-  return suggestAlternatives(req, planned, (r) => {
+function alternativesFor(req: PlanRequest, deps: PlanDeps, planned: Planned): Suggested {
+  if (!planned.out.steps.some((s) => s.impractical)) return { alternatives: [], truncated: false };
+  // one deadline for the whole cheaper-target search: each candidate's search stops at it too
+  const deadline = deadlineIn(deps.budget, (b) => b.alternativesMs);
+  const evaluate = (r: PlanRequest) => {
     try {
-      return planCore(r, deps);
+      return planCore(r, deps, deadline);
     } catch (e: unknown) {
       if (e instanceof PlanRejectedError) return null;
       throw e;
     }
-  });
+  };
+  return suggestAlternatives(req, planned, evaluate, deadline);
 }
 
-/** Throws UnknownPlannerBaseError (404) and PlanRejectedError (422, with the graded reasons). */
+/** The main plan; past the budget it fails loudly instead of holding the server. */
+function planMain(req: PlanRequest, deps: PlanDeps): Planned {
+  try {
+    return planCore(req, deps, deadlineIn(deps.budget, (b) => b.searchMs));
+  } catch (e: unknown) {
+    if (e instanceof SearchTimeoutError) throw new PlanTimeoutError(e.elapsedMs);
+    throw e;
+  }
+}
+
+/** Throws UnknownPlannerBaseError (404), PlanRejectedError (422, with the graded reasons) and PlanTimeoutError (503). */
 export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
-  const planned = planCore(req, deps);
+  const planned = planMain(req, deps);
   const { ctx, issues, found, out } = planned;
+  const alt = alternativesFor(req, deps, planned);
   return {
     kind: "plan",
     league: deps.league,
@@ -122,6 +162,7 @@ export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
     patch: { rules: RULES_PATCH, data: deps.cat.gameDataPatch, repoe: deps.cat.repoeVersion, reverifyAfter: RULES_REVERIFY_AFTER },
     rulesStale: rulesStale(deps.now),
     expanded: found.expanded,
-    alternatives: alternativesFor(req, deps, planned),
+    alternatives: alt.alternatives,
+    alternativesTruncated: alt.truncated,
   };
 }

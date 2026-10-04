@@ -27,6 +27,23 @@ export class SearchCappedError extends Error {
   }
 }
 
+/** A wall-clock limit for one search: the planner runs on the web server's only thread. */
+export interface Deadline {
+  /** Time (from `now`) at which the search gives up. */
+  at: number;
+  now: () => number;
+}
+
+export class SearchTimeoutError extends Error {
+  constructor(
+    readonly elapsedMs: number,
+    readonly expanded: number,
+  ) {
+    super(`the planner gave up after ${Math.round(elapsedMs)} ms (${expanded} item states) — try fewer targets or a lower minimum tier`);
+    this.name = "SearchTimeoutError";
+  }
+}
+
 export class NoPlanError extends Error {
   constructor(includeUnverified: boolean) {
     super(
@@ -121,7 +138,8 @@ function unwind(link: PathLink): Move[] {
 }
 
 /** Cheapest plan from any allowed start to a state where every target (and the quality goal) is met. */
-export function searchPlan(ctx: PlanCtx, baseAsk: (move: Move) => number = () => 0, cap: number = SEARCH_CAP): SearchResult {
+export function searchPlan(ctx: PlanCtx, baseAsk: (move: Move) => number = () => 0, cap: number = SEARCH_CAP, deadline: Deadline | null = null): SearchResult {
+  const started = deadline?.now() ?? 0;
   const heap = new Heap();
   const best = new Map<string, Node>();
   const offer = (n: Node) => {
@@ -140,6 +158,7 @@ export function searchPlan(ctx: PlanCtx, baseAsk: (move: Move) => number = () =>
     if (best.get(node.key) !== node) continue;
     if (allMet(ctx, node.state)) return { moves: unwind(node.path), expanded };
     if (++expanded > cap) throw new SearchCappedError(cap);
+    if (deadline && deadline.now() >= deadline.at) throw new SearchTimeoutError(deadline.now() - started, expanded);
     for (const { move, order } of movesFrom(node.state, ctx)) {
       const sig = sigOf(node.sig, order, move);
       offer({ state: move.next, key: stateKey(move.next), g: nextG(node.g, move, ctx), sig, path: { move, order, prev: node.path } });

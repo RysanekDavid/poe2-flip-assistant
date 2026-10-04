@@ -76,6 +76,7 @@ export function AlternativeChips({ plan, onPick }: { plan: PlanResponse; onPick:
         </p>
       )}
       {!onPick && <p className="text-xs text-amber-200">You changed the item since this plan — plan it again to use these.</p>}
+      {plan.alternativesTruncated && <p className="text-xs text-amber-200">The planner stopped looking to keep things quick — more options may exist.</p>}
     </section>
   );
 }

@@ -225,6 +225,8 @@ export const planResponseSchema = z.object({
   expanded: z.number().int().nonnegative(),
   /** Up to 3 cheaper requests, only when a step is impractical; cheapest realistic first (absent from an older server). */
   alternatives: z.array(alternativeSchema).max(3).default([]),
+  /** The cheaper-target search hit its time budget: more options may exist than these. */
+  alternativesTruncated: z.boolean().default(false),
 });
 export type PlanResponse = z.infer<typeof planResponseSchema>;
 

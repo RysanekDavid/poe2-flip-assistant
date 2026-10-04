@@ -94,9 +94,11 @@ function testOlderServerResponse(cat: CraftCatalog): void {
   const fresh = planCraft(OWNER_FLAT_RING, { cat, prices: fixturePrices(), exaltPerDivine: 250, league: "Test", now: NOW });
   const old = JSON.parse(JSON.stringify(fresh)) as Record<string, unknown> & { steps: Array<Record<string, unknown>> };
   delete old.alternatives;
+  delete old.alternativesTruncated;
   for (const s of old.steps) delete s.impractical;
   const parsed = planResponseSchema.parse(old);
   assert.deepEqual(parsed.alternatives, [], "alternatives default to none");
+  assert.equal(parsed.alternativesTruncated, false, "no truncation flag → not truncated");
   assert.ok(parsed.steps.every((s) => s.impractical === null), "impractical defaults to null");
 }
 

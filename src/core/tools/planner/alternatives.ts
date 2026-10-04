@@ -1,5 +1,5 @@
 import type { AlternativeView, PlanRequest, PlanStepView, TargetChangeView } from "../../../lib/tools/craftPlannerContract";
-import { UNPRICED_RANK_DIV } from "./search";
+import { SearchTimeoutError, UNPRICED_RANK_DIV, type Deadline } from "./search";
 import type { PlanCtx, ResolvedTarget } from "./types";
 import type { Unrolled } from "./unroll";
 
@@ -21,8 +21,14 @@ export interface Costed {
   out: Unrolled;
 }
 
-/** Plan a request; null when there is no plan for it (refused targets, no method, search cap). */
+/** Plan a request; null when there is no plan for it (refused targets, no method, search cap). Throws SearchTimeoutError past the deadline. */
 export type Evaluate = (req: PlanRequest) => Costed | null;
+
+export interface Suggested {
+  alternatives: AlternativeView[];
+  /** The time budget ran out before every candidate was planned: more options may exist. */
+  truncated: boolean;
+}
 
 /** Ranking cost of a plan: priced lines at their price, an unpriced one at the search's stand-in. */
 export function planScore(out: Pick<Unrolled, "bill">): number {
@@ -83,31 +89,49 @@ interface Found {
 /** Realistic first, then cheaper; the key keeps equal plans in a stable order. */
 const better = (a: Found, b: Found): number => Number(a.alt.impractical) - Number(b.alt.impractical) || a.score - b.score || a.key.localeCompare(b.key);
 
-/** Plans candidate changes within the budget and keeps the best one per key. */
+/** Plans candidate changes within the budget (count and wall clock) and keeps the best one per key. */
 class Explorer {
   private budget = ALTERNATIVE_BUDGET;
   readonly best = new Map<string, Found>();
+  /** The deadline passed with candidates left unplanned. */
+  truncated = false;
   constructor(
     private readonly req: PlanRequest,
     private readonly evaluate: Evaluate,
+    private readonly deadline: Deadline | null,
   ) {}
 
   get spent(): boolean {
-    return this.budget <= 0;
+    return this.budget <= 0 || this.truncated;
   }
 
   /** The candidate's result: realistic, still impractical, or null when it has no plan / no budget. */
   attempt(key: string, changes: readonly TargetChangeView[]): Found | null {
     if (this.spent) return null;
+    if (this.deadline && this.deadline.now() >= this.deadline.at) {
+      this.truncated = true;
+      return null;
+    }
     this.budget -= 1;
     const targets = applyChanges(this.req, changes);
-    const got = this.evaluate({ ...this.req, targets });
+    const got = this.planned(targets);
     if (!got) return null;
     const totals = { div: got.out.totals.div, basis: got.out.totals.basis };
     const found: Found = { key, score: planScore(got.out), alt: { changes: [...changes], targets, totals, impractical: isImpractical(got.out) } };
     const prev = this.best.get(key);
     if (!prev || better(found, prev) < 0) this.best.set(key, found);
     return found;
+  }
+
+  private planned(targets: PlanRequest["targets"]): Costed | null {
+    try {
+      return this.evaluate({ ...this.req, targets });
+    } catch (e: unknown) {
+      // out of time mid-search: keep what was found, say that more may exist
+      if (!(e instanceof SearchTimeoutError)) throw e;
+      this.truncated = true;
+      return null;
+    }
   }
 }
 
@@ -136,15 +160,16 @@ function relaxEach(x: Explorer, ctx: PlanCtx, focus: readonly ResolvedTarget[]):
   }
 }
 
-export function suggestAlternatives(req: PlanRequest, base: Costed, evaluate: Evaluate): AlternativeView[] {
+export function suggestAlternatives(req: PlanRequest, base: Costed, evaluate: Evaluate, deadline: Deadline | null = null): Suggested {
   const { ctx } = base;
   const focus = focusTargets(ctx, base.out.steps);
-  const x = new Explorer(req, evaluate);
+  const x = new Explorer(req, evaluate, deadline);
   relaxAll(x, ctx, focus);
   if (req.targets.length > 1) {
     for (const t of focus) x.attempt(`drop:${t.idx}`, [{ kind: "drop", target: t.idx, side: t.side, family: t.family, from: tierRef(ctx, t, t.modId) }]);
   }
   relaxEach(x, ctx, focus);
   const baseScore = planScore(base.out);
-  return [...x.best.values()].filter((f) => f.score < baseScore).sort(better).slice(0, MAX_ALTERNATIVES).map((f) => f.alt);
+  const alternatives = [...x.best.values()].filter((f) => f.score < baseScore).sort(better).slice(0, MAX_ALTERNATIVES).map((f) => f.alt);
+  return { alternatives, truncated: x.truncated };
 }

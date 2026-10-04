@@ -7,7 +7,7 @@ import type { CraftCatalog } from "../../core/tools/craftmoves/catalog";
 import { MAX_ALTERNATIVES } from "../../core/tools/planner/alternatives";
 import { solveChain } from "../../core/tools/planner/expectation";
 import { EXALT_TIERS, mat } from "../../core/tools/planner/methodKit";
-import { buildCtx, planCraft } from "../../core/tools/planner/plan";
+import { buildCtx, planCraft, PlanTimeoutError, type PlanBudget } from "../../core/tools/planner/plan";
 import { IMPRACTICAL_CLICKS } from "../../core/tools/planner/sanity";
 import { buildChain, slamScope } from "../../core/tools/planner/slamChain";
 import { junk } from "../../core/tools/planner/state";
@@ -119,7 +119,28 @@ function testGoldensUnflagged(cat: CraftCatalog): void {
   }
 }
 
+/**
+ * Time budgets (the planner runs on the web server's only thread). A fake clock that ticks 1 ms per
+ * read keeps this deterministic: past the cheaper-target budget the plan still comes back, flagged
+ * as possibly incomplete; past the main budget the request fails loudly with a typed error.
+ */
+function testTimeBudgets(cat: CraftCatalog): void {
+  const ticking = (): PlanBudget["now"] => {
+    let t = 0;
+    return () => t++;
+  };
+  const deps = (budget: PlanBudget) => ({ cat, prices: pricesWithoutCatalysts(), exaltPerDivine: 250, league: "Test", now: NOW, budget });
+  const quick = planResponseSchema.parse(planCraft(OWNER_FLAT_RING, deps({ searchMs: Infinity, alternativesMs: 0, now: ticking() })));
+  assert.equal(quick.alternativesTruncated, true, "out of time for cheaper targets → said so");
+  assert.deepEqual(quick.alternatives, [], "nothing was planned in a zero budget");
+  assert.ok(quick.steps.some((s) => s.impractical), "the plan itself is still returned");
+  assert.throws(() => planCraft(OWNER_FLAT_RING, deps({ searchMs: 25, alternativesMs: Infinity, now: ticking() })), (e: unknown) => e instanceof PlanTimeoutError && !/\bms\b|states/.test(e.message), "past the main budget: a typed error in plain words");
+  const unlimited = planWith(cat, OWNER_FLAT_RING, pricesWithoutCatalysts());
+  assert.equal(unlimited.alternativesTruncated, false, "no budget → every candidate planned");
+}
+
 export function runSanityCases(cat: CraftCatalog): void {
+  testTimeBudgets(cat);
   testOwnerCase(cat);
   testPartialHitsByHand(cat);
   testGoldensUnflagged(cat);

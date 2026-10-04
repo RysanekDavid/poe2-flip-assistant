@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "../../../../../auth/session";
 import { getDefaultLeague } from "../../../../../core/leagueState";
 import { planForLeague } from "../../../../../core/tools/planner/load";
-import { PlanRejectedError } from "../../../../../core/tools/planner/plan";
+import { PlanRejectedError, PlanTimeoutError } from "../../../../../core/tools/planner/plan";
 import { UnknownPlannerBaseError } from "../../../../../core/tools/planner/targets";
 import { planRejectedSchema, planRequestSchema, planResponseSchema, type PlanRequest, type PlanResponse } from "../../../../../lib/tools/craftPlannerContract";
 import { createTtlCache } from "../../../../../lib/ttlCache";
@@ -30,7 +30,7 @@ async function readBody(req: Request): Promise<{ ok: true; body: unknown } | { o
  * quality } → an ordered plan written as targets, per-step odds with their basis, the expected
  * materials bill at live ninja prices, and the CraftGuide the session wizard runs. Spends NO trade2
  * budget. 400 bad body · 401 · 404 unknown base · 422 targets that can't coexist (graded reasons)
- * or no plan with the admitted methods.
+ * or no plan with the admitted methods · 503 the search ran past its time budget.
  *
  * League: the default league, like the other craft tools — the prices must come from the economy
  * the later value step searches.
@@ -50,6 +50,8 @@ export async function POST(req: Request): Promise<Response> {
   } catch (e: unknown) {
     if (e instanceof UnknownPlannerBaseError) return NextResponse.json({ error: e.message }, { status: 404 });
     if (e instanceof PlanRejectedError) return NextResponse.json(planRejectedSchema.parse({ error: e.message, feasibility: e.issues }), { status: 422 });
+    // the planner runs on the server's only thread, so a plan past its time budget is refused
+    if (e instanceof PlanTimeoutError) return NextResponse.json({ error: e.message }, { status: 503 });
     throw e;
   }
 }
