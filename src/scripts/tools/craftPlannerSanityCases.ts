@@ -70,6 +70,7 @@ function testOwnerCase(cat: CraftCatalog): void {
   assert.ok(best.totals.div!.point * 4 < p.totals.div!.point, `≥ 4× cheaper: ${best.totals.div!.point} vs ${p.totals.div!.point}`);
   // with live catalyst prices the catalysed slam still beats whittling — and 16k catalysts are flagged
   const cat2 = planWith(cat, OWNER_FLAT_RING, fixturePrices());
+  assert.ok(cat2.steps.some((s) => s.materials.some((m) => m.id === "reaver-catalyst")), "one Reaver Catalyst biases all three attack flats");
   const catFlagged = cat2.steps.filter((s) => s.impractical);
   assert.ok(catFlagged.length === 1 && catFlagged[0]!.impractical!.materialId.endsWith("-catalyst"), "the catalyst count is past the limit");
   assertAlternatives(cat, cat2, fixturePrices());
@@ -139,7 +140,33 @@ function testTimeBudgets(cat: CraftCatalog): void {
   assert.equal(unlimited.alternativesTruncated, false, "no budget → every candidate planned");
 }
 
+/**
+ * Market reality (owner, 2026-10-04): rings with three near-top "to Attacks" flats and all-res sell
+ * routinely. Every flat carries the "attack" tag, so one Reaver Catalyst biases all three at once;
+ * planning each flat under its own element catalyst made the prod-like ring ~1,941 div.
+ */
+function testMarketReality(cat: CraftCatalog): void {
+  const allRes = target("AllResistances", "suffix", "AllResistances5");
+  const ring = (tier: number): PlanRequest => ({
+    itemClass: "Rings",
+    base: "Breach Ring",
+    ilvl: 82,
+    includeUnverified: false,
+    quality: null,
+    targets: [target("ColdDamage", "prefix", `AddedColdDamage${tier}`), target("LightningDamage", "prefix", `AddedLightningDamage${tier}`), target("PhysicalDamage", "prefix", `AddedPhysicalDamage${tier}`), allRes],
+  });
+  const reaver = (p: PlanResponse) => p.steps.find((s) => s.method === "slam-prefix-exalt-perfect-catalysing")?.materials.some((m) => m.id === "reaver-catalyst") ?? false;
+  const t8 = planWith(cat, ring(8), fixturePrices());
+  assert.ok(reaver(t8), `the prefix slams aim with the Reaver Catalyst: ${t8.steps.map((s) => s.method).join(", ")}`);
+  assert.ok(t8.totals.div!.point < 400, `three T8 flats + all-res costs low hundreds, got ${t8.totals.div!.point}`);
+  const t9 = planWith(cat, ring(9), fixturePrices());
+  assert.ok(reaver(t9) && t9.totals.div!.point < 1700, `three T9 flats: Reaver, under 1,700 div (was 1,941 with a catalyst per flat), got ${t9.totals.div!.point}`);
+  const best = t9.alternatives[0]!;
+  assert.ok(best.changes.length === 3 && best.changes.every((c) => c.kind === "relax") && best.totals.div!.point < 150, `cheapest realistic chip: all three flats a tier set lower, ${best.totals.div!.point} div`);
+}
+
 export function runSanityCases(cat: CraftCatalog): void {
+  testMarketReality(cat);
   testTimeBudgets(cat);
   testOwnerCase(cat);
   testPartialHitsByHand(cat);

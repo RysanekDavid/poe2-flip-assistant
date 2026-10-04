@@ -1,5 +1,5 @@
 import type { AffixSide } from "../craftmoves/catalog";
-import { catalystFor, QUALITY_PER_CATALYST, type CatalystInfo } from "./catalystTags";
+import { CATALYSTS, matchesCatalyst, QUALITY_PER_CATALYST, type CatalystInfo } from "./catalystTags";
 import type { ChainNode } from "./expectation";
 import { mat, sideOmen, type CurrencyTier } from "./methodKit";
 import { addOdds } from "./odds";
@@ -75,19 +75,23 @@ interface Aim {
   est: Estimate;
 }
 
-/** Aim at the missing target with the best odds under its own catalyst (ties: lowest index). */
+/**
+ * The catalyst for this slam: the one that makes ANY missing target most likely (a Reaver Catalyst
+ * favours every "to Attacks" flat at once, where an element catalyst favours one), ties to table
+ * order. The headline odds are the best single target's under it (ties: lowest index).
+ */
 function aimOf(ctx: PlanCtx, scope: SlamScope, mask: number, j: number, v: SlamVariant, at: PlanState): Aim {
   const idx = bits(mask, scope.chain.length).map((i) => scope.chain[i]!.idx);
   const quality = ctx.base.qualityCap ?? 0;
   // the side's junk (fractured anchor included) blocks one family of unknown identity each
   const junkAfter = at.affixes.filter((a) => a.side === scope.side && isJunk(a) && a.kind !== "desecrated").length;
-  let best: { aim: Aim; p: number } | null = null;
-  for (const id of idx) {
-    const catalyst = v.catalysing ? catalystFor(ctx.targets[id]!.tags) : null;
-    if (v.catalysing && !catalyst) continue;
+  const options = v.catalysing ? CATALYSTS.filter((c) => idx.some((id) => matchesCatalyst(c, ctx.targets[id]!.tags))) : [null];
+  let best: { aim: Aim; progress: number } | null = null;
+  for (const catalyst of options) {
     const odds = addOdds(ctx, at, { sides: [scope.side], floor: v.tier.floor, catalyst, quality, junkAfter }, idx);
-    const p = odds.p.get(id) ?? 0;
-    if (p > 0 && (!best || p > best.p)) best = { aim: { p: odds.p, catalyst, est: odds.estimate(id) }, p };
+    const progress = idx.reduce((sum, id) => sum + (odds.p.get(id) ?? 0), 0);
+    const top = idx.reduce<number | null>((b, id) => ((odds.p.get(id) ?? 0) > (b == null ? 0 : odds.p.get(b)!) ? id : b), null);
+    if (top != null && (!best || progress > best.progress)) best = { aim: { p: odds.p, catalyst, est: odds.estimate(top) }, progress };
   }
   if (!best) throw new NoAimError();
   return best.aim;
