@@ -20,7 +20,8 @@ const TONE = {
 export function ImpracticalBanner({ imp, plan }: { imp: ImpracticalView; plan: PlanResponse }) {
   const tone = severityOf(imp);
   const odds = imp.perClick != null && imp.perClick > 0 ? `Each try lands the mod it aims at about ${oneIn(imp.perClick)}` : "Each try is a long shot";
-  const undo = imp.undoRisk ? ", and the Annulment that clears a miss can take a mod you already landed — so the count snowballs" : "";
+  // worded for every repair that can undo progress: a slam's Annulment, a Whittle on a tie
+  const undo = imp.undoRisk ? ", and clearing a miss can also remove a mod you already landed — so the count snowballs" : "";
   const next = plan.alternatives.length > 0 ? "The summary lists cheaper targets — one click re-plans." : "Lower a minimum tier or leave a mod off to bring it down.";
   return (
     <div role="alert" className={`mt-3 flex items-start gap-3 rounded-md border p-3 ${TONE[tone]}`}>
