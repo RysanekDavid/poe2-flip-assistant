@@ -7,6 +7,7 @@ import { addOdds, catalysingMultiplier } from "./odds";
 import { buildChain, NoAimError, slamScope, stateAt, type Chain, type SlamScope, type SlamVariant } from "./slamChain";
 import { isJunk, openOf, present, removable, SIDES, targetAffix, withAffixes, without } from "./state";
 import type { MaterialUse, Method, Move, PlanCtx, PlanState, StepText } from "./types";
+import { whittleLoop } from "./methodsWhittle";
 
 /**
  * Random adds: the anchored Chaos loop (one removable mod → every Chaos swaps exactly it) and the
@@ -213,5 +214,6 @@ function slamFill(state: PlanState, ctx: PlanCtx): Move[] {
 export const FILL_METHODS: readonly Method[] = [
   { id: "chaos-loop", order: 30, moves: chaosLoop },
   { id: "erasure-loop", order: 31, moves: erasureLoop },
+  { id: "whittle-loop", order: 32, moves: whittleLoop },
   { id: "slam-fill", order: 70, moves: slamFill },
 ];

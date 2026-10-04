@@ -42,24 +42,40 @@ export function mergeUses(uses: readonly MaterialUse[]): MaterialUse[] {
   return [...out.values()];
 }
 
-/** Solve A·X = B (n×n, n×k) with partial pivoting; throws on a singular system (a planner bug). */
-export function solveLinear(a: number[][], b: number[][]): number[][] {
-  const n = a.length;
-  const m = a.map((row, i) => [...row, ...b[i]!]);
+/**
+ * Solve the augmented rows [A | B] (n×n, n×k) in place by Gaussian elimination with partial pivoting
+ * and back substitution; throws on a singular system (a planner bug). Typed rows: the whittle chains
+ * reach a few hundred states, and this loop is the planner's hot spot.
+ */
+function solveAugmented(m: Float64Array[], n: number): number[][] {
   const width = m[0]?.length ?? 0;
   for (let col = 0; col < n; col++) {
     let pivot = col;
     for (let r = col + 1; r < n; r++) if (Math.abs(m[r]![col]!) > Math.abs(m[pivot]![col]!)) pivot = r;
     if (Math.abs(m[pivot]![col]!) < 1e-12) throw new Error("planner bug: the retry chain has no way to finish (singular system)");
     [m[col], m[pivot]] = [m[pivot]!, m[col]!];
-    for (let r = 0; r < n; r++) {
-      if (r === col) continue;
-      const f = m[r]![col]! / m[col]![col]!;
+    const top = m[col]!;
+    // retry chains are sparse: only the pivot row's nonzero columns change anything
+    const nz: number[] = [];
+    for (let c = col; c < width; c++) if (top[c] !== 0) nz.push(c);
+    for (let r = col + 1; r < n; r++) {
+      const row = m[r]!;
+      const f = row[col]! / top[col]!;
       if (f === 0) continue;
-      for (let c = col; c < width; c++) m[r]![c] = m[r]![c]! - f * m[col]![c]!;
+      for (const c of nz) row[c] = row[c]! - f * top[c]!;
     }
   }
-  return m.map((row, i) => row.slice(n).map((v) => v / row[i]!));
+  const k = width - n;
+  const x = Array.from({ length: n }, () => new Array<number>(k).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    const row = m[i]!;
+    for (let j = 0; j < k; j++) {
+      let s = row[n + j]!;
+      for (let c = i + 1; c < n; c++) s -= row[c]! * x[c]![j]!;
+      x[i]![j] = s / row[i]!;
+    }
+  }
+  return x;
 }
 
 export interface ChainNode {
@@ -75,17 +91,19 @@ export function solveChain(nodes: readonly ChainNode[], start: string, materials
   const live = nodes.filter((n) => !n.terminal);
   const index = new Map(live.map((n, i) => [n.id, i]));
   if (!index.has(start)) return Object.fromEntries(materials.map((m) => [m, 0]));
-  const a = live.map((n, i) => {
-    const row = live.map(() => 0);
+  const n = live.length;
+  // row i: x_i − Σ p·x_next = cost_i (terminal nodes drop out: their x is 0)
+  const rows = live.map((node, i) => {
+    const row = new Float64Array(n + materials.length);
     row[i] = 1;
-    for (const e of n.edges) {
+    for (const e of node.edges) {
       const j = index.get(e.to);
       if (j != null) row[j] = row[j]! - e.p;
     }
+    materials.forEach((m, k) => (row[n + k] = node.cost[m] ?? 0));
     return row;
   });
-  const b = live.map((n) => materials.map((m) => n.cost[m] ?? 0));
-  const x = solveLinear(a, b);
+  const x = solveAugmented(rows, n);
   const row = x[index.get(start)!]!;
   return Object.fromEntries(materials.map((m, k) => [m, row[k]!]));
 }

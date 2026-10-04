@@ -143,8 +143,8 @@ export const planStepSchema = z.object({
   grade: claimVerdictSchema,
   unverified: z.string().nullable(),
   after: itemStateSchema,
-  /** Set when the step is not realistic as planned; null otherwise. */
-  impractical: impracticalSchema.nullable(),
+  /** Set when the step is not realistic as planned; null otherwise (absent from a server older than the flag). */
+  impractical: impracticalSchema.nullable().default(null),
 });
 export type PlanStepView = z.infer<typeof planStepSchema>;
 
@@ -223,8 +223,10 @@ export const planResponseSchema = z.object({
   patch: z.object({ rules: z.string(), data: z.string(), repoe: z.string(), reverifyAfter: z.string() }),
   rulesStale: z.boolean(),
   expanded: z.number().int().nonnegative(),
-  /** Up to 3 cheaper requests, only when a step is impractical; cheapest realistic first. */
-  alternatives: z.array(alternativeSchema).max(3),
+  /** Up to 3 cheaper requests, only when a step is impractical; cheapest realistic first (absent from an older server). */
+  alternatives: z.array(alternativeSchema).max(3).default([]),
+  /** The cheaper-target search hit its time budget: more options may exist than these. */
+  alternativesTruncated: z.boolean().default(false),
 });
 export type PlanResponse = z.infer<typeof planResponseSchema>;
 
