@@ -16,6 +16,8 @@ export class PlanRejectedError extends Error {
   constructor(
     message: string,
     readonly issues: FeasibilityIssue[],
+    /** Set when the search hit its state cap: the targets may still have a plan the planner didn't reach. */
+    readonly capped: SearchCappedError | null = null,
   ) {
     super(message);
     this.name = "PlanRejectedError";
@@ -88,7 +90,8 @@ function search(ctx: PlanCtx, issues: FeasibilityIssue[], deadline: Deadline | n
   try {
     return searchPlan(ctx, () => 0, SEARCH_CAP, deadline);
   } catch (e: unknown) {
-    if (e instanceof NoPlanError || e instanceof SearchCappedError) throw new PlanRejectedError(e.message, issues);
+    if (e instanceof NoPlanError) throw new PlanRejectedError(e.message, issues);
+    if (e instanceof SearchCappedError) throw new PlanRejectedError(e.message, issues, e);
     throw e;
   }
 }
@@ -124,6 +127,8 @@ function alternativesFor(req: PlanRequest, deps: PlanDeps, planned: Planned): Su
     try {
       return planCore(r, deps, deadline);
     } catch (e: unknown) {
+      // a capped candidate was not shown to have no plan: the explorer marks the list incomplete
+      if (e instanceof PlanRejectedError && e.capped) throw e.capped;
       if (e instanceof PlanRejectedError) return null;
       throw e;
     }

@@ -5,14 +5,15 @@ import { getDefaultLeague } from "../../../../../core/leagueState";
 import { planForLeague } from "../../../../../core/tools/planner/load";
 import { PlanRejectedError, PlanTimeoutError } from "../../../../../core/tools/planner/plan";
 import { UnknownPlannerBaseError } from "../../../../../core/tools/planner/targets";
-import { planRejectedSchema, planRequestSchema, planResponseSchema, type PlanRequest, type PlanResponse } from "../../../../../lib/tools/craftPlannerContract";
-import { createTtlCache } from "../../../../../lib/ttlCache";
+import { planRejectedSchema, planRequestSchema, planResponseSchema, type PlanRequest } from "../../../../../lib/tools/craftPlannerContract";
+import { createPlanCache } from "../../../../../core/tools/planner/planCache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// plans are pure given league prices, which the poller refreshes hourly: 10 minutes is fresh enough
-const PLAN_CACHE = createTtlCache<PlanResponse>(10 * 60_000, 64);
+// plans are pure given league prices, which the poller refreshes hourly: 10 minutes is fresh enough;
+// a timed-out request is refused again for 45 s instead of stalling the server again
+const PLAN_CACHE = createPlanCache({ planTtlMs: 10 * 60_000, timeoutTtlMs: 45_000, maxEntries: 64 });
 
 const keyOf = (league: string, req: PlanRequest): string => `${league}|${createHash("sha256").update(JSON.stringify(req)).digest("hex")}`;
 

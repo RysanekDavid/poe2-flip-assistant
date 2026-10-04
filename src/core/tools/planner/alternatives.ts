@@ -1,5 +1,5 @@
 import type { AlternativeView, PlanRequest, PlanStepView, TargetChangeView } from "../../../lib/tools/craftPlannerContract";
-import { SearchTimeoutError, UNPRICED_RANK_DIV, type Deadline } from "./search";
+import { SearchCappedError, SearchTimeoutError, UNPRICED_RANK_DIV, type Deadline } from "./search";
 import type { PlanCtx, ResolvedTarget } from "./types";
 import type { Unrolled } from "./unroll";
 
@@ -21,12 +21,12 @@ export interface Costed {
   out: Unrolled;
 }
 
-/** Plan a request; null when there is no plan for it (refused targets, no method, search cap). Throws SearchTimeoutError past the deadline. */
+/** Plan a request; null when it has no plan (refused targets, no method). Throws SearchTimeoutError past the deadline and SearchCappedError when the search gave up. */
 export type Evaluate = (req: PlanRequest) => Costed | null;
 
 export interface Suggested {
   alternatives: AlternativeView[];
-  /** The time budget ran out before every candidate was planned: more options may exist. */
+  /** A candidate went unplanned (time budget, or its search hit the state cap): more options may exist. */
   truncated: boolean;
 }
 
@@ -93,8 +93,10 @@ const better = (a: Found, b: Found): number => Number(a.alt.impractical) - Numbe
 class Explorer {
   private budget = ALTERNATIVE_BUDGET;
   readonly best = new Map<string, Found>();
-  /** The deadline passed with candidates left unplanned. */
+  /** Some candidate went unplanned (deadline, or its search hit the state cap). */
   truncated = false;
+  /** The deadline passed: nothing more is planned. */
+  private outOfTime = false;
   constructor(
     private readonly req: PlanRequest,
     private readonly evaluate: Evaluate,
@@ -102,14 +104,14 @@ class Explorer {
   ) {}
 
   get spent(): boolean {
-    return this.budget <= 0 || this.truncated;
+    return this.budget <= 0 || this.outOfTime;
   }
 
   /** The candidate's result: realistic, still impractical, or null when it has no plan / no budget. */
   attempt(key: string, changes: readonly TargetChangeView[]): Found | null {
     if (this.spent) return null;
     if (this.deadline && this.deadline.now() >= this.deadline.at) {
-      this.truncated = true;
+      this.outOfTime = this.truncated = true;
       return null;
     }
     this.budget -= 1;
@@ -127,8 +129,10 @@ class Explorer {
     try {
       return this.evaluate({ ...this.req, targets });
     } catch (e: unknown) {
-      // out of time mid-search: keep what was found, say that more may exist
-      if (!(e instanceof SearchTimeoutError)) throw e;
+      // out of time, or a search that gave up: keep what was found, say that more may exist; only
+      // the deadline stops the other candidates
+      if (!(e instanceof SearchTimeoutError) && !(e instanceof SearchCappedError)) throw e;
+      if (e instanceof SearchTimeoutError) this.outOfTime = true;
       this.truncated = true;
       return null;
     }

@@ -18,6 +18,7 @@ import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
 import { runPlannerStateCases } from "./craftPlannerStateCases";
 import { runSanityCases } from "./craftPlannerSanityCases";
 import { runWhittleCases } from "./craftPlannerWhittleCases";
+import { runCacheCases } from "./craftPlannerCacheCases";
 
 function rejected(cat: CraftCatalog, req: PlanRequest): PlanRejectedError {
   try {
@@ -229,7 +230,8 @@ testContract();
 runPlannerStateCases(cat);
 runSanityCases(cat);
 runWhittleCases(cat);
+runCacheCases(cat);
 console.log(
   `ALL PASS — craft-planner: golden plans (Breach mana stacker, fractured-flat res ring, fractured +3 amulet), violations (mod group, caps incl. Dusk/Time-Lost, ilvl gate, one crafted/desecrated, essence table, quality cap, over-cap jewel), ` +
-    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases, cost sanity (owner's 13,201-slam ring now whittled, its long step flagged + cheaper alternatives, partial hits by hand, goldens unflagged, time budgets: truncated alternatives + typed timeout), whittle loop (ties / no tie / unique-lowest by hand, fixed-mod guard, older-server defaults)`,
+    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases, cost sanity (owner's 13,201-slam ring now whittled, its long step flagged + cheaper alternatives, partial hits by hand, goldens unflagged, time budgets: truncated alternatives + typed timeout), whittle loop (ties / no tie / unique-lowest by hand, fixed-mod guard, older-server defaults), route memo (cut-short plans not cached, 45 s timeout refusal, capped candidate = incomplete list)`,
 );
