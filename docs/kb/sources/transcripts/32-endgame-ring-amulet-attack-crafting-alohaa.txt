@@ -1,0 +1,343 @@
+Endgame Ring & Amulet Crafting Guide for Attack Builds | PoE 2 0.5 Runes of Aldur
+Creator: Alohaa
+https://www.youtube.com/watch?v=kPBToE_G5t8
+
+(YouTube captions with [m:ss] timestamps, fetched 2026-10-04 with youtube-transcript-api, languages en/en-US/cs/de; title and creator from YouTube oEmbed, fetched 2026-10-05. Mined for docs/research/craft-mining/ring-attack-flat.)
+
+[0:00] Hey YouTube, since many of you guys are
+[0:03] in end game, I just want to make a quick
+[0:05] video on how to craft actual end game
+[0:08] rings and end game amulets.
+[0:10] So, both of these items are over quality
+[0:12] to 60% quality or in this case 40%
+[0:15] quality.
+[0:16] And these are extremely high end game
+[0:20] gear pieces which take a lot of divines
+[0:22] to craft. So, if you do not have 200
+[0:24] divines to spare for this craft, I do
+[0:26] not recommend starting it. It is
+[0:27] extremely expensive but it's the best in
+[0:30] slot for you. In this video, I'm going
+[0:32] to go over every single step and I
+[0:34] explain everything
+[0:36] you need to do to craft these.
+[0:38] Of course, it's going to be a lot
+[0:39] cheaper to craft them yourself than to
+[0:40] buy them from the market. First up, you
+[0:42] want to start with an breach ring,
+[0:44] preferably item level 82 because item
+[0:47] level 82 can roll tier one max res. The
+[0:49] next thing I like to do is I like to
+[0:51] annul and roll until you hit one of the
+[0:54] tier one modifiers with damage to
+[0:56] attacks, either fire, cold, lightning,
+[0:59] or fizz. This is the least preferred
+[1:01] because it's the most common one because
+[1:04] in the final step, we're going to
+[1:05] desecrate for fizz
+[1:07] and it's better if you have elemental,
+[1:09] but nonetheless, I would still try to
+[1:10] fracture a fizz tier one modifier. The
+[1:13] next step we want to fracture this, so
+[1:14] I'll add a greater exaltation omen with
+[1:16] a greater exalted to add two modifiers.
+[1:19] So, before fracturing it, you want to
+[1:22] make sure that you have added a
+[1:23] desecrated modifier. And the reason why
+[1:25] you want to add a desecrated modifier is
+[1:26] because a desecrated modifier cannot be
+[1:28] fractured.
+[1:30] So, I have three mods right here and if
+[1:31] I use a fracturing orb, I have a one in
+[1:33] three chance to hit. And the next step
+[1:35] you want to do is you want to remove two
+[1:37] modifiers again and keep chaos spamming
+[1:39] until you hit another tier one to
+[1:41] attacks. This takes about, I think,
+[1:43] roughly 200 to 300
+[1:46] chaos on average, so be prepared. It's
+[1:48] going to take quite a while. So, now you
+[1:50] have two tier one modifiers and the next
+[1:52] thing you want to do is you want to add
+[1:54] one suffix modifier. In order to
+[1:56] guarantee that, I use an omen of dextra
+[1:58] exaltation. This will make it that your
+[2:00] next exalted orb is only adding one
+[2:02] suffix.
+[2:04] So, boom. We have our suffix. And the
+[2:06] next thing you want to do is you want to
+[2:07] use an omen of dextra crystallization.
+[2:10] And this omen will make it that your
+[2:12] next perfect or corrupted essence will
+[2:14] remove only suffix modifiers. This
+[2:16] essence is guaranteed to remove your
+[2:18] suffix modifier and adds 20% maximum
+[2:20] quality to your ring. So, now you have
+[2:23] an item with three prefixes. You have
+[2:25] two tier one attacks and one maximum
+[2:27] quality.
+[2:28] So, now you can quality your ring up to
+[2:30] 60% Before you do that though, we need
+[2:33] to add
+[2:34] suffixes. And in order to add the
+[2:36] suffixes, I will first apply 60% of
+[2:39] lightning modifiers onto the ring. Now
+[2:41] that you've done that, you want to use
+[2:42] an omen of catalyzing exaltation. And
+[2:45] this omen will
+[2:47] consume all the catalyst quality and
+[2:49] then it will increase the chance for the
+[2:50] corresponding type of modifier.
+[2:53] So, because you have 60% lightning res
+[2:54] right now, the most likely mods we get
+[2:57] is all elemental resistances and
+[2:59] lightning resistance.
+[3:00] Now, it can roll other mods, but it's
+[3:02] more likely than not to roll these
+[3:04] modifiers. On top of that, I'm using a
+[3:06] greater exaltation to add two suffix
+[3:08] modifiers and a perfect exaltation to
+[3:11] add high tier of these two suffix
+[3:13] modifiers. I would be expected to hit
+[3:15] lightning res and all res. In my case, I
+[3:18] hit all res and tier one physical damage
+[3:21] to attacks. Now, this is not the best
+[3:23] outcome, but before I can change it, I
+[3:26] will first apply reaver catalyst. So,
+[3:28] you see I have 60% quality on the attack
+[3:30] modifiers right now.
+[3:32] Before you do anything, you have to
+[3:33] apply the reaver catalyst because
+[3:35] there's no way to remove the
+[3:37] physical damage as mana with a whitling
+[3:40] orb. So, I will first apply the attack
+[3:42] catalyst on the ring and I will now try
+[3:44] to change the physical attack damage
+[3:46] modifiers to another mod.
+[3:49] But before I do that, I have to remove
+[3:50] the max quality because this is the
+[3:53] currently lowest tier tier modifier with
+[3:55] an omen of whittling. So, what I do here
+[3:56] is now I I remove the quality and I'm
+[3:58] I'm hoping for a suffix.
+[4:01] And I'm hoping that I can desecrate the
+[4:02] last prefix, so the prefixes are done,
+[4:05] and then I can slowly start working on
+[4:06] the suffixes with omen of whittling or a
+[4:09] different omen. So, now that we have two
+[4:12] suffixes and we have three prefixes, I
+[4:14] want to change the max quality to a
+[4:16] suffix first. In order to do that, I'm
+[4:18] using an omen of whittling. An omen of
+[4:20] whittling will
+[4:21] remove the lowest tier modifier and add
+[4:23] a new modifier via a chaos orb. So, I
+[4:26] use a greater chaos orb to change it and
+[4:28] change from max quality to maximum life.
+[4:31] And the next lowest modifier is physical
+[4:33] attack damage to mana.
+[4:35] Now, you might be wondering if all these
+[4:37] stats are tier one, why is that it
+[4:39] changes only the physical attack damage
+[4:41] to mana? And therefore, we have to go to
+[4:43] the POE DB website so I can explain that
+[4:45] to you guys. POE DB website are all the
+[4:48] modifiers listed.
+[4:49] And if you check physical tier one
+[4:51] attack damage leeches mana, you can
+[4:53] acquire this mod at an item level of 38
+[4:55] already. Comparatively wise, if you look
+[4:58] at the mods right here, for example,
+[5:00] we're looking at
+[5:01] tier one life, you will get at 54.
+[5:04] And physical damage or like any damage
+[5:06] to attacks will get at 75.
+[5:08] So, this means the highest tier modifier
+[5:10] right now
+[5:11] is damage to attacks, then it's max
+[5:14] life, and the lowest tier modifier is
+[5:16] physical attack damage as mana. This is
+[5:18] why you can remove the physical attack
+[5:20] damage as mana. So, I use a chaos orb in
+[5:22] order to remove that. Now, I didn't show
+[5:24] it, but it will got changed from
+[5:26] physical damage to
+[5:27] attack to lightning res. And I want to
+[5:30] keep whittling until I hit something
+[5:32] good. So, in this case, I hit tier two
+[5:34] decks, which is not the worst. I would
+[5:36] have preferred a resistance, but it's
+[5:38] still
+[5:39] a decent stat.
+[5:40] And now the next whittling is going to
+[5:43] remove the max life. The reason is the
+[5:46] same. You just have a life as the next
+[5:49] tier modifier, next lowest tier
+[5:51] modifier, even though it is tier one
+[5:53] compared to decks tier two.
+[5:57] Okay, we hit tier one int. So, now the
+[6:00] suffixes are basically done. If you
+[6:02] want, you can keep brittling, but before
+[6:04] you would keep brittling, you would
+[6:05] probably start to the desecrated
+[6:07] modifier first. In my case, I'm happy
+[6:10] with it, but if you want to keep
+[6:11] brittling, make sure you first desecrate
+[6:13] and finish the desecration and then keep
+[6:15] brittling at the end. So, in my case,
+[6:16] I'm happy with it. I'm going to
+[6:17] desecrate the last modifier now. And you
+[6:20] want to use echoings with color bones in
+[6:23] order to reveal another tier one damage
+[6:25] to attacks. And if it doesn't work, you
+[6:27] can use an omen of blight to remove the
+[6:30] desecrated modifier and go again until
+[6:31] you hit tier one attacks. Now, this is
+[6:34] probably one of the most expensive parts
+[6:35] of the craft. It can cost you up to
+[6:37] hundreds of divines if you're unlucky.
+[6:39] And the ring is probably worth around
+[6:41] anywhere between 200 to maybe 600
+[6:45] divines or 500 divines. That's how you
+[6:47] craft the ring, basically. I think it's
+[6:49] cheaper to craft it yourself than to buy
+[6:51] one.
+[6:52] Okay, so here's how I crafted my amulet.
+[6:54] So, I was looking for an amulet with
+[6:56] plus three to melee skills, some rarity,
+[6:59] 45 spirit
+[7:01] because I don't need 50 spirit because
+[7:03] of the quality of blasphemy,
+[7:05] and I'm looking for any useful suffixes
+[7:07] and energy shield.
+[7:09] That was like my main goal. So, I
+[7:11] started off with buying a gold amulet
+[7:13] with like plus three melee fractured.
+[7:16] And I made sure that it
+[7:18] had gold amulet as the base because I
+[7:20] want some rarity.
+[7:22] And the first thing to I did is remove
+[7:24] the mods until I hit
+[7:26] one of the
+[7:28] prefixes I like. For example, I like
+[7:30] spirit, so I kept rolling until I hit my
+[7:33] spirit. This can roll over 45 spirit.
+[7:36] So, I was happy with the tier two
+[7:37] spirit. If you're not happy, you can
+[7:38] keep rolling. Now, you have your spirit,
+[7:40] you want to again make sure that you
+[7:41] have your plus 20% max quality through
+[7:44] the breach essence. So again, I use a
+[7:47] omen of dextral exaltation. This will
+[7:49] only add a suffix modifier with the next
+[7:51] exalted orb. I did that, added the
+[7:53] suffix modifier. And then again, I use
+[7:55] an omen of dextral crystallization with
+[7:58] an essence of the breach. This will
+[8:00] guarantee remove the suffix. Since melee
+[8:03] skills is fractured, it cannot be
+[8:04] removed. So it will only remove the
+[8:06] other suffix, which is in this case life
+[8:08] region, and it will add 20% quality. Now
+[8:11] that we have this quality, we can
+[8:13] put some quality on it.
+[8:15] In this case, I put defense because I
+[8:17] want to look for ES. Then I use an omen
+[8:19] of sinistral exaltation, which will
+[8:21] guarantee a prefix modifier.
+[8:23] And then add omen of
+[8:25] catalyzing exaltation. This will consume
+[8:27] all the catalysts
+[8:29] quality, which is in this case defense,
+[8:31] and makes it more likely to roll a
+[8:33] defense modifier with the next exalted
+[8:35] orb. We got a perfect exalted orb, and
+[8:37] now we have these two actives, so this
+[8:39] will add a most likely a defense
+[8:41] modifier combined
+[8:44] with a prefix modifier.
+[8:45] And there's like a couple of choices
+[8:47] like evasion, armor, percent ES, flat
+[8:49] ES.
+[8:51] And if you're unlucky and you miss your
+[8:53] exalted, then you have to annul it away
+[8:56] and repeat the process.
+[8:58] So if you get unlucky, get evasion or
+[8:59] armor, you have to annul it away and use
+[9:01] another exalted. In this case, I got
+[9:03] fairly lucky. I got T1 flat ES, and I'm
+[9:06] going with it. I apply again the defense
+[9:08] catalyst.
+[9:10] And now I want to remove the max quality
+[9:12] because even if you remove the max
+[9:14] quality, the quality will stay.
+[9:16] So I use a omen of witling, which
+[9:19] removes the lowest tier modifier, which
+[9:20] is in this case again the essence. And
+[9:22] so I removed it, and I got a tier three
+[9:24] to all attributes. And the next thing
+[9:26] I'm doing is I'm using a omen of
+[9:29] sinistral necromancy. This omen will
+[9:31] only add a prefix of the next
+[9:32] desecration attempt.
+[9:35] So this way you have your perfect
+[9:36] prefixes, which are going to be a
+[9:38] spirit, maximum ES, and one desecrated
+[9:42] modifier.
+[9:44] As suffixes, you have your plus melee
+[9:45] skills and one open suffix and all
+[9:48] attributes. Now I add another exalted to
+[9:50] fill up the suffixes. I hit tier three
+[9:53] decks. And at this point you might
+[9:55] think, "Oh, I'm pretty unhappy with my
+[9:56] suffixes. I would like more tier ones."
+[9:58] That's right. What you can do now is you
+[10:00] can use an omen of textual erasure. Now
+[10:02] these are extremely expensive, but it is
+[10:05] like a sort of deterministic craft
+[10:07] because you can now use chaos orbs to
+[10:09] only remove your suffixes, and you do
+[10:11] this until you're happy. In this case, I
+[10:13] got all attributes and mana region,
+[10:14] which I'm happy about all attributes,
+[10:17] but not so about the mana region. And
+[10:19] you just keep going until you're happy
+[10:20] with the suffixes. In this case, I
+[10:22] desecrated first to hit like tier one
+[10:24] mana, and I could also use an omen of
+[10:26] witling to change the suffixes. However,
+[10:30] spirit is quite a low-tier modifier, so
+[10:32] most of the time you will have to use a
+[10:33] textual erasure. I did it until I hit
+[10:35] rarity and strength, so I'm pretty happy
+[10:37] with that.
+[10:38] And the last you do is you desecrate
+[10:41] until you hit maximum energy shield. So
+[10:43] again, you want to use an hollowbone and
+[10:46] then use an echoes
+[10:48] of desecration to to get down the chance
+[10:50] of the mod you want to hit.
+[10:52] And if it's not what you want to hit,
+[10:54] you use an omen of light to remove the
+[10:56] desecrated modifier, and then you use
+[10:58] another hollowbone to check again. This
+[11:00] was like the final version of the
+[11:01] amulet. It has like tier one melee
+[11:04] skills, tier one max energy shield, one
+[11:06] percent energy shield, rarity, spirit,
+[11:09] and strength, and it has like 40%
+[11:10] quality to defense. Overall, a very good
+[11:13] amulet both defensively and offensively.
+[11:16] And it cost quite a lot of
+[11:18] money to craft. I think it cost me like
+[11:20] 100 divine orbs to craft, so
+[11:22] if you want to craft this,
+[11:24] make sure to save up some money, but
+[11:26] that is it for the video. I hope you
+[11:28] guys enjoyed it. If you have any
+[11:29] questions, you can write it down in the
+[11:31] comments below,
+[11:32] and you can also check me out on Twitch
+[11:34] and ask me about crafting options
+[11:37] and yeah thank you guys for watching the
+[11:38] video.

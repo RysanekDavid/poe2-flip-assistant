@@ -1,0 +1,116 @@
+Here is how i made over 200d profit crafting rings (PoE2 0.5 step by step guide)
+Creator: Fre drik
+https://www.youtube.com/watch?v=nyLcWFR3gHg
+
+(YouTube captions with [m:ss] timestamps, fetched 2026-10-04 with youtube-transcript-api, languages en/en-US/cs/de; title and creator from YouTube oEmbed, fetched 2026-10-05. Mined for docs/research/craft-mining/ring-attack-flat.)
+
+[0:00] We are going to start off every craft
+[0:03] with a fractured tier one rarity suffix
+[0:06] and then using essence of the breach to
+[0:08] get 40% attack modifier quality.
+[0:18] After your quality is done, we will
+[0:21] start chaos spamming.
+[0:23] When we chaos spam, we are looking for
+[0:25] either tier three flat damage or tier
+[0:28] one rarity. If you get tier three flat
+[0:31] from chaos spamming, then you will
+[0:33] greater exalt prefix and hope for either
+[0:35] tier one rarity
+[0:37] or tier two flat damage mod. If you got
+[0:39] tier one rarity from chaos spamming,
+[0:42] then you will greater exalt prefix and
+[0:44] hope for tier two flat damage. If your
+[0:46] greater exalt misses, then you will
+[0:48] annul and try again.
+[0:50] Here we got tier one rarity. We will now
+[0:53] try to greater exalt a tier two flat
+[0:56] damage. We hit tier two cold damage.
+[0:58] That is very nice. The next step is to
+[1:00] desecrate a prefix with an ancient
+[1:02] collarbone.
+[1:04] Now we will reroll this with omen of
+[1:06] light until we hit another flat damage
+[1:08] modifier.
+[1:32] That is tier two flat fist damage, which
+[1:35] is really good.
+[1:43] We will now try to get attack speed on
+[1:45] the suffix.
+[1:47] We can do this by slamming a suffix and
+[1:49] then removing that suffix with the use
+[1:52] of omen of dextral crystallization in
+[1:55] [music] combination with a swift alloy.
+[1:58] If you for some reason hit a very good
+[2:00] modifier, then you can slam again and
+[2:03] either settle on these two suffixes or
+[2:06] try to target remove one of them with a
+[2:08] swift alloy. The good suffixes you can
+[2:11] land are mana leech or resistances. If
+[2:15] the second exalt misses, then we will
+[2:18] have to use omen of dextral annulment to
+[2:20] remove one of our suffixes. If your
+[2:23] attack speed got removed, then you can
+[2:25] replace the other bad suffix with attack
+[2:28] speed once again. And we will do this
+[2:30] over and over again until you have found
+[2:33] a suffix that you want to settle with.
+[2:38] In this craft, we will start off once
+[2:40] again with essence of breach. Add 40%
+[2:44] attack quality, and then we will start
+[2:47] chaos spamming. The mods we are looking
+[2:49] out for are tier three flat damage or
+[2:52] tier one rarity.
+[2:59] We hit tier three flat damage. We will
+[3:02] now greater exalt and hope to hit either
+[3:04] tier one rarity or a tier two flat
+[3:07] damage mod.
+[3:12] Now, for our last prefix, we will
+[3:15] desecrate. You can settle with either
+[3:17] tier one rarity or a good flat damage
+[3:20] mod.
+[3:24] After we fill out our prefixes, we will
+[3:27] greater exalt a suffix and hope we land
+[3:30] something good like resistance or mana
+[3:32] leech. We actually hit mana leech, which
+[3:35] is great. We will try to slam another
+[3:37] suffix. This suffix wasn't as good, so
+[3:40] we will try to 50/50 remove it with
+[3:43] attack speed alloy. We got lucky and
+[3:46] kept the mana leech. However, if you did
+[3:49] not get as lucky as me in this craft,
+[3:51] then you will have to do the same thing
+[3:53] as I did in the older craft. You will
+[3:55] use the omen of textural annulment to
+[3:57] try and remove the bad modifier and then
+[4:00] slam a new one until you have the attack
+[4:02] speed mode and another solid suffix.
+[4:11] Now I will show you how I find my rarity
+[4:14] rings to fracture. In my stat filters,
+[4:16] I'm looking for at least 18 rarity with
+[4:18] a maximum of four modifiers and an item
+[4:21] level of at least 75.
+[4:24] The base type should be gold ring, but
+[4:26] you can always do this with breach rings
+[4:28] if you prefer that.
+[4:31] We scroll down and select no crafted
+[4:32] modifiers and no corrupted items and
+[4:35] then hit search.
+[4:38] I usually scroll far down and then press
+[4:40] control F.
+[4:44] And in the little search box, I type S1
+[4:47] to filter out the bad items faster.
+[4:53] If you for some reason are looking to
+[4:55] buy pre-fractured gold rings,
+[4:58] >> [music]
+[4:58] >> then there are two very important things
+[5:00] to look out for. The fractured mode can
+[5:03] be on a prefix and we are not looking
+[5:06] for any fractured prefixes in this
+[5:08] craft.
+[5:09] And also, the fractured modifier can be
+[5:12] a crafted mode.
+[5:13] You do not want a crafted fractured
+[5:16] modifier as it blocks us from doing our
+[5:20] crafts. If you hover over the fractured
+[5:23] modifier, you can read the text and see
+[5:26] if it's a crafted mode or not.
+[5:29] Thank you for watching and good luck.

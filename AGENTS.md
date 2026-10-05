@@ -32,6 +32,7 @@ This is the working contract for coding agents and contributors. `README.md` cov
 | Recipe audit | `npm run craft:audit-recipes`, then commit `src/data/poe2/craft/recipe-audit.json` |
 | CX price shadow vs ninja | `npm run cx:shadow-report -- [--league "…"] [--hours 168] [--json]` (same data: owner-only `GET /api/system/cx-shadow`) |
 | Patch notes | `npm run patch:sync` · `patch:review` · `patch:summarize` |
+| Craft route mining | `npm run research:validate` (schemas + cross-checks for `docs/research/craft-mining/**`, `src/data/poe2/craft/{routes,priors}`) |
 
 CI (`.github/workflows/deploy.yml`) runs the following. Run every one of them before you call a
 change done:
@@ -43,7 +44,7 @@ npm run test:user-league && npm run test:market-league && npm run test:rates && 
 npm run test:flips && npm run test:middleware && npm run test:auth && npm run test:maintenance
 npm run test:valuation && npm run test:auto-snipe && npm run test:snipe && npm run test:system
 npm run test:notify && npm run test:features-schema && npm run test:patch && npm run kb:check
-npm run test:craft && npm run test:craft-provenance && npm run test:tools
+npm run test:craft && npm run test:craft-provenance && npm run test:research && npm run test:tools
 npm run test:strategies && npm run test:learn && npm run test:demo-user
 uv --directory services/coach run pytest && uv --directory services/coach run ruff check .
 ```

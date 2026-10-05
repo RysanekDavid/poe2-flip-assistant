@@ -17,6 +17,11 @@ const ROOT = process.cwd();
 const TREES: ReadonlyArray<{ dir: string; ext: string; skip?: string }> = [
   { dir: "src/data/poe2", ext: ".json", skip: "repoe" },
   { dir: "src/core", ext: ".ts" },
+  // craft route mining: archetypes, candidates, extractions, synthesis notes and the transcripts they cite
+  { dir: "docs/research/craft-mining", ext: ".json" },
+  { dir: "docs/research/craft-mining", ext: ".md" },
+  { dir: "docs/kb/sources", ext: ".json" },
+  { dir: "docs/kb/sources/transcripts", ext: ".txt" },
 ];
 const URL_RE = /https?:\/\/[^\s"'`)<>\]]+/g;
 
@@ -60,6 +65,10 @@ assert.ok(corpus.some((f) => f.endsWith(".md")), "the Coach corpus must be part 
 const CRAFT_FILES = ["craftProvenanceData2.ts", "craftRecipeData5.ts", "craftGuideData5.ts"];
 const missingCraft = CRAFT_FILES.filter((name) => !data.some((f) => f.endsWith(join("src", "core", name))));
 assert.deepEqual(missingCraft, [], "the craft provenance, recipe and guide data must be part of the sweep");
+// the craft-mining tree and its transcripts are cited to players through route cards and priors
+const MINING_FILES = [join("docs", "research", "craft-mining", "ring-attack-flat", "candidates.json"), join("docs", "kb", "sources", "transcripts", "index.json")];
+const missingMining = MINING_FILES.filter((path) => !data.some((f) => f.endsWith(path)));
+assert.deepEqual(missingMining, [], "the craft-mining research tree and the transcript index must be part of the sweep");
 const hits = rmtHits(files);
 assert.deepEqual(hits, [], `curated data cites real-money-trading shops (RMT_DOMAINS):\n${hits.join("\n")}`);
 const named = brandHits(data);
