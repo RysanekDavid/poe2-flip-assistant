@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "videoId": "nyLcWFR3gHg",
+  "title": "Here is how i made over 200d profit crafting rings (PoE2 0.5 step by step guide)",
+  "creator": "Fre drik",
+  "publishedAt": null,
+  "transcriptRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt",
+  "patch": { "stated": "PoE2 0.5 (video title)", "atUpload": null, "outOfPatch": { "flag": false, "reasons": [], "mechanics": [] } },
+  "language": "en",
+  "archetypes": ["ring-attack-flat"],
+  "base": {
+    "name": "Gold Ring",
+    "ilvl": null,
+    "bought": true,
+    "boughtState": { "fracturedMods": [], "otherMods": ["unfractured T1 rarity suffix (at least 18% rarity), at most four mods, item level 75 or higher; he fractures it himself. Pre-fractured rings are the alternative (4:53–5:20)."] },
+    "priceClaim": null,
+    "at": "4:11–4:21",
+    "quote": "I'm looking for at least 18 rarity with a maximum of four modifiers and an item level of at least 75."
+  },
+  "steps": [
+    {
+      "order": 1,
+      "action": "breach-quality",
+      "materials": ["essence-of-the-breach"],
+      "omens": [],
+      "side": null,
+      "target": { "text": "40% attack modifier quality", "acceptedTiers": ["unstated"] },
+      "at": "0:06–0:10",
+      "quote": "using essence of the breach to get 40% attack modifier quality.",
+      "note": null
+    },
+    {
+      "order": 2,
+      "action": "chaos-loop",
+      "materials": ["chaos"],
+      "omens": [],
+      "side": null,
+      "target": { "text": "tier three flat damage or tier one rarity", "acceptedTiers": ["T1", "T3"] },
+      "at": "0:21–0:28",
+      "quote": "When we chaos spam, we are looking for either tier three flat damage or tier one rarity.",
+      "note": "T3 applies to the flat, T1 to rarity. Chaos spam happens after the quality is done."
+    },
+    {
+      "order": 3,
+      "action": "slam-fill",
+      "materials": ["greater-exalted-orb"],
+      "omens": [],
+      "side": "prefix",
+      "target": { "text": "tier one rarity or tier two flat damage (whichever the chaos spam did not give)", "acceptedTiers": ["T1", "T2"] },
+      "at": "0:31–0:37",
+      "quote": "you will greater exalt prefix and hope for either tier one rarity or tier two flat damage mod.",
+      "note": "After a T1 rarity from chaos he hopes for a T2 flat (0:39–0:44)."
+    },
+    {
+      "order": 4,
+      "action": "desecrate",
+      "materials": ["ancient-collarbone"],
+      "omens": [],
+      "side": "prefix",
+      "target": { "text": "flat damage", "acceptedTiers": ["unstated"] },
+      "at": "0:58–1:02",
+      "quote": "The next step is to desecrate a prefix with an ancient collarbone.",
+      "note": null
+    },
+    {
+      "order": 5,
+      "action": "desecrate",
+      "materials": [],
+      "omens": ["omen-of-light"],
+      "side": "prefix",
+      "target": { "text": "another flat damage modifier (T1 rarity or a good flat is acceptable in the second craft)", "acceptedTiers": ["unstated"] },
+      "at": "1:04–1:08",
+      "quote": "Now we will reroll this with omen of light until we hit another flat damage modifier.",
+      "note": "Reveal reroll; he got a T2 flat on the first craft (1:32–1:35)."
+    },
+    {
+      "order": 6,
+      "action": "slam-fill",
+      "materials": [],
+      "omens": [],
+      "side": "suffix",
+      "target": { "text": "attack speed, plus mana leech or a resistance", "acceptedTiers": ["unstated"] },
+      "at": "1:43–1:49",
+      "quote": "We will now try to get attack speed on the suffix. We can do this by slamming a suffix",
+      "note": "Exalt type is not stated for the first craft; the second craft uses a greater exalt on the suffix (3:24–3:30)."
+    },
+    {
+      "order": 7,
+      "action": "other",
+      "materials": ["swift-alloy"],
+      "omens": ["omen-of-dextral-crystallisation"],
+      "side": "suffix",
+      "target": { "text": "remove the slammed suffix and replace it with attack speed", "acceptedTiers": ["unstated"] },
+      "at": "1:49–1:55",
+      "quote": "removing that suffix with the use of omen of dextral crystallization in combination with a swift alloy.",
+      "note": "Swift Alloy is called the attack speed alloy later (3:40–3:43); removal is a 50/50 between the two suffixes."
+    }
+  ],
+  "missHandling": [
+    {
+      "afterStep": 3,
+      "trigger": "greater exalt misses (no T1 rarity or T2 flat)",
+      "repair": "other",
+      "retryTo": 3,
+      "at": "0:46–0:48",
+      "quote": "If your greater exalt misses, then you will annul and try again.",
+      "note": "Orb of Annulment (catalog id annul), then greater exalt again."
+    },
+    {
+      "afterStep": 7,
+      "trigger": "second suffix slam misses or the attack speed suffix was removed",
+      "repair": "other",
+      "retryTo": 6,
+      "at": "2:15–2:28",
+      "quote": "If the second exalt misses, then we will have to use omen of dextral annulment to remove one of our suffixes.",
+      "note": "Omen of Dextral Annulment (omen-of-dextral-annulment); then slam a new suffix and repeat until attack speed plus one solid suffix."
+    }
+  ],
+  "qualityPath": {
+    "catalyst": null,
+    "pct": 40,
+    "orderNote": "40% attack-modifier quality comes from Essence of the Breach, applied first, before any chaos spam.",
+    "at": "0:06–0:10"
+  },
+  "measured": [],
+  "claims": [],
+  "salvage": [],
+  "caveats": [
+    "Main flow (4:11–4:21): he buys UNfractured gold rings with the T1 rarity suffix and fractures them himself; buying pre-fractured rings is the alternative (4:53). For a pre-fractured ring the fractured mod must not be a prefix and must not be a crafted (essence) mod, because a crafted fractured mod blocks the crafts (5:09–5:20). One crafted mod fits on an item, so the Breach essence mod has to be gone before the Swift Alloy goes on (inferred from the one-crafted-mod rule, KB §7; fracturing a crafted mod uses the slot up for good).",
+    "Trade search filter given: at least 18 rarity, at most 4 modifiers, item level at least 75, no crafted modifiers, no corrupted (4:11–4:35).",
+    "Breach rings work as an alternative base (4:24–4:28).",
+    "Second craft accepts either T1 rarity or a good flat for the last prefix (3:15–3:20) and settles for mana leech or resistance on the suffix (3:24–3:35)."
+  ],
+  "unresolved": [
+    "Title claims over 200d profit; the transcript states no cost, sale price, attempt count or success rate.",
+    "Exalt type for the suffix slam in the first craft (1:47) is not stated.",
+    "Number of chaos spins and fracture attempts per ring is not stated.",
+    "The fracture itself is not shown and no odds are stated; the video starts from a fractured ring."
+  ]
+}

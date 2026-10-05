@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "videoId": "TWgmQuiLeHA",
+  "title": "Attack ring craft PERFECTED! PoE 2 - 0.5",
+  "creator": "Keyson",
+  "publishedAt": null,
+  "transcriptRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+  "patch": { "stated": "0.5", "atUpload": null, "outOfPatch": { "flag": false, "reasons": [], "mechanics": [] } },
+  "language": "en",
+  "archetypes": ["ring-attack-flat"],
+  "base": {
+    "name": "Gold Ring",
+    "ilvl": 82,
+    "bought": true,
+    "boughtState": {
+      "fracturedMods": [{ "text": "flat damage to attacks prefix (cold, fire or lightning; he prefers cold)", "tier": "T1" }],
+      "otherMods": []
+    },
+    "priceClaim": { "value": null, "low": 60, "high": 70, "unit": "div", "at": "7:52–7:58", "quote": "about, you know, 60, 70 divs into a base, and 60, 70 divs into chaos, and another, you know, 10 divs into a perfect exalt." },
+    "at": "1:11–1:15",
+    "quote": "we're starting with an item level 82 gold ring with a fractured flat."
+  },
+  "steps": [
+    {
+      "order": 1,
+      "action": "chaos-loop",
+      "materials": ["chaos"],
+      "omens": [],
+      "side": "prefix",
+      "target": { "text": "second T1 flat damage to attacks, elemental (not physical)", "acceptedTiers": ["T1"] },
+      "at": "2:01–2:09",
+      "quote": "we're going to chaos for a second tier one flat, and it cannot be fizz. It has to be either whichever one you don't have",
+      "note": "Any element but physical is accepted; he explicitly does not chase one specific element (2:59–3:15)."
+    },
+    {
+      "order": 2,
+      "action": "slam-fill",
+      "materials": ["exalted"],
+      "omens": ["omen-of-dextral-exaltation"],
+      "side": "suffix",
+      "target": { "text": "any suffix (thrown away in the next step)", "acceptedTiers": ["unstated"] },
+      "at": "3:26–3:38",
+      "quote": "we're going to pull out an exalted orb and throw that on there. And it doesn't matter what it hits",
+      "note": "He names only a 'suffix omen that designates a suffix'; Dextral Exaltation is the matching omen (the other creators name it)."
+    },
+    {
+      "order": 3,
+      "action": "breach-quality",
+      "materials": ["essence-of-the-breach"],
+      "omens": ["omen-of-dextral-crystallisation"],
+      "side": "suffix",
+      "target": { "text": "Breach quality mod replaces the slammed suffix", "acceptedTiers": ["unstated"] },
+      "at": "3:39–3:52",
+      "quote": "we pull out our suffix essence designator, dextral crystallization, and then we're going to eat that garbage we just slammed on",
+      "note": null
+    },
+    {
+      "order": 4,
+      "action": "slam-fill",
+      "materials": ["eshs-catalyst", "xophs-catalyst", "perfect-exalted-orb"],
+      "omens": ["omen-of-catalysing-exaltation"],
+      "side": "suffix",
+      "target": { "text": "two T1 resistances (a first-slam T1 res saves five to seven whittles)", "acceptedTiers": ["T1"] },
+      "at": "4:53–5:09",
+      "quote": "It's very important you do not do cold catalyst for this, but you do lightning or fire. And we pull out our perfect exalted orbs.",
+      "note": "Single slams (prefixes are full, no side omen needed); he re-catalyses before each further slam (5:50–5:55). Esh = lightning, Xoph = fire catalyst. A double slam (greater omen) is mentioned as an alternative (5:11–5:19)."
+    },
+    {
+      "order": 5,
+      "action": "catalyse-finish",
+      "materials": ["reaver-catalyst"],
+      "omens": [],
+      "side": null,
+      "target": { "text": "Attack-modifier quality before the Breach quality mod is removed", "acceptedTiers": ["unstated"] },
+      "at": "6:48–6:56",
+      "quote": "make sure you put the quality of attacks first before you go anything else. After you do your two slams, remember, quality slam",
+      "note": "He says only 'quality of attacks'; Attack catalyst is Reaver. Percentage not stated."
+    },
+    {
+      "order": 6,
+      "action": "whittle-loop",
+      "materials": ["chaos"],
+      "omens": ["omen-of-whittling"],
+      "side": null,
+      "target": { "text": "push the Breach quality mod into a suffix slot to free a prefix slot", "acceptedTiers": ["unstated"] },
+      "at": "8:14–8:26",
+      "quote": "it's a 50/50 on whether it gives you back a prefix or a suffix. If it gives you a prefix, you whittle it again.",
+      "note": "Expects just over 20 whittles for the whole craft (7:17–7:23). Which chaos orb is used is not stated; the 'greater chaos' is only opened to read weights (13:36–13:40)."
+    },
+    {
+      "order": 7,
+      "action": "desecrate",
+      "materials": [],
+      "omens": ["omen-of-light"],
+      "side": "prefix",
+      "target": { "text": "any mod with item level 75 or higher (T1 mana, a flat, T1 % damage) so whittles stop targeting the desecrated mod", "acceptedTiers": ["unstated"] },
+      "at": "9:19–9:25",
+      "quote": "we need to put a desecration on here, and we want an item level 75 mod. And we don't care what",
+      "note": "Collarbone type not stated. He first lets whittles run and uses Omen of Light only once whittles start hitting the desecrated mod (10:44–11:05)."
+    },
+    {
+      "order": 8,
+      "action": "whittle-loop",
+      "materials": ["chaos"],
+      "omens": ["omen-of-whittling"],
+      "side": "suffix",
+      "target": { "text": "T1 resistances (two required, third T1 res, all-res or rarity is the best last mod)", "acceptedTiers": ["T1"] },
+      "at": "11:40–11:48",
+      "quote": "one in five to get a tier one. We need two tier one reses, and then we can do whatever for the last mod.",
+      "note": "T1 res mods are item level 82 and cannot be whittled away (13:20–13:27)."
+    },
+    {
+      "order": 9,
+      "action": "desecrate",
+      "materials": [],
+      "omens": ["omen-of-light"],
+      "side": "prefix",
+      "target": { "text": "last prefix: T1 flat (physical or fire shown) or prefix rarity", "acceptedTiers": ["T1"] },
+      "at": "16:59–17:10",
+      "quote": "our omens of lights and our jawbones and we are looking to hit a either a tier one fizz, tier one fire, or rarity.",
+      "note": "Says jawbones here and collarbones at 9:27 and 17:48; bone type unstated."
+    }
+  ],
+  "missHandling": [
+    {
+      "afterStep": 8,
+      "trigger": "whittles start targeting the desecrated prefix because its item level is below the suffix mods",
+      "repair": "desecrate",
+      "retryTo": 7,
+      "at": "10:44–10:49",
+      "quote": "it's going to start targeting our desecration, at which point we have to light and put an item level 75 mod.",
+      "note": "Reroll the desecrated mod with Omen of Light until it is item level 75 or higher, then resume whittling."
+    },
+    {
+      "afterStep": 8,
+      "trigger": "a high-level suffix (item level 75 mana regen) cannot be whittled out",
+      "repair": "erasure-loop",
+      "retryTo": 8,
+      "at": "15:30–15:50",
+      "quote": "there is a omen for suffixes for suffix chaos that you could use along with a whittle to force it to hit suffixes",
+      "note": "He calls it 'suffix chaos'; Dextral Erasure is the matching omen (the other creators name it). Claims zero bricks on suffix whittles (15:45–15:55)."
+    },
+    {
+      "afterStep": 4,
+      "trigger": "slammed resistances are poor",
+      "repair": "other",
+      "retryTo": 4,
+      "at": "4:01–4:11",
+      "quote": "once you slam the resistances, if they suck, you can gamble the annuls and try to reslam.",
+      "note": "Alternative to whittling for res; he prefers an extra whittle to re-chaosing for the flat and says expected value is about the same (4:35–4:37)."
+    }
+  ],
+  "qualityPath": {
+    "catalyst": "reaver-catalyst",
+    "pct": null,
+    "orderNote": "Apply Attack quality after the catalysed slams and before whittling the Breach quality mod away; skipping it bricked three of his rings. Percentage not stated; at most 40% by inference (Gold Ring cap 20% plus the 20% Breach essence).",
+    "at": "6:28–6:41"
+  },
+  "measured": [
+    {
+      "quantity": "hit_rate",
+      "value": 0.0025,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "chance per chaos of hitting a second T1 flat; derived from 'the average is like 400' chaos. His own run took about 600 chaos (2:46–2:54).",
+      "at": "2:20–2:26",
+      "quote": "in this case, we're looking for fire or lightning off the chaos orb. The average is like 400 or something"
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.2,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "about 1 in 5 resistance hits from the whittles is T1 (said right after the first whittle hit landed a T1 resistance), not a catalysed-slam rate",
+      "at": "11:40–11:44",
+      "quote": "It's usually a one in five to get a tier one."
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.0238,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "table_reading",
+      "context": "single resistance weight 1000 in a pool of 42000 read off the item's Greater Chaos weight display (suffix whittle with two T1 res blocked)",
+      "at": "13:36–13:45",
+      "quote": "we have 1,000 out of 42. So, one in 42 to hit our last res."
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.0267,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "table_reading",
+      "context": "all-resistances weight 800 of 30000, same display",
+      "at": "14:28–14:33",
+      "quote": "we have a 800 out of 30,000 for all res."
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.0033,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "table_reading",
+      "context": "last T1 elemental flat 200 of 60000 prefix pool (400 of 60000 for the other flat shown, 1000 of 60000 for rarity), read off the weight display during the desecration reveal",
+      "at": "17:25–17:36",
+      "quote": "200 out of 60,000 for the last flat and it's 400 out of 60,000 for the other one."
+    },
+    {
+      "quantity": "reveal_offered",
+      "value": 3,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "a desecration reveal shows three mods and can be rerolled once with Omen of Abyssal Echoes (RePoE OmenOnAbyssRerollOptions, KB desecration-abyss); the caption says 'on the omen of light', which is the omen that removes the desecrated mod, so the reroll is read as Echoes",
+      "at": "17:41–17:47",
+      "quote": "because you get to see three mods and you get to see them twice on the omen of light."
+    }
+  ],
+  "claims": [
+    {
+      "kind": "cost",
+      "text": "whole craft expected 300 to 400 div (included about 50 div of leftover omens and whittles)",
+      "value": null,
+      "low": 300,
+      "high": 400,
+      "unit": "div",
+      "material": null,
+      "dateContext": "late 0.5 league (Runes of Aldur), at upload",
+      "at": "18:20–18:24",
+      "quote": "So, the whole craft is like 300 to 400 expected."
+    },
+    {
+      "kind": "cost",
+      "text": "variance: lucky 200 div, unlucky 600 to 700 div",
+      "value": null,
+      "low": 200,
+      "high": 700,
+      "unit": "div",
+      "material": null,
+      "dateContext": "late 0.5 league (Runes of Aldur), at upload",
+      "at": "0:44–0:52",
+      "quote": "you could get unlucky and freaking spend 6, 700 divines. I mean, you could go and get lucky and get the craft done in 200"
+    },
+    {
+      "kind": "cost",
+      "text": "his own run spent about 600 chaos finding the second T1 flat (500-something plus another 100)",
+      "value": 600,
+      "low": null,
+      "high": null,
+      "unit": "chaos",
+      "material": null,
+      "dateContext": "late 0.5 league (Runes of Aldur), at upload",
+      "at": "2:46–2:54",
+      "quote": "I went through all of my 500 something chaos, and then I went and bought another 100, so we were looking at about 600 chaos"
+    },
+    {
+      "kind": "sale",
+      "text": "going rate for finished rings 400 to 500 div, not worth profit crafting late league",
+      "value": null,
+      "low": 400,
+      "high": 500,
+      "unit": "div",
+      "material": null,
+      "dateContext": "late 0.5 league (Runes of Aldur), at upload",
+      "at": "0:52–0:59",
+      "quote": "the going rate for the actual rings is like 4, 500 divs and it's just not worth it."
+    },
+    {
+      "kind": "sale",
+      "text": "his result would list at 550 (identical copy listed at 625); profit about 100 to 150 div",
+      "value": null,
+      "low": 550,
+      "high": 625,
+      "unit": "div",
+      "material": null,
+      "dateContext": "late 0.5 league (Runes of Aldur), at upload",
+      "at": "21:34–21:47",
+      "quote": "this I would list for like 550. if we find an exact copy of ours, it's going for 625."
+    },
+    {
+      "kind": "sale",
+      "text": "worth it only if the result sells for 800 to 900 div, especially early league",
+      "value": null,
+      "low": 800,
+      "high": 900,
+      "unit": "div",
+      "material": null,
+      "dateContext": "conditional, early league",
+      "at": "18:26–18:32",
+      "quote": "if the result sells for 800, 900, especially early league, this is perfectly worth it."
+    },
+    {
+      "kind": "material_price",
+      "text": "Omen of Whittling when cheap: three to four div (early-league example)",
+      "value": null,
+      "low": 3,
+      "high": 4,
+      "unit": "div",
+      "material": "omen-of-whittling",
+      "dateContext": "hypothetical early league, not the upload-time price",
+      "at": "18:33–18:36",
+      "quote": "Especially when whittles are cheap. When whittles are like three, four div"
+    },
+    {
+      "kind": "odds",
+      "text": "about 15 Omens of Light with 15 collarbones should be enough for the last prefix; usually fewer than 10",
+      "value": 15,
+      "low": null,
+      "high": null,
+      "unit": null,
+      "material": null,
+      "dateContext": "0.5, at upload",
+      "at": "17:48–17:55",
+      "quote": "In theory, 15 lights with 15 collar bones should be enough. Once you count rarity in and everything, we're usually less than 10."
+    }
+  ],
+  "salvage": [
+    {
+      "when": "Attack quality was skipped before removing the Breach quality mod (ring bricked)",
+      "action": "rescue craft and settle on a cheaper outcome",
+      "valueClaim": "lost money on it",
+      "at": "6:36–6:46",
+      "quote": "I literally just bricked the ring that was pretty perfect that I then had to rescue craft and settle on a cheaper outcome"
+    },
+    {
+      "when": "running out of money at the final prefix reveal",
+      "action": "settle on a T2 or T3 flat, or on prefix rarity",
+      "valueClaim": "prefix rarity does sell",
+      "at": "19:19–19:33",
+      "quote": "if you are running out of money, you can technically settle on the tier two tier three."
+    }
+  ],
+  "caveats": [
+    "Creator says this is a bad profit craft late in the league and advises against profit crafting it (0:26–1:01).",
+    "Base must be checked for tier: a 40% quality fractured T2 is bait (1:44–1:52).",
+    "He accepts a chaos-slammed physical flat only as a last-prefix outcome; phys has a higher weight so it is an out for the Omen of Light step (2:09–2:17).",
+    "Whittling removes the lowest item-level mod, which is why the desecrated mod must be item level 75 or higher (9:47–10:04).",
+    "Cold catalyst is explicitly excluded for the resistance slams (4:55)."
+  ],
+  "unresolved": [
+    "Which omen the 'suffix omen' at 3:26 and the 'suffix chaos' omen at 15:36 are: Dextral Exaltation and Dextral Erasure are inferred from the other creators.",
+    "Collarbone/jawbone type used for the desecrations (ancient vs preserved) is not stated (9:27, 17:01, 17:48).",
+    "Attack-quality percentage reached is not stated; at most 40% is inferred from the Gold Ring's 20% cap plus the 20% Breach essence.",
+    "Probability of bricking the whole item at the first quality whittle ('one in a couple hundred, or maybe one in eight', 8:04–8:10) is self-contradicting.",
+    "Which chaos orb the whittles use (plain vs greater) is not stated."
+  ]
+}

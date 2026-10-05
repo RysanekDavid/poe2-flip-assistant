@@ -1,0 +1,263 @@
+{
+  "schema_version": 1,
+  "videoId": "m_n2htaTr98",
+  "title": "How to craft attack Rings with 4 flats Poe2 0.5",
+  "creator": "SaVeQ",
+  "publishedAt": null,
+  "transcriptRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt",
+  "patch": { "stated": "0.5", "atUpload": null, "outOfPatch": { "flag": false, "reasons": [], "mechanics": [] } },
+  "language": "en",
+  "archetypes": ["ring-attack-flat"],
+  "base": {
+    "name": "Dusk Ring (inferred; the video never names the base)",
+    "ilvl": null,
+    "bought": "unstated",
+    "boughtState": null,
+    "priceClaim": null,
+    "at": "0:45–0:50",
+    "quote": "when it comes to prefixes on the rings, we kind of want four flat damages on to them."
+  },
+  "steps": [
+    {
+      "order": 1,
+      "action": "fracture",
+      "materials": ["fracturing-orb"],
+      "omens": [],
+      "side": "prefix",
+      "target": { "text": "fracture an elemental T1 flat damage to attacks (cold, fire or lightning, not physical)", "acceptedTiers": ["T1"] },
+      "at": "1:54–2:09",
+      "quote": "We will try to fracture one of the elemental damages. So, I have lightning, I have lightning, I have fire here prepared",
+      "note": "He explains he avoids physical because its weight is doubled, so physical is left for the desecration."
+    },
+    {
+      "order": 2,
+      "action": "chaos-loop",
+      "materials": ["annul", "chaos"],
+      "omens": [],
+      "side": "prefix",
+      "target": { "text": "second T1 flat damage to attacks (elemental wanted; took T1 physical)", "acceptedTiers": ["T1"] },
+      "at": "2:22–2:35",
+      "quote": "we will annul it down. We going to chaos spam for any other T1 elemental flats.",
+      "note": "He got T1 physical and kept it (2:57–3:00)."
+    },
+    {
+      "order": 3,
+      "action": "slam-fill",
+      "materials": ["exalted"],
+      "omens": [],
+      "side": "suffix",
+      "target": { "text": "any suffix (removed next step)", "acceptedTiers": ["unstated"] },
+      "at": "3:04–3:12",
+      "quote": "we going to add a suffix modifier. With normal exalted orb, we got all elemental resistances quite good.",
+      "note": "No side omen is named for this exalt."
+    },
+    {
+      "order": 4,
+      "action": "breach-quality",
+      "materials": ["essence-of-the-breach"],
+      "omens": ["omen-of-dextral-crystallisation"],
+      "side": "suffix",
+      "target": { "text": "suffix removed, Breach quality mod added so quality can go beyond 20%", "acceptedTiers": ["unstated"] },
+      "at": "3:34–3:44",
+      "quote": "activate omen of the Tsar's Crystallisation, essence of breach. This will remove all elemental resistances. And right now we can quality up beyond 20.",
+      "note": "'Tsar's Crystallisation' is the caption for Dextral Crystallisation."
+    },
+    {
+      "order": 5,
+      "action": "slam-fill",
+      "materials": ["tuls-catalyst", "perfect-exalted-orb"],
+      "omens": ["omen-of-catalysing-exaltation", "omen-of-sinistral-exaltation"],
+      "side": "prefix",
+      "target": { "text": "the missing element's T1 flat (cold here)", "acceptedTiers": ["T1"] },
+      "at": "4:07–4:32",
+      "quote": "omen of catalyzed exaltation with an omen of sinister exaltation. This will consume the quality, but it will improve our chances",
+      "note": "Cold catalyst quality applied just before (3:51–4:06). Hit T1 cold on the first try, which he calls super lucky."
+    },
+    {
+      "order": 6,
+      "action": "catalyse-finish",
+      "materials": ["reaver-catalyst"],
+      "omens": [],
+      "side": null,
+      "target": { "text": "Attack-modifier quality up to 40%", "acceptedTiers": ["unstated"] },
+      "at": "5:10–5:24",
+      "quote": "we need to grab ourselves a river catalyst. It's attack, not a damage. Let's quality this up all the way to 40.",
+      "note": "'River catalyst' is the caption for Reaver (Attack) catalyst."
+    },
+    {
+      "order": 7,
+      "action": "whittle-loop",
+      "materials": ["chaos"],
+      "omens": ["omen-of-whittling"],
+      "side": null,
+      "target": { "text": "remove the maximum-quality mod, ideally into a suffix slot", "acceptedTiers": ["unstated"] },
+      "at": "5:28–5:46",
+      "quote": "we can grab witling. We can kind of whittle with normal chaos orb. You don't want to use greater.",
+      "note": null
+    },
+    {
+      "order": 8,
+      "action": "slam-fill",
+      "materials": ["exalted"],
+      "omens": [],
+      "side": "suffix",
+      "target": { "text": "fill all open suffixes so the desecration can only land in a prefix", "acceptedTiers": ["unstated"] },
+      "at": "7:45–8:03",
+      "quote": "fill your suffixes first so the desecration will only go towards the prefixes. So, fill the suffixes with normal X",
+      "note": "He did this after a failed first desecration (7:32–7:41); the correct order is suffixes first."
+    },
+    {
+      "order": 9,
+      "action": "desecrate",
+      "materials": ["preserved-collarbone"],
+      "omens": ["omen-of-sinistral-necromancy", "omen-of-abyssal-echoes", "omen-of-light"],
+      "side": "prefix",
+      "target": { "text": "fourth flat: lightning (T1 or T2 wanted)", "acceptedTiers": ["T1", "T2"] },
+      "at": "6:40–7:01",
+      "quote": "Doesn't look like we can stick with T1 or T2.",
+      "note": "T1 or T2 is the acceptance bar for the desecrated flat (6:40–7:01). The method itself: Sinistral Necromancy, Preserved collarbones and Abyssal Echoes (5:49–6:25), Omen of Light removes a poor reveal (7:13–7:18). Got T1 lightning after several rerolls (9:04–9:10)."
+    },
+    {
+      "order": 10,
+      "action": "whittle-loop",
+      "materials": ["chaos"],
+      "omens": ["omen-of-whittling"],
+      "side": "suffix",
+      "target": { "text": "all elemental resistances or other resistances; rarity or dexterity acceptable", "acceptedTiers": ["unstated"] },
+      "at": "9:14–9:28",
+      "quote": "the last thing to do is whittle onto the suffixes to get either all elemental resistances with any other resistances, that would be good.",
+      "note": "He stopped at rarity plus cold res and listed it (9:35–9:45)."
+    }
+  ],
+  "missHandling": [
+    {
+      "afterStep": 9,
+      "trigger": "revealed desecrated mod is poor (low evasion, T4/T5 flat)",
+      "repair": "desecrate",
+      "retryTo": 9,
+      "at": "7:13–7:20",
+      "quote": "activate omen of light to remove the desecrated evasion. We can add collar bone. Let's desecrate.",
+      "note": null
+    },
+    {
+      "afterStep": 5,
+      "trigger": "the catalysed slam hits a wrong element (no-chaos alternative route)",
+      "repair": "other",
+      "retryTo": 4,
+      "at": "11:38–11:53",
+      "quote": "We got cold damage. You annul it down, and you repeat the process. you going to add the essence again",
+      "note": "Alternative to chaos-spamming the flat: Breach essence, cold catalyst, Catalysing plus Sinistral omens with a Greater Exalted Orb, annul on a miss and redo the essence (10:43–11:55)."
+    }
+  ],
+  "qualityPath": {
+    "catalyst": "reaver-catalyst",
+    "pct": 40,
+    "orderNote": "Cold catalyst quality is consumed by the catalysed prefix slam; Attack catalyst then takes the ring to 40% before the Breach quality mod is whittled away.",
+    "at": "5:10–5:24"
+  },
+  "measured": [
+    {
+      "quantity": "hit_rate",
+      "value": 0.5,
+      "low": null,
+      "high": null,
+      "n": 4,
+      "howMeasured": "own_attempts",
+      "context": "fracturing orb on four prepared rings (two lightning, two fire T1 flats): two fractured, two missed and sold to vendor; he calls the base chance one in three",
+      "at": "2:05–2:15",
+      "quote": "One in three. We missed. We missed. We got it, and we got it."
+    },
+    {
+      "quantity": "multiplier",
+      "value": 2,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "table_reading",
+      "context": "physical flat weight is double the elemental flats' (read off the weights; he gives T1 and T2 elemental weights as '241, 342')",
+      "at": "1:12–1:32",
+      "quote": "we will try to desecrate in the world of souls, the weights of fizz the weights on fizz are doubled."
+    }
+  ],
+  "claims": [
+    {
+      "kind": "cost",
+      "text": "this craft: 120 to 200 div depending on luck",
+      "value": null,
+      "low": 120,
+      "high": 200,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, at upload",
+      "at": "0:03–0:07",
+      "quote": "Prepare to spend around 120 to 200 divines depending on the luck."
+    },
+    {
+      "kind": "cost",
+      "text": "cheaper version 50 to 80 div if not picky with modifiers",
+      "value": null,
+      "low": 50,
+      "high": 80,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, at upload",
+      "at": "12:45–12:50",
+      "quote": "you can do this craft for even like 50 to 80 divines if you're not going to be picky with the modifiers."
+    },
+    {
+      "kind": "sale",
+      "text": "his finished ring: price check 690 div, listed at 650, expected 500 to 600 easily",
+      "value": 650,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, at upload",
+      "at": "10:02–10:20",
+      "quote": "Looks like uh 690 divines. So, I mean, I will list it at 650. it should sell for around 500 to 600 divines easily."
+    },
+    {
+      "kind": "sale",
+      "text": "mid-budget ring with T3 flats sells for about 100 to 150 div",
+      "value": null,
+      "low": 100,
+      "high": 150,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, at upload",
+      "at": "12:20–12:35",
+      "quote": "This ring would still sell for around 100 to 150 divines, depending on the suffixes"
+    }
+  ],
+  "salvage": [
+    {
+      "when": "fracture misses on a base",
+      "action": "sell the unfractured rings back to vendor",
+      "valueClaim": null,
+      "at": "2:15–2:22",
+      "quote": "We missed two. So, right now the only thing we can do is sell them back to vendor."
+    },
+    {
+      "when": "mid-budget goal, no need for T1 flats",
+      "action": "settle for T3 flats (chaos spam or slam for T3, desecrate T3)",
+      "valueClaim": "ring sells for about 100 to 150 div",
+      "at": "12:17–12:35",
+      "quote": "if you want to go for this mid-budget craft, I mean, you can stick with T3."
+    }
+  ],
+  "caveats": [
+    "Title says four flats and the plan targets four flat prefixes (0:45–0:50), but the intro says two flat damage rings (0:01–0:03); the final ring's flats are T1 fire, T1 cold, T1 physical (kept) and T1 lightning.",
+    "A four-flat-prefix ring is a Dusk Ring craft: three flats are on the ring by 4:36–4:40 and the fourth is revealed at 9:04–9:10, with the Breach quality mod whittled out of a prefix slot in between; quality goes to 40% (3:42–3:44, 5:19–5:24). The base is inferred from the four prefixes (KB §3); the transcript never names it.",
+    "SaVeQ (this video, 33) and ASaVeQ (transcripts 23, 27, 30) are very likely the same creator, so they count as ONE creator. ASaVeQ's Dusk Ring video (27, CZepweLtKwA 0:12–0:20: 'the best base, of course, Dusk Ring, so we can have four prefixes') corroborates the base but is not an independent source.",
+    "He avoids physical for the fracture because its weight is doubled, and would rather desecrate for lightning or cold since desecrated physical weights are good but lightning's are 'halved' (6:43–6:56).",
+    "Desecrated lightning weights quoted as about 200 (T1) and 300 (T3) (8:48–8:58); the number is partly garbled.",
+    "Mistake shown: desecrating before filling suffixes (7:32–7:58)."
+  ],
+  "unresolved": [
+    "Base type and item level are never stated; Dusk Ring is inferred from four prefix flats (KB §3), not named in this transcript.",
+    "Whether the bases were bought or crafted from scratch is not stated.",
+    "What exactly 'I failed super badly, I forgot to do something' was at 7:32 (apparently desecrating with open suffixes), and what was annulled.",
+    "Weights '241, 342' (1:14–1:19) and the Reaver catalyst price '29 for 10' (5:15–5:18) are garbled; units unclear.",
+    "Which exalt omen, if any, is used for the plain suffix slams at 3:09 and 8:01."
+  ]
+}

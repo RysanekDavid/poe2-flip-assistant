@@ -154,7 +154,8 @@ const throwsWith = (fn: () => unknown, why: RegExp): void => assert.throws(fn, (
 ok("loader cross-checks: a full tree with extraction, route and prior passes", () => {
   withTempTree((dirs) => {
     const mining = readCraftMining(dirs);
-    assert.equal(mining.archetypes[0]?.extractions.length, 1);
+    // The committed tree already holds extractions; the fixture replaces _sSjC5LX_Ck's.
+    assert.ok(mining.archetypes[0]?.extractions.some((x) => x.videoId === VALID_EXTRACTION.videoId && x.steps.length === VALID_EXTRACTION.steps.length));
     assert.equal(mining.routes[0]?.templates.length, 1);
     assert.equal(mining.priors[0]?.entries.length, 1);
   });

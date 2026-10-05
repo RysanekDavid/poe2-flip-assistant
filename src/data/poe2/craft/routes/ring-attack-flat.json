@@ -1,0 +1,1908 @@
+{
+  "schema_version": 1,
+  "archetype": "ring-attack-flat",
+  "templates": [
+    {
+      "id": "ring-attack-flat-budget-magic",
+      "archetype": "ring-attack-flat",
+      "itemClass": "Rings",
+      "bases": [
+        "Gold Ring",
+        "Prismatic Ring"
+      ],
+      "tier": "budget",
+      "patch": {
+        "verified_against": "0.5.5b",
+        "leagues": [
+          "Runes of Aldur"
+        ],
+        "stamped_at": "2026-10-06"
+      },
+      "status": "draft",
+      "targetRoles": [
+        {
+          "id": "attack-flats",
+          "side": "prefix",
+          "count": 2,
+          "anyOf": [
+            {
+              "family": "PhysicalDamage",
+              "label": "Adds # to # Physical Damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "FireDamage",
+              "label": "Adds # to # Fire damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "ColdDamage",
+              "label": "Adds # to # Cold damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "LightningDamage",
+              "label": "Adds # to # Lightning damage to Attacks",
+              "source": "natural"
+            }
+          ],
+          "minTier": 3,
+          "note": "Two flats is the common result (_sSjC5LX_Ck 7:53–8:01); a third from the catalysed slam or the collarbone makes the better ring (kE8Tn32yNp0 11:36–11:40). The T3 physical slam counted as a hit (kE8Tn32yNp0 7:14–7:24)."
+        },
+        {
+          "id": "rarity",
+          "side": "suffix",
+          "count": 1,
+          "anyOf": [
+            {
+              "family": "ItemFoundRarityIncrease",
+              "label": "#% increased Rarity of Items found",
+              "source": "essence"
+            }
+          ],
+          "minTier": 1,
+          "note": "Essence of Opulence: T1 rarity after the rarity nerf (kE8Tn32yNp0 1:43–1:48)."
+        },
+        {
+          "id": "resistances",
+          "side": "suffix",
+          "count": 1,
+          "anyOf": [
+            {
+              "family": "FireResistance",
+              "label": "+#% to Fire Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "LightningResistance",
+              "label": "+#% to Lightning Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "ColdResistance",
+              "label": "+#% to Cold Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "AllResistances",
+              "label": "+#% to all Elemental Resistances",
+              "source": "natural"
+            }
+          ],
+          "minTier": null,
+          "note": "Catalysed suffix slam or a Greater Essence of Insulation (T3); two resistances when the slam lands both."
+        }
+      ],
+      "start": {
+        "kind": "bought_magic_with_target",
+        "carried": [
+          {
+            "role": "attack-flats",
+            "fractured": false
+          }
+        ],
+        "askClaims": [
+          {
+            "text": "magic ring (a T1/T2 flat prefix plus a resistance or open suffix) bought for 60 ex",
+            "at": "7:42–7:45",
+            "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+            "low": 60,
+            "high": 60,
+            "unit": "ex",
+            "dateContext": "0.5 after the rarity nerf, price at upload; league week unstated"
+          },
+          {
+            "text": "magic ring with a T1 flat: 1 div with an open suffix, 2 div with a good resistance roll",
+            "at": "0:49–0:53",
+            "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+            "low": 1,
+            "high": 2,
+            "unit": "div",
+            "dateContext": "price at upload; league week and patch unstated"
+          },
+          {
+            "text": "cheap bases for the second craft: 25–30 ex each",
+            "at": "9:02–9:07",
+            "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+            "low": 25,
+            "high": 30,
+            "unit": "ex",
+            "dateContext": "price at upload; league week and patch unstated"
+          }
+        ],
+        "requiresPlayerConsent": true
+      },
+      "preconditions": {
+        "ilvlMin": null,
+        "quality": null
+      },
+      "skeleton": [
+        {
+          "phase": 1,
+          "method": "essence-greater",
+          "side": "suffix",
+          "targetRole": "rarity",
+          "note": "Creators use the REGULAR Essence of Opulence (magic to rare + T1 rarity); the planner's method only offers Greater essences, so it must learn the regular one. Alternative on a ring that already rolled rarity: Greater Essence of Insulation for a T3 resistance (_sSjC5LX_Ck 1:17–1:26).",
+          "sources": [
+            {
+              "text": "opulences on these rings, guaranteed T1 rarity",
+              "at": "1:43–1:48",
+              "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt"
+            },
+            {
+              "text": "essence of opulence guarantees T1 rarity",
+              "at": "1:28–1:32",
+              "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt"
+            }
+          ]
+        },
+        {
+          "phase": 2,
+          "method": "slam-fill",
+          "side": "suffix",
+          "targetRole": "resistances",
+          "note": "Matching-resistance catalyst + Dextral + Catalysing Exaltation + Perfect (or Greater, cheaper) Exalt; cold res has no Perfect breakpoint, so no cold catalyst with Perfect (4:26–4:35). _sSjC5LX_Ck instead fills the open suffix of the magic ring with a Perfect Orb of Augmentation BEFORE any essence (1:07–1:15); that is an Augmentation, not an Exalt.",
+          "sources": [
+            {
+              "text": "dextral + catalysing exaltation target the suffix",
+              "at": "3:29–3:45",
+              "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt"
+            },
+            {
+              "text": "perfect all the open suffix rings (a Perfect Orb of Augmentation on the magic ring)",
+              "at": "1:07–1:15",
+              "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt"
+            }
+          ]
+        },
+        {
+          "phase": 3,
+          "method": "slam-fill",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Catalyst for the missing flat: Uul-Netol's + Perfect Exalt (kE8Tn32yNp0) or Tul's + Greater Exalt + Omen of Greater Exaltation (_sSjC5LX_Ck, cheaper than Reaver and adds no bad-mod weight, 3:22–3:50).",
+          "sources": [
+            {
+              "text": "same as the last step without dextral, prefixes",
+              "at": "6:52–7:05",
+              "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt"
+            },
+            {
+              "text": "cold catalysts, catalysing + greater exaltation",
+              "at": "1:49–1:59",
+              "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt"
+            }
+          ]
+        },
+        {
+          "phase": 4,
+          "method": "unsupported",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Collarbone on the prefix (Preserved + Sinistral Necromancy, or Ancient) for a flat, rarity or life, revealed with Abyssal Echoes only on rings worth it; in the cheaper second craft only rings whose slam hit get a bone (_sSjC5LX_Ck 9:45–10:15). Ordinary-mod desecration is not a planner method until P1.",
+          "sources": [
+            {
+              "text": "preserved collarbone + sinistral necromancy, a prefix desecration",
+              "at": "5:42–5:48",
+              "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt"
+            },
+            {
+              "text": "grab an echo and unveil",
+              "at": "6:43–6:48",
+              "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt"
+            },
+            {
+              "text": "preserved versus ancient collarbone",
+              "at": "9:05–9:15",
+              "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt"
+            }
+          ]
+        }
+      ],
+      "decisionPoints": [
+        {
+          "afterPhase": 3,
+          "acceptLadder": [
+            1,
+            2,
+            3
+          ],
+          "salvage": "sell-as-base"
+        },
+        {
+          "afterPhase": 4,
+          "acceptLadder": [
+            1,
+            2,
+            3
+          ],
+          "salvage": "list-at-comparable"
+        }
+      ],
+      "salvage": [
+        {
+          "id": "sell-as-base",
+          "action": "Prefix slam missed but the suffixes are good: sell before any desecration",
+          "method": "unsupported",
+          "valueClaims": [
+            {
+              "text": "missed ring with good resistances sells for close to 1 div",
+              "at": "7:45–7:50",
+              "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+              "low": 1,
+              "high": 1,
+              "unit": "div",
+              "dateContext": "0.5 after the rarity nerf, price at upload; league week unstated"
+            },
+            {
+              "text": "pre-desecration miss sold as a base for about 1 div",
+              "at": "12:06–12:11",
+              "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+              "low": 1,
+              "high": 1,
+              "unit": "div",
+              "dateContext": "0.5 after the rarity nerf, price at upload; league week unstated"
+            }
+          ]
+        },
+        {
+          "id": "list-at-comparable",
+          "action": "Weak suffixes or a bad reveal: spend no Omen of Light or Echo, list at the closest comparable",
+          "method": "unsupported",
+          "valueClaims": [
+            {
+              "text": "missed ring with attribute, rarity and double flat: comparables 3–4 div",
+              "at": "15:11–15:15",
+              "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+              "low": 3,
+              "high": 4,
+              "unit": "div",
+              "dateContext": "price at upload; league week and patch unstated"
+            }
+          ]
+        },
+        {
+          "id": "abyss-rescue",
+          "action": "Truly bricked: Omen of Sinistral Crystallisation + Essence of the Abyss turns a random prefix (50/50) into a desecration, then a collarbone and the catalyst again",
+          "method": "unsupported",
+          "valueClaims": []
+        }
+      ],
+      "costClaims": [
+        {
+          "text": "about 3 div per ring including materials (four rings, 12 div)",
+          "at": "15:35–15:42",
+          "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+          "low": 3,
+          "high": 3,
+          "unit": "div",
+          "dateContext": "price at upload; league week and patch unstated"
+        },
+        {
+          "text": "showcase ring cost about 4–5 div",
+          "at": "0:13–0:16",
+          "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+          "low": 4,
+          "high": 5,
+          "unit": "div",
+          "dateContext": "0.5 after the rarity nerf, price at upload; league week unstated"
+        },
+        {
+          "text": "the deterministic Opulence part about half a div",
+          "at": "1:54–2:00",
+          "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+          "low": 0.5,
+          "high": 0.5,
+          "unit": "div",
+          "dateContext": "0.5 after the rarity nerf, price at upload; league week unstated"
+        },
+        {
+          "text": "one catalysing exalt with a Reaver catalyst about 2 div",
+          "at": "6:21–6:26",
+          "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+          "low": 2,
+          "high": 2,
+          "unit": "div",
+          "dateContext": "0.5 after the rarity nerf, price at upload; league week unstated"
+        },
+        {
+          "text": "one catalysing exalt with a Physical catalyst about 20-something ex",
+          "at": "6:26–6:32",
+          "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+          "low": 20,
+          "high": 29,
+          "unit": "ex",
+          "dateContext": "0.5 after the rarity nerf, price at upload; league week unstated"
+        },
+        {
+          "text": "one catalysing exalt with a Reaver catalyst about 7–8 div (cold catalyst: under 1 div)",
+          "at": "3:58–4:02",
+          "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+          "low": 7,
+          "high": 8,
+          "unit": "div",
+          "dateContext": "price at upload; league week and patch unstated; the other creator video priced it at about 2 div (35, 6:21–6:26)"
+        }
+      ],
+      "saleClaims": [
+        {
+          "text": "double rarity, cold flat, double resistances: a 30–40 div ring",
+          "at": "0:11–0:19",
+          "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+          "low": 30,
+          "high": 40,
+          "unit": "div",
+          "dateContext": "price at upload; league week and patch unstated"
+        },
+        {
+          "text": "double flats T1/T2, double res, T1 rarity, T1 life: comparable ~80, listed at 70–75 (unsold after 17 h)",
+          "at": "7:53–8:01",
+          "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+          "low": 70,
+          "high": 75,
+          "unit": "div",
+          "dateContext": "listing at upload; comparable had not sold in 17 hours"
+        },
+        {
+          "text": "flats, rarity and chaos res listed at about 13 div",
+          "at": "13:15–13:19",
+          "sourceRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+          "low": 13,
+          "high": 13,
+          "unit": "div",
+          "dateContext": "listing at upload; not yet sold"
+        },
+        {
+          "text": "triple flat plus rarity: 'surprised if worth less than 20 div' (a floor, not a listing)",
+          "at": "11:36–11:40",
+          "sourceRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+          "low": 20,
+          "high": 20,
+          "unit": "div",
+          "dateContext": "estimate at upload, not listed; league week unstated"
+        }
+      ],
+      "durability": {
+        "why_it_works": "Volume play: cheap magic bases with a flat, a guaranteed rarity essence and one catalysed slam per ring; misses resell near cost, so a hit pays for two or three bricks.",
+        "breaks_when": [
+          "Essence of Opulence stops giving T1 rarity",
+          "Omen of Catalysing Exaltation's bias changes",
+          "magic T1-flat ring bases stop being cheap",
+          "Omen of Light or desecration of ordinary ring mods changes"
+        ],
+        "claim": {
+          "v": "ss",
+          "src": [
+            "https://www.youtube.com/watch?v=kE8Tn32yNp0",
+            "https://www.youtube.com/watch?v=_sSjC5LX_Ck"
+          ]
+        }
+      },
+      "sources": [
+        {
+          "kind": "video",
+          "title": "How to Craft GOD-TIER Flat Attack Rarity Rings! | Step-by-Step Guide",
+          "url": "https://www.youtube.com/watch?v=kE8Tn32yNp0",
+          "creator": "XTheFarmerX",
+          "date": null,
+          "datePrecision": null,
+          "tier": "primary",
+          "ref": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt"
+        },
+        {
+          "kind": "video",
+          "title": "How To Craft INSANE End Game Rings For CHEAP!",
+          "url": "https://www.youtube.com/watch?v=_sSjC5LX_Ck",
+          "creator": "XTheFarmerX",
+          "date": null,
+          "datePrecision": null,
+          "tier": "primary",
+          "ref": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt"
+        }
+      ],
+      "conflicts": [
+        {
+          "topic": "Perfect Exalted Orb price, which decides Perfect vs Greater for the catalysed slams",
+          "positions": [
+            {
+              "videoId": "kE8Tn32yNp0",
+              "at": "3:15–3:21",
+              "text": "'perfect exalts are incredibly cheap still. So like 2/3 of a div'"
+            },
+            {
+              "videoId": "_sSjC5LX_Ck",
+              "at": "4:59–5:06",
+              "text": "'perfect exalts are almost three div each'; Greater 10–11 ex, so he slams with Greater (4:58–5:25)"
+            }
+          ],
+          "resolution": "Not a disagreement about mechanics: the two videos were recorded at different points of the league (prices drift, KB §9b). The planner picks Perfect vs Greater from live prices, never from these numbers; both are kept as dated market-reality fixtures.",
+          "grade": "cf"
+        },
+        {
+          "topic": "whether Omen of Catalysing Exaltation biases both mods of an Omen of Greater Exaltation slam",
+          "positions": [
+            {
+              "videoId": "_sSjC5LX_Ck",
+              "at": "4:07–4:19",
+              "text": "the catalysing omen applies to both exalts of the greater omen; tested, worked last league"
+            },
+            {
+              "url": "https://www.pathofexile.com/forum/view-thread/3849100",
+              "text": "combined with Sinistral/Dextral/Greater Exaltation omens, 0 of 3 hit the catalysed tag; OP suspects a bug (n=3)"
+            }
+          ],
+          "resolution": "KB §4 keeps this [cf] and budgets FIRST-MOD-ONLY; the creator's claim has no count on screen. The planner keeps first-mod-only until an owner in-game test (KB §10 T10) settles it. Alohaa (kPBToE_G5t8 2:41–3:15) and XTheFarmerX both pair the omens, so the pairing itself is legal.",
+          "grade": "cf"
+        }
+      ]
+    },
+    {
+      "id": "ring-attack-flat-mid-rarity-fracture",
+      "archetype": "ring-attack-flat",
+      "itemClass": "Rings",
+      "bases": [
+        "Gold Ring",
+        "Breach Ring"
+      ],
+      "tier": "mid",
+      "patch": {
+        "verified_against": "0.5.5b",
+        "leagues": [
+          "Runes of Aldur"
+        ],
+        "stamped_at": "2026-10-06"
+      },
+      "status": "draft",
+      "targetRoles": [
+        {
+          "id": "fractured-rarity",
+          "side": "suffix",
+          "count": 1,
+          "anyOf": [
+            {
+              "family": "ItemFoundRarityIncrease",
+              "label": "#% increased Rarity of Items found",
+              "source": "natural"
+            }
+          ],
+          "minTier": 1,
+          "note": "Main flow: buy an UNfractured ring with a T1 rarity suffix (at least 18% rarity, ilvl 75+, at most 4 mods, no crafted mods, not corrupted) and fracture it yourself (nyLcWFR3gHg 4:11–4:35). Alternative: buy it pre-fractured (4:53), where the fractured mod must be the rarity suffix, not a prefix, and must not be a crafted (essence) mod (5:09–5:20). Start kind is the closest in the schema: the ring is a rare of at most 4 mods, not magic, and START_KINDS has no 'bought unfractured' kind."
+        },
+        {
+          "id": "attack-flats",
+          "side": "prefix",
+          "count": 2,
+          "anyOf": [
+            {
+              "family": "PhysicalDamage",
+              "label": "Adds # to # Physical Damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "FireDamage",
+              "label": "Adds # to # Fire damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "ColdDamage",
+              "label": "Adds # to # Cold damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "LightningDamage",
+              "label": "Adds # to # Lightning damage to Attacks",
+              "source": "natural"
+            }
+          ],
+          "minTier": 3,
+          "note": "Chaos for a T3 flat, Greater Exalt for a T2 flat, desecration for another flat (0:21–1:08)."
+        },
+        {
+          "id": "prefix-rarity",
+          "side": "prefix",
+          "count": 1,
+          "anyOf": [
+            {
+              "family": "ItemFoundRarityIncreasePrefix",
+              "label": "#% increased Rarity of Items found (prefix)",
+              "source": "natural"
+            }
+          ],
+          "minTier": 1,
+          "note": "T1 prefix rarity or a third flat fills the last prefix (0:31–0:37, 3:15–3:20)."
+        },
+        {
+          "id": "attack-speed",
+          "side": "suffix",
+          "count": 1,
+          "anyOf": [
+            {
+              "family": "IncreasedAttackSpeed",
+              "label": "#% increased Attack Speed",
+              "source": null
+            }
+          ],
+          "minTier": null,
+          "note": "From a Swift Alloy steered by Dextral Crystallisation; attack speed is not in the natural ring pool (craft catalog 0.5.5b)."
+        }
+      ],
+      "start": {
+        "kind": "bought_magic_with_target",
+        "carried": [
+          {
+            "role": "fractured-rarity",
+            "fractured": false
+          }
+        ],
+        "askClaims": [],
+        "requiresPlayerConsent": true
+      },
+      "preconditions": {
+        "ilvlMin": 75,
+        "quality": null
+      },
+      "skeleton": [
+        {
+          "phase": 1,
+          "method": "fracture",
+          "side": "suffix",
+          "targetRole": "fractured-rarity",
+          "note": "Fracturing Orb on the bought ring; the fracture itself is not shown and no odds are stated (the video starts from a fractured ring). A ring bought pre-fractured skips this phase. Precondition: the fractured rarity must not be a crafted (essence) mod, because a crafted fractured mod blocks the crafts (5:09–5:20).",
+          "sources": [
+            {
+              "text": "I find my rarity rings to fracture: at least 18 rarity, at most four mods, item level 75+",
+              "at": "4:11–4:21",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            },
+            {
+              "text": "buying pre-fractured: the fractured mod must not be crafted",
+              "at": "4:53–5:20",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            }
+          ]
+        },
+        {
+          "phase": 2,
+          "method": "breach-quality",
+          "side": null,
+          "targetRole": null,
+          "note": "40% attack-modifier quality first; the catalyst is not named, so the route sets no quality precondition.",
+          "sources": [
+            {
+              "text": "essence of the breach to get 40% attack modifier quality",
+              "at": "0:06–0:10",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            }
+          ]
+        },
+        {
+          "phase": 3,
+          "method": "chaos-loop",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Stop at a T3 flat or a T1 prefix rarity.",
+          "sources": [
+            {
+              "text": "chaos spam for a T3 flat or T1 rarity",
+              "at": "0:21–0:28",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            }
+          ]
+        },
+        {
+          "phase": 4,
+          "method": "slam-fill",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Greater Exalt; annul and retry on a miss (0:46–0:48).",
+          "sources": [
+            {
+              "text": "greater exalt prefix for T1 rarity or a T2 flat",
+              "at": "0:31–0:37",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            }
+          ]
+        },
+        {
+          "phase": 5,
+          "method": "unsupported",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Ancient Collarbone on a prefix, rerolled with Omen of Light until a flat shows; not a planner method until P1.",
+          "sources": [
+            {
+              "text": "desecrate a prefix with an ancient collarbone",
+              "at": "0:58–1:02",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            },
+            {
+              "text": "reroll with omen of light until another flat",
+              "at": "1:04–1:08",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            }
+          ]
+        },
+        {
+          "phase": 6,
+          "method": "slam-fill",
+          "side": "suffix",
+          "targetRole": null,
+          "note": "Exalt type unstated in the first craft, Greater in the second (3:24–3:30).",
+          "sources": [
+            {
+              "text": "slam a suffix to work toward attack speed",
+              "at": "1:43–1:49",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            }
+          ]
+        },
+        {
+          "phase": 7,
+          "method": "unsupported",
+          "side": "suffix",
+          "targetRole": "attack-speed",
+          "note": "Swift Alloy + Omen of Dextral Crystallisation replaces a suffix with attack speed (a 50/50 between the two suffixes); Crystallisation steering an alloy is creator-demonstrated only (KB §4). On a miss, Dextral Annulment and re-slam (2:15–2:28). Precondition: the Breach essence mod must be gone before the Swift Alloy goes on, since an item holds one crafted mod (inferred from the 5:09–5:20 crafted-mod warning; KB §7).",
+          "sources": [
+            {
+              "text": "dextral crystallization with a swift alloy",
+              "at": "1:49–1:55",
+              "sourceRef": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+            }
+          ]
+        }
+      ],
+      "decisionPoints": [],
+      "salvage": [],
+      "costClaims": [],
+      "saleClaims": [],
+      "durability": {
+        "why_it_works": "The fractured T1 rarity keeps its value through every reroll; prefixes come from Chaos, a Greater Exalt and a desecration, attack speed from an alloy.",
+        "breaks_when": [
+          "GGG stops Omen of Crystallisation from steering alloys (undocumented behaviour, KB §4)",
+          "Swift Alloy changes",
+          "Omen of Light or desecration of ordinary ring mods changes"
+        ],
+        "claim": {
+          "v": "ss",
+          "src": [
+            "https://www.youtube.com/watch?v=nyLcWFR3gHg"
+          ]
+        }
+      },
+      "sources": [
+        {
+          "kind": "video",
+          "title": "Here is how i made over 200d profit crafting rings (PoE2 0.5 step by step guide)",
+          "url": "https://www.youtube.com/watch?v=nyLcWFR3gHg",
+          "creator": "Fre drik",
+          "date": null,
+          "datePrecision": null,
+          "tier": "primary",
+          "ref": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "ring-attack-flat-high-self-fracture",
+      "archetype": "ring-attack-flat",
+      "itemClass": "Rings",
+      "bases": [
+        "Breach Ring"
+      ],
+      "tier": "high",
+      "patch": {
+        "verified_against": "0.5.5b",
+        "leagues": [
+          "Runes of Aldur"
+        ],
+        "stamped_at": "2026-10-06"
+      },
+      "status": "draft",
+      "targetRoles": [
+        {
+          "id": "attack-flats",
+          "side": "prefix",
+          "count": 3,
+          "anyOf": [
+            {
+              "family": "PhysicalDamage",
+              "label": "Adds # to # Physical Damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "FireDamage",
+              "label": "Adds # to # Fire damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "ColdDamage",
+              "label": "Adds # to # Cold damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "LightningDamage",
+              "label": "Adds # to # Lightning damage to Attacks",
+              "source": "natural"
+            }
+          ],
+          "minTier": 3,
+          "note": "Alohaa chases T1 on all three (kPBToE_G5t8 0:49–0:56, 6:17–6:31). The four-flat Dusk Ring route (SaVeQ) is a separate template."
+        },
+        {
+          "id": "useful-suffixes",
+          "side": "suffix",
+          "count": 2,
+          "anyOf": [
+            {
+              "family": "FireResistance",
+              "label": "+#% to Fire Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "ColdResistance",
+              "label": "+#% to Cold Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "LightningResistance",
+              "label": "+#% to Lightning Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "AllResistances",
+              "label": "+#% to all Elemental Resistances",
+              "source": "natural"
+            },
+            {
+              "family": "ItemFoundRarityIncrease",
+              "label": "#% increased Rarity of Items found",
+              "source": "natural"
+            }
+          ],
+          "minTier": null,
+          "note": "T1 resistances preferred (Alohaa 4:14–4:28)."
+        }
+      ],
+      "start": {
+        "kind": "clean",
+        "carried": [],
+        "askClaims": [],
+        "requiresPlayerConsent": false
+      },
+      "preconditions": {
+        "ilvlMin": 82,
+        "quality": {
+          "catalyst": "reaver-catalyst",
+          "pct": 60
+        }
+      },
+      "skeleton": [
+        {
+          "phase": 1,
+          "method": "chaos-loop",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Annul and roll until a T1 flat.",
+          "sources": [
+            {
+              "text": "annul and roll until a T1 damage-to-attacks mod",
+              "at": "0:49–0:56",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 2,
+          "method": "slam-fill",
+          "side": null,
+          "targetRole": null,
+          "note": "Greater Exalted Orb + Omen of Greater Exaltation: two filler mods to reach the Fracturing Orb's four.",
+          "sources": [
+            {
+              "text": "greater exaltation omen with a greater exalted, two modifiers",
+              "at": "1:13–1:19",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 3,
+          "method": "blocker",
+          "side": null,
+          "targetRole": null,
+          "note": "A desecrated mod cannot be fractured but counts toward four (KB §2). Bone, side and omens unstated.",
+          "sources": [
+            {
+              "text": "add a desecrated modifier, it cannot be fractured",
+              "at": "1:19–1:28",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 4,
+          "method": "fracture",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "One in three on the flat (the desecrated blocker cannot be fractured).",
+          "sources": [
+            {
+              "text": "fracturing orb, one in three chance to hit",
+              "at": "1:30–1:33",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 5,
+          "method": "unsupported",
+          "side": null,
+          "targetRole": null,
+          "note": "The desecrated blocker must be removed (Omen of Light + Annulment, or chaos/annul it off) before the final desecration, because an item holds one desecrated mod (KB desecration-abyss). Alohaa states a removal ('remove two modifiers again', 1:35–1:37) but not the method or which mods.",
+          "sources": [
+            {
+              "text": "remove two modifiers again, then keep chaos spamming",
+              "at": "1:35–1:41",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 6,
+          "method": "chaos-loop",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Second T1 flat; how the filler mods are cleared first is not stated (he says 'remove two modifiers again', 1:35–1:37).",
+          "sources": [
+            {
+              "text": "chaos spam for another T1, 200 to 300 chaos on average",
+              "at": "1:35–1:46",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 7,
+          "method": "slam-fill",
+          "side": "suffix",
+          "targetRole": null,
+          "note": "Placeholder suffix for the Breach essence (Dextral Exaltation).",
+          "sources": [
+            {
+              "text": "omen of dextral exaltation, next exalt adds one suffix",
+              "at": "1:54–2:02",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 8,
+          "method": "breach-quality",
+          "side": "suffix",
+          "targetRole": null,
+          "note": null,
+          "sources": [
+            {
+              "text": "Breach essence removes the suffix and adds 20% maximum quality",
+              "at": "2:07–2:20",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 9,
+          "method": "slam-fill",
+          "side": "suffix",
+          "targetRole": "useful-suffixes",
+          "note": "Esh's catalyst to 60% + Catalysing + Greater Exaltation + Perfect Exalt for two suffixes.",
+          "sources": [
+            {
+              "text": "greater exaltation for two suffixes, perfect for high tiers",
+              "at": "2:41–3:15",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 10,
+          "method": "catalyse-finish",
+          "side": null,
+          "targetRole": null,
+          "note": "Reaver back to 60% BEFORE whittling the quality mod; the quality stays after the mod goes.",
+          "sources": [
+            {
+              "text": "apply the reaver catalyst before the whittle",
+              "at": "3:26–3:40",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 11,
+          "method": "whittle-loop",
+          "side": "suffix",
+          "targetRole": "useful-suffixes",
+          "note": "Whittle off the quality mod, then keep whittling the lowest-level suffix until good suffixes land.",
+          "sources": [
+            {
+              "text": "whittling removes the lowest tier modifier and adds one",
+              "at": "4:14–4:28",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        },
+        {
+          "phase": 12,
+          "method": "unsupported",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Collarbone with Abyssal Echoes and an Omen of Light loop for the last T1 flat; he finishes the desecration before any further whittling (6:10–6:15). Ordinary-mod desecration + Light loop is not a planner method until P1. The desecrated blocker of phase 3 must already be gone (phase 5).",
+          "sources": [
+            {
+              "text": "echoes with collarbones to reveal another T1 damage to attacks",
+              "at": "6:17–6:31",
+              "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+            }
+          ]
+        }
+      ],
+      "decisionPoints": [],
+      "salvage": [],
+      "costClaims": [
+        {
+          "text": "minimum bankroll before starting: 200 div",
+          "at": "0:20–0:27",
+          "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt",
+          "low": 200,
+          "high": 200,
+          "unit": "div",
+          "dateContext": "0.5 Runes of Aldur, at upload"
+        },
+        {
+          "text": "second T1 flat: 200–300 Chaos on average",
+          "at": "1:41–1:46",
+          "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt",
+          "low": 200,
+          "high": 300,
+          "unit": "chaos",
+          "dateContext": "0.5 Runes of Aldur, at upload"
+        }
+      ],
+      "saleClaims": [
+        {
+          "text": "finished ring worth about 200 to 600 div",
+          "at": "6:37–6:46",
+          "sourceRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt",
+          "low": 200,
+          "high": 600,
+          "unit": "div",
+          "dateContext": "0.5 Runes of Aldur, at upload"
+        }
+      ],
+      "durability": {
+        "why_it_works": "The keeper flat is fractured behind a desecrated blocker (1-in-3, KB §2), then Chaos, Breach-essence quality, catalysed Exalts, Whittling and desecration build the rest; no league-only mechanic.",
+        "breaks_when": [
+          "Fracturing Orb rules change (four-mod minimum, desecrated mods counting but not fracturable)",
+          "Omen of Whittling's lowest-modifier-level rule changes",
+          "Essence of the Breach stops adding the quality mod, or the Breach Ring's +20% maximum quality implicit changes",
+          "Omen of Light or desecration of ordinary ring mods changes"
+        ],
+        "claim": {
+          "v": "vs",
+          "src": [
+            "https://www.youtube.com/watch?v=kPBToE_G5t8",
+            "https://www.youtube.com/watch?v=m_n2htaTr98"
+          ],
+          "note": "Graded 2+ sources only for the shared durability mechanics (Fracturing Orb one-in-three and desecrated mods not fracturable, Omen of Whittling's lowest-level rule, Breach essence quality that survives its removal), which both Alohaa and SaVeQ show. Everything route-specific here (ilvl 82, 60% Reaver quality, cost and sale bands, the desecrated-blocker order) rests on Alohaa alone: one source (ss)."
+        }
+      },
+      "sources": [
+        {
+          "kind": "video",
+          "title": "Endgame Ring & Amulet Crafting Guide for Attack Builds | PoE 2 0.5 Runes of Aldur",
+          "url": "https://www.youtube.com/watch?v=kPBToE_G5t8",
+          "creator": "Alohaa",
+          "date": null,
+          "datePrecision": null,
+          "tier": "primary",
+          "ref": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt"
+        }
+      ],
+      "conflicts": [
+        {
+          "topic": "which Chaos Orb drives the Whittling loop",
+          "positions": [
+            {
+              "videoId": "kPBToE_G5t8",
+              "at": "4:14–4:28",
+              "text": "Greater Chaos Orb with the Omen of Whittling (plain Chaos later, 5:20)"
+            },
+            {
+              "videoId": "m_n2htaTr98",
+              "at": "5:28–5:46",
+              "text": "'whittle with normal chaos orb. You don't want to use greater.'"
+            }
+          ],
+          "resolution": "Neither gives a reason with numbers. The Greater Chaos floor is still an open KB question (§10 q1), so the planner prices plain Chaos (cheaper, and the item text of Whittling only needs 'a Chaos Orb') and flags Greater as an untested variant.",
+          "grade": "cf"
+        },
+        {
+          "topic": "whether Omen of Catalysing Exaltation biases both mods of an Omen of Greater Exaltation slam",
+          "positions": [
+            {
+              "videoId": "_sSjC5LX_Ck",
+              "at": "4:07–4:19",
+              "text": "the catalysing omen applies to both exalts of the greater omen; tested, worked last league"
+            },
+            {
+              "url": "https://www.pathofexile.com/forum/view-thread/3849100",
+              "text": "combined with Sinistral/Dextral/Greater Exaltation omens, 0 of 3 hit the catalysed tag; OP suspects a bug (n=3)"
+            }
+          ],
+          "resolution": "KB §4 keeps this [cf] and budgets FIRST-MOD-ONLY; the creator's claim has no count on screen. The planner keeps first-mod-only until an owner in-game test (KB §10 T10) settles it. Alohaa (kPBToE_G5t8 2:41–3:15) and XTheFarmerX both pair the omens, so the pairing itself is legal.",
+          "grade": "cf"
+        },
+        {
+          "topic": "whether a physical flat belongs in the three-flat set",
+          "positions": [
+            {
+              "videoId": "TWgmQuiLeHA",
+              "at": "2:01–2:09",
+              "text": "the chaosed second T1 flat 'cannot be fizz'; physical is accepted only for the last (Omen of Light) prefix, where its higher weight helps (2:09–2:17)"
+            },
+            {
+              "videoId": "kPBToE_G5t8",
+              "at": "0:49–0:56",
+              "text": "any T1 flat to attacks, fire, cold, lightning or physical (physical least preferred)"
+            },
+            {
+              "videoId": "m_n2htaTr98",
+              "at": "2:22–2:35",
+              "text": "chaos for an elemental flat, but the T1 physical that landed was kept (2:57–3:00)"
+            },
+            {
+              "videoId": "kE8Tn32yNp0",
+              "at": "6:52–7:05",
+              "text": "the catalysed prefix slam targets physical on purpose (Physical catalyst)"
+            }
+          ],
+          "resolution": "Physical is a member of the group, not excluded: three creators keep or target it and the owner's 2026-10-05 sample has a physical flat on 4 of 5 listed rings (market-sample.json). Keyson's rule is an ORDER preference (leave the likelier physical flat for the last, cheapest-to-retry step), so the planner treats it as a sequencing hint, not a target restriction.",
+          "grade": "cf"
+        }
+      ]
+    },
+    {
+      "id": "ring-attack-flat-high-dusk-four-flat",
+      "archetype": "ring-attack-flat",
+      "itemClass": "Rings",
+      "bases": [
+        "Dusk Ring"
+      ],
+      "tier": "high",
+      "patch": {
+        "verified_against": "0.5.5b",
+        "leagues": [
+          "Runes of Aldur"
+        ],
+        "stamped_at": "2026-10-06"
+      },
+      "status": "draft",
+      "targetRoles": [
+        {
+          "id": "attack-flats",
+          "side": "prefix",
+          "count": 4,
+          "anyOf": [
+            {
+              "family": "PhysicalDamage",
+              "label": "Adds # to # Physical Damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "FireDamage",
+              "label": "Adds # to # Fire damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "ColdDamage",
+              "label": "Adds # to # Cold damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "LightningDamage",
+              "label": "Adds # to # Lightning damage to Attacks",
+              "source": "natural"
+            }
+          ],
+          "minTier": 3,
+          "note": "Four flat prefixes need a Dusk Ring (KB §3); the video never names the base, so this is inferred (m_n2htaTr98 0:45–0:50 wants four flats, 4:36–4:40 has three, 9:04–9:10 reveals the fourth). T1 on the fractured, chaosed and catalysed flats; T1 or T2 accepted on the desecrated fourth (6:40–7:01); the mid-budget version sticks with T3 everywhere (12:17–12:35)."
+        },
+        {
+          "id": "useful-suffixes",
+          "side": "suffix",
+          "count": 2,
+          "anyOf": [
+            {
+              "family": "FireResistance",
+              "label": "+#% to Fire Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "ColdResistance",
+              "label": "+#% to Cold Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "LightningResistance",
+              "label": "+#% to Lightning Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "AllResistances",
+              "label": "+#% to all Elemental Resistances",
+              "source": "natural"
+            },
+            {
+              "family": "ItemFoundRarityIncrease",
+              "label": "#% increased Rarity of Items found",
+              "source": "natural"
+            }
+          ],
+          "minTier": null,
+          "note": "'Depending on the suffixes' (12:20–12:35); all-res + another res is his best case (9:14–9:28)."
+        }
+      ],
+      "start": {
+        "kind": "clean",
+        "carried": [],
+        "askClaims": [],
+        "requiresPlayerConsent": false
+      },
+      "preconditions": {
+        "ilvlMin": null,
+        "quality": {
+          "catalyst": "reaver-catalyst",
+          "pct": 40
+        }
+      },
+      "skeleton": [
+        {
+          "phase": 1,
+          "method": "fracture",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "On prepared rings carrying an elemental T1 flat (how they were made or bought is unstated); physical is avoided for the fracture because its desecration weight is doubled. Two of four fractured (2:05–2:15).",
+          "sources": [
+            {
+              "text": "fracture one of the elemental flats",
+              "at": "1:54–2:09",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 2,
+          "method": "chaos-loop",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Annul down, then chaos for another T1 elemental flat; he kept the T1 physical that landed (2:57–3:00). Mid budget: stop at T3. Alternative without chaos: Breach essence + Tul's + Catalysing + Sinistral Greater Exalt, annul and redo the essence on a miss (11:38–11:53).",
+          "sources": [
+            {
+              "text": "annul down, chaos spam for another T1 elemental flat",
+              "at": "2:22–2:35",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            },
+            {
+              "text": "mid-budget craft, stick with T3",
+              "at": "12:17–12:35",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 3,
+          "method": "slam-fill",
+          "side": "suffix",
+          "targetRole": null,
+          "note": "Placeholder suffix for the Breach essence; a normal Exalted Orb, no side omen named.",
+          "sources": [
+            {
+              "text": "add a suffix with a normal exalted orb",
+              "at": "3:04–3:12",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 4,
+          "method": "breach-quality",
+          "side": "suffix",
+          "targetRole": null,
+          "note": "Dextral Crystallisation + Essence of the Breach; quality can go beyond 20% (3:42–3:44).",
+          "sources": [
+            {
+              "text": "Dextral Crystallisation + Essence of the Breach",
+              "at": "3:34–3:44",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 5,
+          "method": "slam-fill",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Cold (Tul's) catalyst + Catalysing Exaltation + Sinistral Exaltation + Perfect Exalt for the missing element's flat; the omen consumes the catalyst quality. Hit T1 cold on the first try, which he calls super lucky.",
+          "sources": [
+            {
+              "text": "catalysing + sinistral exaltation on the prefix, perfect exalt",
+              "at": "4:07–4:40",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 6,
+          "method": "catalyse-finish",
+          "side": null,
+          "targetRole": null,
+          "note": "Reaver (Attack, not Damage) catalyst up to 40% BEFORE the quality mod is whittled away.",
+          "sources": [
+            {
+              "text": "reaver catalyst, quality up to 40",
+              "at": "5:10–5:24",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 7,
+          "method": "whittle-loop",
+          "side": null,
+          "targetRole": null,
+          "note": "Remove the maximum-quality mod with plain Chaos, not Greater.",
+          "sources": [
+            {
+              "text": "whittle with normal chaos, not greater",
+              "at": "5:28–5:46",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 8,
+          "method": "slam-fill",
+          "side": "suffix",
+          "targetRole": "useful-suffixes",
+          "note": "Fill every suffix BEFORE desecrating so the bone can only land a prefix; his first attempt skipped this and failed (7:32–7:41).",
+          "sources": [
+            {
+              "text": "fill your suffixes first so the desecration goes to prefixes",
+              "at": "7:45–8:03",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 9,
+          "method": "unsupported",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Desecrate the fourth flat: Sinistral Necromancy, Preserved collarbones, Abyssal Echoes and an Omen of Light loop (5:49–6:25); T1 or T2 accepted (6:40–7:01); T1 lightning after several rerolls (9:04–9:10). Not a planner method until P1.",
+          "sources": [
+            {
+              "text": "sinistral necromancy, desecrate the prefix, omens of light for lightning",
+              "at": "5:49–6:25",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            },
+            {
+              "text": "doesn't look like we can stick with T1 or T2",
+              "at": "6:40–7:01",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        },
+        {
+          "phase": 10,
+          "method": "whittle-loop",
+          "side": "suffix",
+          "targetRole": "useful-suffixes",
+          "note": "Whittle the suffixes for all-res plus another resistance; he stopped at rarity + cold res (9:35–9:45).",
+          "sources": [
+            {
+              "text": "whittle for all elemental resistances with any other resistance",
+              "at": "9:14–9:28",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+            }
+          ]
+        }
+      ],
+      "decisionPoints": [
+        {
+          "afterPhase": 1,
+          "acceptLadder": [
+            1
+          ],
+          "salvage": "vendor-fracture-miss"
+        },
+        {
+          "afterPhase": 9,
+          "acceptLadder": [
+            1,
+            2,
+            3
+          ],
+          "salvage": "settle-t3"
+        }
+      ],
+      "salvage": [
+        {
+          "id": "vendor-fracture-miss",
+          "action": "Fracture missed the flat: sell the ring to a vendor",
+          "method": "unsupported",
+          "valueClaims": []
+        },
+        {
+          "id": "settle-t3",
+          "action": "Mid budget: accept T3 flats (chaos, slam and desecrate for T3) and list the ring",
+          "method": "unsupported",
+          "valueClaims": [
+            {
+              "text": "ring with T3 flats still sells for about 100–150 div, depending on suffixes",
+              "at": "12:20–12:35",
+              "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt",
+              "low": 100,
+              "high": 150,
+              "unit": "div",
+              "dateContext": "0.5, at upload"
+            }
+          ]
+        }
+      ],
+      "costClaims": [
+        {
+          "text": "this craft: 120–200 div depending on luck (T1 flats)",
+          "at": "0:03–0:07",
+          "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt",
+          "low": 120,
+          "high": 200,
+          "unit": "div",
+          "dateContext": "0.5, at upload"
+        },
+        {
+          "text": "mid-budget version 50–80 div if not picky with the modifiers (T3 flats)",
+          "at": "12:45–12:50",
+          "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt",
+          "low": 50,
+          "high": 80,
+          "unit": "div",
+          "dateContext": "0.5, at upload"
+        }
+      ],
+      "saleClaims": [
+        {
+          "text": "his four-flat ring: price check 690, listed at 650, expects 500–600",
+          "at": "10:02–10:20",
+          "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt",
+          "low": 500,
+          "high": 690,
+          "unit": "div",
+          "dateContext": "0.5, at upload"
+        },
+        {
+          "text": "mid-budget ring with T3 flats sells for about 100–150 div, depending on suffixes",
+          "at": "12:20–12:35",
+          "sourceRef": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt",
+          "low": 100,
+          "high": 150,
+          "unit": "div",
+          "dateContext": "0.5, at upload"
+        }
+      ],
+      "durability": {
+        "why_it_works": "Fracture the keeper flat, add two more T1 flats by chaos and one catalysed slam, keep the 40% Reaver quality while the Breach quality mod is whittled out of a prefix slot, then desecrate the fourth prefix with the suffixes already full.",
+        "breaks_when": [
+          "Fracturing Orb rules change",
+          "Omen of Whittling's lowest-modifier-level rule changes",
+          "Essence of the Breach stops adding the quality mod or the quality no longer survives its removal",
+          "The Dusk Ring's extra prefix changes",
+          "Omen of Light or desecration of ordinary ring mods changes"
+        ],
+        "claim": {
+          "v": "ss",
+          "src": [
+            "https://www.youtube.com/watch?v=m_n2htaTr98"
+          ],
+          "note": "One creator. SaVeQ (33) and ASaVeQ (transcripts 23, 27, 30) are very likely the same person, so the ASaVeQ Dusk Ring video (27) is not a second source."
+        }
+      },
+      "sources": [
+        {
+          "kind": "video",
+          "title": "How to craft attack Rings with 4 flats Poe2 0.5",
+          "url": "https://www.youtube.com/watch?v=m_n2htaTr98",
+          "creator": "SaVeQ",
+          "date": null,
+          "datePrecision": null,
+          "tier": "primary",
+          "ref": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt"
+        }
+      ],
+      "conflicts": [
+        {
+          "topic": "which Chaos Orb drives the Whittling loop",
+          "positions": [
+            {
+              "videoId": "kPBToE_G5t8",
+              "at": "4:14–4:28",
+              "text": "Greater Chaos Orb with the Omen of Whittling (plain Chaos later, 5:20)"
+            },
+            {
+              "videoId": "m_n2htaTr98",
+              "at": "5:28–5:46",
+              "text": "'whittle with normal chaos orb. You don't want to use greater.'"
+            }
+          ],
+          "resolution": "Neither gives a reason with numbers. The Greater Chaos floor is still an open KB question (§10 q1), so the planner prices plain Chaos (cheaper, and the item text of Whittling only needs 'a Chaos Orb') and flags Greater as an untested variant.",
+          "grade": "cf"
+        },
+        {
+          "topic": "whether a physical flat belongs in the three-flat set",
+          "positions": [
+            {
+              "videoId": "TWgmQuiLeHA",
+              "at": "2:01–2:09",
+              "text": "the chaosed second T1 flat 'cannot be fizz'; physical is accepted only for the last (Omen of Light) prefix, where its higher weight helps (2:09–2:17)"
+            },
+            {
+              "videoId": "kPBToE_G5t8",
+              "at": "0:49–0:56",
+              "text": "any T1 flat to attacks, fire, cold, lightning or physical (physical least preferred)"
+            },
+            {
+              "videoId": "m_n2htaTr98",
+              "at": "2:22–2:35",
+              "text": "chaos for an elemental flat, but the T1 physical that landed was kept (2:57–3:00)"
+            },
+            {
+              "videoId": "kE8Tn32yNp0",
+              "at": "6:52–7:05",
+              "text": "the catalysed prefix slam targets physical on purpose (Physical catalyst)"
+            }
+          ],
+          "resolution": "Physical is a member of the group, not excluded: three creators keep or target it and the owner's 2026-10-05 sample has a physical flat on 4 of 5 listed rings (market-sample.json). Keyson's rule is an ORDER preference (leave the likelier physical flat for the last, cheapest-to-retry step), so the planner treats it as a sequencing hint, not a target restriction.",
+          "grade": "cf"
+        }
+      ]
+    },
+    {
+      "id": "ring-attack-flat-high-bought-fracture",
+      "archetype": "ring-attack-flat",
+      "itemClass": "Rings",
+      "bases": [
+        "Gold Ring"
+      ],
+      "tier": "high",
+      "patch": {
+        "verified_against": "0.5.5b",
+        "leagues": [
+          "Runes of Aldur"
+        ],
+        "stamped_at": "2026-10-06"
+      },
+      "status": "draft",
+      "targetRoles": [
+        {
+          "id": "attack-flats",
+          "side": "prefix",
+          "count": 3,
+          "anyOf": [
+            {
+              "family": "PhysicalDamage",
+              "label": "Adds # to # Physical Damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "FireDamage",
+              "label": "Adds # to # Fire damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "ColdDamage",
+              "label": "Adds # to # Cold damage to Attacks",
+              "source": "natural"
+            },
+            {
+              "family": "LightningDamage",
+              "label": "Adds # to # Lightning damage to Attacks",
+              "source": "natural"
+            }
+          ],
+          "minTier": 3,
+          "note": "T1 on the fractured and the chaosed flat; the last (desecrated) prefix aims T1 and settles for T2/T3 (TWgmQuiLeHA 19:19–19:33)."
+        },
+        {
+          "id": "t1-resistances",
+          "side": "suffix",
+          "count": 2,
+          "anyOf": [
+            {
+              "family": "FireResistance",
+              "label": "+#% to Fire Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "ColdResistance",
+              "label": "+#% to Cold Resistance",
+              "source": "natural"
+            },
+            {
+              "family": "LightningResistance",
+              "label": "+#% to Lightning Resistance",
+              "source": "natural"
+            }
+          ],
+          "minTier": 1,
+          "note": "Two T1 elemental resistances are required (TWgmQuiLeHA 11:40–11:48); T1 needs ilvl 82 (KB §3)."
+        },
+        {
+          "id": "last-suffix",
+          "side": "suffix",
+          "count": 1,
+          "anyOf": [
+            {
+              "family": "AllResistances",
+              "label": "+#% to all Elemental Resistances",
+              "source": "natural"
+            },
+            {
+              "family": "ItemFoundRarityIncrease",
+              "label": "#% increased Rarity of Items found",
+              "source": "natural"
+            }
+          ],
+          "minTier": null,
+          "note": "Best last suffix: a third T1 resistance, all-res or rarity (TWgmQuiLeHA 11:40–11:48); a third T1 res is listed under t1-resistances' families."
+        }
+      ],
+      "start": {
+        "kind": "bought_fractured_target",
+        "carried": [
+          {
+            "role": "attack-flats",
+            "fractured": true
+          }
+        ],
+        "askClaims": [
+          {
+            "text": "ilvl 82 Gold Ring with a fractured T1 flat: about 60–70 div",
+            "at": "7:52–7:58",
+            "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+            "low": 60,
+            "high": 70,
+            "unit": "div",
+            "dateContext": "late 0.5 league (Runes of Aldur), at upload"
+          }
+        ],
+        "requiresPlayerConsent": true
+      },
+      "preconditions": {
+        "ilvlMin": 82,
+        "quality": {
+          "catalyst": "reaver-catalyst",
+          "pct": 40
+        }
+      },
+      "skeleton": [
+        {
+          "phase": 1,
+          "method": "chaos-loop",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Second T1 flat; Keyson excludes physical here (see conflicts).",
+          "sources": [
+            {
+              "text": "chaos for a second T1 flat, not physical",
+              "at": "2:01–2:09",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        },
+        {
+          "phase": 2,
+          "method": "slam-fill",
+          "side": "suffix",
+          "targetRole": null,
+          "note": "Placeholder suffix (Dextral Exaltation inferred) that the Breach essence eats next.",
+          "sources": [
+            {
+              "text": "exalt a suffix, it doesn't matter what it hits",
+              "at": "3:26–3:38",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        },
+        {
+          "phase": 3,
+          "method": "breach-quality",
+          "side": "suffix",
+          "targetRole": null,
+          "note": null,
+          "sources": [
+            {
+              "text": "Dextral Crystallisation + Essence of the Breach eats the slammed suffix",
+              "at": "3:39–3:52",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        },
+        {
+          "phase": 4,
+          "method": "slam-fill",
+          "side": "suffix",
+          "targetRole": "t1-resistances",
+          "note": "Catalysed Perfect Exalt with a lightning or fire catalyst (never cold), re-catalysing before each slam; a poor slam can be annulled and re-slammed (4:01–4:11).",
+          "sources": [
+            {
+              "text": "lightning or fire catalyst, Perfect Exalted Orbs",
+              "at": "4:53–5:09",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        },
+        {
+          "phase": 5,
+          "method": "catalyse-finish",
+          "side": null,
+          "targetRole": null,
+          "note": "Attack (Reaver) quality BEFORE the Breach quality mod is whittled away; skipping it bricked three of his rings (6:28–6:41). Percentage not stated; at most 40% is inferred (Gold Ring cap 20% + the 20% Breach essence), not said by him.",
+          "sources": [
+            {
+              "text": "quality of attacks first, after the two slams",
+              "at": "6:48–6:56",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        },
+        {
+          "phase": 6,
+          "method": "whittle-loop",
+          "side": null,
+          "targetRole": null,
+          "note": "Whittle the Breach quality mod off; a 50/50 whether the replacement is a prefix or a suffix.",
+          "sources": [
+            {
+              "text": "whittle again if it gives back a prefix",
+              "at": "8:14–8:26",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        },
+        {
+          "phase": 7,
+          "method": "unsupported",
+          "side": "prefix",
+          "targetRole": null,
+          "note": "Desecrate the open prefix for ANY item-level-75+ mod so later whittles cannot target it; reroll with Omen of Light when whittles start hitting it (10:44–10:49). The planner has no level-anchor model (P1).",
+          "sources": [
+            {
+              "text": "a desecration with an item level 75 mod, we don't care what",
+              "at": "9:19–9:25",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        },
+        {
+          "phase": 8,
+          "method": "whittle-loop",
+          "side": "suffix",
+          "targetRole": "t1-resistances",
+          "note": "About 1 in 5 resistance hits from the whittles is T1 (11:40–11:44); T1 res (level 82) cannot be whittled away (13:20–13:27). Just over 20 whittles for the whole craft (7:17–7:23). A stuck high-level suffix is handled with Dextral Erasure (15:30–15:50) (inferred; he says 'suffix chaos' omen).",
+          "sources": [
+            {
+              "text": "one in five to get a tier one; two T1 res needed",
+              "at": "11:40–11:48",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        },
+        {
+          "phase": 9,
+          "method": "unsupported",
+          "side": "prefix",
+          "targetRole": "attack-flats",
+          "note": "Re-desecrate the last prefix (bone type unstated) and loop Omen of Light for a T1 flat or prefix rarity; ordinary-mod desecration + Light loop is not a planner method until P1.",
+          "sources": [
+            {
+              "text": "omens of light and bones for T1 phys, T1 fire or rarity",
+              "at": "16:59–17:10",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            },
+            {
+              "text": "15 lights with 15 bones should be enough, usually fewer than 10",
+              "at": "17:48–17:55",
+              "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+            }
+          ]
+        }
+      ],
+      "decisionPoints": [
+        {
+          "afterPhase": 9,
+          "acceptLadder": [
+            1,
+            2,
+            3
+          ],
+          "salvage": "settle-low-tier-or-prefix-rarity"
+        }
+      ],
+      "salvage": [
+        {
+          "id": "settle-low-tier-or-prefix-rarity",
+          "action": "Out of money at the last reveal: take a T2/T3 flat or prefix rarity and list the ring",
+          "method": "unsupported",
+          "valueClaims": []
+        },
+        {
+          "id": "rescue-skipped-quality",
+          "action": "Attack quality skipped before removing the Breach mod: rescue-craft to a cheaper outcome (a loss)",
+          "method": "unsupported",
+          "valueClaims": []
+        }
+      ],
+      "costClaims": [
+        {
+          "text": "whole craft expected 300–400 div TOTAL, including the 60–70 div base ('we started with 400', 18:10; ~50 div of leftover omens and whittles in stock)",
+          "at": "18:10–18:24",
+          "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+          "low": 300,
+          "high": 400,
+          "unit": "div",
+          "dateContext": "late 0.5 league (Runes of Aldur), at upload"
+        },
+        {
+          "text": "variance: lucky 200 div, unlucky 600–700 div",
+          "at": "0:44–0:52",
+          "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+          "low": 200,
+          "high": 700,
+          "unit": "div",
+          "dateContext": "late 0.5 league (Runes of Aldur), at upload"
+        },
+        {
+          "text": "his own second-flat chaos spend: about 600 Chaos",
+          "at": "2:46–2:54",
+          "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+          "low": 600,
+          "high": 600,
+          "unit": "chaos",
+          "dateContext": "late 0.5 league (Runes of Aldur), at upload"
+        }
+      ],
+      "saleClaims": [
+        {
+          "text": "going rate for finished rings 400–500 div; not worth profit-crafting late league",
+          "at": "0:52–0:59",
+          "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+          "low": 400,
+          "high": 500,
+          "unit": "div",
+          "dateContext": "late 0.5 league (Runes of Aldur), at upload"
+        },
+        {
+          "text": "his result would list at 550 (an identical copy listed at 625); he says the craft made about 100–150 div (21:10–21:17)",
+          "at": "21:34–21:47",
+          "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+          "low": 550,
+          "high": 625,
+          "unit": "div",
+          "dateContext": "late 0.5 league (Runes of Aldur), at upload"
+        },
+        {
+          "text": "worth it only if the result sells for 800–900 div",
+          "at": "18:26–18:32",
+          "sourceRef": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+          "low": 800,
+          "high": 900,
+          "unit": "div",
+          "dateContext": "conditional, early league"
+        }
+      ],
+      "durability": {
+        "why_it_works": "Every step is a currency or omen effect (Chaos, catalysed Exalts, Breach essence, Whittling, desecration + Omen of Light) with no league-only mechanic; the fractured flat survives everything.",
+        "breaks_when": [
+          "Omen of Whittling's lowest-modifier-level rule changes (the ilvl-75 desecrated anchor depends on it)",
+          "Omen of Light or desecration of ordinary ring mods changes",
+          "Essence of the Breach stops adding the quality mod or the quality no longer survives its removal",
+          "flat attack damage weights or the ilvl-82 T1 resistance gate change"
+        ],
+        "claim": {
+          "v": "ss",
+          "src": [
+            "https://www.youtube.com/watch?v=TWgmQuiLeHA"
+          ]
+        }
+      },
+      "sources": [
+        {
+          "kind": "video",
+          "title": "Attack ring craft PERFECTED! PoE 2 - 0.5",
+          "url": "https://www.youtube.com/watch?v=TWgmQuiLeHA",
+          "creator": "Keyson",
+          "date": null,
+          "datePrecision": null,
+          "tier": "primary",
+          "ref": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt"
+        }
+      ],
+      "conflicts": [
+        {
+          "topic": "whether a physical flat belongs in the three-flat set",
+          "positions": [
+            {
+              "videoId": "TWgmQuiLeHA",
+              "at": "2:01–2:09",
+              "text": "the chaosed second T1 flat 'cannot be fizz'; physical is accepted only for the last (Omen of Light) prefix, where its higher weight helps (2:09–2:17)"
+            },
+            {
+              "videoId": "kPBToE_G5t8",
+              "at": "0:49–0:56",
+              "text": "any T1 flat to attacks, fire, cold, lightning or physical (physical least preferred)"
+            },
+            {
+              "videoId": "m_n2htaTr98",
+              "at": "2:22–2:35",
+              "text": "chaos for an elemental flat, but the T1 physical that landed was kept (2:57–3:00)"
+            },
+            {
+              "videoId": "kE8Tn32yNp0",
+              "at": "6:52–7:05",
+              "text": "the catalysed prefix slam targets physical on purpose (Physical catalyst)"
+            }
+          ],
+          "resolution": "Physical is a member of the group, not excluded: three creators keep or target it and the owner's 2026-10-05 sample has a physical flat on 4 of 5 listed rings (market-sample.json). Keyson's rule is an ORDER preference (leave the likelier physical flat for the last, cheapest-to-retry step), so the planner treats it as a sequencing hint, not a target restriction.",
+          "grade": "cf"
+        },
+        {
+          "topic": "Chaos Orbs needed for the second T1 flat",
+          "positions": [
+            {
+              "videoId": "TWgmQuiLeHA",
+              "at": "2:20–2:26",
+              "text": "'the average is like 400' (elemental only, physical excluded); his own run took about 600 (2:46–2:54)"
+            },
+            {
+              "videoId": "kPBToE_G5t8",
+              "at": "1:41–1:46",
+              "text": "'roughly 200 to 300 chaos on average' (any of the four flats)"
+            }
+          ],
+          "resolution": "Both are statements without counted attempts (Keyson's 600 is n=1). The gap is consistent with Keyson excluding physical, the heaviest flat, from the accepted set. The planner computes the count from catalog weights for the accepted set and should land inside 200–600 Chaos; outside that band is a planner defect to investigate.",
+          "grade": "cf"
+        }
+      ]
+    }
+  ]
+}
