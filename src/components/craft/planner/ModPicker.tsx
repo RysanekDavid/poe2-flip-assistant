@@ -26,7 +26,7 @@ interface Props {
   pool: PlannerPool;
   ilvl: number;
   current: SlotPick | null;
-  /** Families already on the item in another slot. */
+  /** Families already picked: in another slot or in either pool. */
   taken: ReadonlySet<string>;
   onPick: (pick: SlotPick) => void;
   onClose: () => void;
@@ -86,7 +86,7 @@ function FamilyRow({ f, pool, ilvl, open, taken, current, onToggle, onTier }: Ro
         disabled={taken}
         aria-expanded={open}
         onClick={onToggle}
-        title={taken ? "already on the item in another slot" : undefined}
+        title={taken ? "already picked: in another slot or a pool" : undefined}
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-white/5 focus-visible:outline focus-visible:outline-1 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ChevronRight aria-hidden className={`h-3.5 w-3.5 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-90" : ""}`} />
@@ -94,7 +94,7 @@ function FamilyRow({ f, pool, ilvl, open, taken, current, onToggle, onTier }: Ro
           <span className="block text-sm text-[#8888ff]">{genericText(top.text)}</span>
           <span className="block text-xs text-neutral-500">
             {f.tiers.length} {f.tiers.length === 1 ? "tier" : "tiers"} · best needs ilvl {top.level}
-            {taken ? " · already on the item" : ""}
+            {taken ? " · already picked" : ""}
           </span>
         </span>
         <FamilyBadges f={f} pool={pool} />

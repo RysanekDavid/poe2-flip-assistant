@@ -26,7 +26,7 @@ import {
 
 export const DEFAULT_START: StartInput = { mode: "compare", carried: [], fractured: true, askDiv: null, note: null };
 
-export const CARRIED_CLEARED_NOTE = "A mod you picked for the bought base left the item: pick again, or leave none and the planner chooses.";
+export const CARRIED_CLEARED_NOTE = "The mod you picked for the bought base is no longer on your item: pick another, or leave none and the planner chooses.";
 
 /** The same wanted mod in a slot: a tier change keeps it, another family (or source) is another mod. */
 const sameMod = (a: SlotPick | null | undefined, b: SlotPick | null | undefined): boolean => a != null && b != null && a.family === b.family && a.side === b.side && a.source === b.source;
@@ -109,18 +109,17 @@ export function totalWithBase(plan: Pick<PlanResponse, "totals" | "start">, askD
   return { point: t.point + b.point * askDiv, low: t.low + b.low * askDiv, high: t.high + b.high * askDiv };
 }
 
-/** A plan's total counts the base: only a bought plan with the player's price entered (a clean plan's bill never prices its base). */
-export const totalIncludesBase = (plan: Pick<PlanResponse, "totals" | "start">, askDiv: number | null): boolean => totalWithBase(plan, askDiv) != null;
-
 /**
- * Which compare card earns the "cheaper" badge: only when BOTH totals count the base — a clean
- * total without its base against a bought total with it would favour the clean plan by the price.
+ * Which compare card earns the "cheaper" badge. Both totals counting the base: the lower wins. A
+ * clean total still lacks its base, which can only add to it — so a bought total (base included)
+ * under it is cheaper whatever that base costs; the clean plan never wins on an incomplete total.
  */
 export function cheaperPlan(primary: Pick<PlanResponse, "totals" | "start"> | null, bought: Pick<PlanResponse, "totals" | "start"> | null, askDiv: number | null): "primary" | "bought" | null {
-  if (!primary || !bought || !totalIncludesBase(primary, askDiv) || !totalIncludesBase(bought, askDiv)) return null;
-  const tp = totalWithBase(primary, askDiv)!.point;
-  const tb = totalWithBase(bought, askDiv)!.point;
-  return tp < tb ? "primary" : tb < tp ? "bought" : null;
+  const tb = bought ? totalWithBase(bought, askDiv) : null;
+  if (!primary || !tb) return null;
+  const withBase = totalWithBase(primary, askDiv);
+  if (!withBase) return primary.start.kind === "clean" && primary.totals.div && tb.point < primary.totals.div.point ? "bought" : null;
+  return withBase.point < tb.point ? "primary" : tb.point < withBase.point ? "bought" : null;
 }
 
 /** The trade search body for a plan's bought base (what the base-link route takes). */

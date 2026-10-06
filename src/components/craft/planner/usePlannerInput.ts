@@ -25,7 +25,7 @@ const res = (family: string, id: string) => pick(family, "suffix", "natural", id
 export const PLANNER_EXAMPLES: readonly PlannerExample[] = [
   {
     label: "Breach Ring mana stacker",
-    title: "T1 flat mana, essence % mana, Amanamu minion damage, two resistances",
+    title: "top-tier flat mana, essence % mana, Amanamu minion damage, two resistances",
     itemClass: "Rings",
     base: "Breach Ring",
     ilvl: 82,
@@ -39,7 +39,7 @@ export const PLANNER_EXAMPLES: readonly PlannerExample[] = [
   },
   {
     label: "Breach Ring: any 3 attack flats",
-    title: "any 3 of the cold, fire, lightning and physical attack flats (tier 3 or better) and any 2 resistances",
+    title: "any 3 of the cold, fire, lightning and physical attack flats (tier 7+ of 9: the top three tiers) and any 2 resistances",
     itemClass: "Rings",
     base: "Breach Ring",
     ilvl: 82,

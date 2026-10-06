@@ -120,7 +120,8 @@ function BoughtFields(props: Props) {
           base price <AskField value={s.askDiv} onChange={(v) => props.onChange({ askDiv: v })} label="your price for the bought base" />
         </span>
       </div>
-      <p className="text-xs text-neutral-400">{s.carried.length === 0 ? "No mod picked: the planner chooses which wanted mod the base carries fractured." : s.fractured ? "A rare base with this mod fractured." : "A magic base with just these mods (one prefix, one suffix)."}</p>
+      {/* the note already says what an empty pick means: the hint below would repeat it */}
+      {!s.note && <p className="text-xs text-neutral-400">{s.carried.length === 0 ? "No mod picked: the planner chooses which wanted mod the base carries fractured." : s.fractured ? "A rare base with this mod fractured." : "A magic base with just these mods (one prefix, one suffix)."}</p>}
     </div>
   );
 }
