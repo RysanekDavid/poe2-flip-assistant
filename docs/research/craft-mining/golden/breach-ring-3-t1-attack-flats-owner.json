@@ -1,0 +1,57 @@
+{
+  "id": "breach-ring-3-t1-attack-flats-owner",
+  "archetype": "ring-attack-flat",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "The owner's Breach Ring: any 3 of the 4 top-tier attack flats as prefixes, start compared; creator side = the prefix part of Keyson's route (bought fractured flat, Chaos for the second, desecration + Omen of Light for the third).",
+  "planRequest": {
+    "itemClass": "Rings",
+    "base": "Breach Ring",
+    "ilvl": 82,
+    "targets": [],
+    "groups": [
+      {
+        "side": "prefix",
+        "need": 3,
+        "candidates": [
+          { "family": "ColdDamage", "minModId": "AddedColdDamage9" },
+          { "family": "FireDamage", "minModId": "AddedFireDamage9" },
+          { "family": "LightningDamage", "minModId": "AddedLightningDamage9" },
+          { "family": "PhysicalDamage", "minModId": "AddedPhysicalDamage9" }
+        ]
+      }
+    ],
+    "includeUnverified": false,
+    "quality": null
+  },
+  "startMode": "compare",
+  "creator": {
+    "tags": ["bought-base", "fracture-target", "chaos-loop", "desecrate", "omen-light", "annul"],
+    "materials": [
+      { "id": "chaos", "uses": { "point": 400, "low": 200, "high": 600 } },
+      { "id": "preserved-collarbone", "uses": { "point": 12, "low": 6, "high": 20 } },
+      { "id": "omen-of-light", "uses": { "point": 11, "low": 5, "high": 19 } },
+      { "id": "annul", "uses": { "point": 11, "low": 5, "high": 19 } }
+    ],
+    "baseDiv": { "point": 65, "low": 60, "high": 70 },
+    "statedTotalDiv": null,
+    "steps": [
+      "Buy an item level 82+ ring with a FRACTURED top-tier attack flat (cold, fire or lightning); Keyson paid 60-70 div for his Gold Ring base.",
+      "Chaos Orb until a second top-tier elemental attack flat lands: about 400 on average, his own run took about 600.",
+      "Keyson's suffix work (placeholder slam, Essence of the Breach, catalysed Perfect Exalt slams, Reaver quality, whittles) is out of scope: this request has no suffix targets, so its materials are not counted.",
+      "Desecrate the last prefix with a collarbone; on a miss, Omen of Light + Orb of Annulment and desecrate again until a top-tier flat (he says 15 tries should be enough, under 10 when rarity also counts; bone type unstated, preserved assumed).",
+      "Keyson's whole-ring total (300-400 div, suffixes included) is not this request's scope, so statedTotalDiv is left null."
+    ]
+  },
+  "market": { "priceDiv": { "point": 380, "low": 350, "high": 450 }, "date": "2026-10-06", "source": "owner trade check" },
+  "sources": [
+    { "kind": "video", "ref": "TWgmQuiLeHA", "at": "1:11–1:15" },
+    { "kind": "video", "ref": "TWgmQuiLeHA", "at": "7:52–7:58" },
+    { "kind": "video", "ref": "TWgmQuiLeHA", "at": "2:20–2:26" },
+    { "kind": "video", "ref": "TWgmQuiLeHA", "at": "2:46–2:54" },
+    { "kind": "video", "ref": "TWgmQuiLeHA", "at": "17:48–17:55" },
+    { "kind": "owner", "ref": "2026-10-06 trade check of a 3x top-tier attack flat Breach Ring (~380 div); the request mirrors the owner's planner input (prefix pool any 3 of 4 at the top tier, start compared)", "at": null }
+  ],
+  "confidence": "medium",
+  "factCheck": null
+}
