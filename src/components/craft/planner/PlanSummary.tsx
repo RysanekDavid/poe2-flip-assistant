@@ -13,6 +13,8 @@ import { IMPRACTICAL_CLICKS } from "./alternativesModel";
 import { NumberField } from "./NumberField";
 import { adjustedTotal, type QtyOverrides } from "./plannerModel";
 import { qtyText } from "./StepCard";
+import { totalWithBase } from "./plannerStartModel";
+import { BoughtLines } from "./StartCompare";
 
 /**
  * The sticky summary: expected total (point + band, with its basis), the materials bill with art
@@ -109,15 +111,32 @@ interface Props {
   runLabel: string;
   /** Apply a cheaper target set and re-plan; null while the item differs from this plan's request. */
   onAlternative: ((alt: AlternativeView) => void) | null;
+  /** The player's price for a bought base (a bought plan's total adds it). */
+  ask: { value: number | null; onChange: (v: number | null) => void };
 }
 
-export function PlanSummary({ plan, over, onQty, onRun, runLabel, onAlternative }: Props) {
+/** A bought plan: the base line (its price is the player's) and the total with it, or the prompt for the price. */
+function WithBase({ plan, ask }: Pick<Props, "plan" | "ask">) {
+  const total = totalWithBase(plan, ask.value);
+  const ex = plan.exaltPerDivine ?? 0;
+  return (
+    <div className="space-y-1 rounded-md border border-neutral-800 p-2">
+      <BoughtLines plan={plan} askDiv={ask.value} onAsk={ask.onChange} />
+      <p className="text-sm tabular-nums text-neutral-200">
+        {total ? `with the base ≈ ${fmtDivOrEx(total.point, ex)} (${fmtDivOrExRange(total.low, total.high, ex)})` : "enter the base price — the total is incomplete without it"}
+      </p>
+    </div>
+  );
+}
+
+export function PlanSummary({ plan, over, onQty, onRun, runLabel, onAlternative, ask }: Props) {
   // on a phone the summary sits above the bench, so the long bill folds away until asked for
   const phone = useIsPhone();
   const [billOpen, setBillOpen] = useState(false);
   return (
     <aside aria-label="plan summary" className="space-y-3 rounded-lg border border-amber-900/50 bg-gradient-to-b from-amber-950/20 to-surface/80 p-4">
       <Total plan={plan} total={adjustedTotal(plan, over)} />
+      {plan.start.kind === "bought" && <WithBase plan={plan} ask={ask} />}
       <AlternativeChips plan={plan} onPick={onAlternative} />
       <Button variant="primary" className="w-full" onClick={onRun}>
         <Play aria-hidden className="h-4 w-4" /> {runLabel}

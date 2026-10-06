@@ -4,7 +4,8 @@ import { Minus, Plus, X } from "lucide-react";
 import type { FeasibilityIssueView, PlannerPool } from "../../../lib/tools/craftPlannerContract";
 import { IssueLine } from "./IssueLine";
 import { NumberField } from "./NumberField";
-import { findFamily, tierOf, type CatalogBase, type Side, type SlotPick, type Slots } from "./plannerModel";
+import { findFamily, tierOf, type CatalogBase, type Pools, type Side, type SidePool, type SlotPick, type Slots } from "./plannerModel";
+import { PoolRows } from "./PoolRows";
 import { ArtBadge, MOD_TONE, Separator, SideChip, TooltipFrame } from "./tooltipParts";
 
 /**
@@ -26,6 +27,52 @@ interface Props {
   issuesFor: (side: Side, slot: number) => FeasibilityIssueView[];
   onOpen: (side: Side, slot: number) => void;
   onClear: (side: Side, slot: number) => void;
+  /** Mod pools per side and their editing (pool mode: "any k of these"). */
+  pools: Pools;
+  poolIssues: (side: Side) => FeasibilityIssueView[];
+  onPoolMode: (side: Side, on: boolean) => void;
+  onPoolAdd: (side: Side) => void;
+  onPoolChange: (side: Side, pool: SidePool) => void;
+}
+
+function SideHeader({ side, pooled, onPoolMode }: { side: Side; pooled: boolean; onPoolMode: (on: boolean) => void }) {
+  return (
+    <div className="mb-1 flex items-center justify-between gap-2 text-xs text-neutral-400">
+      <span className="uppercase tracking-wide">{side}es</span>
+      <button
+        type="button"
+        aria-pressed={pooled}
+        onClick={() => onPoolMode(!pooled)}
+        title={pooled ? "back to one mod per slot" : "put several mods in a pool and say how many must land — any combination is fine"}
+        className={`rounded border px-1.5 py-0.5 ${pooled ? "border-amber-400/60 text-amber-200" : "border-neutral-700 text-neutral-300 hover:border-amber-500/60 hover:text-amber-200"}`}
+      >
+        {pooled ? "pool on" : "any of… (pool)"}
+      </button>
+    </div>
+  );
+}
+
+function SideSlots({ side, props }: { side: Side; props: Props }) {
+  const pool = props.pools[side];
+  const cap = side === "prefix" ? props.base.caps.p : props.base.caps.s;
+  return (
+    <div>
+      <SideHeader side={side} pooled={pool != null} onPoolMode={(on) => props.onPoolMode(side, on)} />
+      {pool && props.pool && (
+        <PoolRows
+          side={side}
+          pool={pool}
+          data={props.pool}
+          cap={cap}
+          issues={props.poolIssues(side)}
+          onAdd={() => props.onPoolAdd(side)}
+          onRemove={(i) => props.onPoolChange(side, { ...pool, candidates: pool.candidates.filter((_, k) => k !== i) })}
+          onNeed={(k) => props.onPoolChange(side, { ...pool, need: k })}
+        />
+      )}
+      <SlotList side={side} props={props} />
+    </div>
+  );
 }
 
 const STEP_BTN = "inline-flex h-6 w-6 items-center justify-center rounded border border-neutral-700 text-neutral-300 hover:border-amber-500/60 hover:text-amber-200 disabled:opacity-40";
@@ -136,9 +183,9 @@ export function ItemTooltip(props: Props) {
         </>
       )}
       <Separator />
-      <SlotList side="prefix" props={props} />
+      <SideSlots side="prefix" props={props} />
       <div className="h-2" />
-      <SlotList side="suffix" props={props} />
+      <SideSlots side="suffix" props={props} />
     </TooltipFrame>
   );
 }

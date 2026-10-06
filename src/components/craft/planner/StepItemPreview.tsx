@@ -11,7 +11,7 @@ type Affix = ItemStateView["affixes"][number];
 type Target = PlanResponse["targets"][number];
 
 const SIDE_ORDER = { prefix: 0, suffix: 1, any: 2 } as const;
-const sigOf = (a: Affix): string => `${a.side}|${a.kind}|${a.target ?? "-"}|${a.unrevealed ? 1 : 0}`;
+const sigOf = (a: Affix): string => `${a.side}|${a.kind}|${a.target ?? "-"}|${a.alt ?? "-"}|${a.unrevealed ? 1 : 0}`;
 
 /** Multiset difference a − b by signature. */
 function minus(a: readonly Affix[], b: readonly Affix[]): Affix[] {
@@ -28,6 +28,9 @@ function label(a: Affix, targets: readonly Target[]): { text: string; tone: stri
   if (a.unrevealed) return { text: `unrevealed desecrated ${a.side === "any" ? "mod" : a.side} — reveal at the Well`, tone: MOD_TONE.desecrated };
   const t = a.target != null ? targets[a.target] : undefined;
   const tone = MOD_TONE[a.kind];
+  // a pool slot shows the candidate the plan assumes landed (any other one of the pool is as good)
+  const landed = t && a.alt != null ? t.candidates[a.alt] : undefined;
+  if (landed) return { text: `${landed.text} (or another of the pool)`, tone };
   if (t) return { text: t.text, tone };
   const role = a.kind === "fractured" ? "fractured anchor" : a.kind === "crafted" ? "crafted mod" : "a mod you don't need";
   return { text: `${role}${a.side === "any" ? " (either side)" : ""}`, tone: `${tone} italic opacity-70` };
