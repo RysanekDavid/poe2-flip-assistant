@@ -58,6 +58,8 @@ jobs:
       - run: npm run test:craft
       # Recipe provenance + the stamped recipe-audit.json (fails until craft:audit-recipes is re-run).
       - run: npm run test:craft-provenance
+      # Craft route mining: schemas, cross-file checks and research:validate over the research tree.
+      - run: npm run test:research
       - run: npm run test:tools
       - run: npm run test:strategies
       - run: npm run test:learn

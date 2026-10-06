@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "videoId": "kPBToE_G5t8",
+  "title": "Endgame Ring & Amulet Crafting Guide for Attack Builds | PoE 2 0.5 Runes of Aldur",
+  "creator": "Alohaa",
+  "publishedAt": null,
+  "transcriptRef": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt",
+  "patch": { "stated": "0.5 Runes of Aldur", "atUpload": null, "outOfPatch": { "flag": false, "reasons": [], "mechanics": [] } },
+  "language": "en",
+  "archetypes": ["ring-attack-flat"],
+  "base": {
+    "name": "Breach Ring",
+    "ilvl": 82,
+    "bought": "unstated",
+    "boughtState": null,
+    "priceClaim": null,
+    "at": "0:40–0:49",
+    "quote": "you want to start with an breach ring, preferably item level 82 because item level 82 can roll tier one max res."
+  },
+  "steps": [
+    {
+      "order": 1,
+      "action": "chaos-loop",
+      "materials": ["annul", "chaos"],
+      "omens": [],
+      "side": "prefix",
+      "target": { "text": "T1 flat damage to attacks (fire, cold, lightning or physical; physical least preferred)", "acceptedTiers": ["T1"] },
+      "at": "0:49–0:56",
+      "quote": "I like to annul and roll until you hit one of the tier one modifiers with damage to attacks, either fire, cold, lightning, or fizz.",
+      "note": "He says 'annul and roll' without naming the roll orb; chaos is inferred from the later chaos spamming (1:37)."
+    },
+    {
+      "order": 2,
+      "action": "slam-fill",
+      "materials": ["greater-exalted-orb"],
+      "omens": ["omen-of-greater-exaltation"],
+      "side": null,
+      "target": { "text": "two more modifiers so the ring has three mods to fracture from", "acceptedTiers": ["unstated"] },
+      "at": "1:13–1:19",
+      "quote": "I'll add a greater exaltation omen with a greater exalted to add two modifiers.",
+      "note": null
+    },
+    {
+      "order": 3,
+      "action": "desecrate",
+      "materials": [],
+      "omens": [],
+      "side": null,
+      "target": { "text": "a desecrated mod, which cannot be fractured, so the fracture hits only the other mods", "acceptedTiers": ["unstated"] },
+      "at": "1:19–1:28",
+      "quote": "you want to make sure that you have added a desecrated modifier. a desecrated modifier cannot be fractured.",
+      "note": "Bone, side and omens for this protective desecration are not stated."
+    },
+    {
+      "order": 4,
+      "action": "fracture",
+      "materials": ["fracturing-orb"],
+      "omens": [],
+      "side": "prefix",
+      "target": { "text": "fracture the T1 flat damage to attacks", "acceptedTiers": ["T1"] },
+      "at": "1:30–1:33",
+      "quote": "I have three mods right here and if I use a fracturing orb, I have a one in three chance to hit.",
+      "note": null
+    },
+    {
+      "order": 5,
+      "action": "chaos-loop",
+      "materials": ["chaos"],
+      "omens": [],
+      "side": "prefix",
+      "target": { "text": "second T1 flat damage to attacks", "acceptedTiers": ["T1"] },
+      "at": "1:35–1:46",
+      "quote": "keep chaos spamming until you hit another tier one to attacks. This takes about, I think, roughly 200 to 300 chaos on average",
+      "note": "How the two mods are removed is not stated."
+    },
+    {
+      "order": 6,
+      "action": "slam-fill",
+      "materials": ["exalted"],
+      "omens": ["omen-of-dextral-exaltation"],
+      "side": "suffix",
+      "target": { "text": "one suffix (placeholder, removed next step)", "acceptedTiers": ["unstated"] },
+      "at": "1:54–2:02",
+      "quote": "I use an omen of dextra exaltation. This will make it that your next exalted orb is only adding one suffix.",
+      "note": null
+    },
+    {
+      "order": 7,
+      "action": "breach-quality",
+      "materials": ["essence-of-the-breach"],
+      "omens": ["omen-of-dextral-crystallisation"],
+      "side": "suffix",
+      "target": { "text": "suffix removed, +20% maximum quality added", "acceptedTiers": ["unstated"] },
+      "at": "2:07–2:20",
+      "quote": "This essence is guaranteed to remove your suffix modifier and adds 20% maximum quality to your ring.",
+      "note": "Ring then has three prefixes: two T1 attack flats and the quality mod (2:23–2:27)."
+    },
+    {
+      "order": 8,
+      "action": "slam-fill",
+      "materials": ["eshs-catalyst", "perfect-exalted-orb"],
+      "omens": ["omen-of-catalysing-exaltation", "omen-of-greater-exaltation"],
+      "side": "suffix",
+      "target": { "text": "two suffixes: lightning resistance and all-resistances most likely", "acceptedTiers": ["unstated"] },
+      "at": "2:41–3:15",
+      "quote": "I'm using a greater exaltation to add two suffix modifiers and a perfect exaltation to add high tier of these two suffix modifiers.",
+      "note": "Applies 60% lightning catalyst quality first (2:36–2:39), which the Catalysing omen consumes. He hit all-res and physical attack damage leeched as mana, both suffixes (3:37–3:40, 4:32–4:55); the caption's 'tier one physical damage to attacks' at 3:18–3:21 is that leech suffix (item level 38), not a prefix flat."
+    },
+    {
+      "order": 9,
+      "action": "catalyse-finish",
+      "materials": ["reaver-catalyst"],
+      "omens": [],
+      "side": null,
+      "target": { "text": "Attack-modifier quality (60%) restored before removing the quality mod", "acceptedTiers": ["unstated"] },
+      "at": "3:26–3:40",
+      "quote": "I have to apply the reaver catalyst because there's no way to remove the physical damage as mana with a whitling orb.",
+      "note": "Applied before the whittle so quality survives."
+    },
+    {
+      "order": 10,
+      "action": "whittle-loop",
+      "materials": ["greater-chaos-orb"],
+      "omens": ["omen-of-whittling"],
+      "side": "suffix",
+      "target": { "text": "remove the quality mod, then keep whittling until good suffixes land (T1 res preferred)", "acceptedTiers": ["T1"] },
+      "at": "4:14–4:28",
+      "quote": "An omen of whittling will remove the lowest tier modifier and add a new modifier via a chaos orb.",
+      "note": "He uses a greater chaos orb here and a plain chaos orb at 5:20. Whittling targets the lowest item-level mod (physical attack damage as mana is level 38, life 54, attack flats 75; 4:51–5:16)."
+    },
+    {
+      "order": 11,
+      "action": "desecrate",
+      "materials": [],
+      "omens": ["omen-of-abyssal-echoes", "omen-of-light"],
+      "side": "prefix",
+      "target": { "text": "last prefix: another T1 damage to attacks", "acceptedTiers": ["T1"] },
+      "at": "6:17–6:31",
+      "quote": "use echoings with color bones in order to reveal another tier one damage to attacks. And if it doesn't work",
+      "note": "'Echoings' is Omen of Abyssal Echoes; 'omen of blight' removes the desecrated mod, so Omen of Light is meant. 'Color bones' is a collarbone, type not stated. He says finish the desecration before whittling more (6:10–6:15)."
+    }
+  ],
+  "missHandling": [
+    {
+      "afterStep": 10,
+      "trigger": "whittle lands a poor suffix (T2 dexterity, then life is the next lowest-level mod)",
+      "repair": "whittle-loop",
+      "retryTo": 10,
+      "at": "5:30–5:46",
+      "quote": "the next whittling is going to remove the max life. you just have a life as the next tier modifier, next lowest tier modifier",
+      "note": null
+    },
+    {
+      "afterStep": 11,
+      "trigger": "revealed mod is not a T1 flat to attacks",
+      "repair": "desecrate",
+      "retryTo": 11,
+      "at": "6:25–6:31",
+      "quote": "if it doesn't work, you can use an omen of blight to remove the desecrated modifier and go again until you hit tier one attacks.",
+      "note": "Omen of Light to remove the desecrated mod, then a new bone."
+    }
+  ],
+  "qualityPath": {
+    "catalyst": "reaver-catalyst",
+    "pct": 60,
+    "orderNote": "Lightning catalyst to 60% for the catalysed resistance slam (consumed); then Attack catalyst back to 60% before whittling the Breach quality mod, because the quality stays after the mod is removed.",
+    "at": "3:26–3:32"
+  },
+  "measured": [
+    {
+      "quantity": "hit_rate",
+      "value": null,
+      "low": 0.0033,
+      "high": 0.005,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "chance per chaos of a second T1 flat, derived from 'roughly 200 to 300 chaos on average'",
+      "at": "1:41–1:46",
+      "quote": "This takes about, I think, roughly 200 to 300 chaos on average, so be prepared."
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.3333,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "fracturing orb on a three-mod ring",
+      "at": "1:30–1:33",
+      "quote": "I have three mods right here and if I use a fracturing orb, I have a one in three chance to hit."
+    }
+  ],
+  "claims": [
+    {
+      "kind": "cost",
+      "text": "recommended minimum bankroll: 200 div for the ring craft",
+      "value": 200,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5 Runes of Aldur, at upload",
+      "at": "0:20–0:27",
+      "quote": "if you do not have 200 divines to spare for this craft, I do not recommend starting it."
+    },
+    {
+      "kind": "cost",
+      "text": "chaos spam for the second T1 flat: 200 to 300 chaos on average",
+      "value": null,
+      "low": 200,
+      "high": 300,
+      "unit": "chaos",
+      "material": null,
+      "dateContext": "0.5 Runes of Aldur, at upload",
+      "at": "1:41–1:46",
+      "quote": "roughly 200 to 300 chaos on average"
+    },
+    {
+      "kind": "sale",
+      "text": "finished ring worth about 200 to 600 div",
+      "value": null,
+      "low": 200,
+      "high": 600,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5 Runes of Aldur, at upload",
+      "at": "6:37–6:46",
+      "quote": "the ring is probably worth around anywhere between 200 to maybe 600 divines or 500 divines."
+    }
+  ],
+  "salvage": [],
+  "caveats": [
+    "The last desecration is described as one of the most expensive parts, up to hundreds of div if unlucky (6:34–6:38); no number given.",
+    "The video also covers a gold amulet craft (6:52–11:22, about 100 div, 10:57 onward); not extracted, it is not a ring.",
+    "He claims it is cheaper to craft the ring than to buy one (6:47–6:51)."
+  ],
+  "unresolved": [
+    "Fracture odds: he says one in three with three mods while one of them is desecrated and unfracturable, which would leave two eligible; how many mods the ring held is unclear (1:19–1:33).",
+    "Bone type, side and omens for the protective desecration at step 3 are not stated.",
+    "How the two mods are removed before the second chaos spam (1:35) is not stated.",
+    "Final ring state and cost of his own ring are not shown."
+  ]
+}

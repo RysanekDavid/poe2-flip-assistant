@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "archetype": "ring-attack-flat",
+  "observedAt": "2026-10-05",
+  "source": {
+    "kind": "owner_trade_listings",
+    "note": "Five listed Breach Rings the owner screenshotted on 2026-10-05 (images 46-50 in the planning chat; not committed). Transcribed in the 2026-10-04/05 comparison notes; per-ring item level, suffixes and asking prices were not transcribed, so they stay null."
+  },
+  "common": {
+    "base": "Breach Ring",
+    "ilvlRange": { "min": 79, "max": 82 },
+    "quality": { "modifiers": "Attack Modifiers", "pct": 60 },
+    "implicits": ["+20% to maximum Quality"]
+  },
+  "items": [
+    {
+      "name": "Oblivion Band",
+      "ilvl": null,
+      "fractured": { "side": "prefix", "kind": "attack_flat", "text": null },
+      "prefixFlats": [{ "damage": "lightning", "note": null }, { "damage": "physical", "note": null }, { "damage": "cold", "note": null }],
+      "suffixes": null,
+      "askDiv": null
+    },
+    {
+      "name": "Bramble Gyre",
+      "ilvl": null,
+      "fractured": { "side": "prefix", "kind": "attack_flat", "text": null },
+      "prefixFlats": [{ "damage": "cold", "note": null }, { "damage": "lightning", "note": null }, { "damage": "fire", "note": null }],
+      "suffixes": null,
+      "askDiv": null
+    },
+    {
+      "name": "Carrion Turn",
+      "ilvl": null,
+      "fractured": { "side": "suffix", "kind": "other", "text": "Leech 11.95% of Physical Attack Damage as Life" },
+      "prefixFlats": [{ "damage": "lightning", "note": null }, { "damage": "physical", "note": null }, { "damage": "cold", "note": "17-30, a low tier" }],
+      "suffixes": null,
+      "askDiv": null
+    },
+    {
+      "name": "Hate Loop",
+      "ilvl": null,
+      "fractured": { "side": "prefix", "kind": "attack_flat", "text": null },
+      "prefixFlats": [{ "damage": "cold", "note": null }, { "damage": "physical", "note": null }, { "damage": "lightning", "note": null }],
+      "suffixes": null,
+      "askDiv": null
+    },
+    {
+      "name": "Rune Coil",
+      "ilvl": null,
+      "fractured": { "side": "prefix", "kind": "attack_flat", "text": null },
+      "prefixFlats": [{ "damage": "lightning", "note": null }, { "damage": "physical", "note": null }, { "damage": "cold", "note": null }],
+      "suffixes": null,
+      "askDiv": null
+    }
+  ],
+  "fracturedFlatsObserved": [
+    "Lightning 6-113",
+    "Cold 38-57",
+    "Cold 33-57",
+    "Lightning 1-108"
+  ],
+  "suffixesObserved": [
+    "fire / cold / lightning resistance, 36-43%",
+    "14% increased Attack Speed",
+    "+15% to all Elemental Resistances",
+    "+32 to Dexterity",
+    "16% increased Rarity of Items found"
+  ],
+  "notes": [
+    "Fractured flats are in the notes' shorthand (damage type, added min-max). Which ring carries which was not transcribed; the list is sample-wide.",
+    "Leech is a suffix family in the ring pool (craft catalog 0.5.5b: LifeLeechPermyriad), so Carrion Turn's fracture sits on a suffix and its three flats are all prefixes. 11.95% is above the catalog's 9.9% roll; the 60% attack quality is the likely reason (unverified).",
+    "Suffixes are 'whatever useful', not necessarily T1. The planner target this supports: 3 of {physical, fire, cold, lightning} attack flats plus any of {resistances, attack speed, rarity}."
+  ]
+}

@@ -1,0 +1,602 @@
+Attack ring craft PERFECTED! PoE 2 - 0.5
+Creator: Keyson
+https://www.youtube.com/watch?v=TWgmQuiLeHA
+
+(YouTube captions with [m:ss] timestamps, fetched 2026-10-04 with youtube-transcript-api, languages en/en-US/cs/de; title and creator from YouTube oEmbed, fetched 2026-10-05. Mined for docs/research/craft-mining/ring-attack-flat.)
+
+[0:00] Okay, boys. Today, we are going over the
+[0:03] updated ring craft. I released a video
+[0:06] and then a bunch of people showed up in
+[0:08] Discord who are awesome and then we
+[0:09] yapped for a while and then we looked
+[0:12] all crazy. And then we are doing our
+[0:15] updated ring guide. So,
+[0:19] the
+[0:21] idea here is to make it for a little bit
+[0:23] cheaper. Now, I have a disclaimer.
+[0:26] The ring market sucks right now. First
+[0:28] of all, it's later in the league and
+[0:30] people are switching off of attack
+[0:31] builds. So, this is a really, really bad
+[0:33] profit craft.
+[0:34] Second disclaimer is that and unless
+[0:39] it sells for like 800, 900, there's a
+[0:42] bit of variance. There's a lot of
+[0:44] variance cuz we're just whittling a lot
+[0:46] in this craft. So, you could get unlucky
+[0:48] and freaking spend 6, 700 divines. I
+[0:50] mean, you could go and get lucky and get
+[0:52] the craft done in 200, but the going
+[0:55] rate for the actual rings is like 4, 500
+[0:57] divs and it's just not worth it. Like, I
+[0:59] am not profit crafting these. So, don't
+[1:01] profit craft these late into the league.
+[1:03] But, you guys have asked for the
+[1:05] breakdown of how it works and what to do
+[1:07] and what the updated better method is.
+[1:08] So, here you go. So, first things first,
+[1:11] we're starting with an item level 82
+[1:13] gold ring with a fractured flat. Now, I
+[1:15] prefer cold. That's just me because I
+[1:18] like Herald of Ice with the freezes and
+[1:19] everything, but we're searching for a
+[1:21] base. These are the parameters. Um you
+[1:24] can go lightning, cold, fire. These
+[1:26] numbers are not exact. You do need to
+[1:28] play around with these, but make sure
+[1:29] you set item level 82. Make sure you set
+[1:31] not corrupted, not sanctified in case
+[1:33] somebody's being, you know, a little bit
+[1:35] crazy with these rings and then you
+[1:36] search for them. Now, this string found
+[1:38] tier one fires and it found tier one
+[1:41] lightnings. So, you could technically
+[1:42] start out with any of them. You do need
+[1:44] to look at the quality mods because
+[1:47] sometimes you might get you baited by
+[1:49] 40% quality where this is a tier two.
+[1:52] Make sure you look at the tier. You do
+[1:55] need to start with a tier one fractured
+[1:58] prefix.
+[1:59] So, now that we're there, we're going to
+[2:01] chaos for a second tier one flat, and it
+[2:05] cannot be fizz. It has to be either
+[2:08] whichever one you don't have, one of the
+[2:09] other two, it needs to be an elemental.
+[2:12] The fizz has a higher waiting, so if the
+[2:14] fizz needs to be one of our outs on the
+[2:17] omen of light. So,
+[2:20] in this case, we're looking for fire or
+[2:22] lightning off the chaos orb. The average
+[2:24] is like
+[2:26] 400 or something, so I'm going to buy a
+[2:28] couple more chaos orbs.
+[2:30] Um yeah, 50 divines and chaos orbs is
+[2:33] probably fine. So,
+[2:35] I'm going to chaos this. I will see you
+[2:38] when I hit it.
+[2:44] Okay, so we hit tier one lightning, got
+[2:46] a little bit on the unluckier side. I
+[2:48] went through all of my 500 something
+[2:50] chaos, and then I went and bought
+[2:51] another 100, so we were looking at about
+[2:54] 600 chaos in this case. And that you can
+[2:57] get unlucky, especially I I've had
+[2:59] somebody throw 2,000 chaos at an item
+[3:01] before they hit a tier one. Um but they
+[3:03] were also looking for a specific tier
+[3:05] one, and they were rolling over the
+[3:06] others. So, don't be looking for a
+[3:08] specific one. I hit lightning, I hit
+[3:10] lightning. If I hit fire, I would have
+[3:11] taken fire. I really didn't care which
+[3:13] one I I got. Just as long as I got one
+[3:15] of them. Cold and lightning is, in my
+[3:17] opinion, the best scenario. So, you
+[3:19] know, that's cool.
+[3:20] From this point forward,
+[3:22] uh we are going to add a suffix.
+[3:26] So, we're going to pull out our suffix
+[3:28] omen that designates a suffix. We're
+[3:30] going to pull out an exalted orb and
+[3:32] throw that on there. And it doesn't
+[3:34] matter what it hits, even if it's nice,
+[3:36] then you just you cry, unfortunately,
+[3:38] and you have to roll over it. We're
+[3:39] going to get our breach essence,
+[3:41] and we are going to pull out our suffix
+[3:44] essence designator, dextral
+[3:46] crystallization, and then we're going to
+[3:48] eat that garbage we just slammed on and
+[3:50] put on quality.
+[3:52] Now, from this point
+[3:54] you have a couple of different ideas to
+[3:57] go forward and it's really your personal
+[3:59] preference. If you don't mind chaos-ing
+[4:01] for lightning, what you can do is once
+[4:04] you slam the resistances, if they suck,
+[4:07] you can gamble the annuls and try to
+[4:09] reslam.
+[4:11] I'm not about to chaos for a flat again.
+[4:14] I'm doing it one time and I'm done.
+[4:18] Because I hate chaos-ing because my time
+[4:20] is worth more and because there's a lot
+[4:21] of variance to it. I would rather
+[4:23] whittle for res
+[4:25] for an extra whittle for res than I
+[4:27] would
+[4:28] re-chaos for the flat again. That's just
+[4:31] me. You know, you make your own
+[4:33] decisions as to how that goes. The
+[4:35] expected value is about the same, so
+[4:37] it's just whatever sandwich you
+[4:39] want. If you prefer to whittle for it,
+[4:41] whittle. You prefer to slam for the
+[4:43] second mod, you can slam for the second
+[4:45] mod. We ran the math a whole bunch of
+[4:47] different ways.
+[4:48] There's not a large enough variance to
+[4:50] make the decision for into either
+[4:52] direction.
+[4:53] So, we put either lightning or fire.
+[4:55] It's very important you do not do cold
+[4:56] catalyst for this, but you do lightning
+[4:58] or fire.
+[4:59] And we pull out our perfect exalted
+[5:01] orbs.
+[5:03] And we pull out our catalyzing slams.
+[5:05] So, our prefixes are full, so we don't
+[5:07] have to designate anything and we are
+[5:09] only doing singles.
+[5:11] Now, there's an argument for doing a
+[5:13] double slam, which saves you a perfect
+[5:15] exalt, and it sends you towards an all
+[5:18] res
+[5:19] uh outcome. I want two tier ones. On the
+[5:22] off chance that I hit a tier one on the
+[5:24] first slam, I want to be able to have an
+[5:27] option, have a chance to hit a second
+[5:28] tier one, which saves a lot on the
+[5:30] whittles. So, sometimes you get really,
+[5:32] really lucky. If we hit a tier one res
+[5:34] off of one of these slams,
+[5:36] we just saved ourselves like five to
+[5:38] seven whittles per hit. So, you know,
+[5:40] great, but it doesn't always work that
+[5:42] way. So,
+[5:44] first slam, all res,
+[5:47] that's actually bad.
+[5:49] Doesn't matter. We're going to We're
+[5:50] going to recatalyze. It does not matter
+[5:53] what we catalyze with. We did lightning
+[5:55] before, so let's go lightning again.
+[5:58] It really is not effectual as to which
+[6:02] one you pick, fire or lightning, as long
+[6:04] as you do fire or lightning. Again, send
+[6:06] another perfect exalt and hit nothing
+[6:08] that is about common. That's usually how
+[6:11] it ends up being.
+[6:12] And at this point, we are done with this
+[6:14] section. Now,
+[6:16] very important. If you skip this, I
+[6:18] swear to god.
+[6:20] If you skip anything in this section, do
+[6:23] not skip this portion. When you are
+[6:25] here, before you go through, don't be
+[6:28] like I am and brick like three different
+[6:30] rings for being stupid. When you see it
+[6:32] right here, make sure, before you get
+[6:35] rid of the quality, that you quality
+[6:36] this. So, I literally just bricked the
+[6:38] ring that was pretty perfect that I then
+[6:41] had to rescue craft and settle on a
+[6:44] cheaper outcome and lost money on. So,
+[6:48] make sure you put the quality of attacks
+[6:51] first before you go anything else. After
+[6:54] you do your two slams, remember, quality
+[6:56] slam, quality slam, quality.
+[7:00] Don't forget it. Okay? Okay, cool.
+[7:02] So, we have our attack quality, we have
+[7:05] the two flats, and we have a bunch of
+[7:07]  This is about the standard
+[7:08] quest state that you're going to
+[7:10] encounter in these rings.
+[7:11] Now, this is where it goes to
+[7:15] afterwards. So, we're going to pick up a
+[7:17] bunch of whittles. Our expected thing
+[7:19] for whittles is about just over 20, so
+[7:23] we're going to
+[7:24] we're going to pick up 20. Actually, I
+[7:26] need more than 20, so
+[7:28] let's go.
+[7:29] 26 should be enough here. So, this first
+[7:32] whittle section is actually really,
+[7:33] really simple.
+[7:35] All we're going to do is if you
+[7:36] highlight a whittle, it's where we need
+[7:38] to move this quality. We need to move
+[7:41] this, and we need to push this into a
+[7:43] suffix. Now,
+[7:45] there's a very, very small chance that
+[7:47] the whole item is bricked right here.
+[7:50] Now, we haven't spent a whole lot of
+[7:52] money onto it. We're about, you know,
+[7:55] 60, 70 divs into a base, and 60, 70 divs
+[7:58] into chaos, and another, you know, 10
+[8:01] divs into a perfect exalt. So, there's a
+[8:03] chance. It's a very, very small one.
+[8:04] It's like one one in a couple hundred,
+[8:07] but
+[8:08] yeah, or maybe it's like one in eight or
+[8:10] something. The The point being is it's
+[8:11] small. But, we are going to hit this
+[8:14] breach quality with a whittle, and it's
+[8:17] a 50/50 on whether it gives you back a
+[8:19] prefix or a suffix. If it gives you a
+[8:21] prefix, you whittle it again. We're
+[8:22] whittling this until it goes into a
+[8:24] suffix. We don't care what it hits. We
+[8:26] just need that quality to become a
+[8:28] suffix. All we're doing is we're moving
+[8:30] it out of the way because we want to
+[8:31] desecrate this, and we we need that slot
+[8:35] open. So,
+[8:37] here's our whittle. We send it. It goes
+[8:39] to suffix with the mana.
+[8:42] That's exactly what we want. We want our
+[8:43] 50/50. That's great. So, now we put our
+[8:47] whittles away for a minute. We actually
+[8:50] need to pick up a couple of graders.
+[8:55] Yeah, that's good enough.
+[8:58] And we are going to do some abyss
+[9:01] things. So, from this point forward,
+[9:05] we are looking at
+[9:08] and we need some annuls, also.
+[9:15] So, from this point, what we need to do
+[9:17] is we need to put a desecration on here,
+[9:19] and we want an item level 75 mod. And we
+[9:22] don't care what the item level 75 mod
+[9:24] is.
+[9:25] So, I'm going to show you what I do. We
+[9:27] put in our collarbone on there. We put
+[9:30] the rerolls, and then we head out into
+[9:32] the abyss pit.
+[9:35] And there it is. So, we're going to open
+[9:38] our desecration and we are searching for
+[9:41] anything. Now, look, if we hit here,
+[9:43] great. We're lucky and it's awesome and
+[9:45] it's fantastic. But, what we are looking
+[9:47] for is any mod that has a waiting of 75.
+[9:50] So, we'll take tier one mana, we'll take
+[9:53] any one of the flats, we'll take the
+[9:55] tier one percent damages. We are going
+[9:57] to like them off later, but we really
+[9:59] want it to be 75 so that we can whittle
+[10:02] our suffixes in peace. If we don't hit
+[10:04] 75, we can start whittling here. This
+[10:07] fire is just not high enough. 13 to 28
+[10:10] or 19 to 28, I believe, is a tier three.
+[10:14] Yeah, 28 on the on the max roll is a
+[10:17] tier three. That's item level 60. So,
+[10:20] that's not really enough, but this 23%
+[10:23] chaos, I think, is an item level 65. So,
+[10:25] we are likely to take the chaos. Uh yes,
+[10:29] it's 65 for tier two. That's 23 to 26.
+[10:33] So, we're going to take the item level
+[10:35] 65 for now and then send a couple of
+[10:38] whittles. We will get to a point
+[10:41] where it's going to start targeting our
+[10:44] desecration, at which point we have to
+[10:46] light and put an item level 75 mod. The
+[10:49] reason we don't go for lights right now
+[10:51] is on the off chance that if we can
+[10:53] finish the suffixes on the whittles,
+[10:56] it's a very, very low chance, but we
+[10:58] give ourselves chances of good RNG.
+[11:00] If there's a chance that we can finish
+[11:02] the suffixes and we can save a light and
+[11:04] we hit rarity or something, then we can
+[11:05] save ourselves on on omens of light.
+[11:08] If this didn't make any sense, just
+[11:10] ignore it. You you basically pick
+[11:12] whatever on the first one and when your
+[11:14] whittles start targeting the prefix,
+[11:16] then you omen of light it until you get
+[11:17] an item level 75 mod. I would just give
+[11:19] yourself a chance to throw something at
+[11:21] the prefixes. If you are very inclined,
+[11:24] you can omen of light until you hit an
+[11:25] item level 75 mod if you just want to do
+[11:27] it step by step. Um I don't. I try to
+[11:30] give myself a shot at good RNG, so
+[11:31] that's what I do, but be very careful.
+[11:33] You know, it's it's more important to
+[11:36] sort of be exact with it than to screw
+[11:38] it up. And so, we got incredibly lucky
+[11:40] there. Our first hit gave us our first
+[11:42] tier one res. It's usually a one in five
+[11:44] to get a tier one. We need two tier one
+[11:46] reses, and then we can do whatever for
+[11:48] the last mod. So, now at this point, we
+[11:51] are looking for our second tier one res,
+[11:53] and we're just going to keep rolling
+[11:55] until we either it targets our prefix or
+[11:58] it gives us what we want. So,
+[12:01] um I think intelligence is higher than
+[12:03] that 65 tier one int. I think is item
+[12:06] level 74. So, it's about to send us to
+[12:09] the Yeah, there we go. So, now we're
+[12:11] back to omens of light cuz we got stats,
+[12:13] and that is fine. So, let's go do our
+[12:16] omen of light jail bits.
+[12:21] So, move our whittles out of the way.
+[12:25] Make sure we can see what we got. So, we
+[12:27] get rid of it, and we turn on our
+[12:30] rerolls.
+[12:35] Um 175 mana, I think is good enough on
+[12:39] the mana front.
+[12:42] 175 mana indeed is good enough on the
+[12:44] mana front. So, now we take this mana.
+[12:47] That's item level 75. Now, the game
+[12:50] should let us whittle in peace.
+[12:53] So, yay.
+[12:55] Now, we are
+[13:00] looking for a second tier one.
+[13:04] Um if the stats So, there we go. We got
+[13:07] our second tier one.
+[13:09] The thing with this This is actually a
+[13:11] really really good position.
+[13:13] This is what I mean by this. So, let's
+[13:14] look at the modifiers so you guys can
+[13:16] understand why we are doing what we're
+[13:18] doing. So, now we have two tier one
+[13:20] reses. They're item level 82.
+[13:22] Those are
+[13:24] set in. They're blocked. Can't touch
+[13:27] them. no matter what you do. That's it.
+[13:30] Safe from the whittles.
+[13:32] Now, we have one tier one res
+[13:36] on a on a greater chaos. I can click
+[13:38] greater so you guys could see the
+[13:39] weighting.
+[13:40] So, we have 1,000 out of 42.
+[13:43] So, one in 42 to hit our last res. Okay,
+[13:45] cool.
+[13:46] But, also
+[13:48] because these are attack rings and a lot
+[13:49] of these builds
+[13:51] will take chaos res. Also, we have a 250
+[13:54] out of 40,000.
+[13:57] And it's actually less than 30,000. It's
+[13:58] actually 30,000 because these are
+[14:00] blocked. But, that's besides the point.
+[14:02] So, one in 30 for your T1 res. We also
+[14:05] have a small chance to hit tier one
+[14:07] chaos res, which we can either settle in
+[14:09] or reroll because it's 81, so it's
+[14:11] changeable. If you don't want chaos res,
+[14:13] great. You hit it, whatever. No big
+[14:15] deal, you could roll over it if it's not
+[14:17] a good settle point for you.
+[14:18] Doesn't bother me. I would settle on it,
+[14:21] but whatever. Then, we have another
+[14:22] thousand for rarity. So, we have another
+[14:25] one in 30 for rarity. And then, on top
+[14:28] of all of that, we have a 800 out of
+[14:30] 30,000 for all res. So, we could go
+[14:33] rarity, all res, chaos res, single res.
+[14:36] And guess what? The life leech as mana
+[14:39] will sell for attack builds. That's
+[14:40] something that most people don't know.
+[14:41] So, we have another thousand for attack
+[14:44] as mana. So, that last whittle is
+[14:46] actually not a big deal. You just pick
+[14:48] whatever you want. Now, to me, the best
+[14:51] outcomes in this case are either all res
+[14:53] or rarity. If I can hit all res or
+[14:55] rarity, I'm very, very, very happy
+[14:57] because then that's a really good ring.
+[14:59] If I hit at the last tier one res,
+[15:02] that's fine. You know, the rarity
+[15:05] itself, I could just go settle double
+[15:06] rarity and that'll sell pretty well. So,
+[15:08] there there's a whole bunch of different
+[15:10] combinations and you can evaluate it as
+[15:11] a package however you want to. But, that
+[15:14] being said, we are now whittling and
+[15:17] looking for our very, very, very last
+[15:19] winner, whatever that may be.
+[15:22] One thing to note, and I had this
+[15:24] question come up on the last video. You
+[15:27] see this item level 75 mana regen? If
+[15:30] that rolls, we are not dead. Yes, it's
+[15:32] higher than the 75s, but there is a omen
+[15:36] for suffixes for suffix chaos that you
+[15:38] could use along with a whittle to force
+[15:41] it to hit suffixes and roll off the mana
+[15:43] regen 75. So, this is not dead. This is
+[15:45] fine. We are safe. There are no bricks
+[15:48] on the chaos on the suffix whittles.
+[15:50] There Let me tell you this again. There
+[15:52] are no bricks on suffix whittles. Zero
+[15:55] bricks.
+[15:57] Okay? Okay. Let's keep going.
+[16:00] >> [snorts]
+[16:01] >> And we hit the tier one res again. So,
+[16:04] cool. We are done. In theory, if you
+[16:07] really wanted to, let me show you
+[16:08] something that you can do. If you don't
+[16:10] want to go with triple tier one res.
+[16:13] If you're like, "Listen, I want my
+[16:14] rarity or I want my mana regen or I want
+[16:17] whatever. You want something else."
+[16:19] Cool. One thing you can do is you can go
+[16:24] for the suffix.
+[16:27] And you can pick this
+[16:30] suffix chaos.
+[16:32] >> I'll fill that in as soon as I can.
+[16:33] >> And you can select it with a whittle and
+[16:36] then you can roll off any one of the
+[16:38] three resits. Doesn't matter which res
+[16:40] you roll off unless you're looking for
+[16:41] specific ones. But you could do that and
+[16:44] you could continue rolling it. Now, I'm
+[16:46] not going to do that
+[16:48] because I'm not crazy.
+[16:51] But you could do it if you want to.
+[16:53] So, now from this point forward, we are
+[16:56] done with whittles.
+[16:57] We are done with this whole shebang. All
+[16:59] we are doing is we're picking up our
+[17:01] omens of lights and our jawbones and we
+[17:04] are looking to hit a either a tier one
+[17:06] fizz, tier one fire, or rarity. Those
+[17:10] are settles. That's the prefixes. So, we
+[17:12] can go through so you guys could see. Um
+[17:14] we are not looking at the greater chaos
+[17:17] anymore. It doesn't matter what these
+[17:19] roll. All we're looking for is about a
+[17:21] thousand weight out of
+[17:23] the two of these are blocked, so out of
+[17:25] 60,000. So, one in 60 for rarity.
+[17:28] It's another, you know,
+[17:31] 200 out of
+[17:33] 60,000 for the last flat and it's 400
+[17:36] out of 60,000 for the other one. It's,
+[17:40] you know, these are not great odds on a
+[17:41] whittle, but because you get to see
+[17:43] three mods and you get to see them twice
+[17:45] on the omen of light. It's not even that
+[17:47] bad.
+[17:48] In theory, 15 lights with 15 collar
+[17:51] bones should be enough. Once you count
+[17:54] rarity in and everything, we're usually
+[17:55] less than 10. So, that's not the
+[17:57] expensive part of the craft. The
+[17:59] expensive part is pretty much over. And
+[18:01] as you can see, I already had the omens
+[18:03] of light and I did spend a little extra
+[18:05] money and I have, you know, a couple
+[18:06] extra whittles and whatever left over.
+[18:08] So, this is probably like 50 div over
+[18:10] here. So, and we started with 400. So,
+[18:12] the whole craft, give or take, um you
+[18:15] know, you could essentially exchange
+[18:17] these extras that we have left for the
+[18:18] omens of lights that already existed.
+[18:20] So, the whole craft is like 300 to 400
+[18:22] expected. And the thing is, if you get
+[18:24] unlucky and the the result sells for
+[18:26] 400, it's usually really bad. But, if
+[18:28] the result sells for 800, 900,
+[18:30] especially early league, this is
+[18:32] perfectly worth it. Especially when
+[18:33] whittles are cheap. When whittles are
+[18:34] like three, four div, oh my god, this
+[18:37] ring prints money. Prints money, but
+[18:39] earlier in the league. So, now from this
+[18:42] point forward, all we're going to do is
+[18:44] we're picking up whatever settle we can.
+[18:46] You know, we get lucky, we get lucky.
+[18:47] That's cool.
+[18:49] Um but we
+[18:50] omen of light our stuff off. We open
+[18:52] this and then we go to our gambling slot
+[18:54] machine and then, you know, we just cry
+[18:56] until, you know, we we we delete a bunch
+[18:59] of omens of light. That's just how life
+[19:00] goes. So, I'm going to show you how
+[19:02] these go. We'll finish the ring
+[19:04] together. I'll go to the final end and
+[19:07] then we'll sell it and then we'll price
+[19:08] check it.
+[19:11] So, 15 to 35 is what I'm clicking
+[19:13] anyway. This is not good enough. I think
+[19:15] this is tier two. It's actually tier
+[19:16] three.
+[19:18] So,
+[19:19] you know,
+[19:21] um if you are running out of money, you
+[19:22] can technically settle on the tier two
+[19:24] tier three.
+[19:26] I'm not going to, but you can.
+[19:28] Um and rarity, we hit rarity. So, at
+[19:31] this point, prefix rarity does sell.
+[19:34] Um so, I am going to just
+[19:37] leave the ring alone. If somebody wants
+[19:40] to buy it and somebody wants to roll for
+[19:42] triple flats,
+[19:45] 07, buddy. But, for me, we got triple
+[19:48] good stats. We're going to price check
+[19:50] this together. We don't need to look at
+[19:51] the quality of the mods. This is a gold
+[19:53] ring, so we don't need to look at the
+[19:54] prefix.
+[19:56] Um and we are going to actually collapse
+[19:59] the hidden mods. Sure, we'll look at the
+[20:00] total rarity. Let's go 22 rarity. Let's
+[20:03] go for our elemental damage 80. Um and
+[20:07] we look at a 123.
+[20:10] Fine enough. So, now
+[20:13] we're looking at price checks.
+[20:16] The tier two fire,
+[20:18] not great. Let's go like 82 on here,
+[20:21] just a little bit more. So, this is not
+[20:22] a good comp because it's got a tier two
+[20:24] prefix and a tier two suffix. Not good.
+[20:27] This is also not a good comp because it
+[20:29] has all res. You see how all res is
+[20:31] selling for a little bit more? These are
+[20:33] it's comparable resistances, but because
+[20:35] it's across all three, it's nice. But,
+[20:37] this does make it kind of weird for your
+[20:40] um mirror of uh for your ring of
+[20:41] Calandra because if you just go ring
+[20:43] plus mirrored ring, that's 90 res and
+[20:45] you're basically done with dealing with
+[20:47] your reses. So, you know, that that is
+[20:50] nice for people. Um then we're looking
+[20:52] at all res tier one and a tier two
+[20:54] resistance. That's a good settle
+[20:56] stopping point. That's still whatever.
+[20:58] So, this is our probably our most
+[21:02] most likely competitor.
+[21:04] It has fire cold.
+[21:06] It has all res cold res and lightning.
+[21:08] So, this is a little bit better than
+[21:10] where we're at.
+[21:12] And it looks like we made just a little
+[21:13] bit of money with this craft, like 100
+[21:15] divs, 150 divs. Obviously, we can push
+[21:17] this further. We can technically turn
+[21:20] off rarity, and we can we can turn up
+[21:22] the elemental damage or the physical
+[21:24] damage, and we can start looking for the
+[21:27] the the different rings that there are,
+[21:30] but they're they're just not that much
+[21:32] better, like hypothetically speaking.
+[21:34] So, this I would list for like 550. It's
+[21:36] not as good as the old res ring. It it
+[21:38] could be a decent competitor to this. Um
+[21:41] but, you know, if we find an exact copy
+[21:43] of ours, it's going for 625. 1 hour on
+[21:47] the market, this is a one-to-one
+[21:49] comparison to ours. Okay, cool. So, we
+[21:52] got a one-to-one comparison. Bless.
+[21:55] Would I list this for 600 or 550? Maybe.
+[21:59] I could start out with 550 just to see
+[22:01] if somebody goes, but the the liquidity
+[22:04] in this market really really sucks. So,
+[22:06] I might just try to get it done, but
+[22:09] there it is. There you have it as far as
+[22:11] the results and as far as the pricing
+[22:13] and everything else. And now you have
+[22:15] the method, and you guys saw it. We got
+[22:17] it done in under 400 divs.
+[22:19] Hopefully, you liked it.
+[22:21] Let me know what you guys want. Um I
+[22:23] have added a idea channel in the
+[22:25] Discord, so come by the Discord, take a
+[22:27] look at the idea channel, and I'll see
+[22:29] you on the next one.
+[22:30] Peace.

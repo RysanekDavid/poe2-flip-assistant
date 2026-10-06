@@ -26,6 +26,7 @@ const targets = {
   "alert-noise": "src/scripts/testAlertNoise.ts",
   "patch-summary": "src/scripts/testPatchSummary.ts",
   rates: "src/scripts/testRates.ts",
+  research: "src/scripts/testCraftMining.ts",
   "scout-demand": "src/scripts/testScoutDemand.ts",
   "snipe-db": "src/scripts/testSnipeDb.ts",
   strategies: "src/scripts/testStrategies.ts",

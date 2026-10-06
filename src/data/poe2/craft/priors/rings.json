@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "scope": "Rings",
+  "entries": [
+    {
+      "key": "reveal.lightLoopAnchor.t1-attack-flat-or-rarity",
+      "value": { "point": 10, "low": 0, "high": 15 },
+      "basis": "creator_stated",
+      "n": null,
+      "sources": [{ "videoId": "TWgmQuiLeHA", "at": "17:48–17:55" }],
+      "claim": {
+        "v": "ss",
+        "src": ["https://www.youtube.com/watch?v=TWgmQuiLeHA"],
+        "note": "A CEILING, not a mean. Keyson: Omens of Light (with as many collarbones) to land the last ring prefix as a T1 flat or prefix rarity: '15 should be enough' (high = 15), 'usually less than 10' (point = 10, the top of the usual case). He states no lower bound; the schema needs a number, so low = 0 is a placeholder for 'no stated floor', not a measurement. One creator, nothing counted on screen. Anchor for the planner's reveal expectation, not a replacement for it."
+      },
+      "patch": "0.5.5b",
+      "conflicts": []
+    },
+    {
+      "key": "brick.ring-attack-flat-budget-magic",
+      "value": { "point": 0.25, "low": 0.25, "high": 0.5 },
+      "basis": "creator_measured",
+      "n": 4,
+      "sources": [{ "videoId": "_sSjC5LX_Ck", "at": "14:26–14:44" }],
+      "claim": {
+        "v": "ss",
+        "src": ["https://www.youtube.com/watch?v=_sSjC5LX_Ck"],
+        "note": "XTheFarmerX's own second craft on four cheap magic rings: one hard brick (1 of 4 = 0.25); a second ring he also calls a miss, so 2 of 4 missed (0.5) by his own words. Point = the hard-brick rate, high = counting the soft miss. n = 4 from one creator in one session is thin, so the band is wide and the grade is one source. His first craft ran 4 mana hits in 5 on the Greater-exalt step (6:27–6:37), a step miss, not a ring brick."
+      },
+      "patch": "0.5.5b",
+      "conflicts": []
+    }
+  ]
+}

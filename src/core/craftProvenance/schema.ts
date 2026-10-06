@@ -22,13 +22,13 @@ export type RecipeStatus = (typeof RECIPE_STATUSES)[number];
 export type HitRateBasis = (typeof HIT_RATE_BASES)[number];
 
 /** Round-trips through Date so an overflowing day (2026-02-30) is rejected, not rolled over. */
-const isoDay = z
+export const isoDay = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "expected YYYY-MM-DD")
   .refine((s) => new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s, "not a real calendar date");
 
 // Rendered as links, so https only (no javascript:/data: hrefs out of a data file), and never an RMT shop.
-const httpsUrl = z
+export const httpsUrl = z
   .string()
   .url()
   .regex(/^https:\/\//, "source URLs must be https")

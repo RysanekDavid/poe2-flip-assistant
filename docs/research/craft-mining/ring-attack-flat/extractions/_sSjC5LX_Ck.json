@@ -1,0 +1,372 @@
+{
+  "schema_version": 1,
+  "videoId": "_sSjC5LX_Ck",
+  "title": "How To Craft INSANE End Game Rings For CHEAP!",
+  "creator": "XTheFarmerX",
+  "publishedAt": null,
+  "transcriptRef": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+  "patch": { "stated": null, "atUpload": null, "outOfPatch": { "flag": false, "reasons": [], "mechanics": [] } },
+  "language": "en",
+  "archetypes": ["ring-attack-flat"],
+  "base": {
+    "name": "unstated",
+    "ilvl": null,
+    "bought": true,
+    "boughtState": { "fracturedMods": [], "otherMods": ["tier one of any flat attack damage, ideally fire or lightning (not physical, not cold), plus an open suffix or a good resistance roll"] },
+    "priceClaim": { "value": null, "low": 1, "high": 2, "unit": "div", "at": "0:49–0:53", "quote": "I was paying one div for the open suffix and then two div for the good resistance rolls." },
+    "at": "0:21–0:25",
+    "quote": "buying a ton of these magic rings that have tier one of any flat on them."
+  },
+  "steps": [
+    {
+      "order": 1,
+      "action": "other",
+      "materials": ["perfect-orb-of-augmentation"],
+      "omens": [],
+      "side": "suffix",
+      "target": { "text": "fill the open suffix of the magic ring (hit rarity or resistance)", "acceptedTiers": ["unstated"] },
+      "at": "1:07–1:15",
+      "quote": "what we're going to do is perfect all the open suffix rings. Awesome. So, we hit one rarity, one resistance.",
+      "note": "'Perfect all the open suffix rings' is a Perfect Orb of Augmentation on the magic ring, applied BEFORE any essence; it is not an Exalted Orb (a magic ring takes an Augmentation, and the rare-making essences follow at 1:17–1:32). The orb is read from context; he says only 'perfect'."
+    },
+    {
+      "order": 2,
+      "action": "essence-greater",
+      "materials": ["greater-essence-of-insulation"],
+      "omens": [],
+      "side": "suffix",
+      "target": { "text": "tier three resistance on rings that already have rarity (fire or lightning, not cold)", "acceptedTiers": ["T3"] },
+      "at": "1:17–1:26",
+      "quote": "you can then use a greater essence of insulation. You can do the fire or the lightning one, but don't do the cold one",
+      "note": "Guarantees T3 resistance (1:24–1:26)."
+    },
+    {
+      "order": 3,
+      "action": "other",
+      "materials": ["essence-of-opulence"],
+      "omens": [],
+      "side": "suffix",
+      "target": { "text": "tier one rarity", "acceptedTiers": ["T1"] },
+      "at": "1:28–1:32",
+      "quote": "you're going to want to use an essence of opulence. This will guarantee you tier one rarity.",
+      "note": "Used on the rings that already rolled a resistance."
+    },
+    {
+      "order": 4,
+      "action": "desecrate",
+      "materials": ["preserved-collarbone"],
+      "omens": ["omen-of-sinistral-necromancy"],
+      "side": "prefix",
+      "target": { "text": "flat attack damage or percentage cold damage; rarity and life also accepted", "acceptedTiers": ["unstated"] },
+      "at": "5:42–5:48",
+      "quote": "preserve quality bone, ominous ancestral decrement seed to guarantee a prefix desecration on all of our rings.",
+      "note": "Captions garble the names; read as Preserved Collarbone and Omen of Sinistral Necromancy (guarantees a prefix). This is the order of the first craft; in the second, cheaper craft he slams first and applies the collarbone only to rings that hit (9:45–10:15)."
+    },
+    {
+      "order": 5,
+      "action": "slam-fill",
+      "materials": ["tuls-catalyst", "greater-exalted-orb"],
+      "omens": ["omen-of-catalysing-exaltation", "omen-of-greater-exaltation"],
+      "side": null,
+      "target": { "text": "flat cold damage to attacks, percentage cold damage, cold or all resistance", "acceptedTiers": ["unstated"] },
+      "at": "1:49–1:59",
+      "quote": "catalyze all these rings with these cold catalysts, and then we're going to use an omen of catalyzing exaltation, an omen of greater exaltation",
+      "note": "Cold catalyst instead of Reaver (attack) because it adds no bad-mod weight and is far cheaper (3:22–3:50). Greater Exalted Orb chosen over Perfect: perfect only removes one mod from the pool for roughly 2.5-3 div more (4:58–5:25). The catalysing omen applies to both exalts of the greater omen (4:07–4:19)."
+    },
+    {
+      "order": 6,
+      "action": "desecrate",
+      "materials": [],
+      "omens": ["omen-of-abyssal-echoes"],
+      "side": "prefix",
+      "target": { "text": "flat damage, rarity or life (a cold flat if missing)", "acceptedTiers": ["unstated"] },
+      "at": "6:43–6:48",
+      "quote": "We're going to definitely want to grab an echo and unveil.",
+      "note": "Reveal step. 'Echo' read as Omen of Abyssal Echoes (about 1.5 div). Taken only on rings worth it; skipped on a ring with two weak suffixes (11:09–11:15)."
+    }
+  ],
+  "missHandling": [],
+  "qualityPath": { "catalyst": "tuls-catalyst", "pct": null, "orderNote": "Cold catalyst quality goes on right before the catalysed slam that consumes it.", "at": "1:49–1:53" },
+  "measured": [
+    {
+      "quantity": "brick_rate",
+      "value": 0.25,
+      "low": null,
+      "high": null,
+      "n": 4,
+      "howMeasured": "own_attempts",
+      "context": "second, cheap craft, four rings: one hard brick (14:26–14:37, 'the only thing we can do is chaos off the desecration', which missed); a fourth ring he also calls a miss, so 2 of 4 missed overall (14:36–14:44)",
+      "at": "14:26–14:44",
+      "quote": "There's four rings here. We missed on one and we hit on the other three."
+    },
+    {
+      "quantity": "multiplier",
+      "value": 2,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "weight multiplier for tagged mods at 20% catalyst quality with Omen of Catalysing Exaltation; the 300-400 attempts are passive ('there was testing done') and not shown as the creator's own",
+      "at": "2:48–3:04",
+      "quote": "There was testing done to the tune of like three or 400 attempts with 20% and 40% quality on rings"
+    },
+    {
+      "quantity": "multiplier",
+      "value": 3,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "weight multiplier for tagged mods at 40% catalyst quality, same passive testing",
+      "at": "3:01–3:04",
+      "quote": "at 20% quality, it doubles the weighting, and at 40% quality, it triples the weighting."
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.056,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "table_reading",
+      "context": "flat cold damage weight 3,900 of a 69,000 ring pool, read off poe2db weights, no catalysing",
+      "at": "2:44–2:48",
+      "quote": "normally flat cold damage has a 3,900 weighting out of a pool of 69,000"
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.11,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "creator's own arithmetic: cold flat chance at 20% quality (about 11%); 40% quality about 15% (3:12–3:18)",
+      "at": "3:06–3:14",
+      "quote": "this has a 5.6% chance of hitting cold damage, now it'll double to being like around a 11% chance"
+    },
+    {
+      "quantity": "brick_rate",
+      "value": 0.8,
+      "low": null,
+      "high": null,
+      "n": 5,
+      "howMeasured": "own_attempts",
+      "context": "five rings on the catalysed greater-exalt prefix step: tier one or two mana landed on four of five, which he calls unlucky; he says mana is about half as likely as the flats",
+      "at": "6:27–6:37",
+      "quote": "We hit mana four out of five times. That's kind of unlucky."
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 1,
+      "low": null,
+      "high": null,
+      "n": 4,
+      "howMeasured": "own_attempts",
+      "context": "second, cheap craft on four rings (catalysed greater exalt before any collarbone): acceptable result on all four, which he calls very lucky",
+      "at": "10:35–10:41",
+      "quote": "We actually hit on all of them. Like that was very lucky."
+    }
+  ],
+  "claims": [
+    {
+      "kind": "cost",
+      "text": "one Reaver catalysing exalt costs about 7 to 8 div, versus under 1 div with a cold catalyst",
+      "value": null,
+      "low": 7,
+      "high": 8,
+      "unit": "div",
+      "material": null,
+      "dateContext": "price at upload ('right now'); league week unstated. kE8Tn32yNp0 6:21–6:26 gives about 2 div for the same action, so the two videos priced it at different times",
+      "at": "3:58–4:02",
+      "quote": "it costs us around like seven or eight div to do one reaver catalyzing exaltation."
+    },
+    {
+      "kind": "cost",
+      "text": "base price: 1 div with an open suffix, 2 div with a good resistance roll",
+      "value": null,
+      "low": 1,
+      "high": 2,
+      "unit": "div",
+      "material": null,
+      "dateContext": "price at upload; league week unstated",
+      "at": "0:49–0:53",
+      "quote": "I was paying one div for the open suffix and then two div for the good resistance rolls."
+    },
+    {
+      "kind": "cost",
+      "text": "cheap bases bought for about 25 to 30 ex each",
+      "value": null,
+      "low": 25,
+      "high": 30,
+      "unit": "ex",
+      "material": null,
+      "dateContext": "price at upload; league week unstated",
+      "at": "9:02–9:07",
+      "quote": "I bought all these bases for like 25, 30 exalts. They're super cheap."
+    },
+    {
+      "kind": "cost",
+      "text": "about 3 div per ring including materials; four rings, about 12 div invested",
+      "value": 3,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "price at upload; league week unstated",
+      "at": "15:35–15:42",
+      "quote": "Cost is around three div per ring, so 12 div investment, and we easily made back 12 div."
+    },
+    {
+      "kind": "material_price",
+      "text": "Tul's (cold) catalyst about 5 ex each",
+      "value": 5,
+      "low": null,
+      "high": null,
+      "unit": "ex",
+      "material": "tuls-catalyst",
+      "dateContext": "price at upload ('right now'); league week unstated",
+      "at": "3:41–3:48",
+      "quote": "cold catalysts, the tall catalysts, are five exalts each right now, okay?"
+    },
+    {
+      "kind": "material_price",
+      "text": "Reaver catalyst about 30 ex each",
+      "value": 30,
+      "low": null,
+      "high": null,
+      "unit": "ex",
+      "material": "reaver-catalyst",
+      "dateContext": "price at upload ('right now'); league week unstated",
+      "at": "3:48–3:52",
+      "quote": "Reaver catalysts are 30 exalts each. So, it's like six times more expensive."
+    },
+    {
+      "kind": "material_price",
+      "text": "Perfect Exalted Orb almost 3 div each",
+      "value": 3,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": "perfect-exalted-orb",
+      "dateContext": "price at upload; league week unstated",
+      "at": "4:59–5:06",
+      "quote": "perfect exalts are almost three div each and greater exalts are 10 to 11 exalts each."
+    },
+    {
+      "kind": "material_price",
+      "text": "Greater Exalted Orb 10 to 11 ex each",
+      "value": null,
+      "low": 10,
+      "high": 11,
+      "unit": "ex",
+      "material": "greater-exalted-orb",
+      "dateContext": "price at upload; league week unstated",
+      "at": "5:03–5:09",
+      "quote": "greater exalts are 10 to 11 exalts each."
+    },
+    {
+      "kind": "material_price",
+      "text": "Omen of Abyssal Echoes about 1.5 div each",
+      "value": 1.5,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": "omen-of-abyssal-echoes",
+      "dateContext": "price at upload ('right now'); league week unstated",
+      "at": "10:52–10:56",
+      "quote": "Echoes are around a div and a half each right now, so they're quite expensive."
+    },
+    {
+      "kind": "material_price",
+      "text": "Omen of Light about 4.5 div each",
+      "value": 4.5,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": "omen-of-light",
+      "dateContext": "price at upload ('right now'); league week unstated",
+      "at": "15:20–15:23",
+      "quote": "How much are omen of lights right now? They're like four and a half div, yeah."
+    },
+    {
+      "kind": "sale",
+      "text": "showcase ring with double rarity, cold flat and double resistances described as a 30 to 40 div ring",
+      "value": null,
+      "low": 30,
+      "high": 40,
+      "unit": "div",
+      "material": null,
+      "dateContext": "estimate at upload; league week unstated",
+      "at": "0:11–0:19",
+      "quote": "Double rarity, flat cold damage with double resistances. Definitely like solid 30-40 div ring"
+    },
+    {
+      "kind": "sale",
+      "text": "ring with double flats T1/T2, double resistances, T1 rarity and T1 life: closest comparable about 80 div, he lists at 70 to 75",
+      "value": null,
+      "low": 70,
+      "high": 75,
+      "unit": "div",
+      "material": null,
+      "dateContext": "listing at upload; comparable had not sold in 17 hours",
+      "at": "7:53–8:01",
+      "quote": "the closest comparable ring would be like 80 div. Realistically though, this hasn't sold in 17 hours"
+    },
+    {
+      "kind": "sale",
+      "text": "ring with flats, rarity and chaos resistance listed at about 13 div",
+      "value": 13,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "listing at upload; not yet sold",
+      "at": "13:15–13:19",
+      "quote": "So, let's put this up for like 13 div."
+    },
+    {
+      "kind": "sale",
+      "text": "missed ring with attribute, rarity and double flat: closest comparables 3 to 4 div",
+      "value": null,
+      "low": 3,
+      "high": 4,
+      "unit": "div",
+      "material": null,
+      "dateContext": "estimate at upload; not listed",
+      "at": "15:11–15:15",
+      "quote": "the closest ones are going to be like this, three or four div. So, we definitely missed on this ring."
+    }
+  ],
+  "salvage": [
+    {
+      "when": "desecrated prefix is bad and the ring is otherwise dead",
+      "action": "chaos orb off the desecrated mod (one in three); he missed immediately on the example",
+      "valueClaim": null,
+      "at": "14:29–14:37",
+      "quote": "we can just chaos off the um the desecration a a one in three. And we instantly missed."
+    },
+    {
+      "when": "suffixes are not filled with good mods",
+      "action": "do not spend an Omen of Light or an Echo; list the ring at its comparable price",
+      "valueClaim": "about 3 div",
+      "at": "15:15–15:33",
+      "quote": "If we had filled suffixes, we for sure could keep going, but we don't, unfortunately."
+    }
+  ],
+  "caveats": [
+    "Expect to craft two or three rings to hit one (1:04–1:05).",
+    "Do not spend more than about two or three div on a base because many will brick (0:54–0:59).",
+    "T1 physical flat has the highest weighting, so a base that already has it lowers the odds of hitting another flat; cold is avoided on the base because it is wanted later (0:25–0:41).",
+    "Reaver catalyst gives more flat chances but is about six times the price of the cold catalyst; cold catalyst adds no weight to bad mods (3:22–4:06).",
+    "He tested the catalysing omen with the Omen of Greater Exaltation (applies to both exalts) and says it worked last league (4:09–4:19).",
+    "Second craft: collarbone only on rings whose catalysed slam hit, to save cost (9:45–10:15); the first craft desecrated first.",
+    "Other bases work: gold, prismatic or any resistance ring; gold rarity bases sell best but cost more (8:48–9:01).",
+    "Unsold rings are not catalysed, so he adds a cold catalyst to look better in the trade filter (8:02–8:20); he lowers listings by a div every hour or few hours (14:01–14:07).",
+    "Second craft, four rings (14:26–14:44): one hard brick, a second ring he also calls a miss (kept at about 3 div); recorded as a measured brick_rate with n=4."
+  ],
+  "unresolved": [
+    "Patch and league week at upload are not stated.",
+    "Whether the 300-400 test attempts were the creator's own is not stated; recorded as a statement.",
+    "Cost line at 13:19–13:23 reads 'we spent 3714 div'; caption garbled, not recorded.",
+    "How many rings were crafted overall and the total profit across both crafts is not stated beyond the 12 div investment line."
+  ]
+}

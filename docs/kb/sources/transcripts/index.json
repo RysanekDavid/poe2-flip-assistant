@@ -172,5 +172,103 @@
   "title": null,
   "url": "https://www.youtube.com/watch?v=5ngxdC6xY6Q",
   "chars": 23808
+ },
+ {
+  "file": "docs/kb/sources/transcripts/31-attack-ring-craft-perfected-keyson.txt",
+  "title": "Attack ring craft PERFECTED! PoE 2 - 0.5",
+  "url": "https://www.youtube.com/watch?v=TWgmQuiLeHA",
+  "chars": 25290,
+  "videoId": "TWgmQuiLeHA",
+  "creator": "Keyson",
+  "fetched": "2026-10-04",
+  "lang": "en",
+  "sha256": "1800e8927d214f032ebf6dc7fd4f84a8e772ef0ced18b5b802a8c273daf3a78d",
+  "archetypes": [
+   "ring-attack-flat"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/32-endgame-ring-amulet-attack-crafting-alohaa.txt",
+  "title": "Endgame Ring & Amulet Crafting Guide for Attack Builds | PoE 2 0.5 Runes of Aldur",
+  "url": "https://www.youtube.com/watch?v=kPBToE_G5t8",
+  "chars": 14241,
+  "videoId": "kPBToE_G5t8",
+  "creator": "Alohaa",
+  "fetched": "2026-10-04",
+  "lang": "en",
+  "sha256": "4c5776f5ebf9de60deeeef0178db27fecde481834e99be761c183aa60e4b2f6f",
+  "archetypes": [
+   "ring-attack-flat"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/33-attack-rings-with-four-flats-saveq.txt",
+  "title": "How to craft attack Rings with 4 flats Poe2 0.5",
+  "url": "https://www.youtube.com/watch?v=m_n2htaTr98",
+  "chars": 12300,
+  "videoId": "m_n2htaTr98",
+  "creator": "SaVeQ",
+  "fetched": "2026-10-04",
+  "lang": "en",
+  "sha256": "2d04b4ef3de8eb00380a54ba21b843bd93febfb659f7e8387b9d7bf8c99b7f40",
+  "archetypes": [
+   "ring-attack-flat"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/34-200d-profit-crafting-rings-fredrik.txt",
+  "title": "Here is how i made over 200d profit crafting rings (PoE2 0.5 step by step guide)",
+  "url": "https://www.youtube.com/watch?v=nyLcWFR3gHg",
+  "chars": 4599,
+  "videoId": "nyLcWFR3gHg",
+  "creator": "Fre drik",
+  "fetched": "2026-10-04",
+  "lang": "en",
+  "sha256": "97a2c3e1e4775b5eaf43efb48aa73afc0dcd02a4a3582b91c19a00d7ae35c176",
+  "archetypes": [
+   "ring-attack-flat"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+  "title": "How to Craft GOD-TIER Flat Attack Rarity Rings! | Step-by-Step Guide",
+  "url": "https://www.youtube.com/watch?v=kE8Tn32yNp0",
+  "chars": 16993,
+  "videoId": "kE8Tn32yNp0",
+  "creator": "XTheFarmerX",
+  "fetched": "2026-10-04",
+  "lang": "en",
+  "sha256": "c8b9b0214f5f1edc6a5f68c3247a15346d623ed971d1ae45d06f0229bcb0d962",
+  "archetypes": [
+   "ring-attack-flat"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/36-insane-end-game-rings-for-cheap-xthefarmerx.txt",
+  "title": "How To Craft INSANE End Game Rings For CHEAP!",
+  "url": "https://www.youtube.com/watch?v=_sSjC5LX_Ck",
+  "chars": 22976,
+  "videoId": "_sSjC5LX_Ck",
+  "creator": "XTheFarmerX",
+  "fetched": "2026-10-04",
+  "lang": "en",
+  "sha256": "cb350a247c4ee2d02c3ae939c6f867c87d6bcd9899eb26e2b64a548901bf19f6",
+  "archetypes": [
+   "ring-attack-flat"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/37-one-mirror-ring-to-rule-them-all-belton.txt",
+  "title": "ONE [MIRROR] RING TO RULE THEM ALL! | The Best Ring Ever Crafted | PoE 2 0.5",
+  "url": "https://www.youtube.com/watch?v=x_Wt8jOXVtY",
+  "chars": 19731,
+  "videoId": "x_Wt8jOXVtY",
+  "creator": "Belton",
+  "fetched": "2026-10-04",
+  "lang": "en",
+  "sha256": "488d22514862964f36c9e128a9a551185a5a43202d5ac0553e7b439143583181",
+  "archetypes": [
+   "ring-attack-flat"
+  ]
  }
 ]

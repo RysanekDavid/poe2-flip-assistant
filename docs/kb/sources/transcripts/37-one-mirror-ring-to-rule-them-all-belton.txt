@@ -1,0 +1,485 @@
+ONE [MIRROR] RING TO RULE THEM ALL! | The Best Ring Ever Crafted | PoE 2 0.5
+Creator: Belton
+https://www.youtube.com/watch?v=x_Wt8jOXVtY
+
+(YouTube captions with [m:ss] timestamps, fetched 2026-10-04 with youtube-transcript-api, languages en/en-US/cs/de; title and creator from YouTube oEmbed, fetched 2026-10-05. Mined for docs/research/craft-mining/ring-attack-flat.)
+
+[0:10] Hello YouTube.
+[0:12] It's Belton here.
+[0:14] Today I'm going to showcase something
+[0:16] with you guys that I'm so proud of.
+[0:20] Probably not only the coolest and best
+[0:23] mirror item mirror ring I've ever
+[0:25] crafted, but the coolest and best mirror
+[0:27] item I've ever crafted in POE 2.
+[0:31] And not only is it that, it is the best
+[0:35] mirror ring ever crafted in POE 2.
+[0:39] Not only that,
+[0:40] the best mirror item ever crafted in POE
+[0:43] 2.
+[0:44] And I'm going to tell you guys why, show
+[0:46] you how I did it,
+[0:48] and I wrote a little thing here so I
+[0:49] could try and keep this video nice and
+[0:51] short for you guys.
+[0:52] But oh my god, this is so cool. I love
+[0:55] this league. All right guys, here it is.
+[0:57] Here is the precious.
+[1:02] 70% quality breaching with
+[1:06] plus one to level of all spell skills.
+[1:10] Tier one mana, which can be upwards of
+[1:12] 307%.
+[1:14] 117%
+[1:16] mana regeneration.
+[1:18] 44% mana cost efficiency of spells.
+[1:22] 24% cast speed.
+[1:25] And 10% mana.
+[1:28] All right, so let's go through with this
+[1:30] right here.
+[1:32] All right, so what is this ring feature
+[1:34] fellas? Well,
+[1:36] we got [clears throat] the breach ring
+[1:37] base, which obviously gives the 20% max
+[1:40] quality. We have a breach essence, which
+[1:43] we added and removed to give an
+[1:44] additional 20 quality. We then used the
+[1:47] infusers to add another 10 max quality,
+[1:50] which cost 15 Hinokora's Locks
+[1:53] to bring this to a total of 70% quality.
+[1:56] All mana tagged modifiers now get a
+[1:59] times 1.7 multiplier to their affixes,
+[2:02] rounding down to the closest whole
+[2:03] number.
+[2:05] Breach rings are a one in 10 on the
+[2:07] Genesis tree,
+[2:09] um
+[2:10] which means you have to get them as a
+[2:11] drop. So, the Genesis tree is here
+[2:13] through breach
+[2:14] in order to get a breach ring to begin
+[2:16] with, as well as to get the breach ring
+[2:19] only modifiers of both of the mana cost
+[2:22] efficiency of skills and plus one spell
+[2:24] skills are uh just those, the uh sorry,
+[2:27] the breach ring ones.
+[2:28] Um you are going to have to come to the
+[2:31] Genesis tree here,
+[2:33] uh where you only have 10 points in the
+[2:35] ring tree, and you have to take the
+[2:38] birth items uh have to have a 10% chance
+[2:41] to become a breach ring, and you're
+[2:42] going to want to get the birth items
+[2:44] always have a caster modifier and always
+[2:46] have two caster modifiers. So, that is a
+[2:49] bare minimum of 1 2 3 4 5 6 7 8 out of
+[2:53] the possible 10 points that you can
+[2:55] take.
+[2:56] Um and so, that is basically the entire
+[2:58] investment that you need to get that
+[2:59] there. Now, the breach ring not only had
+[3:02] to drop itself, which again takes one in
+[3:04] 10, but breach ring had to drop with
+[3:07] tier one mana cost efficiency, which
+[3:09] from my testing is about uh one in 10
+[3:12] rings uh that will drop will have the
+[3:13] tier one mana cost efficiency. Uh
+[3:16] therefore, it would take approximately
+[3:18] 100 rings uh being turned in uh to have
+[3:21] a breach ring with the tier one
+[3:24] efficiency.
+[3:25] Now, plus one to all spell skills,
+[3:29] um
+[3:30] which as a fun side note, uh the
+[3:33] modifier name for it is of Jordan, the
+[3:35] plus one all spell skills, which is
+[3:36] obviously a callback uh to Diablo II
+[3:39] with the SoJs, the Stones of Jordan. So,
+[3:42] uh it is the rarest modifier in the
+[3:44] entire game of Path of Exile, and a cool
+[3:46] little shout out there. Uh but, a cool
+[3:48] thing about that mod, it cannot be
+[3:50] rolled onto rings. It must drop
+[3:52] organically on a breach ring being
+[3:54] produced directly from the genesis
+[3:56] genesis tree here.
+[3:58] Um the genesis tree is hive blood uh to
+[4:01] get the hive blood for it. It is
+[4:02] farmable only. So, you can't like buy
+[4:04] hive blood or brute force your way into
+[4:06] try to make one of these
+[4:08] uh you know, by having a bunch of
+[4:09] currency or pulling it. You have to
+[4:11] actually farm the the the hive blood.
+[4:13] The modifier itself, the plus one, is
+[4:16] only item level of 45, which means it is
+[4:18] very difficult to craft with if it is
+[4:20] not fractured.
+[4:21] And here's the craziest part, guys. In
+[4:24] the entire game, okay?
+[4:27] Uh of which over 1 million accounts have
+[4:30] played this league, right? Now, if you
+[4:31] look on like Steam charts and stuff,
+[4:33] that just shows concurrence, not total,
+[4:35] right? Uh so, in one of the most popular
+[4:37] leagues ever, across all ring bases of
+[4:40] all item levels, corrupted or
+[4:42] uncorrupted, fractured or not, etc.
+[4:45] There are less than 50
+[4:48] rings
+[4:50] that have ever dropped
+[4:53] with plus one to spell skills.
+[4:56] Most of which are on bases, have
+[4:59] bricked corruptions, as you can see, and
+[5:02] or uh have no other drop-only
+[5:04] breach-exclusive modifiers.
+[5:06] Of these 48 that have ever dropped with
+[5:09] that one mod,
+[5:11] five of them are breach rings.
+[5:14] Five of them.
+[5:15] >> [laughter]
+[5:16] >> Uh
+[5:18] five.
+[5:19] Uh
+[5:22] Um two of which uh are not costing
+[5:26] multiple mirrors, uh and none of which
+[5:28] have a tier one breach drop-only
+[5:30] modifier paired with the plus one to
+[5:32] spell skills, let alone the absolute
+[5:34] best one.
+[5:36] In the entirety of the game, in one of
+[5:37] the most popular leagues ever, with over
+[5:39] a million accounts, where you are forced
+[5:41] to run the content, there have been
+[5:43] approximately 50 rings ever with this
+[5:46] modifier. Of those, a handful are on
+[5:48] breach bases, and of those, all but one
+[5:52] failed to roll with another breach
+[5:55] only caster mod modifier that is tier
+[5:58] one. And gentlemen,
+[6:00] you're looking at it.
+[6:02] To get that is so hard because there's
+[6:04] only 10 points as I said on that Genesis
+[6:06] tree, and everyone is basically forced
+[6:08] into taking the rolls two caster
+[6:10] modifiers,
+[6:12] and since it's heavily favored to roll
+[6:13] cast speed, which is the only natural
+[6:15] caster mod that's on a non-breach ring,
+[6:18] um
+[6:19] or that's like non-breach only. And
+[6:22] since the only other caster modifier,
+[6:23] like if you're getting the plus one,
+[6:25] that's obviously one of those caster
+[6:26] mods,
+[6:27] it is exceedingly rare to get ones that
+[6:29] have been lucky enough to roll
+[6:30] additional modifiers in excess of the
+[6:32] two guaranteed. You also must invest
+[6:35] points into being able to drop breach
+[6:37] rings, which again is only a 10% chance
+[6:39] per ring, and it comes at the expense of
+[6:42] opportunity cost-wise of not taking
+[6:44] other Genesis tree modifiers.
+[6:46] >> [clears throat]
+[6:46] >> Um on top of the sheer absurdity of the
+[6:49] base,
+[6:50] we also put 10% extra quality above the
+[6:53] maximum typical 60%. Uh
+[6:56] after putting on the 20% breach essence,
+[6:59] this allows various mods to hit break
+[7:01] points or higher values than what
+[7:02] otherwise be possible. For example, you
+[7:05] know, the 6% mana with 70% quality goes
+[7:08] to 10% mana, which it wouldn't if it
+[7:11] were just the 60%.
+[7:13] Um and as well as all the other ones
+[7:15] just going higher. Um
+[7:17] and you also have to do that while the
+[7:20] essence mod is on the ring, meaning that
+[7:22] you must do it first, not last, right?
+[7:25] So, the very first thing that you have
+[7:27] to do
+[7:28] is get the quality on there, and as I
+[7:31] said, that took 15 Exalted Orbs to lock.
+[7:34] Um
+[7:36] See here, you can see on the tracking
+[7:38] score at crafting, 17 locks have been
+[7:40] used.
+[7:41] And I bought I that just before starting
+[7:44] like maybe a day before
+[7:46] or not bought it but you know equipped
+[7:48] it or whatever.
+[7:51] And that that's just the quality of it,
+[7:53] right? So after hitting the fracture
+[7:55] landing the 20% extra quality essence
+[7:59] while maintaining the plus one and 26%
+[8:02] efficiency and then hitting the 10%
+[8:04] extra quality which was such a pain in
+[8:07] the ass cuz when we hovered with the
+[8:09] locks seven times when I hovered it
+[8:12] showed it being corrupted seven times on
+[8:14] the way to getting 10 quality.
+[8:16] Which is brutal, right?
+[8:18] So to get rid of it then you'd have to
+[8:20] just divine and then re-divine it back
+[8:22] perfect and then you know go check again
+[8:24] with another lock.
+[8:28] Yeah, then after that was done though
+[8:30] we then whittled the 20% quality
+[8:33] modifier away. The efficiency prefix is
+[8:35] item level 78 and there are no natural
+[8:37] prefixes that are a higher item level.
+[8:40] And since the ring is only item level 80
+[8:42] which is perfect for what we wanted
+[8:44] we fractured the plus one to all spell
+[8:46] skills and we kept the T1 mana regen
+[8:48] which is item level 79 and therefore it
+[8:51] is the highest item level suffix that
+[8:53] was also possible. So that means that
+[8:54] you could just whittle spam that that
+[8:57] fourth mod with perfect chaos until I
+[9:00] hit either T1 cast speed or T1 flat
+[9:02] mana. I ended up hitting T1 flat mana.
+[9:05] After that I desecrated a suffix using
+[9:07] dextral necromancy and a
+[9:10] the what do you call it? Dextral
+[9:12] necromancy and the not the jawbone but
+[9:14] the collarbone.
+[9:16] And
+[9:17] after putting the desecrated mod on I
+[9:19] then used the
+[9:20] dextral
+[9:22] crystallization and a perfect mana
+[9:23] essence which removed the dextral the
+[9:26] desecrated mod suffix and gave us the
+[9:28] 10% mana. I then re-desecrated for T1
+[9:32] cast speed
+[9:33] using omens of light uh, and abyssal
+[9:35] echoes
+[9:37] uh, until I got the T1 cast speed. That
+[9:40] by itself took me 76 omens of light to
+[9:43] get the cast speed, uh, half of which I
+[9:45] was using ancient uh,
+[9:47] collarbones, half of which I was using
+[9:48] the regular ones. Uh, that was four
+[9:50] times the average cost. Uh, on average
+[9:53] it takes uh, I think it was uh, 10
+[9:56] ancient or if you're doing the regular
+[9:58] ones, 20 regular ones. Uh, and I did I
+[10:01] think uh, like 26 ancients and yeah,
+[10:05] anyways, it it was not not a great
+[10:07] showing on the RNG scale, but didn't
+[10:09] even matter. You know, like it's just
+[10:11] this is uh, so cool.
+[10:14] Uh, but yeah, as I said, I got that
+[10:15] tracking smaller crafting shortly before
+[10:17] the craft, which illustrates how cost
+[10:19] intensive it was to produce. Um, but
+[10:21] that's not what makes this so cool or
+[10:23] why I'm so stoked. Um, and what makes
+[10:25] this to me so special, so hard and so
+[10:28] cool is that uh, it is literally the
+[10:30] only mirror item in the game of PoE 2
+[10:32] that I have uh, ever made that could not
+[10:34] be immediately reproduced by an
+[10:36] interested, willing, able, and wealthy
+[10:38] enough player if they wanted to. Not
+[10:40] only that, but the bottleneck to being
+[10:42] able to even start is gated behind force
+[10:44] gameplay and even then, if you were able
+[10:47] to average the amount of attempts
+[10:48] server-wide versus how many rings have
+[10:50] actually been produced only with just a
+[10:52] plus one spell mod, it would be safe to
+[10:54] assume that the individual person doing
+[10:56] breach 24/7 and only turning in high
+[10:59] blood for rings would likely have a
+[11:01] statistically near zero chance of being
+[11:03] able to self-farm the item even if they
+[11:05] wanted to, since the league does not run
+[11:07] indefinitely and the occurrence rate is
+[11:09] so low.
+[11:10] Uh, this is a tremendously cool feeling
+[11:12] and something that has not been a part
+[11:14] of my personal PoE journey like at all
+[11:16] ever. Uh, and the last time I made items
+[11:18] like this was in PoE wandering crucible
+[11:20] league. Uh, to a lesser extent sort of
+[11:22] with synthesis vulture uh, implicits
+[11:25] too, but ultimately those could be
+[11:27] brute-forced to occurrence in enough
+[11:28] time. The same cannot be said about this
+[11:30] ring. Uh, lastly, since the implicit is
+[11:33] 70% quality, we want to take full
+[11:35] advantage by choosing to keep uh on that
+[11:38] mana region. Uh, we have effectively uh
+[11:40] we have effectively have a now near nine
+[11:43] modifier item, right? Since it's got six
+[11:46] mods, four of which are mana tagged, so
+[11:48] uh you know, uh four times the uh 70
+[11:51] quality is 2.8, so 2.8 plus six is
+[11:55] almost like an 8.8 modded ring.
+[11:57] Um, and obviously those mods are all
+[11:59] very good.
+[12:00] Uh,
+[12:01] >> [clears throat]
+[12:01] >> and uh
+[12:03] yeah, so but since that quality is also
+[12:04] so high, each of these mana modifiers uh
+[12:07] is doing well in excess of most every
+[12:09] other form of possible scaling for their
+[12:11] respective roles anywhere in the entire
+[12:14] game. The region is comparable to night
+[12:17] scale, a unique and entirely unique uh
+[12:20] which takes up your gloves. Uh, it's
+[12:21] also conditional, temporary, and has a
+[12:23] downside, right? The the the entire
+[12:26] purpose of the night scale gloves is
+[12:28] that it gives you on crit for 4 seconds
+[12:31] 150% mana regen. But, if you haven't
+[12:34] crit recently, you get zero mana regen.
+[12:36] And this gives 117 almost as like an
+[12:39] afterthought. Crazy. Um,
+[12:43] >> [laughter]
+[12:43] >> uh an entire unique, yeah. So, uh the
+[12:45] more the mana percentage, right? Uh
+[12:48] on the tree, the 8% mana uh
+[12:51] notable uh has the downside of giving
+[12:54] uh 10% increased cost of mana cost of
+[12:57] skills, right? And so, not only is this
+[13:00] higher, no downside. Uh not only And
+[13:02] then, like not only that, but the mana
+[13:04] cost efficiency is higher than it's you
+[13:07] can't get that much mana cost efficiency
+[13:10] anywhere in the game, anywhere. Uh like
+[13:13] if you have an entire rune in your
+[13:15] helmet, it's 15%, right? Like if you use
+[13:18] a suffix on your foci, it's 20%, right?
+[13:22] Like the nodes on the tree for cost of
+[13:23] mana cost efficiency are like 10%, you
+[13:26] know, 15%
+[13:28] the bloody ring
+[13:30] has 44.
+[13:32] >> [laughter]
+[13:33] >> Especially when you have Archmage,
+[13:34] right? Like Archmage adds mana cost to
+[13:37] the skill. So, like not only are you
+[13:38] getting an absurd amount of flat mana,
+[13:40] like over 300 flat mana higher than
+[13:42] anywhere, 10% mana, but then the cost of
+[13:46] which is making you do more damage with
+[13:47] Archmage, but then the cost efficiency
+[13:50] is helping take away the
+[13:52] the downside of it as well. It's just so
+[13:54] nuts. So nuts.
+[13:57] Um
+[13:58] but uh yeah, on top of that as well,
+[14:00] you've got 24% cast speed and a god damn
+[14:04] junk level.
+[14:05] >> [laughter]
+[14:07] >> Did I forget to mention, by the way,
+[14:09] Colandra's Touch?
+[14:11] Uh so, it's not really one ring, it's
+[14:13] two rings. Uh so, if you mirror it, not
+[14:15] only
+[14:16] uh do you get the you know, the best
+[14:18] ring ever made, but you basically get
+[14:21] two free mirror like a a second mirror
+[14:23] copy for free because of KT. Uh so, not
+[14:25] only is it irreplaceable, best in slot,
+[14:28] but it comes with a second version for
+[14:30] free. On top of that, you could use
+[14:32] Ingenuity to scale them even further or
+[14:34] play a ritualist to allow for a third
+[14:36] ring and even more scaling. I don't want
+[14:38] to take too long with this video as I
+[14:39] truly think that this item honestly just
+[14:41] speaks for itself. Uh as I said to start
+[14:43] this off, not only is this the best
+[14:45] mirror item I've ever made so far in POE
+[14:46] 2, but I think, in my humble opinion, it
+[14:49] is the best mirror item ever made so far
+[14:51] in POE 2. Uh if you'd like to copy it,
+[14:53] my in-game name is just @Belton, right?
+[14:56] @Belton.
+[14:58] Um
+[14:59] and the mirror fee is one Heathedcore's
+[15:01] Lock. Uh I have a mirror shop thread on
+[15:03] the POE forums, uh which will be linked
+[15:06] below in the description of this YouTube
+[15:08] video as well. I'll put it in the pinned
+[15:10] comment. So, you can see the thread
+[15:11] here, which has
+[15:13] uh just some more information. You can
+[15:14] copy the info to enter in your pob if
+[15:16] you want. There's a copy-paste for
+[15:18] mirror service if you want to hit me up.
+[15:20] Uh you can see the ring there as well.
+[15:22] There's an expanded view with alt held.
+[15:24] Uh, and so that'll be linked below. And
+[15:26] I'll also include a link that will just
+[15:28] show you the ring on the trade uh, uh,
+[15:31] the trade site. I I keep it uh, on my
+[15:34] uh, Ange uh, listed for 1337 league. Uh,
+[15:38] buyout for mirrors, uh, just so that
+[15:40] people can come and and view it when
+[15:42] they want to. Uh, that's of course here
+[15:44] with our mirror wand, the plus eight to
+[15:46] all spell skills one with that legacy
+[15:47] cast speed. Uh, and I also made this,
+[15:49] which I'll maybe do a separate video
+[15:51] about here, but we're going to be able
+[15:52] to turn this into a plus six to spell
+[15:55] skills amulet with uh, right now it's
+[15:58] got like 42 cast speed, 42 or 45 spell
+[16:01] damage. I need to put one more quality
+[16:02] on it and the 50 spirit. Um, but yeah,
+[16:05] separate video for there. Either way,
+[16:06] you can come see it right there. In case
+[16:08] anyone's curious why they say 1337, if
+[16:10] you look at the name of the tab though,
+[16:11] DM@Belton Mirror Services, one lock fee.
+[16:15] That's what that's there for.
+[16:17] Uh, but again, I'll put those links
+[16:18] below in case you're curious. Um, you'll
+[16:20] need to message me in the game @Belton
+[16:22] to make a copy. However, the trade site
+[16:24] listing is just so people can view it.
+[16:26] And uh, yeah, so thanks for watching
+[16:27] lads. Uh, what do you guys think? Uh,
+[16:29] you can probably tell I'm pretty jazzed
+[16:31] about this one. Uh, and I'm actually
+[16:32] looking forward to reading your comments
+[16:34] and I think once this is posted. Um, I
+[16:36] guess I'll do some YouTube stuff now. If
+[16:38] you're new to the channel, consider
+[16:40] subscribing. Uh, if you want to see some
+[16:41] more PoE or PoE 2 related crafting,
+[16:43] economy, and trading oriented videos.
+[16:45] I'm a 13-year old vet and also the
+[16:47] game's most prolific mirror crafter in
+[16:49] its history.
+[16:50] I know many of you guys aren't thinking
+[16:51] about uh, in that ballpark. But we'll
+[16:54] get you there. Um, I was thinking maybe
+[16:56] I would do things like you you hear like
+[16:57] Hollywood stars say sometimes like one
+[16:59] for me, one for you. I was thinking
+[17:01] maybe that's what I'll do going forward.
+[17:03] You know, if I do a mirror crafting
+[17:04] video, then I'll do one that's like a
+[17:05] profit crafting or show you guys some
+[17:07] cool tech that everyone can access. So
+[17:09] with that being said, uh, the next video
+[17:11] will be showcasing some hidden crafting
+[17:13] tech that I discovered recently and that
+[17:16] I know nobody else is doing cuz you
+[17:18] know, it's pretty easy to see that and I
+[17:20] think it's pretty it's got some crazy
+[17:21] implications a lot of cool ways to do
+[17:23] it. So hope to see you guys there for
+[17:24] that one. Cheers fellas. God bless and
+[17:27] I'll see you on the next one and let's
+[17:29] let's sign off here with our good friend
+[17:39] >> [laughter]
+[17:40] >> All right, see you boys.

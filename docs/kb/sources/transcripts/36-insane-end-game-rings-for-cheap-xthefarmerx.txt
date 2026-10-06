@@ -1,0 +1,529 @@
+How To Craft INSANE End Game Rings For CHEAP!
+Creator: XTheFarmerX
+https://www.youtube.com/watch?v=_sSjC5LX_Ck
+
+(YouTube captions with [m:ss] timestamps, fetched 2026-10-04 with youtube-transcript-api, languages en/en-US/cs/de; title and creator from YouTube oEmbed, fetched 2026-10-05. Mined for docs/research/craft-mining/ring-attack-flat.)
+
+[0:00] What is going on YouTube? So, today I
+[0:03] decided to upgrade some of my rings. If
+[0:04] you take a look here, these were the
+[0:06] rings that I was working with. They are
+[0:08] absolutely dog shitto, and I upgraded to
+[0:10] a ring that looks a little bit more like
+[0:11] this. Double rarity, flat cold damage
+[0:15] with double resistances. Definitely like
+[0:17] solid 30-40 div ring, and I was able to
+[0:19] craft it for quite cheaply. The way you
+[0:21] craft these are just by buying a ton of
+[0:23] these magic rings that have tier one of
+[0:25] any flat on them. Ideally, you don't
+[0:26] have tier one flat fizz just because
+[0:28] tier one flat fizz has the highest
+[0:30] weighting. So, if you have it on the
+[0:32] ring to begin with, the odds that you
+[0:33] hit any flat later on will be a little
+[0:35] bit lower. And you don't want cold
+[0:36] because we want to hit cold later as
+[0:38] well. So, ideally you have fire and
+[0:40] lightning, but if you can't find those
+[0:41] for cheap, then you can get cold and
+[0:43] fizz as well. On top of that, I was
+[0:45] looking for either open suffix or I was
+[0:46] looking for a good resistance roll. I
+[0:49] was paying one div for the open suffix
+[0:51] and then two div for the good resistance
+[0:53] rolls. You probably don't want to be
+[0:54] spending more than like two or three div
+[0:55] for a base though cuz this is going to
+[0:57] be a numbers game. You are going to
+[0:58] brick some of them. So, please keep that
+[0:59] in mind. For crafting rings,
+[1:01] unfortunately, there isn't a lot we can
+[1:03] do. It's kind of a numbers game here.
+[1:04] You're probably going to craft two or
+[1:05] three in order to hit one. From here,
+[1:07] what we're going to do is perfect all
+[1:08] the open suffix rings.
+[1:13] Awesome. So, we hit one rarity, one
+[1:15] resistance. From this point, you have
+[1:17] two options, right? If you have rarity
+[1:18] on your ring, you can then use a greater
+[1:21] essence of insulation. You can do the
+[1:22] fire or the lightning one, but don't do
+[1:24] the cold one, and this will guarantee
+[1:26] you tier three resistance. And then for
+[1:28] the other ones that have resistance on
+[1:30] them, you're going to want to use an
+[1:31] essence of opulence. This will guarantee
+[1:32] you tier one rarity.
+[1:40] Awesome. So, we have five rings that are
+[1:42] going to be either two or three mods,
+[1:44] right? From here, what we're going to do
+[1:45] is the classic catalyzing exalts tech
+[1:47] for the rings. And what we're going to
+[1:49] do is essentially catalyze all these
+[1:50] rings with these cold catalysts, and
+[1:53] then we're going to use an omen of
+[1:54] catalyzing exaltation, an omen of
+[1:55] greater exaltation, and then we're
+[1:56] either going to be using a greater exalt
+[1:58] or we're going to be using a perfect
+[1:59] exalt on the rings. So, in case you guys
+[2:01] don't know, the way this works is the
+[2:02] omen of catalyzing exaltation, what this
+[2:04] does is it consumes the catalyst quality
+[2:06] to increase the chance of the
+[2:07] corresponding type modifier for the
+[2:09] ring. So, in this case, if we're using
+[2:10] tools, right, this gives us cold
+[2:12] modifiers. When we activate this omen
+[2:15] and then we exalt the ring, it'll
+[2:16] consume the cold modifiers to give us a
+[2:18] higher likelihood of rolling cold
+[2:19] modifiers on the ring.
+[2:21] Now, the way this actually works is
+[2:22] this. You come here to PoE 2 DB, you can
+[2:24] look at the weightings of the rings. If
+[2:26] you sort by cold modifiers, which you
+[2:28] can do just by clicking cold here, you
+[2:29] can see that modifiers on the ring that
+[2:31] actually have the cold tag are these
+[2:33] four: cold damage to attacks, increased
+[2:35] cold damage, cold resistance, and
+[2:36] elemental resistances, right? They all
+[2:38] have the cold tag on them. So, how much
+[2:39] effect are we actually getting from the
+[2:42] catalyzing exaltation omen? So, if you
+[2:44] see here, normally flat cold damage has
+[2:45] a 3,900 weighting out of a pool of
+[2:48] 69,000, right? There was testing done to
+[2:52] the tune of like three or 400 attempts
+[2:54] with 20% and 40% quality on rings to see
+[2:56] how much the actual effect increase of
+[2:58] the catalyzing exalt was, and it looks
+[3:01] like at 20% quality, it doubles the
+[3:03] weighting, and at 40% quality, it
+[3:04] triples the weighting. So, all that
+[3:06] means is this has a 5.6% chance of
+[3:09] hitting cold damage, now it'll double to
+[3:12] being like around a 11% chance of
+[3:14] hitting cold damage, and roughly like
+[3:16] 15% if you have
+[3:18] uh 40% quality on the ring while you use
+[3:20] the catalyzing. If you're wondering now,
+[3:22] like why are we doing cold catalyzing?
+[3:24] Because it has the cold tag over
+[3:25] something like reaver, which gives you
+[3:27] the attack tag for the catalyzing, and
+[3:29] as you can see, attack is like pretty
+[3:30] significantly better. You have way more
+[3:31] likelihood to hit all the flats. There's
+[3:34] one brick. Number one, there's no bricks
+[3:37] for the cold, right? You don't increase
+[3:39] the likelihood of getting a bad
+[3:39] modifier. And number two, and more
+[3:41] importantly, cold catalysts, the tall
+[3:43] catalysts,
+[3:45] are five exalts each right now, okay?
+[3:48] Reaver catalysts
+[3:50] are 30 exalts each. So, it's like six
+[3:52] times more expensive. So, to use the
+[3:54] cold catalyst less than a div in order
+[3:56] to do one cold catalyzing exaltation and
+[3:58] it costs us around like seven or eight
+[4:00] div to do one reaver catalyzing
+[4:02] exaltation. It just makes a lot more
+[4:04] sense like cost efficiency wise to do it
+[4:06] like this. Next, we're going to use an
+[4:07] omen of greater exaltation. Omen of
+[4:09] catalyzing exaltation proc will apply to
+[4:11] both exalts when you use an omen of
+[4:13] greater exaltation. This was tested as
+[4:14] well. I know a lot of people think that
+[4:16] it doesn't work, but it should work. At
+[4:17] least it did work last league. So, from
+[4:19] here all we need to do is figure out do
+[4:20] we want to use a greater exalt or do we
+[4:22] want to use a perfect exalt? If we look
+[4:23] at the PVDB again, we can see what is
+[4:25] the difference. Well, greater exalt is
+[4:27] 35 ilvl minimum and perfect exalt is 50
+[4:29] ilvl minimum, right? So, what does that
+[4:31] actually mean for us? So, at 50, right?
+[4:33] For cold damage, we remove anything tier
+[4:36] five or below. So, we can only have tier
+[4:37] four or above. So, tier four, tier
+[4:39] three, tier two, or tier one mods if we
+[4:41] use a perfect exalt. And if we use a
+[4:43] greater exalt, we can have tier five and
+[4:44] above. So, tier five, tier four, tier
+[4:46] three, tier one. So, the perfect exalt
+[4:48] only really removes one mod here. For
+[4:50] cold damage, it does the same thing. It
+[4:52] removes tier three and below versus tier
+[4:55] four and below for greater. Same thing
+[4:56] for cold res, right? What is the cost
+[4:58] differential between perfect and
+[4:59] greater? Well, if you look here,
+[5:01] perfect exalts are
+[5:03] almost three div each and greater exalts
+[5:06] are 10 to 11 exalts each. So, the
+[5:09] perfect exalt is like pretty much two
+[5:10] and a half three div more expensive than
+[5:11] the greater and all we're doing is
+[5:13] removing one modifier from the pool. And
+[5:15] keep in mind that the base value of
+[5:17] these rings are only like a div, maybe
+[5:18] two div each. So, it's like we're almost
+[5:20] doubling the price of the craft just to
+[5:22] remove one modifier. I don't think it's
+[5:24] worth it. So, for that reason, I'm just
+[5:25] going to be using um greater exalts for
+[5:28] this craft. So, we want to desecrate a
+[5:30] prefix here just because we have a lot
+[5:33] bigger pool of things that we can hit
+[5:34] with a prefix desecration. For suffixes,
+[5:36] we pretty much just want resistances
+[5:37] because we already hit the rarity, but
+[5:38] for prefixes, we want any of the flat
+[5:40] rolls plus the percentage cold roll.
+[5:41] Now, on top of that, we can also take
+[5:42] rarity and life. We're going to preserve
+[5:44] quality bone, ominous ancestral
+[5:46] decrement seed to guarantee a prefix
+[5:48] desecration on all of our rings.
+[5:53] Ideally what we roll is like one flat or
+[5:55] percentage cold and then one suffix
+[5:57] which is like
+[5:58] cold res or all elemental resistances,
+[6:00] right? All we're going to do now is
+[6:01] greater exalt with the omen set that I
+[6:02] just kind of explained to you guys.
+[6:05] Okay, we did not hit flats or colds.
+[6:07] Unfortunate.
+[6:10] We did not hit flats or cold again. We
+[6:12] keep on getting tier one or two mana
+[6:14] though. That's that's not good.
+[6:16] Flats or cold, go.
+[6:18] Oh, okay, we hit flat and cold. That's
+[6:20] exactly what we wanted to see. Tier two
+[6:22] as well. Flats and cold.
+[6:25] God damn it, we hit mana
+[6:27] again. Flats and cold?
+[6:30] We hit mana four out of five times.
+[6:33] That's kind of unlucky. The odds of
+[6:34] hitting tier one or two mana is like
+[6:36] half the odds of hitting flats there.
+[6:37] So, really unfortunate that happens,
+[6:39] right? That's going to happen. It's a
+[6:40] numbers game for sure. Even though we
+[6:42] got unlucky, we still have one really
+[6:43] solid ring that came out of this. We're
+[6:45] going to definitely want to grab an echo
+[6:48] and unveil.
+[6:49] Lightning damage, that's rough.
+[6:52] Okay, so there's actually two good
+[6:53] options here. You can take [ __ ]
+[6:54] lightning which is What is this? Is this
+[6:56] like literally min roll? I guess it's
+[6:58] tier eight. Or you can take life which
+[7:01] is I think either tier one or tier two.
+[7:02] It's tier one life. Let's just take the
+[7:04] life, right?
+[7:07] So, not bad at all. We have a ring with
+[7:09] double flats tier one tier two, double
+[7:12] resistances tier three, tier one rarity,
+[7:13] and then tier one life.
+[7:15] What does this actually look like for
+[7:16] us?
+[7:19] [ __ ] there aren't any in the game with
+[7:21] those exact mods. So, what you do here
+[7:22] is instead of just like plugging in
+[7:24] these two mods cuz like fire damage tier
+[7:25] one is roughly tier one cold, tier one
+[7:28] lightning, tier one is Those are all
+[7:29] roughly equitable to each other. So, you
+[7:31] do a weighted sum with all these stats
+[7:33] and then you do something like 55 here
+[7:35] cuz it's like tier one tier two. You
+[7:36] have 15 rarity, you have no cold damage,
+[7:37] you have good resistances to the tune of
+[7:39] like what? 55? And then we also have
+[7:42] life. So, let's add life. You can put
+[7:44] like tier two even.
+[7:47] And then, holy [ __ ] So, this ring, as
+[7:49] you can see, is quite amazing.
+[7:52] Um the closest comparable ring would be
+[7:53] like 80 div. Realistically though, this
+[7:56] hasn't sold in 17 hours, so maybe close
+[7:58] to like 75 div, 70 div. But, uh yeah,
+[8:01] that is exactly how you do it. Oh,
+[8:02] another thing is that these are not
+[8:05] catalyzed.
+[8:07] So, if you don't catalyze your rings,
+[8:08] it's going to be harder to show up on
+[8:09] the filter. So, let's just go ahead and
+[8:11] throw on some some tool catalyst here.
+[8:16] Right?
+[8:17] Makes our cold damage look a little bit
+[8:19] better. Makes our cold res a little bit
+[8:20] better as well for the filter.
+[8:22] Throw this up for Let's just put it up
+[8:23] for Yeah, we can just do like 75, 70
+[8:27] div.
+[8:28] That's all there really is to it. It's
+[8:29] unfortunately a numbers game. Like, we
+[8:31] hit [ __ ] flat mana four out of our
+[8:33] five rings. That's not supposed to
+[8:34] happen, right? Even if you miss four out
+[8:36] of five, you still have a chance to hit.
+[8:38] And these big hits are going to be
+[8:39] really good. But, that is kind of the
+[8:41] idea that we're going for right now. I
+[8:43] want to sell one, and I also want to
+[8:44] make one for myself. So, I want to show
+[8:45] you guys
+[8:46] uh maybe one more craft on how to do it.
+[8:48] One thing that's really important to
+[8:49] consider is you can go on a lot of
+[8:50] different bases, right? You can do gold
+[8:52] base, you can do prismatic base, you can
+[8:54] do any of the res bases, whatever you
+[8:55] are feeling. It doesn't just have to be
+[8:56] this gold rarity um implicit base. These
+[9:00] definitely sell the best, but they're
+[9:01] also way more expensive. So, that's just
+[9:02] something for you to consider. I bought
+[9:04] all these bases for like 25, 30 exalts.
+[9:07] They're super cheap. You can go with
+[9:08] open suffix or with like high res, that
+[9:11] kind of thing. And those are going to be
+[9:12] like two div each. But, these ones were
+[9:13] just 30 ex each. You can do it on the
+[9:15] cheap version, or you can do it on the
+[9:16] more expensive versions. It's all going
+[9:17] to be the same process though. So, it's
+[9:18] just up to you to figure out what the
+[9:20] base price point is going to be. We're
+[9:22] just going to add essence of opulences
+[9:24] to get tier one rarity. So, we'll have a
+[9:27] ring like this that has one prefix
+[9:28] that's tier one and one suffix that's
+[9:30] tier one and then one [ __ ] suffix.
+[9:31] So, after we have our rings to this
+[9:32] point, we're going to be just doing the
+[9:33] standard omen of catalyzing exaltation
+[9:36] on not guaranteeing, but increasing our
+[9:37] likelihood of hitting specifically cold
+[9:39] rolls.
+[9:40] And we are just going to then send the
+[9:42] omen of catalyzing exaltation, greater
+[9:44] exaltation, and then greater exalt orbs
+[9:45] on here. You want a prefix desecration,
+[9:47] so you could pre-collarbone with a
+[9:49] prefix desecration here, but think about
+[9:51] it like this. So far, our investment in
+[9:53] this ring has only been like a div and
+[9:55] maybe a half, right? Probably less than
+[9:58] a div and a half, like closer to like a
+[9:59] div and a quarter.
+[10:00] If we throw on the collarbone here, then
+[10:02] our our investment goes up to two div,
+[10:03] right? And we're not guaranteed to hit.
+[10:05] So, I prefer to just if it's on the
+[10:07] cheaper ends, what we can do is we can
+[10:08] just send these, and if we hit good
+[10:10] rolls, then we can potentially put the
+[10:12] collarbone on. And if we miss, we save
+[10:14] some cost that way.
+[10:15] So, let's see what we get.
+[10:19] We hit chaos res plus cold damage,
+[10:21] that's acceptable.
+[10:24] We hit cold damage plus
+[10:26] int, also acceptable.
+[10:28] We hit cold damage plus gain as mana or
+[10:31] gain as life. Ah, it's okay.
+[10:35] And then we hit cold damage plus cold
+[10:37] res, tier five. We actually hit on all
+[10:39] of them. Like that was very lucky. Like
+[10:40] you're not supposed to be hitting that
+[10:41] much. Very, very nice. Now we're just
+[10:43] going to collarbone all of these.
+[10:48] Depending on how good your rings are,
+[10:51] you're going to want to be using an
+[10:52] echo. Echoes are around a div and a half
+[10:54] each right now, so they're quite
+[10:55] expensive. The entire craft so far only
+[10:57] cost us around two div, so we're pretty
+[10:58] much doubling our cost in order to hit
+[11:00] the last mod. If we hit something good
+[11:01] here on the prefix, we can easily go
+[11:03] from being like a one or two div ring to
+[11:05] being like a 50 div ring. So, I think
+[11:08] it's worth it to gamble on this, but at
+[11:09] the same time, it's kind of up to you to
+[11:11] your discretion. Like two miss suffixes,
+[11:13] so maybe we actually don't want to echo
+[11:15] this one. The other ones, I think we
+[11:16] should just definitely send it, and
+[11:18] let's take a look.
+[11:21] Act damage on low life, none of these
+[11:22] are that good. You basically just want
+[11:23] rarity, flats, or life here. That's all
+[11:26] we're really looking for, and maybe cold
+[11:28] damage if you don't have it.
+[11:30] So, we got a flat, good enough. It's
+[11:33] tier six, unfortunately, but it still
+[11:35] looks very nice.
+[11:37] Uh tier one mana, unfortunate.
+[11:40] Chaos damage, unfortunate. So,
+[11:43] um that's rough. We'll just take the
+[11:44] chaos damage cuz who knows.
+[11:47] And we'll go again.
+[11:50] Uh mana accuracy, increased attack
+[11:53] damage, not that good.
+[11:55] Accuracy, not that good.
+[11:59] Oof, that's rough.
+[12:03] Oh, nice. We hit uh 41. Yeah, that's
+[12:06] tier three. And then this is 11 to 19 is
+[12:07] actually tier four. So, we have tier
+[12:09] three lightning damage to attacks or
+[12:11] tier four cold damage. So, we're just
+[12:12] going to take the lightning damage.
+[12:15] Call it a day here. So, this is
+[12:18] tier one fire, tier two, tier three
+[12:20] cold, tier six lightning, plus rarity,
+[12:22] chaos res. So, you don't actually want
+[12:24] to plug these numbers in. You want to
+[12:26] kind of take the weighted sum of these.
+[12:27] So, this is like 13 damage, this is like
+[12:29] 20, this is like 30, right? So, it's 13,
+[12:33] 30, 20, which is equal to 60
+[12:35] uh flat damage. So, you have a filter
+[12:37] like this, right? Where you have a
+[12:39] weighted sum. So, we have like 60 damage
+[12:40] roughly. We have 15 rarity. Let's just
+[12:42] do it with no resistances for now and
+[12:44] see what we comes out.
+[12:45] So, ours is a little bit better than
+[12:47] this one, right? Cuz ours is tier six,
+[12:50] and theirs is flat, which is a worse
+[12:51] roll. Um but tier one, tier three, like
+[12:53] this kind of thing. Yeah, this one's
+[12:55] worth like around 10 div, it looks like.
+[12:56] Like these ones look more comparable.
+[12:58] This one does not, though. Uh cuz this
+[13:00] is tier one, tier two, nothing here. So,
+[13:02] ours is actually better than all of
+[13:03] these. We could probably sell this one
+[13:04] for like
+[13:05] honestly, like 13 div, maybe even 14,
+[13:07] 15. Like around that ballpark. This
+[13:10] one's better than ours a little bit. But
+[13:12] another thing to consider is that we do
+[13:13] have chaos res here, tier three. But
+[13:15] chaos res isn't like that premium of a
+[13:16] stat. So, let's put this up for like 13
+[13:17] div. But as you can see, like this is
+[13:19] not even like one of our best ones. We
+[13:21] spent 3714 div, and we've already
+[13:23] recouped the cost on one ring. Let's
+[13:25] take a look at the next ones. This is 31
+[13:27] fire damage, roughly. This is 21
+[13:29] lightning damage, roughly. So, that's
+[13:31] again 52. And then we have cold damage
+[13:33] on top of it. So, we come back here.
+[13:35] Uh we take a look. We go here 50 instead
+[13:38] of 60. And then we do rarity still. And
+[13:40] then we do cold damage.
+[13:43] So, again, this one is looking like just
+[13:46] with the with just prefixes and one
+[13:48] suffix, it's looking like 14 div. This
+[13:50] isn't sold in 9 hours though, so it's a
+[13:52] little sus. We could probably put this
+[13:53] up for like 10 div or 12 div at the very
+[13:55] least. And then we can just lower these
+[13:57] over time. So, these are kind of like
+[13:58] the upper ends of what we'd want to sell
+[13:59] these at, but we can also expect to sell
+[14:01] it for lower. So, we put these up for
+[14:03] this price. If it doesn't sell in like
+[14:04] an hour, we can lower it by a div or a
+[14:06] couple hours lower it by a div and rinse
+[14:07] and repeat until we find a price that
+[14:09] someone wants. Um this next ring here is
+[14:12] kind of a dead one, so maybe we don't
+[14:14] price check it or we can still look at
+[14:15] it, see if there's any value that can be
+[14:17] squeezed out of it. So, this is what? 30
+[14:19] damage?
+[14:21] So, what is this? 20 Let's just put 26.
+[14:23] We have rarity. We have cold damage. 25.
+[14:26] Yeah, so this one is a hard brick. The
+[14:29] only thing we can do on this one is we
+[14:30] can just chaos off the um the
+[14:32] desecration a a one in three.
+[14:34] And we instantly missed. So, it's just
+[14:36] dead now, right? That's going to happen.
+[14:38] It's a numbers game. There's four rings
+[14:40] here. We missed on one and we hit on the
+[14:42] other three. More than acceptable. Oh,
+[14:44] this last one we also kind of missed on.
+[14:45] That's a little unfortunate. But, we
+[14:47] have an attribute, rarity, double flat.
+[14:49] So, like even though we missed here,
+[14:50] this should still be worth something,
+[14:51] right? Cuz this is
+[14:54] it's still 50 damage.
+[14:57] So, we go 50 damage here.
+[15:00] Uh we have cold and we don't have res.
+[15:02] We have int.
+[15:03] All attributes. We'll go 30 or 27 for
+[15:06] tier two, rarity, and uh
+[15:10] Let's take a look. Hmm, okay. So, like
+[15:11] the closest ones are going to be like
+[15:13] this, three or four div. So, we
+[15:14] definitely missed on this ring. There is
+[15:16] a world where you omen of light go
+[15:18] again, but that is really expensive. How
+[15:20] much are omen of lights right now?
+[15:22] They're like four and a half div, yeah.
+[15:23] So, there is a world where you go for
+[15:24] that, and if you do hit something good
+[15:26] here, it's worth a ton, but you know, we
+[15:28] have in tier instead of like resistance,
+[15:29] so I would say it's not really worth it.
+[15:31] If we had filled suffixes, we for sure
+[15:32] could keep going, but we don't,
+[15:33] unfortunately. But yeah, that is kind of
+[15:35] how you do it. Um this one probably
+[15:37] three div. We rolled four rings. Cost is
+[15:39] around three div per ring, so 12 div
+[15:41] investment, and we easily made back 12
+[15:43] div. We like doubled our investment and
+[15:44] more. Realistically doubled it though,
+[15:46] cuz we probably will have to lower the
+[15:47] prices on some of these by like a div or
+[15:48] two in order to sell them. But that's
+[15:50] the kind of idea that I'm going for here
+[15:52] with these rings. It's a numbers game in
+[15:53] that way, but that is how you do this
+[15:55] craft. But there's a lot of variance
+[15:57] here, so it will definitely take more
+[15:58] than a couple rings in order to get the
+[16:00] ring that you want. I guess that's like
+[16:01] the two ways you do it. You either do it
+[16:03] with a a cheap 30 exalt ring base, or
+[16:05] you can do it with a more expensive like
+[16:07] two div ring base, and have way higher
+[16:09] jackpot value on your hits. But at the
+[16:11] same time, you can still eat a lot of
+[16:13] variance and and miss on some. But yeah,
+[16:15] that's all there really is for the
+[16:16] video. Thank you guys so much for
+[16:17] watching. If this was helpful for you
+[16:19] guys, please like, comment, subscribe,
+[16:20] all that good stuff. It really does help
+[16:22] with the algorithm, and it costs you
+[16:24] nothing. I hope to see you guys again in
+[16:26] the next one. 07 boys.

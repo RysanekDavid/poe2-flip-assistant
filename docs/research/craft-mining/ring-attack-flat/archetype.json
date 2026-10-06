@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "id": "ring-attack-flat",
+  "itemClass": "Rings",
+  "bases": ["Breach Ring", "Gold Ring", "Dusk Ring", "Prismatic Ring"],
+  "targets": [
+    {
+      "id": "attack-flats",
+      "side": "prefix",
+      "count": 3,
+      "anyOf": [
+        { "family": "PhysicalDamage", "label": "Adds # to # Physical Damage to Attacks", "source": "natural" },
+        { "family": "FireDamage", "label": "Adds # to # Fire damage to Attacks", "source": "natural" },
+        { "family": "ColdDamage", "label": "Adds # to # Cold damage to Attacks", "source": "natural" },
+        { "family": "LightningDamage", "label": "Adds # to # Lightning damage to Attacks", "source": "natural" }
+      ],
+      "minTier": 3,
+      "note": "Any three of the four, whichever lands (Keyson advises against chasing one element, TWgmQuiLeHA 2:01–3:15). Creators aim T1 on the first two and settle for T2/T3 on the last; the owner's 2026-10-05 market sample mixes elements freely, physical in 4 of 5."
+    },
+    {
+      "id": "useful-suffixes",
+      "side": "suffix",
+      "count": 2,
+      "anyOf": [
+        { "family": "FireResistance", "label": "+#% to Fire Resistance", "source": "natural" },
+        { "family": "ColdResistance", "label": "+#% to Cold Resistance", "source": "natural" },
+        { "family": "LightningResistance", "label": "+#% to Lightning Resistance", "source": "natural" },
+        { "family": "AllResistances", "label": "+#% to all Elemental Resistances", "source": "natural" },
+        { "family": "ItemFoundRarityIncrease", "label": "#% increased Rarity of Items found", "source": "natural" },
+        { "family": "IncreasedAttackSpeed", "label": "#% increased Attack Speed", "source": null }
+      ],
+      "minTier": null,
+      "note": "Suffix set 'any of {resistances, rarity, attack speed}'. Market listings carry these not necessarily at T1; creators aim T1 res. Attack speed is not in the natural ring pool (craft catalog 0.5.5b) but appears on listed rings; how it gets there (essence or alloy) is unresolved, so its source is null."
+    }
+  ],
+  "patchFloor": {
+    "version": "0.5.0",
+    "notesPublished": "2026-05-22",
+    "threadId": 3932556,
+    "url": "https://www.pathofexile.com/forum/view-thread/3932540",
+    "note": "Date from the patch-notes index (official_patch row 3932556 'Content-Update 0.5.0 – Path of Exile 2: Return of the Ancients', published May 22, 2026, 3:00:51 AM; that index snapshot came from a non-English forum mirror). The url is the English 0.5.0 notes thread the KB cites. Servers launched 2026-05-29 (docs/kb/atlas-juicing.md patch stamp), so uploads between the two dates are pre-launch previews."
+  },
+  "excludedMechanics": ["homogenising-omens", "omen-of-corruption", "omen-of-greater-annulment", "recombinator"],
+  "queries": [
+    { "text": "breach ring craft", "lang": "en" },
+    { "text": "attack ring craft 0.5", "lang": "en" },
+    { "text": "triple flat ring", "lang": "en" }
+  ],
+  "creatorCap": 3,
+  "minCreators": 4,
+  "notes": [
+    "Seed set: the 10 locally fetched breach/attack ring videos compared on 2026-10-04 (no discovery run yet).",
+    "Owner decisions 2026-10-05: a bought base carrying a target is allowed but the planner asks the player first; group/any-of targets are wanted; transcripts are committed; approval is the PR."
+  ]
+}

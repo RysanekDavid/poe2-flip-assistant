@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "scope": "global",
+  "entries": [
+    {
+      "key": "catalysing.multiplier@20",
+      "value": { "point": 2, "low": 2, "high": 5 },
+      "basis": "creator_stated",
+      "n": null,
+      "sources": [
+        { "videoId": "_sSjC5LX_Ck", "at": "2:48–3:04" },
+        { "url": "https://www.poe2wiki.net/wiki/Omen_of_Catalysing_Exaltation" }
+      ],
+      "claim": {
+        "v": "cf",
+        "src": ["https://www.youtube.com/watch?v=_sSjC5LX_Ck", "https://www.poe2wiki.net/wiki/Omen_of_Catalysing_Exaltation"],
+        "note": "XTheFarmerX states x2 at 20% catalyst quality, citing 300-400 attempts by unnamed testers (not his own count on screen, so creator_stated, not measured). The community model (poe2wiki; Craft of Exile per KB §4) says x5. The same creator says 'like 5x odds' with no quality level in another video. Point follows the only quality-specific creator statement; the band spans the community model. Settle with an owner in-game count."
+      },
+      "patch": "0.5.5b",
+      "conflicts": [
+        {
+          "topic": "Omen of Catalysing Exaltation weight multiplier at 20% catalyst quality",
+          "positions": [
+            { "videoId": "_sSjC5LX_Ck", "at": "2:48–3:04", "text": "at 20% quality it doubles the weighting (testing 'to the tune of 300-400 attempts', by others)" },
+            { "videoId": "kE8Tn32yNp0", "at": "3:35–3:48", "text": "'like 5x odds' on the catalysed mod; quality level not stated, no attempts counted" },
+            { "url": "https://www.poe2wiki.net/wiki/Omen_of_Catalysing_Exaltation", "text": "5x weight at 20% quality (community model; the omen's item text gives no number)" }
+          ],
+          "resolution": "No primary source gives a number (entity catalog 0.5.5b item text has none), and no creator counted attempts on screen, so rule 2/3 (measured beats stated) cannot apply. Point = the quality-specific creator statement (x2), band [2, 5] spans the community model. The planner must show this odds input as [cf], and an owner in-game count (KB §10 T10-style test) replaces it.",
+          "grade": "cf"
+        }
+      ]
+    },
+    {
+      "key": "catalysing.multiplier@40",
+      "value": { "point": 3, "low": 3, "high": 7.5 },
+      "basis": "creator_stated",
+      "n": null,
+      "sources": [
+        { "videoId": "_sSjC5LX_Ck", "at": "3:01–3:04" },
+        { "url": "https://www.poe2wiki.net/wiki/Omen_of_Catalysing_Exaltation" }
+      ],
+      "claim": {
+        "v": "cf",
+        "src": ["https://www.youtube.com/watch?v=_sSjC5LX_Ck", "https://www.poe2wiki.net/wiki/Omen_of_Catalysing_Exaltation"],
+        "note": "XTheFarmerX states x3 at 40% (same passive 'testing was done'); poe2wiki says x7.5 and Craft of Exile x7.4 (KB §4, §8). Point follows the creator statement; band spans the community model."
+      },
+      "patch": "0.5.5b",
+      "conflicts": [
+        {
+          "topic": "Omen of Catalysing Exaltation weight multiplier at 40% catalyst quality",
+          "positions": [
+            { "videoId": "_sSjC5LX_Ck", "at": "3:01–3:04", "text": "at 40% quality it triples the weighting" },
+            { "url": "https://www.poe2wiki.net/wiki/Omen_of_Catalysing_Exaltation", "text": "7.5x weight at 40% quality (community model; Craft of Exile gives x7.4 per KB §4)" }
+          ],
+          "resolution": "Same as @20: statement vs community model, no measurement either side. Point x3, band [3, 7.5], graded cf until an owner in-game count.",
+          "grade": "cf"
+        }
+      ]
+    },
+    {
+      "key": "reveal.options",
+      "value": { "point": 3, "low": 3, "high": 3 },
+      "basis": "creator_stated",
+      "n": null,
+      "sources": [
+        { "videoId": "TWgmQuiLeHA", "at": "17:41–17:47" },
+        { "url": "https://www.pathofexile.com/forum/view-thread/3826682" }
+      ],
+      "claim": {
+        "v": "vp",
+        "src": ["https://www.pathofexile.com/forum/view-thread/3826682"],
+        "note": "Keyson: a desecration reveal shows three options. GGG 0.3.0 notes: 'selecting one of three different options' (KB §5, verified-primary). The options can be rerolled once with Omen of Abyssal Echoes (RePoE OmenOnAbyssRerollOptions, KB desecration-abyss). Keyson's caption says 'twice on the omen of light'; Omen of Light removes the desecrated mod, so the reroll is read as Echoes, and the prior is the three options per reveal either way."
+      },
+      "patch": "0.5.5b",
+      "conflicts": []
+    }
+  ]
+}

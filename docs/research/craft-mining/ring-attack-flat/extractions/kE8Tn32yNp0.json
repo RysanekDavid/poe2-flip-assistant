@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "videoId": "kE8Tn32yNp0",
+  "title": "How to Craft GOD-TIER Flat Attack Rarity Rings! | Step-by-Step Guide",
+  "creator": "XTheFarmerX",
+  "publishedAt": null,
+  "transcriptRef": "docs/kb/sources/transcripts/35-god-tier-flat-attack-rarity-rings-xthefarmerx.txt",
+  "patch": { "stated": null, "atUpload": null, "outOfPatch": { "flag": false, "reasons": [], "mechanics": [] } },
+  "language": "en",
+  "archetypes": ["ring-attack-flat"],
+  "base": {
+    "name": "unstated",
+    "ilvl": null,
+    "bought": true,
+    "boughtState": { "fracturedMods": [], "otherMods": ["magic ring (one prefix plus one suffix): a T1 or T2 elemental flat attack damage prefix (not physical) plus either a resistance suffix or an open suffix; 'tier one, tier one' / 'tier one, tier two' at 1:01–1:13 means flat plus suffix, and Opulence then makes 'triple tier ones' (1:54–1:58); same base described in _sSjC5LX_Ck 0:21–0:53"] },
+    "priceClaim": { "value": 60, "low": null, "high": null, "unit": "ex", "at": "7:42–7:45", "quote": "we bought the base for 60x, right?" },
+    "at": "0:49–1:05",
+    "quote": "you really have to start on a good magic base. You don't need to have tier one, tier one"
+  },
+  "steps": [
+    {
+      "order": 1,
+      "action": "other",
+      "materials": ["essence-of-opulence"],
+      "omens": [],
+      "side": "suffix",
+      "target": { "text": "tier one rarity (guaranteed)", "acceptedTiers": ["T1"] },
+      "at": "1:43–1:48",
+      "quote": "So we throw on the opulences on these rings. It's guaranteed tier one rarity.",
+      "note": "Essence of Opulence gives T1 rarity after the rarity nerfs (1:27–1:32); the whole deterministic part cost about half a div (1:56–2:00)."
+    },
+    {
+      "order": 2,
+      "action": "slam-fill",
+      "materials": ["xophs-catalyst", "eshs-catalyst", "perfect-exalted-orb"],
+      "omens": ["omen-of-dextral-exaltation", "omen-of-catalysing-exaltation"],
+      "side": "suffix",
+      "target": { "text": "resistance or attributes", "acceptedTiers": ["unstated"] },
+      "at": "3:29–3:45",
+      "quote": "omen of dextral exaltation and then omen of catalyzing exaltation. So these two together just make it so this targets the suffix.",
+      "note": "Catalyst matches the wanted stat: fire resistance shown first (Xoph's inferred from 'let's do fire resistance'), then lightning ('Ech's' normalised to Esh's, 4:56). Greater Exalted Orb is the cheaper alternative (greater guarantees T5 or better, perfect T3 or better on fire res; 2:55–3:04). Cold res has no perfect-exalt breakpoint so a cold catalyst with perfect is poor value (4:26–4:35). Attribute catalysts for attribute rolls (2:42–2:46)."
+    },
+    {
+      "order": 3,
+      "action": "slam-fill",
+      "materials": ["uul-netols-catalyst", "perfect-exalted-orb"],
+      "omens": ["omen-of-catalysing-exaltation"],
+      "side": "prefix",
+      "target": { "text": "a physical flat (or any good prefix)", "acceptedTiers": ["unstated"] },
+      "at": "6:52–7:05",
+      "quote": "the plan is the exact same as the last step except this time we don't need to use the dextral exaltation cuz we have prefixes.",
+      "note": "Captions say 'Fizz' catalyst, read as the Physical catalyst (Uul-Netol's). Catalysing omen kept because 'exact same as the last step'; no other omen as suffixes are full. Reasoning: T1 physical weight 400 vs 200 for each elemental flat (5:34–5:49)."
+    },
+    {
+      "order": 4,
+      "action": "desecrate",
+      "materials": ["ancient-collarbone"],
+      "omens": [],
+      "side": null,
+      "target": { "text": "flat attack damage or rarity (life acceptable, percentage damage weak)", "acceptedTiers": ["unstated"] },
+      "at": "9:05–9:15",
+      "quote": "Add collar bones to this. So, one thing to consider is using a preserved collarbone versus using an ancient collar bone.",
+      "note": "Applied on the rings that hit. Ancient is called 2x the value of preserved; compare cost of preserved + echo + Omen of Light against ancient + echo (9:15–9:31)."
+    }
+  ],
+  "missHandling": [
+    {
+      "afterStep": 3,
+      "trigger": "physical slam misses and the ring counts as bricked (base resale about 20x or less)",
+      "repair": "other",
+      "retryTo": 3,
+      "at": "8:00–8:16",
+      "quote": "grab a sinestral crystallization and then you can grab a essence of the abyss.",
+      "note": "Omen of Sinistral Crystallisation + Essence of the Abyss: removes a random prefix (50/50 which) and turns it into a Mark of the Abyssal Lord, then a collarbone makes it a desecration; the Physical catalyst is reapplied for a second try (8:44–8:56). The creator's own try lost the 50/50. He only recommends it if the item is truly bricked (8:22–8:26)."
+    }
+  ],
+  "qualityPath": {
+    "catalyst": "uul-netols-catalyst",
+    "pct": null,
+    "orderNote": "Matching-stat catalyst quality is put on before each catalysing exalt (resistance catalyst for the suffix step, Physical catalyst before the prefix step); the catalysing omen consumes it.",
+    "at": "2:29–2:35"
+  },
+  "measured": [
+    {
+      "quantity": "multiplier",
+      "value": 5,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "odds multiplier on the catalysed tag's mods from the catalysing exalt; quality level not given and no attempts counted",
+      "at": "3:35–3:48",
+      "quote": "this uses our catalyzing to get give us those like 5x odds on hitting the whatever catalyst mod that we have."
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.5,
+      "low": null,
+      "high": null,
+      "n": null,
+      "howMeasured": "statement",
+      "context": "chance of landing one of the matching resistances on the catalysed suffix slam; he missed on his first ring",
+      "at": "3:57–4:01",
+      "quote": "We had like a 50/50 chance of getting one of those resistances."
+    },
+    {
+      "quantity": "hit_rate",
+      "value": 0.667,
+      "low": null,
+      "high": null,
+      "n": 3,
+      "howMeasured": "own_attempts",
+      "context": "three Physical-catalysed perfect exalts on prefixes: T3 physical hit, T1 max life hit, increased fire damage hit; he calls it something good two out of three times",
+      "at": "7:14–7:24",
+      "quote": "We hit something good two out of three of the times."
+    }
+  ],
+  "claims": [
+    {
+      "kind": "material_price",
+      "text": "Physical (Uul-Netol's) catalyst about 1.1 ex each; 'x' is exalts",
+      "value": 1.1,
+      "low": null,
+      "high": null,
+      "unit": "ex",
+      "material": "uul-netols-catalyst",
+      "dateContext": "0.5, price at upload; league week unstated",
+      "at": "6:13–6:17",
+      "quote": "the Fizz catalysts are incredibly cheap. They are 1.1x each"
+    },
+    {
+      "kind": "material_price",
+      "text": "Reaver catalyst about 12 ex each; 'x' is exalts",
+      "value": 12,
+      "low": null,
+      "high": null,
+      "unit": "ex",
+      "material": "reaver-catalyst",
+      "dateContext": "0.5, price at upload; league week unstated (_sSjC5LX_Ck 3:48–3:52 gives 30 ex at another time)",
+      "at": "6:17–6:19",
+      "quote": "the Reaver catalysts are incredibly expensive. They're 12x each."
+    },
+    {
+      "kind": "cost",
+      "text": "whole craft of the showcase ring costs about 4 to 5 div",
+      "value": null,
+      "low": 4,
+      "high": 5,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, after the rarity nerf; league week unstated",
+      "at": "0:13–0:16",
+      "quote": "It was quite easy to do. Didn't really cost that much money. Like maybe like four or five div."
+    },
+    {
+      "kind": "cost",
+      "text": "magic bases with Opulence applied cost about half a div for the deterministic part",
+      "value": 0.5,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, after the rarity nerf; league week unstated",
+      "at": "1:54–2:00",
+      "quote": "it only cost us half a dib to do this, right? It's really really cheap."
+    },
+    {
+      "kind": "material_price",
+      "text": "Perfect Exalted Orb about two thirds of a div",
+      "value": 0.667,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": "perfect-exalted-orb",
+      "dateContext": "0.5, price at upload; league week unstated",
+      "at": "3:15–3:21",
+      "quote": "perfect exalts are incredibly cheap still. So like 2/3 of a div."
+    },
+    {
+      "kind": "cost",
+      "text": "one catalysing exalt with a Reaver catalyst costs about 2 div",
+      "value": 2,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, price at upload; league week unstated",
+      "at": "6:21–6:26",
+      "quote": "in order to do one catalyzing exalt on a reaver, it's going to cost you like two div."
+    },
+    {
+      "kind": "cost",
+      "text": "one catalysing exalt with a Physical catalyst costs about 20-something ex",
+      "value": null,
+      "low": 20,
+      "high": 29,
+      "unit": "ex",
+      "material": null,
+      "dateContext": "0.5, price at upload; league week unstated",
+      "at": "6:26–6:32",
+      "quote": "in order to do one catalyzing on the Fizz, it's going to cost you like 20 something X."
+    },
+    {
+      "kind": "sale",
+      "text": "ring with a missed physical slam but good resistances sells for close to 1 div",
+      "value": 1,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, estimate at upload; league week unstated",
+      "at": "7:45–7:50",
+      "quote": "we could probably sell this for like close to a divine, even considering that we missed."
+    },
+    {
+      "kind": "sale",
+      "text": "a ring before desecration that missed can be sold as a base for about 1 div",
+      "value": 1,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, estimate at upload; league week unstated",
+      "at": "12:06–12:11",
+      "quote": "we were able to sell this as the base for like one div."
+    },
+    {
+      "kind": "sale",
+      "text": "triple flat plus rarity ring estimated at no less than 20 div",
+      "value": 20,
+      "low": null,
+      "high": null,
+      "unit": "div",
+      "material": null,
+      "dateContext": "0.5, estimate (not listed), league week unstated",
+      "at": "11:36–11:40",
+      "quote": "I would be surprised if this is worth less than 20 div."
+    }
+  ],
+  "salvage": [
+    {
+      "when": "ring misses the physical slam but still has good resistances",
+      "action": "sell the ring as is (or as the base, before any desecration)",
+      "valueClaim": "close to 1 div",
+      "at": "7:45–7:50",
+      "quote": "we could probably sell this for like close to a divine, even considering that we missed."
+    },
+    {
+      "when": "ring is truly bricked",
+      "action": "Omen of Sinistral Crystallisation + Essence of the Abyss to convert a prefix into a desecration (50/50 which prefix), then a collarbone; Physical catalyst again for a second try",
+      "valueClaim": null,
+      "at": "8:00–8:16",
+      "quote": "grab a sinestral crystallization and then you can grab a essence of the abyss."
+    },
+    {
+      "when": "failed attempts overall",
+      "action": "failed rings pay back part of the cost; hits cover the rest",
+      "valueClaim": "two to three div invested, sells back for two or three",
+      "at": "11:57–12:04",
+      "quote": "we probably invested what, like two div into three div, and we could probably sell it back for like two div or maybe even three."
+    }
+  ],
+  "caveats": [
+    "No homogenising omens: 'there's no more homogs in this game anymore', so the start needs a good magic base and the craft is not deterministic (0:40–0:50).",
+    "Avoid physical-flat bases so the Physical flat can be hit later; T1 lightning, cold and fire flats weight 200 each, T1 physical 400 (5:34–6:49). Weights are read off a tool, not counted.",
+    "Perfect exalt breakpoint: fire and lightning res skip T4, cold res does not (4:19–4:35).",
+    "Desecrate settle stats: flats and rarity are premium, life decent, percentage damage weak, mana, evasion, accuracy and chaos damage are bricks (9:39–10:31).",
+    "Result tradeoff: Reaver catalyst gives the attack tag but is far pricier than the matching-element or Physical catalyst (6:10–6:32)."
+  ],
+  "unresolved": [
+    "Which catalyst the first fire-resistance slam used: the transcript says only 'corresponding' catalyst and 'fire resistance'; Xoph's is inferred.",
+    "Whether the collarbone is applied to a free prefix or to the slot created by the Physical slam is not clear: the final ring is 'triple flat with rarity' after a collarbone on a ring that already had a prefix slam.",
+    "'Fizz' is read as the Physical catalyst; the '1.1x' and '12x' prices (6:13–6:19) are exalts and are recorded as material_price claims.",
+    "Number of attempts and how many rings were attempted overall is not stated beyond the three rings shown.",
+    "Patch and league week at upload are not stated."
+  ]
+}
