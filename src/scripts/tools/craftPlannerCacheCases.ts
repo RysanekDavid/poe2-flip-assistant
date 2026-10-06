@@ -10,7 +10,7 @@ import { createPlanCache } from "../../core/tools/planner/planCache";
 import { SearchCappedError, searchPlan } from "../../core/tools/planner/search";
 import { unrollPlan } from "../../core/tools/planner/unroll";
 import type { PlanResponse } from "../../lib/tools/craftPlannerContract";
-import { OWNER_FLAT_RING, pricesWithoutCatalysts } from "./plannerFixtures";
+import { FOUR_FLAT_DUSK, OWNER_FLAT_RING, pricesWithoutCatalysts } from "./plannerFixtures";
 import { NOW } from "./testCraftPlannerGolden";
 
 function counted(plan: PlanResponse): { compute: () => PlanResponse; calls: () => number } {
@@ -49,17 +49,17 @@ function testPlanCache(cat: CraftCatalog): void {
 
 /** A candidate whose search gave up at the state cap: the list is marked incomplete, the rest still planned. */
 function testCappedCandidate(cat: CraftCatalog): void {
-  const { ctx } = buildCtx(OWNER_FLAT_RING, { cat, prices: pricesWithoutCatalysts(), exaltPerDivine: 250, league: "Test", now: NOW });
+  const { ctx } = buildCtx(FOUR_FLAT_DUSK, { cat, prices: pricesWithoutCatalysts(), exaltPerDivine: 250, league: "Test", now: NOW });
   const base = { ctx, out: unrollPlan(searchPlan(ctx).moves, ctx, 250) };
   let calls = 0;
-  const capped = suggestAlternatives(OWNER_FLAT_RING, base, () => {
+  const capped = suggestAlternatives(FOUR_FLAT_DUSK, base, () => {
     calls += 1;
     throw new SearchCappedError(5000);
   });
   assert.equal(capped.truncated, true, "a capped candidate is not \"no plan\"");
   assert.deepEqual(capped.alternatives, []);
   assert.ok(calls > 1, `the other candidates are still tried (${calls})`);
-  const none = suggestAlternatives(OWNER_FLAT_RING, base, () => null);
+  const none = suggestAlternatives(FOUR_FLAT_DUSK, base, () => null);
   assert.equal(none.truncated, false, "candidates without a plan leave the list complete");
 }
 

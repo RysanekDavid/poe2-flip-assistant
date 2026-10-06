@@ -4,7 +4,7 @@ import type { AffixSide } from "../craftmoves/catalog";
 import { KB } from "../craftmoves/ruleTypes";
 import { band } from "./expectation";
 import { isOverCap, legality } from "./state";
-import type { Basis, Estimate, MaterialUse, Move, PlanCtx, PlanState, StepText } from "./types";
+import type { Basis, BoughtStart, Estimate, MaterialUse, Move, PlanCtx, PlanState, StepText } from "./types";
 
 /** Helpers every method module shares: materials, currency tiers, grades and the legality-checked Move builder. */
 
@@ -74,6 +74,7 @@ export interface MoveSpec {
   /** The macro adds a mod: on an over-cap jewel that is unverified (KB §6 b), so its core is unknown. */
   adds?: boolean;
   undoRisk?: boolean;
+  bought?: BoughtStart;
 }
 
 const OVER_CAP_FACT = "Adding a mod to an over-cap jewel: whether the other side can still take one is untested.";
@@ -109,6 +110,7 @@ export function makeMove(ctx: PlanCtx, spec: MoveSpec): Move | null {
     coreUnknown,
     unverified: facts.length > 0 ? [...new Set(facts)].join(" · ") : null,
     undoRisk: spec.undoRisk ?? false,
+    ...(spec.bought ? { bought: spec.bought } : {}),
   };
 }
 
@@ -118,3 +120,12 @@ export function step(partial: Partial<StepText> & Pick<StepText, "do" | "why">):
 
 /** Short label for a target: its catalog text, ranges kept, joined onto one line. */
 export const targetText = (text: string): string => text.split("\n").join(" / ");
+
+const COUNT_WORD = ["", "one", "two", "three", "four"];
+
+/** Labels for several targets; a pool's slots read once ("two of: A | B | C"). */
+export function aimsText(texts: readonly string[]): string[] {
+  const counts = new Map<string, number>();
+  for (const t of texts) counts.set(t, (counts.get(t) ?? 0) + 1);
+  return [...counts].map(([t, n]) => (n > 1 && t.startsWith("any of: ") ? `${COUNT_WORD[n] ?? n} of: ${targetText(t.slice(8))}` : targetText(t)));
+}

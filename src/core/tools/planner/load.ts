@@ -6,8 +6,10 @@ import { resolveRates } from "../../rates";
 import { comboFor, loadCraftCatalog, type CraftCatalog } from "../craftmoves/catalog";
 import { CATALYSTS } from "./catalystTags";
 import { ESSENCE_OUTCOMES, essencesFor } from "./essenceOutcomes";
-import { BONE } from "./methodsWrite";
+import { BONE } from "./methodsDesecrate";
+import { loadCraftMining } from "../../research/craftMining/load";
 import { planCraft, SERVER_PLAN_BUDGET } from "./plan";
+import { revealPriorsFrom } from "./revealPriors";
 import { factionOf, PLANNER_CLASSES, resolveBase } from "./targets";
 
 /**
@@ -38,7 +40,8 @@ export function planForLeague(req: PlanRequest, league: string, now: Date): Plan
   const live = livePrices(league);
   // catalog art first: a ninja snapshot icon is only the fallback for a material the catalog lacks
   const iconOf = (id: string): string | null => catalogIcon(id) ?? live.icons.get(id) ?? null;
-  return planCraft(req, { cat: loadCraftCatalog(), prices: live.prices, exaltPerDivine: rates?.rates.exaltPerDivine ?? null, league, now, iconOf, budget: SERVER_PLAN_BUDGET });
+  const reveal = revealPriorsFrom(loadCraftMining().priors);
+  return planCraft(req, { cat: loadCraftCatalog(), prices: live.prices, exaltPerDivine: rates?.rates.exaltPerDivine ?? null, league, now, iconOf, budget: SERVER_PLAN_BUDGET, reveal });
 }
 
 export function plannerCatalog(cat: CraftCatalog = loadCraftCatalog()): PlannerCatalog {

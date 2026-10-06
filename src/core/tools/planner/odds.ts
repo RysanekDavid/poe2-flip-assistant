@@ -1,5 +1,6 @@
 import type { AffixSide } from "../craftmoves/catalog";
 import { matchesCatalyst, type CatalystInfo } from "./catalystTags";
+import { eligibleAlts, presentModGroups } from "./state";
 import type { Estimate, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
@@ -24,6 +25,12 @@ export function exact(p: number, formula: string, inputs: Estimate["inputs"] = {
 export function estimate(p: number, formula: string, inputs: Estimate["inputs"] = {}): Estimate {
   if (!(p > 0 && p <= 1)) throw new Error(`estimated odds out of range: ${p} (${formula})`);
   return { point: p, low: p * ESTIMATE_BAND.down, high: Math.min(1, p * ESTIMATE_BAND.up), basis: "estimate", formula, inputs };
+}
+
+/** An estimate whose band comes from the model itself (not the ×½…×2 constant). */
+export function estimateWithin(point: number, low: number, high: number, formula: string, inputs: Estimate["inputs"] = {}): Estimate {
+  if (!(point > 0 && point <= 1 && low > 0 && low <= point + 1e-12 && high >= point - 1e-12 && high <= 1)) throw new Error(`estimated odds out of range: ${low} ≤ ${point} ≤ ${high} (${formula})`);
+  return { point, low, high, basis: "estimate", formula, inputs };
 }
 
 /** Floors are SOFT (KB §1): when every reachable tier sits below the floor, the top reachable tier rolls. */
@@ -54,11 +61,9 @@ export function catalysingMultiplier(quality: number): number | null {
 /** Player prose for the catalyst bias in a formula (×5 at 20%, ×7.5 at 40%, crafting rules — omens). */
 export const CATALYSING_NOTE = "Catalysing Exaltation weighs them ×5 at 20% quality, ×7.5 at 40%; nothing is documented above 40%";
 
-function presentGroups(ctx: PlanCtx, state: PlanState): Set<string> {
-  return new Set(state.affixes.flatMap((a) => (a.target == null ? [] : ctx.targets[a.target]!.groups)));
-}
+const presentGroups = presentModGroups;
 
-function familyGroups(ctx: PlanCtx, side: AffixSide, family: string): readonly string[] {
+export function familyGroups(ctx: PlanCtx, side: AffixSide, family: string): readonly string[] {
   const first = Object.keys(ctx.combo[side][family] ?? {})[0];
   return first ? ctx.cat.mods[first]?.groups ?? [family] : [family];
 }
@@ -111,18 +116,10 @@ export interface AddOdds {
   estimate: (idx: number) => Estimate;
 }
 
-/** Odds that one random add (Exalt, Chaos add, Aug, Transmute) lands each given target. */
-export function addOdds(ctx: PlanCtx, state: PlanState, pool: AddPool, targetIdx: readonly number[]): AddOdds {
-  const w = poolWeights(ctx, state, pool);
-  const p = new Map<number, number>();
-  const formulas = new Map<number, Estimate>();
-  for (const idx of targetIdx) {
-    const t = ctx.targets[idx]!;
-    const share = tierShare(ctx, t, pool.floor);
-    const pf = w.weightOf(t) / w.total;
-    const pi = pf * share.share;
-    p.set(idx, pi);
-    if (pi <= 0) continue;
+function singleOdds(ctx: PlanCtx, w: PoolWeights, pool: AddPool, t: ResolvedTarget): { p: number; est: () => Estimate } {
+  const share = tierShare(ctx, t, pool.floor);
+  const p = (w.weightOf(t) / w.total) * share.share;
+  const est = () => {
     const bias = pool.catalyst && w.weightOf(t) > 1 ? ` (${pool.catalyst.mat.label} favours ${w.tagged} famil${w.tagged === 1 ? "y" : "ies"} ×${w.mult}: ${CATALYSING_NOTE})` : "";
     const floorTxt = pool.floor != null ? ` at currency floor ${pool.floor}` : "";
     const formula = `P = ${w.weightOf(t)}/${round(w.total)} family weight × ${share.good}/${share.of} reachable tiers${floorTxt}${bias} — ${PRIOR_NOTE}`;
@@ -132,7 +129,43 @@ export function addOdds(ctx: PlanCtx, state: PlanState, pool: AddPool, targetIdx
       "reachable tiers": share.of,
       ...(pool.floor != null ? { "currency floor level": pool.floor } : {}),
     };
-    formulas.set(idx, estimate(pi, formula, inputs));
+    return estimate(p, formula, inputs);
+  };
+  return { p, est };
+}
+
+/** A pool slot: any still-possible candidate counts, so the chance is the sum over them. */
+function poolOdds(ctx: PlanCtx, state: PlanState, w: PoolWeights, pool: AddPool, idx: number): { p: number; est: () => Estimate } {
+  const t = ctx.targets[idx]!;
+  const parts = eligibleAlts(ctx, state, idx).map((a) => ({ c: t.alts[a]!, ...singleOdds(ctx, w, pool, t.alts[a]!) }));
+  const p = Math.min(1, parts.reduce((s, x) => s + x.p, 0));
+  const est = () => {
+    const terms = parts.filter((x) => x.p > 0).map((x) => `${w.weightOf(x.c)}/${round(w.total)} × ${tierShare(ctx, x.c, pool.floor).good}/${tierShare(ctx, x.c, pool.floor).of}`);
+    const bias = pool.catalyst && parts.some((x) => w.weightOf(x.c) > 1) ? ` (${pool.catalyst.mat.label} favours ${w.tagged} famil${w.tagged === 1 ? "y" : "ies"} ×${w.mult}: ${CATALYSING_NOTE})` : "";
+    const floorTxt = pool.floor != null ? ` at currency floor ${pool.floor}` : "";
+    const formula = `P = any of ${parts.length} pool mods: ${terms.join(" + ")} (family weight × good/reachable tiers${floorTxt})${bias} — ${PRIOR_NOTE}`;
+    return estimate(p, formula, { "eligible mod families": w.families, "pool mods still possible": parts.length, ...(pool.floor != null ? { "currency floor level": pool.floor } : {}) });
+  };
+  return { p, est };
+}
+
+/** Odds that one random add (Exalt, Chaos add, Aug, Transmute) lands each given target. */
+export function addOdds(ctx: PlanCtx, state: PlanState, pool: AddPool, targetIdx: readonly number[]): AddOdds {
+  const w = poolWeights(ctx, state, pool);
+  const p = new Map<number, number>();
+  const formulas = new Map<number, Estimate>();
+  const aimedPools = new Set<number>();
+  for (const idx of targetIdx) {
+    const t = ctx.targets[idx]!;
+    // two missing slots of one pool are one "any of" roll: the first listed takes the whole chance
+    if (t.group != null && aimedPools.has(t.group)) {
+      p.set(idx, 0);
+      continue;
+    }
+    if (t.group != null) aimedPools.add(t.group);
+    const o = t.group != null ? poolOdds(ctx, state, w, pool, idx) : singleOdds(ctx, w, pool, t);
+    p.set(idx, o.p);
+    if (o.p > 0) formulas.set(idx, o.est());
   }
   return {
     p,
@@ -171,21 +204,3 @@ export function addLevelOutcomes(ctx: PlanCtx, state: PlanState, sides: readonly
   return families.flatMap((f) => f.levels.map((level) => ({ side: f.side, family: f.family, level, p: 1 / families.length / f.levels.length })));
 }
 
-/**
- * Reveal odds at the Well of Souls: three DIFFERENT options (0.3.0 notes); with a faction omen all
- * three come from that faction's pool for the side (theory-gaps round 2 (1), secondary + creators).
- * P(target offered) = min(1, 3 / pool size); Omen of Abyssal Echoes rerolls the three once.
- */
-export function revealOdds(ctx: PlanCtx, state: PlanState, t: ResolvedTarget, faction: boolean): { first: number; withEchoes: Estimate } {
-  const blocked = presentGroups(ctx, state);
-  const pool = Object.entries(ctx.combo.desecrated).filter(([, tiers]) => {
-    const mod = ctx.cat.mods[Object.keys(tiers)[0]!];
-    if (!mod || mod.side !== t.side || mod.groups.some((g) => blocked.has(g))) return false;
-    return !faction || (t.faction != null && mod.tags.includes(`${t.faction}_mod`));
-  }).length;
-  const first = Math.min(1, 3 / Math.max(pool, 1));
-  const both = 1 - (1 - first) ** 2;
-  const scope = faction ? `${t.faction} ${t.side}es` : `${t.side} desecrated mods`;
-  const formula = `P(offered) = min(1, 3/${pool} ${scope}) = ${first.toFixed(2)}; with one Echoes reroll 1 − (1 − p)² = ${both.toFixed(2)} — assumes the Well offers three different mods, each equally likely (the game doesn't say)`;
-  return { first, withEchoes: estimate(both, formula, { "mods the Well can offer": pool, faction: faction ? t.faction ?? "none" : "none" }) };
-}

@@ -71,7 +71,7 @@ function focusTargets(ctx: PlanCtx, steps: readonly PlanStepView[]): ResolvedTar
     const before = landed(steps[i - 1]);
     for (const idx of landed(s)) if (!before.has(idx)) out.add(idx);
   });
-  return [...out].sort((a, b) => a - b).map((i) => ctx.targets[i]!).filter((t) => t.source === "natural");
+  return [...out].sort((a, b) => a - b).map((i) => ctx.targets[i]!).filter((t) => t.source === "natural" && t.group == null);
 }
 
 function applyChanges(req: PlanRequest, changes: readonly TargetChangeView[]): PlanRequest["targets"] {

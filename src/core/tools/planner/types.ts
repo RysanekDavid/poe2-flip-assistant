@@ -43,6 +43,8 @@ export interface PlanAffix {
   kind: PlanAffixKind;
   /** Index into PlanCtx.targets, or null for junk. */
   target: number | null;
+  /** On a pool slot: which candidate landed (index into the slot's `alts`); null otherwise. */
+  alt: number | null;
   unrevealed: boolean;
   special: AffixSpecial | null;
 }
@@ -79,6 +81,37 @@ export interface ResolvedTarget {
   /** Essence writes that satisfy the target (tier >= minimum), from essenceOutcomes.ts. */
   essences: readonly EssenceWrite[];
   faction: Faction | null;
+  /** Index of the request pool this slot fills; null for a single wanted mod. */
+  group: number | null;
+  /**
+   * A pool slot's candidates (each a concrete mod, `idx` = this slot), likeliest first: when a random
+   * add can land several, the plan assumes the first one still possible lands (the most likely
+   * outcome, and it leaves the rarer candidates for later — never flatters the next step). Empty
+   * for a single mod. A slot's own family/modId/groups are placeholders: read the landed candidate.
+   */
+  alts: readonly ResolvedTarget[];
+}
+
+/** One request pool: `need` of the slots `slots` (target indices), all sharing the candidates. */
+export interface TargetGroup {
+  side: AffixSide;
+  need: number;
+  slots: readonly number[];
+}
+
+/** The base the plan starts from (see PlanStartInput). */
+export type StartChoice =
+  | { kind: "clean" }
+  | { kind: "bought"; carried: ReadonlyArray<{ ref: number; fractured: boolean }> | null; askDiv: number | null };
+
+/** Read-only numbers from the curated craft-mining priors (src/data/poe2/craft/priors) the planner uses. */
+export interface RevealPriors {
+  /** Options the Well of Souls offers per reveal. */
+  options: number;
+  /** Where that number comes from, as the player reads it. */
+  optionsBasis: string;
+  /** Creators' Omen of Light count for a top attack flat or rarity on a ring prefix (a ceiling), or null. */
+  lightAnchor: { point: number; high: number; basis: string } | null;
 }
 
 export interface EssenceWrite {
@@ -116,6 +149,9 @@ export interface PlanCtx {
   priceOf: (materialId: string) => number | null;
   includeUnverified: boolean;
   quality: QualityGoal | null;
+  groups: readonly TargetGroup[];
+  start: StartChoice;
+  reveal: RevealPriors;
 }
 
 export interface MaterialUse {
@@ -161,6 +197,13 @@ export interface Move {
   unverified: string | null;
   /** A miss's repair can remove a target the macro already landed (a steered Annulment on a side of several targets). */
   undoRisk: boolean;
+  /** Set on a start that buys a base carrying wanted mods: what it carries (the plan reports it). */
+  bought?: BoughtStart;
+}
+
+export interface BoughtStart {
+  rarity: "Magic" | "Rare";
+  carried: ReadonlyArray<{ ref: number; fractured: boolean }>;
 }
 
 export interface Method {

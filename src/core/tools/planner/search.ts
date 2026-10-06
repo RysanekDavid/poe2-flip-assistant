@@ -1,5 +1,6 @@
 import { movesFrom } from "./methods";
-import { startMoves } from "./methodsPrep";
+import { startMoves } from "./methodsStart";
+import { rankCost } from "./rank";
 import { allMet, stateKey } from "./state";
 import type { Move, PlanCtx, PlanState } from "./types";
 
@@ -13,12 +14,7 @@ import type { Move, PlanCtx, PlanState } from "./types";
  */
 
 export const SEARCH_CAP = 5000;
-export const RISK_LAMBDA = 0.25;
-/**
- * Ranking-only stand-in for a material with no live price (never shown: totals with an unpriced
- * material are null). Above every material price we have seen, so an unpriced route is ranked last.
- */
-export const UNPRICED_RANK_DIV = 10;
+export { RISK_LAMBDA, UNPRICED_RANK_DIV, rankCost } from "./rank";
 
 export class SearchCappedError extends Error {
   constructor(expanded: number) {
@@ -67,17 +63,6 @@ interface Node {
   g: number;
   sig: string;
   path: PathLink;
-}
-
-export function rankCost(move: Move, ctx: PlanCtx): number {
-  let point = 0;
-  let high = 0;
-  for (const u of move.uses) {
-    const price = ctx.priceOf(u.mat.id) ?? UNPRICED_RANK_DIV;
-    point += u.qty.point * price;
-    high += u.qty.high * price;
-  }
-  return point + RISK_LAMBDA * (high - point);
 }
 
 const nextG = (g: number, move: Move, ctx: PlanCtx): number => {

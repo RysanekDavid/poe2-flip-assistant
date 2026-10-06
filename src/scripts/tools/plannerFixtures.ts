@@ -131,6 +131,53 @@ export const OWNER_FLAT_RING: PlanRequest = {
   quality: null,
 };
 
+/** The four "Adds X to Y … to Attacks" ring prefixes: catalog family and tier-id stem (tier 9 = the top, level 75). */
+export const FLAT_FAMILIES: ReadonlyArray<readonly [string, string]> = [
+  ["ColdDamage", "AddedColdDamage"],
+  ["FireDamage", "AddedFireDamage"],
+  ["LightningDamage", "AddedLightningDamage"],
+  ["PhysicalDamage", "AddedPhysicalDamage"],
+];
+
+/** Four top-tier attack flats on a Dusk Ring (its fourth prefix slot): still a whittle step past the limit. */
+export const FOUR_FLAT_DUSK: PlanRequest = {
+  itemClass: "Rings",
+  base: "Dusk Ring",
+  ilvl: 82,
+  targets: FLAT_FAMILIES.map(([family, id]) => target(family, "prefix", `${id}9`)),
+  includeUnverified: true,
+  quality: null,
+};
+
+/**
+ * The owner's Breach Ring as a pool (2026-10-06): any 3 of the four attack flats at tier 3 or better
+ * (T1–T3 of 9: level 60+), any 2 of fire / cold / lightning resistance (T2+, level 71) or all
+ * elemental resistance (T2+, level 54), item level 82. Attack speed, on the owner's list, doesn't
+ * roll on a Breach Ring (catalog), so the suffix pool holds the resistances.
+ */
+export const OWNER_POOL_RING = (start: PlanRequest["start"], quality: PlanRequest["quality"] = null, flatTier = 7): PlanRequest => ({
+  itemClass: "Rings",
+  base: "Breach Ring",
+  ilvl: 82,
+  targets: [],
+  includeUnverified: false,
+  quality,
+  groups: [
+    { side: "prefix", need: 3, candidates: FLAT_FAMILIES.map(([family, id]) => ({ family, minModId: `${id}${flatTier}` })) },
+    {
+      side: "suffix",
+      need: 2,
+      candidates: [
+        { family: "FireResistance", minModId: "FireResist7" },
+        { family: "ColdResistance", minModId: "ColdResist7" },
+        { family: "LightningResistance", minModId: "LightningResist7" },
+        { family: "AllResistances", minModId: "AllResistances4" },
+      ],
+    },
+  ],
+  start,
+});
+
 /** fixturePrices() with every catalyst unpriced: the table that rebuilds the owner's prod route and bill. */
 export function pricesWithoutCatalysts(): Map<string, number> {
   const out = fixturePrices();

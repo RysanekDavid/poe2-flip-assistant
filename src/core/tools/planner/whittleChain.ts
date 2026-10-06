@@ -3,7 +3,7 @@ import type { ChainNode } from "./expectation";
 import type { MaterialKey } from "../../craftMaterials";
 import { mat, sideOmen } from "./methodKit";
 import { addLevelOutcomes, addOdds } from "./odds";
-import { isJunk, junk, openOf, removable, SIDES, stateKey, targetAffix, withAffixes } from "./state";
+import { acceptedMods, aimable, isJunk, junk, landAffix, modOf, openOf, removable, SIDES, stateKey, targetAffix, withAffixes } from "./state";
 import type { PlanAffix, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
@@ -25,8 +25,13 @@ export const MAX_WHITTLE_NODES = 300;
 
 export interface WhittleScope {
   target: ResolvedTarget;
-  /** Removable natural targets on the item plus the one the loop is for (bit i = chain[i]). */
+  /**
+   * Removable natural targets on the item plus the one the loop is for (bit i = chain[i]), each as
+   * the concrete mod it holds (a pool slot: its candidate; `idx` stays the slot).
+   */
   chain: readonly ResolvedTarget[];
+  /** The pool candidate each chain entry holds once landed (null for a single mod). */
+  alts: ReadonlyArray<number | null>;
   /** Removable targets the loop could NOT win back (essence / desecrated writes). */
   fixed: ReadonlyArray<{ level: number; side: AffixSide }>;
   /** Sorted distinct levels of every chain target and fixed mod: the bucket boundaries. */
@@ -49,7 +54,7 @@ const isChainTarget = (ctx: PlanCtx, a: PlanAffix): boolean => a.target != null 
 
 /** Null unless the item is rare, its removable mods are kept targets + exactly one plain throwaway, and t can land after it goes. */
 export function whittleScope(state: PlanState, ctx: PlanCtx, t: ResolvedTarget): WhittleScope | null {
-  if (state.rarity !== "Rare" || t.source !== "natural" || state.affixes.some((a) => a.target === t.idx || a.side === "any")) return null;
+  if (state.rarity !== "Rare" || t.source !== "natural" || !aimable(ctx, state, t) || state.affixes.some((a) => a.side === "any")) return null;
   const loose = removable(state);
   const junks = loose.filter(isJunk);
   const kept = loose.filter((a) => !isJunk(a));
@@ -58,14 +63,16 @@ export function whittleScope(state: PlanState, ctx: PlanCtx, t: ResolvedTarget):
   // an unrevealed mod is level 1 (always whittled first) and specials have no level we know
   if (kept.length === 0 || kept.some((a) => a.unrevealed || a.special != null)) return null;
   const chainKept = kept.filter((a) => isChainTarget(ctx, a));
-  const chain = [...chainKept.map((a) => ctx.targets[a.target!]!), t];
-  const fixed = kept.filter((a) => !isChainTarget(ctx, a)).map((a) => ({ level: ctx.targets[a.target!]!.level, side: ctx.targets[a.target!]!.side }));
+  const landing = landAffix(ctx, withAffixes(state, state.affixes.filter((a) => a !== j)), t.idx, "explicit");
+  const chain = [...chainKept.map((a) => modOf(ctx, a)), modOf(ctx, landing)];
+  const alts = [...chainKept.map((a) => a.alt), landing.alt];
+  const fixed = kept.filter((a) => !isChainTarget(ctx, a)).map((a) => ({ level: modOf(ctx, a).level, side: modOf(ctx, a).side }));
   const rest = state.affixes.filter((a) => a !== j && !chainKept.includes(a));
   const after = withAffixes(state, [...rest, ...chainKept]);
   if (openOf(ctx, after, t.side) < 1) return null;
   // t's own level too: once it lands, a later Whittle compares it like any kept mod
   const levels = [...new Set([...chain.map((c) => c.level), ...fixed.map((f) => f.level)])].sort((a, b) => a - b);
-  return { target: t, chain, fixed, levels, rest, junkSide: j.side, missing0: 1 << (chain.length - 1) };
+  return { target: t, chain, alts, fixed, levels, rest, junkSide: j.side, missing0: 1 << (chain.length - 1) };
 }
 
 /** Even = strictly between known levels (0 = below all), odd = equal to levels[(b − 1) / 2]. */
@@ -87,7 +94,7 @@ const withJunk = (junks: readonly JunkCode[], c: JunkCode): JunkCode[] => [...ju
 
 /** The item at node (mask, junks). */
 export function whittleStateAt(base: PlanState, scope: WhittleScope, mask: number, junks: readonly JunkCode[]): PlanState {
-  const landed = scope.chain.filter((_, i) => !((mask >> i) & 1)).map((c) => targetAffix(c.side, c.idx, "explicit"));
+  const landed = scope.chain.flatMap((c, i) => ((mask >> i) & 1 ? [] : [targetAffix(c.side, c.idx, "explicit", scope.alts[i] ?? null)]));
   return withAffixes(base, [...scope.rest, ...landed, ...junks.map((c) => junk(sideOfCode(c)))]);
 }
 
@@ -119,7 +126,8 @@ export function addShape(ctx: PlanCtx, scope: WhittleScope, item: PlanState, mas
   const junkAfter = item.affixes.filter((a) => isJunk(a) && a.side !== "any" && sides.includes(a.side)).length;
   const odds = addOdds(ctx, item, { sides, floor: null, catalyst: null, quality: 0, junkAfter }, missing.map(({ c }) => c.idx));
   const hits = new Map(missing.filter(({ c }) => (odds.p.get(c.idx) ?? 0) > 0).map(({ c, i }) => [i, odds.p.get(c.idx)!] as const));
-  const outcomes = addLevelOutcomes(ctx, item, sides).filter((o) => !missing.some(({ c }) => c.side === o.side && c.family === o.family && o.level >= c.level));
+  const accepted = missing.flatMap(({ c }) => acceptedMods(ctx, item, ctx.targets[c.idx]!));
+  const outcomes = addLevelOutcomes(ctx, item, sides).filter((o) => !accepted.some((c) => c.side === o.side && c.family === o.family && o.level >= c.level));
   const junkTotal = outcomes.reduce((a, o) => a + o.p, 0);
   const junk = new Map<JunkCode, number>();
   for (const o of outcomes) {
