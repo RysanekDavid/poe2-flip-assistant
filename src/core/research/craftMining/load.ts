@@ -95,9 +95,14 @@ export function readArchetypeDir(dir: string, id: string): ArchetypeBundle {
   return { archetype, candidates, marketSample, extractions: readExtractions(dir, archetype, candidates) };
 }
 
+/** The golden craft set (goldenSchema.ts) lives beside the archetypes but is not one; craft:eval reads it. */
+export const GOLDEN_DIR_NAME = "golden";
+
 /** Every archetype under `root` (one directory each); at least one must exist. */
 export function readArchetypes(root: string): ArchetypeBundle[] {
-  const ids = readdirSync(root).filter((e) => statSync(join(root, e)).isDirectory()).sort();
+  const ids = readdirSync(root)
+    .filter((e) => e !== GOLDEN_DIR_NAME && statSync(join(root, e)).isDirectory())
+    .sort();
   if (ids.length === 0) throw new Error(`craft mining: no archetype directories in ${root}`);
   return ids.map((id) => readArchetypeDir(join(root, id), id));
 }
