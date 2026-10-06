@@ -3,7 +3,7 @@
  * the bought base's total and its trade-search body. Imported by testPlannerUi.ts. */
 import assert from "node:assert/strict";
 import { liveCheck, NO_POOLS, type PlannerInput, type SlotPick } from "../../components/craft/planner/plannerModel";
-import { baseLinkRequest, carriedRef, DEFAULT_START, poolFromSide, poolProblems, poolSlot0, requestsFor, totalWithBase, withPool } from "../../components/craft/planner/plannerStartModel";
+import { baseLinkRequest, carriedRef, compactNames, DEFAULT_START, poolFromSide, poolProblems, poolSlot0, requestsFor, totalWithBase, withPool } from "../../components/craft/planner/plannerStartModel";
 import type { PlanResponse } from "../../lib/tools/craftPlannerContract";
 
 const p = (family: string, side: SlotPick["side"], minModId: string, source: SlotPick["source"] = "natural"): SlotPick => ({ family, side, source, minModId, fractured: false });
@@ -63,7 +63,14 @@ function testTotals(): void {
   assert.deepEqual(baseLinkRequest(plan as unknown as PlanResponse), { itemClass: "Rings", base: "Breach Ring", ilvl: 82, rarity: "Rare", carried: [{ modIds: ["AddedColdDamage7", "AddedFireDamage7"], fractured: true }] });
 }
 
+function testNames(): void {
+  assert.equal(compactNames(["Adds # to # Cold damage to Attacks", "Adds # to # Fire damage to Attacks", "Adds # to # Physical Damage to Attacks"]), "Adds # to # Cold · Fire · Physical damage to Attacks");
+  assert.equal(compactNames(["+#% to Fire Resistance", "+#% to all Elemental Resistances"]), "+#% to Fire Resistance · all Elemental Resistances");
+  assert.equal(compactNames(["+# to Strength", "#% increased Rarity of Items found"]), "+# to Strength · #% increased Rarity of Items found");
+}
+
 export function runStartUiCases(): void {
+  testNames();
   testPoolMode();
   testRequests();
   testTotals();

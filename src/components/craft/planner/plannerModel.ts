@@ -42,7 +42,7 @@ export function refitSlots(slots: Slots, caps: { p: number; s: number }): Slots 
 export const picks = (slots: Slots): SlotPick[] => [...slots.prefix, ...slots.suffix].filter((x): x is SlotPick => x != null);
 
 /** "+(165-179) to maximum Mana" → "+# to maximum Mana": the family's name as trade sites write it. */
-export const genericText = (text: string): string => text.replace(/\((-?\d+(?:\.\d+)?)-(-?\d+(?:\.\d+)?)\)|-?\d+(?:\.\d+)?/g, "#");
+export { genericText } from "../../../lib/tools/modNames";
 
 export interface TierInfo {
   tier: PoolTier;

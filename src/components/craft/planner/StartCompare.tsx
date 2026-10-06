@@ -5,7 +5,7 @@ import type { BandView, PlanResponse, PlanRequest } from "../../../lib/tools/cra
 import { fmtDivOrEx, fmtDivOrExRange } from "../../../lib/format";
 import { BuyLink } from "./BuyLink";
 import { usePlan, type PlanState } from "./plannerClient";
-import { totalWithBase } from "./plannerStartModel";
+import { carriedText, totalWithBase } from "./plannerStartModel";
 import { AskField } from "./StartChooser";
 
 /**
@@ -63,7 +63,7 @@ function BoughtLines({ plan, askDiv, onAsk }: { plan: PlanResponse; askDiv: numb
   return (
     <div className="space-y-1 text-xs text-neutral-300">
       <p>
-        buys a {plan.start.rarity.toLowerCase()} base with {plan.start.carried.map((c) => `${c.fractured ? "FRACTURED " : ""}${c.text}`).join(" and ")}
+        buys a {plan.start.rarity.toLowerCase()} base with {plan.start.carried.map((c) => `${c.fractured ? "FRACTURED " : ""}${carriedText(plan, c.ref)}`).join(" and ")}
       </p>
       <p className="flex flex-wrap items-center gap-1.5">
         materials {plan.totals.div ? `≈ ${fmtDivOrEx(plan.totals.div.point, ex)}` : "not priced yet"} + base

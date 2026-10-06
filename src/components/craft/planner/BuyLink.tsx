@@ -21,7 +21,10 @@ export function BuyLink({ plan }: { plan: PlanResponse }) {
     if (key === "null") return;
     let live = true;
     postJson("/api/tools/craft-planner/base-link", JSON.parse(key) as unknown, baseLinkResponseSchema)
-      .then((r) => live && setState({ key, link: r.ok ? r.data : null, error: r.ok ? null : r.error }))
+      .then((r) => {
+        if (!r.ok) console.error(`[planner] base trade link refused (${r.status}): ${r.error}`);
+        if (live) setState({ key, link: r.ok ? r.data : null, error: r.ok ? null : r.error });
+      })
       .catch((e: unknown) => {
         console.error("[planner] base trade link failed", e);
         if (live) setState({ key, link: null, error: e instanceof Error ? e.message : String(e) });
@@ -33,7 +36,8 @@ export function BuyLink({ plan }: { plan: PlanResponse }) {
   if (!body) return null;
   const s = state?.key === key ? state : null;
   if (!s) return <span className="text-xs text-neutral-400">preparing the trade search…</span>;
-  if (s.error || !s.link) return <span role="alert" className="text-xs text-red-300">No trade link: {s.error}</span>;
+  // the server's reason (configuration, trade site down) goes to the console; the player reads plain words
+  if (s.error || !s.link) return <span role="alert" className="text-xs text-red-300">The trade search link isn&apos;t available right now — search the trade site for this base by hand.</span>;
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5 text-xs">
       <a href={s.link.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sky-300 underline-offset-2 hover:underline">

@@ -1,5 +1,6 @@
 import type { ClaimVerdict } from "../../../lib/claim";
 import type { TargetGroupInput } from "../../../lib/tools/craftPlannerContractStart";
+import { poolName } from "../../../lib/tools/modNames";
 import type { CatalogCombo, CraftCatalog } from "../craftmoves/catalog";
 import { sourceLine, sources } from "./sources";
 import type { FeasibilityIssue, Resolution, TargetSpec } from "./targets";
@@ -64,7 +65,8 @@ function slotsFor(g: TargetGroupInput, gi: number, list: readonly ResolvedTarget
       side: g.side,
       modId: list[0]!.modId,
       level: Math.min(...list.map((c) => c.level)),
-      text: `any of: ${list.map((c) => c.text.split("\n").join(" / ")).join(" | ")}`,
+      // each candidate's minimum tier travels in `alts` (the response lists them); the name stays one short line
+      text: poolName(list.map((c) => c.text)),
       groups: [],
       tags: [...new Set(list.flatMap((c) => c.tags))],
       source: "natural" as const,

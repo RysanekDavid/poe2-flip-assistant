@@ -1,5 +1,6 @@
 import type { BandView, PlanRequest, PlanResponse } from "../../../lib/tools/craftPlannerContract";
 import type { BaseLinkRequest } from "../../../lib/tools/craftPlannerContractStart";
+import { compactNames } from "../../../lib/tools/modNames";
 import {
   genericText,
   picks,
@@ -105,12 +106,22 @@ export function carriedLabel(slots: Slots, pools: Pools, c: CarriedPick, familyT
   return pick ? familyText(pick) : "(empty slot)";
 }
 
-/** Pool rows read "any of: Cold · Fire · Lightning …" (each candidate's family name, minimum tier aside). */
+export { compactNames };
+
+/** Pool rows read "any of: Adds # to # Cold · Fire · … damage to Attacks" (family names, the minimum tier is on the chips). */
 export function poolRowText(pool: SidePool, familyOf: (p: SlotPick) => PoolFamily | null): string {
   const names = pool.candidates.map((c) => {
     const f = familyOf(c);
     const best = f?.tiers.find((t) => t.modId === c.minModId)?.text ?? c.minModId;
     return genericText(best.split("\n")[0] ?? best);
   });
-  return `any of: ${names.join(" · ")}`;
+  return `any of: ${compactNames(names)}`;
+}
+
+/** A carried mod of a plan's bought base, short: its family name, or the pool's names in one line. */
+export function carriedText(plan: PlanResponse, ref: number): string {
+  const t = plan.targets[ref];
+  if (!t) return "";
+  const names = (t.candidates.length > 0 ? t.candidates.map((c) => c.text) : [t.text]).map((x) => genericText(x.split("\n")[0] ?? x));
+  return t.candidates.length > 0 ? `one of ${compactNames(names)}` : (names[0] ?? "");
 }

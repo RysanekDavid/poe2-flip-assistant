@@ -82,7 +82,8 @@ function boughtRare(ctx: PlanCtx, t: ResolvedTarget): Move | null {
   const carried = { ...landAffix(ctx, EMPTY, t.idx, "fractured") };
   const bought = canonical({ rarity: "Rare", affixes: [carried, junk("any"), junk("any"), junk("any")], quality: 0, catalyst: null });
   const next = canonical({ rarity: "Rare", affixes: [carried, junk("any")], quality: 0, catalyst: null });
-  const text = targetText(t.text);
+  // a purchase names the exact minimum tiers: "one of these, this roll or better"
+  const text = t.alts.length > 0 ? `one of these (this tier or better): ${t.alts.map((a) => targetText(a.text)).join("; ")}` : targetText(t.text);
   const start: BoughtStart = { rarity: "Rare", carried: [{ ref: t.idx, fractured: true }] };
   return makeMove(ctx, {
     methodId: "acquire-bought-rare",
@@ -90,7 +91,7 @@ function boughtRare(ctx: PlanCtx, t: ResolvedTarget): Move | null {
     next,
     steps: [
       step({ do: `Buy a rare ${ctx.base.name}, item level ${ctx.base.ilvl}+, with FRACTURED ${text}, and no crafted or desecrated mod.`, why: `The fractured mod you want can't be removed or rolled away, so every later step works around it. ${PRICE_WHY}`, sources: sources("kb-fracture", "creators") }),
-      annulDown(`The fractured ${text}`),
+      annulDown(t.alts.length > 0 ? "The fractured pool mod" : `The fractured ${text}`),
     ],
     uses: [useOf(mat("annul"), band(3, 2, 4))],
     odds: exact(1, "each Annulment removes a loose mod (the fractured one is immune)"),
