@@ -121,9 +121,14 @@ function boughtMagic(ctx: PlanCtx, ts: readonly ResolvedTarget[]): Move | null {
   });
 }
 
-/** The planner's own pick: one start per wanted mod (a pool once) bought fractured; the search keeps the cheapest. */
+/**
+ * The planner's own pick: one start per wanted mod (a pool once) bought fractured; the search keeps
+ * the cheapest. While another target must end up fractured, buying this one fractured would take
+ * the item's only fracture, so it is no candidate.
+ */
 function boughtAuto(ctx: PlanCtx): Move[] {
-  const firsts = ctx.targets.filter((t) => t.group == null || ctx.groups[t.group]!.slots[0] === t.idx);
+  const otherFractured = (t: ResolvedTarget) => ctx.targets.some((x) => x.fractured && x.idx !== t.idx);
+  const firsts = ctx.targets.filter((t) => (t.group == null || ctx.groups[t.group]!.slots[0] === t.idx) && !otherFractured(t));
   return firsts.map((t) => boughtRare(ctx, t)).filter((m): m is Move => m != null);
 }
 

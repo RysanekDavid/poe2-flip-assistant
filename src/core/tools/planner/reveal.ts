@@ -11,10 +11,14 @@ import type { Estimate, PlanCtx, PlanState, ResolvedTarget } from "./types";
  *   pool   = every family of the side the Well can draw: ordinary families plus the desecrated
  *            (faction) ones, minus mod groups already on the item, each with a tier the item level
  *            reaches (Ancient bones: modifier level 40+ only);
- *   draws  = the options; at item level 65+ one of them is always faction-exclusive (one source), so
- *            an ordinary mod gets the other two draws;
+ *   draws  = the options; at item level 65+ AT LEAST one of them is faction-exclusive (poe2wiki
+ *            Desecrated modifier; KB desecration-abyss), so the other two still draw from the whole
+ *            pool, faction families included, and a wanted faction mod has two routes: the faction
+ *            draw (share pf of the faction families) and the open draws (share p of the pool) — not
+ *            a double count;
  *   p      = the wanted mod's share of the pool: equal weight per family, equal per reachable tier.
- * P(offered) = 1 − (1 − p)^draws, the band runs from two draws at half p to three draws at twice p.
+ * P(offered) = 1 − (1 − p)^draws × (1 − pf)^faction draws, the band runs from two open draws at half
+ * the shares to three at twice them, each with the faction draw.
  * With Omen of the Liege (Amanamu targets) all options come from the faction (as before).
  */
 
@@ -113,8 +117,12 @@ export function revealOdds(ctx: PlanCtx, state: PlanState, t: ResolvedTarget, op
   const lo = Math.min(low, point);
   const hi = Math.max(high, point);
   const inputs = { "families the Well can offer": pool.length, "wanted share of them": Number(p.toFixed(4)), options, "item level": ctx.base.ilvl, ...(opts.bone === "ancient" ? { "Ancient bone: modifier level ≥": ANCIENT_MIN_LEVEL } : {}) };
-  const draws = factionSlot ? `${options - 1} draws (at item level ${FACTION_OPTION_ILVL}+ one option is always a faction mod — one source)` : `${options} draws`;
-  const formula = `P(offered) = 1 − (1 − p)^${options - factionSlot} with p = ${p.toFixed(4)}: the wanted mods' share of ${pool.length} ${t.side} families the Well can offer (${ctx.reveal.optionsBasis}), ${draws}; band from 2 draws at ½p to 3 draws at 2p — assumes every family and every reachable tier equally likely (the game doesn't say)`;
+  const draws = factionSlot ? `${options - 1} open draws (at item level ${FACTION_OPTION_ILVL}+ at least one option is a faction mod)` : `${options} draws`;
+  const facTerm = factionSlot && pf > 0 ? ` × (1 − pf) with pf = ${pf.toFixed(4)}, its share of the ${factionPool.length} faction families (the faction option)` : "";
+  const band = `band from ${options - 1} open draws at ½ the share${pf > 0 ? "s" : ""} to ${options} at 2×${pf > 0 ? ", each with the faction option" : ""}`;
+  // the faction option makes faction families likelier than ordinary ones: "equal" only holds within a draw's own families
+  const assume = "assumes equal weight per family and per reachable tier among the families a draw comes from (the game doesn't say)";
+  const formula = `P(offered) = 1 − (1 − p)^${options - factionSlot}${facTerm}; p = ${p.toFixed(4)}: the wanted mods' share of ${pool.length} ${t.side} families the Well can offer (${ctx.reveal.optionsBasis}), ${draws}; ${band} — ${assume}`;
   return {
     first: point,
     once: estimateWithin(point, lo, hi, formula, inputs),

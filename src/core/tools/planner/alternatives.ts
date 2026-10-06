@@ -74,10 +74,26 @@ function focusTargets(ctx: PlanCtx, steps: readonly PlanStepView[]): ResolvedTar
   return [...out].sort((a, b) => a - b).map((i) => ctx.targets[i]!).filter((t) => t.source === "natural" && t.group == null);
 }
 
-function applyChanges(req: PlanRequest, changes: readonly TargetChangeView[]): PlanRequest["targets"] {
+/**
+ * The bought start after dropping targets: a carried `ref` indexes the request's targets and then
+ * the pools' slots, so every ref past a dropped target moves down (pool slots included — the request's
+ * pools name families, not indices). Null when a dropped target is one the bought base carries.
+ */
+function remapStart(start: PlanRequest["start"], gone: ReadonlySet<number>): PlanRequest["start"] | null {
+  if (start?.kind !== "bought" || start.carried == null) return start;
+  if (start.carried.some((c) => gone.has(c.ref))) return null;
+  const shift = (ref: number) => ref - [...gone].filter((g) => g < ref).length;
+  return { ...start, carried: start.carried.map((c) => ({ ...c, ref: shift(c.ref) })) };
+}
+
+/** The request with the changes applied; null when the change drops a mod the bought base carries (no such start is left to plan). */
+export function applyChanges(req: PlanRequest, changes: readonly TargetChangeView[]): PlanRequest | null {
   const to = new Map(changes.flatMap((c) => (c.kind === "relax" ? [[c.target, c.to.modId] as const] : [])));
   const gone = new Set(changes.filter((c) => c.kind === "drop").map((c) => c.target));
-  return req.targets.flatMap((t, i) => (gone.has(i) ? [] : [{ ...t, minModId: to.get(i) ?? t.minModId }]));
+  const start = remapStart(req.start, gone);
+  if (start === null) return null;
+  const targets = req.targets.flatMap((t, i) => (gone.has(i) ? [] : [{ ...t, minModId: to.get(i) ?? t.minModId }]));
+  return start === undefined ? { ...req, targets } : { ...req, targets, start };
 }
 
 interface Found {
@@ -110,24 +126,26 @@ class Explorer {
   /** The candidate's result: realistic, still impractical, or null when it has no plan / no budget. */
   attempt(key: string, changes: readonly TargetChangeView[]): Found | null {
     if (this.spent) return null;
+    // dropping the mod the bought base carries leaves no such base: not a candidate, no budget spent
+    const req = applyChanges(this.req, changes);
+    if (!req) return null;
     if (this.deadline && this.deadline.now() >= this.deadline.at) {
       this.outOfTime = this.truncated = true;
       return null;
     }
     this.budget -= 1;
-    const targets = applyChanges(this.req, changes);
-    const got = this.planned(targets);
+    const got = this.planned(req);
     if (!got) return null;
     const totals = { div: got.out.totals.div, basis: got.out.totals.basis };
-    const found: Found = { key, score: planScore(got.out), alt: { changes: [...changes], targets, totals, impractical: isImpractical(got.out) } };
+    const found: Found = { key, score: planScore(got.out), alt: { changes: [...changes], targets: req.targets, totals, impractical: isImpractical(got.out) } };
     const prev = this.best.get(key);
     if (!prev || better(found, prev) < 0) this.best.set(key, found);
     return found;
   }
 
-  private planned(targets: PlanRequest["targets"]): Costed | null {
+  private planned(req: PlanRequest): Costed | null {
     try {
-      return this.evaluate({ ...this.req, targets });
+      return this.evaluate(req);
     } catch (e: unknown) {
       // out of time, or a search that gave up: keep what was found, say that more may exist; only
       // the deadline stops the other candidates

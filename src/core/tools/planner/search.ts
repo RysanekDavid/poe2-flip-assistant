@@ -123,7 +123,7 @@ function unwind(link: PathLink): Move[] {
 }
 
 /** Cheapest plan from any allowed start to a state where every target (and the quality goal) is met. */
-export function searchPlan(ctx: PlanCtx, baseAsk: (move: Move) => number = () => 0, cap: number = SEARCH_CAP, deadline: Deadline | null = null): SearchResult {
+export function searchPlan(ctx: PlanCtx, cap: number = SEARCH_CAP, deadline: Deadline | null = null): SearchResult {
   const started = deadline?.now() ?? 0;
   const heap = new Heap();
   const best = new Map<string, Node>();
@@ -135,7 +135,7 @@ export function searchPlan(ctx: PlanCtx, baseAsk: (move: Move) => number = () =>
   };
   for (const move of startMoves(ctx)) {
     const sig = sigOf("", 0, move);
-    offer({ state: move.next, key: stateKey(move.next), g: rankCost(move, ctx) + baseAsk(move), sig, path: { move, order: 0, prev: null } });
+    offer({ state: move.next, key: stateKey(move.next), g: rankCost(move, ctx), sig, path: { move, order: 0, prev: null } });
   }
   let expanded = 0;
   while (heap.size > 0) {

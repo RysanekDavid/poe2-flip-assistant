@@ -109,6 +109,11 @@ function BoughtFields(props: Props) {
   return (
     <div className="space-y-2 rounded-md border border-neutral-800 bg-neutral-950/40 p-2">
       <CarriedChips {...props} />
+      {s.note && (
+        <p role="status" className="text-xs text-amber-200">
+          {s.note}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Toggle checked={s.fractured} onChange={(v) => props.onChange({ fractured: v, carried: v ? s.carried.slice(0, 1) : s.carried })} label="fractured" />
         <span className="inline-flex items-center gap-1.5 text-sm text-neutral-300">

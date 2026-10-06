@@ -5,7 +5,7 @@ import type { BandView, PlanResponse, PlanRequest } from "../../../lib/tools/cra
 import { fmtDivOrEx, fmtDivOrExRange } from "../../../lib/format";
 import { BuyLink } from "./BuyLink";
 import { usePlan, type PlanState } from "./plannerClient";
-import { carriedText, totalWithBase } from "./plannerStartModel";
+import { carriedText, cheaperPlan, totalWithBase } from "./plannerStartModel";
 import { AskField } from "./StartChooser";
 
 /**
@@ -92,6 +92,7 @@ function CompareCard({ title, state, active, cheaper, askDiv, onAsk, onPick }: C
           {total ? (
             <p className="tabular-nums">
               <span className="text-xl font-semibold text-amber-300">≈ {fmtDivOrEx(total.point, ex)}</span> <span className="text-xs text-neutral-400">{fmtDivOrExRange(total.low, total.high, ex)}</span>
+              {plan.start.kind === "clean" && <span className="text-xs text-neutral-400"> · excl. base</span>}
             </p>
           ) : (
             <p className="text-sm text-amber-200">{missingAsk ? "enter the base price — the total is incomplete without it" : `not priced yet: ${plan.unpriced.join(", ")}`}</p>
@@ -117,12 +118,11 @@ interface Props {
 
 export function StartCompare({ primary, bought, view, onView, askDiv, onAsk }: Props) {
   if (bought.kind === "idle") return null;
-  const tp = primary.kind === "plan" ? startTotal(primary.data, askDiv)?.point ?? null : null;
-  const tb = bought.kind === "plan" ? startTotal(bought.data, askDiv)?.point ?? null : null;
+  const cheaper = cheaperPlan(primary.kind === "plan" ? primary.data : null, bought.kind === "plan" ? bought.data : null, askDiv);
   return (
     <section aria-label="clean base or bought base" className="grid gap-3 sm:grid-cols-2">
-      <CompareCard title="From a clean base" state={primary} active={view === "primary"} cheaper={tp != null && tb != null && tp < tb} askDiv={askDiv} onAsk={onAsk} onPick={() => onView("primary")} />
-      <CompareCard title="From a bought base" state={bought} active={view === "bought"} cheaper={tp != null && tb != null && tb < tp} askDiv={askDiv} onAsk={onAsk} onPick={() => onView("bought")} />
+      <CompareCard title="From a clean base" state={primary} active={view === "primary"} cheaper={cheaper === "primary"} askDiv={askDiv} onAsk={onAsk} onPick={() => onView("primary")} />
+      <CompareCard title="From a bought base" state={bought} active={view === "bought"} cheaper={cheaper === "bought"} askDiv={askDiv} onAsk={onAsk} onPick={() => onView("bought")} />
     </section>
   );
 }

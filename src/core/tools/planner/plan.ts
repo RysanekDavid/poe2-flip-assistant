@@ -7,7 +7,7 @@ import { isFeasible, resolveBase, resolveTargets, type FeasibilityIssue } from "
 import { startIssues } from "./methodsStart";
 import { DEFAULT_REVEAL } from "./revealPriors";
 import { startView, targetViews, totalsWithBase } from "./planViews";
-import type { Move, PlanCtx, RevealPriors } from "./types";
+import type { PlanCtx, RevealPriors } from "./types";
 import { unrollPlan } from "./unroll";
 
 /**
@@ -97,12 +97,9 @@ export function buildCtx(req: PlanRequest, deps: PlanDeps): { ctx: PlanCtx; issu
   return { ctx, issues };
 }
 
-/** The player's base price counts in the ranking too (a constant across a bought plan's starts, so it never changes which plan wins). */
-const askOf = (ctx: PlanCtx) => (move: Move): number => (move.bought && ctx.start.kind === "bought" ? ctx.start.askDiv ?? 0 : 0);
-
 function search(ctx: PlanCtx, issues: FeasibilityIssue[], deadline: Deadline | null): ReturnType<typeof searchPlan> {
   try {
-    return searchPlan(ctx, askOf(ctx), SEARCH_CAP, deadline);
+    return searchPlan(ctx, SEARCH_CAP, deadline);
   } catch (e: unknown) {
     if (e instanceof NoPlanError) throw new PlanRejectedError(e.message, issues);
     if (e instanceof SearchCappedError) throw new PlanRejectedError(e.message, issues, e);

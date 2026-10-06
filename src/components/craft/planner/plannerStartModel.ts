@@ -24,7 +24,23 @@ import {
  * The base price never goes to the server: it only adds to a total, so typing it never re-plans.
  */
 
-export const DEFAULT_START: StartInput = { mode: "compare", carried: [], fractured: true, askDiv: null };
+export const DEFAULT_START: StartInput = { mode: "compare", carried: [], fractured: true, askDiv: null, note: null };
+
+export const CARRIED_CLEARED_NOTE = "A mod you picked for the bought base left the item: pick again, or leave none and the planner chooses.";
+
+/** The same wanted mod in a slot: a tier change keeps it, another family (or source) is another mod. */
+const sameMod = (a: SlotPick | null | undefined, b: SlotPick | null | undefined): boolean => a != null && b != null && a.family === b.family && a.side === b.side && a.source === b.source;
+
+/**
+ * The item with new slot picks. A carried pick whose slot emptied or now holds another mod is
+ * dropped (left in, it would point at nothing and the planner would quietly pick its own mod), and
+ * the start says so.
+ */
+export function withSlots(input: PlannerInput, slots: Slots): PlannerInput {
+  const kept = input.start.carried.filter((c) => c.kind === "pool" || sameMod(input.slots[c.side][c.slot], slots[c.side][c.slot]));
+  const dropped = kept.length < input.start.carried.length;
+  return { ...input, slots, start: dropped ? { ...input.start, carried: kept, note: CARRIED_CLEARED_NOTE } : input.start };
+}
 
 /**
  * The item with a side's pool set (or cleared): the side's single-mod slots shrink to what the pool
@@ -91,6 +107,20 @@ export function totalWithBase(plan: Pick<PlanResponse, "totals" | "start">, askD
   if (plan.start.kind !== "bought" || !t || askDiv == null) return null;
   const b = plan.start.buys;
   return { point: t.point + b.point * askDiv, low: t.low + b.low * askDiv, high: t.high + b.high * askDiv };
+}
+
+/** A plan's total counts the base: only a bought plan with the player's price entered (a clean plan's bill never prices its base). */
+export const totalIncludesBase = (plan: Pick<PlanResponse, "totals" | "start">, askDiv: number | null): boolean => totalWithBase(plan, askDiv) != null;
+
+/**
+ * Which compare card earns the "cheaper" badge: only when BOTH totals count the base — a clean
+ * total without its base against a bought total with it would favour the clean plan by the price.
+ */
+export function cheaperPlan(primary: Pick<PlanResponse, "totals" | "start"> | null, bought: Pick<PlanResponse, "totals" | "start"> | null, askDiv: number | null): "primary" | "bought" | null {
+  if (!primary || !bought || !totalIncludesBase(primary, askDiv) || !totalIncludesBase(bought, askDiv)) return null;
+  const tp = totalWithBase(primary, askDiv)!.point;
+  const tb = totalWithBase(bought, askDiv)!.point;
+  return tp < tb ? "primary" : tb < tp ? "bought" : null;
 }
 
 /** The trade search body for a plan's bought base (what the base-link route takes). */

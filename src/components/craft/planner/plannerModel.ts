@@ -119,6 +119,8 @@ export interface StartInput {
   fractured: boolean;
   /** The player's price for the bought base (Divine); null = not entered yet. */
   askDiv: number | null;
+  /** Why the carried picks just changed without the player touching them (a slot they named emptied); null = nothing to say. */
+  note: string | null;
 }
 
 export interface PlannerInput {

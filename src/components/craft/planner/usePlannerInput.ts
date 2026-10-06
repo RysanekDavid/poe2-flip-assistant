@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PlannerCatalog, PlannerPool } from "../../../lib/tools/craftPlannerContract";
 import { carryQuality, emptySlots, findFamily, NO_POOLS, refitSlots, type ItemClass, type PlannerInput, type Pools, type Side, type SidePool, type SlotPick, type StartInput } from "./plannerModel";
-import { DEFAULT_START, poolFromSide, withPool } from "./plannerStartModel";
+import { DEFAULT_START, poolFromSide, withPool, withSlots } from "./plannerStartModel";
 
 /** The input item's state: base, item level, the slot picks, the mod pools and the plan options. */
 
@@ -103,14 +103,14 @@ export function usePlannerInput(catalog: PlannerCatalog) {
     [catalog],
   );
   const setSlot = useCallback(
-    (side: Side, i: number, value: SlotPick | null) =>
-      setInput((cur) => ({ ...cur, slots: { ...cur.slots, [side]: cur.slots[side].map((x, k) => (k === i ? value : x)) } })),
+    (side: Side, i: number, value: SlotPick | null) => setInput((cur) => withSlots(cur, { ...cur.slots, [side]: cur.slots[side].map((x, k) => (k === i ? value : x)) })),
     [],
   );
   const setIlvl = useCallback((ilvl: number) => setInput((cur) => ({ ...cur, ilvl })), []);
-  const setSlots = useCallback((slots: PlannerInput["slots"]) => setInput((cur) => ({ ...cur, slots })), []);
+  const setSlots = useCallback((slots: PlannerInput["slots"]) => setInput((cur) => withSlots(cur, slots)), []);
   const setOptions = useCallback((patch: Partial<Pick<PlannerInput, "includeUnverified" | "quality">>) => setInput((cur) => ({ ...cur, ...patch })), []);
-  const setStart = useCallback((patch: Partial<StartInput>) => setInput((cur) => ({ ...cur, start: { ...cur.start, ...patch } })), []);
+  // the player touching the start answers the note
+  const setStart = useCallback((patch: Partial<StartInput>) => setInput((cur) => ({ ...cur, start: { ...cur.start, note: null, ...patch } })), []);
   const setPool = useCallback(
     (side: Side, pool: SidePool | "from-side" | null) =>
       setInput((cur) => withPool(cur, side, pool === "from-side" ? poolFromSide(cur.slots, side) : pool, capOf(capsOf(catalog, cur.itemClass, cur.base), side))),
