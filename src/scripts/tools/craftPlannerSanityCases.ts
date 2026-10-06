@@ -13,7 +13,7 @@ import { buildChain, slamScope } from "../../core/tools/planner/slamChain";
 import { junk } from "../../core/tools/planner/state";
 import type { PlanState } from "../../core/tools/planner/types";
 import { planResponseSchema, type PlanRequest, type PlanResponse } from "../../lib/tools/craftPlannerContract";
-import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, fixturePrices, pricesWithoutCatalysts, target } from "./plannerFixtures";
+import { BREACH_RING, FLAT_FAMILIES, FOUR_FLAT_DUSK, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, fixturePrices, pricesWithoutCatalysts, target } from "./plannerFixtures";
 import { NOW } from "./testCraftPlannerGolden";
 
 const planWith = (cat: CraftCatalog, req: PlanRequest, prices: Map<string, number>): PlanResponse =>
@@ -22,16 +22,16 @@ const planWith = (cat: CraftCatalog, req: PlanRequest, prices: Map<string, numbe
 const near = (a: number, b: number, tol: number): boolean => Math.abs(a - b) <= tol;
 
 /** Every alternative is cheaper, and planning its targets reproduces its totals exactly (same model, no shortcut). */
-function assertAlternatives(cat: CraftCatalog, p: PlanResponse, prices: Map<string, number>): void {
+function assertAlternatives(cat: CraftCatalog, p: PlanResponse, prices: Map<string, number>, req: PlanRequest): void {
   assert.ok(p.alternatives.length >= 1 && p.alternatives.length <= MAX_ALTERNATIVES, `1..${MAX_ALTERNATIVES} alternatives, got ${p.alternatives.length}`);
   assert.equal(p.alternatives[0]!.impractical, false, "the first alternative is realistic");
   for (const alt of p.alternatives) {
     assert.ok(alt.totals.div && p.totals.div && alt.totals.div.point < p.totals.div.point, "an alternative is cheaper");
-    const again = planWith(cat, { ...OWNER_FLAT_RING, targets: alt.targets }, prices);
+    const again = planWith(cat, { ...req, targets: alt.targets }, prices);
     assert.deepEqual(again.totals.div, alt.totals.div, "the chip's cost is what planning its targets gives");
     assert.equal(again.steps.some((s) => s.impractical), alt.impractical);
     for (const c of alt.changes) {
-      assert.equal(OWNER_FLAT_RING.targets[c.target]!.minModId, c.from.modId, "a change starts from the request's own tier");
+      assert.equal(req.targets[c.target]!.minModId, c.from.modId, "a change starts from the request's own tier");
       if (c.kind === "relax") assert.ok(c.to.k < c.from.k && c.to.level < c.from.level, "a relax lowers the minimum tier");
     }
   }
@@ -43,37 +43,36 @@ function assertAlternatives(cat: CraftCatalog, p: PlanResponse, prices: Map<stri
  */
 const OWNER_BEFORE_DIV = 5834.53;
 
+/** PR #124: the second and third flat whittled, the third ~2,013 Chaos (flagged), 3,321.38 div. */
+const OWNER_WHITTLE_DIV = 3321.38;
+
 /**
- * After: the planner whittles the second and third flat prefix instead (a Whittle takes the lowest
- * level, so landed level-75 flats only go on a tie) — the slam chain is gone and the plan costs
- * ~3,321 div. The third flat still averages ~2,013 Chaos (level-75 throwaways tie with the two kept
- * flats), so that step stays flagged, with a realistic alternative.
+ * Now (P1): the third flat is desecrated — an Ancient Collarbone + Sinistral Necromancy reveal with
+ * one Echoes reroll, Omen of Light on a miss (the creators' last prefix) — ~22 Lights, ~1,129 div,
+ * no step past the limit. The same flats as a pool ("any 3 of the 4 attack flats") or on a bought
+ * base carrying one of them fractured are cheaper again. Four top flats on a Dusk Ring still have a
+ * whittle step past the limit, with realistic cheaper target sets.
  */
 function testOwnerCase(cat: CraftCatalog): void {
   const prices = pricesWithoutCatalysts();
   const p = planWith(cat, OWNER_FLAT_RING, prices);
   const route = p.steps.map((s) => s.method);
   assert.ok(!route.includes("slam-prefix-exalt-greater"), `the 13,201-slam chain is gone: ${route.join(", ")}`);
-  assert.equal(route.filter((m) => m === "whittle-loop").length, 3, `two flat prefixes and the rarity are whittled: ${route.join(", ")}`);
-  assert.ok(near(p.totals.div!.point, 3321.38, 0.05), `≈ 3,321 div, got ${p.totals.div!.point}`);
-  assert.ok(p.totals.div!.point * 1.7 < OWNER_BEFORE_DIV, "well under the slam plan");
-  const flagged = p.steps.filter((s) => s.impractical);
-  assert.equal(flagged.length, 1, "only the third flat prefix is past the limit");
-  const imp = flagged[0]!.impractical!;
-  assert.equal(flagged[0]!.method, "whittle-loop");
-  assert.equal(imp.materialId, mat("chaos").id);
-  assert.ok(near(imp.clicks.point, 2013.1, 0.5), `~2,013 Chaos Orbs, got ${imp.clicks.point}`);
-  assert.equal(imp.undoRisk, true, "a level-75 throwaway can tie with a kept flat");
-  assertAlternatives(cat, p, prices);
-  const best = p.alternatives[0]!;
-  assert.deepEqual(best.changes.map((c) => [c.kind, c.target]), [["drop", 1]], "leave one flat prefix off");
-  assert.ok(best.totals.div!.point * 4 < p.totals.div!.point, `≥ 4× cheaper: ${best.totals.div!.point} vs ${p.totals.div!.point}`);
-  // with live catalyst prices the catalysed slam still beats whittling — and 16k catalysts are flagged
-  const cat2 = planWith(cat, OWNER_FLAT_RING, fixturePrices());
-  assert.ok(cat2.steps.some((s) => s.materials.some((m) => m.id === "reaver-catalyst")), "one Reaver Catalyst biases all three attack flats");
-  const catFlagged = cat2.steps.filter((s) => s.impractical);
-  assert.ok(catFlagged.length === 1 && catFlagged[0]!.impractical!.materialId.endsWith("-catalyst"), "the catalyst count is past the limit");
-  assertAlternatives(cat, cat2, fixturePrices());
+  const desecrate = p.steps.find((s) => s.method.startsWith("desecrate-"));
+  assert.ok(desecrate && desecrate.instructions[0]!.pick.some((x) => /Physical|Lightning|Cold/.test(x)), `a flat prefix is desecrated: ${route.join(", ")}`);
+  assert.ok(near(p.totals.div!.point, 1128.54, 0.05), `≈ 1,129 div, got ${p.totals.div!.point}`);
+  assert.ok(p.totals.div!.point * 2.9 < OWNER_WHITTLE_DIV && p.totals.div!.point * 5 < OWNER_BEFORE_DIV, "well under the whittle-only and the slam plans");
+  assert.deepEqual(p.steps.filter((s) => s.impractical).map((s) => s.method), [], "no step is past the limit any more");
+  const lights = desecrate.materials.find((m) => m.id === mat("omenLight").id)!.qty.point;
+  assert.ok(lights > 15 && lights < 30, `one top-tier flat family: ~22 Omens of Light, got ${lights}`);
+  const pool = planWith(cat, { ...OWNER_FLAT_RING, targets: OWNER_FLAT_RING.targets.slice(3), groups: [{ side: "prefix", need: 3, candidates: FLAT_FAMILIES.map(([family, id]) => ({ family, minModId: `${id}9` })) }] }, prices);
+  assert.ok(pool.totals.div!.point < p.totals.div!.point * 0.6, `any 3 of the 4 flats: ${pool.totals.div!.point} div`);
+  const bought = planWith(cat, { ...OWNER_FLAT_RING, start: { kind: "bought", carried: null, askDiv: 65 } }, prices);
+  assert.ok(bought.totalsWithBase!.div!.point < p.totals.div!.point * 0.35, `bought fractured flat at 65 div: ${bought.totalsWithBase!.div!.point} div with the base`);
+  const dusk = planWith(cat, FOUR_FLAT_DUSK, prices);
+  const flagged = dusk.steps.filter((s) => s.impractical);
+  assert.ok(flagged.length === 1 && flagged[0]!.method === "whittle-loop" && flagged[0]!.impractical!.materialId === mat("chaos").id, "four top flats: one whittle step past the limit");
+  assertAlternatives(cat, dusk, prices, FOUR_FLAT_DUSK);
 }
 
 /**
@@ -131,12 +130,12 @@ function testTimeBudgets(cat: CraftCatalog): void {
     return () => t++;
   };
   const deps = (budget: PlanBudget) => ({ cat, prices: pricesWithoutCatalysts(), exaltPerDivine: 250, league: "Test", now: NOW, budget });
-  const quick = planResponseSchema.parse(planCraft(OWNER_FLAT_RING, deps({ searchMs: Infinity, alternativesMs: 0, now: ticking() })));
+  const quick = planResponseSchema.parse(planCraft(FOUR_FLAT_DUSK, deps({ searchMs: Infinity, alternativesMs: 0, now: ticking() })));
   assert.equal(quick.alternativesTruncated, true, "out of time for cheaper targets → said so");
   assert.deepEqual(quick.alternatives, [], "nothing was planned in a zero budget");
   assert.ok(quick.steps.some((s) => s.impractical), "the plan itself is still returned");
-  assert.throws(() => planCraft(OWNER_FLAT_RING, deps({ searchMs: 25, alternativesMs: Infinity, now: ticking() })), (e: unknown) => e instanceof PlanTimeoutError && !/\bms\b|states/.test(e.message), "past the main budget: a typed error in plain words");
-  const unlimited = planWith(cat, OWNER_FLAT_RING, pricesWithoutCatalysts());
+  assert.throws(() => planCraft(FOUR_FLAT_DUSK, deps({ searchMs: 25, alternativesMs: Infinity, now: ticking() })), (e: unknown) => e instanceof PlanTimeoutError && !/\bms\b|states/.test(e.message), "past the main budget: a typed error in plain words");
+  const unlimited = planWith(cat, FOUR_FLAT_DUSK, pricesWithoutCatalysts());
   assert.equal(unlimited.alternativesTruncated, false, "no budget → every candidate planned");
 }
 
@@ -159,10 +158,11 @@ function testMarketReality(cat: CraftCatalog): void {
   const t8 = planWith(cat, ring(8), fixturePrices());
   assert.ok(reaver(t8), `the prefix slams aim with the Reaver Catalyst: ${t8.steps.map((s) => s.method).join(", ")}`);
   assert.ok(t8.totals.div!.point < 400, `three T8 flats + all-res costs low hundreds, got ${t8.totals.div!.point}`);
+  // P1: the third T9 flat comes from a desecration reveal (the creators' last prefix), not a 1-in-250 slam
   const t9 = planWith(cat, ring(9), fixturePrices());
-  assert.ok(reaver(t9) && t9.totals.div!.point < 1700, `three T9 flats: Reaver, under 1,700 div (was 1,941 with a catalyst per flat), got ${t9.totals.div!.point}`);
-  const best = t9.alternatives[0]!;
-  assert.ok(best.changes.length === 3 && best.changes.every((c) => c.kind === "relax") && best.totals.div!.point < 150, `cheapest realistic chip: all three flats a tier set lower, ${best.totals.div!.point} div`);
+  const route = t9.steps.map((s) => s.method).join(", ");
+  assert.ok(/desecrate-/.test(route) && t9.totals.div!.point < 1000, `three T9 flats: the last one desecrated, under 1,000 div (1,600 with the slam), got ${t9.totals.div!.point}: ${route}`);
+  assert.deepEqual(t9.steps.filter((s) => s.impractical).map((s) => s.method), [], "no step past the limit, so no cheaper-target chips");
 }
 
 export function runSanityCases(cat: CraftCatalog): void {

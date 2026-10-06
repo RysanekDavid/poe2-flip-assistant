@@ -42,7 +42,7 @@ export function refitSlots(slots: Slots, caps: { p: number; s: number }): Slots 
 export const picks = (slots: Slots): SlotPick[] => [...slots.prefix, ...slots.suffix].filter((x): x is SlotPick => x != null);
 
 /** "+(165-179) to maximum Mana" → "+# to maximum Mana": the family's name as trade sites write it. */
-export const genericText = (text: string): string => text.replace(/\((-?\d+(?:\.\d+)?)-(-?\d+(?:\.\d+)?)\)|-?\d+(?:\.\d+)?/g, "#");
+export { genericText } from "../../../lib/tools/modNames";
 
 export interface TierInfo {
   tier: PoolTier;
@@ -79,23 +79,48 @@ export interface LiveCheck {
 }
 
 /** What the client can say before asking the server: slot counts, one-of limits, item-level gates. */
-export function liveCheck(slots: Slots, caps: { p: number; s: number }, ilvl: number, pool: PlannerPool | null): LiveCheck {
+export function liveCheck(slots: Slots, caps: { p: number; s: number }, ilvl: number, pool: PlannerPool | null, pools: Pools = NO_POOLS): LiveCheck {
   const all = picks(slots);
+  const candidates = [...(pools.prefix?.candidates ?? []), ...(pools.suffix?.candidates ?? [])];
   const ilvlShort = pool
-    ? all.flatMap((pick) => {
+    ? [...all, ...candidates].flatMap((pick) => {
         const fam = findFamily(pool, pick);
         const t = fam ? tierOf(fam, pick.minModId) : null;
         return t && t.tier.level > ilvl ? [{ pick, needs: t.tier.level }] : [];
       })
     : [];
   return {
-    p: { used: slots.prefix.filter(Boolean).length, cap: caps.p },
-    s: { used: slots.suffix.filter(Boolean).length, cap: caps.s },
+    p: { used: slots.prefix.filter(Boolean).length + poolNeed(pools, "prefix"), cap: caps.p },
+    s: { used: slots.suffix.filter(Boolean).length + poolNeed(pools, "suffix"), cap: caps.s },
     crafted: all.filter((x) => x.source === "essence").length,
     desecrated: all.filter((x) => x.source === "desecrated").length,
     fractured: all.filter((x) => x.fractured).length,
     ilvlShort,
   };
+}
+
+/** "Any `need` of these" on one side; candidates are ordinary (currency-rolled) mods. */
+export interface SidePool {
+  candidates: readonly SlotPick[];
+  need: number;
+}
+export interface Pools {
+  prefix: SidePool | null;
+  suffix: SidePool | null;
+}
+export const NO_POOLS: Pools = { prefix: null, suffix: null };
+
+export type StartMode = "compare" | "clean" | "bought";
+/** A wanted mod the bought base carries: a filled slot, or one of a side's pool. */
+export type CarriedPick = { kind: "slot"; side: Side; slot: number } | { kind: "pool"; side: Side };
+export interface StartInput {
+  mode: StartMode;
+  carried: readonly CarriedPick[];
+  fractured: boolean;
+  /** The player's price for the bought base (Divine); null = not entered yet. */
+  askDiv: number | null;
+  /** Why the carried picks just changed without the player touching them (a slot they named emptied); null = nothing to say. */
+  note: string | null;
 }
 
 export interface PlannerInput {
@@ -105,6 +130,20 @@ export interface PlannerInput {
   slots: Slots;
   includeUnverified: boolean;
   quality: { catalyst: string; pct: number } | null;
+  pools: Pools;
+  start: StartInput;
+}
+
+/** A pool that can be planned: two or more candidates and a need it can meet. */
+export const poolReady = (p: SidePool | null): p is SidePool => p != null && p.candidates.length >= 2 && p.need >= 1 && p.need <= p.candidates.length;
+
+export const poolNeed = (pools: Pools, side: Side): number => pools[side]?.need ?? 0;
+
+function groupsOf(pools: Pools): NonNullable<PlanRequest["groups"]> {
+  return (["prefix", "suffix"] as const).flatMap((side) => {
+    const p = pools[side];
+    return poolReady(p) ? [{ side, need: p.need, candidates: p.candidates.map((c) => ({ family: c.family, minModId: c.minModId })) }] : [];
+  });
 }
 
 /** The quality goal carried to a new base: clamped to its cap, dropped where catalysts don't apply. */
@@ -113,12 +152,15 @@ export function carryQuality(quality: PlannerInput["quality"], qualityCap: numbe
   return { ...quality, pct: Math.min(quality.pct, qualityCap) };
 }
 
+/** The item as a request with a clean start (plannerStartModel.requestsFor adds the bought start). */
 export function toRequest(input: PlannerInput): PlanRequest {
+  const groups = groupsOf(input.pools);
   return {
     itemClass: input.itemClass,
     base: input.base,
     ilvl: input.ilvl,
     targets: picks(input.slots).map((p) => ({ family: p.family, side: p.side, minModId: p.minModId, fractured: p.fractured })),
+    ...(groups.length > 0 ? { groups } : {}),
     includeUnverified: input.includeUnverified,
     quality: input.quality,
   };

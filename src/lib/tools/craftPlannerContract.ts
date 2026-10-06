@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { MaterialGroup } from "../../core/craftMaterials";
 import { claimVerdictSchema } from "../claim";
+import { planStartSchema, startViewSchema, targetGroupSchema } from "./craftPlannerContractStart";
 
 /**
  * GET /api/tools/craft-planner and POST /api/tools/craft-planner/plan. Shared by the routes and the
@@ -53,13 +54,19 @@ export const planRequestSchema = z
     itemClass: plannerClassSchema,
     base: z.string().trim().min(1).max(80),
     ilvl: z.number().int().min(1).max(100),
-    targets: z.array(targetSpecSchema).min(1, "pick at least one mod").max(6, "an item holds at most 6 affixes"),
+    targets: z.array(targetSpecSchema).max(6, "an item holds at most 6 affixes"),
+    /** Mod pools: "any `need` of these" per side (at most one pool per side). */
+    groups: z.array(targetGroupSchema).max(2).optional(),
+    /** Where the plan starts; absent = a clean base. */
+    start: planStartSchema.optional(),
     /** Admit methods whose core rule is unverified (each step then carries the badge). */
     includeUnverified: z.boolean().default(false),
     /** Optional finished-item catalyst quality (rings/amulets). */
     quality: z.object({ catalyst: z.string().trim().min(1).max(60), pct: z.number().int().min(1).max(70) }).nullable().default(null),
   })
-  .refine((r) => new Set(r.targets.map((t) => t.minModId)).size === r.targets.length, "the same mod is picked twice");
+  .refine((r) => r.targets.length + (r.groups ?? []).length > 0, "pick at least one mod")
+  .refine((r) => new Set(r.targets.map((t) => t.minModId)).size === r.targets.length, "the same mod is picked twice")
+  .refine((r) => new Set((r.groups ?? []).map((g) => g.side)).size === (r.groups ?? []).length, "one pool per side");
 export type PlanRequest = z.infer<typeof planRequestSchema>;
 
 export const feasibilityIssueSchema = z.object({
@@ -107,6 +114,8 @@ export const itemStateSchema = z.object({
       side: z.enum(["prefix", "suffix", "any"]),
       kind: z.enum(["explicit", "fractured", "crafted", "desecrated"]),
       target: z.number().int().nonnegative().nullable(),
+      /** A pool slot: which of its candidates landed (index into that target's candidates). */
+      alt: z.number().int().nonnegative().nullable().default(null),
       unrevealed: z.boolean(),
     }),
   ),
@@ -202,6 +211,10 @@ export const planTargetSchema = z.object({
   level: z.number().int(),
   source: z.enum(["natural", "essence", "desecrated"]),
   fractured: z.boolean(),
+  /** Index of the request's pool this slot belongs to; null for a single mod. */
+  group: z.number().int().nonnegative().nullable().default(null),
+  /** A pool slot's candidates, in the order the plan assumes they land (likeliest first). */
+  candidates: z.array(z.object({ modId: z.string(), text: z.string(), level: z.number().int() })).default([]),
 });
 
 export const planResponseSchema = z.object({
@@ -227,6 +240,9 @@ export const planResponseSchema = z.object({
   alternatives: z.array(alternativeSchema).max(3).default([]),
   /** The cheaper-target search hit its time budget: more options may exist than these. */
   alternativesTruncated: z.boolean().default(false),
+  start: startViewSchema.default({ kind: "clean" }),
+  /** A bought start: materials + the bases bought at the player's price; div null = no price entered or a material unpriced. */
+  totalsWithBase: z.object({ div: bandSchema.nullable(), basis: basisSchema }).nullable().default(null),
 });
 export type PlanResponse = z.infer<typeof planResponseSchema>;
 

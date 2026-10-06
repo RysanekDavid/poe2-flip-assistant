@@ -1,6 +1,7 @@
 import type { AlternativeView, ImpracticalView, TargetChangeView } from "../../../lib/tools/craftPlannerContract";
 import { IMPRACTICAL_CLICKS } from "../../../core/tools/planner/sanity";
 import { genericText, targetIndex, toRequest, type PlannerInput, type Side, type SlotPick } from "./plannerModel";
+import { withSlots } from "./plannerStartModel";
 
 /**
  * Pure helpers for the planner's cost-sanity UI: how loud an impractical step is, the words on a
@@ -53,7 +54,8 @@ export function withAlternative(input: PlannerInput, alt: AlternativeView): Plan
     if (!pick || pick.minModId !== c.from.modId) throw new Error(`planner: slot ${side} ${i} no longer holds ${c.from.modId}`);
     slots[side][i] = c.kind === "drop" ? null : { ...pick, minModId: c.to.modId };
   }
-  const next: PlannerInput = { ...input, slots };
+  // a dropped mod the bought base carried takes its carried pick with it (and the start says so)
+  const next = withSlots(input, slots);
   if (!sameTargets(toRequest(next).targets, alt.targets)) throw new Error("planner: the alternative no longer matches the item's slots");
   return next;
 }

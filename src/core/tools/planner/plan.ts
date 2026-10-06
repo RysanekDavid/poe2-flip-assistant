@@ -4,7 +4,10 @@ import type { CraftCatalog } from "../craftmoves/catalog";
 import { suggestAlternatives, type Costed, type Suggested } from "./alternatives";
 import { NoPlanError, searchPlan, SearchCappedError, SearchTimeoutError, SEARCH_CAP, type Deadline, type SearchResult } from "./search";
 import { isFeasible, resolveBase, resolveTargets, type FeasibilityIssue } from "./targets";
-import type { PlanCtx } from "./types";
+import { startIssues } from "./methodsStart";
+import { DEFAULT_REVEAL } from "./revealPriors";
+import { startView, targetViews, totalsWithBase } from "./planViews";
+import type { PlanCtx, RevealPriors } from "./types";
 import { unrollPlan } from "./unroll";
 
 /**
@@ -57,6 +60,8 @@ export interface PlanDeps {
   iconOf?: (materialId: string) => string | null;
   /** Wall-clock limits; absent = none (tests and offline scripts want byte-identical output). */
   budget?: PlanBudget;
+  /** Reveal numbers from the curated priors; absent = the patch-note default (three options, no anchor). */
+  reveal?: RevealPriors;
 }
 
 const deadlineIn = (budget: PlanBudget | undefined, ms: (b: PlanBudget) => number): Deadline | null => (budget ? { at: budget.now() + ms(budget), now: budget.now } : null);
@@ -73,7 +78,7 @@ function iconsFor(ids: Iterable<string>, iconOf: PlanDeps["iconOf"]): Record<str
 
 export function buildCtx(req: PlanRequest, deps: PlanDeps): { ctx: PlanCtx; issues: FeasibilityIssue[] } {
   const { base, combo } = resolveBase(deps.cat, req.itemClass, req.base, req.ilvl);
-  const { targets, issues } = resolveTargets(deps.cat, combo, base, req.targets, req.quality);
+  const { targets, groups, issues } = resolveTargets(deps.cat, combo, base, req.targets, req.quality, req.groups ?? []);
   const ctx: PlanCtx = {
     cat: deps.cat,
     combo,
@@ -82,13 +87,19 @@ export function buildCtx(req: PlanRequest, deps: PlanDeps): { ctx: PlanCtx; issu
     priceOf: (id) => deps.prices.get(id) ?? null,
     includeUnverified: req.includeUnverified,
     quality: req.quality,
+    groups,
+    start: req.start ?? { kind: "clean" },
+    reveal: deps.reveal ?? DEFAULT_REVEAL,
   };
+  if (isFeasible(issues)) {
+    for (const message of startIssues(ctx)) issues.push({ severity: "impossible", rule: "start", message, grade: "vp", source: "Your start choice", target: null });
+  }
   return { ctx, issues };
 }
 
 function search(ctx: PlanCtx, issues: FeasibilityIssue[], deadline: Deadline | null): ReturnType<typeof searchPlan> {
   try {
-    return searchPlan(ctx, () => 0, SEARCH_CAP, deadline);
+    return searchPlan(ctx, SEARCH_CAP, deadline);
   } catch (e: unknown) {
     if (e instanceof NoPlanError) throw new PlanRejectedError(e.message, issues);
     if (e instanceof SearchCappedError) throw new PlanRejectedError(e.message, issues, e);
@@ -155,7 +166,7 @@ export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
     kind: "plan",
     league: deps.league,
     base: { name: ctx.base.name, itemClass: req.itemClass, ilvl: ctx.base.ilvl },
-    targets: ctx.targets.map((t) => ({ idx: t.idx, modId: t.modId, text: t.text, side: t.side, level: t.level, source: t.source, fractured: t.fractured })),
+    targets: targetViews(ctx),
     feasibility: issues,
     steps: out.steps,
     guide: out.guide,
@@ -169,5 +180,7 @@ export function planCraft(req: PlanRequest, deps: PlanDeps): PlanResponse {
     expanded: found.expanded,
     alternatives: alt.alternatives,
     alternativesTruncated: alt.truncated,
+    start: startView(ctx, found.moves, out.buys),
+    totalsWithBase: totalsWithBase(ctx, out),
   };
 }

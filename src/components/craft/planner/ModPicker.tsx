@@ -30,6 +30,8 @@ interface Props {
   taken: ReadonlySet<string>;
   onPick: (pick: SlotPick) => void;
   onClose: () => void;
+  /** Adding a candidate to a side's pool: ordinary mods only, never fractured. */
+  poolMode?: boolean;
 }
 
 const best = (f: PoolFamily) => f.tiers[f.tiers.length - 1]!;
@@ -108,9 +110,9 @@ function usePickerState(props: Props) {
   const [fractured, setFractured] = useState(props.current?.fractured ?? false);
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const mine = props.pool.families.filter((f) => f.side === props.side && matches(f, q));
+    const mine = props.pool.families.filter((f) => f.side === props.side && matches(f, q) && (!props.poolMode || f.source === "natural"));
     return GROUPS.map((g) => ({ ...g, families: mine.filter((f) => f.source === g.source) })).filter((g) => g.families.length > 0);
-  }, [props.pool, props.side, query]);
+  }, [props.pool, props.side, props.poolMode, query]);
   return { query, setQuery, open, setOpen, fractured, setFractured, groups };
 }
 
@@ -176,18 +178,22 @@ export function ModPicker(props: Props) {
   const list = useRef<HTMLDivElement>(null);
   const openDesecrated = s.open?.split("|")[1] === "desecrated";
   const pick = (f: PoolFamily, modId: string) =>
-    props.onPick({ family: f.family, side: f.side, source: f.source, minModId: modId, fractured: s.fractured && f.source !== "desecrated" });
+    props.onPick({ family: f.family, side: f.side, source: f.source, minModId: modId, fractured: !props.poolMode && s.fractured && f.source !== "desecrated" });
   return (
-    <Drawer title={`Choose a ${props.side}`} onClose={props.onClose}>
+    <Drawer title={props.poolMode ? `Add a mod to the ${props.side} pool` : `Choose a ${props.side}`} onClose={props.onClose}>
       <div className="space-y-3">
         <PickerSearch side={props.side} query={s.query} onQuery={s.setQuery} list={list} />
-        <Toggle
-          checked={s.fractured && !openDesecrated}
-          onChange={s.setFractured}
-          label="must be fractured on the finished item"
-          disabled={openDesecrated}
-          disabledReason="a desecrated mod can't be fractured"
-        />
+        {props.poolMode ? (
+          <p className="text-xs text-neutral-400">Pick the lowest tier you&apos;d accept. Any combination of the pool&apos;s mods counts.</p>
+        ) : (
+          <Toggle
+            checked={s.fractured && !openDesecrated}
+            onChange={s.setFractured}
+            label="must be fractured on the finished item"
+            disabled={openDesecrated}
+            disabledReason="a desecrated mod can't be fractured"
+          />
+        )}
         <div ref={list} onKeyDown={(e) => moveFocus(e, list.current)} className="space-y-4">
           <FamilyGroups props={props} s={s} onPick={pick} />
         </div>

@@ -13,12 +13,14 @@ import { searchPlan, SearchCappedError } from "../../core/tools/planner/search";
 import { slotIssues } from "../../core/tools/planner/targets";
 import { plannerCatalog, plannerPool } from "../../core/tools/planner/load";
 import { plannerCatalogSchema, plannerPoolSchema, planRequestSchema, planResponseSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
-import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, fixturePrices, target } from "./plannerFixtures";
+import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, OWNER_POOL_RING, fixturePrices, target } from "./plannerFixtures";
 import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
 import { runPlannerStateCases } from "./craftPlannerStateCases";
 import { runSanityCases } from "./craftPlannerSanityCases";
 import { runWhittleCases } from "./craftPlannerWhittleCases";
 import { runCacheCases } from "./craftPlannerCacheCases";
+import { runPoolCases } from "./craftPlannerPoolCases";
+import { runReviewCases } from "./craftPlannerReviewCases";
 
 function rejected(cat: CraftCatalog, req: PlanRequest): PlanRejectedError {
   try {
@@ -131,7 +133,7 @@ function testExpectation(): void {
 function testDeterminismAndCap(cat: CraftCatalog): void {
   assert.equal(JSON.stringify(plan(cat, BREACH_RING)), JSON.stringify(plan(cat, BREACH_RING)), "same request → byte-identical plan");
   const { ctx } = buildCtx(BREACH_RING, { cat, prices: fixturePrices(), exaltPerDivine: null, league: "Test", now: NOW });
-  assert.throws(() => searchPlan(ctx, () => 0, 2), SearchCappedError);
+  assert.throws(() => searchPlan(ctx, 2), SearchCappedError);
 }
 
 function testEssenceTable(cat: CraftCatalog): void {
@@ -201,11 +203,12 @@ function testNoDeveloperReferences(cat: CraftCatalog): void {
   const pick = (side: "prefix" | "suffix", n: number) => Object.entries(combo[side]).slice(0, n).map(([family, tiers]) => target(family, side, Object.keys(tiers)[0]!));
   const jewel: PlanRequest = { itemClass: "Jewels", base: "Sapphire", ilvl: 82, targets: [...pick("suffix", 3), ...pick("prefix", 2)], includeUnverified: true, quality: null };
   const quality: PlanRequest = { ...BREACH_RING, quality: { catalyst: "xophs-catalyst", pct: 40 } };
-  const golden = [BREACH_RING, FRACTURED_T1RES_RING, FRACTURE_PLUS3_AMULET, { ...BREACH_RING, includeUnverified: true }, jewel, quality, OWNER_FLAT_RING];
+  const pools = [OWNER_POOL_RING({ kind: "bought", carried: null, askDiv: 65 }, { catalyst: "reaver-catalyst", pct: 60 }, 9), OWNER_POOL_RING({ kind: "clean" })];
+  const golden = [BREACH_RING, FRACTURED_T1RES_RING, FRACTURE_PLUS3_AMULET, { ...BREACH_RING, includeUnverified: true }, jewel, quality, OWNER_FLAT_RING, ...pools];
   const shown = golden.flatMap((req) => {
     const p = plan(cat, req);
     // patch/method/rule ids are not shown as prose; everything else is
-    return strings({ steps: p.steps.map((s) => ({ ...s, method: "", rules: [] })), guide: p.guide, feasibility: p.feasibility, targets: p.targets, alternatives: p.alternatives });
+    return strings({ steps: p.steps.map((s) => ({ ...s, method: "", rules: [] })), guide: p.guide, feasibility: p.feasibility, targets: p.targets, alternatives: p.alternatives, start: p.start });
   });
   const refusals = [
     ring("Ruby Ring", 60, [target("FireResistance", "suffix", "FireResist8")]),
@@ -231,7 +234,9 @@ runPlannerStateCases(cat);
 runSanityCases(cat);
 runWhittleCases(cat);
 runCacheCases(cat);
+runPoolCases(cat);
+runReviewCases(cat);
 console.log(
   `ALL PASS — craft-planner: golden plans (Breach mana stacker, fractured-flat res ring, fractured +3 amulet), violations (mod group, caps incl. Dusk/Time-Lost, ilvl gate, one crafted/desecrated, essence table, quality cap, over-cap jewel), ` +
-    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases, cost sanity (owner's 13,201-slam ring now whittled, its long step flagged + cheaper alternatives, partial hits by hand, goldens unflagged, time budgets: truncated alternatives + typed timeout), whittle loop (ties / no tie / unique-lowest by hand, fixed-mod guard, older-server defaults), route memo (cut-short plans not cached, 45 s timeout refusal, capped candidate = incomplete list)`,
+    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases, cost sanity (owner's 13,201-slam ring: last flat desecrated, ~1,129 div, pool and bought variants cheaper; four-flat Dusk Ring flagged + cheaper alternatives; partial hits by hand, goldens unflagged, time budgets), whittle loop (ties / no tie / unique-lowest by hand, fixed-mod guard, older-server defaults), route memo (cut-short plans not cached, 45 s timeout refusal, capped candidate = incomplete list), P1 (pool feasibility, reveal model by hand, owner pool ring inside the creators' band clean + bought, Light anchor, bought-base golden + start refusals, quality ordering, buy link)`,
 );

@@ -38,6 +38,7 @@ export interface TradeQuery {
   evMin?: number; // minimum evasion rating — selects EV-base armour (attack gear)
   arMin?: number; // minimum armour rating → equipment_filters.ar.min (Shield Wall shields)
   stats?: StatFilter[]; // explicit/implicit mod thresholds (AND-combined)
+  anyOf?: Array<{ filters: StatFilter[]; min: number }>; // trade2 "count" groups: at least `min` of these mods
   account?: string; // restrict to one seller account (own-stash reads)
 }
 
@@ -84,17 +85,9 @@ export function buildTradeQuery(q: TradeQuery): Record<string, unknown> {
   // A filter with no min/max still matches on the mod being PRESENT (any roll) — that's
   // what we want for a sell search: the finished item must HAVE the mod.
   const live = (q.stats ?? []).filter((s) => s.id);
-  query.stats = live.length
-    ? [
-        {
-          type: "and",
-          filters: live.map((s) => ({
-            id: s.id,
-            value: { ...(s.min != null ? { min: s.min } : {}), ...(s.max != null ? { max: s.max } : {}) },
-          })),
-        },
-      ]
-    : [];
+  const filterOf = (s: StatFilter) => ({ id: s.id, value: { ...(s.min != null ? { min: s.min } : {}), ...(s.max != null ? { max: s.max } : {}) } });
+  const counts = (q.anyOf ?? []).filter((g) => g.filters.length > 0).map((g) => ({ type: "count", filters: g.filters.map(filterOf), value: { min: g.min } }));
+  query.stats = [...(live.length ? [{ type: "and", filters: live.map(filterOf) }] : []), ...counts];
   return query;
 }
 

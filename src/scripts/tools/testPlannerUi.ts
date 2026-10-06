@@ -19,7 +19,10 @@ import {
   toRequest,
   type SlotPick,
   type Slots,
+  NO_POOLS,
 } from "../../components/craft/planner/plannerModel";
+import { DEFAULT_START } from "../../components/craft/planner/plannerStartModel";
+import { runStartUiCases } from "./plannerStartUiCases";
 
 const p = (family: string, side: SlotPick["side"], minModId: string, source: SlotPick["source"] = "natural", fractured = false): SlotPick => ({ family, side, source, minModId, fractured });
 
@@ -35,7 +38,7 @@ function testSlots(): void {
   assert.deepEqual(targetIndex(slots, "suffix", 1), 2, "suffix indices follow every filled prefix");
   assert.deepEqual(targetIndex(slots, "suffix", 2), 3);
   assert.equal(targetIndex(slots, "suffix", 0), null, "an empty slot has no target");
-  assert.deepEqual(toRequest({ itemClass: "Rings", base: "Ruby Ring", ilvl: 82, slots, includeUnverified: false, quality: null }).targets.map((t) => t.minModId), [
+  assert.deepEqual(toRequest({ itemClass: "Rings", base: "Ruby Ring", ilvl: 82, slots, includeUnverified: false, quality: null, pools: NO_POOLS, start: DEFAULT_START }).targets.map((t) => t.minModId), [
     "IncreasedMana12",
     "EssenceIncreasedManaPercent1",
     "FireResist7",
@@ -93,7 +96,7 @@ function testTotals(): void {
 }
 
 function testSession(): void {
-  const req = toRequest({ itemClass: "Rings", base: "Ruby Ring", ilvl: 82, slots: { prefix: [MANA], suffix: [FIRE] }, includeUnverified: false, quality: null });
+  const req = toRequest({ itemClass: "Rings", base: "Ruby Ring", ilvl: 82, slots: { prefix: [MANA], suffix: [FIRE] }, includeUnverified: false, quality: null, pools: NO_POOLS, start: DEFAULT_START });
   const guide: Pick<PlanResponse["guide"], "phases"> = { phases: [{ title: "A", steps: [{ do: "a" }] }, { title: "B", steps: [{ do: "b" }, { do: "c" }] }] };
   const id = planSessionId(req, guide);
   assert.equal(id, planSessionId(req, guide), "stable");
@@ -117,7 +120,7 @@ const totals = { div: { point: 668.6, low: 300, high: 1500 }, basis: "estimate" 
 function testAlternatives(): void {
   const phys = p("PhysicalDamage", "prefix", PHYS9.modId);
   const light = p("LightningDamage", "prefix", LIGHT9.modId);
-  const input = { itemClass: "Rings" as const, base: "Breach Ring", ilvl: 82, slots: { prefix: [phys, null, light], suffix: [FIRE, null, null] }, includeUnverified: true, quality: null };
+  const input = { itemClass: "Rings" as const, base: "Breach Ring", ilvl: 82, slots: { prefix: [phys, null, light], suffix: [FIRE, null, null] }, includeUnverified: true, quality: null, pools: NO_POOLS, start: DEFAULT_START };
   const both: AlternativeView = {
     changes: [
       { kind: "relax", target: 0, side: "prefix", family: "PhysicalDamage", from: PHYS9, to: tier("AddedPhysicalDamage7", 7, "Adds (7-11) to (14-20) Physical Damage to Attacks", 60) },
@@ -173,7 +176,8 @@ async function main(): Promise<void> {
   testSession();
   testAlternatives();
   await testReadStored();
-  console.log("ALL PASS — planner UI logic: slots/targetIndex/refit, live check, family names, quality carry, catalyst-override total, session id + saved-step guard, cheaper-target chips, readStored");
+  runStartUiCases();
+  console.log("ALL PASS — planner UI logic: slots/targetIndex/refit, live check, family names, quality carry, catalyst-override total, session id + saved-step guard, cheaper-target chips, readStored, pools + start (pool mode, requests per start mode, total with the base, buy-link body)");
 }
 
 main().catch((e: unknown) => {

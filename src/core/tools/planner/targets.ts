@@ -5,7 +5,9 @@ import { baseAllowance, catalystQualityCap } from "../craftmoves/classify";
 import { CATALYSTS } from "./catalystTags";
 import { ESSENCE_OUTCOMES, BREACH_ESSENCE_ID, essenceWritesFor } from "./essenceOutcomes";
 import { sourceLine, sources } from "./sources";
-import type { BaseInfo, Faction, QualityGoal, ResolvedTarget } from "./types";
+import type { TargetGroupInput } from "../../../lib/tools/craftPlannerContractStart";
+import { resolveGroups } from "./groupTargets";
+import type { BaseInfo, Faction, QualityGoal, ResolvedTarget, TargetGroup } from "./types";
 
 /**
  * User targets → catalog-resolved targets, plus the feasibility verdict. Every refusal names the
@@ -76,9 +78,9 @@ export function resolveBase(cat: CraftCatalog, itemClass: string, name: string, 
 const FACTIONS: readonly Faction[] = ["amanamu", "ulaman", "kurgal"];
 export const factionOf = (tags: readonly string[]): Faction | null => FACTIONS.find((f) => tags.includes(`${f}_mod`)) ?? null;
 
-type Resolution = { target: ResolvedTarget } | { issue: FeasibilityIssue };
+export type Resolution = { target: ResolvedTarget } | { issue: FeasibilityIssue };
 
-function impossible(idx: number, rule: string, message: string, grade: ClaimVerdict, source: string): { issue: FeasibilityIssue } {
+export function impossible(idx: number, rule: string, message: string, grade: ClaimVerdict, source: string): { issue: FeasibilityIssue } {
   return { issue: { severity: "impossible", rule, message, grade, source, target: idx } };
 }
 
@@ -89,7 +91,7 @@ function sourceOf(cat: CraftCatalog, combo: CatalogCombo, spec: TargetSpec): Res
   return combo[spec.side][spec.family]?.[spec.minModId] != null ? "natural" : null;
 }
 
-function resolveOne(cat: CraftCatalog, combo: CatalogCombo, base: BaseInfo, spec: TargetSpec, idx: number): Resolution {
+export function resolveOne(cat: CraftCatalog, combo: CatalogCombo, base: BaseInfo, spec: TargetSpec, idx: number): Resolution {
   const mod = cat.mods[spec.minModId];
   if (!mod) return impossible(idx, "catalog", `unknown modifier id "${spec.minModId}"`, "vp", SRC.gameData);
   if (mod.family !== spec.family || mod.side !== spec.side) {
@@ -120,6 +122,8 @@ function resolveOne(cat: CraftCatalog, combo: CatalogCombo, base: BaseInfo, spec
     fractured: spec.fractured,
     essences,
     faction: source === "desecrated" ? factionOf(mod.tags) : null,
+    group: null,
+    alts: [],
   };
   return { target };
 }
@@ -193,10 +197,19 @@ function qualityIssues(cat: CraftCatalog, base: BaseInfo, quality: QualityGoal |
 
 export interface TargetResolution {
   targets: ResolvedTarget[];
+  groups: TargetGroup[];
   issues: FeasibilityIssue[];
 }
 
-export function resolveTargets(cat: CraftCatalog, combo: CatalogCombo, base: BaseInfo, specs: readonly TargetSpec[], quality: QualityGoal | null): TargetResolution {
+/** Single mods first (indices = the request's targets), then each pool's slots. */
+export function resolveTargets(
+  cat: CraftCatalog,
+  combo: CatalogCombo,
+  base: BaseInfo,
+  specs: readonly TargetSpec[],
+  quality: QualityGoal | null,
+  pools: readonly TargetGroupInput[] = [],
+): TargetResolution {
   const targets: ResolvedTarget[] = [];
   const issues: FeasibilityIssue[] = [];
   specs.forEach((spec, idx) => {
@@ -204,9 +217,12 @@ export function resolveTargets(cat: CraftCatalog, combo: CatalogCombo, base: Bas
     if ("issue" in r) issues.push(r.issue);
     else targets.push(r.target);
   });
-  if (issues.length > 0) return { targets, issues };
-  issues.push(...capIssues(base, targets), ...pairIssues(targets), ...slotIssues(base, targets), ...qualityIssues(cat, base, quality));
-  return { targets, issues };
+  if (issues.length > 0) return { targets, groups: [], issues };
+  const pooled = resolveGroups({ cat, combo, base, resolve: resolveOne }, pools, targets);
+  if (pooled.issues.some((i) => i.severity === "impossible")) return { targets, groups: [], issues: pooled.issues };
+  const all = [...targets, ...pooled.targets];
+  issues.push(...pooled.issues, ...capIssues(base, all), ...pairIssues(targets), ...slotIssues(base, all), ...qualityIssues(cat, base, quality));
+  return { targets: all, groups: pooled.groups, issues };
 }
 
 export const isFeasible = (issues: readonly FeasibilityIssue[]): boolean => !issues.some((i) => i.severity === "impossible");

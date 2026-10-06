@@ -3,80 +3,20 @@ import { band, failuresOf, useOf } from "./expectation";
 import { AUG_TIERS, makeMove, mat, once, sideOmen, step, targetText, TRANSMUTE_FOR_AUG, usableTier, type MoveSpec } from "./methodKit";
 import { sources } from "./sources";
 import { addOdds, exact } from "./odds";
-import { anyJunkCount, canonical, isJunk, isMet, junk, openOf, otherSide, present, removable, SIDES, targetAffix, withAffixes } from "./state";
-import { startJunkRare } from "./methodsJewel";
+import { aimable, anyJunkCount, isJunk, isMet, junk, openOf, otherSide, present, removable, SIDES, withAffixes, withLanded } from "./state";
 import type { Method, Move, PlanCtx, PlanState } from "./types";
 
 /**
- * Acquire and shape the base: the two allowed starts (a clean Normal base, or a rare with a
- * FRACTURED non-target "anchor" — owner rule: never buy a base that already carries a target), the
- * magic Annul+Aug loop, Regal, throwaway mods and junk strips.
+ * Shape the base (the starts live in methodsStart.ts): the magic Annul+Aug loop, Regal, throwaway
+ * mods, junk strips and the fracture.
  */
-
-const EMPTY: PlanState = { rarity: "Normal", affixes: [], quality: 0, catalyst: null };
-
-function finishedCap(ctx: PlanCtx, side: AffixSide): number {
-  if (ctx.base.jewel) return 2;
-  return 3 + (side === "prefix" ? ctx.base.allowance.p : ctx.base.allowance.s);
-}
-
-function startNormal(ctx: PlanCtx): Move | null {
-  return makeMove(ctx, {
-    methodId: "acquire-normal",
-    title: "Base",
-    next: EMPTY,
-    steps: [step({ do: `Buy a Normal ${ctx.base.name}, item level ${ctx.base.ilvl}+.`, why: "A clean base: nothing on it to work around." })],
-    uses: [],
-    odds: exact(1, "buying a base is not a gamble"),
-    grade: "vp",
-    checks: [],
-  });
-}
-
-/** Rare with a FRACTURED non-target mod on a side the targets leave room on, stripped to it + one mod. */
-function startAnchored(ctx: PlanCtx, side: AffixSide): Move | null {
-  const wanted = ctx.targets.filter((t) => t.side === side).length;
-  if (ctx.targets.some((t) => t.fractured) || wanted >= finishedCap(ctx, side)) return null;
-  const anchor = junk(side, "fractured");
-  const bought = canonical({ rarity: "Rare", affixes: [anchor, junk("any"), junk("any"), junk("any")], quality: 0, catalyst: null });
-  const next = canonical({ rarity: "Rare", affixes: [anchor, junk("any")], quality: 0, catalyst: null });
-  return makeMove(ctx, {
-    methodId: `acquire-anchored-${side}`,
-    title: "Anchored base",
-    next,
-    steps: [
-      step({
-        do: `Buy a rare ${ctx.base.name}, item level ${ctx.base.ilvl}+, with a FRACTURED ${side} that is not a tier of any mod you want (${ctx.targets.map((t) => targetText(t.text)).join("; ")}), and no crafted or desecrated mod.`,
-        why: `The fractured mod can't be removed, so every later removal lands on the loose mods — and it fills a ${side} slot you don't need.`,
-        sources: sources("kb-fracture"),
-      }),
-      step({
-        do: "Orb of Annulment until only the fractured mod and one other mod remain.",
-        why: "Each Annulment removes a random mod; the fractured one is immune.",
-        sources: sources("kb-fracture"),
-        mats: [mat("annul")],
-        check: `The fractured ${side} plus exactly one loose mod.`,
-      }),
-    ],
-    // a fractured rare has 4–6 mods (the Fracturing Orb needs 4): 2–4 Annulments, 3 expected
-    uses: [useOf(mat("annul"), band(3, 2, 4))],
-    odds: exact(1, "each Annulment removes a loose mod (the fractured one is immune)"),
-    grade: "vp",
-    checks: [{ state: bought, rules: ["annul"] }],
-  });
-}
-
-/** The search's start edges. */
-export function startMoves(ctx: PlanCtx): Move[] {
-  return [startNormal(ctx), ...SIDES.map((side) => startAnchored(ctx, side)), startJunkRare(ctx)].filter((m): m is Move => m != null);
-}
 
 /** Normal → magic → Annulment + Augmentation until the target: magic items hold one mod per side. */
 function magicLoop(state: PlanState, ctx: PlanCtx): Move[] {
   if (state.rarity !== "Normal" || ctx.base.allowance.p !== 0 || ctx.base.allowance.s !== 0) return [];
   const out: Move[] = [];
   for (const t of ctx.targets) {
-    if (t.source !== "natural" || present(state, t.idx)) continue;
+    if (t.source !== "natural" || !aimable(ctx, state, t)) continue;
     for (const aug of AUG_TIERS.filter((a) => usableTier(ctx, a))) {
       const trans = TRANSMUTE_FOR_AUG[aug.rule]!;
       const odds = addOdds(ctx, state, { sides: SIDES, floor: aug.floor, catalyst: null, quality: 0, junkAfter: 0 }, [t.idx]);
@@ -87,7 +27,7 @@ function magicLoop(state: PlanState, ctx: PlanCtx): Move[] {
       const move = makeMove(ctx, {
         methodId: `magic-loop-${aug.rule}`,
         title: `${targetText(t.text)} on a magic base`,
-        next: withAffixes(state, [targetAffix(t.side, t.idx, "explicit")], { rarity: "Magic" }),
+        next: withLanded(ctx, state, t.idx, "explicit", { rarity: "Magic" }),
         steps: [
           step({ do: `${trans.label} on the Normal base.`, why: "Normal → magic with one random mod.", mats: [mat(trans.key)] }),
           step({

@@ -13,6 +13,8 @@ import { PlanSession, PLAN_SESSION_KEY } from "./PlanSession";
 import { PlanSummary } from "./PlanSummary";
 import { PlanTimeline, TimelineSkeleton } from "./PlanTimeline";
 
+type Ask = { value: number | null; onChange: (v: number | null) => void };
+
 /**
  * Everything under the input item: nothing yet, the bench being planned, the plan with its sticky
  * summary, or why there is no plan (refused targets, rates missing, a failed request — said loudly).
@@ -26,6 +28,8 @@ interface Props {
   onReplan: () => void;
   /** Apply a cheaper target set from the summary and re-plan. */
   onAlternative: (alt: AlternativeView) => void;
+  /** The player's price for a bought base. */
+  ask: Ask;
 }
 
 /** The step a saved run of this plan stopped at (1-based), for the "Resume" label. */
@@ -39,9 +43,10 @@ interface ViewProps {
   baseArt: string | null;
   sessionId: string;
   onAlternative: ((alt: AlternativeView) => void) | null;
+  ask: Ask;
 }
 
-function PlanView({ plan, baseArt, sessionId, onAlternative }: ViewProps) {
+function PlanView({ plan, baseArt, sessionId, onAlternative, ask }: ViewProps) {
   const [over, setOver] = useState<QtyOverrides>({});
   const [running, setRunning] = useState(false);
   const resume = running ? null : savedStep(sessionId, plan);
@@ -58,7 +63,7 @@ function PlanView({ plan, baseArt, sessionId, onAlternative }: ViewProps) {
       <div className="lg:order-2">
         {/* below the sticky shell header; a bill taller than the screen scrolls inside the summary */}
         <div className="lg:sticky lg:top-[calc(var(--shell-h,0px)+1rem)] lg:max-h-[calc(100vh-var(--shell-h,0px)-2rem)] lg:overflow-y-auto">
-          <PlanSummary plan={plan} over={over} onQty={onQty} onRun={() => setRunning(true)} runLabel={resume ? `Resume the plan (step ${resume})` : "Run this plan"} onAlternative={onAlternative} />
+          <PlanSummary plan={plan} over={over} onQty={onQty} onRun={() => setRunning(true)} runLabel={resume ? `Resume the plan (step ${resume})` : "Run this plan"} onAlternative={onAlternative} ask={ask} />
         </div>
       </div>
       <div className="min-w-0 lg:order-1">
@@ -95,7 +100,7 @@ function Failed({ status, error }: { status: number | null; error: string }) {
   );
 }
 
-export function PlanResult({ state, stale, baseArt, onReplan, onAlternative }: Props) {
+export function PlanResult({ state, stale, baseArt, onReplan, onAlternative, ask }: Props) {
   if (state.kind === "idle") {
     return (
       <p className="flex items-center gap-3 rounded-lg border border-dashed border-neutral-700 px-4 py-6 text-sm text-neutral-400">
@@ -123,6 +128,7 @@ export function PlanResult({ state, stale, baseArt, onReplan, onAlternative }: P
           sessionId={planSessionId(state.req, state.data.guide)}
           // a chip edits the CURRENT item: only while it is still the item this plan answers
           onAlternative={stale ? null : onAlternative}
+          ask={ask}
         />
       )}
       {state.kind === "rejected" && <Rejected error={state.data.error} issues={state.data.feasibility} />}

@@ -32,6 +32,7 @@ export const PLANNER_METHOD_IDS = [
   "essence-greater",
   "essence-perfect",
   "desecrate",
+  "strip-desecrated",
   "blocker",
 ] as const;
 export const plannerMethodIdSchema = z.enum(PLANNER_METHOD_IDS);

@@ -2,7 +2,7 @@ import type { AffixSide } from "../craftmoves/catalog";
 import type { Affix, ItemState } from "../craftmoves/classify";
 import { rolledLines } from "../craftmoves/outcome";
 import { evaluateRules, type MoveRule } from "../craftmoves/rules";
-import type { PlanAffix, PlanCtx, PlanSide, PlanState } from "./types";
+import type { PlanAffix, PlanCtx, PlanSide, PlanState, ResolvedTarget } from "./types";
 
 /**
  * Abstract item state: caps, slot counting, the canonical key the search dedups on, and the
@@ -24,6 +24,7 @@ function compareAffix(a: PlanAffix, b: PlanAffix): number {
     SIDE_ORDER[a.side] - SIDE_ORDER[b.side] ||
     KIND_ORDER[a.kind] - KIND_ORDER[b.kind] ||
     (a.target ?? -1) - (b.target ?? -1) ||
+    (a.alt ?? -1) - (b.alt ?? -1) ||
     Number(a.unrevealed) - Number(b.unrevealed) ||
     (a.special ?? "").localeCompare(b.special ?? "")
   );
@@ -35,7 +36,7 @@ export function canonical(state: PlanState): PlanState {
 
 /** Dedup key: two states with the same key are the same abstract item. */
 export function stateKey(state: PlanState): string {
-  const mods = state.affixes.map((a) => `${a.side[0]}${a.kind[0]}${a.target ?? "j"}${a.unrevealed ? "u" : ""}${a.special ? `:${a.special}` : ""}`);
+  const mods = state.affixes.map((a) => `${a.side[0]}${a.kind[0]}${a.target ?? "j"}${a.alt != null ? `.${a.alt}` : ""}${a.unrevealed ? "u" : ""}${a.special ? `:${a.special}` : ""}`);
   return `${state.rarity[0]}|q${state.quality}${state.catalyst ? `:${state.catalyst}` : ""}|${mods.join(",")}`;
 }
 
@@ -43,17 +44,74 @@ export const junk = (side: PlanSide, kind: PlanAffix["kind"] = "explicit", speci
   side,
   kind,
   target: null,
+  alt: null,
   unrevealed: false,
   special,
 });
 
-export const targetAffix = (side: AffixSide, target: number, kind: PlanAffix["kind"]): PlanAffix => ({
+/** A target affix; a pool slot also needs the candidate that landed (`alt`) — landAffix picks it. */
+export const targetAffix = (side: AffixSide, target: number, kind: PlanAffix["kind"], alt: number | null = null): PlanAffix => ({
   side,
   kind,
   target,
+  alt,
   unrevealed: false,
   special: null,
 });
+
+/** The concrete mod an affix holds: the target itself, or the pool candidate that landed. */
+export function modOf(ctx: PlanCtx, a: PlanAffix): ResolvedTarget {
+  const t = ctx.targets[a.target!]!;
+  if (t.alts.length === 0) return t;
+  const m = a.alt == null ? undefined : t.alts[a.alt];
+  if (!m) throw new Error(`planner bug: pool slot ${t.idx} holds no candidate`);
+  return m;
+}
+
+/** Mod groups of every target mod on the item (a mod group holds one mod per item). */
+export function presentModGroups(ctx: PlanCtx, state: PlanState): Set<string> {
+  return new Set(state.affixes.flatMap((a) => (a.target == null ? [] : modOf(ctx, a).groups)));
+}
+
+/**
+ * Candidates (alt indices) a pool slot can still land: not already on the item in another slot of
+ * the pool, and not blocked by a mod group the item holds. Likeliest first (the alts' order).
+ */
+export function eligibleAlts(ctx: PlanCtx, state: PlanState, idx: number): number[] {
+  const t = ctx.targets[idx]!;
+  const taken = new Set(state.affixes.filter((a) => a.target != null && ctx.targets[a.target]!.group === t.group && t.group != null).map((a) => a.alt));
+  const blocked = presentModGroups(ctx, state);
+  return t.alts.flatMap((m, i) => (taken.has(i) || m.groups.some((g) => blocked.has(g)) ? [] : [i]));
+}
+
+/** The concrete mods that count as landing `t`: the target, or a pool slot's still-possible candidates. */
+export function acceptedMods(ctx: PlanCtx, state: PlanState, t: ResolvedTarget): ResolvedTarget[] {
+  return t.alts.length === 0 ? [t] : eligibleAlts(ctx, state, t.idx).map((a) => t.alts[a]!);
+}
+
+/**
+ * A missing target a method may aim at now: a single mod, or the FIRST missing slot of a pool with a
+ * candidate left (one aim per pool: two missing slots of one pool are the same "any of" roll).
+ */
+export function aimable(ctx: PlanCtx, state: PlanState, t: ResolvedTarget): boolean {
+  if (present(state, t.idx)) return false;
+  if (t.group == null) return true;
+  const first = ctx.groups[t.group]!.slots.find((s) => !present(state, s));
+  return first === t.idx && eligibleAlts(ctx, state, t.idx).length > 0;
+}
+
+/** The affix a random add that hits `idx` leaves: a pool slot holds its first still-possible candidate. */
+export function landAffix(ctx: PlanCtx, state: PlanState, idx: number, kind: PlanAffix["kind"]): PlanAffix {
+  const t = ctx.targets[idx]!;
+  if (t.alts.length === 0) return targetAffix(t.side, idx, kind);
+  const alt = eligibleAlts(ctx, state, idx)[0];
+  if (alt == null) throw new Error(`planner bug: pool slot ${idx} has no candidate left`);
+  return targetAffix(t.side, idx, kind, alt);
+}
+
+/** Add one landed target to the item (canonical order kept). */
+export const withLanded = (ctx: PlanCtx, state: PlanState, idx: number, kind: PlanAffix["kind"], patch: Partial<PlanState> = {}): PlanState =>
+  withAffixes(state, [...state.affixes, landAffix(ctx, state, idx, kind)], patch);
 
 export function sideCount(state: PlanState, side: AffixSide): number {
   return state.affixes.filter((a) => a.side === side).length;
@@ -124,7 +182,7 @@ export function without(state: PlanState, gone: PlanAffix): PlanAffix[] {
 }
 
 function projectAffix(ctx: PlanCtx, a: PlanAffix, anySide: AffixSide): Affix {
-  const t = a.target == null ? null : ctx.targets[a.target]!;
+  const t = a.target == null ? null : modOf(ctx, a);
   const mod = t ? ctx.cat.mods[t.modId] : undefined;
   const side = a.side === "any" ? anySide : a.side;
   return {

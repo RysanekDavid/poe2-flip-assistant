@@ -3,7 +3,7 @@ import { CATALYSTS, matchesCatalyst, QUALITY_PER_CATALYST, type CatalystInfo } f
 import type { ChainNode } from "./expectation";
 import { mat, sideOmen, type CurrencyTier } from "./methodKit";
 import { addOdds } from "./odds";
-import { anyJunkCount, isJunk, junk, openOf, otherSide, present, removable, targetAffix, withAffixes } from "./state";
+import { anyJunkCount, isJunk, junk, landAffix, openOf, otherSide, present, removable, targetAffix, withAffixes } from "./state";
 import type { Estimate, PlanAffix, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
@@ -63,10 +63,18 @@ export function slamScope(state: PlanState, ctx: PlanCtx, side: AffixSide): Slam
 }
 
 /** The item at chain node (mask, j). */
-export function stateAt(state: PlanState, scope: SlamScope, mask: number, j: number): PlanState {
+export function stateAt(ctx: PlanCtx, state: PlanState, scope: SlamScope, mask: number, j: number): PlanState {
   const keep = state.affixes.filter((a) => a.side !== scope.side || a.kind === "fractured" || (a.target != null && !scope.chain.some((t) => t.idx === a.target)));
-  const placed = scope.chain.filter((_, i) => !((mask >> i) & 1)).map((t) => targetAffix(scope.side, t.idx, "explicit"));
-  return withAffixes(state, [...keep, ...placed, ...Array.from({ length: j }, () => junk(scope.side))]);
+  const placed = scope.chain.filter((_, i) => !((mask >> i) & 1));
+  // a target already on the item keeps the pool candidate it holds; one the chain lands takes the
+  // first candidate still possible (landAffix), so the chain and the search agree on the item
+  const kept = placed.flatMap((t) => {
+    const a = present(state, t.idx);
+    return a ? [targetAffix(scope.side, t.idx, "explicit", a.alt)] : [];
+  });
+  let item = withAffixes(state, [...keep, ...kept]);
+  for (const t of placed) if (!present(state, t.idx)) item = withAffixes(item, [...item.affixes, landAffix(ctx, item, t.idx, "explicit")]);
+  return withAffixes(item, [...item.affixes, ...Array.from({ length: j }, () => junk(scope.side))]);
 }
 
 interface Aim {
@@ -123,7 +131,7 @@ function slamCost(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, catalyst: Cata
 
 /** `scale` multiplies every hit probability: 1 = the prior, 2 / 0.5 = the cheap / dear end of the band. */
 function slamNode(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, mask: number, j: number, scale: number): { node: ChainNode; aim: Aim } {
-  const aim = aimOf(ctx, scope, mask, j, v, stateAt(state, scope, mask, j));
+  const aim = aimOf(ctx, scope, mask, j, v, stateAt(ctx, state, scope, mask, j));
   const missing = bits(mask, scope.chain.length);
   const raw = missing.map((i) => Math.min(1, (aim.p.get(scope.chain[i]!.idx) ?? 0) * scale));
   const total = raw.reduce((a, b) => a + b, 0);

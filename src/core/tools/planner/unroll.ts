@@ -2,7 +2,7 @@ import type { BandView, PlanMaterialView, PlanStepView } from "../../../lib/tool
 import { assertGuideRetryRefs } from "../../craftRetry";
 import type { CraftGuide, GuideStep, RetryRef } from "../../craftRecipes";
 import { combineBasis, mergeUses, scaleBand } from "./expectation";
-import { targetText } from "./methodKit";
+import { aimsText } from "./methodKit";
 import { impracticalOf } from "./sanity";
 import type { Band, Basis, MaterialUse, Move, PlanCtx, StepText } from "./types";
 
@@ -18,6 +18,26 @@ export interface Unrolled {
   bill: PlanMaterialView[];
   totals: { div: BandView | null; exalt: BandView | null; basis: Basis };
   unpriced: string[];
+  /** Bases bought on average: a step that restarts on a new base multiplies the first purchase. */
+  buys: Band;
+}
+
+/** Catalysing Exaltation consumes ALL catalyst quality (KB §4), so no catalysing slam may follow the step that sets the finished quality. */
+const isCatalysing = (m: Move): boolean => /-catalysing$/.test(m.methodId);
+const setsQuality = (m: Move): boolean => m.methodId === "catalyse-finish" || m.methodId.startsWith("breach-quality");
+
+/**
+ * Quality ordering (a planner-bug check, never a player message): with a quality goal, the last
+ * quality step comes after every Catalysing slam, and the plan ends at the goal's catalyst.
+ */
+export function assertQualityOrder(moves: readonly Move[], ctx: PlanCtx): void {
+  const q = ctx.quality;
+  if (!q) return;
+  const lastSet = moves.map(setsQuality).lastIndexOf(true);
+  const lastCat = moves.map(isCatalysing).lastIndexOf(true);
+  if (lastCat > lastSet) throw new Error(`planner bug: Catalysing slam (${moves[lastCat]!.methodId}) after the final quality (${moves[lastSet]!.methodId})`);
+  const end = moves.at(-1)!.next;
+  if (end.catalyst !== q.catalyst || end.quality < q.pct) throw new Error(`planner bug: the plan ends at ${end.quality}% ${end.catalyst ?? "no catalyst"}, not ${q.pct}% ${q.catalyst}`);
 }
 
 /** scale[i] = Π 1/p over every restart move at or after i; an estimated p widens the band. */
@@ -98,14 +118,14 @@ function stepView(move: Move, index: number, title: string, first: string, scale
       rarity: move.next.rarity,
       quality: move.next.quality,
       catalyst: move.next.catalyst,
-      affixes: move.next.affixes.map((a) => ({ side: a.side, kind: a.kind, target: a.target, unrevealed: a.unrevealed })),
+      affixes: move.next.affixes.map((a) => ({ side: a.side, kind: a.kind, target: a.target, alt: a.alt, unrevealed: a.unrevealed })),
     },
     impractical: impracticalOf(move, materials),
   };
 }
 
 function guideHeader(moves: readonly Move[], ctx: PlanCtx): Pick<CraftGuide, "goal" | "shopping" | "marketCheck" | "brick"> {
-  const goal = ctx.targets.map((t) => `${t.fractured ? "FRACTURED " : ""}${targetText(t.text)}`).join("; ");
+  const goal = aimsText(ctx.targets.map((t) => `${t.fractured ? "FRACTURED " : ""}${t.text}`)).join("; ");
   const restarts = moves.filter((m) => m.restartP != null);
   return {
     goal: `Rare ${ctx.base.name} (item level ${ctx.base.ilvl}+) with ${goal}${ctx.quality ? `; ${ctx.quality.pct}% catalyst quality` : ""}.`,
@@ -119,6 +139,7 @@ function guideHeader(moves: readonly Move[], ctx: PlanCtx): Pick<CraftGuide, "go
 
 export function unrollPlan(moves: readonly Move[], ctx: PlanCtx, exaltPerDivine: number | null): Unrolled {
   if (moves.length === 0) throw new Error("planner bug: empty plan");
+  assertQualityOrder(moves, ctx);
   const titles = phaseTitles(moves);
   const scales = restartScales(moves);
   const steps = moves.map((m, i) => stepView(m, i, titles[i]!, titles[0]!, scales[i]!, ctx));
@@ -142,5 +163,6 @@ export function unrollPlan(moves: readonly Move[], ctx: PlanCtx, exaltPerDivine:
     bill,
     totals: { div, exalt, basis: combineBasis(...moves.map((m) => m.costBasis)) },
     unpriced: bill.filter((l) => l.unitDiv == null).map((l) => l.label),
+    buys: scales[0]!,
   };
 }
