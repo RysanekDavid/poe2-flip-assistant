@@ -107,12 +107,14 @@ function testStaleCarried(): void {
   assert.deepEqual(requestsFor(next).primary.start, { kind: "bought", carried: [{ ref: 1, fractured: false }], askDiv: null }, "rarity is now target 1");
 }
 
-/** The "cheaper" badge only compares totals that both count the base. */
+/** The "cheaper" badge compares whole totals; a clean total without its base can only lose to a bought one under it. */
 function testCheaperBadge(): void {
   const totals = (point: number) => ({ div: { point, low: point, high: point }, exalt: null, basis: "estimate" as const });
   const bought = (point: number) => ({ totals: totals(point), start: { kind: "bought" as const, rarity: "Rare" as const, carried: [], askDiv: null, buys: { point: 1, low: 1, high: 1 } } });
   const clean = { totals: totals(10), start: { kind: "clean" as const } };
-  assert.equal(cheaperPlan(clean, bought(5), 100), null, "a clean total without its base is no match for one with it");
+  assert.equal(cheaperPlan(clean, bought(5), 100), null, "a bought total over the clean one: the clean base's price could still tip it");
+  assert.equal(cheaperPlan(clean, bought(5), 3), "bought", "a bought total under the clean one before its base: cheaper whatever that base costs");
+  assert.equal(cheaperPlan(clean, bought(5), 5), null, "a tie with the clean total before its base earns no badge");
   assert.equal(cheaperPlan(clean, bought(5), null), null);
   assert.equal(cheaperPlan(bought(30), bought(5), 10), "bought", "both with the base: the cheaper wins");
   assert.equal(cheaperPlan(bought(5), bought(5), 10), null, "a tie earns no badge");
