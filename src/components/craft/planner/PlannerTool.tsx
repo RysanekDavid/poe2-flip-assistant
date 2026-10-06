@@ -30,7 +30,8 @@ const LEGEND =
   "Odds that depend on which mod a random add rolls are estimates (PoE2 publishes no mod weights): amber, with a band and the formula. " +
   "Removals, side omens and essence writes are counted exactly. Costs use live exchange prices; a base you buy is added at the price you enter. Spends no trade searches.";
 
-const GRID = "grid gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]";
+// minmax(0,1fr) on a phone too: a truncated pool row must not widen the column past the screen
+const GRID = "grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]";
 
 function Header({ examples }: { examples?: Parameters<typeof PageHeader>[0]["examples"] }) {
   return (
