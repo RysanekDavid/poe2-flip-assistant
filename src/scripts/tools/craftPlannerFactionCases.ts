@@ -118,11 +118,14 @@ function testRules(cat: CraftCatalog): void {
   }
 }
 
-/** Verbatim KB §5 fragment (whitespace-normalised) behind the three omens and the belt evidence. */
+/** Verbatim KB §5 fragment (whitespace-normalised) behind the three omens, the belt evidence and the jewel reveal model (reveal.ts). */
 export const KB5_FACTION_FACTS: ReadonlyArray<{ rule: string; text: string }> = [
   { rule: "faction omen map", text: "Liege → Amanamu, Sovereign → Ulaman, Blackblooded → Kurgal" },
   { rule: "faction omen text", text: "\"your next Weapon or Jewellery Desecration attempt will guarantee a random Kurgal modifier\"" },
   { rule: "sovereign on a belt", text: "Dextral Necromancy + Sovereign + a collarbone on a life + lightning resistance belt for the Ulaman lightning and chaos resistance suffix (TheSaneExile [Zop328DR50Q](https://www.youtube.com/watch?v=Zop328DR50Q) 0:51–1:12, reveal 2:35–2:59)" },
+  { rule: "jewel reveals: no faction mods", text: "jewels have no faction mods — a Cranium's desecrated-only options are the jewel exclusives" },
+  { rule: "jewel reveals: Time-Lost exclusives", text: "Time-Lost jewels have their own 12 radius exclusives" },
+  { rule: "jewel reveals: open draws", text: "Whether a jewel reveal always includes one jewel-exclusive option is unconfirmed" },
 ];
 
 function testKb5(): void {

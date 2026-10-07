@@ -19,8 +19,8 @@
       "path": "docs/kb/desecration-abyss.md",
       "patch": "0.5.4",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-10-02",
-      "sha256": "8616a95f1a7f6ad30263f2cf3ee54b288aec28454373cb56121559793b243efe"
+      "stamped_at": "2026-10-07",
+      "sha256": "e2773f869239cb17d81fe351f954d9370b6a157f226c2520eda5c5ad6d3f1e5e"
     },
     {
       "path": "docs/kb/delirium.md",
@@ -83,7 +83,7 @@
       "patch": "0.5.x",
       "league": "Runes of Aldur",
       "stamped_at": "2026-10-07",
-      "sha256": "68fac98b110b67006e8437289a1eb12ac4e8a17d1945e093b56259ca717245bc"
+      "sha256": "b2fcb334b1d5b90eee5224c1fed8cec9e60cea198b31f6742ff9e734c516f521"
     },
     {
       "path": "docs/research/poe2-bow-crafting-0.5.md",
