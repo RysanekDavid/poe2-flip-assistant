@@ -3,7 +3,7 @@ import { CATALYSTS, matchesCatalyst, QUALITY_PER_CATALYST, type CatalystInfo } f
 import type { ChainNode } from "./expectation";
 import { mat, sideOmen, type CurrencyTier } from "./methodKit";
 import { addOdds } from "./odds";
-import { anyJunkCount, isJunk, junk, landAffix, openOf, otherSide, present, removable, targetAffix, withAffixes } from "./state";
+import { anyJunkCount, isJunk, junk, landAffix, openOf, otherSide, present, removable, stateKey, targetAffix, withAffixes } from "./state";
 import type { Estimate, PlanAffix, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
@@ -77,7 +77,7 @@ export function stateAt(ctx: PlanCtx, state: PlanState, scope: SlamScope, mask: 
   return withAffixes(item, [...item.affixes, ...Array.from({ length: j }, () => junk(scope.side))]);
 }
 
-interface Aim {
+export interface Aim {
   p: Map<number, number>;
   catalyst: CatalystInfo | null;
   est: Estimate;
@@ -88,7 +88,7 @@ interface Aim {
  * favours every "to Attacks" flat at once, where an element catalyst favours one), ties to table
  * order. The headline odds are the best single target's under it (ties: lowest index).
  */
-function aimOf(ctx: PlanCtx, scope: SlamScope, mask: number, j: number, v: SlamVariant, at: PlanState): Aim {
+function aimOf(ctx: PlanCtx, scope: SlamScope, mask: number, v: SlamVariant, at: PlanState): Aim {
   const idx = bits(mask, scope.chain.length).map((i) => scope.chain[i]!.idx);
   const quality = ctx.base.qualityCap ?? 0;
   // the side's junk (fractured anchor included) blocks one family of unknown identity each
@@ -129,9 +129,49 @@ function slamCost(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, catalyst: Cata
   return cost;
 }
 
+/**
+ * Aims by missing mask, shared by one variant's point / cheap / dear chains and its search bound
+ * (edgeBounds.ts): a slam node only exists at j = j0 and its aim does not read the band scale.
+ */
+export type AimCache = Map<number, Aim>;
+
+// one search meets the same chain node item from many parents (an item one slam further along has
+// a subset of this item's nodes); an aim reads only that item, the side, the missing targets and the
+// variant — null = no missing target is reachable (NoAimError)
+const AIMS = new WeakMap<PlanCtx, Map<string, Aim | null>>();
+
+/** The aim of the slam node at `mask` (j = j0); throws NoAimError when no missing target can roll. */
+export function aimAt(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, mask: number, aims: AimCache): Aim {
+  const local = aims.get(mask);
+  if (local) return local;
+  const at = stateAt(ctx, state, scope, mask, scope.j0);
+  let byKey = AIMS.get(ctx);
+  if (!byKey) AIMS.set(ctx, (byKey = new Map()));
+  const idx = bits(mask, scope.chain.length).map((i) => scope.chain[i]!.idx);
+  const key = `${stateKey(at)}#${scope.side}#${idx.join(",")}#${v.tier.rule}#${v.catalysing}`;
+  let aim = byKey.get(key);
+  if (aim === undefined) {
+    aim = tryAim(ctx, scope, mask, v, at);
+    byKey.set(key, aim);
+  }
+  if (!aim) throw new NoAimError();
+  aims.set(mask, aim);
+  return aim;
+}
+
+function tryAim(ctx: PlanCtx, scope: SlamScope, mask: number, v: SlamVariant, at: PlanState): Aim | null {
+  try {
+    return aimOf(ctx, scope, mask, v, at);
+  } catch (e: unknown) {
+    if (e instanceof NoAimError) return null;
+    throw e;
+  }
+}
+
 /** `scale` multiplies every hit probability: 1 = the prior, 2 / 0.5 = the cheap / dear end of the band. */
-function slamNode(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, mask: number, j: number, scale: number): { node: ChainNode; aim: Aim } {
-  const aim = aimOf(ctx, scope, mask, j, v, stateAt(ctx, state, scope, mask, j));
+function slamNode(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, mask: number, scale: number, aims: AimCache): { node: ChainNode; aim: Aim } {
+  const j = scope.j0;
+  const aim = aimAt(state, ctx, scope, v, mask, aims);
   const missing = bits(mask, scope.chain.length);
   const raw = missing.map((i) => Math.min(1, (aim.p.get(scope.chain[i]!.idx) ?? 0) * scale));
   const total = raw.reduce((a, b) => a + b, 0);
@@ -165,7 +205,7 @@ export interface Chain {
   undoes: boolean;
 }
 
-export function buildChain(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, scale: number): Chain {
+export function buildChain(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, scale: number, aims: AimCache = new Map()): Chain {
   const nodes: ChainNode[] = [];
   const seen = new Set<string>();
   const queue: Array<[number, number]> = [[scope.missing0, scope.j0]];
@@ -185,7 +225,7 @@ export function buildChain(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: 
     // a miss is annulled at once: while it waits, every slam that lands puts one more good mod in
     // the Annulment's way (and slamming only at j = j0 keeps the end state deterministic)
     if (j === scope.j0) {
-      const built = slamNode(state, ctx, scope, v, mask, j, scale);
+      const built = slamNode(state, ctx, scope, v, mask, scale, aims);
       first ??= built.aim;
       if (built.aim.catalyst && !catalysts.includes(built.aim.catalyst)) catalysts.push(built.aim.catalyst);
       nodes.push(built.node);

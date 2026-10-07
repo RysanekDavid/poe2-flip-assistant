@@ -17,6 +17,7 @@ export const PLANNER_METHOD_IDS = [
   "magic-loop",
   "magic-aug-filler",
   "regal",
+  "transmute-regal",
   "strip-junk",
   "plant-junk",
   "fracture",

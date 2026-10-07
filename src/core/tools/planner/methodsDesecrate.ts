@@ -6,7 +6,7 @@ import { rankCost } from "./rank";
 import { revealOdds, type BoneKind, type RevealOdds } from "./reveal";
 import { sources, type SourceId } from "./sources";
 import { exact } from "./odds";
-import { acceptedMods, aimable, hasKind, junk, landAffix, openOf, present, SIDES, withAffixes, withLanded, without } from "./state";
+import { acceptedMods, aimable, hasKind, isMet, junk, landAffix, openOf, present, SIDES, withAffixes, withLanded, without } from "./state";
 import type { Method, Move, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
@@ -173,10 +173,23 @@ function desecrateSpec(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, d: Des
   };
 }
 
+/**
+ * A fracture is coming: a target the player wants fractured, or — the self-fracture (Alohaa, KB §2) —
+ * an unfractured 3-mod item holding a landed target the Fracturing Orb can lock (explicit or crafted,
+ * revealed: the same keepers as methodsPrep fracture()) while another natural target is still
+ * missing (the blocker makes the 4th mod; fracturing the last target would protect nothing).
+ */
+function fracturePending(state: PlanState, ctx: PlanCtx): boolean {
+  if (hasKind(state, "fractured")) return false;
+  if (ctx.targets.some((t) => t.fractured)) return true;
+  if (state.affixes.length !== 3) return false;
+  const lockable = state.affixes.filter((a) => a.target != null && !a.unrevealed && (a.kind === "explicit" || a.kind === "crafted"));
+  return lockable.some((a) => ctx.targets.some((t) => t.idx !== a.target && t.source === "natural" && !isMet(ctx, state, t.idx)));
+}
+
 /** An UNREVEALED desecrated throwaway: counts toward the Fracturing Orb's 4 mods, can't be fractured (KB §2). */
 function blocker(state: PlanState, ctx: PlanCtx): Move[] {
-  const pending = ctx.targets.some((t) => t.fractured && !hasKind(state, "fractured"));
-  if (!pending || ctx.targets.some((t) => t.source === "desecrated")) return [];
+  if (!fracturePending(state, ctx) || ctx.targets.some((t) => t.source === "desecrated")) return [];
   const out: Move[] = [];
   for (const side of SIDES) {
     const d = desecration(ctx, state, side, "preserved");

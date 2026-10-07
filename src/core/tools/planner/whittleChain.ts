@@ -90,7 +90,11 @@ const sideOfCode = (c: JunkCode): AffixSide => (c[0] === "p" ? "prefix" : "suffi
 const bucketOfCode = (c: JunkCode): number => Number(c.slice(1));
 // throwaway lists are kept sorted, so a node's id is a plain join (it is computed a lot)
 const nodeId = (mask: number, junks: readonly JunkCode[]): string => `${mask}|${junks.join(",")}`;
-const withJunk = (junks: readonly JunkCode[], c: JunkCode): JunkCode[] => [...junks, c].sort();
+const withJunk = (junks: readonly JunkCode[], c: JunkCode): JunkCode[] => {
+  // the lists hold a few codes: an insertion keeps them sorted (same order as Array#sort's string order)
+  const at = junks.findIndex((x) => x > c);
+  return at < 0 ? [...junks, c] : [...junks.slice(0, at), c, ...junks.slice(at)];
+};
 
 /** The item at node (mask, junks). */
 export function whittleStateAt(base: PlanState, scope: WhittleScope, mask: number, junks: readonly JunkCode[]): PlanState {
@@ -214,6 +218,8 @@ interface GraphStep {
   /** Node id a hit on chain index i / a throwaway with code c leads to. */
   hitTo: Map<number, string>;
   junkTo: Map<JunkCode, string>;
+  /** Every state the add can lead to (hits and throwaways alike, whatever the band). */
+  succ: Pending[];
 }
 
 interface GraphNode {
@@ -238,48 +244,55 @@ export interface WhittleGraph {
   erasures: Map<AffixSide, PlanState>;
 }
 
-type ShapeOf = (mask: number, junks: readonly JunkCode[]) => AddShape;
+/** What follows one removal: the add on the item it leaves. Many removals leave the same item, so it is built once per graph. */
+type AfterRemoval = Omit<GraphStep, "p">;
+type AfterOf = (mask: number, junks: JunkCode[]) => AfterRemoval;
 
-function attemptNode(ctx: PlanCtx, scope: WhittleScope, mask: number, junks: JunkCode[], shapeOf: ShapeOf): { node: GraphNode; action: WhittleAction; undoes: boolean } {
+type Pending = { id: string; mask: number; junks: JunkCode[] };
+
+function afterRemoval(shape: AddShape, mask: number, junks: JunkCode[]): AfterRemoval {
+  const succ: Pending[] = [];
+  const hitTo = new Map<number, string>();
+  for (const i of shape.hits.keys()) {
+    const id = nodeId(mask & ~(1 << i), junks);
+    hitTo.set(i, id);
+    succ.push({ id, mask: mask & ~(1 << i), junks });
+  }
+  const junkTo = new Map<JunkCode, string>();
+  for (const c of shape.junk.keys()) {
+    const next = withJunk(junks, c);
+    const id = nodeId(mask, next);
+    junkTo.set(c, id);
+    succ.push({ id, mask, junks: next });
+  }
+  return { mask, junks, shape, hitTo, junkTo, succ };
+}
+
+function attemptNode(ctx: PlanCtx, scope: WhittleScope, mask: number, junks: JunkCode[], afterOf: AfterOf): { node: GraphNode; action: WhittleAction; undoes: boolean } {
   const { action, rs } = actionAt(ctx, scope, mask, junks);
   const omen = action.kind === "whittle" ? mat("omenWhittling") : mat(sideOmen(action.side, "Erasure").key);
-  const steps = rs.map((r): GraphStep => {
-    const shape = shapeOf(r.mask, r.junks);
-    const hitTo = new Map([...shape.hits.keys()].map((i) => [i, nodeId(r.mask & ~(1 << i), r.junks)] as const));
-    const junkTo = new Map([...shape.junk.keys()].map((c) => [c, nodeId(r.mask, withJunk(r.junks, c))] as const));
-    return { p: r.p, mask: r.mask, junks: r.junks, shape, hitTo, junkTo };
-  });
+  const steps = rs.map((r): GraphStep => ({ p: r.p, ...afterOf(r.mask, r.junks) }));
   const node = { id: nodeId(mask, junks), depth: junks.length, terminal: false, cost: { [omen.id]: 1, [mat("chaos").id]: 1 }, steps };
   return { node, action, undoes: rs.some((r) => r.undo) };
 }
 
-type Pending = { id: string; mask: number; junks: JunkCode[] };
-
-/** Every state an add can lead to (hits and throwaways alike, whatever the band). */
-function successors(s: GraphStep): Pending[] {
-  return [
-    ...[...s.hitTo].map(([i, id]) => ({ id, mask: s.mask & ~(1 << i), junks: s.junks })),
-    ...[...s.junkTo].map(([c, id]) => ({ id, mask: s.mask, junks: withJunk(s.junks, c) })),
-  ];
-}
-
 /** The throwaway already on the item: its level is unknown, so it is drawn like any Chaos add on its side. */
-function startNode(scope: WhittleScope, shapeOf: ShapeOf): ChainNode {
-  const onSide = [...shapeOf(scope.missing0, []).junk].filter(([c]) => sideOfCode(c) === scope.junkSide);
+function startNode(scope: WhittleScope, afterOf: AfterOf): ChainNode {
+  const onSide = [...afterOf(scope.missing0, []).shape.junk].filter(([c]) => sideOfCode(c) === scope.junkSide);
   const total = onSide.reduce((a, [, p]) => a + p, 0);
   if (total <= 0) throw new WhittleOutOfScopeError("no throwaway can sit on that side");
   return { id: "start", terminal: false, cost: {}, edges: onSide.map(([c, p]) => ({ to: nodeId(scope.missing0, [c]), p: p / total })) };
 }
 
 export function buildWhittleGraph(base: PlanState, ctx: PlanCtx, scope: WhittleScope): WhittleGraph {
-  const local = new Map<string, AddShape>();
-  const shapeOf: ShapeOf = (mask, junks) => {
+  const local = new Map<string, AfterRemoval>();
+  const afterOf: AfterOf = (mask, junks) => {
     const id = nodeId(mask, junks);
-    let shape = local.get(id);
-    if (!shape) local.set(id, (shape = cachedAddShape(ctx, scope, whittleStateAt(base, scope, mask, junks), mask)));
-    return shape;
+    let after = local.get(id);
+    if (!after) local.set(id, (after = afterRemoval(cachedAddShape(ctx, scope, whittleStateAt(base, scope, mask, junks), mask), mask, junks)));
+    return after;
   };
-  const start = startNode(scope, shapeOf);
+  const start = startNode(scope, afterOf);
   const g: WhittleGraph = { nodes: [], start, undoes: false, ties: false, whittles: false, erasures: new Map() };
   const queue: Pending[] = start.edges.map((e) => ({ id: e.to, mask: scope.missing0, junks: e.to.split("|")[1]!.split(",") }));
   const seen = new Set<string>(queue.map((q) => q.id));
@@ -290,16 +303,18 @@ export function buildWhittleGraph(base: PlanState, ctx: PlanCtx, scope: WhittleS
       g.nodes.push({ id, depth: 0, terminal: true, cost: {}, steps: [] });
       continue;
     }
-    const built = attemptNode(ctx, scope, mask, junks, shapeOf);
+    const built = attemptNode(ctx, scope, mask, junks, afterOf);
     g.undoes ||= built.undoes;
     g.ties ||= built.undoes && built.node.steps.length > 1;
     if (built.action.kind === "whittle") g.whittles = true;
     else if (!g.erasures.has(built.action.side)) g.erasures.set(built.action.side, whittleStateAt(base, scope, mask, junks));
     g.nodes.push(built.node);
-    for (const next of built.node.steps.flatMap(successors)) {
-      if (seen.has(next.id)) continue;
-      seen.add(next.id);
-      queue.push(next);
+    for (const step of built.node.steps) {
+      for (const next of step.succ) {
+        if (seen.has(next.id)) continue;
+        seen.add(next.id);
+        queue.push(next);
+      }
     }
   }
   return g;

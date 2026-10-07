@@ -48,6 +48,9 @@ re-tested), [creator-demonstrated] (video + timestamp), [community] (forum link 
 re-worded and re-graded §4 Catalysing + Greater, Echoes bug and Homogenising availability; §5 Well options and
 faction omens; §7 forum quotes and the Perfect-essence test scope; §8 infuser scope and the Breach Ring citation.
 
+**Corrections 2026-10-07 (partial, craft planner self-fracture):** §2 adds Alohaa's
+desecrated-blocker self-fracture sequence [creator-demonstrated]. The rest is unchanged.
+
 **Corrections 2026-10-07 (partial, planner rule flags):** §1 Greater Regal, Greater Chaos and Perfect
 Chaos floors CONFIRMED from poe2db item text; §4 Whittling as a suffix engine (creator-demonstrated)
 and Omen of Light's item text; §10 question 1 resolved. The rest of the file is unchanged.
@@ -129,6 +132,16 @@ Sources: identical exception wording on all poe2wiki min-level currency pages; f
   desecrated mod; that an unrevealed one behaves the same is creator-demonstrated only.
 - **Desecrated mods can't be fractured but DO count toward the 4-mod minimum** → the
   1/4→1/3 odds trick (keeper + 2 junk + 1 desecrated) is real and optimal.
+- **Self-fracture of the wanted mod behind a desecrated blocker** [creator-demonstrated — Alohaa,
+  docs/kb/sources/transcripts/32 (kPBToE_G5t8) at 0:51–1:46, item-level 82 Breach Ring]:
+  (1) Annulment and re-roll until a tier-1 "to Attacks" flat lands; (2) Omen of Greater Exaltation
+  + Greater Exalted Orb → two more mods; (3) add one desecrated mod → 4 mods, 3 the orb can pick;
+  (4) Fracturing Orb → "a one in three chance to hit" the flat; a miss means a new base;
+  (5) remove the two loose mods, then Chaos Orb ~200–300 times for the second tier-1 flat. The
+  craft planner plans the same shape (fracture a LANDED wanted mod, never the last one) with its own
+  clicks to 3 mods — never Greater Exaltation (owner rule). The 1-in-3 rests on the uniform-pick
+  assumption above; a crafted or alloy keeper would be fracturable too (Belton, transcript 25 at
+  1:54–2:47).
 - Fractured mod **values are Divine-proof** (bug fixed 0.2.0e). 0.5.1 hotfixes closed every
   un-fracture bypass (Runeforging; Fluxes; Passion/Breath/Ire/Betrayal of Aldur transforms).
 

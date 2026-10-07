@@ -207,9 +207,26 @@ export interface BoughtStart {
   carried: ReadonlyArray<{ ref: number; fractured: boolean }>;
 }
 
+/**
+ * An edge whose Move is costly to build (a retry chain solved three times): the search offers it at
+ * `bound` and builds it only if that bound is ever the cheapest thing left (search.ts).
+ */
+export interface LazyEdge {
+  methodId: string;
+  next: PlanState;
+  /** A lower bound on rankCost(build()): ADMISSIBLE, or the search could return a dearer plan. */
+  bound: number;
+  /** The Move, or null where the eager method would have offered none. */
+  build: () => Move | null;
+  /** Optional middle step: the same edge with a tighter (still admissible) bound, or null = no Move. */
+  refine?: () => LazyEdge | null;
+}
+
 export interface Method {
   id: string;
   /** Tie-break preference between equal-cost plans (lower first): stable, explainable output. */
   order: number;
   moves: (state: PlanState, ctx: PlanCtx) => Move[];
+  /** The same edges as `moves`, in the same order, unbuilt (slam-fill, whittle-loop). */
+  lazy?: (state: PlanState, ctx: PlanCtx) => LazyEdge[];
 }

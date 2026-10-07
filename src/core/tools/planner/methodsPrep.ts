@@ -3,12 +3,12 @@ import { band, failuresOf, useOf } from "./expectation";
 import { AUG_TIERS, makeMove, mat, once, sideOmen, step, targetText, TRANSMUTE_FOR_AUG, usableTier, type MoveSpec } from "./methodKit";
 import { sources } from "./sources";
 import { addOdds, exact } from "./odds";
-import { aimable, anyJunkCount, isJunk, isMet, junk, openOf, otherSide, present, removable, SIDES, withAffixes, withLanded } from "./state";
-import type { Method, Move, PlanCtx, PlanState } from "./types";
+import { aimable, anyJunkCount, isJunk, isMet, junk, modOf, openOf, otherSide, present, removable, SIDES, withAffixes, withLanded } from "./state";
+import type { Method, Move, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
- * Shape the base (the starts live in methodsStart.ts): the magic Annul+Aug loop, Regal, throwaway
- * mods, junk strips and the fracture.
+ * Shape the base (the starts live in methodsStart.ts): the magic Annul+Aug loop, Regal, the
+ * two-throwaway rare, throwaway mods, junk strips and the fracture.
  */
 
 /** Normal → magic → Annulment + Augmentation until the target: magic items hold one mod per side. */
@@ -86,6 +86,29 @@ function regal(state: PlanState, ctx: PlanCtx): Move[] {
   return move ? [move] : [];
 }
 
+/**
+ * Normal → two throwaways: Transmutation + Regal. The cheapest rare whose every mod is loose — the
+ * Chaos loop's start when no anchor is bought (the self-fracture route, KB §2).
+ */
+function transmuteRegal(state: PlanState, ctx: PlanCtx): Move[] {
+  if (state.rarity !== "Normal" || ctx.base.allowance.p !== 0 || ctx.base.allowance.s !== 0) return [];
+  const magic: PlanState = { rarity: "Magic", affixes: [junk("any")], quality: 0, catalyst: null };
+  const move = makeMove(ctx, {
+    methodId: "transmute-regal",
+    title: "Rare with two throwaways",
+    next: withAffixes(state, [junk("any"), junk("any")], { rarity: "Rare" }),
+    steps: [step({ do: "Orb of Transmutation, then Regal Orb.", why: "Normal → magic with one random mod → rare with a second one; neither mod matters, both are rolled away.", mats: [mat("transmute"), mat("regal")], sources: sources("kb-currency") })],
+    uses: [once(mat("transmute")), once(mat("regal"))],
+    odds: exact(1, "both mods are throwaways"),
+    grade: "vp",
+    checks: [
+      { state, rules: ["transmute"] },
+      { state: magic, rules: ["regal"] },
+    ],
+  });
+  return move ? [move] : [];
+}
+
 /** A throwaway mod on a chosen side: side omen + Exalted Orb, or a plain Exalt when only that side is open. */
 function plantJunk(state: PlanState, ctx: PlanCtx): Move[] {
   if (state.rarity !== "Rare") return [];
@@ -146,15 +169,44 @@ function stripJunk(state: PlanState, ctx: PlanCtx): Move[] {
   return move ? [move] : [];
 }
 
+/**
+ * Which present targets a Fracturing Orb may aim at. A target the player wants fractured is the only
+ * aim while it is pending (one fracture per item, ever). Otherwise any landed natural target may be
+ * fractured to protect it — the creators' self-fracture (KB §2) — but only while another natural
+ * target is still missing: fracturing the last one protects nothing.
+ */
+function fractureAims(state: PlanState, ctx: PlanCtx): ResolvedTarget[] {
+  if (ctx.targets.some((t) => t.fractured)) return ctx.targets.filter((t) => t.fractured && !isMet(ctx, state, t.idx));
+  const unmet = (t: ResolvedTarget) => ctx.targets.some((x) => x.idx !== t.idx && x.source === "natural" && !isMet(ctx, state, x.idx));
+  return ctx.targets.filter(unmet);
+}
+
+function fractureMissText(otherWanted: number): string {
+  const junkMiss = "A throwaway fractured → one fracture per item, ever: start over on a new base (sell this one as it is).";
+  if (otherWanted === 0) return junkMiss;
+  return `${junkMiss} Another wanted mod fractured → keep the item: plan again from it as a base you already have, with that mod fractured.`;
+}
+
+function fractureFormula(mods: number, eligible: number, otherWanted: number): string {
+  const base = `P = 1/${eligible} — ${mods} mods, ${mods - eligible} desecrated can't be fractured; each other mod equally likely`;
+  if (otherWanted === 0) return base;
+  return `${base}. The ${otherWanted} other wanted mod${otherWanted === 1 ? "" : "s"} on the item count${otherWanted === 1 ? "s" : ""} as a miss here, though that item is worth keeping — so the cost shown is on the safe side`;
+}
+
 /** Fracture with ≥4 mods: P = 1/(mods − desecrated) (KB §2; uniform pick assumed, owner rule). */
 function fracture(state: PlanState, ctx: PlanCtx): Move[] {
   if (state.rarity !== "Rare" || state.affixes.some((a) => a.kind === "fractured") || state.affixes.length < 4) return [];
   const out: Move[] = [];
   const eligible = state.affixes.filter((a) => a.kind !== "desecrated").length;
-  for (const t of ctx.targets) {
+  for (const t of fractureAims(state, ctx)) {
     const a = present(state, t.idx);
-    if (!t.fractured || !a || a.unrevealed || isMet(ctx, state, t.idx) || (a.kind !== "explicit" && a.kind !== "crafted")) continue;
+    if (!a || a.unrevealed || (a.kind !== "explicit" && a.kind !== "crafted")) continue;
+    // a pool slot names the candidate that landed, not "any of: …"
+    const label = targetText(modOf(ctx, a).text);
     const p = 1 / eligible;
+    // P counts a fracture on another wanted mod as a miss although that item is worth keeping and
+    // re-planning from: the restart cost is a ceiling, never flattering
+    const otherWanted = state.affixes.filter((x) => x !== a && x.target != null && x.kind !== "desecrated").length;
     const facts = [
       ...(a.kind === "crafted" ? ["A crafted mod can be fractured — seen in one creator video only."] : []),
       ...(state.affixes.some((x) => x.unrevealed) ? ["An unrevealed desecrated mod counting toward the 4 is shown in creator videos, not confirmed by game data."] : []),
@@ -162,21 +214,21 @@ function fracture(state: PlanState, ctx: PlanCtx): Move[] {
     const next = withAffixes(state, state.affixes.map((x) => (x === a ? { ...x, kind: "fractured" as const, special: x.kind === "crafted" ? ("fractured-crafted" as const) : x.special } : x)));
     const spec: MoveSpec = {
       methodId: "fracture",
-      title: `Fracture ${targetText(t.text)}`,
+      title: `Fracture ${label}`,
       next,
       steps: [
         step({
           do: "Fracturing Orb.",
-          why: `Locks one random mod for good; desecrated mods count toward the 4 but can't be picked — 1 in ${eligible} lands ${targetText(t.text)}.`,
+          why: `Locks one random mod for good; desecrated mods count toward the 4 but can't be picked — 1 in ${eligible} lands ${label}.`,
           sources: sources("kb-fracture"),
           mats: [mat("fracturing")],
-          check: `${targetText(t.text)} is FRACTURED.`,
-          onFail: "Wrong mod fractured → one fracture per item, ever: start over on a new base (sell this one as it is).",
+          check: `${label} is FRACTURED.`,
+          onFail: fractureMissText(otherWanted),
           retry: "start",
         }),
       ],
       uses: [once(mat("fracturing"))],
-      odds: exact(p, `P = 1/${eligible} — ${state.affixes.length} mods, ${state.affixes.length - eligible} desecrated can't be fractured; each other mod equally likely`, { "mods on the item": state.affixes.length, "mods it can lock": eligible }),
+      odds: exact(p, fractureFormula(state.affixes.length, eligible, otherWanted), { "mods on the item": state.affixes.length, "mods it can lock": eligible, ...(otherWanted > 0 ? { "other wanted mods it can lock": otherWanted } : {}) }),
       restartP: p,
       grade: facts.length > 0 ? "ss" : "vs",
       facts,
@@ -192,6 +244,7 @@ export const PREP_METHODS: readonly Method[] = [
   { id: "magic-loop", order: 10, moves: magicLoop },
   { id: "magic-aug-filler", order: 11, moves: magicFiller },
   { id: "regal", order: 12, moves: regal },
+  { id: "transmute-regal", order: 13, moves: transmuteRegal },
   { id: "strip-junk", order: 20, moves: stripJunk },
   { id: "plant-junk", order: 40, moves: plantJunk },
   { id: "fracture", order: 80, moves: fracture },
