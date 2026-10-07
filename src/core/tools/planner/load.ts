@@ -1,13 +1,15 @@
 import { getMaterialPrices } from "../../../db/craftQueries";
-import { ALL_MATERIALS, MATS } from "../../craftMaterials";
+import { MATS } from "../../craftMaterials";
 import { entityByExchangeId } from "../../entities/load";
 import type { PlanRequest, PlanResponse, PlannerCatalog, PlannerPool } from "../../../lib/tools/craftPlannerContract";
 import { resolveRates } from "../../rates";
 import { comboFor, loadCraftCatalog, type CraftCatalog } from "../craftmoves/catalog";
 import { CATALYSTS } from "./catalystTags";
-import { ESSENCE_OUTCOMES, essencesFor } from "./essenceOutcomes";
+import { alloysFor } from "./alloyOutcomes";
+import { essencesFor } from "./essenceOutcomes";
 import { BONE } from "./methodsDesecrate";
 import { loadCraftMining } from "../../research/craftMining/load";
+import { PLANNER_MATERIAL_IDS } from "./materialIds";
 import { planCraft, SERVER_PLAN_BUDGET } from "./plan";
 import { revealPriorsFrom } from "./revealPriors";
 import { factionOf, PLANNER_CLASSES, resolveBase } from "./targets";
@@ -16,11 +18,6 @@ import { factionOf, PLANNER_CLASSES, resolveBase } from "./targets";
  * Server wiring for the planner: the committed craft catalog, live material prices (ninja
  * snapshots) and rates from SQLite. Spends no trade2 budget.
  */
-
-/** Every material any planner method can use, priced in one query. */
-export const PLANNER_MATERIAL_IDS: readonly string[] = [
-  ...new Set([...ALL_MATERIALS.map((m) => m.id), ...CATALYSTS.map((c) => c.mat.id), ...ESSENCE_OUTCOMES.map((r) => r.essenceId)]),
-];
 
 /** Entity-catalog art (always a poecdn URL the CSP allows); null for a material it lacks. */
 export const catalogIcon = (materialId: string): string | null => entityByExchangeId(materialId)?.icon_url ?? null;
@@ -64,7 +61,7 @@ const tiersOf = (cat: CraftCatalog, tiers: Record<string, number>) =>
     .sort((a, b) => a[1] - b[1])
     .map(([modId, level]) => ({ modId, level, text: cat.mods[modId]?.text ?? modId }));
 
-/** What a base can carry: natural families per side, desecrated families, essence-only mods. */
+/** What a base can carry: natural families per side, desecrated families, essence- and alloy-only mods. */
 export function plannerPool(itemClass: PlanRequest["itemClass"], baseName: string, cat: CraftCatalog = loadCraftCatalog()): PlannerPool {
   const { combo } = resolveBase(cat, itemClass, baseName, 100);
   const essences = essencesFor(itemClass);
@@ -82,7 +79,7 @@ export function plannerPool(itemClass: PlanRequest["itemClass"], baseName: strin
     const first = cat.mods[Object.keys(tiers)[0]!]!;
     return { family, side: first.side, source: "desecrated" as const, faction: factionOf(first.tags), tiers: tiersOf(cat, tiers), essences: [] };
   });
-  const crafted = essences
+  const crafted = [...essences, ...alloysFor(itemClass)]
     .filter((e) => cat.mods[e.modId]?.craftedOnly)
     .map((e) => {
       const mod = cat.mods[e.modId]!;

@@ -1,0 +1,244 @@
+{
+  "id": "ring-attack-flat-saveq-dusk-t3-budget",
+  "archetype": "ring-attack-flat",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Mid-budget Dusk Ring with four T3-or-better attack flats at 40% Attack quality, the creator's 'not picky' variant of his four-flat route.",
+  "planRequest": {
+    "itemClass": "Rings",
+    "base": "Dusk Ring",
+    "ilvl": 82,
+    "targets": [],
+    "groups": [
+      {
+        "side": "prefix",
+        "need": 4,
+        "candidates": [
+          {
+            "family": "PhysicalDamage",
+            "minModId": "AddedPhysicalDamage7"
+          },
+          {
+            "family": "FireDamage",
+            "minModId": "AddedFireDamage7"
+          },
+          {
+            "family": "ColdDamage",
+            "minModId": "AddedColdDamage7"
+          },
+          {
+            "family": "LightningDamage",
+            "minModId": "AddedLightningDamage7"
+          }
+        ]
+      }
+    ],
+    "start": {
+      "kind": "clean"
+    },
+    "includeUnverified": false,
+    "quality": {
+      "catalyst": "reaver-catalyst",
+      "pct": 40
+    }
+  },
+  "creator": {
+    "tags": [
+      "fracture-target",
+      "annul",
+      "chaos-loop",
+      "essence",
+      "catalyse",
+      "exalt-omen-side",
+      "perfect-exalt",
+      "whittle",
+      "desecrate",
+      "omen-echoes",
+      "omen-light"
+    ],
+    "materials": [
+      {
+        "id": "fracturing-orb",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "essence-of-the-breach",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-dextral-crystallisation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "tuls-catalyst",
+        "uses": {
+          "point": 30,
+          "low": 20,
+          "high": 40
+        }
+      },
+      {
+        "id": "omen-of-catalysing-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-sinistral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "perfect-exalted-orb",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "reaver-catalyst",
+        "uses": {
+          "point": 40,
+          "low": 40,
+          "high": 40
+        }
+      },
+      {
+        "id": "omen-of-whittling",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-sinistral-necromancy",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "preserved-collarbone",
+        "uses": {
+          "point": 5,
+          "low": 1,
+          "high": 8
+        }
+      },
+      {
+        "id": "omen-of-light",
+        "uses": {
+          "point": 4,
+          "low": 1,
+          "high": 6
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 4,
+          "low": 1,
+          "high": 6
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 3
+        }
+      },
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      }
+    ],
+    "baseDiv": null,
+    "statedTotalDiv": {
+      "point": 65,
+      "low": 50,
+      "high": 80
+    },
+    "steps": [
+      "Base and item level are never named: Dusk Ring inferred from four flat prefixes, ilvl 82 assumed",
+      "Fracture an elemental flat (2 of 4 rings fractured in the video)",
+      "Annul down and Chaos spam (or slam) for a second flat; T3 is enough for this variant",
+      "Exalt a junk suffix, Essence of the Breach + Dextral Crystallisation for the quality mod; quality to 40%",
+      "Cold catalyst + Catalysing + Sinistral Exaltation + Perfect Exalt for the missing element's flat",
+      "Reaver catalyst to 40%, Omen of Whittling + Chaos to remove the quality mod",
+      "Fill suffixes, then Sinistral Necromancy + Preserved Collarbone + Abyssal Echoes, Omen of Light rerolls for the fourth flat (T3 accepted)",
+      "Catalyst counts assume ~1% quality per catalyst; the cold quality level before the slam is not stated",
+      "Chaos-spam count not stated; the bone/Light/Annul counts follow his high-end run (~5 bones, ~4 Lights, 6:13-9:09); stated 50-80 div total for this variant"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 125,
+      "low": 100,
+      "high": 150
+    },
+    "date": "2026-06-12",
+    "source": "creator estimate at upload (m_n2htaTr98 12:20-12:35: T3-flat ring 'around 100 to 150 divines'), not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "m_n2htaTr98",
+      "at": "1:54–2:35"
+    },
+    {
+      "kind": "video",
+      "ref": "m_n2htaTr98",
+      "at": "3:04–5:46"
+    },
+    {
+      "kind": "video",
+      "ref": "m_n2htaTr98",
+      "at": "5:49–7:20"
+    },
+    {
+      "kind": "video",
+      "ref": "m_n2htaTr98",
+      "at": "12:17–12:50"
+    }
+  ],
+  "confidence": "low",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Base Dusk Ring and ilvl 82 marked inferred; added Preserved Collarbone (6:03), Exalts (3:09, 7:58), whittle Chaos (5:36) and the Light + Annul loop from the high-end run. Upload 2026-06-12 (0.5 Runes of Aldur). Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+  }
+}

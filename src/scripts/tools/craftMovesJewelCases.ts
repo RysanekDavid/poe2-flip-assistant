@@ -51,8 +51,8 @@ function testContemptSlot(cat: CraftCatalog): void {
     assert.deepEqual([s.capacity?.s, s.openPrefixes, s.openSuffixes], [3, 0, 1], "the suffix side gains one slot");
     const ev = evaluateRules(s);
     assert.match(ev.blocked.find((b) => b.id === "liquid-potent-contempt")?.reason ?? "", /ONE crafted mod/, "Contempt not offered again");
-    const essence = ev.moves.find((m) => m.id === "essence-perfect");
-    assert.ok(essence && !essence.verified && essence.notes.some((n) => /replaces the existing crafted mod/.test(n)), "Perfect Essence replaces, unverified on jewels");
+    const essence = ev.blocked.find((b) => b.id === "essence-perfect");
+    assert.match(essence?.reason ?? "", /already has a crafted mod/, "Perfect Essence refused over the crafted mod (KB §7, inferred)");
   }
 }
 

@@ -1,0 +1,250 @@
+{
+  "id": "amulet-melee-spirit-es-alohaa",
+  "archetype": "amulet-skill-spirit",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Gold Amulet bought with fractured +3 Melee Skills, finished with Spirit, T1 flat ES (catalysed), desecrated % ES and rarity at 40% defence quality.",
+  "planRequest": {
+    "itemClass": "Amulets",
+    "base": "Gold Amulet",
+    "ilvl": 82,
+    "targets": [
+      {
+        "family": "GlobalIncreaseMeleeSkillGemLevel",
+        "side": "suffix",
+        "minModId": "GlobalMeleeSkillGemLevel3",
+        "fractured": true
+      },
+      {
+        "family": "BaseSpirit",
+        "side": "prefix",
+        "minModId": "IncreasedSpirit4",
+        "fractured": false
+      },
+      {
+        "family": "EnergyShield",
+        "side": "prefix",
+        "minModId": "IncreasedEnergyShield10",
+        "fractured": false
+      },
+      {
+        "family": "GlobalEnergyShieldPercent",
+        "side": "prefix",
+        "minModId": "IncreasedEnergyShieldPercent1",
+        "fractured": false
+      },
+      {
+        "family": "ItemFoundRarityIncrease",
+        "side": "suffix",
+        "minModId": "ItemFoundRarityIncrease2",
+        "fractured": false
+      }
+    ],
+    "start": {
+      "kind": "bought",
+      "carried": [
+        {
+          "ref": 0,
+          "fractured": true
+        }
+      ],
+      "askDiv": null
+    },
+    "includeUnverified": false,
+    "quality": {
+      "catalyst": "carapace-catalyst",
+      "pct": 40
+    }
+  },
+  "creator": {
+    "tags": [
+      "bought-base",
+      "chaos-loop",
+      "exalt-omen-side",
+      "essence",
+      "catalyse",
+      "perfect-exalt",
+      "whittle",
+      "desecrate",
+      "erasure",
+      "omen-echoes",
+      "omen-light"
+    ],
+    "materials": [
+      {
+        "id": "omen-of-dextral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-dextral-crystallisation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "essence-of-the-breach",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "carapace-catalyst",
+        "uses": {
+          "point": 80,
+          "low": 80,
+          "high": 80
+        }
+      },
+      {
+        "id": "omen-of-sinistral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-catalysing-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "perfect-exalted-orb",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-whittling",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-sinistral-necromancy",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "preserved-collarbone",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-dextral-erasure",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-light",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      }
+    ],
+    "baseDiv": null,
+    "statedTotalDiv": {
+      "point": 100,
+      "low": 100,
+      "high": 100
+    },
+    "steps": [
+      "Item level not stated for the amulet: 82 assumed (T1 flat ES needs 80)",
+      "Buy a Gold Amulet with fractured +3 Melee Skills (price not stated)",
+      "Remove mods and reroll until a Spirit prefix (settled for T2, ~45); roll count not stated",
+      "Dextral Exaltation + Exalt a suffix, Dextral Crystallisation + Essence of the Breach removes it and adds +20% max quality",
+      "Defence catalysts, Sinistral + Catalysing Exaltation + Perfect Exalt: T1 flat ES first try (misses would be annulled)",
+      "Re-apply defence quality, Omen of Whittling + Chaos removes the quality mod (quality stays)",
+      "Sinistral Necromancy + bone desecration on a prefix, Exalt fills the suffixes; Omen of Dextral Erasure + Chaos loop on suffixes until rarity + strength (loop count not stated)",
+      "Last: bone + Abyssal Echoes, Omen of Light on a miss, until % maximum Energy Shield",
+      "Counts are the minimum one-per-step from the video (several loops have no stated count); stated total 'like 100 divine orbs'"
+    ]
+  },
+  "market": null,
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "kPBToE_G5t8",
+      "at": "6:52–8:11"
+    },
+    {
+      "kind": "video",
+      "ref": "kPBToE_G5t8",
+      "at": "8:11–9:24"
+    },
+    {
+      "kind": "video",
+      "ref": "kPBToE_G5t8",
+      "at": "9:26–10:37"
+    },
+    {
+      "kind": "video",
+      "ref": "kPBToE_G5t8",
+      "at": "10:38–11:22"
+    }
+  ],
+  "confidence": "low",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "% ES minimum tier lowered to any tier (tier never stated, 11:04 garbled); ilvl 82 marked inferred. T2 spirit ~45 = IncreasedSpirit4 and 'like 100 divine orbs' (11:18-11:20) confirmed. Upload 2026-06-07 (0.5 Runes of Aldur). Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+  }
+}

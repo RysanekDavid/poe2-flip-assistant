@@ -25,7 +25,11 @@ export type HitRateBasis = (typeof HIT_RATE_BASES)[number];
 export const isoDay = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "expected YYYY-MM-DD")
-  .refine((s) => new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s, "not a real calendar date");
+  // zod still runs this after a failed regex: an unparsable string must be an issue, not a RangeError
+  .refine((s) => {
+    const d = new Date(`${s}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+  }, "not a real calendar date");
 
 // Rendered as links, so https only (no javascript:/data: hrefs out of a data file), and never an RMT shop.
 export const httpsUrl = z

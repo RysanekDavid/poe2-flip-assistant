@@ -9,7 +9,7 @@ import { tierGates } from "../../core/tools/craftmoves/gates";
 import { assembleMoves } from "../../core/tools/craftmoves/moves";
 import { outcomeText, rolledLines } from "../../core/tools/craftmoves/outcome";
 import { rankMoves, tierOf } from "../../core/tools/craftmoves/rank";
-import { legalMoves } from "../../core/tools/craftmoves/rules";
+import { evaluateRules, legalMoves } from "../../core/tools/craftmoves/rules";
 import { craftMovesResponseSchema } from "../../lib/tools/craftMovesContract";
 import { decodeItem, encodeItem, SHARE_MAX_BYTES, shareQuery } from "../../lib/tools/shareItem";
 import { itemText, RING, ringLines, renderFamily } from "./craftMovesFixtures";
@@ -75,6 +75,30 @@ function testTierClassification(): void {
   assert.deepEqual(tiers(["essence", "essence-greater", "essence-perfect"]), [1, 1, 3], "Lesser/regular/Greater essences add, Perfect Essence replaces");
   assert.deepEqual(tiers(["omen-sinistral-greater-exaltation", "omen-dextral-greater-exaltation"]), [1, 1], "side-steered double adds are aimed adds");
   assert.deepEqual(tiers(["divine", "fracture", "omen-whittling", "bone-preserved"]), [null, null, null, null], "never a card");
+}
+
+/**
+ * KB §7: an alloy removes a random mod and writes the crafted one, like a Perfect essence — a card
+ * on a full rare. Over an existing crafted mod both are refused with the same, inferred reason.
+ */
+function testAlloyCard(cat: CraftCatalog): void {
+  const full = ringLines(cat, ["IncreasedLife", "IncreasedMana", "FireDamage"], ["FireResistance", "ColdResistance", "Strength"]);
+  const s = classify(cat, itemText({ ...RING, rarity: "Rare", ilvl: 82, lines: full }));
+  const alloy = legalMoves(s).find((m) => m.id === "alloy");
+  assert.ok(alloy && alloy.verified && alloy.warnings.length === 0, "a full rare ring takes an alloy (verified, no warning)");
+  assert.equal(tierOf(stub("alloy"), null), 3, "an alloy frees a slot, the Perfect-essence tier");
+  const cards = rankMoves([stub("annul", 0.5), stub("alloy", 0.01), stub("essence-perfect", 0.2)], s, []);
+  assert.deepEqual(cards.map((c) => [c.move.id, c.tier]), [["alloy", 3], ["essence-perfect", 3], ["annul", 3]], "the cheapest alloy leads the cards");
+  assert.match(cards[0]?.why ?? "", /^frees a slot/);
+  const crafted = classify(cat, itemText({ ...RING, rarity: "Rare", ilvl: 82, lines: [...full.slice(0, -1), `${full[full.length - 1]} (crafted)`] }));
+  assert.equal(crafted.slots.crafted, 1, "the crafted line is counted");
+  const ev = evaluateRules(crafted);
+  const [perfect, alloyBlock] = ["essence-perfect", "alloy"].map((id) => ev.blocked.find((b) => b.id === id));
+  assert.ok(perfect && alloyBlock, "both crafted-slot writers are refused over a crafted mod");
+  assert.equal(perfect.reason, alloyBlock.reason, "same refusal for both");
+  assert.match(perfect.reason, /already has a crafted mod.*3967316, 3960848, 3932540.*unverified/);
+  assert.ok(!perfect.verified && !alloyBlock.verified, "the refusal is inferred, not verified");
+  assert.ok(!legalMoves(crafted).some((m) => m.id === "alloy" || m.id === "essence-perfect"), "neither is offered");
 }
 
 /** Lesser/regular and Greater essences do the same thing to a magic item: one card, the cheaper one. */
@@ -143,6 +167,7 @@ export function runRankCases(cat: CraftCatalog): void {
   testCheapestAndVariants(cat);
   testTierClassification();
   testEssenceCollapse(cat);
+  testAlloyCard(cat);
   testMagicAndNormalCards(cat);
   testLockedAndContract(cat);
   testOutcomeText(cat);

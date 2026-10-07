@@ -1,0 +1,185 @@
+{
+  "id": "jewel-emerald-5mod-lilbotq",
+  "archetype": "jewel-5mod-overcap",
+  "patch": "0.5.5",
+  "league": "Forbidden Rites (likely: 'extremely profitable early league', 9:11-9:13; not stated)",
+  "summary": "High-end five-mod Emerald from a bought base with attack crit damage and movement speed: Liquid Contempt over-cap, desecrated attack crit chance, then an attack damage prefix.",
+  "planRequest": {
+    "itemClass": "Jewels",
+    "base": "Emerald",
+    "ilvl": 80,
+    "targets": [
+      {
+        "family": "AttackCriticalStrikeMultiplier",
+        "side": "suffix",
+        "minModId": "JewelAttackCriticalDamage",
+        "fractured": false
+      },
+      {
+        "family": "MovementVelocity",
+        "side": "suffix",
+        "minModId": "JewelMovementSpeed",
+        "fractured": false
+      },
+      {
+        "family": "AttackCriticalStrikeChance",
+        "side": "suffix",
+        "minModId": "JewelAttackCriticalChance",
+        "fractured": false
+      }
+    ],
+    "includeUnverified": true,
+    "quality": null
+  },
+  "startMode": "compare",
+  "creator": {
+    "tags": [
+      "bought-base",
+      "liquid",
+      "desecrate",
+      "omen-echoes",
+      "omen-light",
+      "annul",
+      "erasure",
+      "chaos-loop"
+    ],
+    "materials": [
+      {
+        "id": "potent-liquid-contempt",
+        "uses": {
+          "point": 4,
+          "low": 2,
+          "high": 4
+        }
+      },
+      {
+        "id": "preserved-cranium",
+        "uses": {
+          "point": 5,
+          "low": 4,
+          "high": 5
+        }
+      },
+      {
+        "id": "omen-of-dextral-necromancy",
+        "uses": {
+          "point": 5,
+          "low": 4,
+          "high": 5
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-light",
+        "uses": {
+          "point": 4,
+          "low": 3,
+          "high": 4
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 5,
+          "low": 4,
+          "high": 5
+        }
+      },
+      {
+        "id": "omen-of-sinistral-annulment",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-sinistral-erasure",
+        "uses": {
+          "point": 1,
+          "low": 0.5,
+          "high": 1
+        }
+      },
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 10,
+          "low": 1,
+          "high": 20
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      }
+    ],
+    "baseDiv": {
+      "point": 2.5,
+      "low": 2,
+      "high": 3
+    },
+    "statedTotalDiv": {
+      "point": 95,
+      "low": 80,
+      "high": 100
+    },
+    "steps": [
+      "Buy rare Emeralds with movement speed + attack crit damage bonus suffixes and 2 prefixes, 2-3 div each",
+      "Potent Liquid Contempt for '+1 Suffix Modifier allowed': won 1 of 4 (the three losses ruin those bases)",
+      "Omen of Dextral Necromancy + Preserved Cranium, reveal with Abyssal Echoes; Omen of Light loop (3-4 Lights) until attack crit chance",
+      "Omen of Sinistral Annulment to remove the '+1 suffix' mod (missed), then Sinistral Erasure + Chaos",
+      "Exalt to full, Chaos spam until increased attack damage (count not stated; 10 is a placeholder)",
+      "Not costed (no planner target): Potent Liquid Ferocity (~7 div) for the suffix-effect prefix, won its 50/50 first try",
+      "Stated: ~20 div ritual omens + ~40 div lights and craniums + ~20 div bases = ~80, 'roughly 90 to 100' all in; valued ~120-150 div"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 135,
+      "low": 120,
+      "high": 150
+    },
+    "date": "2026-09-14",
+    "source": "creator at upload (Hcb_HcWDUOA 21:44-22:11): 'roughly worth 120', later 'worth 150'; not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "Hcb_HcWDUOA",
+      "at": "10:29–11:30"
+    },
+    {
+      "kind": "video",
+      "ref": "Hcb_HcWDUOA",
+      "at": "15:03–17:59"
+    },
+    {
+      "kind": "video",
+      "ref": "Hcb_HcWDUOA",
+      "at": "18:45–20:45"
+    },
+    {
+      "kind": "video",
+      "ref": "Hcb_HcWDUOA",
+      "at": "20:45–22:11"
+    }
+  ],
+  "confidence": "medium",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Patch 0.5 -> 0.5.5 (uploaded 2026-09-14); league marked likely Forbidden Rites. Counts and stated totals match (15:03-15:11, 20:45-21:17, 21:44-22:14)."
+  }
+}

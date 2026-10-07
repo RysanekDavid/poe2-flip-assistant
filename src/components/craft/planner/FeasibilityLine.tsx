@@ -31,7 +31,7 @@ export function FeasibilityLine({ check, issues, onIlvl }: Props) {
           {check.s.used}/{check.s.cap} suffixes
         </span>
         {check.crafted > 0 && (
-          <span className={check.crafted > 1 ? BAD : OK} title="one crafted (essence-only) mod per item — a second needs Astrid's Creativity, which the planner doesn't plan">
+          <span className={check.crafted > 1 ? BAD : OK} title="one crafted (essence- or alloy-only) mod per item — a second needs Astrid's Creativity, which the planner doesn't plan">
             crafted {check.crafted}/1
           </span>
         )}
