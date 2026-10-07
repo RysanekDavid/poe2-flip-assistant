@@ -180,7 +180,7 @@
               "kind": "pairing",
               "verdict": "ok",
               "detail": "Omen of the Liege pairing matches verified rule omen-liege",
-              "source": "poe2-crafting-knowledge.md §4"
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5"
             }
           ]
         },
@@ -2285,7 +2285,7 @@
         },
         {
           "idx": 1,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -2301,9 +2301,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of the Sovereign",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of the Sovereign pairing matches verified rule omen-sovereign",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5"
             }
           ]
         },
@@ -2462,7 +2462,7 @@
               "kind": "pairing",
               "verdict": "ok",
               "detail": "Omen of the Liege pairing matches verified rule omen-liege",
-              "source": "poe2-crafting-knowledge.md §4"
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5"
             }
           ]
         },
@@ -3394,7 +3394,7 @@
         "preserved-collarbone": "ba212d890ee28451"
       },
       "repoeChanged": [],
-      "verdict": "unknown",
+      "verdict": "ok",
       "steps": [
         {
           "idx": 0,
@@ -3410,7 +3410,7 @@
         },
         {
           "idx": 1,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -3426,9 +3426,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of the Sovereign",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of the Sovereign pairing matches verified rule omen-sovereign",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5"
             }
           ]
         },
@@ -3485,7 +3485,7 @@
         },
         {
           "idx": 1,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -3501,9 +3501,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "no rule covers Omen of the Sovereign",
-              "source": "poe2-crafting-knowledge.md §4"
+              "verdict": "ok",
+              "detail": "Omen of the Sovereign pairing matches verified rule omen-sovereign",
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5"
             }
           ]
         },
@@ -3743,7 +3743,7 @@
               "kind": "pairing",
               "verdict": "ok",
               "detail": "Omen of the Liege pairing matches verified rule omen-liege",
-              "source": "poe2-crafting-knowledge.md §4"
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5"
             },
             {
               "kind": "pairing",
@@ -3961,7 +3961,7 @@
               "kind": "pairing",
               "verdict": "ok",
               "detail": "Omen of the Liege pairing matches verified rule omen-liege",
-              "source": "poe2-crafting-knowledge.md §4"
+              "source": "poe2-crafting-knowledge.md §4; poe2-crafting-knowledge.md §5"
             }
           ]
         },

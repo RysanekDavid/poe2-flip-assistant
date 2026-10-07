@@ -52,16 +52,16 @@ function testRevealModel(cat: CraftCatalog): void {
   const req = ring(undefined, [target("FireResistance", "suffix", "FireResist7")]);
   const ctx = ctxOf(cat, req);
   const state = canonical({ rarity: "Rare", affixes: [junk("prefix"), junk("prefix"), junk("suffix")], quality: 0, catalyst: null });
-  const odds = revealOdds(ctx, state, ctx.targets[0]!, { liege: false, bone: "preserved" })!;
+  const odds = revealOdds(ctx, state, ctx.targets[0]!, { factionOmen: false, bone: "preserved" })!;
   const p = Number(odds.once.inputs["wanted share of them"]);
   const families = Number(odds.once.inputs["families the Well can offer"]);
   assert.ok(Math.abs(p - 2 / 8 / families) < 1e-4, `fire res T2+: 2 of 8 tiers of one of ${families} families, got ${p}`);
   assert.ok(Math.abs(odds.first - (1 - (1 - 2 / 8 / families) ** 2)) < 1e-9, "item level 82: one option is a faction mod, two draws for the ordinary pool");
   assert.ok(odds.once.low! < odds.first && odds.once.high! > odds.first && odds.withEchoes.point! > odds.first, "a band, and Echoes is one more draw");
   const low = ctxOf(cat, { ...req, ilvl: 72 });
-  const lowOdds = revealOdds(low, state, low.targets[0]!, { liege: false, bone: "preserved" })!;
+  const lowOdds = revealOdds(low, state, low.targets[0]!, { factionOmen: false, bone: "preserved" })!;
   assert.ok(lowOdds.first > 0, "below 82 still offered");
-  const anc = revealOdds(ctx, state, ctx.targets[0]!, { liege: false, bone: "ancient" })!;
+  const anc = revealOdds(ctx, state, ctx.targets[0]!, { factionOmen: false, bone: "ancient" })!;
   assert.ok(anc.first > odds.first, "Ancient bones cut the tiers under level 40: better odds for a level-71 tier");
   assert.match(odds.once.formula, /creator's statement, confirmed by game patch notes/, "the options count names its basis");
 }

@@ -19,7 +19,8 @@ import type { Estimate, PlanCtx, PlanState, ResolvedTarget } from "./types";
  *   p      = the wanted mod's share of the pool: equal weight per family, equal per reachable tier.
  * P(offered) = 1 − (1 − p)^draws × (1 − pf)^faction draws, the band runs from two open draws at half
  * the shares to three at twice them, each with the faction draw.
- * With Omen of the Liege (Amanamu targets) all options come from the faction (as before).
+ * With a faction omen (Liege → Amanamu, Sovereign → Ulaman, Blackblooded → Kurgal) all options come
+ * from that Lich's families (community reading of the singular item text, KB §5).
  */
 
 export type BoneKind = "preserved" | "ancient";
@@ -80,11 +81,13 @@ function shareOf(pool: readonly PoolFamily[], wanted: readonly ResolvedTarget[])
 const miss = (p: number, n: number): number => (1 - Math.min(1, p)) ** n;
 const withEcho = (q: number): number => 1 - (1 - q) ** 2;
 
-function liegeOdds(ctx: PlanCtx, state: PlanState, t: ResolvedTarget): RevealOdds {
+function factionOdds(ctx: PlanCtx, state: PlanState, t: ResolvedTarget): RevealOdds {
   const blocked = presentModGroups(ctx, state);
+  // any tier decides the Lich: one belt family (flask charges) holds both an Ulaman and a Kurgal mod
   const pool = Object.entries(ctx.combo.desecrated).filter(([, tiers]) => {
-    const mod = ctx.cat.mods[Object.keys(tiers)[0]!];
-    return mod != null && mod.side === t.side && !mod.groups.some((g) => blocked.has(g)) && t.faction != null && mod.tags.includes(`${t.faction}_mod`);
+    const mods = Object.keys(tiers).map((id) => ctx.cat.mods[id]).filter((m) => m != null);
+    const mod = mods[0];
+    return mod != null && mod.side === t.side && !mod.groups.some((g) => blocked.has(g)) && t.faction != null && mods.some((m) => m.tags.includes(`${t.faction}_mod`));
   }).length;
   const options = ctx.reveal.options;
   const first = Math.min(1, options / Math.max(pool, 1));
@@ -99,9 +102,9 @@ function liegeOdds(ctx: PlanCtx, state: PlanState, t: ResolvedTarget): RevealOdd
   };
 }
 
-/** Reveal odds for one wanted mod (or pool slot) on its side; Liege only for Amanamu desecrated targets. Null = never offered. */
-export function revealOdds(ctx: PlanCtx, state: PlanState, t: ResolvedTarget, opts: { liege: boolean; bone: BoneKind }): RevealOdds | null {
-  if (opts.liege) return liegeOdds(ctx, state, t);
+/** Reveal odds for one wanted mod (or pool slot) on its side; `factionOmen` only for a Lich desecrated target. Null = never offered. */
+export function revealOdds(ctx: PlanCtx, state: PlanState, t: ResolvedTarget, opts: { factionOmen: boolean; bone: BoneKind }): RevealOdds | null {
+  if (opts.factionOmen) return factionOdds(ctx, state, t);
   const pool = wellPool(ctx, state, t.side, opts.bone);
   const wanted = acceptedMods(ctx, state, t);
   const p = shareOf(pool, wanted);
