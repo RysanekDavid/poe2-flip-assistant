@@ -77,18 +77,21 @@ export function junkRemoval(state: PlanState, steer: AffixSide | null): PlanAffi
   return first;
 }
 
-function essencePerfect(state: PlanState, ctx: PlanCtx): Move[] {
-  if (state.rarity !== "Rare" || craftedSlotUsed(state)) return [];
-  const out: Move[] = [];
-  for (const wr of writes(ctx, state)) {
-    for (const w of wr.mod.essences.filter((e) => e.tier !== "greater")) {
-      for (const steer of [null, ...SIDES] as const) {
-        const move = perfectMove(state, ctx, wr, w, steer);
-        if (move) out.push(move);
+/** Remove-then-write on a rare: Perfect/special essences, or (alloys) the Verisium alloys. */
+function rareWrites(alloys: boolean) {
+  return (state: PlanState, ctx: PlanCtx): Move[] => {
+    if (state.rarity !== "Rare" || craftedSlotUsed(state)) return [];
+    const out: Move[] = [];
+    for (const wr of writes(ctx, state)) {
+      for (const w of wr.mod.essences.filter((e) => e.tier !== "greater" && (e.tier === "alloy") === alloys)) {
+        for (const steer of [null, ...SIDES] as const) {
+          const move = perfectMove(state, ctx, wr, w, steer);
+          if (move) out.push(move);
+        }
       }
     }
-  }
-  return out;
+    return out;
+  };
 }
 
 /** An alloy is currency on the exchange, not an essence: its material row comes from MATS. */
@@ -147,5 +150,7 @@ function essenceSources(w: EssenceWrite, steered: boolean): SourceRef[] {
 
 export const WRITE_METHODS: readonly Method[] = [
   { id: "essence-greater", order: 15, moves: essenceGreater },
-  { id: "essence-perfect", order: 50, moves: essencePerfect },
+  { id: "essence-perfect", order: 50, moves: rareWrites(false) },
+  // its own method so craft:eval and the creator-footage vocabulary can name an alloy step
+  { id: "alloy", order: 51, moves: rareWrites(true) },
 ];

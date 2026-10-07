@@ -67,7 +67,8 @@ export function evaluateRules(s: ItemState, rules: readonly MoveRule[] = ALL_RUL
     const v = rule.check(s);
     if (v == null) continue;
     if ("block" in v) {
-      blocked.push({ id: rule.id, label: rule.label, family: rule.family, reason: v.block, source: rule.source, verified: rule.verified });
+      const reason = v.unverifiedBecause ? `${v.block} — unverified: ${v.unverifiedBecause}` : v.block;
+      blocked.push({ id: rule.id, label: rule.label, family: rule.family, reason, source: rule.source, verified: rule.verified && v.unverifiedBecause == null });
     } else moves.push(toMove(rule, s, v));
   }
   return { moves, blocked, locked: null };

@@ -6,7 +6,7 @@
       "patch": "0.5.4b",
       "league": "Runes of Aldur",
       "stamped_at": "2026-10-07",
-      "sha256": "4e78706433312862e8659ce460e320857e75f908627fec4d33a26cfdae9f826b"
+      "sha256": "d2c5a0731708d31b97d932eaca7b4eda2e7de9e4791e7abe8e53084b210a0543"
     },
     {
       "path": "docs/kb/breach.md",
@@ -83,7 +83,7 @@
       "patch": "0.5.x",
       "league": "Runes of Aldur",
       "stamped_at": "2026-10-07",
-      "sha256": "aac8a8ff2fa0081486889fed96e99887769718a1bb7a8903b1dbdddea6b51e38"
+      "sha256": "a409627cd5e2e611ca827f7dce3367dcf6cf6b90e1f2f475cade40e00f5c017c"
     },
     {
       "path": "docs/research/poe2-bow-crafting-0.5.md",

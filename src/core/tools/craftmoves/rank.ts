@@ -7,7 +7,7 @@ import type { FamilyGateView, ItemStateView, PricedMoveView, RankedMoveView } fr
  *            Lesser/regular/Greater essence taking a magic item to rare);
  *   tier 2 — adds one random mod (Exalt, Regal, Augmentation, Transmutation, Alchemy, Greater
  *            Exaltation);
- *   tier 3 — frees a slot (Annulment, Erasure-steered or plain Chaos, Perfect Essence).
+ *   tier 3 — frees a slot (Annulment, Erasure-steered or plain Chaos, Perfect Essence, Alloy).
  * A move with a red warning (Whittling, Putrefaction, Fracture…) or one not backed by the verified
  * KB never makes the cards — it stays in the full legal list. Within a tier the cheapest priced move
  * leads (unpriced last), and Greater/Perfect variants collapse onto their cheapest sibling so three
@@ -35,7 +35,7 @@ const variantKey = (id: string): string =>
 
 // matched against variantKey(id), so every currency tier classifies exactly like its base orb
 const RANDOM_ADD = /^(exalt|regal|aug|transmute|alchemy|omen-greater-exaltation)$/;
-const REMOVAL = /^(annul|chaos|essence-perfect|omen-(sinistral|dextral)-(erasure|annulment|crystallisation))$/;
+const REMOVAL = /^(annul|chaos|essence-perfect|alloy|omen-(sinistral|dextral)-(erasure|annulment|crystallisation))$/;
 
 /** Card tier of one move (null: never a card), given the family being aimed at. */
 export function tierOf(move: PricedMoveView, target: FamilyGateView | null): Tier | null {

@@ -55,7 +55,7 @@ export type MaterialSpec = MaterialKey | UnlistedMaterial | ((s: ItemState) => M
 
 export type Verdict =
   | null // rule does not apply to this kind of item — hidden
-  | { block: string }
+  | { block: string; unverifiedBecause?: string } // unverifiedBecause: the refusal itself is inferred
   | { pass: true; warnings?: string[]; notes?: string[]; unverifiedBecause?: string; label?: string };
 
 export interface MoveRule {

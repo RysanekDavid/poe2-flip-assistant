@@ -118,6 +118,7 @@ export const KB7_ALLOY_FACTS: ReadonlyArray<{ rule: string; text: string }> = [
   { rule: "alloy target", text: "every alloy reads \"Removes a random modifier and augments a Rare item with a new guaranteed modifier\"" },
   { rule: "alloy crafted slot", text: "its mod is crafted-only and is the item's ONE crafted mod" },
   { rule: "alloy refused", text: "**an alloy on an item that already has a crafted mod is refused: \"This item already has a crafted mod\"**" },
+  { rule: "perfect essence refused too", text: "a crafted mod\"** — and so is a Perfect essence" },
   { rule: "breach first", text: "a Breach-quality route runs **Essence of the Breach first**" },
 ];
 

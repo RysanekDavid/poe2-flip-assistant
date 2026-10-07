@@ -1,4 +1,4 @@
-import type { EssenceOutcomeRow } from "./essenceOutcomes";
+import { rows, type EssenceOutcomeRow } from "./essenceOutcomes";
 
 /**
  * Curated alloy → item class → the crafted mod it writes, for the planner's classes (Rings, Amulets,
@@ -12,30 +12,24 @@ import type { EssenceOutcomeRow } from "./essenceOutcomes";
  * Prismatic, Mystic, Celestial, Transcendent, Runebinder's, Runefather's), and the other classes of
  * the alloys below (Swift gloves/shields, Protective weapons/shields, Sovereign weapons/armour).
  * poe2db's "Required Level" is the character requirement, not the RePoE mod level the planner reads.
+ * Class rows independently fact-checked vs poe2db 2026-10-07 (Swift_Alloy, Runic_Alloy,
+ * Protective_Alloy, Sovereign_Alloy): text, side and class; the mod ids are matched by catalog text.
  */
-
-type ClassRow = [EssenceOutcomeRow["itemClass"], string, string];
-
-const DB = "https://poe2db.tw/us/";
-
-function rows(alloyId: string, label: string, page: string, perClass: ClassRow[]): EssenceOutcomeRow[] {
-  return perClass.map(([itemClass, modId, poe2dbText]) => ({ essenceId: alloyId, label, itemClass, modId, poe2dbText, tier: "alloy", source: `${DB}${page}` }));
-}
 
 const SOVEREIGN_TEXT = "(20-30)% increased Explicit Resistance Modifier magnitudes";
 
 export const ALLOY_OUTCOMES: readonly EssenceOutcomeRow[] = [
-  ...rows("swift-alloy", "Swift Alloy", "Swift_Alloy", [
+  ...rows("swift-alloy", "Swift Alloy", "alloy", "Swift_Alloy", [
     ["Rings", "AlloyAttackSpeedRing1", "(7-9)% increased Attack Speed"],
     ["Belts", "AlloyFlaskChargesPerSecond1", "Flasks gain (0.75-1) charges per Second"],
   ]),
-  ...rows("runic-alloy", "Runic Alloy", "Runic_Alloy", [
+  ...rows("runic-alloy", "Runic Alloy", "alloy", "Runic_Alloy", [
     ["Rings", "AlloyMaximumRunicWard1", "+(37-49) to maximum Runic Ward"],
     ["Amulets", "AlloyMaximumRunicWardPercent1", "(6-10)% increased maximum Runic Ward"],
     ["Belts", "AlloyRunicWardRechargeRate1", "(15-20)% increased Runic Ward Regeneration Rate"],
   ]),
-  ...rows("protective-alloy", "Protective Alloy", "Protective_Alloy", [["Belts", "AlloyRecoverRunicWardOnCharmUse1", "Recover (32-45) Runic Ward when a Charm is used"]]),
-  ...rows("sovereign-alloy", "Sovereign Alloy", "Sovereign_Alloy", [
+  ...rows("protective-alloy", "Protective Alloy", "alloy", "Protective_Alloy", [["Belts", "AlloyRecoverRunicWardOnCharmUse1", "Recover (32-45) Runic Ward when a Charm is used"]]),
+  ...rows("sovereign-alloy", "Sovereign Alloy", "alloy", "Sovereign_Alloy", [
     ["Rings", "AlloyEffectOfResistanceMods1", SOVEREIGN_TEXT],
     ["Amulets", "AlloyEffectOfResistanceMods1", SOVEREIGN_TEXT],
     ["Belts", "AlloyEffectOfResistanceMods1", SOVEREIGN_TEXT],

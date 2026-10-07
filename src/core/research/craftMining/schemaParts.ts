@@ -31,6 +31,7 @@ export const PLANNER_METHOD_IDS = [
   "catalyse-finish",
   "essence-greater",
   "essence-perfect",
+  "alloy",
   "desecrate",
   "strip-desecrated",
   "blocker",

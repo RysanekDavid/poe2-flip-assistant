@@ -1,6 +1,6 @@
 import { ALL_MATERIALS } from "../../craftMaterials";
 import { CATALYSTS } from "./catalystTags";
-import { CRAFTED_WRITE_OUTCOMES } from "./essenceOutcomes";
+import { CRAFTED_WRITE_OUTCOMES } from "./craftedWrites";
 
 /**
  * Every material any planner method can use. Kept free of DB imports (unlike load.ts) so the
