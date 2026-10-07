@@ -386,6 +386,20 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   [community, n=1 — [forum 3853903](https://www.pathofexile.com/forum/view-thread/3853903)]. Sinistral/Dextral Crystallisation overrides it: "your
   next Perfect or Corrupted Essence will remove only Prefix [Suffix] modifiers" [verified-primary — entity catalog 0.5.5b]; ASaVeQ: Dextral
   Crystallisation + Essence of the Breach (prefix) removes a suffix [creator-demonstrated — S27 11:40–11:49].
+- **Alloys write the crafted slot too.** Item text: every alloy reads "Removes a random modifier and
+  augments a Rare item with a new guaranteed modifier" / "Right click this item then left click a Rare
+  item to apply it." [verified-primary — entity catalog (game data 0.5.5b), all 13 alloys; 0.5.0 notes
+  "Added 13 new Alloy currency items", [forum 3932540](https://www.pathofexile.com/forum/view-thread/3932540)].
+  The guaranteed mod depends on the item class (per-class list: docs/kb/currency-core.md §4); its mod is
+  crafted-only and is the item's ONE crafted mod (RePoE `Alloy*` mods, spawn weight 0 — no natural roll
+  gives them). So **an alloy on an item that already has a crafted mod is refused: "This item already has
+  a crafted mod"** [community — [forum 3967316](https://www.pathofexile.com/forum/view-thread/3967316),
+  the message shown for a liquid; alloys share the slot, so inferred]. Strip the old crafted mod first. On
+  a ring that also wants over-cap quality, a Breach-quality route runs **Essence of the Breach first**:
+  write "+20% to Maximum Quality", catalyse, strip that mod, then apply the alloy [creator-demonstrated —
+  ASaVeQ's Dusk Ring, S27: Dextral Crystallisation + Essence of the Breach 11:40–11:49, Dextral
+  Crystallisation + Swift Alloy 17:12–17:21]. Crystallisation steering an alloy is creator/player-shown
+  only (§4, unverified).
 - Essence of **Insulation = FIRE resistance** (not generic/cold). Check each essence's actual
   mod before buying.
 - Greater Essence of Seeking: guaranteed crit, magnitude scales by base (martial weapon

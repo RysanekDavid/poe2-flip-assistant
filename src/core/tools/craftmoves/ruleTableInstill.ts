@@ -76,6 +76,35 @@ function perfectEssenceCheck(s: ItemState): Verdict {
   return all([needRemovable(s, 1)], { pass: true, notes, unverifiedBecause });
 }
 
+/*
+ * Verisium alloys (KB §7, currency-core §4): "Removes a random modifier and augments a Rare item with
+ * a new guaranteed modifier" (entity catalog, game data 0.5.5b); the alloy mod is the item's one
+ * crafted mod. An existing crafted mod refuses the next one — "This item already has a crafted mod"
+ * (forum 3967316, shown for a liquid; alloys inferred, KB §7). No alloy lists a jewel (poe2db).
+ */
+const ANY_ALLOY: UnlistedMaterial = { key: "alloy-of-choice", label: "Alloy of your choice" };
+
+function alloyCheck(s: ItemState): Verdict {
+  if (!isRare(s) || s.jewel) return null;
+  if (s.slots.crafted > 0) return { block: `This item already has a crafted mod — one crafted mod per item; strip it first (${S7}, forum 3967316)` };
+  return all([needRemovable(s, 1)]);
+}
+
+const ALLOYS: MoveRule[] = [
+  {
+    id: "alloy",
+    label: "Alloy",
+    family: "essence",
+    materials: [ANY_ALLOY],
+    requires: "rare item with a removable mod and no crafted mod",
+    effect: "removes a random mod, then writes the alloy's guaranteed mod (by item class) into the single crafted slot",
+    notes: ["pick the alloy whose mod for this item class you want — read it first (Swift Alloy on a ring = attack speed)"],
+    source: `${S7}; ${CC4}`,
+    verified: true,
+    check: alloyCheck,
+  },
+];
+
 const CATALYST_TAGS =
   "Xoph's=Fire, Tul's=Cold, Esh's=Lightning, Uul-Netol's=Phys, Chayula's=Chaos, Flesh=Life, Neural=Mana, Carapace=Defences, " +
   "Reaver=Attack, Sibilant=Caster, Skittering=Speed, Adaptive=Attributes, Necrotic=Minion";
@@ -160,4 +189,4 @@ const LIQUIDS: MoveRule[] = [
     [ANCIENT_REMOVAL, "Diamond grants +(4–5)% Chaos Resistance per the datamine (Game8 says 5–7%)"]),
 ];
 
-export const INSTILL_RULES: readonly MoveRule[] = [...ESSENCES, ...CATALYSTS, ...LIQUIDS];
+export const INSTILL_RULES: readonly MoveRule[] = [...ESSENCES, ...ALLOYS, ...CATALYSTS, ...LIQUIDS];

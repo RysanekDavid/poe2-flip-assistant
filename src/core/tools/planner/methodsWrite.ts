@@ -1,5 +1,6 @@
-import type { CraftMaterial } from "../../craftMaterials";
+import { ALL_MATERIALS, type CraftMaterial } from "../../craftMaterials";
 import type { AffixSide } from "../craftmoves/catalog";
+import { CRYSTALLISATION_ALLOY_FACT } from "./alloyOutcomes";
 import { makeMove, mat, once, sideOmen, step, targetText } from "./methodKit";
 import { linkSource, sources, type SourceId, type SourceRef } from "./sources";
 import { exact } from "./odds";
@@ -7,8 +8,8 @@ import { aimable, anyJunkCount, craftedSlotUsed, eligibleAlts, isJunk, modOf, op
 import type { EssenceWrite, Method, Move, PlanAffix, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
- * Deterministic writes: Greater essences (magic → rare + guaranteed mod) and Perfect/Corrupted
- * essences steered by Crystallisation. Owner rule (theory-gaps T3, in game 2026-10-02): a Greater
+ * Deterministic writes: Greater essences (magic → rare + guaranteed mod), and Perfect/Corrupted
+ * essences and alloys (rare: remove a random mod, write the crafted one) steered by Crystallisation. Owner rule (theory-gaps T3, in game 2026-10-02): a Greater
  * essence whose family is already on the item fails ("already has a mod of this type") — never
  * planned then. A pool slot is written by the essence of any candidate still possible.
  */
@@ -90,6 +91,20 @@ function essencePerfect(state: PlanState, ctx: PlanCtx): Move[] {
   return out;
 }
 
+/** An alloy is currency on the exchange, not an essence: its material row comes from MATS. */
+function writeMat(w: EssenceWrite): CraftMaterial {
+  if (w.tier !== "alloy") return essenceMat(w);
+  const m = ALL_MATERIALS.find((x) => x.id === w.essenceId);
+  if (!m) throw new Error(`planner: alloy ${w.essenceId} has no craftMaterials entry`);
+  return m;
+}
+
+function perfectWhy(alloy: boolean, where: string, steered: boolean): string {
+  const removal = `The ${alloy ? "alloy" : "essence"} removes a random ${where ? `${where} ` : ""}mod — the only removable one${where ? ` on that side` : ""} is a throwaway, so nothing you want goes — then writes its guaranteed mod into the crafted slot.`;
+  if (alloy) return `${removal} An item that already has a crafted mod refuses it ("This item already has a crafted mod").${steered ? " Activate the Crystallisation omen right before the alloy — any essence used in between consumes it." : ""}`;
+  return `${removal}${steered ? " A Crystallisation omen is used up by ANY essence (one source says so) — activate it right before this one." : ""}`;
+}
+
 function perfectMove(state: PlanState, ctx: PlanCtx, wr: Write, w: EssenceWrite, steer: AffixSide | null): Move | null {
   const { t, alt } = wr;
   const label = targetText(wr.mod.text);
@@ -97,17 +112,20 @@ function perfectMove(state: PlanState, ctx: PlanCtx, wr: Write, w: EssenceWrite,
   if (!gone) return null;
   const after = withAffixes(state, without(state, gone));
   if (openOf(ctx, after, t.side) < 1) return null;
+  const alloy = w.tier === "alloy";
   const omen = steer ? sideOmen(steer, "Crystallisation") : null;
-  const mats = [...(omen ? [mat(omen.key)] : []), essenceMat(w)];
+  const mats = [...(omen ? [mat(omen.key)] : []), writeMat(w)];
   const where = steer ? `${steer}` : "";
+  // the omen's text names Perfect/Corrupted Essences only: steering an alloy rests on creator footage
+  const creatorOnly = alloy && omen != null;
   return makeMove(ctx, {
-    methodId: `essence-perfect:${w.essenceId}${steer ? `:${steer}` : ""}`,
-    title: `${label} by essence`,
+    methodId: `${alloy ? "alloy" : "essence-perfect"}:${w.essenceId}${steer ? `:${steer}` : ""}`,
+    title: `${label} by ${alloy ? "alloy" : "essence"}`,
     next: withAffixes(after, [...after.affixes, targetAffix(t.side, t.idx, "crafted", alt)]),
     steps: [
       step({
         do: `${omen ? `${mat(omen.key).label} + ` : ""}${w.label} → ${label}.`,
-        why: `The essence removes a random ${where ? `${where} ` : ""}mod — the only removable one${where ? ` on that side` : ""} is a throwaway, so nothing you want goes — then writes its guaranteed mod into the crafted slot.${omen ? " A Crystallisation omen is used up by ANY essence (one source says so) — activate it right before this one." : ""}`,
+        why: perfectWhy(alloy, where, omen != null),
         sources: essenceSources(w, steer != null),
         mats,
         check: `${label} present; the throwaway is gone.`,
@@ -115,14 +133,16 @@ function perfectMove(state: PlanState, ctx: PlanCtx, wr: Write, w: EssenceWrite,
     ],
     uses: mats.map(once),
     odds: exact(1, `the removal hits the only removable ${where || "mod"} (a throwaway); the write is guaranteed`),
-    grade: "vp",
-    checks: [{ state, rules: [omen ? omen.rule : "essence-perfect"] }],
+    grade: creatorOnly ? "ss" : "vp",
+    facts: creatorOnly ? [CRYSTALLISATION_ALLOY_FACT.text] : [],
+    checks: [{ state, rules: [omen ? omen.rule : alloy ? "alloy" : "essence-perfect"] }],
   });
 }
 
 /** The essence's poe2db page, the essence rules, and the omen rules when an omen steers it. */
 function essenceSources(w: EssenceWrite, steered: boolean): SourceRef[] {
-  return [...sources("kb-essences", ...(steered ? (["kb-omens"] as SourceId[]) : [])), linkSource(`poe2db — ${w.label}`, w.source)];
+  const omen: SourceId[] = steered ? (w.tier === "alloy" ? ["kb-omens", "creators", "forum"] : ["kb-omens"]) : [];
+  return [...sources("kb-essences", ...omen), linkSource(`poe2db — ${w.label}`, w.source)];
 }
 
 export const WRITE_METHODS: readonly Method[] = [

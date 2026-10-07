@@ -101,7 +101,7 @@ export function resolveOne(cat: CraftCatalog, combo: CatalogCombo, base: BaseInf
   if (!source) return impossible(idx, "base-pool", `"${mod.text}" does not roll on a ${base.name}`, "vp", SRC.gameData);
   const essences = essenceWritesFor(cat, base.itemClass, spec.family, mod.level, spec.minModId);
   if (source === "essence" && essences.length === 0) {
-    return impossible(idx, "essence-table", `no essence we know of writes "${mod.text}" on ${base.itemClass.toLowerCase()}`, "vp", SRC.essences);
+    return impossible(idx, "essence-table", `no essence or alloy we know of writes "${mod.text}" on ${base.itemClass.toLowerCase()}`, "vp", SRC.essences);
   }
   if (source !== "essence" && mod.level > base.ilvl) {
     return impossible(idx, "ilvl-gate", `"${mod.text}" needs item level ${mod.level}; the base is ${base.ilvl}`, "vp", SRC.ilvl);
@@ -169,7 +169,7 @@ function pairIssues(targets: readonly ResolvedTarget[]): FeasibilityIssue[] {
 export function slotIssues(base: BaseInfo, targets: readonly ResolvedTarget[]): FeasibilityIssue[] {
   const out: FeasibilityIssue[] = [];
   const crafted = targets.filter((t) => t.source === "essence");
-  if (crafted.length > 1) out.push({ severity: "impossible", rule: "one-crafted", message: "two essence-only mods: one crafted mod per item — a second needs Astrid's Creativity, which this planner does not plan", grade: "vp", source: SRC.crafted, target: crafted[1]!.idx });
+  if (crafted.length > 1) out.push({ severity: "impossible", rule: "one-crafted", message: "two essence- or alloy-only mods: one crafted mod per item — a second needs Astrid's Creativity, which this planner does not plan", grade: "vp", source: SRC.crafted, target: crafted[1]!.idx });
   const desecrated = targets.filter((t) => t.source === "desecrated");
   if (desecrated.length > 1) out.push({ severity: "impossible", rule: "one-desecrated", message: "two desecrated mods: one per item — only Omen of Putrefaction exceeds it, and it corrupts the item (not planned)", grade: "vp", source: SRC.desecration, target: desecrated[1]!.idx });
   const fractured = targets.filter((t) => t.fractured);

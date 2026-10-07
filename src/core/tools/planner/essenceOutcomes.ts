@@ -1,4 +1,5 @@
 import type { CraftCatalog } from "../craftmoves/catalog";
+import { ALLOY_OUTCOMES, alloysFor } from "./alloyOutcomes";
 import type { EssenceWrite } from "./types";
 
 /**
@@ -86,12 +87,15 @@ export function essencesFor(itemClass: string): EssenceOutcomeRow[] {
   return ESSENCE_OUTCOMES.filter((r) => r.itemClass === itemClass && r.essenceId !== BREACH_ESSENCE_ID);
 }
 
+/** Every curated crafted-mod writer: the essences, then the alloys (alloyOutcomes.ts). */
+export const CRAFTED_WRITE_OUTCOMES: readonly EssenceOutcomeRow[] = [...ESSENCE_OUTCOMES, ...ALLOY_OUTCOMES];
+
 /**
- * Essence writes that satisfy a target: same family, mod level at or above the minimum tier's.
- * A crafted-only target (Perfect Essence of the Mind) matches its own mod id.
+ * Essence and alloy writes that satisfy a target: same family, mod level at or above the minimum
+ * tier's. A crafted-only target (Perfect Essence of the Mind, every alloy mod) matches its own mod id.
  */
 export function essenceWritesFor(cat: CraftCatalog, itemClass: string, family: string, minLevel: number, minModId: string): EssenceWrite[] {
-  return essencesFor(itemClass)
+  return [...essencesFor(itemClass), ...alloysFor(itemClass)]
     .filter((r) => {
       const mod = cat.mods[r.modId];
       if (!mod) throw new Error(`essenceOutcomes: ${r.essenceId} → ${r.modId} is not in the craft catalog — rebuild or fix the row`);

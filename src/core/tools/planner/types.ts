@@ -118,7 +118,8 @@ export interface EssenceWrite {
   essenceId: string;
   label: string;
   modId: string;
-  tier: "greater" | "perfect" | "corrupted" | "special";
+  /** "alloy": a Verisium alloy, written like a Perfect essence (rare, remove-then-replace). */
+  tier: "greater" | "perfect" | "corrupted" | "special" | "alloy";
   source: string;
 }
 

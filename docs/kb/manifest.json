@@ -5,8 +5,8 @@
       "path": "docs/kb/currency-core.md",
       "patch": "0.5.4b",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-10-02",
-      "sha256": "6d43a82fea924cda1079c64100b56d42d8190daf4d773beb2ee6478d18e3bca2"
+      "stamped_at": "2026-10-07",
+      "sha256": "4e78706433312862e8659ce460e320857e75f908627fec4d33a26cfdae9f826b"
     },
     {
       "path": "docs/kb/breach.md",
@@ -82,8 +82,8 @@
       "path": "docs/research/poe2-crafting-knowledge.md",
       "patch": "0.5.x",
       "league": "Runes of Aldur",
-      "stamped_at": "2026-10-02",
-      "sha256": "d7137200a78c42ecc5a7d7f31932ffe82421979040a0436eb231a9b2da5f2eb1"
+      "stamped_at": "2026-10-07",
+      "sha256": "aac8a8ff2fa0081486889fed96e99887769718a1bb7a8903b1dbdddea6b51e38"
     },
     {
       "path": "docs/research/poe2-bow-crafting-0.5.md",
