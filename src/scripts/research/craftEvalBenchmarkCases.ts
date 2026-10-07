@@ -46,10 +46,10 @@ const bought = (div: number | null, buys = 1): Compared => ({
 });
 
 function testPickCompared(): void {
-  assert.deepEqual(pickCompared(clean(239), bought(107), null), { pick: "bought", rule: "materials-only" }, "no base price: the cheaper material total wins");
-  assert.deepEqual(pickCompared(clean(100), bought(107), null), { pick: "clean", rule: "materials-only" });
-  assert.deepEqual(pickCompared(clean(100), bought(null), null), { pick: "clean", rule: "materials-only" }, "an unpriced total cannot win");
-  assert.deepEqual(pickCompared(clean(null), bought(107), null), { pick: "bought", rule: "materials-only" });
+  assert.deepEqual(pickCompared(clean(239), bought(107), null), { pick: "clean", rule: "no-base-clean" }, "no base price: the clean plan, never a falsely cheap bought total");
+  assert.deepEqual(pickCompared(clean(100), bought(107), null), { pick: "clean", rule: "no-base-clean" });
+  assert.deepEqual(pickCompared(clean(100), bought(null), null), { pick: "clean", rule: "no-base-clean" }, "an unpriced total cannot be scored");
+  assert.deepEqual(pickCompared(clean(null), bought(107), null), { pick: "bought", rule: "no-base-clean" }, "only the bought plan is priced");
   assert.deepEqual(pickCompared(clean(239), bought(107), b(200)), { pick: "clean", rule: "with-base" }, "with a base price: 107 + 200 > 239, the UI rule");
   assert.deepEqual(pickCompared(clean(239), bought(107), b(50)), { pick: "bought", rule: "with-base" }, "107 + 50 < 239");
   assert.deepEqual(pickCompared(clean(239), bought(107, 2), b(70)), { pick: "clean", rule: "with-base" }, "restarts buy more bases: 107 + 2 × 70 > 239");

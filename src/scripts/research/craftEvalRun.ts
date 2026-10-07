@@ -46,16 +46,13 @@ type Compared = Pick<PlanResponse, "totals" | "start">;
 
 /**
  * Which of two planned starts a compare entry scores. With the creator's base price: the UI's badge
- * rule (cheaperPlan). Without one, that rule can never pick the bought plan (its total lacks the
- * base), so the cheaper material total wins instead — the creator side then has no base either.
+ * rule (cheaperPlan). Without one, the clean plan: a bought plan's total omits its base, and that
+ * base can carry the very work (a fracture phase) the creator paid for, so it would look falsely cheap.
  */
 export function pickCompared(clean: Compared, bought: Compared, baseDiv: GoldenBand | null): { pick: "clean" | "bought"; rule: CompareRule } {
   if (baseDiv) return { pick: cheaperPlan(clean, bought, baseDiv.point) === "bought" ? "bought" : "clean", rule: "with-base" };
-  const c = clean.totals.div;
-  const b = bought.totals.div;
-  // An unpriced total cannot win a comparison; errorOf reports it if it is the one left.
-  const pick = !b ? "clean" : !c ? "bought" : b.point < c.point ? "bought" : "clean";
-  return { pick, rule: "materials-only" };
+  // An unpriced total cannot be scored; errorOf reports it if it is the one left.
+  return { pick: clean.totals.div || !bought.totals.div ? "clean" : "bought", rule: "no-base-clean" };
 }
 
 /** "compare": plan a clean and a bought start and score the one pickCompared chooses. */

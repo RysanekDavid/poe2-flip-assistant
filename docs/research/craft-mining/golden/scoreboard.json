@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generatedAt": "2026-10-07T03:22:07.427Z",
+  "generatedAt": "2026-10-07T03:24:40.138Z",
   "prices": {
     "league": "Forbidden Rites",
     "fetchedAt": "2026-10-06T23:45:50.337Z",
@@ -534,10 +534,10 @@
     {
       "id": "jewel-sapphire-fractured-pavel",
       "archetype": "jewel-5mod-overcap",
-      "start": "bought",
+      "start": "clean",
       "benchmark": {
         "kind": "materials",
-        "reason": "Stays materials: no lucky-run or minimum-count claim. The source never prices the fractured-route base (only 'dražší báze', more expensive bases, no number), so compare scores the cheaper material total (rule materials-only). That bought plan buys the Critical Spell Damage Bonus already fractured and skips the Preserved Cranium + Fracturing Orb phase (~161 of the creator's ~195 div materials), so this ratio flatters the planner."
+        "reason": "Stays materials: no lucky-run or minimum-count claim. The source never prices the fractured-route base (only 'dražší báze', more expensive bases, no number), so compare scores the clean plan (rule no-base-clean): a bought plan would buy the Critical Spell Damage Bonus already fractured and skip the Preserved Cranium + Fracturing Orb phase (~161 of the creator's ~195 div materials), which would flatter the planner."
       },
       "creatorDiv": {
         "point": 194.77225300000006,
@@ -550,9 +550,9 @@
         "high": 150
       },
       "plannerDiv": {
-        "point": 107.45590033233393,
-        "low": 56.65730327121266,
-        "high": 308.5480852750557
+        "point": 239.0678023323339,
+        "low": 112.03375427121267,
+        "high": 657.2914892750557
       },
       "compared": {
         "clean": {
@@ -565,16 +565,16 @@
           "low": 56.65730327121266,
           "high": 308.5480852750557
         },
-        "rule": "materials-only"
+        "rule": "no-base-clean"
       },
-      "ratio": 0.5517002482501134,
+      "ratio": 1.2274222773011403,
       "pass": true,
       "tags": {
         "planner": [
           "annul",
-          "bought-base",
           "chaos-loop",
           "desecrate",
+          "exalt-omen-side",
           "fracture-target",
           "liquid",
           "omen-echoes",
@@ -591,13 +591,13 @@
           "omen-echoes",
           "omen-light"
         ],
-        "jaccard": 0.8888888888888888
+        "jaccard": 0.7
       },
       "topDriver": {
         "id": "preserved-cranium",
         "label": "Preserved Cranium",
         "div": 75.31205347724801,
-        "share": 0.7008647570242944
+        "share": 0.31502382479994073
       },
       "impractical": false,
       "marketDiv": 400,

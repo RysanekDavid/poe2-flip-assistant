@@ -72,10 +72,11 @@ export const ERROR_KINDS = ["no-plan", "rejected", "timeout", "unpriced"] as con
 
 /**
  * How a compare entry picked its start: "with-base" = the UI's rule with the creator's base price;
- * "materials-only" = no base price in the source, so the cheaper material total (the creator side
- * then has no base either); "one-plan" = only one start planned; "no-plan" = neither did.
+ * "no-base-clean" = no base price in the source, so the clean plan (a bought plan's total would skip
+ * the work its unpriced base embodies and look falsely cheap); "one-plan" = only one start planned;
+ * "no-plan" = neither did.
  */
-export const COMPARE_RULES = ["with-base", "materials-only", "one-plan", "no-plan"] as const;
+export const COMPARE_RULES = ["with-base", "no-base-clean", "one-plan", "no-plan"] as const;
 export type CompareRule = (typeof COMPARE_RULES)[number];
 
 const driverSchema = z.object({ id: z.string(), label: z.string(), div: z.number().nonnegative(), share: z.number().min(0).max(1) }).strict();
