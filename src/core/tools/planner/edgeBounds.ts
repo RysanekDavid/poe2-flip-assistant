@@ -1,7 +1,7 @@
 import { CATALYSTS, matchesCatalyst, QUALITY_PER_CATALYST } from "./catalystTags";
 import { mat, sideOmen } from "./methodKit";
 import { RISK_LAMBDA, UNPRICED_RANK_DIV } from "./rank";
-import { aimAt, bits, NoAimError, type Aim, type AimCache, type SlamScope, type SlamVariant } from "./slamChain";
+import { aimAt, aimOddsAt, bits, NoAimError, type Aim, type AimCache, type SlamScope, type SlamVariant } from "./slamChain";
 import type { AffixSide } from "../craftmoves/catalog";
 import { SIDES } from "./state";
 import type { PlanCtx, PlanState } from "./types";
@@ -20,7 +20,10 @@ import { cachedAddShape, scaledAdd, whittleStateAt, type WhittleScope } from "./
  * Whittle taking a landed target) only adds attempts, so ignoring it keeps the bound below the
  * cost. H(k) is the maximum hit chance over every state at that level, computed with the very same
  * odds the chain uses, at the prior (×1) and at the dear end of the band (×½): rankCost is
- * (1 − λ)·point + λ·dear, both are bounded the same way.
+ * (1 − λ)·point + λ·dear, both are bounded the same way. A catalysed slam's ends also differ in the
+ * Catalysing multiplier (slamChain aimOddsAt): each end's bound reads that end's own odds. "The high
+ * multiplier everywhere" would not be safe — an untagged target's chance falls as the multiplier
+ * rises — while the chain's own odds per end make H(k) exactly the chain's best hit.
  *
  * Undo-free floors are far too low where undo dominates (a steered Annulment on a side of three
  * targets takes a landed one 2 times in 3), so slam-fill solves a level chain that keeps the
@@ -54,8 +57,9 @@ function slamLevelHits(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: Slam
       if (e instanceof NoAimError) continue;
       throw e;
     }
-    // slamChain.ts slamNode: per-target min(1, p·scale), the hit is their sum clamped to 1
-    const raw = bits(mask, n).reduce((sum, i) => sum + Math.min(1, (aim.p.get(scope.chain[i]!.idx) ?? 0) * scale), 0);
+    // slamChain.ts slamNode: per-target min(1, p·scale) on the same band end, the hit is their sum clamped to 1
+    const odds = aimOddsAt(aim, scale);
+    const raw = bits(mask, n).reduce((sum, i) => sum + Math.min(1, (odds.get(scope.chain[i]!.idx) ?? 0) * scale), 0);
     const k = popcount(mask);
     best[k] = Math.max(best[k]!, Math.min(1, raw));
   }

@@ -114,6 +114,15 @@ export interface RevealPriors {
   lightAnchor: { point: number; high: number; basis: string } | null;
 }
 
+/**
+ * Omen of Catalysing Exaltation's weight multiplier for the catalyst's tagged mods at the two quality
+ * points anything is said about. point/low = the creators' statement, high = the community model.
+ */
+export interface CatalysingPriors {
+  at20: Band;
+  at40: Band;
+}
+
 export interface EssenceWrite {
   essenceId: string;
   label: string;
@@ -153,6 +162,7 @@ export interface PlanCtx {
   groups: readonly TargetGroup[];
   start: StartChoice;
   reveal: RevealPriors;
+  catalysing: CatalysingPriors;
 }
 
 export interface MaterialUse {
