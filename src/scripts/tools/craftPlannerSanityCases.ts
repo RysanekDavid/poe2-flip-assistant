@@ -63,7 +63,7 @@ function testOwnerCase(cat: CraftCatalog): void {
   assert.ok(route.includes("fracture") && !route.includes("whittle-loop"), `a landed flat is self-fractured, nothing whittled: ${route.join(", ")}`);
   const desecrate = p.steps.find((s) => s.method.startsWith("desecrate-"));
   assert.ok(desecrate && desecrate.instructions[0]!.pick.some((x) => /Physical|Lightning|Cold/.test(x)), `a flat prefix is desecrated: ${route.join(", ")}`);
-  assert.ok(p.totals.div!.point < 700, `under 700 div (P1 whittled to 1,128.54), got ${p.totals.div!.point}`);
+  assert.ok(near(p.totals.div!.point, 295.4, 0.05), `≈295 div (P1 whittled to 1,128.54), got ${p.totals.div!.point}`);
   assert.ok(p.totals.div!.point * 2.9 < OWNER_WHITTLE_DIV && p.totals.div!.point * 5 < OWNER_BEFORE_DIV, "well under the whittle-only and the slam plans");
   // P1's two whittle loops (~103 and ~72 Whittles, past Whittling's own limit of 50 — KB §4) are gone
   assert.deepEqual(p.steps.filter((s) => s.impractical).map((s) => s.method), [], "no step is past the limit any more");

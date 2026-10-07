@@ -189,7 +189,11 @@ class Frontier {
       if (e.move) return this.offer(child(node, e.move, e.order, rank, this.ctx));
       if (mode === "lazy") return this.defer({ kind: "lazy", key: stateKey(e.lazy.next), g: node.g + e.lazy.bound, ...rank, parent: node, order: e.order, edge: e.lazy });
       const move = e.lazy.build();
-      if (move) this.offer(child(node, move, e.order, rank, this.ctx));
+      if (!move) return;
+      const n = child(node, move, e.order, rank, this.ctx);
+      // every eager run checks the lazy search's premise at every expanded state: the bound never exceeds the cost
+      if (n.g < node.g + e.lazy.bound - 1e-9) throw new Error(`planner bug: ${move.methodId} costs ${n.g - node.g} under its search bound ${e.lazy.bound}`);
+      this.offer(n);
     });
   }
 
