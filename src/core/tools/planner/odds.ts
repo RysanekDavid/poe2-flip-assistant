@@ -1,6 +1,6 @@
 import type { AffixSide } from "../craftmoves/catalog";
 import { matchesCatalyst, type CatalystInfo } from "./catalystTags";
-import { eligibleAlts, presentModGroups } from "./state";
+import { eligibleAlts, presentModGroups, stateKey } from "./state";
 import type { Estimate, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
@@ -85,8 +85,22 @@ interface PoolWeights {
   weightOf: (t: ResolvedTarget) => number;
 }
 
-/** Eligible = families of the pooled sides whose groups are not on the item (and not a target's own). */
+// one search prices the same item's add pool for many moves (every slam variant, chain node and
+// whittle shape); the weights read only the item's mod groups, the sides, the catalyst bias and the
+// junk count — the currency floor only changes tierShare, so it is not part of the key
+const WEIGHTS = new WeakMap<PlanCtx, Map<string, PoolWeights>>();
+
 function poolWeights(ctx: PlanCtx, state: PlanState, pool: AddPool): PoolWeights {
+  let byKey = WEIGHTS.get(ctx);
+  if (!byKey) WEIGHTS.set(ctx, (byKey = new Map()));
+  const key = `${stateKey(state)}|${pool.sides.join(",")}|${pool.catalyst?.mat.id ?? "-"}|${pool.quality}|${pool.junkAfter}`;
+  let w = byKey.get(key);
+  if (!w) byKey.set(key, (w = computePoolWeights(ctx, state, pool)));
+  return w;
+}
+
+/** Eligible = families of the pooled sides whose groups are not on the item (and not a target's own). */
+function computePoolWeights(ctx: PlanCtx, state: PlanState, pool: AddPool): PoolWeights {
   const blocked = presentGroups(ctx, state);
   const mult = pool.catalyst ? catalysingMultiplier(pool.quality) ?? 1 : 1;
   let total = 0;

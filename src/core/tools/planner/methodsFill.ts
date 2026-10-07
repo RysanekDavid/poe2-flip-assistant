@@ -4,10 +4,11 @@ import { attemptsOf, solveChain, useOf } from "./expectation";
 import { aimsText, EXALT_TIERS, makeMove, mat, sideOmen, step, targetText, usableTier } from "./methodKit";
 import { sources, type SourceId } from "./sources";
 import { addOdds, catalysingMultiplier } from "./odds";
-import { buildChain, NoAimError, slamScope, stateAt, type Chain, type SlamScope, type SlamVariant } from "./slamChain";
+import { buildChain, NoAimError, slamScope, stateAt, type AimCache, type Chain, type SlamScope, type SlamVariant } from "./slamChain";
 import { aimable, isJunk, openOf, present, removable, SIDES, targetAffix, withAffixes, withLanded, without } from "./state";
-import type { MaterialUse, Method, Move, PlanAffix, PlanCtx, PlanState, StepText } from "./types";
-import { whittleLoop } from "./methodsWhittle";
+import type { LazyEdge, MaterialUse, Method, Move, PlanAffix, PlanCtx, PlanState, StepText } from "./types";
+import { whittleEdges } from "./methodsWhittle";
+import { slamBound } from "./edgeBounds";
 
 /**
  * Random adds: the Chaos loop (every removable mod a throwaway → every Chaos swaps one) and the
@@ -116,10 +117,10 @@ function erasureLoop(state: PlanState, ctx: PlanCtx): Move[] {
 }
 
 /** Expected material use of the chain with its band (×2 / ×½ every hit chance). */
-function chainUses(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, point: Chain): MaterialUse[] {
+function chainUses(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, point: Chain, aims: AimCache): MaterialUse[] {
   const start = `${scope.missing0}:${scope.j0}`;
-  const cheap = buildChain(state, ctx, scope, v, 2);
-  const dear = buildChain(state, ctx, scope, v, 0.5);
+  const cheap = buildChain(state, ctx, scope, v, 2, aims);
+  const dear = buildChain(state, ctx, scope, v, 0.5, aims);
   const mats = new Map<string, MaterialUse["mat"]>();
   for (const c of [point, cheap, dear]) {
     for (const n of c.nodes) for (const id of Object.keys(n.cost)) mats.set(id, materialById(id, c));
@@ -175,10 +176,10 @@ function slamSteps(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, chain: Chain)
   return out;
 }
 
-function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant): Move | null {
+function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, aims: AimCache): Move | null {
   let chain: Chain;
   try {
-    chain = buildChain(state, ctx, scope, v, 1);
+    chain = buildChain(state, ctx, scope, v, 1, aims);
   } catch (e: unknown) {
     if (e instanceof NoAimError) return null;
     throw e;
@@ -196,12 +197,11 @@ function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVaria
     checks.push({ state: full, rules: [scope.steerAnnul ? sideOmen(scope.side, "Annulment").rule : "annul"] });
   }
   return makeMove(ctx, {
-    methodId: `slam-${scope.side}-${v.tier.rule}${v.catalysing ? "-catalysing" : ""}`,
+    methodId: slamId(scope, v),
     title: `${scope.side === "prefix" ? "Prefix" : "Suffix"} slams`,
-    // Catalysing Exaltation consumes ALL catalyst quality (KB §4): a quality goal must come after
-    next: v.catalysing ? { ...stateAt(ctx, state, scope, 0, scope.j0), quality: 0, catalyst: null } : stateAt(ctx, state, scope, 0, scope.j0),
+    next: slamNext(state, ctx, scope, v),
     steps: slamSteps(ctx, scope, v, chain),
-    uses: chainUses(state, ctx, scope, v, chain),
+    uses: chainUses(state, ctx, scope, v, chain, aims),
     odds: chain.first.est,
     grade: "vp",
     adds: true,
@@ -213,25 +213,39 @@ function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVaria
 
 const countBits = (mask: number): number => mask.toString(2).replace(/0/g, "").length;
 
-function slamFill(state: PlanState, ctx: PlanCtx): Move[] {
-  const out: Move[] = [];
+const slamId = (scope: SlamScope, v: SlamVariant): string => `slam-${scope.side}-${v.tier.rule}${v.catalysing ? "-catalysing" : ""}`;
+
+/** Every chain target landed; Catalysing Exaltation consumes ALL catalyst quality (KB §4): a quality goal must come after. */
+function slamNext(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant): PlanState {
+  const done = stateAt(ctx, state, scope, 0, scope.j0);
+  return v.catalysing ? { ...done, quality: 0, catalyst: null } : done;
+}
+
+/** One edge per side × usable Exalt tier × catalysing; the variant's chain is built only on demand. */
+function slamEdges(state: PlanState, ctx: PlanCtx): LazyEdge[] {
+  const out: LazyEdge[] = [];
   for (const side of SIDES) {
     const scope = slamScope(state, ctx, side);
     if (!scope) continue;
     for (const tier of EXALT_TIERS.filter((t) => usableTier(ctx, t))) {
       for (const catalysing of [false, true]) {
         if (catalysing && (ctx.base.qualityCap == null || scope.steerExalt)) continue;
-        const move = slamMove(state, ctx, scope, { tier, catalysing });
-        if (move) out.push(move);
+        const v = { tier, catalysing };
+        // the bound and the build share the variant's aims: a built edge pays for them once
+        const aims: AimCache = new Map();
+        out.push({ methodId: slamId(scope, v), next: slamNext(state, ctx, scope, v), bound: slamBound(state, ctx, scope, v, aims), build: () => slamMove(state, ctx, scope, v, aims) });
       }
     }
   }
   return out;
 }
 
+const built = (edges: (state: PlanState, ctx: PlanCtx) => LazyEdge[]) => (state: PlanState, ctx: PlanCtx): Move[] =>
+  edges(state, ctx).flatMap((e) => e.build() ?? []);
+
 export const FILL_METHODS: readonly Method[] = [
   { id: "chaos-loop", order: 30, moves: chaosLoop },
   { id: "erasure-loop", order: 31, moves: erasureLoop },
-  { id: "whittle-loop", order: 32, moves: whittleLoop },
-  { id: "slam-fill", order: 70, moves: slamFill },
+  { id: "whittle-loop", order: 32, moves: built(whittleEdges), lazy: whittleEdges },
+  { id: "slam-fill", order: 70, moves: built(slamEdges), lazy: slamEdges },
 ];

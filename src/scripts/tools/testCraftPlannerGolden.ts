@@ -69,7 +69,7 @@ function testBreachRing(cat: CraftCatalog): void {
   for (const id of curatedMats("ring_breach_mana_stacker")) assert.ok(mats.has(id), `Breach plan uses curated material ${id}`);
   const chaos = stepOf(p, /^chaos-loop$/);
   assert.equal(chaos.odds.basis, "estimate");
-  // 30 families − the fractured resistance's − one throwaway suffix's that stays on the item
+  // 31 − Cold Res group (the fractured resistance) − 1 throwaway suffix that stays on the item = 29 families
   assert.ok(Math.abs(chaos.odds.point! - 1 / 29 / 12) < 1e-9, `chaos odds = 1/29 families × 1/12 tiers, got ${chaos.odds.point}`);
   assert.match(chaos.instructions[0]!.do, /^Chaos Orb until \+\(165-179\) to maximum Mana\.$/, "steps are targets, not click counts");
   const slam = stepOf(p, /^slam-suffix/);

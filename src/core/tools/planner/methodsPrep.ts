@@ -181,6 +181,18 @@ function fractureAims(state: PlanState, ctx: PlanCtx): ResolvedTarget[] {
   return ctx.targets.filter(unmet);
 }
 
+function fractureMissText(otherWanted: number): string {
+  const junkMiss = "A throwaway fractured → one fracture per item, ever: start over on a new base (sell this one as it is).";
+  if (otherWanted === 0) return junkMiss;
+  return `${junkMiss} Another wanted mod fractured → keep the item: plan again from it as a base you already have, with that mod fractured.`;
+}
+
+function fractureFormula(mods: number, eligible: number, otherWanted: number): string {
+  const base = `P = 1/${eligible} — ${mods} mods, ${mods - eligible} desecrated can't be fractured; each other mod equally likely`;
+  if (otherWanted === 0) return base;
+  return `${base}. The ${otherWanted} other wanted mod${otherWanted === 1 ? "" : "s"} on the item count${otherWanted === 1 ? "s" : ""} as a miss here, though that item is worth keeping — so the cost shown is on the safe side`;
+}
+
 /** Fracture with ≥4 mods: P = 1/(mods − desecrated) (KB §2; uniform pick assumed, owner rule). */
 function fracture(state: PlanState, ctx: PlanCtx): Move[] {
   if (state.rarity !== "Rare" || state.affixes.some((a) => a.kind === "fractured") || state.affixes.length < 4) return [];
@@ -192,6 +204,9 @@ function fracture(state: PlanState, ctx: PlanCtx): Move[] {
     // a pool slot names the candidate that landed, not "any of: …"
     const label = targetText(modOf(ctx, a).text);
     const p = 1 / eligible;
+    // P counts a fracture on another wanted mod as a miss although that item is worth keeping and
+    // re-planning from: the restart cost is a ceiling, never flattering
+    const otherWanted = state.affixes.filter((x) => x !== a && x.target != null && x.kind !== "desecrated").length;
     const facts = [
       ...(a.kind === "crafted" ? ["A crafted mod can be fractured — seen in one creator video only."] : []),
       ...(state.affixes.some((x) => x.unrevealed) ? ["An unrevealed desecrated mod counting toward the 4 is shown in creator videos, not confirmed by game data."] : []),
@@ -208,12 +223,12 @@ function fracture(state: PlanState, ctx: PlanCtx): Move[] {
           sources: sources("kb-fracture"),
           mats: [mat("fracturing")],
           check: `${label} is FRACTURED.`,
-          onFail: "Wrong mod fractured → one fracture per item, ever: start over on a new base (sell this one as it is).",
+          onFail: fractureMissText(otherWanted),
           retry: "start",
         }),
       ],
       uses: [once(mat("fracturing"))],
-      odds: exact(p, `P = 1/${eligible} — ${state.affixes.length} mods, ${state.affixes.length - eligible} desecrated can't be fractured; each other mod equally likely`, { "mods on the item": state.affixes.length, "mods it can lock": eligible }),
+      odds: exact(p, fractureFormula(state.affixes.length, eligible, otherWanted), { "mods on the item": state.affixes.length, "mods it can lock": eligible, ...(otherWanted > 0 ? { "other wanted mods it can lock": otherWanted } : {}) }),
       restartP: p,
       grade: facts.length > 0 ? "ss" : "vs",
       facts,

@@ -4,7 +4,8 @@ import { makeMove, mat, sideOmen, step, targetText } from "./methodKit";
 import { addOdds } from "./odds";
 import { sources, type SourceId } from "./sources";
 import { isJunk, isOverCap, openOf, SIDES } from "./state";
-import type { Estimate, Move, PlanCtx, PlanState, StepText } from "./types";
+import { whittleBound, whittlePreparedBound } from "./edgeBounds";
+import type { Estimate, LazyEdge, Move, PlanCtx, PlanState, StepText } from "./types";
 import { buildWhittleGraph, chainAt, whittleScope, whittleStateAt, WhittleOutOfScopeError, type WhittleGraph, type WhittleScope } from "./whittleChain";
 
 /**
@@ -26,16 +27,33 @@ function firstOdds(ctx: PlanCtx, state: PlanState, scope: WhittleScope): Estimat
   return (odds.p.get(scope.target.idx) ?? 0) > 0 ? odds.estimate(scope.target.idx) : null;
 }
 
-/** The chain and its expected uses at the prior and both band ends, or null when it can't be modelled. */
-function solved(state: PlanState, ctx: PlanCtx, scope: WhittleScope, ids: (g: WhittleGraph) => string[]): { g: WhittleGraph; uses: Array<Record<string, number>> } | null {
+/** Null when the chain can't be modelled (a write it can't win back would go, too many states, never absorbing). */
+function inScope<T>(f: () => T): T | null {
   try {
-    const g = buildWhittleGraph(state, ctx, scope);
-    if (!g.whittles) return null;
-    return { g, uses: [1, 2, 0.5].map((scale) => solveChain(chainAt(g, scale), g.start.id, ids(g))) };
+    return f();
   } catch (e: unknown) {
     if (e instanceof WhittleOutOfScopeError) return null;
     throw e;
   }
+}
+
+/** The first half of a whittle Move: its graph and the expected uses at the prior — all its tighter search bound needs. */
+interface WhittlePrep {
+  e: Estimate;
+  g: WhittleGraph;
+  /** Expected uses at the prior, by material id (matsOf). */
+  point: Record<string, number>;
+}
+
+const matsOf = (g: WhittleGraph) => [mat("omenWhittling"), ...SIDES.filter((s) => g.erasures.has(s)).map((s) => mat(sideOmen(s, "Erasure").key)), mat("chaos")];
+
+function prepare(state: PlanState, ctx: PlanCtx, scope: WhittleScope): WhittlePrep | null {
+  const e = firstOdds(ctx, state, scope);
+  if (!e) return null;
+  const g = inScope(() => buildWhittleGraph(state, ctx, scope));
+  if (!g || !g.whittles) return null;
+  const point = inScope(() => solveChain(chainAt(g, 1), g.start.id, matsOf(g).map((m) => m.id)));
+  return point ? { e, g, point } : null;
 }
 
 function whyText(scope: WhittleScope, chain: WhittleGraph): string {
@@ -55,16 +73,16 @@ function erasureStep(side: AffixSide): StepText {
   });
 }
 
-function whittleMove(state: PlanState, ctx: PlanCtx, scope: WhittleScope): Move | null {
-  const e = firstOdds(ctx, state, scope);
+/** The Move from its prepared half: the band ends' solves, the guide text and the legality checks. */
+function finish(state: PlanState, ctx: PlanCtx, scope: WhittleScope, prep: WhittlePrep): Move | null {
+  const { e, g: point, point: p } = prep;
+  const ids = matsOf(point).map((m) => m.id);
+  const ends = inScope(() => [2, 0.5].map((scale) => solveChain(chainAt(point, scale), point.start.id, ids)));
+  if (!ends) return null;
+  const [lo, hi] = ends;
   const omen = mat("omenWhittling");
-  const matsOf = (g: WhittleGraph) => [omen, ...SIDES.filter((s) => g.erasures.has(s)).map((s) => mat(sideOmen(s, "Erasure").key)), mat("chaos")];
-  const out = e ? solved(state, ctx, scope, (g) => matsOf(g).map((m) => m.id)) : null;
-  if (!e || !out) return null;
-  const point = out.g;
-  const [p, lo, hi] = out.uses;
   // a click only the dear end of the band reaches (hits ×½) is not part of the plan the player reads
-  const used = (id: string): boolean => p![id]! > 1e-9;
+  const used = (id: string): boolean => p[id]! > 1e-9;
   if (!used(omen.id)) return null;
   const erasureSides = SIDES.filter((s) => point.erasures.has(s) && used(mat(sideOmen(s, "Erasure").key).id));
   const mats = matsOf(point).filter((m) => used(m.id));
@@ -83,7 +101,7 @@ function whittleMove(state: PlanState, ctx: PlanCtx, scope: WhittleScope): Move 
       }),
       ...erasureSides.map(erasureStep),
     ],
-    uses: mats.map((m) => useOf(m, { point: p![m.id]!, low: lo![m.id]!, high: hi![m.id]! })),
+    uses: mats.map((m) => useOf(m, { point: p[m.id]!, low: lo![m.id]!, high: hi![m.id]! })),
     odds: e,
     grade: point.ties ? "ss" : "vp",
     facts: point.ties ? [TIE_FACT] : [],
@@ -93,15 +111,32 @@ function whittleMove(state: PlanState, ctx: PlanCtx, scope: WhittleScope): Move 
   });
 }
 
-/** One move per missing natural target the loop can reach from this item. */
-export function whittleLoop(state: PlanState, ctx: PlanCtx): Move[] {
+/** One edge per missing natural target the loop may reach from this item; the chain is built only on demand. */
+export function whittleEdges(state: PlanState, ctx: PlanCtx): LazyEdge[] {
   // an over-cap jewel refuses some Chaos clicks outright ("no space"): not modelled here
   if (state.rarity !== "Rare" || isOverCap(ctx, state)) return [];
-  const out: Move[] = [];
+  const out: LazyEdge[] = [];
   for (const t of ctx.targets) {
     const scope = whittleScope(state, ctx, t);
-    const move = scope ? whittleMove(state, ctx, scope) : null;
-    if (move) out.push(move);
+    if (!scope) continue;
+    const next = whittleStateAt(state, scope, 0, []);
+    // two steps: the cheap level-1 bound, then (when that comes up) the graph and its prior solve,
+    // which bound the cost far tighter; most loops on a dearer route than the plan stop there
+    const refine = (): LazyEdge | null => {
+      const prep = prepare(state, ctx, scope);
+      return prep ? { methodId: "whittle-loop", next, bound: whittlePreparedBound(state, ctx, scope, prep.point), build: () => finish(state, ctx, scope, prep) } : null;
+    };
+    out.push({ methodId: "whittle-loop", next, bound: whittleBound(state, ctx, scope), build: () => whittleMove(state, ctx, scope), refine });
   }
   return out;
+}
+
+function whittleMove(state: PlanState, ctx: PlanCtx, scope: WhittleScope): Move | null {
+  const prep = prepare(state, ctx, scope);
+  return prep ? finish(state, ctx, scope, prep) : null;
+}
+
+/** One move per missing natural target the loop can reach from this item. */
+export function whittleLoop(state: PlanState, ctx: PlanCtx): Move[] {
+  return whittleEdges(state, ctx).flatMap((e) => e.build() ?? []);
 }
