@@ -53,14 +53,14 @@ function testRevealFactionRoutes(cat: CraftCatalog): void {
   const t = ctx.targets[2]!;
   assert.equal(t.source, "desecrated");
   const state: PlanState = canonical({ rarity: "Rare", affixes: [junk("prefix"), junk("suffix"), junk("suffix")], quality: 0, catalyst: null });
-  const odds = revealOdds(ctx, state, t, { liege: false, bone: "preserved" })!;
+  const odds = revealOdds(ctx, state, t, { factionOmen: false, bone: "preserved" })!;
   const p = Number(odds.once.inputs["wanted share of them"]);
   const pf = Number(/pf = ([0-9.]+)/.exec(odds.once.formula)?.[1]);
   assert.ok(p > 0 && pf > p, `the faction option favours its own families: p ${p}, pf ${pf}`);
   assert.ok(Math.abs(odds.first - (1 - (1 - p) ** 2 * (1 - pf))) < 1e-4, "two open draws plus the faction option");
   assert.match(odds.once.formula, /at least one option is a faction mod/);
   assert.doesNotMatch(odds.once.formula, /every family and every reachable tier equally/, "no claim that every family is equally likely");
-  const ordinary = revealOdds(ctx, state, ctx.targets[3]!, { liege: false, bone: "preserved" })!;
+  const ordinary = revealOdds(ctx, state, ctx.targets[3]!, { factionOmen: false, bone: "preserved" })!;
   assert.doesNotMatch(ordinary.once.formula, /pf = /, "an ordinary mod has no faction route");
 }
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generatedAt": "2026-10-07T02:22:09.630Z",
+  "generatedAt": "2026-10-07T02:21:50.426Z",
   "prices": {
     "league": "Forbidden Rites",
     "fetchedAt": "2026-10-06T23:45:50.337Z",
@@ -185,13 +185,13 @@
         "high": 1.37240556
       },
       "plannerDiv": {
-        "point": 24.70190724619998,
-        "low": 7.2726594208349615,
-        "high": 53.733934432923334
+        "point": 2.0025580639999996,
+        "low": 0.81080056,
+        "high": 13.070678128
       },
       "compared": null,
-      "ratio": 17.998985115012196,
-      "pass": false,
+      "ratio": 1.4591591016288215,
+      "pass": true,
       "tags": {
         "planner": [
           "annul",
@@ -212,8 +212,8 @@
       "topDriver": {
         "id": "omen-of-light",
         "label": "Omen of Light",
-        "div": 21.386044428487068,
-        "share": 0.9022921322888814
+        "div": 0.6366666666666666,
+        "share": 0.6350421881067895
       },
       "impractical": false,
       "marketDiv": 4,
@@ -295,9 +295,9 @@
       },
       "compared": {
         "clean": {
-          "point": 399.18711160265707,
-          "low": 149.80231782937062,
-          "high": 931.615773984523
+          "point": 627.6467116026571,
+          "low": 264.2209178293706,
+          "high": 1387.024573984523
         },
         "bought": {
           "point": 257.49200960265705,
@@ -357,9 +357,9 @@
       },
       "compared": {
         "clean": {
-          "point": 628.3166431308343,
-          "low": 225.34199100586645,
-          "high": 1390.3148507202147
+          "point": 856.7762431308342,
+          "low": 339.76059100586644,
+          "high": 1845.7236507202147
         },
         "bought": {
           "point": 489.62154113083443,
@@ -418,9 +418,9 @@
       },
       "compared": {
         "clean": {
-          "point": 277.5456717440524,
-          "low": 112.04240211949342,
-          "high": 657.3282328291136
+          "point": 506.00527174405244,
+          "low": 226.46100211949343,
+          "high": 1112.7370328291138
         },
         "bought": {
           "point": 146.0337697440524,
@@ -470,15 +470,15 @@
         "high": 336.97829700000005
       },
       "plannerDiv": {
-        "point": 277.5456717440524,
-        "low": 112.04240211949342,
-        "high": 657.3282328291136
+        "point": 506.00527174405244,
+        "low": 226.46100211949343,
+        "high": 1112.7370328291138
       },
       "compared": {
         "clean": {
-          "point": 277.5456717440524,
-          "low": 112.04240211949342,
-          "high": 657.3282328291136
+          "point": 506.00527174405244,
+          "low": 226.46100211949343,
+          "high": 1112.7370328291138
         },
         "bought": {
           "point": 145.9337697440524,
@@ -486,11 +486,12 @@
           "high": 308.5848288291137
         }
       },
-      "ratio": 1.4249754134335157,
-      "pass": true,
+      "ratio": 2.5979330420542617,
+      "pass": false,
       "tags": {
         "planner": [
           "annul",
+          "bought-base",
           "chaos-loop",
           "desecrate",
           "exalt-omen-side",
@@ -510,13 +511,13 @@
           "omen-echoes",
           "omen-light"
         ],
-        "jaccard": 0.7
+        "jaccard": 0.8
       },
       "topDriver": {
-        "id": "preserved-cranium",
-        "label": "Preserved Cranium",
-        "div": 104.20733059885144,
-        "share": 0.3754601177673906
+        "id": "omen-of-dextral-annulment",
+        "label": "Omen of Dextral Annulment",
+        "div": 233.44,
+        "share": 0.461339067072168
       },
       "impractical": false,
       "marketDiv": 400,
@@ -538,9 +539,9 @@
       },
       "compared": {
         "clean": {
-          "point": 146.35882615596898,
-          "low": 96.81964214794519,
-          "high": 240.36628289252494
+          "point": 128.44318861430213,
+          "low": 57.99485193961186,
+          "high": 306.5463263091915
         },
         "bought": {
           "point": 107.88407515596899,
@@ -693,22 +694,21 @@
         "high": 486.63689100000005
       },
       "plannerDiv": {
-        "point": 1303.0059296655668,
-        "low": 267.44626535933475,
-        "high": 8654.25218343455
+        "point": 14540.915051241656,
+        "low": 1161.7959043050648,
+        "high": 206929.36919298398
       },
       "compared": null,
-      "ratio": 4.50193820917039,
+      "ratio": 50.23944985598598,
       "pass": false,
       "tags": {
         "planner": [
+          "anchored-junk",
           "annul",
+          "bought-base",
           "catalyse",
-          "chaos-loop",
-          "desecrate",
           "essence",
           "exalt-omen-side",
-          "fracture-target",
           "greater-exalt"
         ],
         "creator": [
@@ -725,13 +725,13 @@
           "perfect-exalt",
           "whittle"
         ],
-        "jaccard": 0.6666666666666666
+        "jaccard": 0.35714285714285715
       },
       "topDriver": {
         "id": "annul",
         "label": "Orb of Annulment",
-        "div": 998.4586420859805,
-        "share": 0.7662732911294178
+        "div": 12219.557801623874,
+        "share": 0.840356866026835
       },
       "impractical": true,
       "marketDiv": 500,
@@ -747,22 +747,22 @@
         "high": 138.11689499999997
       },
       "plannerDiv": {
-        "point": 345.0796030123405,
-        "low": 99.36297924691364,
-        "high": 2044.5710959134833
+        "point": 1293.2544480277932,
+        "low": 133.38393554706713,
+        "high": 16691.826994846582
       },
       "compared": null,
-      "ratio": 3.8143009725278327,
+      "ratio": 14.294851552445861,
       "pass": false,
       "tags": {
         "planner": [
+          "anchored-junk",
           "annul",
+          "bought-base",
           "catalyse",
           "chaos-loop",
-          "desecrate",
           "essence",
           "exalt-omen-side",
-          "fracture-target",
           "greater-exalt"
         ],
         "creator": [
@@ -778,15 +778,15 @@
           "perfect-exalt",
           "whittle"
         ],
-        "jaccard": 0.5833333333333334
+        "jaccard": 0.35714285714285715
       },
       "topDriver": {
         "id": "annul",
         "label": "Orb of Annulment",
-        "div": 249.47573024690925,
-        "share": 0.7229512497091509
+        "div": 1076.3602680555687,
+        "share": 0.8322880850686522
       },
-      "impractical": false,
+      "impractical": true,
       "marketDiv": 125,
       "error": null
     },

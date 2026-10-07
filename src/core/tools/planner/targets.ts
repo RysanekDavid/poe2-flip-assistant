@@ -179,7 +179,7 @@ export function slotIssues(base: BaseInfo, targets: readonly ResolvedTarget[]): 
     if (base.timeLost) out.push({ severity: "warn", rule: "time-lost-desecration", message: `desecrating a Time-Lost jewel is unverified — planned only with "include unverified methods" (bones target any rare jewel, but no source names Time-Lost ones)`, grade: "uv", source: SRC.desecration, target: t.idx });
     const rolled = targets.filter((x) => x.source === "natural" && x.side === t.side).length;
     if (rolled >= 2) out.push({ severity: "warn", rule: "desecrated-side", message: `"${t.text}" shares its side with ${rolled} rolled mods — no planned method fills such a side yet (a later Annulment could take the desecrated mod)`, grade: "syn", source: SRC.library, target: t.idx });
-    if (t.faction !== "amanamu" || base.itemClass === "Jewels") out.push({ severity: "warn", rule: "reveal-pool", message: `no faction omen steers "${t.text}" here — the reveal odds are an estimate over the whole ${t.side} pool (how the Well draws its offers isn't documented)`, grade: "ss", source: SRC.desecration, target: t.idx });
+    if (t.faction == null || base.itemClass === "Jewels") out.push({ severity: "warn", rule: "reveal-pool", message: `no faction omen steers "${t.text}" here — the reveal odds are an estimate over the whole ${t.side} pool (how the Well draws its offers isn't documented)`, grade: "ss", source: SRC.desecration, target: t.idx });
   }
   return out;
 }

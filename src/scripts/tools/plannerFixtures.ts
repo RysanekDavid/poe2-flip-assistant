@@ -39,6 +39,7 @@ const BY_KEY: Partial<Record<MaterialKey, number>> = {
   omenDextralNecromancy: 0.5,
   omenTheLiege: 3,
   omenTheSovereign: 2,
+  omenTheBlackblooded: 2.5,
   omenAbyssalEchoes: 1.2,
   omenLight: 4,
   omenSinistralErasure: 0.3,

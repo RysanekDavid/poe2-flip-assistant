@@ -77,7 +77,7 @@ export const STEP_PATTERNS: ReadonlyArray<readonly [RegExp, MacroMethodId]> = [
   [/^essence-greater:[a-z0-9-]+$/, "essence-greater"],
   [/^essence-perfect:[a-z0-9-]+(?::(?:prefix|suffix))?$/, "essence-perfect"],
   [/^alloy:[a-z0-9-]+(?::(?:prefix|suffix))?$/, "alloy"],
-  [/^desecrate(?:-liege|-(?:preserved|ancient)(?:-echoes)?)?$/, "desecrate"],
+  [/^desecrate(?:-(?:liege|sovereign|blackblooded)|-(?:preserved|ancient)(?:-echoes)?)?$/, "desecrate"],
   [/^strip-desecrated$/, "strip-desecrated"],
   [/^blocker-(?:prefix|suffix)$/, "blocker"],
   [/^acquire-normal$/, "acquire-normal"],
