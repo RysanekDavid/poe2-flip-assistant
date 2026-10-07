@@ -120,7 +120,7 @@ function desecrateSteps(ctx: PlanCtx, state: PlanState, t: ResolvedTarget, d: De
   if (v.echoes) {
     steps.push(step({
       do: "Not offered → Omen of Abyssal Echoes rerolls the three options once.",
-      why: "One reroll, not a guarantee. Keep the Well open: re-opening it may use up the omen (one forum report).",
+      why: "One reroll, not a guarantee. Arm it before the first reveal; arming it after a reveal can eat it unused (forum 3861139).",
       sources: sources("kb-omens", "forum"),
       mats: [mat("omenAbyssalEchoes")],
       pick: [label],

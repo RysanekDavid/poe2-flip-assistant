@@ -16,6 +16,7 @@ import { plannerCatalogSchema, plannerPoolSchema, planRequestSchema, planRespons
 import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, OWNER_POOL_RING, fixturePrices, target } from "./plannerFixtures";
 import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
 import { runPlannerStateCases } from "./craftPlannerStateCases";
+import { runRuleFlagCases } from "./craftPlannerRuleFlagCases";
 import { runSanityCases } from "./craftPlannerSanityCases";
 import { runWhittleCases } from "./craftPlannerWhittleCases";
 import { runCacheCases } from "./craftPlannerCacheCases";
@@ -237,6 +238,7 @@ testLibraryNeverUses();
 testContract();
 runPlannerStateCases(cat);
 runSanityCases(cat);
+runRuleFlagCases(cat);
 runWhittleCases(cat);
 runCacheCases(cat);
 runPoolCases(cat);

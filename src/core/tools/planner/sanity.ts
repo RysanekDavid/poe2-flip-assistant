@@ -1,4 +1,5 @@
 import type { ImpracticalView, PlanMaterialView } from "../../../lib/tools/craftPlannerContract";
+import { MATS } from "../../craftMaterials";
 import type { Move } from "./types";
 
 /**
@@ -16,9 +17,22 @@ import type { Move } from "./types";
  */
 export const IMPRACTICAL_CLICKS = 1000;
 
-/** The step's most-used material when it passes the limit (catalysts count: each one is applied by hand). */
+/**
+ * Per-material limits below the global one, for materials nobody spends by the thousand. Omen of
+ * Whittling: creators spend 1–26 per ring as a suffix engine (Keyson TWgmQuiLeHA 7:17, KB §4), at
+ * several Divine each — a plan past 50 is not advice even though its Chaos count looks ordinary.
+ */
+export const IMPRACTICAL_BY_MATERIAL: Readonly<Record<string, number>> = { [MATS.omenWhittling.id]: 50 };
+
+const limitOf = (id: string): number => IMPRACTICAL_BY_MATERIAL[id] ?? IMPRACTICAL_CLICKS;
+
+/**
+ * The material furthest past its own limit (catalysts count: each one is applied by hand). With no
+ * per-material limit in play that is the step's most-used material, as before the limits existed.
+ */
 export function impracticalOf(move: Move, materials: readonly PlanMaterialView[]): ImpracticalView | null {
-  const top = materials.reduce<PlanMaterialView | null>((best, m) => (!best || m.qty.point > best.qty.point ? m : best), null);
-  if (!top || top.qty.point <= IMPRACTICAL_CLICKS) return null;
+  const over = (m: PlanMaterialView): number => m.qty.point / limitOf(m.id);
+  const top = materials.filter((m) => over(m) > 1).reduce<PlanMaterialView | null>((best, m) => (!best || over(m) > over(best) ? m : best), null);
+  if (!top) return null;
   return { materialId: top.id, label: top.label, clicks: { ...top.qty }, perClick: move.odds.point, undoRisk: move.undoRisk };
 }

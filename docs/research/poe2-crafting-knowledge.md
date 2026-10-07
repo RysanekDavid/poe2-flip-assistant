@@ -51,6 +51,10 @@ faction omens; §7 forum quotes and the Perfect-essence test scope; §8 infuser 
 **Corrections 2026-10-07 (partial, craft planner self-fracture):** §2 adds Alohaa's
 desecrated-blocker self-fracture sequence [creator-demonstrated]. The rest is unchanged.
 
+**Corrections 2026-10-07 (partial, planner rule flags):** §1 Greater Regal, Greater Chaos and Perfect
+Chaos floors CONFIRMED from poe2db item text; §4 Whittling as a suffix engine (creator-demonstrated)
+and Omen of Light's item text; §10 question 1 resolved. The rest of the file is unchanged.
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -68,7 +72,9 @@ explicitly refuted (0-3 and 1-2 adversarial votes).
 | Greater Exalted Orb | **35** | |
 | Perfect Exalted Orb | **50** | stack 20, drop lvl 79 |
 | Perfect Regal Orb | **50** | [CONFIRMED by the 2026-10-01 independent fact-check against poe2db item data, [Perfect_Regal_Orb](https://poe2db.tw/us/Perfect_Regal_Orb)] |
-| Greater Regal, Greater/Perfect Chaos | **UNVERIFIED** | no surviving claim — look up per item on poe2db before encoding |
+| Greater Regal Orb | **35** | CONFIRMED (poe2db, 2026-10-07): item text "Minimum Modifier Level: 35" |
+| Greater Chaos Orb | **35** | CONFIRMED (poe2db, 2026-10-07): item text "Minimum Modifier Level: 35" |
+| Perfect Chaos Orb | **50** | CONFIRMED (poe2db, 2026-10-07): item text "Minimum Modifier Level: 50" |
 
 Sources: poe2db.tw (data-mined), poe2wiki item pages, GGG 0.5.0 patch notes verbatim,
 GGG moderator forum thread 3863869.
@@ -206,6 +212,9 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   **Ties**: every tied lowest-level mod is highlighted yellow, footer "Modifiers in Yellow may be
   removed" — any of them can go [owner in-game test 2026-10-02: T15 Waystone, 6 same-level mods, all
   6 yellow; screenshot]. Uniform pick assumed [unverified] → P = 1 / (tied removable mods).
+  **Suffix engine**: creators use 1–26 per ring as a suffix engine after a level-75 desecrated prefix
+  (Keyson TWgmQuiLeHA 7:17, 9:47–12:53); works with Greater Chaos (Alohaa 4:23)
+  [creator-demonstrated] — the high-level prefixes keep the Whittles on the suffixes.
   **Unrevealed desecrated** = lowest: on a rare Prismatic Ring (ilvl 82) with an unrevealed Preserved
   Collarbone suffix, only that mod was highlighted [owner in-game test 2026-10-02, n=1]; guides say
   level 1 [single-source — dadsofexile].
@@ -215,6 +224,9 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   insurance, not auto-best-pick. **Bug**: arm it after a reveal and re-reveal, the reroll option is missing, and removing the item from the Well "will
   eat up the omen even though you never got to actually use it" [community bug report — [forum
   3861139](https://www.pathofexile.com/forum/view-thread/3861139), 2025-09-28, n=1]. Arm it before the first reveal.
+- **Omen of Light**: "your next Orb of Annulment will remove only Desecrated modifiers"
+  [verified-primary — item text]. Required to re-desecrate: a second desecration is refused while
+  one desecrated mod exists (§5), so Light + Annulment frees the slot for the next bone.
 - **Omen of the Liege**: forces an Amanamu desecrated mod; weapons +
   jewellery only. (2026-07-13 round.) **Belts count as jewellery** for it [single-source —
   creator footage, ASaVeQ, docs/kb/sources/transcripts/23 at 12:58–13:34: Dextral Necromancy +
@@ -488,7 +500,8 @@ Source: creator league review (single-source, practitioner-grade — the "zero t
 
 ## 10. Open questions (next research round)
 
-1. Greater Regal and Greater/Perfect Chaos floors (poe2db lookup). Perfect Regal = 50 (§1).
+1. ~~Greater Regal and Greater/Perfect Chaos floors~~ — **resolved 2026-10-07**: 35 / 35 / 50 from
+   poe2db item text (§1).
 2. Verify per-base ilvl breakpoints for headline mods against each new RePoE snapshot.
 3. Well of Souls reveal ordering + family-blocking; distinct-family options (owner test T8).
 4. Omen compatibility matrix beyond documented pairs; Catalysing on both Greater mods (T10). Owner
@@ -505,7 +518,7 @@ Source: creator league review (single-source, practitioner-grade — the "zero t
 1. **Check the hover preview before Omen of Whittling** — it removes lowest modifier LEVEL,
    not lowest tier; if SEVERAL mods are yellow, any one can go (owner-tested, §4).
 2. **Key currency floors by exact item**: Perfect Aug=70, Greater Aug/Transmute=44,
-   Perfect Exalt=50, Greater Exalt=35. Floors are soft (family top-tier survives).
+   Perfect Exalt=50, Greater Exalt=35, Greater Regal/Chaos=35, Perfect Regal/Chaos=50. Floors are soft (family top-tier survives).
 3. **ilvl gates**: ele res T1 needs 82, chaos res top needs 81, ele T2 needs 71 — an ilvl-81
    base can never hit top ele res. Buy 82+ when res tiers matter.
 4. **Gnawed bones die above ilvl 64** — Preserved for endgame bases.

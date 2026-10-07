@@ -184,9 +184,9 @@ const FULL_REPLACE: MoveRule[] = [
     requires: "rare with a desecrated mod",
     effect: "the Annulment removes only a desecrated modifier — frees the one desecrated slot for a new bone",
     notes: ["cannot target a crafted mod (e.g. Contempt's '+1 … allowed') — use a Sinistral/Dextral removal for that"],
-    // RePoE OmenOnAnnulRemoveAbyssMod: "your next Orb of Annulment will remove only Desecrated modifiers"
-    source: "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)",
-    verified: false,
+    // item text (verified-primary): "your next Orb of Annulment will remove only Desecrated modifiers"
+    source: S4,
+    verified: true,
     check: (s) => (isRare(s) && s.slots.desecrated > 0 ? { pass: true } : null),
   },
 ];
