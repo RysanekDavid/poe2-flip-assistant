@@ -164,6 +164,18 @@ export const FOUR_FLAT_DUSK: PlanRequest = {
   quality: null,
 };
 
+/** SaVeQ's Dusk Ring as a pool: any 3 of the four attack flats at tier 3 or better, clean start. */
+export const DUSK_FLAT_POOL: PlanRequest = {
+  itemClass: "Rings",
+  base: "Dusk Ring",
+  ilvl: 82,
+  targets: [],
+  includeUnverified: false,
+  quality: null,
+  groups: [{ side: "prefix", need: 3, candidates: FLAT_FAMILIES.map(([family, id]) => ({ family, minModId: `${id}7` })) }],
+  start: { kind: "clean" },
+};
+
 /**
  * The owner's Breach Ring as a pool (2026-10-06): any 3 of the four attack flats at tier 3 or better
  * (T1–T3 of 9: level 60+), any 2 of fire / cold / lightning resistance (T2+, level 71) or all

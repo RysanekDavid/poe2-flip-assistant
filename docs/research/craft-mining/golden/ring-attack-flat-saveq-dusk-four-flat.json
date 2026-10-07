@@ -13,7 +13,7 @@
         "family": "FireDamage",
         "side": "prefix",
         "minModId": "AddedFireDamage9",
-        "fractured": false
+        "fractured": true
       },
       {
         "family": "LightningDamage",
@@ -260,6 +260,6 @@
   "factCheck": {
     "date": "2026-10-07",
     "verdict": "fixed",
-    "notes": "Patch 0.5 -> 0.5.5 (title 'Poe2 0.5.5', uploaded 2026-09-23; league not stated); fire was his fractured flat (8:57-9:05) but the target stays unfractured: requiring the fracture makes the planner reject the request without unverified methods; ilvl 79+ (4:35-4:38); blocker bones added; the channel is SaVeQ (same creator as m_n2htaTr98), id renamed from 'asaveq'. Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+    "notes": "Patch 0.5 -> 0.5.5 (title 'Poe2 0.5.5', uploaded 2026-09-23; league not stated); fire was his fractured flat (8:57-9:05), encoded fractured (2026-10-07, once the planner's Alchemy-strip start made a verified route to it; before that the request was rejected without unverified methods); ilvl 79+ (4:35-4:38); blocker bones added; the channel is SaVeQ (same creator as m_n2htaTr98), id renamed from 'asaveq'. Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
   }
 }

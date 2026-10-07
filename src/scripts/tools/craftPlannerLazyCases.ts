@@ -16,7 +16,7 @@ import { canonical, junk, targetAffix } from "../../core/tools/planner/state";
 import type { LazyEdge, Move, PlanAffix, PlanCtx, PlanState } from "../../core/tools/planner/types";
 import { unrollPlan } from "../../core/tools/planner/unroll";
 import type { PlanRequest } from "../../lib/tools/craftPlannerContract";
-import { BREACH_RING, FOUR_FLAT_DUSK, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, OWNER_POOL_RING, fixturePrices, pricesWithoutCatalysts, target } from "./plannerFixtures";
+import { BREACH_RING, DUSK_FLAT_POOL, FOUR_FLAT_DUSK, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, OWNER_POOL_RING, fixturePrices, pricesWithoutCatalysts, target } from "./plannerFixtures";
 import { NOW } from "./testCraftPlannerGolden";
 
 const reveal = revealPriorsFrom(loadCraftMining().priors);
@@ -60,6 +60,7 @@ const EQUIVALENCE: readonly Case[] = [
   { name: "owner flat ring", req: OWNER_FLAT_RING, prices: pricesWithoutCatalysts },
   { name: "owner T1 pool ring", req: OWNER_POOL_RING({ kind: "clean" }, null, 9), prices: fixturePrices },
   { name: "four-flat Dusk Ring", req: FOUR_FLAT_DUSK, prices: pricesWithoutCatalysts },
+  { name: "Dusk Ring flat pool (Alchemy strip)", req: DUSK_FLAT_POOL, prices: fixturePrices },
 ];
 
 function planned(cat: CraftCatalog, c: Case, mode: EdgeMode) {
