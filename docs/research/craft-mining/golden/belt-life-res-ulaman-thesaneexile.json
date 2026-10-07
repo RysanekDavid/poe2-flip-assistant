@@ -1,0 +1,154 @@
+{
+  "id": "belt-life-res-ulaman-thesaneexile",
+  "archetype": "belt-life-res",
+  "patch": "0.5.5",
+  "league": "Forbidden Rites (inferred from 'leaguestart' and the 2026-09-07 upload)",
+  "summary": "League-start resistance belt: magic T1 life + lightning res base, Greater Essence of Ruin for chaos res, Dextral Necromancy + Omen of the Sovereign desecration for an Ulaman lightning and chaos res suffix.",
+  "planRequest": {
+    "itemClass": "Belts",
+    "base": "Heavy Belt",
+    "ilvl": 75,
+    "targets": [
+      {
+        "family": "IncreasedLife",
+        "side": "prefix",
+        "minModId": "IncreasedLife10",
+        "fractured": false
+      },
+      {
+        "family": "LightningResistance",
+        "side": "suffix",
+        "minModId": "LightningResist5",
+        "fractured": false
+      },
+      {
+        "family": "ChaosResistance",
+        "side": "suffix",
+        "minModId": "ChaosResist2",
+        "fractured": false
+      },
+      {
+        "family": "LightningAndChaosDamageResistance",
+        "side": "suffix",
+        "minModId": "AbyssModArmourJewelleryUlamanSuffixLightningChaosResistance",
+        "fractured": false
+      }
+    ],
+    "start": {
+      "kind": "bought",
+      "carried": [
+        {
+          "ref": 0,
+          "fractured": false
+        },
+        {
+          "ref": 1,
+          "fractured": false
+        }
+      ],
+      "askDiv": 1
+    },
+    "includeUnverified": false,
+    "quality": null
+  },
+  "creator": {
+    "tags": [
+      "bought-base",
+      "essence",
+      "desecrate",
+      "omen-echoes"
+    ],
+    "materials": [
+      {
+        "id": "greater-essence-of-ruin",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-dextral-necromancy",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-the-sovereign",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "preserved-collarbone",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      }
+    ],
+    "baseDiv": {
+      "point": 1,
+      "low": 0.5,
+      "high": 1
+    },
+    "statedTotalDiv": {
+      "point": 2,
+      "low": 2,
+      "high": 2
+    },
+    "steps": [
+      "Buy a magic belt with life and a resistance and at least two charm slots: ~1 div, a magic base often ~0.5 div; belt type not stated (Heavy Belt assumed), item level 'doesn't matter much'",
+      "Greater Essence of Ruin makes it rare with chaos resistance",
+      "Omen of Dextral Necromancy + Omen of the Sovereign + a collarbone (~40 ex): desecrated suffix guaranteed Ulaman",
+      "Omen of Abyssal Echoes (~40 ex), reveal: lightning and chaos resistance ('usually guaranteed on a first try'); bone type not stated, preserved assumed",
+      "Stated: 'about close to two divines'; such belts sell for 3-6 div",
+      "IncreasedLife10 (150-174) is a lower bound; belts also roll IncreasedLife11 (175-189)"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 4,
+      "low": 3,
+      "high": 6
+    },
+    "date": "2026-09-07",
+    "source": "creator at upload (Zop328DR50Q 3:22-4:52): such belts go for 3-6 div; not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "Zop328DR50Q",
+      "at": "0:11–1:47"
+    },
+    {
+      "kind": "video",
+      "ref": "Zop328DR50Q",
+      "at": "2:37–3:36"
+    },
+    {
+      "kind": "video",
+      "ref": "Zop328DR50Q",
+      "at": "4:13–4:52"
+    }
+  ],
+  "confidence": "medium",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Base price point 0.75 -> 1 div (he paid 1 div, 4:13-4:17; magic bases ~0.5); league marked inferred (0.5.5 also ran in Runes of Aldur). T1 life tier on belts unconfirmed, kept as a lower bound. Upload 2026-09-07."
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "id": "amulet-plus3-projectile-fracture-xthefarmerx",
+  "archetype": "amulet-skill-spirit",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Magic amulet with +3 Projectile Skills: Greater Essence of Opulence, prefix desecration as a fracture blocker, then a 1-in-3 Fracturing Orb to fracture the +3.",
+  "planRequest": {
+    "itemClass": "Amulets",
+    "base": "Gold Amulet",
+    "ilvl": 82,
+    "targets": [
+      {
+        "family": "GlobalIncreaseProjectileSkillGemLevel",
+        "side": "suffix",
+        "minModId": "GlobalProjectileSkillGemLevel3",
+        "fractured": true
+      },
+      {
+        "family": "ItemFoundRarityIncrease",
+        "side": "suffix",
+        "minModId": "ItemFoundRarityIncrease3",
+        "fractured": false
+      }
+    ],
+    "start": {
+      "kind": "bought",
+      "carried": [
+        {
+          "ref": 0,
+          "fractured": false
+        }
+      ],
+      "askDiv": 16
+    },
+    "includeUnverified": false,
+    "quality": null
+  },
+  "creator": {
+    "tags": [
+      "bought-base",
+      "essence",
+      "desecrate",
+      "fracture-target"
+    ],
+    "materials": [
+      {
+        "id": "perfect-orb-of-augmentation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "greater-essence-of-opulence",
+        "uses": {
+          "point": 3,
+          "low": 1,
+          "high": 7
+        }
+      },
+      {
+        "id": "omen-of-sinistral-necromancy",
+        "uses": {
+          "point": 3,
+          "low": 1,
+          "high": 7
+        }
+      },
+      {
+        "id": "preserved-collarbone",
+        "uses": {
+          "point": 3,
+          "low": 1,
+          "high": 7
+        }
+      },
+      {
+        "id": "fracturing-orb",
+        "uses": {
+          "point": 3,
+          "low": 1,
+          "high": 7
+        }
+      }
+    ],
+    "baseDiv": {
+      "point": 16,
+      "low": 15,
+      "high": 17
+    },
+    "statedTotalDiv": null,
+    "steps": [
+      "Buy a magic amulet with +3 Projectile Skills, 15 div (17 the next day); open-prefix bases cost more, a filled prefix is acceptable; base name not stated, Gold Amulet assumed (he calls gold bases the best)",
+      "Perfect Orb of Augmentation only if the prefix is open (hit spell damage)",
+      "Greater Essence of Opulence guarantees rarity and makes it rare",
+      "Omen of Sinistral Necromancy + Preserved Collarbone: a desecrated prefix, which the Fracturing Orb cannot hit",
+      "Fracturing Orb (~1-1.5 div): 1 in 3 to fracture the +3; hit 2 of 3 in the video, 'missed seven in a row' the night before",
+      "Per success = 3 attempts at the stated 1-in-3 (each attempt is one base; the harness counts baseDiv once); misses continue as a catalysed finish not costed here",
+      "Fractured +3 projectile + rarity amulets 'selling for 60 divine' (earlier 'worth like 40 div')"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 60,
+      "low": 40,
+      "high": 60
+    },
+    "date": "2026-06-03",
+    "source": "creator at upload: fractured +3 projectile + rarity amulets 'selling for 60 divine' (earlier 'worth like 40 div'); not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "J7PxG6k6gts",
+      "at": "4:07–9:20"
+    }
+  ],
+  "confidence": "medium",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Source timestamp added from the video's 'Mid Tier Craft' chapter (4:07-9:20; the transcript has no timestamps); rarity target raised to T1 (Greater Opulence guarantees 15-18%). Upload 2026-06-03 (0.5 Runes of Aldur, week 1)."
+  }
+}

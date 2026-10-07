@@ -1,0 +1,174 @@
+{
+  "id": "ring-attack-flat-budget-magic-greater",
+  "archetype": "ring-attack-flat",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Budget volume ring (his second, cheap craft): bought magic ring with a T1 elemental attack flat, Greater Essence of Opulence for T1 rarity, a cold-catalysed Greater Exaltation slam for a second flat, collarbone only on hits.",
+  "planRequest": {
+    "itemClass": "Rings",
+    "base": "Gold Ring",
+    "ilvl": 75,
+    "targets": [
+      {
+        "family": "LightningDamage",
+        "side": "prefix",
+        "minModId": "AddedLightningDamage9",
+        "fractured": false
+      },
+      {
+        "family": "ItemFoundRarityIncrease",
+        "side": "suffix",
+        "minModId": "ItemFoundRarityIncrease3",
+        "fractured": false
+      }
+    ],
+    "groups": [
+      {
+        "side": "prefix",
+        "need": 1,
+        "candidates": [
+          {
+            "family": "ColdDamage",
+            "minModId": "AddedColdDamage4"
+          },
+          {
+            "family": "FireDamage",
+            "minModId": "AddedFireDamage4"
+          },
+          {
+            "family": "PhysicalDamage",
+            "minModId": "AddedPhysicalDamage4"
+          }
+        ]
+      }
+    ],
+    "start": {
+      "kind": "bought",
+      "carried": [
+        {
+          "ref": 0,
+          "fractured": false
+        }
+      ],
+      "askDiv": 0.15
+    },
+    "includeUnverified": false,
+    "quality": null
+  },
+  "creator": {
+    "tags": [
+      "bought-base",
+      "essence",
+      "catalyse",
+      "greater-exalt",
+      "desecrate",
+      "omen-echoes"
+    ],
+    "materials": [
+      {
+        "id": "greater-essence-of-opulence",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 3
+        }
+      },
+      {
+        "id": "tuls-catalyst",
+        "uses": {
+          "point": 40,
+          "low": 27,
+          "high": 60
+        }
+      },
+      {
+        "id": "omen-of-catalysing-exaltation",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-greater-exaltation",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "greater-exalted-orb",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "preserved-collarbone",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1.5,
+          "low": 1,
+          "high": 2
+        }
+      }
+    ],
+    "baseDiv": {
+      "point": 0.15,
+      "low": 0.08,
+      "high": 0.3
+    },
+    "statedTotalDiv": {
+      "point": 6,
+      "low": 4,
+      "high": 9
+    },
+    "steps": [
+      "Buy magic rings with a T1 fire or lightning attack flat, 25-30 ex each (9:02-9:07); base name not stated, Gold Ring assumed",
+      "Greater Essence of Opulence for T1 rarity (15-18%, the Greater tier)",
+      "Cold (Tul's) catalyst quality, Omen of Catalysing Exaltation + Omen of Greater Exaltation + Greater Exalted Orb: hoping for a cold flat, % cold, cold or all res",
+      "Only on rings that hit: Preserved Collarbone, reveal with Abyssal Echoes for a flat, rarity or life",
+      "Per success = 2 rings (four rings, about two hits, 14:26-14:44); materials are per success but baseDiv is ONE base, so the creator side holds one base fewer than he bought",
+      "Base in Divine is derived: 25-30 ex at an unstated rate (100-300 ex/div assumed); the video's own prices don't fix a rate",
+      "Stated: 'around three div per ring, so 12 div investment' (15:35-15:42), ~6 div per finished hit. Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+    ]
+  },
+  "market": null,
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "_sSjC5LX_Ck",
+      "at": "0:21–1:32"
+    },
+    {
+      "kind": "video",
+      "ref": "_sSjC5LX_Ck",
+      "at": "1:49–5:48"
+    },
+    {
+      "kind": "video",
+      "ref": "_sSjC5LX_Ck",
+      "at": "9:02–10:15"
+    },
+    {
+      "kind": "video",
+      "ref": "_sSjC5LX_Ck",
+      "at": "14:26–15:42"
+    }
+  ],
+  "confidence": "medium",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Fact-check found two crafts mixed: craft 1 (Perfect Aug + Greater Insulation, 1-2 div bases) and craft 2 (25-30 ex bases, Opulence only, 3 div per ring). The entry now holds craft 2 only: FireResist6 target, Perfect Aug, Insulation and Sinistral Necromancy removed; Opulence x2 (one per ring), Echoes 1.5. The essence is Greater (T1 15-18%), not regular. The ex/div rate is unsourced (band widened). Upload 2026-06-05 (0.5 Runes of Aldur)."
+  }
+}
