@@ -112,11 +112,13 @@ function transmuteRegal(state: PlanState, ctx: PlanCtx): Move[] {
 /**
  * Normal → Alchemy → Annulment ×3 → a rare with one throwaway. The rare start an allowance base
  * (Dusk Ring) has at all from Normal: its magic allowance is unverified, so the Transmutation routes
- * above are gated off there (SaVeQ's Dusk Ring, KB §1). Offered on every base; the search keeps
- * Transmute + Regal where that is cheaper.
+ * above are gated off there (SaVeQ's Dusk Ring, KB §1). Jewels get it too: a one-mod rare Chaos-loops
+ * cheaper than their magic loop. Other bases never plan it cheaper than Transmute + Regal, and
+ * searching its subtree there cost the six-mod Breach Rings ~50% more search time for the same plans.
  */
 function alchemyStrip(state: PlanState, ctx: PlanCtx): Move[] {
-  if (state.rarity !== "Normal") return [];
+  const allowance = ctx.base.allowance.p !== 0 || ctx.base.allowance.s !== 0;
+  if (state.rarity !== "Normal" || !(allowance || ctx.base.jewel)) return [];
   const four: PlanState = { rarity: "Rare", affixes: [junk("any"), junk("any"), junk("any"), junk("any")], quality: state.quality, catalyst: state.catalyst };
   const move = makeMove(ctx, {
     methodId: "alchemy-strip",

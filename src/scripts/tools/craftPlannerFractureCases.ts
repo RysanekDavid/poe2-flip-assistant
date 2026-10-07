@@ -108,7 +108,21 @@ function testDuskAlchemyStrip(cat: CraftCatalog): void {
   assert.equal(p.expanded, 174, "expanded pinned (deterministic)");
 }
 
+/** The Alchemy strip is offered where the Transmutation routes are gated off (allowance bases) and on jewels only. */
+function testAlchemyStripGate(cat: CraftCatalog): void {
+  const normal: PlanState = { rarity: "Normal", affixes: [], quality: 0, catalyst: null };
+  const offered = (req: PlanRequest) => movesOf(normal, ctxOf(cat, req), "alchemy-strip").length;
+  const mana = [target("IncreasedMana", "prefix", "IncreasedMana12")];
+  const ring = (base: string): PlanRequest => ({ itemClass: "Rings", base, ilvl: 82, targets: mana, includeUnverified: false, quality: null });
+  assert.equal(offered(ring("Ruby Ring")), 0, "a non-allowance ring keeps Transmute + Regal");
+  assert.equal(offered(ring("Breach Ring")), 0, "the Breach Ring too");
+  assert.equal(offered(ring("Dusk Ring")), 1, "an allowance base gets the Alchemy strip");
+  const jewel: PlanRequest = { itemClass: "Jewels", base: "Sapphire", ilvl: 80, targets: [target("SpellCritMultiplierForJewel", "suffix", "JewelSpellCriticalDamage")], includeUnverified: false, quality: null };
+  assert.equal(offered(jewel), 1, "a jewel gets the Alchemy strip");
+}
+
 export function runFractureCases(cat: CraftCatalog): void {
+  testAlchemyStripGate(cat);
   testDuskAlchemyStrip(cat);
   testSelfFractureOdds(cat);
   testFracturePrune(cat);

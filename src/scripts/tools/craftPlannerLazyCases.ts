@@ -103,15 +103,11 @@ function assertBoundsAdmissible(ctx: PlanCtx, states: readonly PlanState[], name
   assert.ok(checked > 0 || name.includes("amulet"), `${name}: some lazy edge was checked`);
 }
 
-/**
- * Pins `expanded` (the lazy search expands exactly the eager one's states) and the server budget.
- * G1's Alchemy strip is offered on every base, so these Breach Rings search its one-throwaway rare
- * too (was 1628 / 2378 / 1428) for the same plans.
- */
+/** Pins `expanded` (the lazy search expands exactly the eager one's states) and the server budget. */
 const PINS: ReadonlyArray<Case & { expanded: number }> = [
-  { name: "owner flat ring", req: OWNER_FLAT_RING, prices: pricesWithoutCatalysts, expanded: 2339 },
-  { name: "six singles T9 flats + cast/rarity/fire", req: SIX_T9_MIX, prices: fixturePrices, expanded: 3442 },
-  { name: "six singles T8 flats + cast + fire/cold", req: SIX_T8_MIX, prices: fixturePrices, expanded: 2813 },
+  { name: "owner flat ring", req: OWNER_FLAT_RING, prices: pricesWithoutCatalysts, expanded: 1628 },
+  { name: "six singles T9 flats + cast/rarity/fire", req: SIX_T9_MIX, prices: fixturePrices, expanded: 2378 },
+  { name: "six singles T8 flats + cast + fire/cold", req: SIX_T8_MIX, prices: fixturePrices, expanded: 1428 },
 ];
 
 function testBudgetPins(cat: CraftCatalog): void {
