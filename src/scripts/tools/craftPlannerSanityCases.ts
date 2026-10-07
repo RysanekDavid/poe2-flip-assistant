@@ -52,8 +52,11 @@ const OWNER_WHITTLE_DIV = 3321.38;
  * KB §2), Chaos-loops the next one and desecrates the last: ~295 div, nothing whittled, no step past
  * the limit. The same flats as a pool ("any 3 of the 4 attack flats") are cheaper again; a bought
  * base carrying one of them fractured now only saves the self-fracture's work (its 65 div ask is
- * more than that). Four top flats on a Dusk Ring (no magic route on an allowance base) have two
- * whittle steps past Whittling's own limit of 50, and every cheaper target set still whittles past it.
+ * more than that). Four top flats on a Dusk Ring (no magic route on an allowance base) used to start
+ * from a bought anchored base and whittle twice past Whittling's own limit of 50 (~103, ~645). G1:
+ * Alchemy + Annulments give the Normal base a one-throwaway rare, so a flat is Chaos-rolled and
+ * self-fractured (SaVeQ's route). One whittle step stays past the limit (~98 Whittles, the third T9
+ * flat on a ring with two flats already landed) — the documented bound; cheaper target sets are now realistic.
  */
 function testOwnerCase(cat: CraftCatalog): void {
   const prices = pricesWithoutCatalysts();
@@ -67,19 +70,28 @@ function testOwnerCase(cat: CraftCatalog): void {
   assert.ok(p.totals.div!.point * 2.9 < OWNER_WHITTLE_DIV && p.totals.div!.point * 5 < OWNER_BEFORE_DIV, "well under the whittle-only and the slam plans");
   // P1's two whittle loops (~103 and ~72 Whittles, past Whittling's own limit of 50 — KB §4) are gone
   assert.deepEqual(p.steps.filter((s) => s.impractical).map((s) => s.method), [], "no step is past the limit any more");
-  const whittle = mat("omenWhittling").id;
   const lights = desecrate.materials.find((m) => m.id === mat("omenLight").id)!.qty.point;
   assert.ok(lights > 15 && lights < 30, `one top-tier flat family: ~22 Omens of Light, got ${lights}`);
   const pool = planWith(cat, { ...OWNER_FLAT_RING, targets: OWNER_FLAT_RING.targets.slice(3), groups: [{ side: "prefix", need: 3, candidates: FLAT_FAMILIES.map(([family, id]) => ({ family, minModId: `${id}9` })) }] }, prices);
   assert.ok(pool.totals.div!.point < p.totals.div!.point * 0.6, `any 3 of the 4 flats: ${pool.totals.div!.point} div`);
   const bought = planWith(cat, { ...OWNER_FLAT_RING, start: { kind: "bought", carried: null, askDiv: 65 } }, prices);
   assert.ok(bought.totals.div!.point < p.totals.div!.point, `the bought fractured flat skips the self-fracture: ${bought.totals.div!.point} div of work after it`);
+  testDuskFourFlat(cat, prices);
+}
+
+/** G1 on the four top flats: Alchemy start, a self-fractured flat, one whittle step left past the limit (see above). */
+function testDuskFourFlat(cat: CraftCatalog, prices: Map<string, number>): void {
   const dusk = planWith(cat, FOUR_FLAT_DUSK, prices);
+  const route = dusk.steps.map((s) => s.method);
+  assert.deepEqual(route.slice(0, 2), ["acquire-normal", "alchemy-strip"], `a Normal base, then Alchemy: ${route.join(", ")}`);
+  assert.ok(route.includes("fracture") && !route.some((m) => m.startsWith("acquire-anchored")), `a flat is self-fractured, no anchored base: ${route.join(", ")}`);
   const flagged = dusk.steps.filter((s) => s.impractical);
-  // before the Whittling limit only the second loop (~2,022 Chaos) was flagged; both loops pass 50 Whittles (~103, ~645)
-  assert.ok(flagged.length === 2 && flagged.every((s) => s.method === "whittle-loop" && s.impractical!.materialId === whittle), "four top flats: both whittle steps past the Whittling limit");
-  // every cheaper target set still whittles past 50, so the chips are all "still long"
-  assertAlternatives(cat, dusk, prices, FOUR_FLAT_DUSK, false);
+  const whittles = flagged[0]?.impractical?.clicks.point ?? 0;
+  assert.ok(flagged.length === 1 && flagged[0]!.method === "whittle-loop" && flagged[0]!.impractical!.materialId === mat("omenWhittling").id, `one whittle step past the limit: ${flagged.map((s) => s.method).join(", ")}`);
+  assert.ok(whittles > 50 && whittles < 110, `the documented bound: ~98 Whittles (was ~103 and ~645), got ${whittles}`);
+  assert.ok(dusk.totals.div!.point < 800, `four top flats: ${dusk.totals.div!.point} div`);
+  // a cheaper target set no longer whittles past 50: the first chip is realistic
+  assertAlternatives(cat, dusk, prices, FOUR_FLAT_DUSK, true);
 }
 
 /**

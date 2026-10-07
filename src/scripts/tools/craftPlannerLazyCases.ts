@@ -16,7 +16,7 @@ import { canonical, junk, targetAffix } from "../../core/tools/planner/state";
 import type { LazyEdge, Move, PlanAffix, PlanCtx, PlanState } from "../../core/tools/planner/types";
 import { unrollPlan } from "../../core/tools/planner/unroll";
 import type { PlanRequest } from "../../lib/tools/craftPlannerContract";
-import { BREACH_RING, FOUR_FLAT_DUSK, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, OWNER_POOL_RING, fixturePrices, pricesWithoutCatalysts, target } from "./plannerFixtures";
+import { BREACH_RING, DUSK_FLAT_POOL, FOUR_FLAT_DUSK, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, OWNER_POOL_RING, fixturePrices, pricesWithoutCatalysts, target } from "./plannerFixtures";
 import { NOW } from "./testCraftPlannerGolden";
 
 const reveal = revealPriorsFrom(loadCraftMining().priors);
@@ -60,6 +60,7 @@ const EQUIVALENCE: readonly Case[] = [
   { name: "owner flat ring", req: OWNER_FLAT_RING, prices: pricesWithoutCatalysts },
   { name: "owner T1 pool ring", req: OWNER_POOL_RING({ kind: "clean" }, null, 9), prices: fixturePrices },
   { name: "four-flat Dusk Ring", req: FOUR_FLAT_DUSK, prices: pricesWithoutCatalysts },
+  { name: "Dusk Ring flat pool (Alchemy strip)", req: DUSK_FLAT_POOL, prices: fixturePrices },
 ];
 
 function planned(cat: CraftCatalog, c: Case, mode: EdgeMode) {
@@ -102,11 +103,15 @@ function assertBoundsAdmissible(ctx: PlanCtx, states: readonly PlanState[], name
   assert.ok(checked > 0 || name.includes("amulet"), `${name}: some lazy edge was checked`);
 }
 
-/** Pins `expanded` (the lazy search expands exactly the eager one's states) and the server budget. */
+/**
+ * Pins `expanded` (the lazy search expands exactly the eager one's states) and the server budget.
+ * PR-C: the six-single rings went 2378 → 2724 and 1428 → 1557 — at the creators' Catalysing ×3 the
+ * catalysed slams cost more, so more cheaper-looking states are expanded before the plan settles.
+ */
 const PINS: ReadonlyArray<Case & { expanded: number }> = [
   { name: "owner flat ring", req: OWNER_FLAT_RING, prices: pricesWithoutCatalysts, expanded: 1628 },
-  { name: "six singles T9 flats + cast/rarity/fire", req: SIX_T9_MIX, prices: fixturePrices, expanded: 2378 },
-  { name: "six singles T8 flats + cast + fire/cold", req: SIX_T8_MIX, prices: fixturePrices, expanded: 1428 },
+  { name: "six singles T9 flats + cast/rarity/fire", req: SIX_T9_MIX, prices: fixturePrices, expanded: 2724 },
+  { name: "six singles T8 flats + cast + fire/cold", req: SIX_T8_MIX, prices: fixturePrices, expanded: 1557 },
 ];
 
 function testBudgetPins(cat: CraftCatalog): void {

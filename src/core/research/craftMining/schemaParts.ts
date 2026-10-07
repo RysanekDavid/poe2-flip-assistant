@@ -18,6 +18,7 @@ export const PLANNER_METHOD_IDS = [
   "magic-aug-filler",
   "regal",
   "transmute-regal",
+  "alchemy-strip",
   "strip-junk",
   "plant-junk",
   "fracture",

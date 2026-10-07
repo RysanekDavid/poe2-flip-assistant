@@ -1,7 +1,8 @@
 /* Craft planner PR-A cases: fracture the wanted mod. The Fracturing Orb may lock a landed natural
  * target (not only one the player flagged fractured) while another is still missing, behind an
  * unrevealed desecrated blocker at 1-in-3 (Alohaa, KB §2); the Chaos loop runs on any all-throwaway
- * rare; the owner's T1 pool ring no longer whittles. Imported by testCraftPlanner.ts. */
+ * rare; the owner's T1 pool ring no longer whittles; an allowance base starts from Alchemy (G1).
+ * Imported by testCraftPlanner.ts. */
 import assert from "node:assert/strict";
 import { loadCraftMining } from "../../core/research/craftMining/load";
 import type { CraftCatalog } from "../../core/tools/craftmoves/catalog";
@@ -11,7 +12,7 @@ import { revealPriorsFrom } from "../../core/tools/planner/revealPriors";
 import { canonical, junk, modOf, targetAffix } from "../../core/tools/planner/state";
 import type { Move, PlanAffix, PlanCtx, PlanState } from "../../core/tools/planner/types";
 import { planResponseSchema, type PlanRequest, type PlanResponse } from "../../lib/tools/craftPlannerContract";
-import { FRACTURED_T1RES_RING, OWNER_POOL_RING, fixturePrices, target } from "./plannerFixtures";
+import { DUSK_FLAT_POOL, FRACTURED_T1RES_RING, OWNER_POOL_RING, fixturePrices, target } from "./plannerFixtures";
 import { NOW } from "./testCraftPlannerGolden";
 
 const deps = (cat: CraftCatalog) => ({ cat, prices: fixturePrices(), exaltPerDivine: 250, league: "Test", now: NOW, reveal: revealPriorsFrom(loadCraftMining().priors) });
@@ -89,7 +90,40 @@ function testOwnerPoolT9(cat: CraftCatalog): void {
   assert.ok(p.expanded < 600, `searched ${p.expanded} item states (CPU budget)`);
 }
 
+/**
+ * G1: a Dusk Ring has no magic route (its magic allowance is unverified), so before the Alchemy strip
+ * its only rare start was a bought anchored base — whose one fracture went on the junk anchor, leaving
+ * every flat to one slam chain. Now: Alchemy + Annulments to one throwaway, Chaos for a flat, the
+ * blocker, and the flat self-fractured (SaVeQ's route).
+ */
+function testDuskAlchemyStrip(cat: CraftCatalog): void {
+  const p = planResponseSchema.parse(planCraft(DUSK_FLAT_POOL, deps(cat)));
+  const seq = methods(p);
+  assert.deepEqual(seq.slice(0, 2), ["acquire-normal", "alchemy-strip"], `a Normal base, then Alchemy: ${seq.join(", ")}`);
+  assert.ok(seq.some((m) => /^blocker-/.test(m)) && seq.includes("fracture"), `the blocker, then a flat self-fractured: ${seq.join(", ")}`);
+  assert.ok(!seq.some((m) => m.startsWith("acquire-anchored")), `no anchored base spends the fracture on junk: ${seq.join(", ")}`);
+  const strip = p.steps[1]!;
+  assert.deepEqual(strip.materials.map((m) => m.id), ["alch", "annul"], "Alchemy and Annulments only");
+  assert.ok(strip.after.rarity === "Rare" && strip.after.affixes.length === 1, "a rare with one throwaway left");
+  assert.equal(p.expanded, 174, "expanded pinned (deterministic)");
+}
+
+/** The Alchemy strip is offered where the Transmutation routes are gated off (allowance bases) and on jewels only. */
+function testAlchemyStripGate(cat: CraftCatalog): void {
+  const normal: PlanState = { rarity: "Normal", affixes: [], quality: 0, catalyst: null };
+  const offered = (req: PlanRequest) => movesOf(normal, ctxOf(cat, req), "alchemy-strip").length;
+  const mana = [target("IncreasedMana", "prefix", "IncreasedMana12")];
+  const ring = (base: string): PlanRequest => ({ itemClass: "Rings", base, ilvl: 82, targets: mana, includeUnverified: false, quality: null });
+  assert.equal(offered(ring("Ruby Ring")), 0, "a non-allowance ring keeps Transmute + Regal");
+  assert.equal(offered(ring("Breach Ring")), 0, "the Breach Ring too");
+  assert.equal(offered(ring("Dusk Ring")), 1, "an allowance base gets the Alchemy strip");
+  const jewel: PlanRequest = { itemClass: "Jewels", base: "Sapphire", ilvl: 80, targets: [target("SpellCritMultiplierForJewel", "suffix", "JewelSpellCriticalDamage")], includeUnverified: false, quality: null };
+  assert.equal(offered(jewel), 1, "a jewel gets the Alchemy strip");
+}
+
 export function runFractureCases(cat: CraftCatalog): void {
+  testAlchemyStripGate(cat);
+  testDuskAlchemyStrip(cat);
   testSelfFractureOdds(cat);
   testFracturePrune(cat);
   testSelfFractureBlocker(cat);

@@ -127,7 +127,9 @@ function testBoughtGolden(cat: CraftCatalog): void {
   const p = planOf(cat, req);
   const seq = methods(p);
   assert.ok(seq.startsWith("acquire-bought-rare") && !/blocker|fracture/.test(seq), `the bought route skips the self-fracture: ${seq}`);
-  assert.ok(seq.includes("chaos-loop") && /slam-suffix-.*-catalysing/.test(seq), `then the curated Chaos loop and catalysed suffix slams: ${seq}`);
+  // PR-C: at the creators' ×2 (Gold Ring, 20%) the resistances come from an Erasure-steered Chaos loop
+  // and an Ancient desecration, not the curated catalysed slams (testFracturedResRing, same tail)
+  assert.ok(seq.includes("chaos-loop") && /erasure-loop-suffix, desecrate-/.test(seq) && !seq.includes("-catalysing"), `then the curated Chaos loop, an Erasure loop and a desecration: ${seq}`);
   assert.match(p.steps[0]!.instructions[0]!.do, /with FRACTURED Adds \(21-24\) to \(32-37\) Cold damage to Attacks/);
   assert.deepEqual(rejectedRules(cat, { ...req, start: { kind: "bought", carried: [{ ref: 0, fractured: true }, { ref: 2, fractured: false }], askDiv: null } }), ["start"], "a fractured base carries one wanted mod");
   assert.deepEqual(rejectedRules(cat, { ...req, start: { kind: "bought", carried: [{ ref: 2, fractured: false }, { ref: 3, fractured: false }], askDiv: null } }), ["start"], "a magic base holds one suffix");

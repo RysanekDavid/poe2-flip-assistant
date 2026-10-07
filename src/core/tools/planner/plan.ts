@@ -5,9 +5,9 @@ import { suggestAlternatives, type Costed, type Suggested } from "./alternatives
 import { NoPlanError, searchPlan, SearchCappedError, SearchTimeoutError, SEARCH_CAP, type Deadline, type SearchResult } from "./search";
 import { isFeasible, resolveBase, resolveTargets, type FeasibilityIssue } from "./targets";
 import { startIssues } from "./methodsStart";
-import { DEFAULT_REVEAL } from "./revealPriors";
+import { DEFAULT_CATALYSING, DEFAULT_REVEAL } from "./revealPriors";
 import { startView, targetViews, totalsWithBase } from "./planViews";
-import type { PlanCtx, RevealPriors } from "./types";
+import type { CatalysingPriors, PlanCtx, RevealPriors } from "./types";
 import { unrollPlan } from "./unroll";
 
 /**
@@ -62,6 +62,8 @@ export interface PlanDeps {
   budget?: PlanBudget;
   /** Reveal numbers from the curated priors; absent = the patch-note default (three options, no anchor). */
   reveal?: RevealPriors;
+  /** Omen of Catalysing Exaltation multiplier band from the curated priors; absent = DEFAULT_CATALYSING (the same numbers). */
+  catalysing?: CatalysingPriors;
 }
 
 const deadlineIn = (budget: PlanBudget | undefined, ms: (b: PlanBudget) => number): Deadline | null => (budget ? { at: budget.now() + ms(budget), now: budget.now } : null);
@@ -90,6 +92,7 @@ export function buildCtx(req: PlanRequest, deps: PlanDeps): { ctx: PlanCtx; issu
     groups,
     start: req.start ?? { kind: "clean" },
     reveal: deps.reveal ?? DEFAULT_REVEAL,
+    catalysing: deps.catalysing ?? DEFAULT_CATALYSING,
   };
   if (isFeasible(issues)) {
     for (const message of startIssues(ctx)) issues.push({ severity: "impossible", rule: "start", message, grade: "vp", source: "Your start choice", target: null });

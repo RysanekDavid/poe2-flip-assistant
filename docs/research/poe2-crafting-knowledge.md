@@ -55,6 +55,10 @@ desecrated-blocker self-fracture sequence [creator-demonstrated]. The rest is un
 Chaos floors CONFIRMED from poe2db item text; §4 Whittling as a suffix engine (creator-demonstrated)
 and Omen of Light's item text; §10 question 1 resolved. The rest of the file is unchanged.
 
+**Corrections 2026-10-07 (partial, Catalysing range):** §4 Omen of Catalysing Exaltation and TOP rule
+11 — the multiplier is a range (creators ×2 / ×3, community models ×5 / ×7.5, nothing measured), not
+the community model alone. The rest of the file is unchanged.
+
 **Corrections 2026-10-07 (partial, planner faction omens):** §5 adds the three Lich omens' shared
 item text (poe2db, all three pages) and the Omen of the Sovereign on a belt [creator-demonstrated].
 The rest of the file is unchanged.
@@ -192,9 +196,16 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
 - **Omen of Greater Exaltation**: next Exalt adds TWO mods.
 - **Omen of Catalysing Exaltation**: "your next Exalted Orb will consume all Catalyst Quality to
   increase the chance of the corresponding type of Modifier" [verified-primary — entity catalog
-  0.5.5b] — no number. The multiplier is a **community model, not GGG**: poe2wiki 5× at 20%, 7.5× at
-  40%; Craft of Exile ×(1 + 0.2·Q) to Q = 20, +0.12 per point above → ×5 / ×7.4 / ×8.0 at 20 / 40 / 45
-  [unverified]. Weighted bias, NOT a guarantee. Catalyst quality alone only buffs mod MAGNITUDE.
+  0.5.5b] — no number. **The multiplier is a range, nothing measured** [conflicting]: XTheFarmerX
+  states ×2 at 20% and ×3 at 40% quality, from others' testing "to the tune of like three or 400
+  attempts" ([_sSjC5LX_Ck](https://www.youtube.com/watch?v=_sSjC5LX_Ck) 2:44–3:04, creator-stated, no count
+  on screen; his [kE8Tn32yNp0](https://www.youtube.com/watch?v=kE8Tn32yNp0) 3:38 says "like 5x odds" with no
+  quality level); the community models say ×5 / ×7.5 (poe2wiki) and Craft of Exile ×(1 + 0.2·Q) to
+  Q = 20, +0.12 per point above → ×5 / ×7.4 / ×8.0 at 20 / 40 / 45 [unverified]; forum anecdotes
+  ([3842222](https://www.pathofexile.com/forum/view-thread/3842222),
+  [3849100](https://www.pathofexile.com/forum/view-thread/3849100)) say it under-performs. Plan on
+  **×2–×5 at 20% and ×3–×7.5 at 40%, the creators' figure as the point** (the craft planner does).
+  Weighted bias, NOT a guarantee. Catalyst quality alone only buffs mod MAGNITUDE.
 - **Omens of the same action family STACK** (medium confidence, 2-1 vote): Dextral Exaltation +
   Greater Exaltation on one Perfect Exalt → two suffixes, both floor-50. Sinistral + Greater
   Annulment too, but **Omen of Greater Annulment can no longer be obtained** — 0.3.0: "The following
@@ -558,8 +569,10 @@ Source: creator league review (single-source, practitioner-grade — the "zero t
 9. **One crafted mod + one desecrated mod per item** — plan the whole sequence around those
    two slots before the first click.
 10. **Divine rerolls everything** — only divine when every mod on the item deserves a reroll.
-11. **Catalyst weight bias exists only through Omen of Catalysing Exaltation** (~5× at 20%,
-    ~7.4–7.5× at 40%, community models); raw quality just inflates numbers (still worth 20 ex).
+11. **Catalyst weight bias exists only through Omen of Catalysing Exaltation** — a range, nothing
+    measured: ×2 at 20% / ×3 at 40% (XTheFarmerX, others' 300–400 attempts) to ×5 / ×7.5 (community
+    models); forum 3842222 / 3849100 anecdotes say it under-performs (§4). Raw quality just inflates
+    numbers (still worth 20 ex).
 12. **Abyssal Echoes = one reroll, not a guarantee** — insurance on already-good items, not a
     per-reveal staple; arm it before the first reveal (§4).
 13. **Same-family Greater essence = refused**; a fractured liquid-crafted mod blocks further
