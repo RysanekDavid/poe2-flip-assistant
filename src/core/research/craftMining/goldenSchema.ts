@@ -111,6 +111,17 @@ export const goldenFactCheckSchema = z.object({ date: isoDay, verdict: z.enum(["
  */
 export const START_MODES = ["request", "compare"] as const;
 
+/**
+ * What the planner is scored against. "materials": the creator's listed uses at snapshot prices
+ * (the default, the honest benchmark when the counts are an expected run). "statedTotal": the
+ * creator's own total (creator.statedTotalDiv), for counts from a single lucky run or explicit
+ * minimums that a per-material sum would understate. "excluded": no honest benchmark (a banned
+ * move, a pool the request cannot express); scored and gated for drift, never counted in pass/fail.
+ * The planner is never tuned to a number marked otherwise; benchmarkReason says why it was marked.
+ */
+export const BENCHMARKS = ["materials", "statedTotal", "excluded"] as const;
+export type Benchmark = (typeof BENCHMARKS)[number];
+
 export const goldenEntrySchema = z
   .object({
     id: kebabIdSchema,
@@ -121,6 +132,9 @@ export const goldenEntrySchema = z
     summary: nonEmpty,
     planRequest: planRequestSchema,
     startMode: z.enum(START_MODES).default("request"),
+    benchmark: z.enum(BENCHMARKS).default("materials"),
+    /** Required unless benchmark is "materials": the claim, checked against the source, with timestamps. */
+    benchmarkReason: nonEmpty.optional(),
     creator: goldenCreatorSchema,
     market: goldenMarketSchema.nullable(),
     sources: z.array(goldenSourceSchema).min(1),
@@ -130,6 +144,8 @@ export const goldenEntrySchema = z
   .strict()
   .superRefine((g, ctx) => {
     if (g.startMode === "compare" && g.planRequest.start && g.planRequest.start.kind !== "clean") issue(ctx, ["startMode"], "compare plans a clean and a bought start itself: leave planRequest.start out");
+    if (g.benchmark !== "materials" && !g.benchmarkReason) issue(ctx, ["benchmarkReason"], `benchmark "${g.benchmark}" needs a benchmarkReason`);
+    if (g.benchmark === "statedTotal" && g.creator.statedTotalDiv === null) issue(ctx, ["benchmark"], 'benchmark "statedTotal" needs creator.statedTotalDiv');
   });
 export type GoldenEntry = z.infer<typeof goldenEntrySchema>;
 export type GoldenEntryInput = z.input<typeof goldenEntrySchema>;

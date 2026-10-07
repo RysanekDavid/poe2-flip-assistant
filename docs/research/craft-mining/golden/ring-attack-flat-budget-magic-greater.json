@@ -55,6 +55,8 @@
     "includeUnverified": false,
     "quality": null
   },
+  "benchmark": "excluded",
+  "benchmarkReason": "Class (e), no fair benchmark: the route is a catalysed Omen of Greater Exaltation + Greater Exalted Orb two-mod slam on 25-30 ex bases (9:02-9:07, 9:40-9:45), and the owner bans Omen of Greater Exaltation from the planner, so the planner must price a different route. He keeps any cold damage hit whatever the second mod (10:19-10:31), treats the batch as 'a numbers game' (14:36-14:42), still prices a soft miss at three or four div (15:10-15:16), and called four cold hits in four slams 'very lucky' (10:37-10:41).",
   "creator": {
     "tags": [
       "bought-base",

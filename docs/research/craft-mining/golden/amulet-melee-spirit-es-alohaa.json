@@ -56,6 +56,8 @@
       "pct": 40
     }
   },
+  "benchmark": "statedTotal",
+  "benchmarkReason": "Explicit minimum counts: the Spirit reroll (7:22-7:37), the Dextral Erasure + Chaos loop 'until you're happy' (10:00-10:37) and the final bone + Omen of Light loop (10:38-10:58) have no stated count, and the catalysed T1 flat ES slam hit first try ('I got fairly lucky', 9:01-9:06). Anchor: 'I think it cost me like 100 divine orbs' (11:18-11:22); whether that includes the bought base is not said (its price never is).",
   "creator": {
     "tags": [
       "bought-base",

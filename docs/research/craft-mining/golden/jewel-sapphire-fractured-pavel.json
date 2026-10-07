@@ -46,6 +46,8 @@
     "quality": null
   },
   "startMode": "compare",
+  "benchmark": "materials",
+  "benchmarkReason": "Stays materials: no lucky-run or minimum-count claim. The source never prices the fractured-route base (only 'dražší báze', more expensive bases, no number), so compare scores the clean plan (rule no-base-clean): a bought plan would buy the Critical Spell Damage Bonus already fractured and skip the Preserved Cranium + Fracturing Orb phase (~161 of the creator's ~195 div materials), which would flatter the planner.",
   "creator": {
     "tags": [
       "bought-base",

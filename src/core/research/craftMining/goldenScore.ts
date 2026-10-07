@@ -5,9 +5,9 @@
  * script runs the planner and feeds the numbers in.
  */
 import { z } from "zod";
-import { goldenBandSchema, goldenTagSchema, type GoldenBand, type GoldenCreator } from "./goldenSchema";
+import { BENCHMARKS, goldenBandSchema, goldenTagSchema, type GoldenBand, type GoldenCreator, type GoldenEntry } from "./goldenSchema";
 
-export const SCOREBOARD_VERSION = 1;
+export const SCOREBOARD_VERSION = 2;
 
 /** Pass = the planner lands within 2× of what the creator spent, either way. */
 export const PASS_BAND = { low: 0.5, high: 2 } as const;
@@ -29,6 +29,16 @@ export function creatorCost(c: Pick<GoldenCreator, "materials" | "baseDiv">, pri
 export function plannerCost(totals: GoldenBand, start: { kind: "clean" } | { kind: "bought"; buys: GoldenBand }, baseDiv: GoldenBand | null): GoldenBand {
   if (start.kind !== "bought" || !baseDiv) return totals;
   return { point: totals.point + start.buys.point * baseDiv.point, low: totals.low + start.buys.low * baseDiv.low, high: totals.high + start.buys.high * baseDiv.high };
+}
+
+/**
+ * The creator side the ratio is taken against: the material sum, or the creator's stated total for a
+ * "statedTotal" entry. An "excluded" entry keeps the material sum so --check still sees it drift.
+ */
+export function benchmarkDiv(entry: Pick<GoldenEntry, "id" | "benchmark" | "creator">, materialsDiv: GoldenBand | null): GoldenBand | null {
+  if (entry.benchmark !== "statedTotal") return materialsDiv;
+  if (!entry.creator.statedTotalDiv) throw new Error(`craft:eval ${entry.id}: benchmark "statedTotal" without creator.statedTotalDiv`);
+  return entry.creator.statedTotalDiv;
 }
 
 export function ratioOf(planner: GoldenBand | null, creator: GoldenBand | null): number | null {
@@ -60,6 +70,15 @@ export function topDriver(bill: ReadonlyArray<{ id: string; label: string; total
 
 export const ERROR_KINDS = ["no-plan", "rejected", "timeout", "unpriced"] as const;
 
+/**
+ * How a compare entry picked its start: "with-base" = the UI's rule with the creator's base price;
+ * "no-base-clean" = no base price in the source, so the clean plan (a bought plan's total would skip
+ * the work its unpriced base embodies and look falsely cheap); "one-plan" = only one start planned;
+ * "no-plan" = neither did.
+ */
+export const COMPARE_RULES = ["with-base", "no-base-clean", "one-plan", "no-plan"] as const;
+export type CompareRule = (typeof COMPARE_RULES)[number];
+
 const driverSchema = z.object({ id: z.string(), label: z.string(), div: z.number().nonnegative(), share: z.number().min(0).max(1) }).strict();
 export type ScoreDriver = z.infer<typeof driverSchema>;
 
@@ -69,11 +88,17 @@ export const scoreEntrySchema = z
     archetype: z.string().min(1),
     /** Which start the scored plan used (null when there is no plan). */
     start: z.enum(["clean", "bought"]).nullable(),
+    benchmark: z.object({ kind: z.enum(BENCHMARKS), reason: z.string().min(1).nullable() }).strict(),
+    /** The creator's materials at snapshot prices (+ the bought base). */
     creatorDiv: goldenBandSchema.nullable(),
+    /** The creator's stated total; the ratio's denominator when benchmark.kind is "statedTotal". */
+    statedDiv: goldenBandSchema.nullable(),
     plannerDiv: goldenBandSchema.nullable(),
     /** startMode "compare": both candidates' cost (a bought one with its bases), null = that start has no plan. */
-    compared: z.object({ clean: goldenBandSchema.nullable(), bought: goldenBandSchema.nullable() }).strict().nullable(),
+    compared: z.object({ clean: goldenBandSchema.nullable(), bought: goldenBandSchema.nullable(), rule: z.enum(COMPARE_RULES) }).strict().nullable(),
+    /** planner / benchmark (see benchmarkDiv). */
     ratio: z.number().nonnegative().nullable(),
+    /** The 0.5–2 band; an excluded entry still records it, but the summary does not count it. */
     pass: z.boolean(),
     tags: z.object({ planner: z.array(goldenTagSchema), creator: z.array(goldenTagSchema), jaccard: z.number().min(0).max(1) }).strict(),
     topDriver: driverSchema.nullable(),
@@ -90,17 +115,29 @@ export const scoreboardSchema = z
     generatedAt: z.string().datetime(),
     prices: z.object({ league: z.string(), fetchedAt: z.string().datetime(), source: z.string() }).strict(),
     budget: z.object({ clock: z.literal("cpu"), searchMs: z.number().positive(), alternativesMs: z.number().positive() }).strict(),
-    summary: z.object({ entries: z.number().int().nonnegative(), passed: z.number().int().nonnegative(), errored: z.number().int().nonnegative() }).strict(),
+    summary: z
+      .object({ entries: z.number().int().nonnegative(), counted: z.number().int().nonnegative(), excluded: z.number().int().nonnegative(), passed: z.number().int().nonnegative(), errored: z.number().int().nonnegative() })
+      .strict(),
     entries: z.array(scoreEntrySchema),
   })
   .strict();
 export type Scoreboard = z.infer<typeof scoreboardSchema>;
 
-export const summarize = (entries: readonly ScoreEntry[]): Scoreboard["summary"] => ({
-  entries: entries.length,
-  passed: entries.filter((e) => e.pass).length,
-  errored: entries.filter((e) => e.error).length,
-});
+export const isCounted = (e: Pick<ScoreEntry, "benchmark">): boolean => e.benchmark.kind !== "excluded";
+
+/** `passed` counts only the counted entries: an excluded entry's band result is drift data, not a score. */
+export function summarize(entries: readonly ScoreEntry[]): Scoreboard["summary"] {
+  const counted = entries.filter(isCounted);
+  return {
+    entries: entries.length,
+    counted: counted.length,
+    excluded: entries.length - counted.length,
+    passed: counted.filter((e) => e.pass).length,
+    errored: entries.filter((e) => e.error).length,
+  };
+}
+
+export const summaryLine = (s: Scoreboard["summary"]): string => `${s.passed}/${s.counted} counted pass (${s.excluded} excluded), ${s.errored} errored`;
 
 /** How far a ratio is from 1, symmetric in over- and under-estimates (2× and 0.5× are equally far). */
 const distance = (ratio: number): number => Math.abs(Math.log(ratio));
@@ -111,6 +148,8 @@ export interface CheckResult {
 }
 
 function checkEntry(base: ScoreEntry, now: ScoreEntry): string[] {
+  // A ratio against a different benchmark is not comparable: a re-classification must refresh the baseline.
+  if (base.benchmark.kind !== now.benchmark.kind) return [`${now.id}: benchmark ${base.benchmark.kind} → ${now.benchmark.kind}, ratios not comparable (refresh the baseline with npm run craft:eval)`];
   const out: string[] = [];
   if (base.pass && !now.pass) out.push(`${now.id}: pass → fail (ratio ${fmt(base.ratio)} → ${fmt(now.ratio)})`);
   if (base.ratio != null && now.ratio == null) out.push(`${now.id}: had ratio ${fmt(base.ratio)}, now none (${now.error?.kind ?? "no cost"}: ${now.error?.message ?? ""})`);

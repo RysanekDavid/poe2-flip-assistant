@@ -63,6 +63,8 @@
       "pct": 40
     }
   },
+  "benchmark": "statedTotal",
+  "benchmarkReason": "Single lucky run: T2 cast speed on the first catalysed slam ('we got pretty lucky', 6:44-7:00), T1 max mana on the second ('we hit the 10%', 9:06-9:11), Essence of the Mind 50/50 won (9:56-9:59). Anchor: 'this ring cost me 200 divs ... a little less than that. Like 160 divs or 170' (12:29-12:42), the same run's total. It includes ~90 div of MCE bases and fracture attempts ('we spent 90 divs trying to hit this', 3:46-3:52) that the planner replaces with its own fracture phase, so a pass here is weak evidence.",
   "creator": {
     "tags": [
       "fracture-target",
@@ -233,9 +235,9 @@
     ],
     "baseDiv": null,
     "statedTotalDiv": {
-      "point": 170,
+      "point": 165,
       "low": 160,
-      "high": 200
+      "high": 170
     },
     "steps": [
       "Buy Mnemonic Rings with a perfectly rolled mana cost efficiency prefix, 3 prefixes and 1 suffix, 10 div each",
@@ -284,6 +286,6 @@
   "factCheck": {
     "date": "2026-10-07",
     "verdict": "fixed",
-    "notes": "Chaos rate now cites Hax's own ~11 chaos per div (qATcKacI83o 3:01-3:04) instead of an unsourced LilBotQ rate; cast-speed slam step corrected (no Dextral Exaltation used, 6:48-6:58); Light 2->1, Ancient Collarbone 2->1, Echoes 3->2, Annul 6->5 per footage (10:57-11:49); league marked inferred (uploaded 2026-09-18). Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+    "notes": "Chaos rate now cites Hax's own ~11 chaos per div (qATcKacI83o 3:01-3:04) instead of an unsourced LilBotQ rate; cast-speed slam step corrected (no Dextral Exaltation used, 6:48-6:58); Light 2->1, Ancient Collarbone 2->1, Echoes 3->2, Annul 6->5 per footage (10:57-11:49); league marked inferred (uploaded 2026-09-18). Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved). Benchmark check 2026-10-07: statedTotalDiv 170 (160-200) -> 165 (160-170); he retracts the 200 ('a little less than that. Like 160 divs or 170', 12:29-12:42)."
   }
 }

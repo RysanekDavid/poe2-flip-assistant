@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
-  "generatedAt": "2026-10-07T02:57:31.260Z",
+  "schema_version": 2,
+  "generatedAt": "2026-10-07T03:24:40.138Z",
   "prices": {
     "league": "Forbidden Rites",
     "fetchedAt": "2026-10-06T23:45:50.337Z",
@@ -13,6 +13,8 @@
   },
   "summary": {
     "entries": 16,
+    "counted": 14,
+    "excluded": 2,
     "passed": 8,
     "errored": 0
   },
@@ -21,10 +23,19 @@
       "id": "amulet-caster-plus4-spirit-saveq",
       "archetype": "amulet-skill-spirit",
       "start": "bought",
+      "benchmark": {
+        "kind": "statedTotal",
+        "reason": "Single run, counts are what he had on hand: both catalysed Perfect Exalt slams hit a kept suffix (all-res, then cast speed, 3:55-4:52) and the desecration stopped at a low spell damage roll after at least two Omen of Light rerolls (9:36, 10:30), by choice ('we don't want to spend more currency', 10:58-11:02). Anchor: 'you can start this craft with between 50 to 100 divs' (9:59-10:05), his bankroll guidance, which presumably covers the ~35 div Gold base (1:27-1:33) that the planner side also counts on a bought start."
+      },
       "creatorDiv": {
         "point": 204.71968800000002,
         "low": 164.95168800000002,
         "high": 215.07248800000002
+      },
+      "statedDiv": {
+        "point": 75,
+        "low": 50,
+        "high": 100
       },
       "plannerDiv": {
         "point": 817.0830814321396,
@@ -41,9 +52,10 @@
           "point": 817.0830814321396,
           "low": 193.22678974647783,
           "high": 5327.283760504627
-        }
+        },
+        "rule": "with-base"
       },
-      "ratio": 3.9912286376293205,
+      "ratio": 10.89444108576186,
       "pass": false,
       "tags": {
         "planner": [
@@ -82,10 +94,19 @@
       "id": "amulet-melee-spirit-es-alohaa",
       "archetype": "amulet-skill-spirit",
       "start": "bought",
+      "benchmark": {
+        "kind": "statedTotal",
+        "reason": "Explicit minimum counts: the Spirit reroll (7:22-7:37), the Dextral Erasure + Chaos loop 'until you're happy' (10:00-10:37) and the final bone + Omen of Light loop (10:38-10:58) have no stated count, and the catalysed T1 flat ES slam hit first try ('I got fairly lucky', 9:01-9:06). Anchor: 'I think it cost me like 100 divine orbs' (11:18-11:22); whether that includes the bought base is not said (its price never is)."
+      },
       "creatorDiv": {
         "point": 44.726546,
         "low": 44.726546,
         "high": 48.139056
+      },
+      "statedDiv": {
+        "point": 100,
+        "low": 100,
+        "high": 100
       },
       "plannerDiv": {
         "point": 476.2347962170916,
@@ -93,7 +114,7 @@
         "high": 2502.420454068976
       },
       "compared": null,
-      "ratio": 10.647698935148975,
+      "ratio": 4.762347962170916,
       "pass": false,
       "tags": {
         "planner": [
@@ -137,11 +158,16 @@
       "id": "amulet-plus3-projectile-fracture-xthefarmerx",
       "archetype": "amulet-skill-spirit",
       "start": "bought",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 45.385594,
         "low": 24.997598,
         "high": 85.768786
       },
+      "statedDiv": null,
       "plannerDiv": {
         "point": 77.086311,
         "low": 74.086311,
@@ -179,10 +205,19 @@
       "id": "belt-life-res-ulaman-thesaneexile",
       "archetype": "belt-life-res",
       "start": "bought",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 1.37240556,
         "low": 0.87240556,
         "high": 1.37240556
+      },
+      "statedDiv": {
+        "point": 2,
+        "low": 2,
+        "high": 2
       },
       "plannerDiv": {
         "point": 2.0025580639999996,
@@ -223,11 +258,16 @@
       "id": "breach-ring-3-t1-attack-flats-owner",
       "archetype": "ring-attack-flat",
       "start": "clean",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 216.92270000000002,
         "low": 130.9259,
         "high": 323.6251
       },
+      "statedDiv": null,
       "plannerDiv": {
         "point": 229.82081070318748,
         "low": 98.21515591100416,
@@ -243,7 +283,8 @@
           "point": 249.59848170318747,
           "low": 122.05673941100416,
           "high": 441.42640345144343
-        }
+        },
+        "rule": "with-base"
       },
       "ratio": 1.0594594788981857,
       "pass": true,
@@ -283,10 +324,19 @@
       "id": "jewel-emerald-5mod-fubgun",
       "archetype": "jewel-5mod-overcap",
       "start": "bought",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 145.710357,
         "low": 79.51355699999999,
         "high": 278.207475
+      },
+      "statedDiv": {
+        "point": 65,
+        "low": 50,
+        "high": 80
       },
       "plannerDiv": {
         "point": 183.03783440939173,
@@ -303,7 +353,8 @@
           "point": 183.03783440939173,
           "low": 92.39727780426554,
           "high": 538.5007961037927
-        }
+        },
+        "rule": "with-base"
       },
       "ratio": 1.2561758695669913,
       "pass": true,
@@ -345,10 +396,19 @@
       "id": "jewel-emerald-5mod-lilbotq",
       "archetype": "jewel-5mod-overcap",
       "start": "bought",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 244.20692900000003,
         "low": 189.158459,
         "high": 245.65236800000005
+      },
+      "statedDiv": {
+        "point": 95,
+        "low": 80,
+        "high": 100
       },
       "plannerDiv": {
         "point": 338.5319900248464,
@@ -365,7 +425,8 @@
           "point": 338.5319900248464,
           "low": 168.93743020174523,
           "high": 1005.1987212631593
-        }
+        },
+        "rule": "with-base"
       },
       "ratio": 1.3862505515756531,
       "pass": true,
@@ -406,10 +467,19 @@
       "id": "jewel-sapphire-budget-pavel",
       "archetype": "jewel-5mod-overcap",
       "start": "bought",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 85.27102799999999,
         "low": 53.687448999999994,
         "high": 139.875507
+      },
+      "statedDiv": {
+        "point": 18,
+        "low": 18,
+        "high": 20
       },
       "plannerDiv": {
         "point": 107.55590033233392,
@@ -426,7 +496,8 @@
           "point": 107.55590033233392,
           "low": 56.68730327121266,
           "high": 309.14808527505573
-        }
+        },
+        "rule": "with-base"
       },
       "ratio": 1.2613416638102912,
       "pass": true,
@@ -464,10 +535,19 @@
       "id": "jewel-sapphire-fractured-pavel",
       "archetype": "jewel-5mod-overcap",
       "start": "clean",
+      "benchmark": {
+        "kind": "materials",
+        "reason": "Stays materials: no lucky-run or minimum-count claim. The source never prices the fractured-route base (only 'dražší báze', more expensive bases, no number), so compare scores the clean plan (rule no-base-clean): a bought plan would buy the Critical Spell Damage Bonus already fractured and skip the Preserved Cranium + Fracturing Orb phase (~161 of the creator's ~195 div materials), which would flatter the planner."
+      },
       "creatorDiv": {
         "point": 194.77225300000006,
         "low": 102.27550599999998,
         "high": 336.97829700000005
+      },
+      "statedDiv": {
+        "point": 150,
+        "low": 150,
+        "high": 150
       },
       "plannerDiv": {
         "point": 239.0678023323339,
@@ -484,7 +564,8 @@
           "point": 107.45590033233393,
           "low": 56.65730327121266,
           "high": 308.5480852750557
-        }
+        },
+        "rule": "no-base-clean"
       },
       "ratio": 1.2274222773011403,
       "pass": true,
@@ -526,10 +607,19 @@
       "id": "jewel-time-lost-sapphire-mana-hax",
       "archetype": "jewel-time-lost",
       "start": "bought",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 327.194738,
         "low": 81.49649799999999,
         "high": 572.894296
+      },
+      "statedDiv": {
+        "point": 60,
+        "low": 60,
+        "high": 60
       },
       "plannerDiv": {
         "point": 225.8606295617074,
@@ -546,7 +636,8 @@
           "point": 225.8606295617074,
           "low": 63.41043176694729,
           "high": 634.8143599785503
-        }
+        },
+        "rule": "with-base"
       },
       "ratio": 0.6902941989296522,
       "pass": true,
@@ -583,10 +674,19 @@
       "id": "ring-attack-flat-alohaa-self-fracture",
       "archetype": "ring-attack-flat",
       "start": "clean",
+      "benchmark": {
+        "kind": "excluded",
+        "reason": "Class (e), no fair benchmark: the route uses Omen of Greater Exaltation twice, for the pre-fracture two-mod add (1:14-1:19) and the catalysed two-suffix Perfect slam (3:04-3:11), which the planner may not use. The material counts are minimums (first T1 flat roll, blocker bone, whittle Chaos and the final bone + Omen of Light loop, 'up to hundreds of divines if you're unlucky', 6:35-6:39, are uncounted), and the only total is a bankroll floor, '200 divines to spare' (0:22-0:27), spoken about 'both of these items' (0:10-0:22), so it may cover ring and amulet together."
+      },
       "creatorDiv": {
         "point": 88.52595899999997,
         "low": 65.105959,
         "high": 170.60965899999997
+      },
+      "statedDiv": {
+        "point": 200,
+        "low": 200,
+        "high": 200
       },
       "plannerDiv": {
         "point": 335.4368614678934,
@@ -641,10 +741,19 @@
       "id": "ring-attack-flat-budget-magic-greater",
       "archetype": "ring-attack-flat",
       "start": "bought",
+      "benchmark": {
+        "kind": "excluded",
+        "reason": "Class (e), no fair benchmark: the route is a catalysed Omen of Greater Exaltation + Greater Exalted Orb two-mod slam on 25-30 ex bases (9:02-9:07, 9:40-9:45), and the owner bans Omen of Greater Exaltation from the planner, so the planner must price a different route. He keeps any cold damage hit whatever the second mod (10:19-10:31), treats the batch as 'a numbers game' (14:36-14:42), still prices a soft miss at three or four div (15:10-15:16), and called four cold hits in four slams 'very lucky' (10:37-10:41)."
+      },
       "creatorDiv": {
         "point": 2.4835499999999997,
         "low": 1.7428100000000002,
         "high": 3.92074
+      },
+      "statedDiv": {
+        "point": 6,
+        "low": 4,
+        "high": 9
       },
       "plannerDiv": {
         "point": 19.155448289273508,
@@ -687,10 +796,19 @@
       "id": "ring-attack-flat-saveq-dusk-four-flat",
       "archetype": "ring-attack-flat",
       "start": "clean",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 289.43221100000005,
         "low": 152.248775,
         "high": 486.63689100000005
+      },
+      "statedDiv": {
+        "point": 100,
+        "low": 100,
+        "high": 500
       },
       "plannerDiv": {
         "point": 1303.0059296655668,
@@ -741,10 +859,19 @@
       "id": "ring-attack-flat-saveq-dusk-t3-budget",
       "archetype": "ring-attack-flat",
       "start": "clean",
+      "benchmark": {
+        "kind": "materials",
+        "reason": null
+      },
       "creatorDiv": {
         "point": 90.469946,
         "low": 49.38854599999999,
         "high": 138.11689499999997
+      },
+      "statedDiv": {
+        "point": 65,
+        "low": 50,
+        "high": 80
       },
       "plannerDiv": {
         "point": 345.0796030123405,
@@ -794,10 +921,19 @@
       "id": "ring-caster-mana-hax",
       "archetype": "ring-caster-mana",
       "start": "clean",
+      "benchmark": {
+        "kind": "statedTotal",
+        "reason": "Single lucky run: T2 cast speed on the first catalysed slam ('we got pretty lucky', 6:44-7:00), T1 max mana on the second ('we hit the 10%', 9:06-9:11), Essence of the Mind 50/50 won (9:56-9:59). Anchor: 'this ring cost me 200 divs ... a little less than that. Like 160 divs or 170' (12:29-12:42), the same run's total. It includes ~90 div of MCE bases and fracture attempts ('we spent 90 divs trying to hit this', 3:46-3:52) that the planner replaces with its own fracture phase, so a pass here is weak evidence."
+      },
       "creatorDiv": {
         "point": 101.28536999999999,
         "low": 95.57246999999998,
         "high": 122.86130999999999
+      },
+      "statedDiv": {
+        "point": 165,
+        "low": 160,
+        "high": 170
       },
       "plannerDiv": {
         "point": 634.0261552848319,
@@ -805,7 +941,7 @@
         "high": 1419.5289372538793
       },
       "compared": null,
-      "ratio": 6.259799962075786,
+      "ratio": 3.8425827593020117,
       "pass": false,
       "tags": {
         "planner": [
@@ -850,10 +986,19 @@
       "id": "ring-caster-mana-operatorotter",
       "archetype": "ring-caster-mana",
       "start": "clean",
+      "benchmark": {
+        "kind": "statedTotal",
+        "reason": "Single lucky run: T1 cast speed first try (9:13-9:17), T1 rarity on the first reveal (10:08-10:13), T1 max mana first try (11:18-11:20), Perfect Essence 50/50 won (13:04-13:32, 14:37-14:44). Anchor: his up-front estimate 'between 150 to 300 divs' (0:32-0:36), which covers the 25-30 div MCE base (1:50-1:56) and its fracture attempts ('it could cost up to 300 divs', 4:52-4:58); the materials list leaves both out. This run's fracture phase was unlucky (6 bases, 4:58-5:03), but it is outside the materials."
+      },
       "creatorDiv": {
         "point": 55.77872999999999,
         "low": 55.77872999999999,
         "high": 56.29963
+      },
+      "statedDiv": {
+        "point": 225,
+        "low": 150,
+        "high": 300
       },
       "plannerDiv": {
         "point": 712.7653162848333,
@@ -861,7 +1006,7 @@
         "high": 1637.1335942130654
       },
       "compared": null,
-      "ratio": 12.778442899019634,
+      "ratio": 3.1678458501548143,
       "pass": false,
       "tags": {
         "planner": [

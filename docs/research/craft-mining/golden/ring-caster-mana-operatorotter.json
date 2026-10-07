@@ -49,6 +49,8 @@
       "pct": 40
     }
   },
+  "benchmark": "statedTotal",
+  "benchmarkReason": "Single lucky run: T1 cast speed first try (9:13-9:17), T1 rarity on the first reveal (10:08-10:13), T1 max mana first try (11:18-11:20), Perfect Essence 50/50 won (13:04-13:32, 14:37-14:44). Anchor: his up-front estimate 'between 150 to 300 divs' (0:32-0:36), which covers the 25-30 div MCE base (1:50-1:56) and its fracture attempts ('it could cost up to 300 divs', 4:52-4:58); the materials list leaves both out. This run's fracture phase was unlucky (6 bases, 4:58-5:03), but it is outside the materials.",
   "creator": {
     "tags": [
       "fracture-target",
