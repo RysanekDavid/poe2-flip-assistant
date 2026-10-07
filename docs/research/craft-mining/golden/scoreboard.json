@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generatedAt": "2026-10-07T02:31:18.793Z",
+  "generatedAt": "2026-10-07T02:21:50.426Z",
   "prices": {
     "league": "Forbidden Rites",
     "fetchedAt": "2026-10-06T23:45:50.337Z",
@@ -13,7 +13,7 @@
   },
   "summary": {
     "entries": 16,
-    "passed": 4,
+    "passed": 5,
     "errored": 0
   },
   "entries": [
@@ -185,13 +185,13 @@
         "high": 1.37240556
       },
       "plannerDiv": {
-        "point": 24.70190724619998,
-        "low": 7.2726594208349615,
-        "high": 53.733934432923334
+        "point": 2.0025580639999996,
+        "low": 0.81080056,
+        "high": 13.070678128
       },
       "compared": null,
-      "ratio": 17.998985115012196,
-      "pass": false,
+      "ratio": 1.4591591016288215,
+      "pass": true,
       "tags": {
         "planner": [
           "annul",
@@ -212,8 +212,8 @@
       "topDriver": {
         "id": "omen-of-light",
         "label": "Omen of Light",
-        "div": 21.386044428487068,
-        "share": 0.9022921322888814
+        "div": 0.6366666666666666,
+        "share": 0.6350421881067895
       },
       "impractical": false,
       "marketDiv": 4,

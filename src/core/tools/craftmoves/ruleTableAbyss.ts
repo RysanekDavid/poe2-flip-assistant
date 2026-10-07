@@ -102,17 +102,61 @@ const BONES: MoveRule[] = (["gnawed", "preserved", "ancient"] as const).map((tie
   check: boneCheck(tier),
 }));
 
-/** KB §4: Liege is weapons + jewellery only; belts/quivers are plausible but not named. */
-function liegeCheck(s: ItemState): Verdict {
-  const cls = s.itemClass;
-  if (cls == null) return null;
-  const named = WEAPONS.has(cls) || JEWELLERY.has(cls);
-  const plausible = cls === "Belts" || cls === "Quivers";
-  if (!named && !plausible) return null;
-  const base = boneCheck("preserved", "Omen of the Liege + ")(s);
-  if (base == null || "block" in base || named) return base;
-  return { ...base, unverifiedBecause: `the KB says "weapons + jewellery" without naming ${cls.toLowerCase()}` };
+/** The three Abyss Liches whose desecrated pools an omen can force (the planner's `Faction`). */
+export type LichFaction = "amanamu" | "ulaman" | "kurgal";
+
+/** One Lich omen: its craft-moves rule id, material and the creator who showed it on a belt. */
+export interface FactionOmen {
+  rule: string;
+  name: string;
+  key: MaterialKey;
+  lich: string;
+  /** Who has shown the omen on a belt — the item text says "Weapon or Jewellery" and never names belts. */
+  beltShownBy: string | null;
 }
+
+/**
+ * The three Lich omens share one item text: "your next Weapon or Jewellery Desecration attempt will
+ * guarantee a random <Lich> modifier" (poe2db Omen_of_the_Liege / _Sovereign / _Blackblooded).
+ */
+export const FACTION_OMENS: Readonly<Record<LichFaction, FactionOmen>> = {
+  amanamu: { rule: "omen-liege", name: "Omen of the Liege", key: "omenTheLiege", lich: "Amanamu", beltShownBy: "ASaVeQ, KB §4" },
+  ulaman: { rule: "omen-sovereign", name: "Omen of the Sovereign", key: "omenTheSovereign", lich: "Ulaman", beltShownBy: "TheSaneExile, Zop328DR50Q 0:51–1:12 and 2:35–2:59" },
+  kurgal: { rule: "omen-blackblooded", name: "Omen of the Blackblooded", key: "omenTheBlackblooded", lich: "Kurgal", beltShownBy: null },
+};
+
+/** Weapons + jewellery are named by the item text; belts and quivers are plausible but not named. */
+function factionOmenCheck(faction: LichFaction) {
+  const omen = FACTION_OMENS[faction];
+  return (s: ItemState): Verdict => {
+    const cls = s.itemClass;
+    if (cls == null) return null;
+    const named = WEAPONS.has(cls) || JEWELLERY.has(cls);
+    const plausible = cls === "Belts" || cls === "Quivers";
+    if (!named && !plausible) return null;
+    const base = boneCheck("preserved", `${omen.name} + `)(s);
+    if (base == null || "block" in base || named) return base;
+    const shown = cls === "Belts" && omen.beltShownBy ? `; creator-shown on a belt only (${omen.beltShownBy})` : "";
+    return { ...base, unverifiedBecause: `the item text says "Weapon or Jewellery" without naming ${cls.toLowerCase()}${shown}` };
+  };
+}
+
+const factionOmenRule = (faction: LichFaction): MoveRule => {
+  const omen = FACTION_OMENS[faction];
+  return {
+    id: omen.rule,
+    label: `${omen.name} + bone`,
+    family: "omen",
+    materials: [omen.key, boneMaterial("preserved")],
+    requires: "rare weapon or jewellery, no desecrated mod yet",
+    effect: `guarantees a random ${omen.lich} modifier at the reveal`,
+    // item text is singular; "all three options from the faction" is community-only (KB §5)
+    notes: ["an existing mod in the same group can leave no Lich mod to offer (KB §5)", PRESERVED_ASSUMPTION],
+    source: `${S4}; ${S5}`,
+    verified: true,
+    check: factionOmenCheck(faction),
+  };
+};
 
 const STEERED: MoveRule[] = [
   ...(["sinistral", "dextral"] as const).map((dir) => ({
@@ -127,18 +171,7 @@ const STEERED: MoveRule[] = [
     verified: true,
     check: boneCheck("preserved", `${dir === "sinistral" ? "Sinistral" : "Dextral"} Necromancy + `),
   })),
-  {
-    id: "omen-liege",
-    label: "Omen of the Liege + bone",
-    family: "omen",
-    materials: ["omenTheLiege", boneMaterial("preserved")],
-    requires: "rare weapon or jewellery, no desecrated mod yet",
-    effect: "forces an Amanamu desecrated mod (blocks Ulaman / Kurgal)",
-    notes: [PRESERVED_ASSUMPTION],
-    source: S4,
-    verified: true,
-    check: liegeCheck,
-  },
+  ...(["amanamu", "ulaman", "kurgal"] as const).map(factionOmenRule),
 ];
 
 function putrefactionCheck(s: ItemState): Verdict {

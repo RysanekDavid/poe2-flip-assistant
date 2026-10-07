@@ -23,6 +23,8 @@ export const MATS = {
   omenTheLiege: { id: "omen-of-the-liege", label: "Omen of the Liege", group: "omen" },
   // Ulaman twin of the Liege: "guarantee a random Ulaman modifier" on a Weapon/Jewellery desecration.
   omenTheSovereign: { id: "omen-of-the-sovereign", label: "Omen of the Sovereign", group: "omen" },
+  // Kurgal twin: "guarantee a random Kurgal modifier" (poe2db item text, NoteCode omen-of-the-blackblooded).
+  omenTheBlackblooded: { id: "omen-of-the-blackblooded", label: "Omen of the Blackblooded", group: "omen" },
   omenDextralCrystallisation: { id: "omen-of-dextral-crystallisation", label: "Omen of Dextral Crystallisation", group: "omen" },
   omenSinistralCrystallisation: { id: "omen-of-sinistral-crystallisation", label: "Omen of Sinistral Crystallisation", group: "omen" },
   omenGreaterExaltation: { id: "omen-of-greater-exaltation", label: "Omen of Greater Exaltation", group: "omen" },

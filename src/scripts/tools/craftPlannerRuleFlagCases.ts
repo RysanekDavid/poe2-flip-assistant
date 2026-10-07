@@ -72,12 +72,12 @@ const qtyOf = (m: Move, key: "omenLight" | "omenAbyssalEchoes"): number => m.use
 function testReveal(cat: CraftCatalog): void {
   const ctx = ctxOf(cat, BREACH_RING);
   const state = rare([junk("prefix"), junk("suffix"), junk("suffix")]);
-  const odds = revealOdds(ctx, state, ctx.targets[3]!, { liege: false, bone: "preserved" })!;
+  const odds = revealOdds(ctx, state, ctx.targets[3]!, { factionOmen: false, bone: "preserved" })!;
   const twice = (p: number) => 1 - (1 - p) ** 2;
   assert.ok(near(odds.withEchoes.point!, twice(odds.first)), "point: 1 − (1 − first)²");
   assert.ok(near(odds.withEchoes.low!, twice(odds.once.low!)) && near(odds.withEchoes.high!, twice(odds.once.high!)), "band ends: the same transform");
   const { move } = desecrateMove(cat);
-  const liege = revealOdds(ctx, state, ctx.targets[2]!, { liege: true, bone: "preserved" })!;
+  const liege = revealOdds(ctx, state, ctx.targets[2]!, { factionOmen: true, bone: "preserved" })!;
   const attempts = 1 / move.odds.point!;
   assert.ok(near(move.odds.point!, twice(liege.first)), "the move's odds are the Echoes odds");
   assert.ok(near(qtyOf(move, "omenLight"), attempts - 1), "one Omen of Light per failed attempt");
