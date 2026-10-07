@@ -8,7 +8,7 @@ import type { Method, Move, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
  * Shape the base (the starts live in methodsStart.ts): the magic Annul+Aug loop, Regal, the
- * two-throwaway rare, throwaway mods, junk strips and the fracture.
+ * two-throwaway rare, the Alchemy strip, throwaway mods, junk strips and the fracture.
  */
 
 /** Normal → magic → Annulment + Augmentation until the target: magic items hold one mod per side. */
@@ -104,6 +104,34 @@ function transmuteRegal(state: PlanState, ctx: PlanCtx): Move[] {
     checks: [
       { state, rules: ["transmute"] },
       { state: magic, rules: ["regal"] },
+    ],
+  });
+  return move ? [move] : [];
+}
+
+/**
+ * Normal → Alchemy → Annulment ×3 → a rare with one throwaway. The rare start an allowance base
+ * (Dusk Ring) has at all from Normal: its magic allowance is unverified, so the Transmutation routes
+ * above are gated off there (SaVeQ's Dusk Ring, KB §1). Offered on every base; the search keeps
+ * Transmute + Regal where that is cheaper.
+ */
+function alchemyStrip(state: PlanState, ctx: PlanCtx): Move[] {
+  if (state.rarity !== "Normal") return [];
+  const four: PlanState = { rarity: "Rare", affixes: [junk("any"), junk("any"), junk("any"), junk("any")], quality: state.quality, catalyst: state.catalyst };
+  const move = makeMove(ctx, {
+    methodId: "alchemy-strip",
+    title: "Rare with one throwaway",
+    next: withAffixes(state, [junk("any")], { rarity: "Rare" }),
+    steps: [
+      step({ do: "Orb of Alchemy on the Normal base.", why: "Normal → rare with four random mods; none of them matters.", mats: [mat("alch")], sources: sources("kb-currency") }),
+      step({ do: "Orb of Annulment ×3.", why: "Each Annulment removes one random mod; every mod is a throwaway, so any three may go.", mats: [mat("annul")], check: "Rare with exactly one mod.", sources: sources("kb-currency") }),
+    ],
+    uses: [once(mat("alch")), useOf(mat("annul"), band(3))],
+    odds: exact(1, "every mod is a throwaway"),
+    grade: "vp",
+    checks: [
+      { state, rules: ["alchemy"] },
+      { state: four, rules: ["annul"] },
     ],
   });
   return move ? [move] : [];
@@ -245,6 +273,7 @@ export const PREP_METHODS: readonly Method[] = [
   { id: "magic-aug-filler", order: 11, moves: magicFiller },
   { id: "regal", order: 12, moves: regal },
   { id: "transmute-regal", order: 13, moves: transmuteRegal },
+  { id: "alchemy-strip", order: 14, moves: alchemyStrip },
   { id: "strip-junk", order: 20, moves: stripJunk },
   { id: "plant-junk", order: 40, moves: plantJunk },
   { id: "fracture", order: 80, moves: fracture },

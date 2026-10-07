@@ -23,6 +23,8 @@ export const METHOD_TAGS: Readonly<Record<MacroMethodId, readonly GoldenTag[]>> 
   regal: ["regal"],
   // Transmute then Regal onto a Normal base: two throwaway mods, no Augment loop
   "transmute-regal": ["regal"],
+  // Alchemy then three Annulments: one throwaway left; no golden tag names Alchemy
+  "alchemy-strip": ["annul"],
   "strip-junk": ["annul"],
   // a throwaway Exalt slam: its Exalt tier and side omen come from its materials
   "plant-junk": [],
@@ -59,6 +61,7 @@ export const STEP_PATTERNS: ReadonlyArray<readonly [RegExp, MacroMethodId]> = [
   [/^magic-aug-filler$/, "magic-aug-filler"],
   [/^regal$/, "regal"],
   [/^transmute-regal$/, "transmute-regal"],
+  [/^alchemy-strip$/, "alchemy-strip"],
   [/^strip-junk$/, "strip-junk"],
   [/^plant-junk-(?:prefix|suffix|any)$/, "plant-junk"],
   [/^fracture$/, "fracture"],
