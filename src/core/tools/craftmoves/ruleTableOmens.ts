@@ -34,7 +34,7 @@ function whittle(side: "prefix" | "suffix" | null) {
   };
 }
 
-const ABOVE_40 = "the multiplier is documented at 20% (×5) and 40% (×7.5) only — above 40% (a Refined Breach Ring caps at 45%) it is not";
+const ABOVE_40 = "the multiplier has numbers at 20% and 40% only (creators state ×2 / ×3; community models ×5 / ×7.5; nothing measured) — above 40% (a Refined Breach Ring caps at 45%) nothing is said";
 
 /** Rings/amulets only: classify sets maxQuality for exactly the classes catalysts apply to. */
 function catalysingCheck(s: ItemState): Verdict {
@@ -109,10 +109,10 @@ const EXALTATION: MoveRule[] = [
     family: "omen",
     materials: ["omenCatalysingExaltation", "exalted"],
     requires: "rare ring/amulet with catalyst quality and an open affix",
-    effect: "the next Exalt consumes ALL catalyst quality to bias toward the catalyst's tag (×5 at 20%, ×7.5 at 40%)",
+    effect: "the next Exalt consumes ALL catalyst quality to bias toward the catalyst's tag (creators state ×2 at 20% / ×3 at 40%; community models ×5 / ×7.5; nothing measured)",
     warnings: ["a weighted bias, NOT a guarantee — and all quality is consumed"],
     notes: [
-      "×5 / ×7.5 is the community model of the bias (KB §4), not item text; nothing documents the multiplier above 40% quality",
+      "the item text gives no number: XTheFarmerX states ×2 / ×3 from others' 300–400 attempts, poe2wiki and Craft of Exile model ×5 / ×7.5 (KB §4); nothing documents the multiplier above 40% quality",
       "with Greater Exaltation the bias may hit only the FIRST added mod (KB dispute) — budget first-only",
       `raw catalyst quality alone never changes roll weights (${KB} §8)`,
     ],
