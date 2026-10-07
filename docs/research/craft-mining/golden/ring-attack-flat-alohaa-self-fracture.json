@@ -64,6 +64,8 @@
       "pct": 60
     }
   },
+  "benchmark": "excluded",
+  "benchmarkReason": "Class (e), no fair benchmark: the route uses Omen of Greater Exaltation twice, for the pre-fracture two-mod add (1:14-1:19) and the catalysed two-suffix Perfect slam (3:04-3:11), which the planner may not use. The material counts are minimums (first T1 flat roll, blocker bone, whittle Chaos and the final bone + Omen of Light loop, 'up to hundreds of divines if you're unlucky', 6:35-6:39, are uncounted), and the only total is a bankroll floor, '200 divines to spare' (0:22-0:27), spoken about 'both of these items' (0:10-0:22), so it may cover ring and amulet together.",
   "creator": {
     "tags": [
       "chaos-loop",

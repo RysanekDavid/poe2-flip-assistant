@@ -15,6 +15,7 @@ import { buildSnapshot, priceSnapshotSchema } from "../../core/research/craftMin
 import { goldenEntrySchema, GOLDEN_TAGS, type GoldenEntryInput } from "../../core/research/craftMining/goldenSchema";
 import { macroOf, MACRO_METHOD_IDS, METHOD_TAGS, planTags, START_METHOD_IDS, stepTags, STEP_PATTERNS } from "../../core/research/craftMining/goldenTags";
 import { BREACH_RING, FOUR_FLAT_DUSK, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, OWNER_POOL_RING, fixturePrices } from "../tools/plannerFixtures";
+import { runBenchmarkCases } from "./craftEvalBenchmarkCases";
 import { runScoreCases } from "./craftEvalScoreCases";
 
 let passed = 0;
@@ -78,6 +79,19 @@ ok("golden schema: rejects each defect class", () => {
   rejects((d) => void (d.startMode = "compare", (d.planRequest.start = { kind: "bought", carried: null, askDiv: null })), /leave planRequest.start out/);
   rejects((d) => void (d.extra = 1), /Unrecognized key/);
   rejects((d) => void (d.id = "Not Kebab"), /kebab-case/);
+});
+
+ok("golden schema: benchmark defaults to materials; statedTotal and excluded need a reason, statedTotal a stated total", () => {
+  const parse = (patch: Partial<GoldenEntryInput>) => goldenEntrySchema.safeParse({ ...structuredClone(VALID), ...patch });
+  const plain = parse({});
+  assert.ok(plain.success && plain.data.benchmark === "materials" && plain.data.benchmarkReason === undefined);
+  assert.ok(parse({ benchmark: "statedTotal", benchmarkReason: "single lucky run (2:20)" }).success);
+  assert.ok(parse({ benchmark: "excluded", benchmarkReason: "banned omen" }).success);
+  assert.ok(parse({ benchmarkReason: "checked: counts are an expected run" }).success, "a materials entry may say why it stays materials");
+  rejects((d) => void (d.benchmark = "statedTotal"), /benchmark "statedTotal" needs a benchmarkReason/);
+  rejects((d) => void (d.benchmark = "excluded"), /benchmark "excluded" needs a benchmarkReason/);
+  rejects((d) => void ((d.benchmark = "statedTotal"), (d.benchmarkReason = "lucky"), (d.creator.statedTotalDiv = null)), /needs creator.statedTotalDiv/);
+  rejects((d) => void (d.benchmark = "guess" as never), /Invalid enum value/);
 });
 
 ok("committed golden set and price snapshot parse (ids = filenames)", () => {
@@ -147,4 +161,5 @@ ok("tag derivation: every step of the fixture plans maps (clean and bought start
 });
 
 runScoreCases(ok);
+runBenchmarkCases(ok);
 console.log(`\n${passed} craft:eval check(s) passed`);

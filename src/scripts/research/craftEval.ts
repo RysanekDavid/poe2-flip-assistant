@@ -13,7 +13,7 @@ import { relative } from "node:path";
 import { loadCraftMining } from "../../core/research/craftMining/load";
 import { readGoldenEntries, readPriceSnapshot, readScoreboard, SCOREBOARD_PATH } from "../../core/research/craftMining/goldenLoad";
 import { plannerPrices, type PriceSnapshot } from "../../core/research/craftMining/goldenPrices";
-import { checkAgainstBaseline, fmt, SCOREBOARD_VERSION, summarize, type Scoreboard, type ScoreEntry } from "../../core/research/craftMining/goldenScore";
+import { checkAgainstBaseline, fmt, isCounted, SCOREBOARD_VERSION, summarize, summaryLine, type Scoreboard, type ScoreEntry } from "../../core/research/craftMining/goldenScore";
 import { loadCraftCatalog } from "../../core/tools/craftmoves/catalog";
 import type { PlanDeps } from "../../core/tools/planner/plan";
 import { catalysingPriorsFrom, revealPriorsFrom } from "../../core/tools/planner/revealPriors";
@@ -42,17 +42,25 @@ function parseArgs(argv: readonly string[]): EvalArgs {
 
 const band = (b: { point: number; low: number; high: number } | null): string => (b ? `${fmt(b.point, 1)} (${fmt(b.low, 0)}–${fmt(b.high, 0)})` : "–");
 
+const passCell = (e: ScoreEntry): string => {
+  const inBand = e.pass ? "PASS" : "fail";
+  return isCounted(e) ? inBand : `excluded (${e.benchmark.reason ?? "no reason"}; band: ${inBand})`;
+};
+
+function startCell(e: ScoreEntry): string {
+  if (!e.compared) return e.start ?? "–";
+  return `${e.start ?? "–"} (compared ${e.compared.rule}: clean ${fmt(e.compared.clean?.point ?? null, 0)}, bought ${fmt(e.compared.bought?.point ?? null, 0)})`;
+}
+
 function markdownTable(entries: readonly ScoreEntry[]): string {
-  const head = "| id | start | planner div | creator div | ratio | pass | tag overlap | top driver | impractical | market div | error |";
-  const rule = "|---|---|---|---|---|---|---|---|---|---|---|";
+  const head = "| id | benchmark | start | planner div | creator materials div | creator stated div | ratio | pass | tag overlap | top driver | impractical | market div | error |";
+  const rule = "|---|---|---|---|---|---|---|---|---|---|---|---|---|";
   const rows = entries.map((e) => {
     const driver = e.topDriver ? `${e.topDriver.label} ${Math.round(e.topDriver.share * 100)}%` : "–";
     const error = e.error ? `${e.error.kind}: ${e.error.message}` : "";
-    const start = e.compared ? `${e.start ?? "–"} (compared: clean ${fmt(e.compared.clean?.point ?? null, 0)}, bought ${fmt(e.compared.bought?.point ?? null, 0)})` : (e.start ?? "–");
-    return `| ${e.id} | ${start} | ${band(e.plannerDiv)} | ${band(e.creatorDiv)} | ${fmt(e.ratio)} | ${e.pass ? "PASS" : "fail"} | ${fmt(e.tags.jaccard)} | ${driver} | ${e.impractical ? "yes" : "no"} | ${fmt(e.marketDiv, 0)} | ${error} |`;
+    return `| ${e.id} | ${e.benchmark.kind} | ${startCell(e)} | ${band(e.plannerDiv)} | ${band(e.creatorDiv)} | ${band(e.statedDiv)} | ${fmt(e.ratio)} | ${passCell(e)} | ${fmt(e.tags.jaccard)} | ${driver} | ${e.impractical ? "yes" : "no"} | ${fmt(e.marketDiv, 0)} | ${error} |`;
   });
-  const s = summarize(entries);
-  return [head, rule, ...rows, "", `${s.passed}/${s.entries} pass, ${s.errored} errored`].join("\n");
+  return [head, rule, ...rows, "", summaryLine(summarize(entries))].join("\n");
 }
 
 function deps(snapshot: PriceSnapshot, searchMs: number): PlanDeps {

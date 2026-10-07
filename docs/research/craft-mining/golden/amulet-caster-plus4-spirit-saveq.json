@@ -41,6 +41,8 @@
     }
   },
   "startMode": "compare",
+  "benchmark": "statedTotal",
+  "benchmarkReason": "Single run, counts are what he had on hand: both catalysed Perfect Exalt slams hit a kept suffix (all-res, then cast speed, 3:55-4:52) and the desecration stopped at a low spell damage roll after at least two Omen of Light rerolls (9:36, 10:30), by choice ('we don't want to spend more currency', 10:58-11:02). Anchor: 'you can start this craft with between 50 to 100 divs' (9:59-10:05), his bankroll guidance, which presumably covers the ~35 div Gold base (1:27-1:33) that the planner side also counts on a bought start.",
   "creator": {
     "tags": [
       "bought-base",

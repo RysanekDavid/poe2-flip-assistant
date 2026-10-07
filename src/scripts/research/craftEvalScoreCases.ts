@@ -17,12 +17,14 @@ import {
 const b = (point: number, low = point, high = point) => ({ point, low, high });
 
 /** A scoreboard row with only the fields the gate reads set meaningfully. */
-function entry(id: string, ratio: number | null, error: ScoreEntry["error"] = null): ScoreEntry {
+export function entry(id: string, ratio: number | null, error: ScoreEntry["error"] = null, benchmark: ScoreEntry["benchmark"] = { kind: "materials", reason: null }): ScoreEntry {
   return {
     id,
     archetype: "ring-attack-flat",
     start: ratio == null ? null : "clean",
+    benchmark,
     creatorDiv: b(100),
+    statedDiv: null,
     plannerDiv: ratio == null ? null : b(100 * ratio),
     compared: null,
     ratio,
@@ -81,14 +83,14 @@ function testCheck(): void {
 function testScoreboardShape(): void {
   const entries = [entry("a", 1), entry("b", null, { kind: "rejected", message: "no" })];
   const board = {
-    schema_version: 1,
+    schema_version: 2,
     generatedAt: "2026-10-07T00:00:00.000Z",
     prices: { league: "L", fetchedAt: "2026-10-07T00:00:00.000Z", source: "test" },
     budget: { clock: "cpu", searchMs: 10000, alternativesMs: 3000 },
     summary: summarize(entries),
     entries,
   };
-  assert.deepEqual(board.summary, { entries: 2, passed: 1, errored: 1 });
+  assert.deepEqual(board.summary, { entries: 2, counted: 2, excluded: 0, passed: 1, errored: 1 });
   assert.ok(scoreboardSchema.safeParse(board).success);
 }
 
