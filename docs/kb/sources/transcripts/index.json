@@ -270,5 +270,75 @@
   "archetypes": [
    "ring-attack-flat"
   ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/38-resistance-belt-rings-half-price-thesaneexile.txt",
+  "title": "PoE2 0.5.5 - Craft your resistance Belt/Rings for half price on leaguestart",
+  "url": "https://www.youtube.com/watch?v=Zop328DR50Q",
+  "chars": 4943,
+  "videoId": "Zop328DR50Q",
+  "creator": "TheSaneExile",
+  "fetched": "2026-10-07",
+  "lang": "en",
+  "sha256": "cfb39a88569368b23343de76a3d1de49b586fdf4c1addb6f037517ffee61d5c8",
+  "archetypes": [
+   "belt-life-res"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/39-bis-caster-mana-ring-operatorotter.txt",
+  "title": "HOW TO CRAFT BiS Caster Mana Ring 0.5 - Path of Exile 2 Crafting Guide",
+  "url": "https://www.youtube.com/watch?v=NUiXXbrPS4E",
+  "chars": 20285,
+  "videoId": "NUiXXbrPS4E",
+  "creator": "OperatorOtter",
+  "fetched": "2026-10-07",
+  "lang": "en",
+  "sha256": "5c8b088c78246422e92eb0ac009d70a3b5cfd8e6ba81d753abef8e72621a7896",
+  "archetypes": [
+   "ring-caster-mana"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/40-mana-stacking-ring-full-walkthrough-hax.txt",
+  "title": "How to Craft a Mana Stacking Ring in Path of Exile 2 (Full Walkthrough)",
+  "url": "https://www.youtube.com/watch?v=QrQUKDvSYUU",
+  "chars": 16113,
+  "videoId": "QrQUKDvSYUU",
+  "creator": "Hax",
+  "fetched": "2026-10-07",
+  "lang": "en",
+  "sha256": "ec0795937b4f8b578cd3e3fe10c75f86d8e6c60df39c955b31875076612ac067",
+  "archetypes": [
+   "ring-caster-mana"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/41-400-divs-plus4-caster-amulets-saveq.txt",
+  "title": "How I made 400 Divs crafting +4 caster amulets poe2 0.5",
+  "url": "https://www.youtube.com/watch?v=bmDpeUchnBU",
+  "chars": 12357,
+  "videoId": "bmDpeUchnBU",
+  "creator": "SaVeQ",
+  "fetched": "2026-10-07",
+  "lang": "en",
+  "sha256": "6346388ac70526cb73be8f05ae427251275a420eefdf8199b7a09bbf51dc9a70",
+  "archetypes": [
+   "amulet-skill-spirit"
+  ]
+ },
+ {
+  "file": "docs/kb/sources/transcripts/42-jewels-double-your-damage-hax.txt",
+  "title": "These PoE2 Jewels Double Your Damage — Here's How to Craft Them",
+  "url": "https://www.youtube.com/watch?v=qATcKacI83o",
+  "chars": 12021,
+  "videoId": "qATcKacI83o",
+  "creator": "Hax",
+  "fetched": "2026-10-01",
+  "lang": "en",
+  "sha256": "8c403988180bb54601e928e71c8130861f942d738931a4825775eadd0a349aa9",
+  "archetypes": [
+   "jewel-time-lost"
+  ]
  }
 ]

@@ -1,0 +1,251 @@
+{
+  "id": "ring-caster-mana-operatorotter",
+  "archetype": "ring-caster-mana",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Mana-stacker Mnemonic Ring: fractured mana cost efficiency (anchor), T1 flat mana, % mana essence, T1 intelligence, T1 cast speed, desecrated T1 rarity at 40% quality.",
+  "planRequest": {
+    "itemClass": "Rings",
+    "base": "Mnemonic Ring",
+    "ilvl": 80,
+    "targets": [
+      {
+        "family": "IncreasedMana",
+        "side": "prefix",
+        "minModId": "IncreasedMana12",
+        "fractured": false
+      },
+      {
+        "family": "MaximumManaIncreasePercent",
+        "side": "prefix",
+        "minModId": "EssenceIncreasedManaPercent1",
+        "fractured": false
+      },
+      {
+        "family": "Intelligence",
+        "side": "suffix",
+        "minModId": "Intelligence8",
+        "fractured": false
+      },
+      {
+        "family": "IncreasedCastSpeed",
+        "side": "suffix",
+        "minModId": "CastSpeedJewellery5",
+        "fractured": false
+      },
+      {
+        "family": "ItemFoundRarityIncrease",
+        "side": "suffix",
+        "minModId": "ItemFoundRarityIncrease3",
+        "fractured": false
+      }
+    ],
+    "start": {
+      "kind": "clean"
+    },
+    "includeUnverified": false,
+    "quality": {
+      "catalyst": "neural-catalyst",
+      "pct": 40
+    }
+  },
+  "creator": {
+    "tags": [
+      "fracture-target",
+      "annul",
+      "chaos-loop",
+      "exalt-omen-side",
+      "essence",
+      "catalyse",
+      "perfect-exalt",
+      "desecrate",
+      "omen-echoes",
+      "whittle"
+    ],
+    "materials": [
+      {
+        "id": "annul",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-sinistral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-sinistral-crystallisation",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "essence-of-the-breach",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "skittering-catalyst",
+        "uses": {
+          "point": 40,
+          "low": 40,
+          "high": 40
+        }
+      },
+      {
+        "id": "omen-of-catalysing-exaltation",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-dextral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "perfect-exalted-orb",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-dextral-necromancy",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "ancient-collarbone",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "neural-catalyst",
+        "uses": {
+          "point": 80,
+          "low": 80,
+          "high": 80
+        }
+      },
+      {
+        "id": "omen-of-whittling",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "perfect-essence-of-the-mind",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      }
+    ],
+    "baseDiv": null,
+    "statedTotalDiv": {
+      "point": 225,
+      "low": 150,
+      "high": 300
+    },
+    "steps": [
+      "Item level is not stated: 80 assumed (MCE needs 77+, T1 mana 75)",
+      "Buy a Mnemonic Ring with T1 mana cost efficiency (>= 23%), at most 4 mods, not fractured: 25-30 div; divine MCE to 26%",
+      "Dextral Crystallisation + Essence of the Abyss marks a suffix, Collarbone, Fracturing Orb 1 in 3 on the prefixes: hit on the 6th base ('usually within your first three'). Not costed: mana cost efficiency is not a planner mod, so the planner sees it as a fractured non-target anchor",
+      "Annul down to two mods, Chaos spam for a T1 suffix that isn't cast speed: T1 intelligence (chaos count not stated)",
+      "Sinistral Exaltation + Exalt, Sinistral Crystallisation + Essence of the Breach (removes accuracy, adds max quality)",
+      "Speed catalysts to 40%, Catalysing + Dextral Exaltation + Perfect Exalt: T1 cast speed first try",
+      "Dextral Necromancy + Ancient Collarbone, reveal with Abyssal Echoes: T1 rarity (reveal before whittling)",
+      "Neural catalysts to 40%, Catalysing + Perfect Exalt: T1 max mana first try; re-quality to 40%, Omen of Whittling + Chaos removes the quality mod",
+      "Sinistral Crystallisation + Perfect Essence of the Mind (50/50, won); Divine + Orb of the Blessed not costed",
+      "Stated: 'estimated costing craft being between 150 to 300 divs' (incl. the MCE base and fractures); sells ~400 div. Counts are this single, lucky run"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 400,
+      "low": 400,
+      "high": 600
+    },
+    "date": "2026-06-24",
+    "source": "creator at upload (NUiXXbrPS4E 0:18, 15:00): market 400-600, 'can sell for roughly about 400'; not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "NUiXXbrPS4E",
+      "at": "0:18–0:32"
+    },
+    {
+      "kind": "video",
+      "ref": "NUiXXbrPS4E",
+      "at": "1:24–6:26"
+    },
+    {
+      "kind": "video",
+      "ref": "NUiXXbrPS4E",
+      "at": "6:32–10:01"
+    },
+    {
+      "kind": "video",
+      "ref": "NUiXXbrPS4E",
+      "at": "10:36–15:30"
+    }
+  ],
+  "confidence": "low",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Fracture-phase source range 1:30-5:38 -> 1:24-6:26 (hit at 6:15); ilvl 80 marked inferred. Route and single-run counts match (cast speed and max mana first try, 6 fracture bases). Upload 2026-06-24 (0.5 Runes of Aldur). Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+  }
+}

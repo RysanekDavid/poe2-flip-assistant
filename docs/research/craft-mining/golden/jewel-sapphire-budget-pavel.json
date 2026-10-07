@@ -1,0 +1,157 @@
+{
+  "id": "jewel-sapphire-budget-pavel",
+  "archetype": "jewel-5mod-overcap",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Budget five-mod caster Sapphire from a cheap base with two wanted suffixes: Liquid Contempt over-cap, a desecrated crit suffix, prefix annulment, spell damage prefix.",
+  "planRequest": {
+    "itemClass": "Jewels",
+    "base": "Sapphire",
+    "ilvl": 80,
+    "targets": [
+      {
+        "family": "SpellCriticalStrikeChance",
+        "side": "suffix",
+        "minModId": "JewelSpellCriticalChance",
+        "fractured": false
+      },
+      {
+        "family": "ManaGainedOnKillPercentage",
+        "side": "suffix",
+        "minModId": "JewelManaonKill",
+        "fractured": false
+      }
+    ],
+    "groups": [
+      {
+        "side": "suffix",
+        "need": 1,
+        "candidates": [
+          {
+            "family": "CriticalStrikeChance",
+            "minModId": "JewelCriticalChance"
+          },
+          {
+            "family": "SpellCritMultiplierForJewel",
+            "minModId": "JewelSpellCriticalDamage"
+          },
+          {
+            "family": "CriticalStrikeMultiplier",
+            "minModId": "JewelCriticalDamage"
+          }
+        ]
+      }
+    ],
+    "includeUnverified": true,
+    "quality": null
+  },
+  "startMode": "compare",
+  "creator": {
+    "tags": [
+      "bought-base",
+      "liquid",
+      "desecrate",
+      "omen-echoes",
+      "annul"
+    ],
+    "materials": [
+      {
+        "id": "potent-liquid-contempt",
+        "uses": {
+          "point": 1.5,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "preserved-cranium",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-dextral-necromancy",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-sinistral-annulment",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 3
+        }
+      }
+    ],
+    "baseDiv": {
+      "point": 0.05,
+      "low": 0.03,
+      "high": 0.15
+    },
+    "statedTotalDiv": {
+      "point": 18,
+      "low": 18,
+      "high": 20
+    },
+    "steps": [
+      "Buy a cheap rare jewel with crit chance for spells + recover mana on kill suffixes and ONE prefix (~10 ex; later bases 30 ex); Sapphire inferred from the caster mods",
+      "Potent Liquid Contempt (~1.2 div) for '+1 Suffix Modifier allowed': won 2 of 3",
+      "Preserved Cranium (~2 div) + Omen of Abyssal Echoes (+ Dextral Necromancy while a prefix is open); one jewel took a crit suffix, the other hit crit chance for spells first try; on budget bases buy a new base instead of Omen of Light",
+      "Omen of Sinistral Annulment (~10 div) + Annul removes the '+1 suffix' mod; Exalt hit spell damage",
+      "Not costed (no planner target): Liquid Ferocity (~2 div), won its 50/50 first try",
+      "Stated running tally: failed base ~4 div, the hit ~4 more (8), plus the ~10 div annulment omen; finished jewels list from ~170 div",
+      "Base in Divine is derived: ~10 ex (later 30 ex) at an unstated ex/div rate"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 170,
+      "low": 170,
+      "high": 170
+    },
+    "date": "2026-07-03",
+    "source": "creator at upload: comparable finished jewels 'start at 170 divines'; not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "o0Q975G2s2g",
+      "at": null
+    }
+  ],
+  "confidence": "medium",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Cranium 1->2 and Echoes 1->2 (his tally counts one failed base + one hit: four divs, another four, eight, the annul, ten); Exalts 1->2 ('ty exalty', plural); base ex->div rate unsourced (band widened). Upload 2026-07-03 (0.5 Runes of Aldur)."
+  }
+}

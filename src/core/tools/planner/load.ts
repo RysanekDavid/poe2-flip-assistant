@@ -1,14 +1,15 @@
 import { getMaterialPrices } from "../../../db/craftQueries";
-import { ALL_MATERIALS, MATS } from "../../craftMaterials";
+import { MATS } from "../../craftMaterials";
 import { entityByExchangeId } from "../../entities/load";
 import type { PlanRequest, PlanResponse, PlannerCatalog, PlannerPool } from "../../../lib/tools/craftPlannerContract";
 import { resolveRates } from "../../rates";
 import { comboFor, loadCraftCatalog, type CraftCatalog } from "../craftmoves/catalog";
 import { CATALYSTS } from "./catalystTags";
 import { alloysFor } from "./alloyOutcomes";
-import { CRAFTED_WRITE_OUTCOMES, essencesFor } from "./essenceOutcomes";
+import { essencesFor } from "./essenceOutcomes";
 import { BONE } from "./methodsDesecrate";
 import { loadCraftMining } from "../../research/craftMining/load";
+import { PLANNER_MATERIAL_IDS } from "./materialIds";
 import { planCraft, SERVER_PLAN_BUDGET } from "./plan";
 import { revealPriorsFrom } from "./revealPriors";
 import { factionOf, PLANNER_CLASSES, resolveBase } from "./targets";
@@ -17,11 +18,6 @@ import { factionOf, PLANNER_CLASSES, resolveBase } from "./targets";
  * Server wiring for the planner: the committed craft catalog, live material prices (ninja
  * snapshots) and rates from SQLite. Spends no trade2 budget.
  */
-
-/** Every material any planner method can use, priced in one query. */
-export const PLANNER_MATERIAL_IDS: readonly string[] = [
-  ...new Set([...ALL_MATERIALS.map((m) => m.id), ...CATALYSTS.map((c) => c.mat.id), ...CRAFTED_WRITE_OUTCOMES.map((r) => r.essenceId)]),
-];
 
 /** Entity-catalog art (always a poecdn URL the CSP allows); null for a material it lacks. */
 export const catalogIcon = (materialId: string): string | null => entityByExchangeId(materialId)?.icon_url ?? null;

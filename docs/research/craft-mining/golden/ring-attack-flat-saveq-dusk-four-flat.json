@@ -1,0 +1,265 @@
+{
+  "id": "ring-attack-flat-saveq-dusk-four-flat",
+  "archetype": "ring-attack-flat",
+  "patch": "0.5.5",
+  "league": "Runes of Aldur or Forbidden Rites (not stated)",
+  "summary": "Dusk Ring ilvl 79 with four attack flats (fractured T1 fire, T1 lightning, T2 cold, T3 physical) at 40% Attack quality.",
+  "planRequest": {
+    "itemClass": "Rings",
+    "base": "Dusk Ring",
+    "ilvl": 79,
+    "targets": [
+      {
+        "family": "FireDamage",
+        "side": "prefix",
+        "minModId": "AddedFireDamage9",
+        "fractured": false
+      },
+      {
+        "family": "LightningDamage",
+        "side": "prefix",
+        "minModId": "AddedLightningDamage9",
+        "fractured": false
+      },
+      {
+        "family": "ColdDamage",
+        "side": "prefix",
+        "minModId": "AddedColdDamage8",
+        "fractured": false
+      },
+      {
+        "family": "PhysicalDamage",
+        "side": "prefix",
+        "minModId": "AddedPhysicalDamage7",
+        "fractured": false
+      }
+    ],
+    "start": {
+      "kind": "clean"
+    },
+    "includeUnverified": false,
+    "quality": {
+      "catalyst": "reaver-catalyst",
+      "pct": 40
+    }
+  },
+  "creator": {
+    "tags": [
+      "annul",
+      "chaos-loop",
+      "exalt-omen-side",
+      "greater-exalt",
+      "desecrate",
+      "fracture-target",
+      "essence",
+      "catalyse",
+      "perfect-exalt",
+      "whittle",
+      "omen-echoes",
+      "omen-light"
+    ],
+    "materials": [
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 760,
+          "low": 360,
+          "high": 1760
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 12,
+          "low": 5,
+          "high": 25
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 7,
+          "low": 3,
+          "high": 17
+        }
+      },
+      {
+        "id": "omen-of-sinistral-exaltation",
+        "uses": {
+          "point": 4,
+          "low": 2,
+          "high": 9
+        }
+      },
+      {
+        "id": "omen-of-greater-exaltation",
+        "uses": {
+          "point": 3,
+          "low": 1,
+          "high": 8
+        }
+      },
+      {
+        "id": "fracturing-orb",
+        "uses": {
+          "point": 3,
+          "low": 1,
+          "high": 8
+        }
+      },
+      {
+        "id": "essence-of-the-breach",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-dextral-crystallisation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "reaver-catalyst",
+        "uses": {
+          "point": 80,
+          "low": 80,
+          "high": 80
+        }
+      },
+      {
+        "id": "omen-of-catalysing-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "perfect-exalted-orb",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-whittling",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-sinistral-necromancy",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "ancient-collarbone",
+        "uses": {
+          "point": 10,
+          "low": 5,
+          "high": 12
+        }
+      },
+      {
+        "id": "omen-of-light",
+        "uses": {
+          "point": 9,
+          "low": 4,
+          "high": 11
+        }
+      },
+      {
+        "id": "preserved-collarbone",
+        "uses": {
+          "point": 3,
+          "low": 1,
+          "high": 8
+        }
+      }
+    ],
+    "baseDiv": null,
+    "statedTotalDiv": {
+      "point": 100,
+      "low": 100,
+      "high": 500
+    },
+    "steps": [
+      "Buy normal Dusk Rings ilvl 79+ (75 'ideal', he picks 79) (~1 ex each); annul to one mod and Chaos spam for any T1 flat (1 in ~162 incl. physical)",
+      "Sinistral + Greater Exaltation + Exalt to fill prefixes, desecrate a blocker, Fracturing Orb on the T1 non-physical flat (he hit 2 of 8 rings)",
+      "Blocker bone per fracture attempt: type not stated, Preserved Collarbone assumed (3 per success at the nominal 1 in 3)",
+      "On the fractured ring annul to one mod, Chaos spam (~160) for a second T1 elemental flat",
+      "Exalt a junk suffix, Essence of the Breach + Dextral Crystallisation for the quality mod",
+      "Reaver catalyst to 40%, Sinistral + Catalysing Exaltation + Perfect Exalt (landed T3 physical)",
+      "Re-quality to 40%, Omen of Whittling + Chaos to move the quality mod out",
+      "Sinistral Necromancy + Abyssal Echoes + Ancient Collarbone, Omen of Light + Annul loop (~10 desecrations) for the fourth flat; settled T2 cold",
+      "Catalyst counts assume ~1% quality per catalyst: Reaver to 40% twice (before the catalysed slam and before the whittle)",
+      "Not costed here (no planner target): Swift Alloy attack speed via Dextral Crystallisation and the final Perfect Exalt (intelligence)"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 500,
+      "low": 400,
+      "high": 599
+    },
+    "date": "2026-09-23",
+    "source": "creator at upload (CZepweLtKwA 17:35-18:25): comparables ~400 without attack speed, his ring listed at 599; not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "CZepweLtKwA",
+      "at": "0:52–1:10"
+    },
+    {
+      "kind": "video",
+      "ref": "CZepweLtKwA",
+      "at": "3:08–6:39"
+    },
+    {
+      "kind": "video",
+      "ref": "CZepweLtKwA",
+      "at": "6:39–9:49"
+    },
+    {
+      "kind": "video",
+      "ref": "CZepweLtKwA",
+      "at": "11:18–13:00"
+    },
+    {
+      "kind": "video",
+      "ref": "CZepweLtKwA",
+      "at": "13:14–16:44"
+    },
+    {
+      "kind": "video",
+      "ref": "CZepweLtKwA",
+      "at": "17:35–18:51"
+    }
+  ],
+  "confidence": "medium",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Patch 0.5 -> 0.5.5 (title 'Poe2 0.5.5', uploaded 2026-09-23; league not stated); fire was his fractured flat (8:57-9:05) but the target stays unfractured: requiring the fracture makes the planner reject the request without unverified methods; ilvl 79+ (4:35-4:38); blocker bones added; the channel is SaVeQ (same creator as m_n2htaTr98), id renamed from 'asaveq'. Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+  }
+}

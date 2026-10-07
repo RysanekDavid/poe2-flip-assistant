@@ -1,0 +1,272 @@
+These PoE2 Jewels Double Your Damage — Here's How to Craft Them
+Creator: Hax
+https://www.youtube.com/watch?v=qATcKacI83o
+
+(YouTube captions with [m:ss] timestamps, fetched 2026-10-01 with youtube-transcript-api, languages en/en-US/cs/de; title and creator from a noembed.com lookup, 2026-10-07. Mined for docs/research/craft-mining/golden.)
+
+[0:00] Okay, so here's the deal, guys. I'm
+[0:01] going to be teaching you how to make
+[0:02] these insane mana stacking jewels for
+[0:06] any mana stacker. I'm playing mana
+[0:08] stacking grim pillars oracle, and these
+[0:11] are the best jewels right now. So, I'm
+[0:13] going to be teaching you how to make
+[0:14] these jewels. These have crit chance,
+[0:16] spell damage bonus, and most
+[0:18] importantly, they grant 1% increased
+[0:20] maximum mana. And when I put them in
+[0:22] later in the video, you'll see that
+[0:24] it'll literally double our DPS and give
+[0:26] us like 25% more health. So, let's get
+[0:29] into how to make it. So, yeah, if we put
+[0:30] these jewels in, as you can see, our
+[0:32] grim puller explosion went from 9,000 to
+[0:35] 16,000, almost double, and our mana went
+[0:38] from 3,200 to almost 4,000. So, it gives
+[0:42] us more health and more tankiness. These
+[0:43] are some of the best jewels in the game
+[0:45] for Oracle because there's no passive
+[0:48] points on the tree that are better than
+[0:50] taking notables inside of the radius of
+[0:52] this jewel. and Oracle with intrin
+[0:54] realities makes it super easy to just
+[0:56] pick up all the notables and get max
+[0:58] mana and crit damage bonus and crit
+[1:00] chance inside of the radius of these
+[1:02] jewels. And if you take a look at the
+[1:04] website, the trade website, these jewels
+[1:06] cost 50 divs each. So, you can just buy
+[1:08] them, but you can also just make them
+[1:10] yourself and try to make a profit.
+[1:12] There's only 23 of these on the market.
+[1:14] And if we take a look at the five stat
+[1:16] ones by changing this to two, I'll leave
+[1:18] this in the link in the description.
+[1:19] There's only nine on the market and they
+[1:21] cost 450 divs and these are even better.
+[1:25] We'll be eventually upgrading to these,
+[1:27] but I don't have that kind of money to
+[1:29] spend. So, once we're able to farm,
+[1:32] we'll upgrade to these. Okay, so let's
+[1:33] get into how to craft these jewels.
+[1:36] First, you need to buy one of these uh
+[1:39] 11 div 10 div like uh suffixes. So, it
+[1:42] needs to have increased critical spell
+[1:44] damage bonus or increase critical damage
+[1:47] bonus. And notables have increased
+[1:50] critical hit chance or increased
+[1:53] critical spell hit chance. And so you're
+[1:55] just going to find a good one. I'll buy
+[1:57] this 12 div one. You have to make sure
+[1:59] that when you search for it, it's not
+[2:02] corrupted. It's not crafted. It's not
+[2:04] desecrated. And ideally, it's not
+[2:06] fractured. I'll send this this trade
+[2:08] link in the description so you can
+[2:10] search for it. But here's the jewel. We
+[2:12] buy it. And what you want to do is you
+[2:16] want to get a melancholy. So this costs
+[2:22] 10 kaos right now. Um, and this is a
+[2:25] this is a prefix. This very large radius
+[2:27] to very large is a prefix. So if all
+[2:30] your prefixes and suffixes are full, it
+[2:32] can only remove a prefix. So you go like
+[2:34] this and they remove the prefix. Now you
+[2:37] want to essentially hit it with a prefix
+[2:40] desecration. So you want to say sin
+[2:43] initial necromancy. I don't know. I need
+[2:45] 10 of these. Maybe these are s super
+[2:47] cheap. And then you want to hit it with
+[2:48] a preserved cranium. And these right now
+[2:50] are 25 chaos each. The reason why we So
+[2:54] yeah, you want to hit it with a
+[2:55] preserved cranium. And we didn't get
+[2:56] lucky. We removed the the melancholy. So
+[2:59] we have to buy another melancholy and
+[3:01] try again. It went up to 11, which is a
+[3:04] div. Okay. So now we have the
+[3:05] desecration and the very large. The
+[3:08] reason why we did it that way instead of
+[3:09] doing his initial anolment is because
+[3:12] initial anolment is like 79 and like you
+[3:15] can probably hit the the cranium
+[3:19] melancholy back and forth for cheaper
+[3:21] than that, right? It's like a 50/50,
+[3:22] right? But if not, if you want to play
+[3:23] it safe, you would sinister Lenovo for
+[3:25] like 85k chaos until you only have one
+[3:28] mod and then the desecration will uh the
+[3:30] desecration and the sinial the
+[3:33] desecration and the melancholy won't
+[3:35] interact with each other. So that's how
+[3:37] you guarantee that. But you can get
+[3:38] super unlucky on that like 50/50. But I
+[3:40] like taking the 50/50. So now you want
+[3:42] to go to the Well of Souls and you want
+[3:45] to make sure that you have your Omen of
+[3:47] Abyssal Echo because this is only six
+[3:49] chaos and it's way cheaper than using
+[3:51] two Omen of Lights. So now you want to
+[3:53] reveal and the only thing we're looking
+[3:54] for is increased maximum mana. We didn't
+[3:57] see it. Notable passive increase maximum
+[3:59] mana. We didn't see it so we didn't get
+[4:00] it. Usually this step takes like on the
+[4:03] worst end for me it took like 14
+[4:05] attempts which is ridiculous but I think
+[4:07] the average is supposed to be eight. So
+[4:09] you would omen of light and then remove
+[4:11] the desecration and then if you cranium
+[4:14] you don't even need the initial
+[4:15] necromancy because the only thing that's
+[4:17] open is a prefix. So it's going to add a
+[4:18] prefix and then you just try again. Make
+[4:20] sure you have your abyssal echoes
+[4:22] online. We didn't see it here and we
+[4:24] didn't see it here. So we would open up
+[4:26] light the secretion off. Now we need
+[4:28] more preserve craniums. Maybe I have one
+[4:31] more. No, I don't. Let me go buy some
+[4:32] more. Let's buy some more gnomes. So, we
+[4:36] bought some orbs of anulment, a woman of
+[4:38] lights, some abyssal echoes, and some
+[4:40] craniums to keep going. So, we have the
+[4:42] desecration. Make make sure you have
+[4:45] your abyssal echoes turned on your
+[4:47] video. And we didn't get it. And we
+[4:49] didn't get it again. So, we're just
+[4:51] going to keep going until we get it,
+[4:52] which is unroll it off into a
+[4:56] desecration. Grants 1% increased maximum
+[4:58] life. That's not what we want. Didn't
+[5:00] get it. So, we go boom and boom. Try it
+[5:03] again. Didn't get it. So, we just keep
+[5:05] going until we get it. Yeah, you can get
+[5:07] super unlucky with this. But that's just
+[5:09] how it is sometimes. Okay, grants
+[5:12] increased. We got it in eight attempts
+[5:14] is I think the average is eight.
+[5:15] Increased maximum mana. Boom. And so now
+[5:18] we have three of these. And we're going
+[5:20] to change our passive tree. We're
+[5:22] starting off with 3,191
+[5:25] mana. And if we take a look at our
+[5:28] damage, we have so 9,600 damage. So it's
+[5:33] around six it's around six divs per
+[5:35] attempt. And the base cost like 10 to
+[5:37] 12. And if on average you're supposed to
+[5:39] get it in 8 uh is 48 + 12 it's like 60
+[5:44] 60 divs for one of these jewels.
+[5:46] Basically every one of these jewels is
+[5:48] like if you're making 20 divs an hour
+[5:49] that's like 3 hours of farming. So you
+[5:50] can farm these in a day basically just
+[5:52] like playing the entire day. Remember,
+[5:53] you can hold I to quickly allocate
+[5:56] intelligence. You have to set it up in
+[5:58] your settings like this. Input. Scroll
+[6:01] all the way to the bottom. And I have my
+[6:02] I set to quick allocate intelligence.
+[6:04] You can set So, you can set S for quick
+[6:06] allocate strength and D for quick
+[6:08] allocate dexterity. So, yeah, if we put
+[6:09] these jewels in, as you can see, our
+[6:11] grim pillar explosion went from 9,000 to
+[6:14] 16,000, almost double, and our mana went
+[6:18] from 3,200 to almost 4,000. So, it gives
+[6:21] us more health and more tankiness. These
+[6:23] are some of the best jewels in the game
+[6:24] for Oracle because there's no passive
+[6:27] points on the tree that are better than
+[6:29] taking notables inside of the radius of
+[6:32] this jewel. And Oracle with inwin
+[6:34] realities makes it super easy to just
+[6:36] pick up all the notables and get max
+[6:37] mana and crit damage bonus and crit
+[6:39] chance inside of the radius of these
+[6:41] jewels. And if you take a look at the
+[6:43] website, the trade website, these jewels
+[6:45] cost 50 divs each. So you can just buy
+[6:48] them, but you can also just make them
+[6:50] yourself and try to make a profit.
+[6:51] There's only 23 of these on the market.
+[6:53] And if we take a look at the five stat
+[6:55] ones by say changing this to two. I'll
+[6:57] leave this in the link in the
+[6:58] description. There's only nine on the
+[6:59] market and they cost 450 divs. And these
+[7:03] are even better. We'll be eventually
+[7:06] upgrading to these, but I don't have
+[7:07] that kind of money to spend. So once
+[7:10] we're able to farm, we'll upgrade to
+[7:12] these. But that's how you make those
+[7:13] jewels. Also, if you're following my
+[7:15] build, the Grimpillar's Oracle, we
+[7:17] decided to go for these jewels first.
+[7:19] This is like double damage and a little
+[7:21] bit more health. But what you really
+[7:23] want as a Grimpillar's Oracle is to
+[7:25] stack more mana. The more mana you have,
+[7:27] the better because it means more
+[7:29] tankiness and more damage. And to do
+[7:30] that, what you want is to upgrade your
+[7:32] gear and to have max mana rolls on your
+[7:34] gear and to have as much energy shield
+[7:36] as possible. But we decided to go for
+[7:37] these jewels first. But as we upgrade
+[7:39] our gear, we will get way more mana
+[7:43] because we get at least like 30% more
+[7:45] mana from these jewels. So, every single
+[7:47] upgrade is going to be that much more
+[7:48] meaningful. And if it's too expensive to
+[7:50] get these jewels for you, it's better
+[7:52] just to upgrade your gear and your
+[7:55] energy shield that gets converted into
+[7:57] mana slowly, one gear piece at a time.
+[7:59] And that's going to be the next update
+[8:01] for this build, me upgrading the the
+[8:03] energy shield and the gear. So, you can
+[8:05] follow that guide first if it's if
+[8:08] crafting these crazy jewels is too
+[8:10] expensive for you. But for now, this is
+[8:11] what I did. Also, if you want to make
+[8:13] these five mod jewels, what you need to
+[8:16] do is essentially buy the base like you
+[8:18] like we did before. And then we have to
+[8:21] fracture the mod using a fracturing orb.
+[8:23] And let me check the price right now. A
+[8:27] fracturing orb is 6.2 divs. So if you if
+[8:31] on average it takes three fracturing
+[8:33] orbs, it's at least uh 6 time 6 + 10 16
+[8:38] * 3 is 48. So, it's going to cost 48
+[8:41] divs just to get the base for this. And
+[8:44] then you have to like chaos spam and
+[8:46] exalt and enol until you get the the
+[8:50] critical hit chance and the critical
+[8:51] damage bonus at the same time. And this
+[8:54] is after doing a an ancient potent
+[8:57] liquid contempt, which right now is at
+[9:00] seven divs. So that's like 55 divs
+[9:03] already for the base. And not to mention
+[9:06] the the chaos spamming and the anoling
+[9:09] which is like crazy expensive. And then
+[9:11] after that the final step is the same
+[9:12] which is just omen of light desecrate.
+[9:14] Omen of light desecrate until you hit
+[9:16] the max mana roll until you hit this uh
+[9:17] max mana roll which can only be hit uh
+[9:20] as a desecration. You can only desecrate
+[9:22] this mod on because it's only a
+[9:23] desecration and it says increase maximum
+[9:26] mana. Notables grant increased maximum
+[9:28] mana. But we won't really make an
+[9:30] in-depth tutorial on how to do that
+[9:32] because that cost too much money. And
+[9:33] we'll make that in the future when we
+[9:35] get to that point. I'll be streaming
+[9:36] this live on Twitch. We'll be using this
+[9:39] build to farm a bunch of breach. What
+[9:42] happens if we get 1 million high flood?
+[9:45] If you want to catch that live, catch us
+[9:46] on Twitch. Don't forget to like and
+[9:47] subscribe. I'll see you guys next time.
