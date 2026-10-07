@@ -17,6 +17,7 @@ import { BREACH_RING, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RI
 import { NOW, plan, runGoldenCases } from "./testCraftPlannerGolden";
 import { runPlannerStateCases } from "./craftPlannerStateCases";
 import { runRuleFlagCases } from "./craftPlannerRuleFlagCases";
+import { runFactionCases } from "./craftPlannerFactionCases";
 import { runSanityCases } from "./craftPlannerSanityCases";
 import { runWhittleCases } from "./craftPlannerWhittleCases";
 import { runCacheCases } from "./craftPlannerCacheCases";
@@ -239,6 +240,7 @@ testContract();
 runPlannerStateCases(cat);
 runSanityCases(cat);
 runRuleFlagCases(cat);
+runFactionCases(cat);
 runWhittleCases(cat);
 runCacheCases(cat);
 runPoolCases(cat);
@@ -249,5 +251,5 @@ runAlloyCases(cat);
 runLazyCases(cat);
 console.log(
   `ALL PASS — craft-planner: golden plans (Breach mana stacker, fractured-flat res ring, fractured +3 amulet), violations (mod group, caps incl. Dusk/Time-Lost, ilvl gate, one crafted/desecrated, essence table, quality cap, over-cap jewel), ` +
-    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases, cost sanity (owner's 13,201-slam ring: a flat self-fractured, last flat desecrated, under 700 div, pool variant cheaper; four-flat Dusk Ring flagged + cheaper alternatives; partial hits by hand, goldens unflagged, time budgets), whittle loop (ties / no tie / unique-lowest by hand, fixed-mod guard, older-server defaults), route memo (cut-short plans not cached, 45 s timeout refusal, capped candidate = incomplete list), P1 (pool feasibility, reveal model by hand, owner pool ring inside the creators' band clean + bought, Light anchor, bought-base golden + start refusals, quality ordering, buy link), PR-A self-fracture (1-in-3 behind the blocker, last-target prune, throwaway Chaos loop, owner T1 pool ring unwhittled), ${KB2_FACTS.length} KB §2 facts + transcript quotes, alloys (table vs catalog + poe2db, steered Swift Alloy graded creator-shown, Breach strip first, one-crafted refusal, alloy rule, KB §7 pins), lazy edges (lazy = eager plan/totals/expanded on goldens + owner rings, bounds ≤ cost, owner + six-single rings pinned inside the server budget, fracture miss text, crafted keeper)`,
+    `odds basis, geometric + absorbing chain by hand, determinism + search cap, ${ESSENCE_OUTCOMES.length} essence rows vs catalog + poe2db, banned methods, contract, UI fields (item after each step, material/bone art), no developer references in player text, state/projection cases, cost sanity (owner's 13,201-slam ring: a flat self-fractured, last flat desecrated, under 700 div, pool variant cheaper; four-flat Dusk Ring flagged + cheaper alternatives; partial hits by hand, goldens unflagged, time budgets), whittle loop (ties / no tie / unique-lowest by hand, fixed-mod guard, older-server defaults), route memo (cut-short plans not cached, 45 s timeout refusal, capped candidate = incomplete list), P1 (pool feasibility, reveal model by hand, owner pool ring inside the creators' band clean + bought, Light anchor, bought-base golden + start refusals, quality ordering, buy link), PR-A self-fracture (1-in-3 behind the blocker, last-target prune, throwaway Chaos loop, owner T1 pool ring unwhittled), ${KB2_FACTS.length} KB §2 facts + transcript quotes, alloys (table vs catalog + poe2db, steered Swift Alloy graded creator-shown, Breach strip first, one-crafted refusal, alloy rule, KB §7 pins), lazy edges (lazy = eager plan/totals/expanded on goldens + owner rings, bounds ≤ cost, owner + six-single rings pinned inside the server budget, fracture miss text, crafted keeper), faction omens (Sovereign belt 3/4 by hand, Blackblooded ring, KB §5 pins)`,
 );

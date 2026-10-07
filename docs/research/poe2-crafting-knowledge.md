@@ -55,6 +55,10 @@ desecrated-blocker self-fracture sequence [creator-demonstrated]. The rest is un
 Chaos floors CONFIRMED from poe2db item text; §4 Whittling as a suffix engine (creator-demonstrated)
 and Omen of Light's item text; §10 question 1 resolved. The rest of the file is unchanged.
 
+**Corrections 2026-10-07 (partial, planner faction omens):** §5 adds the three Lich omens' shared
+item text (poe2db, all three pages) and the Omen of the Sovereign on a belt [creator-demonstrated].
+The rest of the file is unchanged.
+
 Purpose: the rules a profit-crafter must know BEFORE spending currency. Feeds the craft-margin
 recipes/guides and (later) the RAG craft agent.
 
@@ -283,6 +287,16 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   11:51–12:29; [hQm2IwebFws](https://www.youtube.com/watch?v=hQm2IwebFws) 7:40–7:48), which is not evidence for "all 3 options". **Existing mod groups
   can block faction mods**, in which case none are offered: Liege on a wand with spell + physical spell damage offered no Amanamu mod — "Amanamu's
   mods shared the same mod group as spell dmg and phy spell dmg" [community — forum 3956293, n=1] — so mod-group exclusion applies to reveals.
+- **Which omen forces which Lich**: Liege → Amanamu, Sovereign → Ulaman, Blackblooded → Kurgal. All three read
+  "your next Weapon or Jewellery Desecration attempt will guarantee a random Amanamu / Ulaman / Kurgal modifier" — e.g.
+  "your next Weapon or Jewellery Desecration attempt will guarantee a random Kurgal modifier" [verified-primary — poe2db
+  [Omen_of_the_Liege](https://poe2db.tw/us/Omen_of_the_Liege), [Omen_of_the_Sovereign](https://poe2db.tw/us/Omen_of_the_Sovereign),
+  [Omen_of_the_Blackblooded](https://poe2db.tw/us/Omen_of_the_Blackblooded) (NoteCodes omen-of-the-liege / -sovereign /
+  -blackblooded), accessed 2026-10-07]. No jewels (poe2wiki: no effect on jewels). **Belts** are not named by the text; creators
+  use them there: Liege (§4, ASaVeQ) and Dextral Necromancy + Sovereign + a collarbone on a life + lightning resistance belt for the
+  Ulaman lightning and chaos resistance suffix (TheSaneExile [Zop328DR50Q](https://www.youtube.com/watch?v=Zop328DR50Q)
+  0:51–1:12, reveal 2:35–2:59) — "it's going to include a Ulaman modifier", "usually is guaranteed on a first try"
+  [creator-demonstrated, n=1 each]. Blackblooded on a belt: no source seen [unverified, inferred from the shared text].
 - Boss pools: **Amanamu bow Attack Speed = 12–18%** (Ulaman = 8–13%; a transcription mixed
   them up once). Amanamu suffix pool on bows: Attack Speed, Pierce (spirit-reservation
   unattested). (2026-07-13 round, medium.)

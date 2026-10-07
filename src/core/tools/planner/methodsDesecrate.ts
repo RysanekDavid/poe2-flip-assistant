@@ -1,5 +1,6 @@
 import type { CraftMaterial, MaterialKey } from "../../craftMaterials";
 import type { AffixSide } from "../craftmoves/catalog";
+import { FACTION_OMENS, type FactionOmen } from "../craftmoves/ruleTableAbyss";
 import { attemptsOf, failuresOf, scaleBand, useOf } from "./expectation";
 import { makeMove, mat, once, sideOmen, step, targetText, type MoveSpec } from "./methodKit";
 import { rankCost } from "./rank";
@@ -10,8 +11,8 @@ import { acceptedMods, aimable, hasKind, isMet, junk, landAffix, openOf, present
 import type { Method, Move, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
- * Desecration as a way to land a wanted mod: bone + side Necromancy (+ Omen of the Liege for an
- * Amanamu target) → reveal at the Well of Souls; not offered → Omen of Abyssal Echoes once (a
+ * Desecration as a way to land a wanted mod: bone + side Necromancy (+ the faction omen for a Lich
+ * target: Liege → Amanamu, Sovereign → Ulaman, Blackblooded → Kurgal) → reveal at the Well of Souls; not offered → Omen of Abyssal Echoes once (a
  * variant, kept when it is cheaper) → still not → pick any, Omen of Light + Annulment strips only
  * the desecrated mod → the next bone. Works for desecrated-pool targets and, since the Well's
  * options include the base's ordinary mods, for ordinary ones too (attack flats on rings, every
@@ -47,13 +48,22 @@ function desecration(ctx: PlanCtx, state: PlanState, side: AffixSide, bone: Bone
 interface Variant {
   bone: BoneKind;
   echoes: boolean;
-  liege: boolean;
+  /** The Lich omen forcing the target's faction; null = unsteered. */
+  factionOmen: FactionOmen | null;
 }
 
-/** A desecrated-pool target keeps its one route (Preserved + Echoes, Liege for Amanamu); an ordinary one may use either bone, with or without Echoes. */
+/**
+ * The faction omen for a Lich target: the item text reads "Weapon or Jewellery Desecration", and
+ * poe2wiki says it does nothing on jewels — so never on a jewel.
+ */
+function factionOmenFor(ctx: PlanCtx, t: ResolvedTarget): FactionOmen | null {
+  return t.faction != null && ctx.base.itemClass !== "Jewels" ? FACTION_OMENS[t.faction] : null;
+}
+
+/** A desecrated-pool target keeps its one route (Preserved + Echoes, its faction omen); an ordinary one may use either bone, with or without Echoes. */
 function variantsFor(ctx: PlanCtx, t: ResolvedTarget): Variant[] {
-  if (t.source === "desecrated") return [{ bone: "preserved", echoes: true, liege: t.faction === "amanamu" && ctx.base.itemClass !== "Jewels" }];
-  return (["preserved", "ancient"] as const).flatMap((bone) => [false, true].map((echoes) => ({ bone, echoes, liege: false })));
+  if (t.source === "desecrated") return [{ bone: "preserved", echoes: true, factionOmen: factionOmenFor(ctx, t) }];
+  return (["preserved", "ancient"] as const).flatMap((bone) => [false, true].map((echoes) => ({ bone, echoes, factionOmen: null })));
 }
 
 /**
@@ -80,7 +90,7 @@ function desecrateLoop(state: PlanState, ctx: PlanCtx): Move[] {
     for (const bone of ["preserved", "ancient"] as const) {
       const d = desecration(ctx, state, t.side, bone);
       const vs = variantsFor(ctx, t).filter((v) => v.bone === bone);
-      const odds = d && vs.length > 0 ? revealOdds(ctx, state, t, { liege: vs[0]!.liege, bone }) : null;
+      const odds = d && vs.length > 0 ? revealOdds(ctx, state, t, { factionOmen: vs[0]!.factionOmen != null, bone }) : null;
       if (d && odds) specs.push(...vs.map((v) => desecrateSpec(state, ctx, t, d, v, odds)));
     }
     specs.sort((a, b) => rankCost(a, ctx) - rankCost(b, ctx));
@@ -95,7 +105,9 @@ function desecrateLoop(state: PlanState, ctx: PlanCtx): Move[] {
   return out;
 }
 
-const methodIdOf = (t: ResolvedTarget, v: Variant): string => (t.source === "desecrated" ? `desecrate${v.liege ? "-liege" : ""}` : `desecrate-${v.bone}${v.echoes ? "-echoes" : ""}`);
+/** desecrate-liege | -sovereign | -blackblooded: the omen rule's suffix ("omen-liege" → "liege"), so "desecrate-liege" stays stable. */
+const methodIdOf = (t: ResolvedTarget, v: Variant): string =>
+  t.source === "desecrated" ? `desecrate${v.factionOmen ? `-${v.factionOmen.rule.replace(/^omen-/, "")}` : ""}` : `desecrate-${v.bone}${v.echoes ? "-echoes" : ""}`;
 
 /** Creators' Omen of Light count for a ring prefix aimed at attack flats (the curated anchor), as player prose. */
 function anchorNote(ctx: PlanCtx, state: PlanState, t: ResolvedTarget): string {
@@ -111,7 +123,7 @@ function desecrateSteps(ctx: PlanCtx, state: PlanState, t: ResolvedTarget, d: De
   const steps = [
     step({
       do: `${slam.map((m) => m.label).join(" + ")} on the open ${t.side}, then reveal at the Well of Souls.`,
-      why: `Necromancy puts the desecrated mod on the ${t.side}; ${v.liege ? "the Liege forces an Amanamu mod; " : ""}an open slot means nothing is removed.${ordinary ? ` The three options can be ordinary ${t.side}es too — pick ${label}.` : ""}${v.bone === "ancient" ? " An Ancient bone only reveals modifier level 40+, so low tiers drop out." : ""}`,
+      why: `Necromancy puts the desecrated mod on the ${t.side}; ${v.factionOmen ? `${v.factionOmen.name} guarantees one ${v.factionOmen.lich} mod among the options; ` : ""}an open slot means nothing is removed.${ordinary ? ` The three options can be ordinary ${t.side}es too — pick ${label}.` : ""}${v.bone === "ancient" ? " An Ancient bone only reveals modifier level 40+, so low tiers drop out." : ""}`,
       sources: sources("kb-omens", "kb-desecration", ...(ordinary ? (["poe2db", "creators"] as SourceId[]) : [])),
       mats: slam,
       pick: [label],
@@ -138,14 +150,18 @@ function desecrateSteps(ctx: PlanCtx, state: PlanState, t: ResolvedTarget, d: De
   return steps;
 }
 
+/** The item text never names belts: a creator video is the evidence, or none for an omen nobody showed there. */
+const beltFact = (o: FactionOmen): string =>
+  o.beltShownBy ? `${o.name} on belts: seen in one creator video only (${o.beltShownBy}).` : `${o.name} on belts: no source shows it; assumed from its twins' identical "Weapon or Jewellery" text.`;
+
 function desecrateSpec(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, d: Desecration, v: Variant, odds: RevealOdds): MoveSpec {
   const e = v.echoes ? odds.withEchoes : odds.once;
-  const slam = [mat(d.omen.key), ...(v.liege ? [mat("omenTheLiege")] : []), d.bone];
+  const slam = [mat(d.omen.key), ...(v.factionOmen ? [mat(v.factionOmen.key)] : []), d.bone];
   const unrevealed = withAffixes(state, [...state.affixes, { ...landAffix(ctx, state, t.idx, "desecrated"), unrevealed: true }]);
   const revealedJunk = withAffixes(state, [...state.affixes, junk(t.side, "desecrated")]);
   const ordinary = t.source !== "desecrated";
   const facts = [
-    ...(ctx.base.itemClass === "Belts" && v.liege ? ["Omen of the Liege on belts: seen in one creator video only."] : []),
+    ...(ctx.base.itemClass === "Belts" && v.factionOmen ? [beltFact(v.factionOmen)] : []),
     ...(d.coreUnknown ? [TIME_LOST_DESECRATION] : []),
     ...(ordinary ? [ORDINARY_AT_WELL] : []),
   ];
@@ -166,7 +182,7 @@ function desecrateSpec(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, d: Des
     coreUnknown: d.coreUnknown,
     facts,
     checks: [
-      { state, rules: [d.boneRule, d.omen.rule, ...(v.liege ? ["omen-liege"] : [])] },
+      { state, rules: [d.boneRule, d.omen.rule, ...(v.factionOmen ? [v.factionOmen.rule] : [])] },
       ...(v.echoes ? [{ state: unrevealed, rules: ["omen-abyssal-echoes"] }] : []),
       { state: revealedJunk, rules: ["omen-light"] },
     ],
