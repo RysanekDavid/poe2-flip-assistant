@@ -1,19 +1,20 @@
 import type { AffixSide } from "../craftmoves/catalog";
 import { QUALITY_PER_CATALYST_NOTE } from "./catalystTags";
 import { attemptsOf, solveChain, useOf } from "./expectation";
-import { aimsText, EXALT_TIERS, makeMove, mat, sideOmen, step, targetText, usableTier } from "./methodKit";
+import { aimsText, EXALT_TIERS, makeMove, mat, sideOmen, step, targetText, usableTier, type Check } from "./methodKit";
 import { sources, type SourceId } from "./sources";
 import { addOdds, CATALYSING_NOTE, catalysingText } from "./odds";
-import { buildChain, NoAimError, slamScope, stateAt, type AimCache, type Chain, type SlamScope, type SlamVariant } from "./slamChain";
-import { aimable, isJunk, openOf, present, removable, SIDES, targetAffix, withAffixes, withLanded, without } from "./state";
+import { buildChain, isPlainJunk, NoAimError, slamScope, stateAt, type AimCache, type Chain, type RepairUse, type SlamScope, type SlamVariant } from "./slamChain";
+import { REPLANT_TIER } from "./slamRepair";
+import { aimable, isJunk, openOf, otherSide, present, removable, SIDES, targetAffix, withAffixes, withLanded, without } from "./state";
 import type { LazyEdge, MaterialUse, Method, Move, PlanAffix, PlanCtx, PlanState, StepText } from "./types";
 import { whittleEdges } from "./methodsWhittle";
 import { slamBound } from "./edgeBounds";
 
 /**
  * Random adds: the Chaos loop (every removable mod a throwaway → every Chaos swaps one) and the
- * side slam-fill (Exalt until the side's targets land; a steered Annulment fixes a miss — solved as
- * an absorbing chain in slamChain.ts because that Annulment can also take a good mod).
+ * side slam-fill (Exalt until the side's targets land; an Annulment fixes a miss — solved as an
+ * absorbing chain in slamChain.ts because that Annulment can also take a good mod).
  */
 
 /** Junk that stays on the item while the add rolls: each blocks one family of unknown identity. */
@@ -162,18 +163,64 @@ function slamSteps(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, chain: Chain)
     mats: [...(v.catalysing ? [mat("omenCatalysingExaltation")] : []), ...(scope.steerExalt ? [mat(sideOmen(side, "Exaltation").key)] : []), mat(v.tier.key)],
     check: `${wanted.join(" and ")} on the item.`,
   }));
-  if (chain.annuls) {
-    const steer = scope.steerAnnul ? `${mat(sideOmen(side, "Annulment").key).label} + ` : "";
-    out.push(step({
-      do: `A ${side} you don't want → ${steer}Orb of Annulment, then slam again.`,
-      why: `The Annulment removes a random ${side}${scope.steerAnnul ? ` (the omen keeps it off the ${side === "prefix" ? "suffixes" : "prefixes"})` : ""} — it can also take a good one; that re-slam is in the cost.`,
-      sources: sources(...(scope.steerAnnul ? (["kb-omens"] as SourceId[]) : [])),
-      mats: [...(scope.steerAnnul ? [mat(sideOmen(side, "Annulment").key)] : []), mat("annul")],
-      onFail: "Back to the slam.",
-      retry: "self",
-    }));
-  }
+  if (chain.annuls) out.push(repairStep(scope, chain));
   return out;
+}
+
+const plural = (side: string): string => (side === "prefix" ? "prefixes" : "suffixes");
+const orList = (ns: readonly number[]): string => (ns.length === 1 ? `${ns[0]}` : `${ns.slice(0, -1).join(", ")} or ${ns[ns.length - 1]}`);
+
+/** The miss repair (slamRepair.ts): steered, plain, or unsteered with a re-plant of the other side's throwaway. */
+function repairStep(scope: SlamScope, chain: Chain): StepText {
+  const side = scope.side;
+  const other = otherSide(side);
+  const steer = mat(sideOmen(side, "Annulment").key);
+  const replantOmen = mat(sideOmen(other, "Exaltation").key);
+  const steeredAt = chain.repairs.filter((r) => r.repair.kind === "steered").map((r) => r.placed).sort((a, b) => a - b);
+  const replants = chain.repairs.flatMap((r) => (r.repair.kind === "unsteered" ? [r.repair.replantOmen] : []));
+  const mixed = steeredAt.length > 0 && steeredAt.length < chain.repairs.length;
+  const steerWhile = steeredAt.length === 1 && steeredAt[0] === 0 ? `while no good ${side} is on the item` : `while ${orList(steeredAt)} good ${plural(side)} are on the item`;
+  const steerText = steeredAt.length === 0 ? "" : mixed ? `${steer.label} (${steerWhile}) + ` : `${steer.label} + `;
+  let replantText = "";
+  if (replants.length > 0) {
+    const how = replants.every((o) => !o) ? `${REPLANT_TIER.label} → a new ${other} throwaway (only a ${other} slot is open)` : `${replantOmen.label} + ${REPLANT_TIER.label} → a new ${other} throwaway${replants.some((o) => !o) ? ` (no omen needed once every ${side} slot is full)` : ""}`;
+    replantText = ` If it takes ${scope.otherLoose === 1 ? `the ${other} throwaway` : `one of the ${other} throwaways`} instead: ${how}, then annul again.`;
+  }
+  let why = `The Annulment removes a random ${side}${steeredAt.length > 0 ? ` (the omen keeps it off the ${plural(other)})` : ""} — it can also take a good one; that re-slam is in the cost.`;
+  if (replants.length > 0) {
+    const worth = mixed ? `the omen pays for itself only while few good ${plural(side)} are on the item` : `cheaper here than ${steer.label} on every repair`;
+    why = `The Annulment removes a random mod — it can take a good ${side} (that re-slam is in the cost) or a ${other} throwaway, which is put back; ${worth}.`;
+  }
+  return step({
+    do: `A ${side} you don't want → ${steerText}Orb of Annulment, then slam again.${replantText}`,
+    why,
+    sources: sources(...(steeredAt.length > 0 || replants.some((o) => o) ? (["kb-omens"] as SourceId[]) : []), ...(replants.length > 0 ? (["kb-currency"] as SourceId[]) : [])),
+    mats: [...(steeredAt.length > 0 ? [steer] : []), mat("annul"), ...(replants.length > 0 ? [mat(REPLANT_TIER.key)] : []), ...(replants.some((o) => o) ? [replantOmen] : [])],
+    onFail: "Back to the slam.",
+    retry: "self",
+  });
+}
+
+/** Every Annulment and re-plant the chain makes must be legal: one check per kind of click. */
+function repairChecks(ctx: PlanCtx, state: PlanState, scope: SlamScope, chain: Chain): Check[] {
+  const full = stateAt(ctx, state, scope, scope.missing0, scope.j0 + countBits(scope.missing0));
+  const rules = new Set(chain.repairs.map((r) => (r.repair.kind === "steered" ? sideOmen(scope.side, "Annulment").rule : "annul")));
+  const checks: Check[] = [{ state: full, rules: [...rules] }];
+  const seen = new Set<boolean>();
+  for (const r of chain.repairs) {
+    if (r.repair.kind !== "unsteered" || seen.has(r.repair.replantOmen)) continue;
+    seen.add(r.repair.replantOmen);
+    checks.push({ state: replantState(ctx, state, scope, r), rules: r.repair.replantOmen ? [sideOmen(otherSide(scope.side), "Exaltation").rule, REPLANT_TIER.rule] : [REPLANT_TIER.rule] });
+  }
+  return checks;
+}
+
+/** The item right after an unsteered Annulment took an other-side throwaway at the repair's node. */
+function replantState(ctx: PlanCtx, state: PlanState, scope: SlamScope, r: RepairUse): PlanState {
+  const at = stateAt(ctx, state, scope, r.mask, r.j);
+  const gone = at.affixes.find((a) => a.side === otherSide(scope.side) && isPlainJunk(a));
+  if (!gone) throw new Error("planner bug: an unsteered repair with no other-side throwaway");
+  return withAffixes(at, without(at, gone));
 }
 
 function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, aims: AimCache): Move | null {
@@ -187,15 +234,12 @@ function slamMove(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVaria
   const start = stateAt(ctx, state, scope, scope.missing0, scope.j0);
   const quality = ctx.base.qualityCap ?? 0;
   const firstRule = scope.steerExalt ? sideOmen(scope.side, "Exaltation").rule : v.tier.rule;
-  const checks = [{ state: start, rules: [firstRule, v.tier.rule] }];
+  const checks: Check[] = [{ state: start, rules: [firstRule, v.tier.rule] }];
   if (v.catalysing) {
     checks.push({ state: { ...start, quality: 0, catalyst: null }, rules: ["catalyst"] });
     checks.push({ state: { ...start, quality, catalyst: chain.first.catalyst?.mat.id ?? null }, rules: ["omen-catalysing-exaltation"] });
   }
-  if (chain.annuls) {
-    const full = stateAt(ctx, state, scope, scope.missing0, scope.j0 + countBits(scope.missing0));
-    checks.push({ state: full, rules: [scope.steerAnnul ? sideOmen(scope.side, "Annulment").rule : "annul"] });
-  }
+  if (chain.annuls) checks.push(...repairChecks(ctx, state, scope, chain));
   return makeMove(ctx, {
     methodId: slamId(scope, v),
     title: `${scope.side === "prefix" ? "Prefix" : "Suffix"} slams`,

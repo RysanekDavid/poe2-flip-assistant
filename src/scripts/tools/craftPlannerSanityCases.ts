@@ -1,11 +1,10 @@
 /* Craft planner cost sanity: the owner's refused prod plan (three top-tier flat attack prefixes on a
- * Breach Ring) self-fractures a flat instead of slamming or whittling; a long step is flagged with cheaper target sets costed by the same model; the
- * slam chain keeps partial hits (checked by hand); golden plans stay unflagged. Imported by
+ * Breach Ring) self-fractures a flat instead of slamming or whittling; a long step is flagged with cheaper target sets costed by the same model;
+ * golden plans stay unflagged (the slam chain's partial hits by hand: craftPlannerRepairCases.ts). Imported by
  * testCraftPlanner.ts. */
 import assert from "node:assert/strict";
 import type { CraftCatalog } from "../../core/tools/craftmoves/catalog";
 import { MAX_ALTERNATIVES } from "../../core/tools/planner/alternatives";
-import { solveChain } from "../../core/tools/planner/expectation";
 import { EXALT_TIERS, mat } from "../../core/tools/planner/methodKit";
 import { buildCtx, planCraft, PlanTimeoutError, type PlanBudget } from "../../core/tools/planner/plan";
 import { IMPRACTICAL_CLICKS } from "../../core/tools/planner/sanity";
@@ -90,42 +89,10 @@ function testDuskFourFlat(cat: CraftCatalog, prices: Map<string, number>): void 
   assert.ok(flagged.length === 1 && flagged[0]!.method === "whittle-loop" && flagged[0]!.impractical!.materialId === mat("omenWhittling").id, `one whittle step past the limit: ${flagged.map((s) => s.method).join(", ")}`);
   assert.ok(whittles > 50 && whittles < 110, `the documented bound: ~98 Whittles (was ~103 and ~645), got ${whittles}`);
   assert.ok(dusk.totals.div!.point < 800, `four top flats: ${dusk.totals.div!.point} div`);
+  // pinned; no slam chain on this route, so G5b's unsteered repair left it as it was
+  assert.ok(near(dusk.totals.div!.point, 724.1008, 5e-4), `four top flats pinned: ${dusk.totals.div!.point} div`);
   // a cheaper target set no longer whittles past 50: the first chip is realistic
   assertAlternatives(cat, dusk, prices, FOUR_FLAT_DUSK, true);
-}
-
-/**
- * Two prefixes from slams, no steer: the chain must keep a partial hit (one lands, the other is
- * slammed for) — by hand, E[S0] = (1 + pa/(1−ca) + pb/(1−cb)) / (pa + pb − pa·ca/(1−ca) − pb·cb/(1−cb)),
- * with ca = (1 − qb)/2 the chance a miss's Annulment takes the landed A, cb likewise.
- */
-function testPartialHitsByHand(cat: CraftCatalog): void {
-  const req: PlanRequest = { itemClass: "Rings", base: "Ruby Ring", ilvl: 82, targets: [target("PhysicalDamage", "prefix", "AddedPhysicalDamage9"), target("ColdDamage", "prefix", "AddedColdDamage9")], includeUnverified: false, quality: null };
-  const { ctx } = buildCtx(req, { cat, prices: fixturePrices(), exaltPerDivine: null, league: "Test", now: NOW });
-  // a fractured throwaway prefix leaves exactly two open prefixes and is immune to the Annulment
-  const state: PlanState = { rarity: "Rare", affixes: [junk("prefix", "fractured"), junk("suffix"), junk("suffix"), junk("suffix")], quality: 0, catalyst: null };
-  const scope = slamScope(state, ctx, "prefix");
-  assert.ok(scope && scope.missing0 === 3 && scope.j0 === 0 && !scope.steerExalt, "both prefixes missing, suffixes full");
-  const chain = buildChain(state, ctx, scope, { tier: EXALT_TIERS[0]!, catalysing: false }, 1);
-  const edge = (from: string, to: string) => chain.nodes.find((n) => n.id === from)!.edges.find((e) => e.to === to)?.p ?? 0;
-  const [pa, pb, qa, qb] = [edge("3:0", "2:0"), edge("3:0", "1:0"), edge("1:0", "0:0"), edge("2:0", "0:0")];
-  assert.ok(pa > 0 && pb > 0 && qa > pa && qb > pb, "a landed prefix blocks its family: the second slam has better odds");
-  const ca = (1 - qb) / 2;
-  const cb = (1 - qa) / 2;
-  const slams = (1 + pa / (1 - ca) + pb / (1 - cb)) / (pa + pb - (pa * ca) / (1 - ca) - (pb * cb) / (1 - cb));
-  const exalt = mat("exalted").id;
-  const annul = mat("annul").id;
-  const solved = solveChain(chain.nodes, "3:0", [exalt, annul]);
-  assert.ok(near(solved[exalt]!, slams, 1e-6), `chain = hand formula: ${solved[exalt]} vs ${slams}`);
-  assert.ok(near(solved[annul]!, slams - 2, 1e-6), "an Annulment only after a miss: annuls = slams − 2 hits");
-  assert.ok(solved[exalt]! < 1 / (pa * qb), "partial hits are kept: far below needing both on one go");
-  assert.equal(chain.undoes, true, "the second prefix's misses can take the first");
-  // one target, one open prefix next to a loose throwaway: a miss's Annulment can only take junk
-  const one = buildCtx({ ...req, targets: [req.targets[0]!] }, { cat, prices: fixturePrices(), exaltPerDivine: null, league: "Test", now: NOW }).ctx;
-  const lone: PlanState = { ...state, affixes: [...state.affixes, junk("prefix")] };
-  const loneScope = slamScope(lone, one, "prefix");
-  assert.ok(loneScope && loneScope.j0 === 1);
-  assert.equal(buildChain(lone, one, loneScope, { tier: EXALT_TIERS[0]!, catalysing: false }, 1).undoes, false, "nothing landed to lose");
 }
 
 function testGoldensUnflagged(cat: CraftCatalog): void {
@@ -202,6 +169,5 @@ export function runSanityCases(cat: CraftCatalog): void {
   testMarketReality(cat);
   testTimeBudgets(cat);
   testOwnerCase(cat);
-  testPartialHitsByHand(cat);
   testGoldensUnflagged(cat);
 }

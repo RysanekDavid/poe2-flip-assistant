@@ -3,25 +3,26 @@ import { CATALYSTS, matchesCatalyst, QUALITY_PER_CATALYST, type CatalystInfo } f
 import type { ChainNode } from "./expectation";
 import { mat, sideOmen, type CurrencyTier } from "./methodKit";
 import { addOdds } from "./odds";
+import { chooseRepair, replantCost, type Repair, type RepairScope } from "./slamRepair";
 import { anyJunkCount, isJunk, junk, landAffix, openOf, otherSide, present, removable, stateKey, targetAffix, withAffixes } from "./state";
 import type { Estimate, PlanAffix, PlanCtx, PlanState, ResolvedTarget } from "./types";
 
 /**
  * The slam-fill retry chain for one side. Node (mask, j): `mask` = which chain targets are missing,
  * `j` = junk mods on the side (j0 at the start). At j = j0 the node slams (Exalt); a miss adds a
- * junk mod and the next node annuls it (a steered Annulment picks uniformly among the side's
- * removable mods — the junk OR a placed target, which then goes back to missing). Terminal: nothing
- * missing. Every non-target slot starts full, so the chain always ends with the starting junk.
+ * junk mod and the next node annuls it (the Annulment picks uniformly among the side's removable
+ * mods — the junk OR a placed target, which then goes back to missing; slamRepair.ts says when it is
+ * steered, and an unsteered one that takes an other-side throwaway is a self-loop through a re-plant
+ * node). Terminal: nothing missing. Every non-target slot starts full, so the chain always ends with
+ * the starting junk.
  */
 
-export interface SlamScope {
-  side: AffixSide;
+export interface SlamScope extends RepairScope {
   /** Every natural target of the side the chain may place or lose. */
   chain: readonly ResolvedTarget[];
   missing0: number;
   j0: number;
   steerExalt: boolean;
-  steerAnnul: boolean;
 }
 
 export interface SlamVariant {
@@ -31,10 +32,12 @@ export interface SlamVariant {
 
 export const bits = (mask: number, n: number): number[] => [...Array(n).keys()].filter((i) => (mask >> i) & 1);
 
-// plain explicit junk only: stateAt re-creates the side's junk, so a desecrated blocker or a Contempt
-// mod there would lose its identity (and the chain's Annulment could take it)
-const okOnSide = (ctx: PlanCtx, a: PlanAffix): boolean =>
-  isJunk(a) ? a.kind === "explicit" && a.special == null && !a.unrevealed : ctx.targets[a.target!]!.source === "natural" && a.kind === "explicit";
+// a throwaway nothing depends on: re-creating or re-planting it loses nothing (a desecrated blocker or
+// a Contempt mod would lose its identity)
+export const isPlainJunk = (a: PlanAffix): boolean => isJunk(a) && a.kind === "explicit" && a.special == null && !a.unrevealed;
+
+// plain explicit junk only: stateAt re-creates the side's junk (and the chain's Annulment could take it)
+const okOnSide = (ctx: PlanCtx, a: PlanAffix): boolean => (isJunk(a) ? isPlainJunk(a) : ctx.targets[a.target!]!.source === "natural" && a.kind === "explicit");
 
 /** Null unless the side's removable mods are all junk or natural targets and its open slots = its missing targets. */
 export function slamScope(state: PlanState, ctx: PlanCtx, side: AffixSide): SlamScope | null {
@@ -52,13 +55,15 @@ export function slamScope(state: PlanState, ctx: PlanCtx, side: AffixSide): Slam
   const missing = bits(missing0, chain.length).length;
   if (missing === 0 || openOf(ctx, state, side) !== missing) return null;
   const other = otherSide(side);
+  const otherLoose = removable(state).filter((a) => a.side === other);
   return {
     side,
     chain,
     missing0,
     j0: onSide.filter(isJunk).length,
     steerExalt: openOf(ctx, state, other) > 0,
-    steerAnnul: removable(state).some((a) => a.side === other),
+    otherLoose: otherLoose.length,
+    otherJunkOnly: otherLoose.every(isPlainJunk),
   };
 }
 
@@ -128,10 +133,14 @@ export class NoAimError extends Error {
 }
 
 const nodeId = (mask: number, j: number): string => `${mask}:${j}`;
-const parseId = (id: string): [number, number] => {
-  const [m, j] = id.split(":").map(Number);
-  return [m!, j!];
+// the re-plant after an unsteered Annulment took an other-side throwaway at node (mask, j)
+const replantId = (mask: number, j: number): string => `${mask}:${j}:replant`;
+const parseId = (id: string): { mask: number; j: number; replant: boolean } => {
+  const [m, j, r] = id.split(":");
+  return { mask: Number(m), j: Number(j), replant: r === "replant" };
 };
+
+const countBits = (mask: number): number => bits(mask, 31).length;
 
 function slamCost(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, catalyst: CatalystInfo | null): Record<string, number> {
   const cost: Record<string, number> = { [mat(v.tier.key).id]: 1 };
@@ -202,14 +211,35 @@ function slamNode(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVaria
   return { node: { id: nodeId(mask, j), terminal: false, cost: slamCost(ctx, scope, v, aim.catalyst), edges }, aim };
 }
 
-function annulNode(scope: SlamScope, mask: number, j: number): ChainNode {
+/** The repair at node (mask, j): the side holds j junk + the placed targets, and its open slots are the missing ones not yet filled by junk. */
+function repairOf(ctx: PlanCtx, scope: SlamScope, mask: number, j: number): { repair: Repair; placed: number } {
+  const placed = scope.chain.length - countBits(mask);
+  return { repair: chooseRepair(ctx, scope, j + placed, countBits(mask) - (j - scope.j0)).repair, placed };
+}
+
+function annulNode(scope: SlamScope, mask: number, j: number, repair: Repair): ChainNode {
   const placed = scope.chain.map((_, i) => i).filter((i) => !((mask >> i) & 1));
-  const n = j + placed.length;
+  const other = repair.kind === "unsteered" ? scope.otherLoose : 0;
+  const n = j + placed.length + other;
   const edges: ChainNode["edges"] = placed.map((i) => ({ to: nodeId(mask | (1 << i), j), p: 1 / n }));
   if (j > 0) edges.push({ to: nodeId(mask, j - 1), p: j / n });
+  if (other > 0) edges.push({ to: replantId(mask, j), p: other / n });
   const cost: Record<string, number> = { [mat("annul").id]: 1 };
-  if (scope.steerAnnul) cost[mat(sideOmen(scope.side, "Annulment").key).id] = 1;
+  if (repair.kind === "steered") cost[mat(sideOmen(scope.side, "Annulment").key).id] = 1;
   return { id: nodeId(mask, j), terminal: false, cost, edges };
+}
+
+function replantNode(scope: SlamScope, mask: number, j: number, repair: Repair): ChainNode {
+  if (repair.kind !== "unsteered") throw new Error("planner bug: a re-plant after a steered Annulment");
+  return { id: replantId(mask, j), terminal: false, cost: replantCost(scope, repair.replantOmen), edges: [{ to: nodeId(mask, j), p: 1 }] };
+}
+
+/** One repair the chain makes: at the first node it meets with `placed` targets on the item. */
+export interface RepairUse {
+  repair: Repair;
+  mask: number;
+  j: number;
+  placed: number;
 }
 
 export interface Chain {
@@ -220,21 +250,23 @@ export interface Chain {
   annuls: boolean;
   /** Some Annulment in the chain can remove a target that already landed (progress can be undone). */
   undoes: boolean;
+  /** The repairs by number of placed targets (that number fixes the repair, since an Annulment node always has j = j0 + 1). */
+  repairs: RepairUse[];
 }
 
 export function buildChain(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, scale: number, aims: AimCache = new Map()): Chain {
   const nodes: ChainNode[] = [];
   const seen = new Set<string>();
-  const queue: Array<[number, number]> = [[scope.missing0, scope.j0]];
+  const queue: string[] = [nodeId(scope.missing0, scope.j0)];
   const catalysts: CatalystInfo[] = [];
+  const repairs: RepairUse[] = [];
   let first: Aim | null = null;
-  let annuls = false;
   let undoes = false;
   while (queue.length > 0) {
-    const [mask, j] = queue.shift()!;
-    const id = nodeId(mask, j);
+    const id = queue.shift()!;
     if (seen.has(id)) continue;
     seen.add(id);
+    const { mask, j, replant } = parseId(id);
     if (mask === 0) {
       nodes.push({ id, terminal: true, cost: {}, edges: [] });
       continue;
@@ -247,14 +279,15 @@ export function buildChain(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: 
       if (built.aim.catalyst && !catalysts.includes(built.aim.catalyst)) catalysts.push(built.aim.catalyst);
       nodes.push(built.node);
     } else {
-      annuls = true;
-      const node = annulNode(scope, mask, j);
+      const { repair, placed } = repairOf(ctx, scope, mask, j);
+      if (!repairs.some((r) => r.placed === placed)) repairs.push({ repair, mask, j, placed });
+      const node = replant ? replantNode(scope, mask, j, repair) : annulNode(scope, mask, j, repair);
       // an edge back to a node with more missing targets = the Annulment took a landed one
-      undoes ||= node.edges.some((e) => parseId(e.to)[0] !== mask);
+      undoes ||= node.edges.some((e) => parseId(e.to).mask !== mask);
       nodes.push(node);
     }
-    for (const e of nodes[nodes.length - 1]!.edges) queue.push(parseId(e.to));
+    for (const e of nodes[nodes.length - 1]!.edges) queue.push(e.to);
   }
   if (!first) throw new Error("planner bug: slam chain never slams");
-  return { nodes, first, catalysts, annuls, undoes };
+  return { nodes, first, catalysts, annuls: repairs.length > 0, undoes, repairs };
 }

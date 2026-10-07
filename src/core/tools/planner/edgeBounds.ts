@@ -1,7 +1,8 @@
 import { CATALYSTS, matchesCatalyst, QUALITY_PER_CATALYST } from "./catalystTags";
 import { mat, sideOmen } from "./methodKit";
-import { RISK_LAMBDA, UNPRICED_RANK_DIV } from "./rank";
+import { rankPrice, RISK_LAMBDA } from "./rank";
 import { aimAt, aimOddsAt, bits, NoAimError, type Aim, type AimCache, type SlamScope, type SlamVariant } from "./slamChain";
+import { chooseRepair } from "./slamRepair";
 import type { AffixSide } from "../craftmoves/catalog";
 import { SIDES } from "./state";
 import type { PlanCtx, PlanState } from "./types";
@@ -31,11 +32,11 @@ import { cachedAddShape, scaledAdd, whittleStateAt, type WhittleScope } from "./
  * its solved graph before the rest of the Move is built (whittlePreparedBound).
  */
 
-// rankCost's own price rule: an unpriced material ranks at UNPRICED_RANK_DIV
-const rankPrice = (ctx: PlanCtx, id: string): number => ctx.priceOf(id) ?? UNPRICED_RANK_DIV;
 const blend = (point: number, dear: number): number => (1 - RISK_LAMBDA) * point + RISK_LAMBDA * dear;
-// the chains are solved by elimination, which may land a few ulps under the closed form
-const admissible = (bound: number): number => Math.max(0, bound * (1 - 1e-9) - 1e-6);
+// the chains are solved by elimination, which may land under the closed form: a chain whose slams hit
+// ~1 in 10⁶ at the dear end (a plain Exalt aiming four T9 flats, ~4.5M div) is ill-conditioned enough
+// to lose ~3·10⁻⁹ of its value, so the relative slack keeps a 30× margin over that
+const admissible = (bound: number): number => Math.max(0, bound * (1 - 1e-7) - 1e-6);
 
 const popcount = (mask: number): number => {
   let n = 0;
@@ -66,12 +67,12 @@ function slamLevelHits(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: Slam
   return best;
 }
 
-/** Undo ignored: Σ over levels 1..top of the click cost of (1/H) slams and (1/H − 1) Annulments; Infinity when a level can't be hit. */
+/** Undo ignored: Σ over levels 1..top of the click cost of (1/H) slams and (1/H − 1) repairs; Infinity when a level can't be hit. */
 function waldFloor(hits: readonly number[], top: number, price: ClickPrices): number {
   let cost = 0;
   for (let k = 1; k <= top; k++) {
     if (!(hits[k]! > 0)) return Infinity;
-    cost += price.slam / hits[k]! + price.annul * (1 / hits[k]! - 1);
+    cost += price.slam / hits[k]! + price.repair[k]! * (1 / hits[k]! - 1);
   }
   return cost;
 }
@@ -104,7 +105,12 @@ function solveDense(a: number[][], b: number[]): number[] | null {
  * The level chain: S_k = a slam with k targets missing, A_k = the Annulment after a miss (j0 + 1
  * junk). An Annulment's odds depend only on the level (it picks uniformly among the j0 + 1 junk and
  * the n − k landed targets), so the real chain differs from this one only in its slam hit chances,
- * each ≤ H(k). φ solved here is a floor of the real cost (optional stopping on φ) as long as a hit
+ * each ≤ H(k). A_k is one finished repair at its exact expected price (slamRepair.ts): an unsteered
+ * repair's self-loops through a re-plant are folded in, (N·annul + o·replant)/t, which only rescales
+ * the real node's row by t/N — the same φ. The real chain picks the same repair at every node of the
+ * level (it reads only t = j0 + 1 + n − k and open = k − 1), so this price is exact, not a guess, and
+ * it is the cheapest repair on offer: a bound priced at the steered omen would sit above the cost of
+ * a chain that repairs unsteered, and the eager check in search.ts would throw. φ solved here is a floor of the real cost (optional stopping on φ) as long as a hit
  * never leaves the player worse off than a miss, φ(S_{k−1}) ≤ φ(A_k) — checked, not assumed:
  * when it fails the caller falls back to the undo-free floor. Returns φ(S_top), or null.
  */
@@ -125,7 +131,7 @@ function levelChainFloor(hits: readonly number[], top: number, j0: number, price
     a[A(k)]![A(k)] = 1;
     a[A(k)]![S(k)] = -toJunk;
     if (k < n) a[A(k)]![A(k + 1)] = -(1 - toJunk);
-    b[A(k)] = price.annul;
+    b[A(k)] = price.repair[k]!;
   }
   const phi = solveDense(a, b);
   if (!phi) return null;
@@ -136,10 +142,11 @@ function levelChainFloor(hits: readonly number[], top: number, j0: number, price
 
 interface ClickPrices {
   slam: number;
-  annul: number;
+  /** Index = level k (targets missing): the price of one finished repair after a miss there. */
+  repair: number[];
 }
 
-/** Per-click prices of a slam variant: the slam (currency, side omen, catalysing) and the Annulment that fixes a miss. */
+/** Per-click prices of a slam variant: the slam (currency, side omen, catalysing) and the repair that fixes a miss at each level. */
 function slamClickPrices(ctx: PlanCtx, scope: SlamScope, v: SlamVariant): ClickPrices {
   let slam = rankPrice(ctx, mat(v.tier.key).id);
   if (scope.steerExalt) slam += rankPrice(ctx, mat(sideOmen(scope.side, "Exaltation").key).id);
@@ -149,14 +156,15 @@ function slamClickPrices(ctx: PlanCtx, scope: SlamScope, v: SlamVariant): ClickP
     const cheapest = Math.min(...options.map((c) => rankPrice(ctx, c.mat.id)));
     slam += rankPrice(ctx, mat("omenCatalysingExaltation").id) + (Number.isFinite(cheapest) ? ((ctx.base.qualityCap ?? 0) / QUALITY_PER_CATALYST) * cheapest : 0);
   }
-  let annul = rankPrice(ctx, mat("annul").id);
-  if (scope.steerAnnul) annul += rankPrice(ctx, mat(sideOmen(scope.side, "Annulment").key).id);
-  return { slam, annul };
+  const n = scope.chain.length;
+  // at level k the side holds the miss and the starting junk (j0 + 1) and the n − k landed targets
+  const repair = Array.from({ length: n + 1 }, (_, k) => (k === 0 ? 0 : chooseRepair(ctx, scope, scope.j0 + 1 + n - k, k - 1).price));
+  return { slam, repair };
 }
 
 /**
- * Slam-fill: every slam pays the slam click; every miss adds a throwaway that an Annulment must take
- * before the next slam (slams only fire at j0). The level-chain floor counts the Annulments that take
+ * Slam-fill: every slam pays the slam click; every miss adds a throwaway that a repair must take
+ * before the next slam (slams only fire at j0). The level-chain floor counts the repairs that take
  * a landed target too; the undo-free floor is the fallback.
  */
 export function slamBound(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, aims: AimCache): number {
