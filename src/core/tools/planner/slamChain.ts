@@ -79,8 +79,22 @@ export function stateAt(ctx: PlanCtx, state: PlanState, scope: SlamScope, mask: 
 
 export interface Aim {
   p: Map<number, number>;
+  /** The same odds at the low / high end of the Catalysing multiplier band (= p without a catalyst). */
+  pLow: Map<number, number>;
+  pHigh: Map<number, number>;
   catalyst: CatalystInfo | null;
   est: Estimate;
+}
+
+/**
+ * The odds a chain at band scale `scale` multiplies: the prior (1) reads the point multiplier, the
+ * cheap end (2) the community model's high one, the dear end (½) the creators' low one, so the
+ * quantity band spans both the ×½…×2 prior band and the sources' disagreement on the multiplier.
+ */
+export function aimOddsAt(aim: Aim, scale: number): ReadonlyMap<number, number> {
+  if (scale > 1) return aim.pHigh;
+  if (scale < 1) return aim.pLow;
+  return aim.p;
 }
 
 /**
@@ -99,7 +113,7 @@ function aimOf(ctx: PlanCtx, scope: SlamScope, mask: number, v: SlamVariant, at:
     const odds = addOdds(ctx, at, { sides: [scope.side], floor: v.tier.floor, catalyst, quality, junkAfter }, idx);
     const progress = idx.reduce((sum, id) => sum + (odds.p.get(id) ?? 0), 0);
     const top = idx.reduce<number | null>((b, id) => ((odds.p.get(id) ?? 0) > (b == null ? 0 : odds.p.get(b)!) ? id : b), null);
-    if (top != null && (!best || progress > best.progress)) best = { aim: { p: odds.p, catalyst, est: odds.estimate(top) }, progress };
+    if (top != null && (!best || progress > best.progress)) best = { aim: { p: odds.p, pLow: odds.pLow, pHigh: odds.pHigh, catalyst, est: odds.estimate(top) }, progress };
   }
   if (!best) throw new NoAimError();
   return best.aim;
@@ -131,13 +145,15 @@ function slamCost(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, catalyst: Cata
 
 /**
  * Aims by missing mask, shared by one variant's point / cheap / dear chains and its search bound
- * (edgeBounds.ts): a slam node only exists at j = j0 and its aim does not read the band scale.
+ * (edgeBounds.ts): a slam node only exists at j = j0, and an aim carries the odds of every band end
+ * (aimOddsAt picks one by scale), so it does not depend on the scale it is read at.
  */
 export type AimCache = Map<number, Aim>;
 
 // one search meets the same chain node item from many parents (an item one slam further along has
 // a subset of this item's nodes); an aim reads only that item, the side, the missing targets and the
-// variant — null = no missing target is reachable (NoAimError)
+// variant (the Catalysing priors are fixed per ctx, and every band end is in the one Aim) — null = no
+// missing target is reachable (NoAimError)
 const AIMS = new WeakMap<PlanCtx, Map<string, Aim | null>>();
 
 /** The aim of the slam node at `mask` (j = j0); throws NoAimError when no missing target can roll. */
@@ -168,12 +184,13 @@ function tryAim(ctx: PlanCtx, scope: SlamScope, mask: number, v: SlamVariant, at
   }
 }
 
-/** `scale` multiplies every hit probability: 1 = the prior, 2 / 0.5 = the cheap / dear end of the band. */
+/** `scale` multiplies every hit probability (of the band end aimOddsAt picks): 1 = the prior, 2 / 0.5 = the cheap / dear end. */
 function slamNode(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, mask: number, scale: number, aims: AimCache): { node: ChainNode; aim: Aim } {
   const j = scope.j0;
   const aim = aimAt(state, ctx, scope, v, mask, aims);
   const missing = bits(mask, scope.chain.length);
-  const raw = missing.map((i) => Math.min(1, (aim.p.get(scope.chain[i]!.idx) ?? 0) * scale));
+  const odds = aimOddsAt(aim, scale);
+  const raw = missing.map((i) => Math.min(1, (odds.get(scope.chain[i]!.idx) ?? 0) * scale));
   const total = raw.reduce((a, b) => a + b, 0);
   const norm = total > 1 ? 1 / total : 1;
   const edges: ChainNode["edges"] = [];

@@ -3,7 +3,7 @@ import { QUALITY_PER_CATALYST_NOTE } from "./catalystTags";
 import { attemptsOf, solveChain, useOf } from "./expectation";
 import { aimsText, EXALT_TIERS, makeMove, mat, sideOmen, step, targetText, usableTier } from "./methodKit";
 import { sources, type SourceId } from "./sources";
-import { addOdds, catalysingMultiplier } from "./odds";
+import { addOdds, CATALYSING_NOTE, catalysingText } from "./odds";
 import { buildChain, NoAimError, slamScope, stateAt, type AimCache, type Chain, type SlamScope, type SlamVariant } from "./slamChain";
 import { aimable, isJunk, openOf, present, removable, SIDES, targetAffix, withAffixes, withLanded, without } from "./state";
 import type { LazyEdge, MaterialUse, Method, Move, PlanAffix, PlanCtx, PlanState, StepText } from "./types";
@@ -116,7 +116,7 @@ function erasureLoop(state: PlanState, ctx: PlanCtx): Move[] {
   return out;
 }
 
-/** Expected material use of the chain with its band (×2 / ×½ every hit chance). */
+/** Expected material use of the chain with its band (×2 / ×½ every hit chance, at the Catalysing band's high / low end). */
 function chainUses(state: PlanState, ctx: PlanCtx, scope: SlamScope, v: SlamVariant, point: Chain, aims: AimCache): MaterialUse[] {
   const start = `${scope.missing0}:${scope.j0}`;
   const cheap = buildChain(state, ctx, scope, v, 2, aims);
@@ -150,7 +150,7 @@ function slamSteps(ctx: PlanCtx, scope: SlamScope, v: SlamVariant, chain: Chain)
     const which = chain.catalysts.map((c) => c.mat.label).join(" / ");
     out.push(step({
       do: `${which} → quality to ${cap}% (the catalyst of the mod you aim at).`,
-      why: `Catalysing Exaltation consumes ALL catalyst quality for a ×${catalysingMultiplier(cap)} bias toward the catalyst's mods — re-catalyse before every slam. ${QUALITY_PER_CATALYST_NOTE}`,
+      why: `Catalysing Exaltation consumes ALL catalyst quality for a ${catalysingText(cap, ctx.catalysing)} bias toward the catalyst's mods (${CATALYSING_NOTE}) — re-catalyse before every slam. ${QUALITY_PER_CATALYST_NOTE}`,
       sources: sources("kb-omens", "kb-catalysts", "creators"),
       mats: chain.catalysts.map((c) => c.mat),
     }));

@@ -26,7 +26,7 @@ export const KB2_FACTS: ReadonlyArray<{ rule: string; text: string }> = [
 const TRANSCRIPTS = join(process.cwd(), "docs", "kb", "sources", "transcripts");
 
 /** Caption text inside [from, to] (m:ss), timestamps dropped and lines joined. */
-function captionsBetween(file: string, from: number, to: number): string {
+export function captionsBetween(file: string, from: number, to: number): string {
   const secs = (m: string, s: string) => Number(m) * 60 + Number(s);
   return readFileSync(join(TRANSCRIPTS, file), "utf8")
     .split(/\r?\n/)

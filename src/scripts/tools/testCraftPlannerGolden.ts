@@ -49,38 +49,42 @@ function stepOf(p: PlanResponse, method: RegExp) {
   return s;
 }
 
+/** The curated catalysed resistance slam's materials: the catalyst, the omen, the Perfect Exalt and the steered Annulment of a miss. */
+const CATALYSED_SLAM_MATS = ["xophs-catalyst", "omen-of-catalysing-exaltation", "perfect-exalted-orb", "omen-of-dextral-annulment"];
+
 /**
  * ring_breach_mana_stacker. The curated recipe buys a junk-fractured anchor; since PR-A the planner
  * fractures a wanted resistance itself (magic loop, Regal, one more mod, 1-in-4 — no blocker: the
  * Amanamu prefix needs the item's one desecrated slot), which the model prices at about half the
- * anchored route. The rest of the curated macro order stays.
+ * anchored route. PR-C: at the creators' ×3 (not the community ×7.5) the curated catalysed slam for
+ * the last resistance is dearer than an Erasure-steered Chaos loop (craftPlannerCatalysingCases pins
+ * both by hand), so the plan ends on that loop. The rest of the curated macro order stays.
  */
 function testBreachRing(cat: CraftCatalog): void {
   const p = plan(cat, BREACH_RING);
   const seq = methods(p);
-  assertInOrder(seq, ["acquire-normal", /^magic-loop/, "fracture", "strip-junk", "chaos-loop", "essence-perfect:perfect-essence-of-the-mind:suffix", "desecrate-liege", /^slam-suffix-exalt-perfect-catalysing$/], "ring_breach_mana_stacker");
+  assertInOrder(seq, ["acquire-normal", /^magic-loop/, "fracture", "strip-junk", "chaos-loop", "essence-perfect:perfect-essence-of-the-mind:suffix", "desecrate-liege", "erasure-loop-suffix"], "ring_breach_mana_stacker");
+  assert.ok(!seq.some((m) => m.endsWith("-catalysing")), `no catalysed slam at the creators' ×3: ${seq.join(", ")}`);
   const fracture = stepOf(p, /^fracture$/);
   assert.equal(fracture.odds.point, 1 / 4, "4 mods, no blocker → 1-in-4");
-  assert.match(fracture.instructions[0]!.check ?? "", /Cold Resistance is FRACTURED/);
+  assert.match(fracture.instructions[0]!.check ?? "", /Fire Resistance is FRACTURED/);
   const essence = stepOf(p, /^essence-perfect:perfect-essence-of-the-mind:suffix$/);
   assert.match(essence.odds.formula, /only removable suffix \(a throwaway\)/, "the Dextral Crystallisation takes the sacrificial suffix");
   assert.equal(seq.filter((m) => m.startsWith("chaos-loop")).length, 1, "the Chaos loop runs once, for the T1 mana");
   const mats = guideMats(p);
-  for (const id of curatedMats("ring_breach_mana_stacker")) assert.ok(mats.has(id), `Breach plan uses curated material ${id}`);
+  for (const id of curatedMats("ring_breach_mana_stacker")) assert.equal(mats.has(id), !CATALYSED_SLAM_MATS.includes(id), `Breach plan ${mats.has(id) ? "uses" : "skips"} curated material ${id}`);
   const chaos = stepOf(p, /^chaos-loop$/);
   assert.equal(chaos.odds.basis, "estimate");
   // 31 − Cold Res group (the fractured resistance) − 1 throwaway suffix that stays on the item = 29 families
   assert.ok(Math.abs(chaos.odds.point! - 1 / 29 / 12) < 1e-9, `chaos odds = 1/29 families × 1/12 tiers, got ${chaos.odds.point}`);
   assert.match(chaos.instructions[0]!.do, /^Chaos Orb until \+\(165-179\) to maximum Mana\.$/, "steps are targets, not click counts");
-  const slam = stepOf(p, /^slam-suffix/);
-  // the fractured Cold Resistance and a throwaway suffix sit beside the slam: 29 families, Fire Res +
-  // All Res ×7.5 at 40%, then 2 of the 3 tiers at or above the Perfect floor 50 reach level 71
-  assert.ok(Math.abs(slam.odds.point! - (7.5 / 29) * (2 / 3)) < 1e-9, `catalysed slam = 7.5/29 × 2/3, got ${slam.odds.point}`);
-  assert.match(slam.instructions[0]!.do, /quality to 40%/, "catalyst step names the quality target (Breach Ring cap 40%)");
+  const erasure = stepOf(p, /^erasure-loop-suffix$/);
+  // the Erasure takes the throwaway beside the fractured Fire Resistance, so the Chaos rolls among the
+  // 17 suffix families outside the Fire Res group; 2 of Cold Resistance's 8 reachable tiers reach level 71
+  assert.ok(Math.abs(erasure.odds.point! - (1 / 17) * (2 / 8)) < 1e-9, `Erasure loop = 1/17 × 2/8, got ${erasure.odds.point}`);
   const desecrate = stepOf(p, /^desecrate/);
   assert.equal(desecrate.odds.basis, "estimate");
   assert.deepEqual(desecrate.instructions.at(-1)!.retryTo, { phase: desecrate.phase, step: 1 }, "a dead reveal → Light strip → back to the bone");
-  assert.deepEqual(slam.instructions.at(-1)!.retryTo, { phase: slam.phase, step: 1 }, "a missed slam → steered Annul → slam again");
   assert.deepEqual(fracture.instructions[0]!.retryTo, { phase: p.steps[0]!.phase, step: 1 }, "a missed fracture restarts on a new base");
   for (const s of p.steps.filter((x) => /^(acquire|plant|essence)/.test(x.method))) assert.equal(s.odds.basis, "exact", `${s.method} is count-based`);
   assert.equal(p.totals.basis, "estimate");
@@ -88,20 +92,29 @@ function testBreachRing(cat: CraftCatalog): void {
   assertRetries(p);
 }
 
+/**
+ * ring_fractured_t1res. PR-C: on a Gold Ring (20% cap) the creators' ×2 (not the community ×5) makes
+ * the curated catalysed slam for both resistances dearer than an Erasure-steered Chaos loop for one
+ * and an Ancient desecration (with an Echoes reroll) for the other; the curated catalysed-slam
+ * materials drop out of the plan.
+ */
 function testFracturedResRing(cat: CraftCatalog): void {
   const p = plan(cat, FRACTURED_T1RES_RING);
-  assertInOrder(methods(p), ["acquire-normal", /^magic-loop/, /^blocker-/, "fracture", "strip-junk", "chaos-loop", /^slam-suffix-.*-catalysing$/], "ring_fractured_t1res");
+  assertInOrder(methods(p), ["acquire-normal", /^magic-loop/, /^blocker-/, "fracture", "strip-junk", "chaos-loop", "erasure-loop-suffix", /^desecrate-/], "ring_fractured_t1res");
+  assert.ok(!methods(p).some((m) => m.endsWith("-catalysing")), `no catalysed slam at the creators' ×2: ${methods(p).join(", ")}`);
   const fracture = stepOf(p, /^fracture$/);
   assert.equal(fracture.odds.basis, "exact");
   assert.equal(fracture.odds.point, 1 / 3, "4 mods, 1 desecrated blocker → 1/3");
   assert.equal(fracture.restartP, 1 / 3);
   assert.deepEqual(fracture.instructions[0]!.retryTo, { phase: p.steps[0]!.phase, step: 1 }, "a missed fracture restarts on a new base");
   const mats = guideMats(p);
-  for (const id of ["chaos", "exalted", "perfect-exalted-orb", "omen-of-catalysing-exaltation", "eshs-catalyst", "xophs-catalyst", "preserved-collarbone", "annul", "fracturing-orb"]) {
+  for (const id of ["chaos", "exalted", "omen-of-dextral-erasure", "preserved-collarbone", "annul", "fracturing-orb"]) {
     assert.ok(mats.has(id), `fractured-res plan uses ${id}`);
   }
+  for (const id of ["perfect-exalted-orb", "omen-of-catalysing-exaltation", "eshs-catalyst", "xophs-catalyst"]) assert.ok(!mats.has(id), `fractured-res plan skips the catalysed slam's ${id}`);
+  // ≥ 7 before PR-C: the curated Xoph's Catalyst, Catalysing omen and Perfect Exalt left with the slam (6 shared now)
   const shared = curatedMats("ring_fractured_t1res").filter((id) => mats.has(id));
-  assert.ok(shared.length >= 7, `most curated materials reappear (${shared.join(", ")})`);
+  assert.ok(shared.length >= 6, `most curated materials reappear (${shared.join(", ")})`);
   // the magic loop's quantities are paid once per fracture attempt: ×3 before the 1-in-3
   const loop = stepOf(p, /^magic-loop/);
   const transmute = loop.materials.find((m) => /transmutation/.test(m.id));

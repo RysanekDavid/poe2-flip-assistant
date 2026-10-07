@@ -16,7 +16,7 @@ import { plannerPrices, type PriceSnapshot } from "../../core/research/craftMini
 import { checkAgainstBaseline, fmt, SCOREBOARD_VERSION, summarize, type Scoreboard, type ScoreEntry } from "../../core/research/craftMining/goldenScore";
 import { loadCraftCatalog } from "../../core/tools/craftmoves/catalog";
 import type { PlanDeps } from "../../core/tools/planner/plan";
-import { revealPriorsFrom } from "../../core/tools/planner/revealPriors";
+import { catalysingPriorsFrom, revealPriorsFrom } from "../../core/tools/planner/revealPriors";
 import { evalBudget, scoreEntry } from "./craftEvalRun";
 
 const DEFAULT_SEARCH_MS = 10_000;
@@ -63,8 +63,9 @@ function deps(snapshot: PriceSnapshot, searchMs: number): PlanDeps {
     league: snapshot.league,
     now: new Date(),
     budget: evalBudget(searchMs, ALTERNATIVES_MS),
-    // the reveal numbers the server plans with (planner/load.ts planForLeague)
+    // the reveal and Catalysing numbers the server plans with (planner/load.ts planForLeague)
     reveal: revealPriorsFrom(loadCraftMining().priors),
+    catalysing: catalysingPriorsFrom(loadCraftMining().priors),
   };
 }
 
