@@ -49,31 +49,39 @@ function stepOf(p: PlanResponse, method: RegExp) {
   return s;
 }
 
+/**
+ * ring_breach_mana_stacker. The curated recipe buys a junk-fractured anchor; since PR-A the planner
+ * fractures a wanted resistance itself (magic loop, Regal, one more mod, 1-in-4 — no blocker: the
+ * Amanamu prefix needs the item's one desecrated slot), which the model prices at about half the
+ * anchored route. The rest of the curated macro order stays.
+ */
 function testBreachRing(cat: CraftCatalog): void {
   const p = plan(cat, BREACH_RING);
   const seq = methods(p);
-  // the curated macro order; the planner may insert cheaper helpers (it lands one resistance with
-  // a Dextral Erasure + Chaos loop before the catalysed slam), never drop or reorder these
-  assertInOrder(seq, ["acquire-anchored-suffix", "chaos-loop", "plant-junk-suffix", "essence-perfect:perfect-essence-of-the-mind:suffix", "desecrate-liege", /^slam-suffix-exalt-perfect-catalysing$/], "ring_breach_mana_stacker");
-  const essenceAt = seq.indexOf("essence-perfect:perfect-essence-of-the-mind:suffix");
-  assert.equal(seq[essenceAt - 1], "plant-junk-suffix", "the sacrificial suffix comes right before the Dextral Crystallisation");
-  assert.equal(seq.filter((m) => m.startsWith("chaos-loop")).length, 1, "the anchored Chaos loop runs once, for the T1 mana");
+  assertInOrder(seq, ["acquire-normal", /^magic-loop/, "fracture", "strip-junk", "chaos-loop", "essence-perfect:perfect-essence-of-the-mind:suffix", "desecrate-liege", /^slam-suffix-exalt-perfect-catalysing$/], "ring_breach_mana_stacker");
+  const fracture = stepOf(p, /^fracture$/);
+  assert.equal(fracture.odds.point, 1 / 4, "4 mods, no blocker → 1-in-4");
+  assert.match(fracture.instructions[0]!.check ?? "", /Cold Resistance is FRACTURED/);
+  const essence = stepOf(p, /^essence-perfect:perfect-essence-of-the-mind:suffix$/);
+  assert.match(essence.odds.formula, /only removable suffix \(a throwaway\)/, "the Dextral Crystallisation takes the sacrificial suffix");
+  assert.equal(seq.filter((m) => m.startsWith("chaos-loop")).length, 1, "the Chaos loop runs once, for the T1 mana");
   const mats = guideMats(p);
   for (const id of curatedMats("ring_breach_mana_stacker")) assert.ok(mats.has(id), `Breach plan uses curated material ${id}`);
   const chaos = stepOf(p, /^chaos-loop$/);
   assert.equal(chaos.odds.basis, "estimate");
-  assert.ok(Math.abs(chaos.odds.point! - 1 / 30 / 12) < 1e-9, `chaos odds = 1/30 families × 1/12 tiers, got ${chaos.odds.point}`);
+  // 30 families − the fractured resistance's − one throwaway suffix's that stays on the item
+  assert.ok(Math.abs(chaos.odds.point! - 1 / 29 / 12) < 1e-9, `chaos odds = 1/29 families × 1/12 tiers, got ${chaos.odds.point}`);
   assert.match(chaos.instructions[0]!.do, /^Chaos Orb until \+\(165-179\) to maximum Mana\.$/, "steps are targets, not click counts");
   const slam = stepOf(p, /^slam-suffix/);
-  // 18 suffix families − the fractured anchor (− a resistance already placed) with Fire/Cold Res +
+  // the fractured Cold Resistance and a throwaway suffix sit beside the slam: 29 families, Fire Res +
   // All Res ×7.5 at 40%, then 2 of the 3 tiers at or above the Perfect floor 50 reach level 71
-  const families = seq.includes("erasure-loop-suffix") ? 29 : 30;
-  assert.ok(Math.abs(slam.odds.point! - (7.5 / families) * (2 / 3)) < 1e-9, `catalysed slam = 7.5/${families} × 2/3, got ${slam.odds.point}`);
+  assert.ok(Math.abs(slam.odds.point! - (7.5 / 29) * (2 / 3)) < 1e-9, `catalysed slam = 7.5/29 × 2/3, got ${slam.odds.point}`);
   assert.match(slam.instructions[0]!.do, /quality to 40%/, "catalyst step names the quality target (Breach Ring cap 40%)");
   const desecrate = stepOf(p, /^desecrate/);
   assert.equal(desecrate.odds.basis, "estimate");
   assert.deepEqual(desecrate.instructions.at(-1)!.retryTo, { phase: desecrate.phase, step: 1 }, "a dead reveal → Light strip → back to the bone");
   assert.deepEqual(slam.instructions.at(-1)!.retryTo, { phase: slam.phase, step: 1 }, "a missed slam → steered Annul → slam again");
+  assert.deepEqual(fracture.instructions[0]!.retryTo, { phase: p.steps[0]!.phase, step: 1 }, "a missed fracture restarts on a new base");
   for (const s of p.steps.filter((x) => /^(acquire|plant|essence)/.test(x.method))) assert.equal(s.odds.basis, "exact", `${s.method} is count-based`);
   assert.equal(p.totals.basis, "estimate");
   assert.ok(p.totals.div && p.totals.div.low <= p.totals.div.point && p.totals.div.point <= p.totals.div.high);

@@ -1,5 +1,5 @@
 /* Craft planner cost sanity: the owner's refused prod plan (three top-tier flat attack prefixes on a
- * Breach Ring) is whittled instead of slammed, its last long step flagged with cheaper target sets costed by the same model; the
+ * Breach Ring) self-fractures a flat instead of slamming or whittling; a long step is flagged with cheaper target sets costed by the same model; the
  * slam chain keeps partial hits (checked by hand); golden plans stay unflagged. Imported by
  * testCraftPlanner.ts. */
 import assert from "node:assert/strict";
@@ -10,7 +10,7 @@ import { EXALT_TIERS, mat } from "../../core/tools/planner/methodKit";
 import { buildCtx, planCraft, PlanTimeoutError, type PlanBudget } from "../../core/tools/planner/plan";
 import { IMPRACTICAL_CLICKS } from "../../core/tools/planner/sanity";
 import { buildChain, slamScope } from "../../core/tools/planner/slamChain";
-import { junk } from "../../core/tools/planner/state";
+import { canonical, junk, targetAffix } from "../../core/tools/planner/state";
 import type { PlanState } from "../../core/tools/planner/types";
 import { planResponseSchema, type PlanRequest, type PlanResponse } from "../../lib/tools/craftPlannerContract";
 import { BREACH_RING, FLAT_FAMILIES, FOUR_FLAT_DUSK, FRACTURE_PLUS3_AMULET, FRACTURED_T1RES_RING, OWNER_FLAT_RING, fixturePrices, pricesWithoutCatalysts, target } from "./plannerFixtures";
@@ -47,10 +47,12 @@ const OWNER_BEFORE_DIV = 5834.53;
 const OWNER_WHITTLE_DIV = 3321.38;
 
 /**
- * Now (P1): the third flat is desecrated — an Ancient Collarbone + Sinistral Necromancy reveal with
- * one Echoes reroll, Omen of Light on a miss (the creators' last prefix) — ~22 Lights, ~1,129 div,
- * no step past the limit. The same flats as a pool ("any 3 of the 4 attack flats") or on a bought
- * base carrying one of them fractured are cheaper again. Four top flats on a Dusk Ring still have a
+ * P1 desecrated the third flat (~22 Lights) but still whittled the second (1,128.54 div). Since PR-A
+ * the planner fractures a landed flat itself (magic loop, Regal, blocker, 1-in-3 — Alohaa's route,
+ * KB §2), Chaos-loops the next one and desecrates the last: ~295 div, nothing whittled, no step past
+ * the limit. The same flats as a pool ("any 3 of the 4 attack flats") are cheaper again; a bought
+ * base carrying one of them fractured now only saves the self-fracture's work (its 65 div ask is
+ * more than that). Four top flats on a Dusk Ring (no magic route on an allowance base) still have a
  * whittle step past the limit, with realistic cheaper target sets.
  */
 function testOwnerCase(cat: CraftCatalog): void {
@@ -58,9 +60,10 @@ function testOwnerCase(cat: CraftCatalog): void {
   const p = planWith(cat, OWNER_FLAT_RING, prices);
   const route = p.steps.map((s) => s.method);
   assert.ok(!route.includes("slam-prefix-exalt-greater"), `the 13,201-slam chain is gone: ${route.join(", ")}`);
+  assert.ok(route.includes("fracture") && !route.includes("whittle-loop"), `a landed flat is self-fractured, nothing whittled: ${route.join(", ")}`);
   const desecrate = p.steps.find((s) => s.method.startsWith("desecrate-"));
   assert.ok(desecrate && desecrate.instructions[0]!.pick.some((x) => /Physical|Lightning|Cold/.test(x)), `a flat prefix is desecrated: ${route.join(", ")}`);
-  assert.ok(near(p.totals.div!.point, 1128.54, 0.05), `≈ 1,129 div, got ${p.totals.div!.point}`);
+  assert.ok(p.totals.div!.point < 700, `under 700 div (P1 whittled to 1,128.54), got ${p.totals.div!.point}`);
   assert.ok(p.totals.div!.point * 2.9 < OWNER_WHITTLE_DIV && p.totals.div!.point * 5 < OWNER_BEFORE_DIV, "well under the whittle-only and the slam plans");
   assert.deepEqual(p.steps.filter((s) => s.impractical).map((s) => s.method), [], "no step is past the limit any more");
   const lights = desecrate.materials.find((m) => m.id === mat("omenLight").id)!.qty.point;
@@ -68,7 +71,7 @@ function testOwnerCase(cat: CraftCatalog): void {
   const pool = planWith(cat, { ...OWNER_FLAT_RING, targets: OWNER_FLAT_RING.targets.slice(3), groups: [{ side: "prefix", need: 3, candidates: FLAT_FAMILIES.map(([family, id]) => ({ family, minModId: `${id}9` })) }] }, prices);
   assert.ok(pool.totals.div!.point < p.totals.div!.point * 0.6, `any 3 of the 4 flats: ${pool.totals.div!.point} div`);
   const bought = planWith(cat, { ...OWNER_FLAT_RING, start: { kind: "bought", carried: null, askDiv: 65 } }, prices);
-  assert.ok(bought.totalsWithBase!.div!.point < p.totals.div!.point * 0.35, `bought fractured flat at 65 div: ${bought.totalsWithBase!.div!.point} div with the base`);
+  assert.ok(bought.totals.div!.point < p.totals.div!.point, `the bought fractured flat skips the self-fracture: ${bought.totals.div!.point} div of work after it`);
   const dusk = planWith(cat, FOUR_FLAT_DUSK, prices);
   const flagged = dusk.steps.filter((s) => s.impractical);
   assert.ok(flagged.length === 1 && flagged[0]!.method === "whittle-loop" && flagged[0]!.impractical!.materialId === mat("chaos").id, "four top flats: one whittle step past the limit");
@@ -154,15 +157,28 @@ function testMarketReality(cat: CraftCatalog): void {
     quality: null,
     targets: [target("ColdDamage", "prefix", `AddedColdDamage${tier}`), target("LightningDamage", "prefix", `AddedLightningDamage${tier}`), target("PhysicalDamage", "prefix", `AddedPhysicalDamage${tier}`), allRes],
   });
-  const reaver = (p: PlanResponse) => p.steps.find((s) => s.method === "slam-prefix-exalt-perfect-catalysing")?.materials.some((m) => m.id === "reaver-catalyst") ?? false;
   const t8 = planWith(cat, ring(8), fixturePrices());
-  assert.ok(reaver(t8), `the prefix slams aim with the Reaver Catalyst: ${t8.steps.map((s) => s.method).join(", ")}`);
+  const t8Route = t8.steps.map((s) => s.method);
+  // PR-A: one flat is self-fractured, so at most one is left to slam and no step plans the Reaver
+  // aim any more — the aim itself is checked on the two-flats-missing slam below
+  assert.ok(t8Route.includes("fracture") && !t8Route.includes("whittle-loop"), `a flat is self-fractured, nothing whittled: ${t8Route.join(", ")}`);
   assert.ok(t8.totals.div!.point < 400, `three T8 flats + all-res costs low hundreds, got ${t8.totals.div!.point}`);
+  assertReaverAim(cat, ring(8));
   // P1: the third T9 flat comes from a desecration reveal (the creators' last prefix), not a 1-in-250 slam
   const t9 = planWith(cat, ring(9), fixturePrices());
   const route = t9.steps.map((s) => s.method).join(", ");
   assert.ok(/desecrate-/.test(route) && t9.totals.div!.point < 1000, `three T9 flats: the last one desecrated, under 1,000 div (1,600 with the slam), got ${t9.totals.div!.point}: ${route}`);
   assert.deepEqual(t9.steps.filter((s) => s.impractical).map((s) => s.method), [], "no step past the limit, so no cheaper-target chips");
+}
+
+/** All three attack flats missing on one prefix slam (the pre-PR-A route): one Reaver Catalyst biases them all, so it is the aim. */
+function assertReaverAim(cat: CraftCatalog, req: PlanRequest): void {
+  const { ctx } = buildCtx(req, { cat, prices: fixturePrices(), exaltPerDivine: null, league: "Test", now: NOW });
+  const state: PlanState = canonical({ rarity: "Rare", affixes: [junk("suffix", "fractured"), targetAffix("suffix", 3, "explicit"), junk("suffix")], quality: 0, catalyst: null });
+  const scope = slamScope(state, ctx, "prefix");
+  assert.ok(scope && scope.missing0 === 7, "three flats missing on the prefix slam");
+  const chain = buildChain(state, ctx, scope, { tier: EXALT_TIERS[2]!, catalysing: true }, 1);
+  assert.equal(chain.first.catalyst?.mat.id, "reaver-catalyst", "the prefix slams aim with the Reaver Catalyst");
 }
 
 export function runSanityCases(cat: CraftCatalog): void {

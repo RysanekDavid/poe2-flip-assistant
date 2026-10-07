@@ -6,11 +6,11 @@ import { sources, type SourceId } from "./sources";
 import { addOdds, catalysingMultiplier } from "./odds";
 import { buildChain, NoAimError, slamScope, stateAt, type Chain, type SlamScope, type SlamVariant } from "./slamChain";
 import { aimable, isJunk, openOf, present, removable, SIDES, targetAffix, withAffixes, withLanded, without } from "./state";
-import type { MaterialUse, Method, Move, PlanCtx, PlanState, StepText } from "./types";
+import type { MaterialUse, Method, Move, PlanAffix, PlanCtx, PlanState, StepText } from "./types";
 import { whittleLoop } from "./methodsWhittle";
 
 /**
- * Random adds: the anchored Chaos loop (one removable mod → every Chaos swaps exactly it) and the
+ * Random adds: the Chaos loop (every removable mod a throwaway → every Chaos swaps one) and the
  * side slam-fill (Exalt until the side's targets land; a steered Annulment fixes a miss — solved as
  * an absorbing chain in slamChain.ts because that Annulment can also take a good mod).
  */
@@ -20,12 +20,30 @@ function junkBlocking(state: PlanState, sides: readonly AffixSide[]): number {
   return state.affixes.filter((a) => isJunk(a) && a.kind !== "desecrated" && (a.side === "any" ? sides.length === 2 : sides.includes(a.side))).length;
 }
 
-function chaosLoop(state: PlanState, ctx: PlanCtx): Move[] {
+/**
+ * The loose mods a Chaos loop may roll over: every removable mod is junk. Two or more must be plain
+ * throwaways on one side (or all of unknown side) so the item after any removal is the same
+ * abstract item — mixed sides would change which side the new mod can land on.
+ */
+function chaosLoose(state: PlanState): PlanAffix[] | null {
   const loose = removable(state);
-  if (state.rarity !== "Rare" || loose.length !== 1 || !isJunk(loose[0]!)) return [];
+  if (state.rarity !== "Rare" || loose.length === 0 || !loose.every(isJunk)) return null;
+  if (loose.length === 1) return loose;
+  const plain = loose.every((a) => a.kind === "explicit" && a.special == null && !a.unrevealed);
+  return plain && new Set(loose.map((a) => a.side)).size === 1 ? loose : null;
+}
+
+function chaosLoop(state: PlanState, ctx: PlanCtx): Move[] {
+  const loose = chaosLoose(state);
+  if (!loose) return [];
+  // each Chaos removes one throwaway: the rest stay and block a family each (junkBlocking counts them)
   const after = withAffixes(state, without(state, loose[0]!));
   const fractured = state.affixes.some((a) => a.kind === "fractured");
   const immune = fractured ? "; the fractured mod is immune" : "";
+  const why =
+    loose.length === 1
+      ? `A Chaos Orb removes one random mod and adds one. The loose mod is the only removable one${immune} — each Chaos swaps exactly it and rolls a fresh mod.`
+      : `A Chaos Orb removes one random mod and adds one. Every loose mod is a throwaway${immune} — each Chaos swaps one and rolls a fresh mod.`;
   const out: Move[] = [];
   for (const t of ctx.targets) {
     if (t.source !== "natural" || !aimable(ctx, state, t) || openOf(ctx, after, t.side) < 1) continue;
@@ -40,7 +58,7 @@ function chaosLoop(state: PlanState, ctx: PlanCtx): Move[] {
       steps: [
         step({
           do: `Chaos Orb until ${targetText(t.text)}.`,
-          why: `A Chaos Orb removes one random mod and adds one. The loose mod is the only removable one${immune} — each Chaos swaps exactly it and rolls a fresh mod.`,
+          why,
           sources: sources("kb-currency", ...(fractured ? (["kb-fracture"] as SourceId[]) : [])),
           mats: [mat("chaos")],
           check: `${targetText(t.text)} (or a better tier) is on the item.`,
