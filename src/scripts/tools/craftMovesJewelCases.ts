@@ -97,7 +97,7 @@ function testDesecratedHeaders(cat: CraftCatalog): void {
   assert.deepEqual([unrevealed.slots.desecrated, unrevealed.slots.unrevealed, unrevealed.prefixes], [1, 1, 2], "advanced unrevealed desecrated prefix");
   assert.ok(moveIds(unrevealed).includes("omen-abyssal-echoes"));
   const light = legalMoves(unrevealed).find((m) => m.id === "omen-light");
-  assert.ok(light && !light.verified, "Omen of Light frees the desecrated slot (not in the verified KB)");
+  assert.ok(light?.verified, "Omen of Light frees the desecrated slot (its item text, KB §4)");
   assert.match(evaluateRules(unrevealed).blocked.find((b) => b.id === "bone-preserved")?.reason ?? "", /Omen of Light/);
   const combo = comboFor(cat, RING.itemClass, RING.base)!;
   const modId = Object.values(combo.desecrated).flatMap((t) => Object.keys(t)).find((m) => cat.mods[m]!.side === "suffix" && !cat.mods[m]!.text.includes("\n"))!;

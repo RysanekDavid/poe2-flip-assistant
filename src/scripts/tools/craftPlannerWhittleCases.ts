@@ -1,15 +1,20 @@
 /* Craft planner whittle loop: the absorbing chain checked by hand on tiny synthetic mod pools (a tie
  * with a kept mod, no tie, a kept mod that is the unique lowest level), the guard that never plans a
- * Whittle that could take a mod the loop can't win back, and an older server's response (no
+ * Whittle that could take a mod the loop can't win back, the creators' suffix engine behind a
+ * level-75 desecrated prefix, the Whittling sanity limit, and an older server's response (no
  * impractical / alternatives fields) still parsing on the client. Imported by testCraftPlanner.ts. */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { CatalogCombo, CraftCatalog } from "../../core/tools/craftmoves/catalog";
 import { mat } from "../../core/tools/planner/methodKit";
 import { whittleLoop } from "../../core/tools/planner/methodsWhittle";
 import { buildCtx, planCraft } from "../../core/tools/planner/plan";
+import { IMPRACTICAL_BY_MATERIAL, impracticalOf } from "../../core/tools/planner/sanity";
 import { canonical, junk, targetAffix } from "../../core/tools/planner/state";
 import type { Move, PlanCtx, PlanState } from "../../core/tools/planner/types";
-import { planResponseSchema, type PlanRequest } from "../../lib/tools/craftPlannerContract";
+import { whittleScope } from "../../core/tools/planner/whittleChain";
+import { planResponseSchema, type PlanMaterialView, type PlanRequest } from "../../lib/tools/craftPlannerContract";
 import { BREACH_RING, OWNER_FLAT_RING, fixturePrices, target } from "./plannerFixtures";
 import { NOW } from "./testCraftPlannerGolden";
 
@@ -89,6 +94,69 @@ function testFixedModGuard(cat: CraftCatalog): void {
   assert.ok(whittleLoop(fractured, ctx).length > 0, "a fractured write is immune, the loop runs");
 }
 
+/**
+ * The creators' suffix engine (Keyson, KB §4): fractured + kept + desecrated flats at level 75 fill
+ * the prefixes, one suffix throwaway. The desecrated flat is a mod the loop can't win back (fixed);
+ * a throwaway at 75 or above goes by Dextral Erasure instead, so no Whittle ever takes a prefix.
+ * Forbidden Rites prices (2026-10-07): Whittling 13.2 div, Dextral Erasure 19.3 — at the fixture's
+ * cheap Erasure the planner clears the lone suffix throwaway with Erasure alone (no Whittle at all).
+ */
+function testSuffixEngine(cat: CraftCatalog): void {
+  const req: PlanRequest = {
+    itemClass: "Rings",
+    base: "Ruby Ring",
+    ilvl: 82,
+    targets: [target("ColdDamage", "prefix", "AddedColdDamage9", true), target("FireDamage", "prefix", "AddedFireDamage9"), target("LightningDamage", "prefix", "AddedLightningDamage9"), target("ItemFoundRarityIncrease", "suffix", "ItemFoundRarityIncrease3")],
+    includeUnverified: false,
+    quality: null,
+  };
+  const prices = fixturePrices();
+  prices.set(mat("omenWhittling").id, 13.2);
+  prices.set(mat("omenDextralErasure").id, 19.3);
+  const ctx = buildCtx(req, { cat, prices, exaltPerDivine: null, league: "Test", now: NOW }).ctx;
+  const state = rare([targetAffix("prefix", 0, "fractured"), targetAffix("prefix", 1, "explicit"), targetAffix("prefix", 2, "desecrated"), junk("suffix")]);
+  const scope = whittleScope(state, ctx, ctx.targets[3]!);
+  assert.ok(scope, "the suffix engine is in scope");
+  assert.deepEqual(scope.fixed, [{ level: 75, side: "prefix" }], "the desecrated flat is the one mod the loop can't win back");
+  assert.deepEqual(scope.chain.map((c) => c.family), ["FireDamage", "ItemFoundRarityIncrease"], "the kept explicit flat and the wanted suffix");
+  const moves = whittleLoop(state, ctx);
+  assert.equal(moves.length, 1, `one loop, for the suffix: ${moves.map((m) => m.title).join(" | ")}`);
+  assert.equal(moves[0]!.undoRisk, false, "no Whittle can take a level-75 prefix");
+}
+
+const lineOf = (key: "omenWhittling" | "chaos", qty: number): PlanMaterialView => {
+  const material = mat(key);
+  return { id: material.id, label: material.label, group: material.group, qty: { point: qty, low: qty, high: qty }, unitDiv: null, totalDiv: null };
+};
+
+/** Creators spend 1–26 Whittles per ring (KB §4): past 50 the step is flagged, with Whittling named, though its Chaos count is ordinary. */
+function testWhittleLimit(cat: CraftCatalog): void {
+  const ctx = tinyCtx(cat, "AddedPhysicalDamage9", { PhysicalDamage: { AddedPhysicalDamage9: 75 }, ColdDamage: { AddedColdDamage9: 75 }, FireDamage: { AddedFireDamage1: 1 } });
+  const m = onlyMove(KEPT_A, ctx);
+  assert.equal(IMPRACTICAL_BY_MATERIAL[mat("omenWhittling").id], 50);
+  const at = (n: number) => impracticalOf(m, [lineOf("omenWhittling", n), lineOf("chaos", n)]);
+  assert.equal(at(50), null, "50 Whittles is the limit, not past it");
+  const flagged = at(51);
+  assert.ok(flagged, "51 Whittles is past the limit");
+  assert.equal(flagged.materialId, mat("omenWhittling").id, "the Whittles are named, not the 51 Chaos");
+  assert.equal(flagged.clicks.point, 51);
+  assert.equal(impracticalOf(m, [lineOf("chaos", 51)]), null, "51 Chaos alone is ordinary");
+  assert.equal(impracticalOf(m, [lineOf("chaos", 1001)])?.materialId, mat("chaos").id, "the global limit still applies to everything else");
+}
+
+/** Verbatim KB §4 fragments (whitespace-normalised) behind the Whittling limit. */
+export const KB4_WHITTLE_FACTS: ReadonlyArray<{ rule: string; text: string }> = [
+  { rule: "whittle limit", text: "creators use 1–26 per ring as a suffix engine after a level-75 desecrated prefix (Keyson TWgmQuiLeHA 7:17, 9:47–12:53); works with Greater Chaos (Alohaa 4:23)" },
+  { rule: "whittle removal", text: "\"your next Chaos Orb will remove the lowest level modifier\"" },
+];
+
+function testKb4Whittle(): void {
+  const kb = readFileSync(join(process.cwd(), "docs", "research", "poe2-crafting-knowledge.md"), "utf8");
+  const start = kb.indexOf("## 4.");
+  const section4 = kb.slice(start, kb.indexOf("## 5.", start)).replace(/\s+/g, " ");
+  for (const f of KB4_WHITTLE_FACTS) assert.ok(section4.includes(f.text), `KB §4 no longer states (${f.rule}): ${f.text}`);
+}
+
 /** A client that loads the page before a deploy finishes may get a response without the new fields. */
 function testOlderServerResponse(cat: CraftCatalog): void {
   const fresh = planCraft(OWNER_FLAT_RING, { cat, prices: fixturePrices(), exaltPerDivine: 250, league: "Test", now: NOW });
@@ -106,5 +174,8 @@ export function runWhittleCases(cat: CraftCatalog): void {
   testTieByHand(cat);
   testUniqueLowestModelled(cat);
   testFixedModGuard(cat);
+  testSuffixEngine(cat);
+  testWhittleLimit(cat);
+  testKb4Whittle();
   testOlderServerResponse(cat);
 }
