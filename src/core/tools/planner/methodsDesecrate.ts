@@ -4,7 +4,7 @@ import { FACTION_OMENS, type FactionOmen } from "../craftmoves/ruleTableAbyss";
 import { attemptsOf, failuresOf, scaleBand, useOf } from "./expectation";
 import { makeMove, mat, once, sideOmen, step, targetText, type MoveSpec } from "./methodKit";
 import { rankCost } from "./rank";
-import { revealOdds, type BoneKind, type RevealOdds } from "./reveal";
+import { JEWEL_REVEAL_ASSUMPTION, JEWEL_REVEAL_TEST, revealOdds, type BoneKind, type RevealOdds } from "./reveal";
 import { sources, type SourceId } from "./sources";
 import { exact } from "./odds";
 import { acceptedMods, aimable, hasKind, isMet, junk, landAffix, openOf, present, SIDES, withAffixes, withLanded, without } from "./state";
@@ -27,6 +27,9 @@ const ANCIENT_BONE: Readonly<Record<string, MaterialKey>> = { Rings: "ancientCol
 const TIME_LOST_DESECRATION = "Desecrating a Time-Lost jewel: no source names Time-Lost jewels.";
 const ORDINARY_AT_WELL =
   "Ordinary mods at the Well: poe2db says reveals \"may include base modifiers\" and creators reveal them on screen; how the Well picks its three options (one always a faction mod at item level 65+) is not documented.";
+// jewels have no faction mods, so the jewellery parenthetical above would mislead there
+const ORDINARY_AT_JEWEL_WELL = "Ordinary mods at the Well: poe2db says reveals \"may include base modifiers\" and creators reveal them on screen; how the Well picks its three options is not documented.";
+const JEWEL_REVEAL = `Jewel reveals: the planner ${JEWEL_REVEAL_ASSUMPTION}. ${JEWEL_REVEAL_TEST}`;
 
 interface Desecration {
   bone: CraftMaterial;
@@ -163,7 +166,8 @@ function desecrateSpec(state: PlanState, ctx: PlanCtx, t: ResolvedTarget, d: Des
   const facts = [
     ...(ctx.base.itemClass === "Belts" && v.factionOmen ? [beltFact(v.factionOmen)] : []),
     ...(d.coreUnknown ? [TIME_LOST_DESECRATION] : []),
-    ...(ordinary ? [ORDINARY_AT_WELL] : []),
+    ...(ordinary ? [ctx.base.jewel ? ORDINARY_AT_JEWEL_WELL : ORDINARY_AT_WELL] : []),
+    ...(ctx.base.jewel ? [JEWEL_REVEAL] : []),
   ];
   return {
     methodId: methodIdOf(t, v),

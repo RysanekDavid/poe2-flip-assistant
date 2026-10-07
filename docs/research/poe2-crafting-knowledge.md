@@ -308,6 +308,17 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   Ulaman lightning and chaos resistance suffix (TheSaneExile [Zop328DR50Q](https://www.youtube.com/watch?v=Zop328DR50Q)
   0:51–1:12, reveal 2:35–2:59) — "it's going to include a Ulaman modifier", "usually is guaranteed on a first try"
   [creator-demonstrated, n=1 each]. Blackblooded on a belt: no source seen [unverified, inferred from the shared text].
+- **Jewel reveals**: jewels have no faction mods — a Cranium's desecrated-only options are the jewel exclusives, all
+  modifier level 1 and single-tier [verified-primary — poe2db "Jewels Desecrated Mods /32"; game data in our craft catalog].
+  Regular jewels: 29 prefixes + 3 suffixes ("(1–2)% increased Strength / Dexterity / Intelligence"). Time-Lost jewels have
+  their own 12 radius exclusives (`AbyssModRadiusJewel*`, e.g. "1% increased maximum Mana"; 6 prefixes + 6 suffixes in the
+  game data) — contradicting poe2db's note that the exclusives are regular-jewel only. Whether a jewel reveal always
+  includes one jewel-exclusive option is unconfirmed: the poe2wiki "at least one" claim is framed at item level 65, the
+  faction mods' level, and Hax's 8 Preserved Crania for the Time-Lost "1% increased maximum Mana" prefix
+  ([qATcKacI83o](https://www.youtube.com/watch?v=qATcKacI83o) 2:40–3:51) fit three open draws better [creator-measured,
+  n=1]. The planner treats all three jewel options as open draws from the whole jewel pool [unverified]. Owner test:
+  10 reveal screens on a cheap regular jewel with Dextral Necromancy + Preserved Cranium — if every screen has a
+  (1–2)% Str/Dex/Int option, one is guaranteed.
 - Boss pools: **Amanamu bow Attack Speed = 12–18%** (Ulaman = 8–13%; a transcription mixed
   them up once). Amanamu suffix pool on bows: Attack Speed, Pierce (spirit-reservation
   unattested). (2026-07-13 round, medium.)

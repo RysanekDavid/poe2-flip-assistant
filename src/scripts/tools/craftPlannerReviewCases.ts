@@ -1,7 +1,8 @@
 /* Craft planner review fixes (PR #128): a dropped target shifts the bought base's carried refs, the
- * reveal formula states its faction routes, one slam's odds over singles + pools never exceed 1, the
- * planner's own bought pick never takes the only fracture another target needs, and the base price
- * never steers the search. Imported by testCraftPlanner.ts. */
+ * reveal formula states its faction routes (jewels, with no faction mods, draw all three options
+ * openly), one slam's odds over singles + pools never exceed 1, the planner's own bought pick never
+ * takes the only fracture another target needs, and the base price never steers the search.
+ * Imported by testCraftPlanner.ts. */
 import assert from "node:assert/strict";
 import type { CraftCatalog } from "../../core/tools/craftmoves/catalog";
 import { applyChanges } from "../../core/tools/planner/alternatives";
@@ -64,6 +65,35 @@ function testRevealFactionRoutes(cat: CraftCatalog): void {
   assert.doesNotMatch(ordinary.once.formula, /pf = /, "an ordinary mod has no faction route");
 }
 
+/**
+ * G2: jewels have no faction mods, so even at item level 65+ no option is reserved — all three draw
+ * from the whole jewel pool (ordinary + jewel-exclusive families of the side). p is counted here from
+ * the catalog itself, not from the planner's inputs.
+ */
+function testJewelRevealOpenDraws(cat: CraftCatalog): void {
+  const combo = Object.values(cat.classes.Jewels!).find((c) => c.bases.includes("Sapphire"))!;
+  const ilvl = 82;
+  const exclusive = Object.entries(combo.desecrated).filter(([, tiers]) => cat.mods[Object.keys(tiers)[0]!]?.side === "suffix");
+  const ordinary = Object.values(combo.suffix).filter((tiers) => Object.values(tiers).some((l) => l <= ilvl));
+  assert.ok(exclusive.length > 0, "a regular jewel has jewel-exclusive suffixes");
+  const [family, tiers] = exclusive[0]!;
+  assert.equal(Object.keys(tiers).length, 1, "jewel exclusives are single-tier");
+  const req: PlanRequest = { itemClass: "Jewels", base: "Sapphire", ilvl, targets: [target(family, "suffix", Object.keys(tiers)[0]!)], includeUnverified: false, quality: null };
+  const ctx = ctxOf(cat, req);
+  const t = ctx.targets[0]!;
+  assert.equal(t.source, "desecrated");
+  assert.equal(t.faction, null, "jewels have no faction mods");
+  const state: PlanState = canonical({ rarity: "Rare", affixes: [junk("prefix"), junk("prefix")], quality: 0, catalyst: null });
+  const odds = revealOdds(ctx, state, t, { factionOmen: false, bone: "preserved" })!;
+  const p = 1 / (ordinary.length + exclusive.length);
+  assert.equal(odds.once.inputs["families the Well can offer"], ordinary.length + exclusive.length, "ordinary + exclusive suffix families");
+  assert.ok(Math.abs(odds.first - (1 - (1 - p) ** 3)) < 1e-9, `three open draws, no faction slot: ${odds.first} vs ${1 - (1 - p) ** 3}`);
+  assert.doesNotMatch(odds.once.formula, /pf = |at least one option is a faction mod/, "no faction route on a jewel");
+  assert.match(odds.once.formula, /whether one is always a jewel-exclusive mod is unconfirmed/);
+  assert.ok(odds.once.high! >= 1 - (1 - 2 * p) ** 2 * (1 - 2 / exclusive.length) - 1e-9, "the band covers a reserved exclusive option");
+  assert.ok(odds.once.low! <= 1 - (1 - p / 2) ** 2 + 1e-9, "…and an ordinary mod losing a draw to it");
+}
+
 /** Finding 4: one add aiming several singles and pool slots spends at most the whole roll; every slam node's edges sum to 1. */
 function testSlamMassAtMostOne(cat: CraftCatalog): void {
   const req: PlanRequest = {
@@ -119,6 +149,7 @@ function testAskNeverSteers(cat: CraftCatalog): void {
 export function runReviewCases(cat: CraftCatalog): void {
   testDropRemapsCarried();
   testRevealFactionRoutes(cat);
+  testJewelRevealOpenDraws(cat);
   testSlamMassAtMostOne(cat);
   testAutoPickKeepsFracture(cat);
   testAskNeverSteers(cat);
