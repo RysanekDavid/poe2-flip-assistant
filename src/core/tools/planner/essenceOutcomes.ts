@@ -1,4 +1,3 @@
-import type { CraftCatalog } from "../craftmoves/catalog";
 import type { EssenceWrite } from "./types";
 
 /**
@@ -35,11 +34,15 @@ export interface EssenceOutcomeRow {
 
 const DB = "https://poe2db.tw/us/";
 
-function rows(essenceId: string, label: string, tier: EssenceWrite["tier"], page: string, perClass: Array<[EssenceOutcomeRow["itemClass"], string, string]>): EssenceOutcomeRow[] {
+/** [item class, catalog mod id, poe2db text] — one class row of a curated writer. */
+export type ClassRow = [EssenceOutcomeRow["itemClass"], string, string];
+
+/** A writer's per-class rows, citing its poe2db page (shared with alloyOutcomes.ts). */
+export function rows(essenceId: string, label: string, tier: EssenceWrite["tier"], page: string, perClass: ClassRow[]): EssenceOutcomeRow[] {
   return perClass.map(([itemClass, modId, poe2dbText]) => ({ essenceId, label, itemClass, modId, poe2dbText, tier, source: `${DB}${page}` }));
 }
 
-const RES = (modId: string, text: string): Array<[EssenceOutcomeRow["itemClass"], string, string]> => [
+const RES = (modId: string, text: string): ClassRow[] => [
   ["Rings", modId, text],
   ["Amulets", modId, text],
   ["Belts", modId, text],
@@ -84,18 +87,4 @@ export const BREACH_ESSENCE_ID = "essence-of-the-breach";
 /** Every essence row for a class (the Breach quality row excluded). */
 export function essencesFor(itemClass: string): EssenceOutcomeRow[] {
   return ESSENCE_OUTCOMES.filter((r) => r.itemClass === itemClass && r.essenceId !== BREACH_ESSENCE_ID);
-}
-
-/**
- * Essence writes that satisfy a target: same family, mod level at or above the minimum tier's.
- * A crafted-only target (Perfect Essence of the Mind) matches its own mod id.
- */
-export function essenceWritesFor(cat: CraftCatalog, itemClass: string, family: string, minLevel: number, minModId: string): EssenceWrite[] {
-  return essencesFor(itemClass)
-    .filter((r) => {
-      const mod = cat.mods[r.modId];
-      if (!mod) throw new Error(`essenceOutcomes: ${r.essenceId} → ${r.modId} is not in the craft catalog — rebuild or fix the row`);
-      return r.modId === minModId || (mod.family === family && mod.level >= minLevel && !mod.craftedOnly);
-    })
-    .map((r) => ({ essenceId: r.essenceId, label: r.label, modId: r.modId, tier: r.tier, source: r.source }));
 }

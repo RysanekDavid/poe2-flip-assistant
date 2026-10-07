@@ -105,7 +105,7 @@ function sourceBadge(pick: SlotPick, pool: PlannerPool) {
   const fam = findFamily(pool, pick);
   if (pick.source === "desecrated") return <ArtBadge src={pool.bone.icon} label={`desecrated pool${fam?.faction ? ` · ${fam.faction}` : ""} — ${pool.bone.label}`} />;
   const ess = fam?.essences[0];
-  if (pick.source === "essence" && ess) return <ArtBadge src={ess.icon} label={`essence-only: ${ess.label}`} />;
+  if (pick.source === "essence" && ess) return <ArtBadge src={ess.icon} label={`crafted-only: ${ess.label}`} />;
   return null;
 }
 

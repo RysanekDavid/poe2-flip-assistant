@@ -37,6 +37,7 @@ export const METHOD_TAGS: Readonly<Record<MacroMethodId, readonly GoldenTag[]>> 
   "catalyse-finish": ["catalyse"],
   "essence-greater": ["essence"],
   "essence-perfect": ["essence"],
+  alloy: ["alloy"],
   desecrate: ["desecrate"],
   "strip-desecrated": ["omen-light", "annul"],
   blocker: ["desecrate"],
@@ -49,7 +50,7 @@ export const METHOD_TAGS: Readonly<Record<MacroMethodId, readonly GoldenTag[]>> 
 
 /**
  * Step method ids are variants of a macro (methodsFill.ts `slam-${side}-${rule}`, methodsWrite.ts
- * `essence-perfect:${id}:${steer}`, …). Each pattern is anchored; exactly one must match.
+ * `essence-perfect:${id}:${steer}`, `alloy:${id}:${steer}`, …). Each pattern is anchored; exactly one must match.
  */
 export const STEP_PATTERNS: ReadonlyArray<readonly [RegExp, MacroMethodId]> = [
   [/^magic-loop-aug(?:-greater|-perfect)?$/, "magic-loop"],
@@ -69,6 +70,7 @@ export const STEP_PATTERNS: ReadonlyArray<readonly [RegExp, MacroMethodId]> = [
   [/^catalyse-finish$/, "catalyse-finish"],
   [/^essence-greater:[a-z0-9-]+$/, "essence-greater"],
   [/^essence-perfect:[a-z0-9-]+(?::(?:prefix|suffix))?$/, "essence-perfect"],
+  [/^alloy:[a-z0-9-]+(?::(?:prefix|suffix))?$/, "alloy"],
   [/^desecrate(?:-liege|-(?:preserved|ancient)(?:-echoes)?)?$/, "desecrate"],
   [/^strip-desecrated$/, "strip-desecrated"],
   [/^blocker-(?:prefix|suffix)$/, "blocker"],
@@ -101,6 +103,9 @@ export const MATERIAL_TAGS: Readonly<Record<string, GoldenTag>> = {
   "celestial-alloy": "alloy",
   "swift-alloy": "alloy",
   "mystic-alloy": "alloy",
+  "runic-alloy": "alloy",
+  "protective-alloy": "alloy",
+  "sovereign-alloy": "alloy",
 };
 
 /** Whole material groups that name a tag (planMaterialSchema group). */

@@ -359,7 +359,8 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   2026-10-01 in the fact-check; entity catalog: "Place into an empty Augment Socket in any
   Equipment"]. It is replaceable by another augment; whether the second crafted mod survives that
   swap is untested. Without it, Greater then Perfect essence stacking is dead; Essences/Perfect Essences/Imbued Alloys all write the same slot
-  (Perfect/Alloy remove-then-replace). Removable via Annulment/Chaos (list non-exhaustive).
+  (Perfect/Alloy remove a random mod, then write theirs). A second crafted mod is refused, never swapped
+  in for the first (below). Removable via Annulment/Chaos (list non-exhaustive).
 - **Targets:** Lesser, regular and Greater essences upgrade a MAGIC item to rare, adding their
   guaranteed mod; no essence applies to a normal item. Item text on every one of them: "Upgrades a
   Magic item to a Rare item, adding a guaranteed modifier" / "Right click this item then left
@@ -386,6 +387,23 @@ the complete RePoE modifier and base-mapping exports rather than a selected PoE2
   [community, n=1 — [forum 3853903](https://www.pathofexile.com/forum/view-thread/3853903)]. Sinistral/Dextral Crystallisation overrides it: "your
   next Perfect or Corrupted Essence will remove only Prefix [Suffix] modifiers" [verified-primary — entity catalog 0.5.5b]; ASaVeQ: Dextral
   Crystallisation + Essence of the Breach (prefix) removes a suffix [creator-demonstrated — S27 11:40–11:49].
+- **Alloys write the crafted slot too.** Item text: every alloy reads "Removes a random modifier and
+  augments a Rare item with a new guaranteed modifier" / "Right click this item then left click a Rare
+  item to apply it." [verified-primary — entity catalog (game data 0.5.5b), all 13 alloys; 0.5.0 notes
+  "Added 13 new Alloy currency items", [forum 3932540](https://www.pathofexile.com/forum/view-thread/3932540)].
+  The guaranteed mod depends on the item class (per-class list: docs/kb/currency-core.md §4); its mod is
+  crafted-only and is the item's ONE crafted mod (RePoE `Alloy*` mods, spawn weight 0 — no natural roll
+  gives them). So **an alloy on an item that already has a crafted mod is refused: "This item already has
+  a crafted mod"** — and so is a Perfect essence. The refusal is player-observed for a liquid
+  [community — [forum 3967316](https://www.pathofexile.com/forum/view-thread/3967316)] and Essence of the
+  Abyss [community — [forum 3960848](https://www.pathofexile.com/forum/view-thread/3960848)], no GGG
+  staff reply in either; for alloys and Perfect essences it is inferred from the shared slot (0.5.0 notes,
+  forum 3932540), not observed [inferred, medium confidence]. Strip the old crafted mod first. On
+  a ring that also wants over-cap quality, a Breach-quality route runs **Essence of the Breach first**:
+  write "+20% to Maximum Quality", catalyse, strip that mod, then apply the alloy [creator-demonstrated —
+  ASaVeQ's Dusk Ring, S27: Dextral Crystallisation + Essence of the Breach 11:40–11:49, Dextral
+  Crystallisation + Swift Alloy 17:12–17:21]. Crystallisation steering an alloy is creator/player-shown
+  only (§4, unverified).
 - Essence of **Insulation = FIRE resistance** (not generic/cold). Check each essence's actual
   mod before buying.
 - Greater Essence of Seeking: guaranteed crit, magnitude scales by base (martial weapon

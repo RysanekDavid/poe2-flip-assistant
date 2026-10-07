@@ -5,6 +5,7 @@ import type { PlanRequest, PlanResponse, PlannerCatalog, PlannerPool } from "../
 import { resolveRates } from "../../rates";
 import { comboFor, loadCraftCatalog, type CraftCatalog } from "../craftmoves/catalog";
 import { CATALYSTS } from "./catalystTags";
+import { alloysFor } from "./alloyOutcomes";
 import { essencesFor } from "./essenceOutcomes";
 import { BONE } from "./methodsDesecrate";
 import { loadCraftMining } from "../../research/craftMining/load";
@@ -60,7 +61,7 @@ const tiersOf = (cat: CraftCatalog, tiers: Record<string, number>) =>
     .sort((a, b) => a[1] - b[1])
     .map(([modId, level]) => ({ modId, level, text: cat.mods[modId]?.text ?? modId }));
 
-/** What a base can carry: natural families per side, desecrated families, essence-only mods. */
+/** What a base can carry: natural families per side, desecrated families, essence- and alloy-only mods. */
 export function plannerPool(itemClass: PlanRequest["itemClass"], baseName: string, cat: CraftCatalog = loadCraftCatalog()): PlannerPool {
   const { combo } = resolveBase(cat, itemClass, baseName, 100);
   const essences = essencesFor(itemClass);
@@ -78,7 +79,7 @@ export function plannerPool(itemClass: PlanRequest["itemClass"], baseName: strin
     const first = cat.mods[Object.keys(tiers)[0]!]!;
     return { family, side: first.side, source: "desecrated" as const, faction: factionOf(first.tags), tiers: tiersOf(cat, tiers), essences: [] };
   });
-  const crafted = essences
+  const crafted = [...essences, ...alloysFor(itemClass)]
     .filter((e) => cat.mods[e.modId]?.craftedOnly)
     .map((e) => {
       const mod = cat.mods[e.modId]!;

@@ -112,6 +112,8 @@ ok("tag table: step variants map to their macro, an unknown step method throws",
     ["desecrate-ancient-echoes", "desecrate"],
     ["desecrate-liege", "desecrate"],
     ["essence-perfect:perfect-essence-of-the-mind:suffix", "essence-perfect"],
+    ["alloy:swift-alloy:suffix", "alloy"],
+    ["alloy:sovereign-alloy", "alloy"],
     ["essence-greater:greater-essence-of-opulence", "essence-greater"],
     ["breach-quality:prefix", "breach-quality"],
     ["strip-prefix", "strip-side"],
@@ -122,6 +124,7 @@ ok("tag table: step variants map to their macro, an unknown step method throws",
   ];
   for (const [step, macro] of cases) assert.equal(macroOf(step), macro, step);
   assert.throws(() => macroOf("brand-new-method"), /matches 0 tag patterns/);
+  assert.deepEqual(stepTags({ method: "alloy:swift-alloy:suffix", materials: [] }), ["alloy"], "an alloy step is tagged alloy");
 });
 
 ok("tag derivation: materials name the Exalt tier and omens; unused materials don't count", () => {

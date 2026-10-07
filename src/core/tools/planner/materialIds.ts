@@ -1,11 +1,11 @@
 import { ALL_MATERIALS } from "../../craftMaterials";
 import { CATALYSTS } from "./catalystTags";
-import { ESSENCE_OUTCOMES } from "./essenceOutcomes";
+import { CRAFTED_WRITE_OUTCOMES } from "./craftedWrites";
 
 /**
  * Every material any planner method can use. Kept free of DB imports (unlike load.ts) so the
  * research schemas and offline scripts can validate material ids against it.
  */
 export const PLANNER_MATERIAL_IDS: readonly string[] = [
-  ...new Set([...ALL_MATERIALS.map((m) => m.id), ...CATALYSTS.map((c) => c.mat.id), ...ESSENCE_OUTCOMES.map((r) => r.essenceId)]),
+  ...new Set([...ALL_MATERIALS.map((m) => m.id), ...CATALYSTS.map((c) => c.mat.id), ...CRAFTED_WRITE_OUTCOMES.map((r) => r.essenceId)]),
 ];

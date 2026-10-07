@@ -17,7 +17,7 @@ import { TierLadder } from "./TierLadder";
 
 const GROUPS: ReadonlyArray<{ source: PoolFamily["source"]; title: string; hint: string }> = [
   { source: "natural", title: "Rolls naturally", hint: "currency can roll these" },
-  { source: "essence", title: "Essence only", hint: "only an essence writes these — they take the one crafted slot" },
+  { source: "essence", title: "Essence or alloy only", hint: "only an essence or an alloy writes these — they take the one crafted slot" },
   { source: "desecrated", title: "Desecrated pool", hint: "a bone + reveal at the Well of Souls — one desecrated mod per item" },
 ];
 

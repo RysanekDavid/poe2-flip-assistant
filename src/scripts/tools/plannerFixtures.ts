@@ -3,6 +3,7 @@
  * curated recipes' targets. */
 import { MATS, type MaterialKey } from "../../core/craftMaterials";
 import { CATALYSTS } from "../../core/tools/planner/catalystTags";
+import { ALLOY_OUTCOMES } from "../../core/tools/planner/alloyOutcomes";
 import { ESSENCE_OUTCOMES } from "../../core/tools/planner/essenceOutcomes";
 import type { PlanRequest } from "../../lib/tools/craftPlannerContract";
 
@@ -57,11 +58,24 @@ const ESSENCE_PRICE: Record<string, number> = {
   "greater-essence-of-opulence": 0.15,
 };
 
+/** Forbidden Rites alloys (poe2scout, 2026-10-07, 1 div = 705.55 ex): Swift 91 ex, Runic 98, Protective 64, Sovereign 167. */
+const ALLOY_PRICE: Record<string, number> = {
+  "swift-alloy": 0.13,
+  "runic-alloy": 0.14,
+  "protective-alloy": 0.09,
+  "sovereign-alloy": 0.24,
+};
+
 export function fixturePrices(): Map<string, number> {
   const out = new Map<string, number>();
   for (const [key, div] of Object.entries(BY_KEY)) out.set(MATS[key as MaterialKey].id, div);
   for (const c of CATALYSTS) out.set(c.mat.id, 0.02);
   for (const r of ESSENCE_OUTCOMES) out.set(r.essenceId, ESSENCE_PRICE[r.essenceId] ?? 0.05);
+  for (const r of ALLOY_OUTCOMES) {
+    const div = ALLOY_PRICE[r.essenceId];
+    if (div == null) throw new Error(`plannerFixtures: no fixture price for ${r.essenceId}`);
+    out.set(r.essenceId, div);
+  }
   return out;
 }
 

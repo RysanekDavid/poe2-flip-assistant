@@ -134,6 +134,13 @@ export const MATS = {
   // Rings: "(7—9)% increased Attack Speed" (suffix); boots Mystic: "+(10—15) to Spirit" (suffix).
   swiftAlloy: { id: "swift-alloy", label: "Swift Alloy", group: "currency" },
   mysticAlloy: { id: "mystic-alloy", label: "Mystic Alloy", group: "currency" },
+  // Planner alloys (poe2db, 2026-10-07). Runic: ring "+(37—49) to maximum Runic Ward", amulet
+  // "(6—10)% increased maximum Runic Ward", belt "(15—20)% increased Runic Ward Regeneration Rate";
+  // Protective: belt "Recover (32—45) Runic Ward when a Charm is used"; Sovereign: ring/amulet/belt
+  // "(20—30)% increased Explicit Resistance Modifier magnitudes" — all prefixes. Ids = ninja Verisium.
+  runicAlloy: { id: "runic-alloy", label: "Runic Alloy", group: "currency" },
+  protectiveAlloy: { id: "protective-alloy", label: "Protective Alloy", group: "currency" },
+  sovereignAlloy: { id: "sovereign-alloy", label: "Sovereign Alloy", group: "currency" },
   chillingFlux: { id: "chilling-flux", label: "Chilling Flux", group: "currency" },
   etcher: { id: "etcher", label: "Arcanist's Etcher", group: "currency" },
   // "exceeding maximum quality by up to 10% with a chance of Corrupting it … Can only be used on items

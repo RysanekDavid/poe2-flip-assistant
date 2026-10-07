@@ -55,7 +55,7 @@ const ESSENCES: MoveRule[] = [
     label: "Perfect Essence",
     family: "essence",
     materials: [ANY_ESSENCE],
-    requires: "rare item with at least one mod",
+    requires: "rare item with a removable mod and no crafted mod",
     effect: "removes a random mod, then writes the essence's guaranteed mod into the single crafted slot",
     notes: [
       ...ESSENCE_NOTES,
@@ -68,13 +68,46 @@ const ESSENCES: MoveRule[] = [
   },
 ];
 
-/** KB §7: Perfect essences remove-then-replace, so an existing crafted mod is replaced, not a blocker. */
+/*
+ * Perfect essences and alloys both remove a random mod and write the item's one crafted mod (KB §7,
+ * 0.5.0 notes forum 3932540). The game refuses a second crafted mod rather than replacing the first:
+ * players saw "This item already has a crafted mod" for a liquid (forum 3967316) and Essence of the
+ * Abyss (forum 3960848) — for alloys and Perfect essences it is inferred, so the block is unverified.
+ */
+const CRAFTED_SLOT_TAKEN: Verdict = {
+  block: `This item already has a crafted mod — one crafted mod per item; strip it first (${S7}; forums 3967316, 3960848, 3932540)`,
+  unverifiedBecause: "the refusal is player-observed for liquids and essences; for alloys and Perfect essences it is inferred",
+};
+
 function perfectEssenceCheck(s: ItemState): Verdict {
   if (!isRare(s)) return null;
-  const notes = s.slots.crafted > 0 ? [`replaces the existing crafted mod — one crafted slot per item (${S7})`] : [];
-  const unverifiedBecause = s.jewel ? JEWEL_ESSENCE : undefined;
-  return all([needRemovable(s, 1)], { pass: true, notes, unverifiedBecause });
+  if (s.slots.crafted > 0) return CRAFTED_SLOT_TAKEN;
+  return all([needRemovable(s, 1)], { pass: true, unverifiedBecause: s.jewel ? JEWEL_ESSENCE : undefined });
 }
+
+/* Verisium alloys (KB §7, currency-core §4): same item text as a Perfect essence; no alloy lists a jewel (poe2db). */
+const ANY_ALLOY: UnlistedMaterial = { key: "alloy-of-choice", label: "Alloy of your choice" };
+
+function alloyCheck(s: ItemState): Verdict {
+  if (!isRare(s) || s.jewel) return null;
+  if (s.slots.crafted > 0) return CRAFTED_SLOT_TAKEN;
+  return all([needRemovable(s, 1)]);
+}
+
+const ALLOYS: MoveRule[] = [
+  {
+    id: "alloy",
+    label: "Alloy",
+    family: "essence",
+    materials: [ANY_ALLOY],
+    requires: "rare item with a removable mod and no crafted mod",
+    effect: "removes a random mod, then writes the alloy's guaranteed mod (by item class) into the single crafted slot",
+    notes: ["pick the alloy whose mod for this item class you want — read it first (Swift Alloy on a ring = attack speed)"],
+    source: `${S7}; ${CC4}`,
+    verified: true,
+    check: alloyCheck,
+  },
+];
 
 const CATALYST_TAGS =
   "Xoph's=Fire, Tul's=Cold, Esh's=Lightning, Uul-Netol's=Phys, Chayula's=Chaos, Flesh=Life, Neural=Mana, Carapace=Defences, " +
@@ -160,4 +193,4 @@ const LIQUIDS: MoveRule[] = [
     [ANCIENT_REMOVAL, "Diamond grants +(4–5)% Chaos Resistance per the datamine (Game8 says 5–7%)"]),
 ];
 
-export const INSTILL_RULES: readonly MoveRule[] = [...ESSENCES, ...CATALYSTS, ...LIQUIDS];
+export const INSTILL_RULES: readonly MoveRule[] = [...ESSENCES, ...ALLOYS, ...CATALYSTS, ...LIQUIDS];

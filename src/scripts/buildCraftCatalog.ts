@@ -140,7 +140,8 @@ function buildClasses(repoe: Repoe, classNames: Map<string, string>, baseNames: 
 
 /**
  * Crafted-only mods carry no spawn weight, so no class pool lists them; keep them globally:
- * essence mods (item domain) and the liquid-emotion jewel mods (misc domain, CraftedJewel*), e.g.
+ * essence mods (item domain), the alloy mods (item domain, Alloy*: an alloy writes the item's one
+ * crafted mod, 0.5.0 notes) and the liquid-emotion jewel mods (misc domain, CraftedJewel*), e.g.
  * Contempt's "+1 Suffix Modifier allowed", which sits in a PREFIX slot.
  */
 function addCraftedOnlyMods(repoe: Repoe, sink: ModSink): number {
@@ -148,8 +149,9 @@ function addCraftedOnlyMods(repoe: Repoe, sink: ModSink): number {
   for (const [modId, src] of Object.entries(repoe.mods)) {
     if (!POOL_DOMAINS.has(src.domain) || !isSide(src.generation_type) || sink.mods[modId]) continue;
     const essence = src.domain === "item" && (src.is_essence_only || /Essence/.test(modId));
+    const alloy = src.domain === "item" && /^Alloy/.test(modId);
     const liquid = src.domain === "misc" && /^CraftedJewel/.test(modId);
-    if (!(essence || liquid) || src.spawn_weights.some((w) => w.weight > 0)) continue;
+    if (!(essence || alloy || liquid) || src.spawn_weights.some((w) => w.weight > 0)) continue;
     const mod = toCatalogMod(src, familyOf(src), src.generation_type, "item");
     if (!mod) continue;
     sink.mods[modId] = { ...mod, craftedOnly: true };
