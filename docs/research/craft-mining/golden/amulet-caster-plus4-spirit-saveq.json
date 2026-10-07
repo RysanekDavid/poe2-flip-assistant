@@ -1,0 +1,207 @@
+{
+  "id": "amulet-caster-plus4-spirit-saveq",
+  "archetype": "amulet-skill-spirit",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Gold Amulet with fractured Spirit and +3 Spell Skills (+4 at 40% caster quality), finished with catalysed Perfect Exalts for all-res and cast speed.",
+  "planRequest": {
+    "itemClass": "Amulets",
+    "base": "Gold Amulet",
+    "ilvl": 82,
+    "targets": [
+      {
+        "family": "BaseSpirit",
+        "side": "prefix",
+        "minModId": "IncreasedSpirit5",
+        "fractured": true
+      },
+      {
+        "family": "GlobalIncreaseSpellSkillGemLevel",
+        "side": "suffix",
+        "minModId": "GlobalSpellGemsLevel3",
+        "fractured": false
+      },
+      {
+        "family": "AllResistances",
+        "side": "suffix",
+        "minModId": "AllResistances4",
+        "fractured": false
+      },
+      {
+        "family": "IncreasedCastSpeed",
+        "side": "suffix",
+        "minModId": "CastSpeedJewellery3",
+        "fractured": false
+      }
+    ],
+    "includeUnverified": false,
+    "quality": {
+      "catalyst": "sibilant-catalyst",
+      "pct": 40
+    }
+  },
+  "startMode": "compare",
+  "creator": {
+    "tags": [
+      "bought-base",
+      "exalt-omen-side",
+      "essence",
+      "catalyse",
+      "perfect-exalt",
+      "annul",
+      "desecrate",
+      "omen-light"
+    ],
+    "materials": [
+      {
+        "id": "omen-of-sinistral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-sinistral-crystallisation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "essence-of-the-breach",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "sibilant-catalyst",
+        "uses": {
+          "point": 120,
+          "low": 80,
+          "high": 120
+        }
+      },
+      {
+        "id": "omen-of-catalysing-exaltation",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-dextral-exaltation",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "perfect-exalted-orb",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-sinistral-annulment",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 3,
+          "low": 3,
+          "high": 4
+        }
+      },
+      {
+        "id": "preserved-collarbone",
+        "uses": {
+          "point": 3,
+          "low": 3,
+          "high": 4
+        }
+      },
+      {
+        "id": "omen-of-light",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 3
+        }
+      }
+    ],
+    "baseDiv": {
+      "point": 35,
+      "low": 35,
+      "high": 35
+    },
+    "statedTotalDiv": {
+      "point": 75,
+      "low": 50,
+      "high": 100
+    },
+    "steps": [
+      "Buy a pre-crafted Gold Amulet with fractured Spirit and a chaos-spammed mod for ~35 div (non-gold ~20-25); the +3 Spell Skills on the base is inferred from '+4 at 40 quality', it is never shown",
+      "Omen of Sinistral Exaltation + Exalt a junk prefix (T4 life), then Sinistral Crystallisation + Essence of the Breach removes it and adds the max-quality mod",
+      "Caster catalysts to 40% (+4 spell), Catalysing + Dextral Exaltation + Perfect Exalt: all-res; re-quality, repeat: cast speed",
+      "Re-quality to 40%, Omen of Sinistral Annulment + Annul removes the max-quality mod (quality stays)",
+      "Exalt a prefix (T3 mana), then Preserved Collarbone desecration for rarity/mana/spell damage with Omen of Light + Annul rerolls; kept a low spell damage roll",
+      "Catalyst count assumes ~1% quality per catalyst (three fills to 40%); collarbone and light counts are what he had on hand",
+      "Stated: 'start this craft with between 50 to 100 divs'; earlier ones sold for 70-75 div, he lists this one at 300"
+    ]
+  },
+  "market": null,
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "bmDpeUchnBU",
+      "at": "0:51–2:01"
+    },
+    {
+      "kind": "video",
+      "ref": "bmDpeUchnBU",
+      "at": "2:09–5:12"
+    },
+    {
+      "kind": "video",
+      "ref": "bmDpeUchnBU",
+      "at": "5:39–6:20"
+    },
+    {
+      "kind": "video",
+      "ref": "bmDpeUchnBU",
+      "at": "8:19–10:45"
+    },
+    {
+      "kind": "video",
+      "ref": "bmDpeUchnBU",
+      "at": "11:08–12:21"
+    }
+  ],
+  "confidence": "medium",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "ok",
+    "notes": "Route, base price (35 div gold, 20-25 other), two catalysed Perfect slams, Sinistral Annulment and 'between 50 to 100 divs' match bmDpeUchnBU. Some 'nothing here' reveals may be one bone + Echoes reroll; the bone and Light bands cover it. Upload 2026-06-05 (0.5 Runes of Aldur). Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+  }
+}

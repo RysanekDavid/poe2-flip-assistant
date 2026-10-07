@@ -1,0 +1,253 @@
+{
+  "id": "ring-attack-flat-alohaa-self-fracture",
+  "archetype": "ring-attack-flat",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Breach Ring ilvl 82 with three T1 attack flats (one self-fractured behind a desecrated blocker), two resistance suffixes and 60% Attack quality.",
+  "planRequest": {
+    "itemClass": "Rings",
+    "base": "Breach Ring",
+    "ilvl": 82,
+    "targets": [],
+    "groups": [
+      {
+        "side": "prefix",
+        "need": 3,
+        "candidates": [
+          {
+            "family": "PhysicalDamage",
+            "minModId": "AddedPhysicalDamage9"
+          },
+          {
+            "family": "FireDamage",
+            "minModId": "AddedFireDamage9"
+          },
+          {
+            "family": "ColdDamage",
+            "minModId": "AddedColdDamage9"
+          },
+          {
+            "family": "LightningDamage",
+            "minModId": "AddedLightningDamage9"
+          }
+        ]
+      },
+      {
+        "side": "suffix",
+        "need": 1,
+        "candidates": [
+          {
+            "family": "FireResistance",
+            "minModId": "FireResist7"
+          },
+          {
+            "family": "ColdResistance",
+            "minModId": "ColdResist7"
+          },
+          {
+            "family": "LightningResistance",
+            "minModId": "LightningResist7"
+          },
+          {
+            "family": "AllResistances",
+            "minModId": "AllResistances4"
+          }
+        ]
+      }
+    ],
+    "start": {
+      "kind": "clean"
+    },
+    "includeUnverified": false,
+    "quality": {
+      "catalyst": "reaver-catalyst",
+      "pct": 60
+    }
+  },
+  "creator": {
+    "tags": [
+      "chaos-loop",
+      "annul",
+      "greater-exalt",
+      "desecrate",
+      "fracture-target",
+      "exalt-omen-side",
+      "essence",
+      "catalyse",
+      "perfect-exalt",
+      "whittle",
+      "omen-echoes",
+      "omen-light"
+    ],
+    "materials": [
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 250,
+          "low": 200,
+          "high": 300
+        }
+      },
+      {
+        "id": "fracturing-orb",
+        "uses": {
+          "point": 3,
+          "low": 1,
+          "high": 6
+        }
+      },
+      {
+        "id": "omen-of-greater-exaltation",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 2
+        }
+      },
+      {
+        "id": "greater-exalted-orb",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "perfect-exalted-orb",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-dextral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-dextral-crystallisation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "essence-of-the-breach",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-catalysing-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "eshs-catalyst",
+        "uses": {
+          "point": 60,
+          "low": 60,
+          "high": 120
+        }
+      },
+      {
+        "id": "reaver-catalyst",
+        "uses": {
+          "point": 60,
+          "low": 60,
+          "high": 60
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-whittling",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 4
+        }
+      }
+    ],
+    "baseDiv": null,
+    "statedTotalDiv": {
+      "point": 200,
+      "low": 200,
+      "high": 200
+    },
+    "steps": [
+      "Annul + Chaos a Breach Ring ilvl 82 until a T1 attack flat (physical least preferred)",
+      "Omen of Greater Exaltation + Greater Exalted Orb for two more mods, add a desecrated mod as fracture blocker",
+      "Fracturing Orb, 1 in 3 to fracture the T1 flat",
+      "Strip the other mods, Chaos spam ~200-300 for a second T1 flat",
+      "Dextral Exaltation + Exalt a placeholder suffix, then Dextral Crystallisation + Essence of the Breach (+20% max quality, eats the suffix)",
+      "Lightning catalyst to 60%, Catalysing + Greater Exaltation + Perfect Exalt for two resistance suffixes",
+      "Reaver catalyst back to 60%, Omen of Whittling + (Greater) Chaos to remove the quality mod and fix weak suffixes",
+      "Desecrate the last prefix with Abyssal Echoes; Omen of Light + new bone until a T1 attack flat",
+      "Catalyst counts assume ~1% quality per catalyst (the planner's own rate): lightning to 60% once (twice if the slam misses), Reaver back to 60%",
+      "Not costed (counts not stated): the first T1 flat roll on the clean ring, the blocker bone, the whittle chaos and the final collarbone + Omen of Light loop ('hundreds of divs if unlucky'); 200 div is his minimum bankroll, not a measured total",
+      "He finished with all-res + T2 dexterity + T1 intelligence (lightning res whittled away, 'I would have preferred a resistance', 5:22-5:39), so one resistance suffix is the target"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 400,
+      "low": 200,
+      "high": 600
+    },
+    "date": "2026-06-07",
+    "source": "creator estimate at upload (kPBToE_G5t8 6:37-6:46: 'anywhere between 200 to maybe 600'), not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "kPBToE_G5t8",
+      "at": "0:20–0:27"
+    },
+    {
+      "kind": "video",
+      "ref": "kPBToE_G5t8",
+      "at": "1:13–1:46"
+    },
+    {
+      "kind": "video",
+      "ref": "kPBToE_G5t8",
+      "at": "1:54–3:40"
+    },
+    {
+      "kind": "video",
+      "ref": "kPBToE_G5t8",
+      "at": "4:14–6:46"
+    }
+  ],
+  "confidence": "low",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Suffix pool need 2 -> 1 (his ring ended with all-res + dex + int, 5:22-5:39); added Annul x2 ('remove two modifiers again', 1:35-1:37) and Omen of Whittling (four whittles on screen, 3:49-5:57). Upload 2026-06-07 (0.5 Runes of Aldur). Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+  }
+}

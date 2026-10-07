@@ -1,0 +1,289 @@
+{
+  "id": "ring-caster-mana-hax",
+  "archetype": "ring-caster-mana",
+  "patch": "0.5.5",
+  "league": "Forbidden Rites (inferred from the 0.5.5 upload date; not stated)",
+  "summary": "Mana-stacker Mnemonic Ring: fractured mana cost efficiency (anchor), T1 flat mana, % mana essence, T2 cast speed, a T1 resistance and desecrated mana regeneration.",
+  "planRequest": {
+    "itemClass": "Rings",
+    "base": "Mnemonic Ring",
+    "ilvl": 82,
+    "targets": [
+      {
+        "family": "IncreasedMana",
+        "side": "prefix",
+        "minModId": "IncreasedMana12",
+        "fractured": false
+      },
+      {
+        "family": "MaximumManaIncreasePercent",
+        "side": "prefix",
+        "minModId": "EssenceIncreasedManaPercent1",
+        "fractured": false
+      },
+      {
+        "family": "IncreasedCastSpeed",
+        "side": "suffix",
+        "minModId": "CastSpeedJewellery4",
+        "fractured": false
+      },
+      {
+        "family": "ManaRegeneration",
+        "side": "suffix",
+        "minModId": "ManaRegeneration5",
+        "fractured": false
+      }
+    ],
+    "groups": [
+      {
+        "side": "suffix",
+        "need": 1,
+        "candidates": [
+          {
+            "family": "FireResistance",
+            "minModId": "FireResist8"
+          },
+          {
+            "family": "ColdResistance",
+            "minModId": "ColdResist8"
+          },
+          {
+            "family": "LightningResistance",
+            "minModId": "LightningResist8"
+          }
+        ]
+      }
+    ],
+    "start": {
+      "kind": "clean"
+    },
+    "includeUnverified": false,
+    "quality": {
+      "catalyst": "neural-catalyst",
+      "pct": 40
+    }
+  },
+  "creator": {
+    "tags": [
+      "fracture-target",
+      "annul",
+      "chaos-loop",
+      "exalt-omen-side",
+      "essence",
+      "catalyse",
+      "desecrate",
+      "omen-echoes",
+      "perfect-exalt",
+      "whittle",
+      "omen-light"
+    ],
+    "materials": [
+      {
+        "id": "annul",
+        "uses": {
+          "point": 5,
+          "low": 4,
+          "high": 7
+        }
+      },
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 110,
+          "low": 55,
+          "high": 165
+        }
+      },
+      {
+        "id": "omen-of-sinistral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-sinistral-crystallisation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "essence-of-the-breach",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "skittering-catalyst",
+        "uses": {
+          "point": 40,
+          "low": 40,
+          "high": 40
+        }
+      },
+      {
+        "id": "omen-of-dextral-necromancy",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "preserved-collarbone",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-catalysing-exaltation",
+        "uses": {
+          "point": 3,
+          "low": 3,
+          "high": 3
+        }
+      },
+      {
+        "id": "perfect-exalted-orb",
+        "uses": {
+          "point": 3,
+          "low": 3,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-dextral-exaltation",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "neural-catalyst",
+        "uses": {
+          "point": 80,
+          "low": 80,
+          "high": 80
+        }
+      },
+      {
+        "id": "omen-of-sinistral-annulment",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-whittling",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "perfect-essence-of-the-mind",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-light",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "ancient-collarbone",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      }
+    ],
+    "baseDiv": null,
+    "statedTotalDiv": {
+      "point": 170,
+      "low": 160,
+      "high": 200
+    },
+    "steps": [
+      "Buy Mnemonic Rings with a perfectly rolled mana cost efficiency prefix, 3 prefixes and 1 suffix, 10 div each",
+      "Dextral Crystallisation + Essence of the Abyss + Collarbone, Fracturing Orb (8 div): missed, missed, hit on the 3rd base ('we spent 90 divs trying to hit this'). Not costed: mana cost efficiency is not a planner mod (the planner sees a fractured non-target anchor)",
+      "Annul down, Chaos spam for a T1 suffix ('we spent like 10 divs on this'; ~110 chaos at the ~11 chaos per div Hax states in qATcKacI83o 3:01-3:04, derived)",
+      "Sinistral Exaltation + Exalt, Sinistral Crystallisation + Essence of the Breach; speed catalysts to 40%",
+      "Dextral Necromancy + Collarbone + Echoes reveals a blocker (strength); Catalysing + Perfect Exalt: T2 cast speed (he forgot the Dextral Exaltation and says to use it, 6:48-6:58; costed as recommended)",
+      "Neural catalysts to 40%, Catalysing + Perfect Exalt hit T1 rarity (miss); re-quality, Sinistral Annulment, Catalysing + Perfect Exalt: T1 max mana",
+      "Omen of Whittling + Chaos removes the quality mod (he forgot to re-quality first); Perfect Essence of the Mind 50/50 won",
+      "Omen of Light + Annul once (10:57-11:05), Ancient Collarbone + Echoes reroll (11:29-11:49): took mana regeneration (59%); Divine + Orb of the Blessed not costed",
+      "Stated: 'this ring cost me 200 divs ... like 160 divs or 170', about 90 of it the MCE fracture phase; comparable 348, listed at 325"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 325,
+      "low": 185,
+      "high": 348
+    },
+    "date": "2026-09-18",
+    "source": "creator at upload (QrQUKDvSYUU 12:00-12:56): comparables 185 and 348, listed at 325; not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "QrQUKDvSYUU",
+      "at": "0:36–3:47"
+    },
+    {
+      "kind": "video",
+      "ref": "QrQUKDvSYUU",
+      "at": "4:02–6:52"
+    },
+    {
+      "kind": "video",
+      "ref": "QrQUKDvSYUU",
+      "at": "7:09–9:36"
+    },
+    {
+      "kind": "video",
+      "ref": "QrQUKDvSYUU",
+      "at": "10:27–12:56"
+    }
+  ],
+  "confidence": "medium",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Chaos rate now cites Hax's own ~11 chaos per div (qATcKacI83o 3:01-3:04) instead of an unsourced LilBotQ rate; cast-speed slam step corrected (no Dextral Exaltation used, 6:48-6:58); Light 2->1, Ancient Collarbone 2->1, Echoes 3->2, Annul 6->5 per footage (10:57-11:49); league marked inferred (uploaded 2026-09-18). Catalyst counts assume ~1% quality per catalyst (creator footage: Diztoh GDLDxn6yxEs 4:24-4:47, OperatorOtter NUiXXbrPS4E 8:36); the KB community formula says ~2% at ilvl 72-84, which would halve them (unresolved)."
+  }
+}

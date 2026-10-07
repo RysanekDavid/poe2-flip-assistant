@@ -1,0 +1,902 @@
+{
+  "schema_version": 1,
+  "generatedAt": "2026-10-07T00:19:56.609Z",
+  "prices": {
+    "league": "Forbidden Rites",
+    "fetchedAt": "2026-10-06T23:45:50.337Z",
+    "source": "poe.ninja PoE2 currency exchange overview via src/api/ninjaClient.ts fetchCategory (categories Currency, Ritual, Essences, Breach, Abyss, Delirium, Runes; primaryValue = Divine per unit), read 2026-10-06"
+  },
+  "budget": {
+    "clock": "cpu",
+    "searchMs": 10000,
+    "alternativesMs": 3000
+  },
+  "summary": {
+    "entries": 16,
+    "passed": 4,
+    "errored": 0
+  },
+  "entries": [
+    {
+      "id": "amulet-caster-plus4-spirit-saveq",
+      "archetype": "amulet-skill-spirit",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 204.71968800000002,
+        "low": 164.95168800000002,
+        "high": 215.07248800000002
+      },
+      "plannerDiv": {
+        "point": 817.0830814321396,
+        "low": 193.22678974647783,
+        "high": 5327.283760504627
+      },
+      "compared": {
+        "clean": {
+          "point": 890.2836244321395,
+          "low": 226.1354827464778,
+          "high": 5481.5889035046275
+        },
+        "bought": {
+          "point": 817.0830814321396,
+          "low": 193.22678974647783,
+          "high": 5327.283760504627
+        }
+      },
+      "ratio": 3.9912286376293205,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "catalyse",
+          "chaos-loop",
+          "essence",
+          "exalt-omen-side",
+          "fracture-target",
+          "greater-exalt"
+        ],
+        "creator": [
+          "annul",
+          "bought-base",
+          "catalyse",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "omen-light",
+          "perfect-exalt"
+        ],
+        "jaccard": 0.45454545454545453
+      },
+      "topDriver": {
+        "id": "annul",
+        "label": "Orb of Annulment",
+        "div": 648.8262948004992,
+        "share": 0.829613004301765
+      },
+      "impractical": true,
+      "marketDiv": null,
+      "error": null
+    },
+    {
+      "id": "amulet-melee-spirit-es-alohaa",
+      "archetype": "amulet-skill-spirit",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 44.726546,
+        "low": 44.726546,
+        "high": 48.139056
+      },
+      "plannerDiv": {
+        "point": 476.2347962170916,
+        "low": 104.79170006811303,
+        "high": 2502.420454068976
+      },
+      "compared": null,
+      "ratio": 10.647698935148975,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "catalyse",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "fracture-target",
+          "greater-exalt",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "bought-base",
+          "catalyse",
+          "chaos-loop",
+          "desecrate",
+          "erasure",
+          "essence",
+          "exalt-omen-side",
+          "omen-echoes",
+          "omen-light",
+          "perfect-exalt",
+          "whittle"
+        ],
+        "jaccard": 0.5
+      },
+      "topDriver": {
+        "id": "annul",
+        "label": "Orb of Annulment",
+        "div": 292.7447100733949,
+        "share": 0.614706679139731
+      },
+      "impractical": false,
+      "marketDiv": null,
+      "error": null
+    },
+    {
+      "id": "amulet-plus3-projectile-fracture-xthefarmerx",
+      "archetype": "amulet-skill-spirit",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 45.385594,
+        "low": 24.997598,
+        "high": 85.768786
+      },
+      "plannerDiv": {
+        "point": 77.086311,
+        "low": 74.086311,
+        "high": 80.086311
+      },
+      "compared": null,
+      "ratio": 1.6984753135543407,
+      "pass": true,
+      "tags": {
+        "planner": [
+          "bought-base",
+          "desecrate",
+          "essence",
+          "fracture-target"
+        ],
+        "creator": [
+          "bought-base",
+          "desecrate",
+          "essence",
+          "fracture-target"
+        ],
+        "jaccard": 1
+      },
+      "topDriver": {
+        "id": "fracturing-orb",
+        "label": "Fracturing Orb",
+        "div": 28.049999999999997,
+        "share": 0.9643711779056477
+      },
+      "impractical": false,
+      "marketDiv": 60,
+      "error": null
+    },
+    {
+      "id": "belt-life-res-ulaman-thesaneexile",
+      "archetype": "belt-life-res",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 1.37240556,
+        "low": 0.87240556,
+        "high": 1.37240556
+      },
+      "plannerDiv": {
+        "point": 24.70190724619998,
+        "low": 7.2726594208349615,
+        "high": 53.733934432923334
+      },
+      "compared": null,
+      "ratio": 17.998985115012196,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "desecrate",
+          "essence",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "bought-base",
+          "desecrate",
+          "essence",
+          "omen-echoes"
+        ],
+        "jaccard": 0.6666666666666666
+      },
+      "topDriver": {
+        "id": "omen-of-light",
+        "label": "Omen of Light",
+        "div": 21.386044428487068,
+        "share": 0.9022921322888814
+      },
+      "impractical": false,
+      "marketDiv": 4,
+      "error": null
+    },
+    {
+      "id": "breach-ring-3-t1-attack-flats-owner",
+      "archetype": "ring-attack-flat",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 216.92270000000002,
+        "low": 130.9259,
+        "high": 323.6251
+      },
+      "plannerDiv": {
+        "point": 249.48036470318746,
+        "low": 121.65542241100417,
+        "high": 441.8746864514435
+      },
+      "compared": {
+        "clean": {
+          "point": 2559.2740340873647,
+          "low": 982.3284615406949,
+          "high": 7128.472611189925
+        },
+        "bought": {
+          "point": 249.48036470318746,
+          "low": 121.65542241100417,
+          "high": 441.8746864514435
+        }
+      },
+      "ratio": 1.1500887860200313,
+      "pass": true,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "fracture-target",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "fracture-target",
+          "omen-light"
+        ],
+        "jaccard": 0.8571428571428571
+      },
+      "topDriver": {
+        "id": "omen-of-light",
+        "label": "Omen of Light",
+        "div": 101.53580783424906,
+        "share": 0.5503881564718888
+      },
+      "impractical": false,
+      "marketDiv": 380,
+      "error": null
+    },
+    {
+      "id": "jewel-emerald-5mod-fubgun",
+      "archetype": "jewel-5mod-overcap",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 145.710357,
+        "low": 79.51355699999999,
+        "high": 278.207475
+      },
+      "plannerDiv": {
+        "point": 257.49200960265705,
+        "low": 92.40506682937064,
+        "high": 538.539569984523
+      },
+      "compared": {
+        "clean": {
+          "point": 968.2793356026568,
+          "low": 434.3484298293706,
+          "high": 2069.800221984523
+        },
+        "bought": {
+          "point": 257.49200960265705,
+          "low": 92.40506682937064,
+          "high": 538.539569984523
+        }
+      },
+      "ratio": 1.7671496721585622,
+      "pass": true,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "fracture-target",
+          "liquid",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "erasure",
+          "fracture-target",
+          "liquid",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "jaccard": 0.8888888888888888
+      },
+      "topDriver": {
+        "id": "preserved-cranium",
+        "label": "Preserved Cranium",
+        "div": 184.21490553280617,
+        "share": 0.7210202221952008
+      },
+      "impractical": false,
+      "marketDiv": null,
+      "error": null
+    },
+    {
+      "id": "jewel-emerald-5mod-lilbotq",
+      "archetype": "jewel-5mod-overcap",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 244.20692900000003,
+        "low": 189.158459,
+        "high": 245.65236800000005
+      },
+      "plannerDiv": {
+        "point": 489.62154113083443,
+        "low": 168.94474000586646,
+        "high": 1005.238646720215
+      },
+      "compared": {
+        "clean": {
+          "point": 27551.34889346433,
+          "low": 3872.1681617239424,
+          "high": 207180.73463008742
+        },
+        "bought": {
+          "point": 489.62154113083443,
+          "low": 168.94474000586646,
+          "high": 1005.238646720215
+        }
+      },
+      "ratio": 2.0049453270461233,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "fracture-target",
+          "liquid",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "erasure",
+          "liquid",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "jaccard": 0.7777777777777778
+      },
+      "topDriver": {
+        "id": "preserved-cranium",
+        "label": "Preserved Cranium",
+        "div": 356.2888265929893,
+        "share": 0.735189826192231
+      },
+      "impractical": false,
+      "marketDiv": 135,
+      "error": null
+    },
+    {
+      "id": "jewel-sapphire-budget-pavel",
+      "archetype": "jewel-5mod-overcap",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 85.27102799999999,
+        "low": 53.687448999999994,
+        "high": 139.875507
+      },
+      "plannerDiv": {
+        "point": 146.0337697440524,
+        "low": 56.695951119493415,
+        "high": 309.1848288291137
+      },
+      "compared": {
+        "clean": {
+          "point": 6288.525848928685,
+          "low": 974.779740788663,
+          "high": 44357.177432838784
+        },
+        "bought": {
+          "point": 146.0337697440524,
+          "low": 56.695951119493415,
+          "high": 309.1848288291137
+        }
+      },
+      "ratio": 1.7125836660964426,
+      "pass": true,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "fracture-target",
+          "liquid",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "annul",
+          "bought-base",
+          "desecrate",
+          "liquid",
+          "omen-echoes"
+        ],
+        "jaccard": 0.625
+      },
+      "topDriver": {
+        "id": "preserved-cranium",
+        "label": "Preserved Cranium",
+        "div": 104.20733059885144,
+        "share": 0.714072765896589
+      },
+      "impractical": false,
+      "marketDiv": 170,
+      "error": null
+    },
+    {
+      "id": "jewel-sapphire-fractured-pavel",
+      "archetype": "jewel-5mod-overcap",
+      "start": "clean",
+      "creatorDiv": {
+        "point": 194.77225300000006,
+        "low": 102.27550599999998,
+        "high": 336.97829700000005
+      },
+      "plannerDiv": {
+        "point": 846.6378957440525,
+        "low": 396.58851411949337,
+        "high": 1795.5126808291136
+      },
+      "compared": {
+        "clean": {
+          "point": 846.6378957440525,
+          "low": 396.58851411949337,
+          "high": 1795.5126808291136
+        },
+        "bought": {
+          "point": 145.9337697440524,
+          "low": 56.665951119493414,
+          "high": 308.5848288291137
+        }
+      },
+      "ratio": 4.346809582492493,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "exalt-omen-side",
+          "fracture-target",
+          "liquid",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "erasure",
+          "fracture-target",
+          "liquid",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "jaccard": 0.8
+      },
+      "topDriver": {
+        "id": "omen-of-sinistral-annulment",
+        "label": "Omen of Sinistral Annulment",
+        "div": 331.52,
+        "share": 0.3915723612969741
+      },
+      "impractical": false,
+      "marketDiv": 400,
+      "error": null
+    },
+    {
+      "id": "jewel-time-lost-sapphire-mana-hax",
+      "archetype": "jewel-time-lost",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 327.194738,
+        "low": 81.49649799999999,
+        "high": 572.894296
+      },
+      "plannerDiv": {
+        "point": 107.88407515596899,
+        "low": 59.60879114794519,
+        "high": 197.84283189252494
+      },
+      "compared": {
+        "clean": {
+          "point": 128.44318861430213,
+          "low": 57.99485193961186,
+          "high": 306.5463263091915
+        },
+        "bought": {
+          "point": 107.88407515596899,
+          "low": 59.60879114794519,
+          "high": 197.84283189252494
+        }
+      },
+      "ratio": 0.3297243586966518,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "chaos-loop",
+          "desecrate",
+          "fracture-target",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "bought-base",
+          "desecrate",
+          "liquid",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "jaccard": 0.5
+      },
+      "topDriver": {
+        "id": "preserved-cranium",
+        "label": "Preserved Cranium",
+        "div": 77.81606075984656,
+        "share": 0.8031873208736756
+      },
+      "impractical": false,
+      "marketDiv": 50,
+      "error": null
+    },
+    {
+      "id": "ring-attack-flat-alohaa-self-fracture",
+      "archetype": "ring-attack-flat",
+      "start": "clean",
+      "creatorDiv": {
+        "point": 88.52595899999997,
+        "low": 65.105959,
+        "high": 170.60965899999997
+      },
+      "plannerDiv": {
+        "point": 2664.8915238520703,
+        "low": 1036.1316454230478,
+        "high": 7337.718712719337
+      },
+      "compared": null,
+      "ratio": 30.102938775868797,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "anchored-junk",
+          "annul",
+          "bought-base",
+          "catalyse",
+          "chaos-loop",
+          "desecrate",
+          "erasure",
+          "essence",
+          "exalt-omen-side",
+          "omen-echoes",
+          "omen-light",
+          "perfect-exalt",
+          "whittle"
+        ],
+        "creator": [
+          "annul",
+          "catalyse",
+          "chaos-loop",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "fracture-target",
+          "greater-exalt",
+          "omen-echoes",
+          "omen-light",
+          "perfect-exalt",
+          "whittle"
+        ],
+        "jaccard": 0.6666666666666666
+      },
+      "topDriver": {
+        "id": "omen-of-whittling",
+        "label": "Omen of Whittling",
+        "div": 2317.9515553389165,
+        "share": 0.869810847680713
+      },
+      "impractical": false,
+      "marketDiv": 400,
+      "error": null
+    },
+    {
+      "id": "ring-attack-flat-budget-magic-greater",
+      "archetype": "ring-attack-flat",
+      "start": "bought",
+      "creatorDiv": {
+        "point": 2.4835499999999997,
+        "low": 1.7428100000000002,
+        "high": 3.92074
+      },
+      "plannerDiv": {
+        "point": 19.155448289273508,
+        "low": 3.8185464836628316,
+        "high": 43.86765060319593
+      },
+      "compared": null,
+      "ratio": 7.712930397726444,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "annul",
+          "bought-base",
+          "desecrate",
+          "essence",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "bought-base",
+          "catalyse",
+          "desecrate",
+          "essence",
+          "greater-exalt",
+          "omen-echoes"
+        ],
+        "jaccard": 0.5
+      },
+      "topDriver": {
+        "id": "omen-of-light",
+        "label": "Omen of Light",
+        "div": 17.043280982905987,
+        "share": 0.8967576414666867
+      },
+      "impractical": false,
+      "marketDiv": null,
+      "error": null
+    },
+    {
+      "id": "ring-attack-flat-saveq-dusk-four-flat",
+      "archetype": "ring-attack-flat",
+      "start": "clean",
+      "creatorDiv": {
+        "point": 289.43221100000005,
+        "low": 152.248775,
+        "high": 486.63689100000005
+      },
+      "plannerDiv": {
+        "point": 14540.915051241656,
+        "low": 1161.7959043050648,
+        "high": 206929.36919298398
+      },
+      "compared": null,
+      "ratio": 50.23944985598598,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "anchored-junk",
+          "annul",
+          "bought-base",
+          "catalyse",
+          "essence",
+          "exalt-omen-side",
+          "greater-exalt"
+        ],
+        "creator": [
+          "annul",
+          "catalyse",
+          "chaos-loop",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "fracture-target",
+          "greater-exalt",
+          "omen-echoes",
+          "omen-light",
+          "perfect-exalt",
+          "whittle"
+        ],
+        "jaccard": 0.35714285714285715
+      },
+      "topDriver": {
+        "id": "annul",
+        "label": "Orb of Annulment",
+        "div": 12219.557801623874,
+        "share": 0.840356866026835
+      },
+      "impractical": true,
+      "marketDiv": 500,
+      "error": null
+    },
+    {
+      "id": "ring-attack-flat-saveq-dusk-t3-budget",
+      "archetype": "ring-attack-flat",
+      "start": "clean",
+      "creatorDiv": {
+        "point": 90.469946,
+        "low": 49.38854599999999,
+        "high": 138.11689499999997
+      },
+      "plannerDiv": {
+        "point": 1293.2544480277932,
+        "low": 133.38393554706713,
+        "high": 16691.826994846582
+      },
+      "compared": null,
+      "ratio": 14.294851552445861,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "anchored-junk",
+          "annul",
+          "bought-base",
+          "catalyse",
+          "chaos-loop",
+          "essence",
+          "exalt-omen-side",
+          "greater-exalt"
+        ],
+        "creator": [
+          "annul",
+          "catalyse",
+          "chaos-loop",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "fracture-target",
+          "omen-echoes",
+          "omen-light",
+          "perfect-exalt",
+          "whittle"
+        ],
+        "jaccard": 0.35714285714285715
+      },
+      "topDriver": {
+        "id": "annul",
+        "label": "Orb of Annulment",
+        "div": 1076.3602680555687,
+        "share": 0.8322880850686522
+      },
+      "impractical": true,
+      "marketDiv": 125,
+      "error": null
+    },
+    {
+      "id": "ring-caster-mana-hax",
+      "archetype": "ring-caster-mana",
+      "start": "clean",
+      "creatorDiv": {
+        "point": 101.28536999999999,
+        "low": 95.57246999999998,
+        "high": 122.86130999999999
+      },
+      "plannerDiv": {
+        "point": 1235.460402290925,
+        "low": 278.00897420956454,
+        "high": 6352.574879569943
+      },
+      "compared": null,
+      "ratio": 12.197816943265599,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "anchored-junk",
+          "annul",
+          "bought-base",
+          "catalyse",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "greater-exalt",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "annul",
+          "catalyse",
+          "chaos-loop",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "fracture-target",
+          "omen-echoes",
+          "omen-light",
+          "perfect-exalt",
+          "whittle"
+        ],
+        "jaccard": 0.5
+      },
+      "topDriver": {
+        "id": "annul",
+        "label": "Orb of Annulment",
+        "div": 689.6717138765415,
+        "share": 0.5582305289572027
+      },
+      "impractical": true,
+      "marketDiv": 325,
+      "error": null
+    },
+    {
+      "id": "ring-caster-mana-operatorotter",
+      "archetype": "ring-caster-mana",
+      "start": "clean",
+      "creatorDiv": {
+        "point": 55.77872999999999,
+        "low": 55.77872999999999,
+        "high": 56.29963
+      },
+      "plannerDiv": {
+        "point": 2798.6172254187723,
+        "low": 507.8383210976845,
+        "high": 17851.682258823348
+      },
+      "compared": null,
+      "ratio": 50.173555859353066,
+      "pass": false,
+      "tags": {
+        "planner": [
+          "anchored-junk",
+          "annul",
+          "bought-base",
+          "catalyse",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "greater-exalt",
+          "omen-echoes",
+          "omen-light"
+        ],
+        "creator": [
+          "annul",
+          "catalyse",
+          "chaos-loop",
+          "desecrate",
+          "essence",
+          "exalt-omen-side",
+          "fracture-target",
+          "omen-echoes",
+          "perfect-exalt",
+          "whittle"
+        ],
+        "jaccard": 0.42857142857142855
+      },
+      "topDriver": {
+        "id": "annul",
+        "label": "Orb of Annulment",
+        "div": 2074.5420947992156,
+        "share": 0.7412739677141059
+      },
+      "impractical": true,
+      "marketDiv": 400,
+      "error": null
+    }
+  ]
+}

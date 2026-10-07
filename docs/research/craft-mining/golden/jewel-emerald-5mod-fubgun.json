@@ -1,0 +1,175 @@
+{
+  "id": "jewel-emerald-5mod-fubgun",
+  "archetype": "jewel-5mod-overcap",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "Five-mod attack Emerald: fractured crit damage bonus, crit chance and a desecrated attack speed suffix via the over-cap Liquid Contempt route, plus an elemental or attack damage prefix.",
+  "planRequest": {
+    "itemClass": "Jewels",
+    "base": "Emerald",
+    "ilvl": 80,
+    "targets": [
+      {
+        "family": "AttackCriticalStrikeMultiplier",
+        "side": "suffix",
+        "minModId": "JewelAttackCriticalDamage",
+        "fractured": true
+      },
+      {
+        "family": "AttackCriticalStrikeChance",
+        "side": "suffix",
+        "minModId": "JewelAttackCriticalChance",
+        "fractured": false
+      }
+    ],
+    "groups": [
+      {
+        "side": "suffix",
+        "need": 1,
+        "candidates": [
+          {
+            "family": "IncreasedAttackSpeed",
+            "minModId": "JewelAttackSpeed"
+          },
+          {
+            "family": "BowAttackSpeedForJewel",
+            "minModId": "JewelBowSpeed"
+          }
+        ]
+      }
+    ],
+    "includeUnverified": true,
+    "quality": null
+  },
+  "startMode": "compare",
+  "creator": {
+    "tags": [
+      "bought-base",
+      "fracture-target",
+      "annul",
+      "chaos-loop",
+      "liquid",
+      "desecrate",
+      "omen-echoes",
+      "omen-light",
+      "erasure"
+    ],
+    "materials": [
+      {
+        "id": "fracturing-orb",
+        "uses": {
+          "point": 4,
+          "low": 1,
+          "high": 8
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 5,
+          "low": 3,
+          "high": 8
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 3,
+          "low": 3,
+          "high": 5
+        }
+      },
+      {
+        "id": "potent-liquid-contempt",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 4
+        }
+      },
+      {
+        "id": "preserved-cranium",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 4
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-light",
+        "uses": {
+          "point": 1,
+          "low": 0.5,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-sinistral-annulment",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "omen-of-sinistral-erasure",
+        "uses": {
+          "point": 0.5,
+          "low": 0.5,
+          "high": 1
+        }
+      },
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      }
+    ],
+    "baseDiv": {
+      "point": 1,
+      "low": 1,
+      "high": 1
+    },
+    "statedTotalDiv": {
+      "point": 65,
+      "low": 50,
+      "high": 80
+    },
+    "steps": [
+      "'20% crit damage' is read as attack crit damage bonus (the generic crit damage bonus rolls the same 10-20%; inferred from the attack build)",
+      "Buy rare 4-mod Emeralds with 20% attack crit damage bonus, ~1 div each (a pre-fractured one is ~9 div); planner base Emerald inferred from the attack mods",
+      "Fracturing Orb, 1 in 4 on a 4-mod jewel (expected 4 bases + 4 orbs per fracture; creator buys a new base per miss)",
+      "Annul twice down to the fractured mod, Chaos spam until attack crit chance (count not stated), Exalt twice to 4 mods",
+      "Potent Liquid Contempt for '+1 Suffix Modifier allowed' (50/50; '+1 prefix' breaks it, back to the annul step)",
+      "Preserved Cranium + Abyssal Echoes for a desecrated attack speed suffix; Omen of Light + Annul and retry on a miss",
+      "Omen of Sinistral Annulment + Annul removes the '+1 suffix' mod (50/50; he lost and finished with Sinistral Erasure + Chaos)",
+      "Exalt to 5 mods, Chaos until a good prefix (count not stated)",
+      "Not costed (no planner target): Potent Liquid Ferocity for the suffix-effect prefix (won on the third try), optional Divines and Reaver catalysts"
+    ]
+  },
+  "market": null,
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "NK-Oat_OtgQ",
+      "at": null
+    }
+  ],
+  "confidence": "low",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "fixed",
+    "notes": "Fractured crit damage family marked inferred (attack and generic crit damage both roll 10-20%); 4-mod base inferred from 'one and four' confirmed. Open: his 'roughly 1.5 divines to get your fractured jewel' contradicts 4 bases + 4 orbs. Upload 2026-06-13 (0.5 Runes of Aldur, after 0.5.2)."
+  }
+}

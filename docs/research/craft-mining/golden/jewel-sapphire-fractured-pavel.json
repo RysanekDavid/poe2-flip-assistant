@@ -1,0 +1,190 @@
+{
+  "id": "jewel-sapphire-fractured-pavel",
+  "archetype": "jewel-5mod-overcap",
+  "patch": "0.5",
+  "league": "Runes of Aldur",
+  "summary": "High-end five-mod caster Sapphire: fractured crit spell damage bonus, a second crit suffix by Chaos, Liquid Contempt over-cap, desecrated third suffix, spell damage prefix.",
+  "planRequest": {
+    "itemClass": "Jewels",
+    "base": "Sapphire",
+    "ilvl": 80,
+    "targets": [
+      {
+        "family": "SpellCritMultiplierForJewel",
+        "side": "suffix",
+        "minModId": "JewelSpellCriticalDamage",
+        "fractured": true
+      },
+      {
+        "family": "SpellCriticalStrikeChance",
+        "side": "suffix",
+        "minModId": "JewelSpellCriticalChance",
+        "fractured": false
+      }
+    ],
+    "groups": [
+      {
+        "side": "suffix",
+        "need": 1,
+        "candidates": [
+          {
+            "family": "ManaGainedOnKillPercentage",
+            "minModId": "JewelManaonKill"
+          },
+          {
+            "family": "IncreasedCastSpeed",
+            "minModId": "JewelCastSpeed"
+          },
+          {
+            "family": "CriticalStrikeChance",
+            "minModId": "JewelCriticalChance"
+          }
+        ]
+      }
+    ],
+    "includeUnverified": true,
+    "quality": null
+  },
+  "startMode": "compare",
+  "creator": {
+    "tags": [
+      "bought-base",
+      "desecrate",
+      "fracture-target",
+      "annul",
+      "chaos-loop",
+      "liquid",
+      "omen-echoes",
+      "omen-light",
+      "erasure"
+    ],
+    "materials": [
+      {
+        "id": "omen-of-sinistral-necromancy",
+        "uses": {
+          "point": 2.5,
+          "low": 1,
+          "high": 5
+        }
+      },
+      {
+        "id": "preserved-cranium",
+        "uses": {
+          "point": 4.5,
+          "low": 2,
+          "high": 8
+        }
+      },
+      {
+        "id": "fracturing-orb",
+        "uses": {
+          "point": 2.5,
+          "low": 1,
+          "high": 5
+        }
+      },
+      {
+        "id": "annul",
+        "uses": {
+          "point": 4,
+          "low": 2,
+          "high": 6
+        }
+      },
+      {
+        "id": "exalted",
+        "uses": {
+          "point": 2,
+          "low": 2,
+          "high": 3
+        }
+      },
+      {
+        "id": "potent-liquid-contempt",
+        "uses": {
+          "point": 1.5,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-dextral-necromancy",
+        "uses": {
+          "point": 2,
+          "low": 1,
+          "high": 3
+        }
+      },
+      {
+        "id": "omen-of-abyssal-echoes",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-light",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      },
+      {
+        "id": "omen-of-sinistral-erasure",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 1
+        }
+      },
+      {
+        "id": "chaos",
+        "uses": {
+          "point": 1,
+          "low": 1,
+          "high": 2
+        }
+      }
+    ],
+    "baseDiv": null,
+    "statedTotalDiv": {
+      "point": 150,
+      "low": 150,
+      "high": 150
+    },
+    "steps": [
+      "Buy 3-mod Sapphires with a perfectly rolled crit spell damage bonus suffix (price not stated)",
+      "Omen of Sinistral Necromancy + Preserved Cranium (prefix, protects the suffix), Fracturing Orb at 1 in 3: hit 2 of 5",
+      "Annul down to the fractured mod, Chaos spam for a second crit suffix (count not stated), Exalt",
+      "Liquid Contempt 50/50 for '+1 suffix': one jewel lost once (annul + Chaos again), won on the second try",
+      "Dextral Necromancy + Cranium + Abyssal Echoes at the Well of Souls; Omen of Light loop: one took mana on kill, the other crit chance for spells after one Light",
+      "Omen of Sinistral Erasure + Chaos removes '+1 suffix' (cheaper than Annulment at the time); Exalt, Chaos for spell damage",
+      "Not costed (no planner target): Liquid Ferocity 50/50 (lost several), Divine Orbs ('the most expensive part')",
+      "Stated: 'it will cost you maybe 150 div'; sold one for 580, sapphires 400 and 280 div"
+    ]
+  },
+  "market": {
+    "priceDiv": {
+      "point": 400,
+      "low": 280,
+      "high": 580
+    },
+    "date": "2026-07-03",
+    "source": "creator at upload: sold one for 580, sapphires 400 and 280 div; not a trade check"
+  },
+  "sources": [
+    {
+      "kind": "video",
+      "ref": "o0Q975G2s2g",
+      "at": null
+    }
+  ],
+  "confidence": "low",
+  "factCheck": {
+    "date": "2026-10-07",
+    "verdict": "ok",
+    "notes": "2 of 5 fractures, Contempt lost then won, Erasure used as cheaper, 'maybe 150 div', sales 580/400/280 all match o0Q975G2s2g. Bone type ('kranium') is not named, Preserved inferred. Upload 2026-07-03 (0.5 Runes of Aldur)."
+  }
+}
