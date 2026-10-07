@@ -106,6 +106,14 @@ function testDuskAlchemyStrip(cat: CraftCatalog): void {
   assert.deepEqual(strip.materials.map((m) => m.id), ["alch", "annul"], "Alchemy and Annulments only");
   assert.ok(strip.after.rarity === "Rare" && strip.after.affixes.length === 1, "a rare with one throwaway left");
   assert.equal(p.expanded, 174, "expanded pinned (deterministic)");
+  // G5b: the last prefixes are slammed with both suffixes planted as throwaways — no Sinistral
+  // Exaltation per slam (0.3 at fixture prices), and a miss repaired by a plain Annulment that
+  // re-plants a suffix it takes (was 24.4489 with the omen on every slam)
+  const slam = p.steps[p.steps.length - 1]!;
+  assert.equal(slam.method, "slam-prefix-exalt-greater");
+  assert.deepEqual(seq.slice(-4, -1), ["plant-junk-suffix", "plant-junk-suffix", "plant-junk-prefix"], `suffixes filled before the slams: ${seq.join(", ")}`);
+  assert.ok(!slam.materials.some((m) => /sinistral/.test(m.id)), "no Sinistral omen on the slams or the repair");
+  assert.ok(Math.abs(p.totals.div!.point - 23.5258) < 5e-4, `Dusk pool total pinned: ${p.totals.div!.point}`);
 }
 
 /** The Alchemy strip is offered where the Transmutation routes are gated off (allowance bases) and on jewels only. */

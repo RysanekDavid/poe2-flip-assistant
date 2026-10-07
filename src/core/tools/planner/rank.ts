@@ -9,12 +9,15 @@ export const RISK_LAMBDA = 0.25;
  */
 export const UNPRICED_RANK_DIV = 10;
 
+/** One unit of a material as rankCost prices it. */
+export const rankPrice = (ctx: PlanCtx, id: string): number => ctx.priceOf(id) ?? UNPRICED_RANK_DIV;
+
 /** Expected Divine (point) + λ·(dear end − point) of a macro's material uses. */
 export function rankCost(move: { uses: readonly MaterialUse[] }, ctx: PlanCtx): number {
   let point = 0;
   let high = 0;
   for (const u of move.uses) {
-    const price = ctx.priceOf(u.mat.id) ?? UNPRICED_RANK_DIV;
+    const price = rankPrice(ctx, u.mat.id);
     point += u.qty.point * price;
     high += u.qty.high * price;
   }
