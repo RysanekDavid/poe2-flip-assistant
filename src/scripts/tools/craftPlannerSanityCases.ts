@@ -22,9 +22,9 @@ const planWith = (cat: CraftCatalog, req: PlanRequest, prices: Map<string, numbe
 const near = (a: number, b: number, tol: number): boolean => Math.abs(a - b) <= tol;
 
 /** Every alternative is cheaper, and planning its targets reproduces its totals exactly (same model, no shortcut). */
-function assertAlternatives(cat: CraftCatalog, p: PlanResponse, prices: Map<string, number>, req: PlanRequest): void {
+function assertAlternatives(cat: CraftCatalog, p: PlanResponse, prices: Map<string, number>, req: PlanRequest, firstRealistic: boolean): void {
   assert.ok(p.alternatives.length >= 1 && p.alternatives.length <= MAX_ALTERNATIVES, `1..${MAX_ALTERNATIVES} alternatives, got ${p.alternatives.length}`);
-  assert.equal(p.alternatives[0]!.impractical, false, "the first alternative is realistic");
+  assert.equal(p.alternatives[0]!.impractical, !firstRealistic, firstRealistic ? "the first alternative is realistic" : "no cheaper target set is realistic");
   for (const alt of p.alternatives) {
     assert.ok(alt.totals.div && p.totals.div && alt.totals.div.point < p.totals.div.point, "an alternative is cheaper");
     const again = planWith(cat, { ...req, targets: alt.targets }, prices);
@@ -48,10 +48,11 @@ const OWNER_WHITTLE_DIV = 3321.38;
 
 /**
  * Now (P1): the third flat is desecrated — an Ancient Collarbone + Sinistral Necromancy reveal with
- * one Echoes reroll, Omen of Light on a miss (the creators' last prefix) — ~22 Lights, ~1,129 div,
- * no step past the limit. The same flats as a pool ("any 3 of the 4 attack flats") or on a bought
- * base carrying one of them fractured are cheaper again. Four top flats on a Dusk Ring still have a
- * whittle step past the limit, with realistic cheaper target sets.
+ * one Echoes reroll, Omen of Light on a miss (the creators' last prefix) — ~22 Lights, ~1,129 div.
+ * Its two whittle loops (~103 and ~72 Whittles) are past Whittling's own limit of 50. The same flats
+ * as a pool ("any 3 of the 4 attack flats") or on a bought base carrying one of them fractured are
+ * cheaper again. Four top flats on a Dusk Ring have two whittle steps past that limit, and every
+ * cheaper target set still whittles past it.
  */
 function testOwnerCase(cat: CraftCatalog): void {
   const prices = pricesWithoutCatalysts();
@@ -62,7 +63,9 @@ function testOwnerCase(cat: CraftCatalog): void {
   assert.ok(desecrate && desecrate.instructions[0]!.pick.some((x) => /Physical|Lightning|Cold/.test(x)), `a flat prefix is desecrated: ${route.join(", ")}`);
   assert.ok(near(p.totals.div!.point, 1128.54, 0.05), `≈ 1,129 div, got ${p.totals.div!.point}`);
   assert.ok(p.totals.div!.point * 2.9 < OWNER_WHITTLE_DIV && p.totals.div!.point * 5 < OWNER_BEFORE_DIV, "well under the whittle-only and the slam plans");
-  assert.deepEqual(p.steps.filter((s) => s.impractical).map((s) => s.method), [], "no step is past the limit any more");
+  // Whittling's own limit (50 a step, creators spend 1–26 a ring — KB §4) flags both loops: ~103 and ~72 Whittles
+  const whittle = mat("omenWhittling").id;
+  assert.deepEqual(p.steps.filter((s) => s.impractical).map((s) => [s.method, s.impractical!.materialId]), [["whittle-loop", whittle], ["whittle-loop", whittle]], "both whittle loops are past the Whittling limit");
   const lights = desecrate.materials.find((m) => m.id === mat("omenLight").id)!.qty.point;
   assert.ok(lights > 15 && lights < 30, `one top-tier flat family: ~22 Omens of Light, got ${lights}`);
   const pool = planWith(cat, { ...OWNER_FLAT_RING, targets: OWNER_FLAT_RING.targets.slice(3), groups: [{ side: "prefix", need: 3, candidates: FLAT_FAMILIES.map(([family, id]) => ({ family, minModId: `${id}9` })) }] }, prices);
@@ -71,8 +74,10 @@ function testOwnerCase(cat: CraftCatalog): void {
   assert.ok(bought.totalsWithBase!.div!.point < p.totals.div!.point * 0.35, `bought fractured flat at 65 div: ${bought.totalsWithBase!.div!.point} div with the base`);
   const dusk = planWith(cat, FOUR_FLAT_DUSK, prices);
   const flagged = dusk.steps.filter((s) => s.impractical);
-  assert.ok(flagged.length === 1 && flagged[0]!.method === "whittle-loop" && flagged[0]!.impractical!.materialId === mat("chaos").id, "four top flats: one whittle step past the limit");
-  assertAlternatives(cat, dusk, prices, FOUR_FLAT_DUSK);
+  // before the Whittling limit only the second loop (~2,022 Chaos) was flagged; both loops pass 50 Whittles (~103, ~645)
+  assert.ok(flagged.length === 2 && flagged.every((s) => s.method === "whittle-loop" && s.impractical!.materialId === whittle), "four top flats: both whittle steps past the Whittling limit");
+  // every cheaper target set still whittles past 50, so the chips are all "still long"
+  assertAlternatives(cat, dusk, prices, FOUR_FLAT_DUSK, false);
 }
 
 /**
@@ -162,7 +167,8 @@ function testMarketReality(cat: CraftCatalog): void {
   const t9 = planWith(cat, ring(9), fixturePrices());
   const route = t9.steps.map((s) => s.method).join(", ");
   assert.ok(/desecrate-/.test(route) && t9.totals.div!.point < 1000, `three T9 flats: the last one desecrated, under 1,000 div (1,600 with the slam), got ${t9.totals.div!.point}: ${route}`);
-  assert.deepEqual(t9.steps.filter((s) => s.impractical).map((s) => s.method), [], "no step past the limit, so no cheaper-target chips");
+  // the second flat's whittle loop takes ~103 Whittles: past Whittling's own limit (50, KB §4)
+  assert.deepEqual(t9.steps.filter((s) => s.impractical).map((s) => [s.method, s.impractical!.materialId]), [["whittle-loop", mat("omenWhittling").id]], "only the whittle loop is past a limit");
 }
 
 export function runSanityCases(cat: CraftCatalog): void {

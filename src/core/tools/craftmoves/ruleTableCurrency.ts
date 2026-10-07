@@ -98,7 +98,8 @@ const REGAL: MoveRule[] = tiers(
     { suffix: "-greater", label: "Greater Regal Orb", key: "greaterRegal", floor: 35 },
     { suffix: "-perfect", label: "Perfect Regal Orb", key: "perfectRegal", floor: 50 },
   ],
-  false,
+  // poe2db item text (2026-10-07): Greater Regal Orb "Minimum Modifier Level: 35", Perfect "… 50" (KB §1)
+  true,
 );
 
 const EXALT: MoveRule[] = tiers(
@@ -134,7 +135,8 @@ const CHAOS: MoveRule[] = tiers(
     { suffix: "-greater", label: "Greater Chaos Orb", key: "greaterChaos", floor: 35 },
     { suffix: "-perfect", label: "Perfect Chaos Orb", key: "perfectChaos", floor: 50 },
   ],
-  false,
+  // poe2db item text (2026-10-07): Greater Chaos Orb "Minimum Modifier Level: 35", Perfect "… 50" (KB §1)
+  true,
 );
 
 function fractureCheck(s: ItemState): Verdict {

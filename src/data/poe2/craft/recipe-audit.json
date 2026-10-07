@@ -1434,7 +1434,7 @@
         },
         {
           "idx": 5,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -1450,9 +1450,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "Omen of Light pairing matches only the unverified rule omen-light",
-              "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
+              "verdict": "ok",
+              "detail": "Omen of Light pairing matches verified rule omen-light",
+              "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         },
@@ -1476,7 +1476,7 @@
         },
         {
           "idx": 7,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -1492,9 +1492,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "Omen of Light pairing matches only the unverified rule omen-light",
-              "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
+              "verdict": "ok",
+              "detail": "Omen of Light pairing matches verified rule omen-light",
+              "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         }
@@ -2714,7 +2714,7 @@
         },
         {
           "idx": 3,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -2730,9 +2730,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "Omen of Light pairing matches only the unverified rule omen-light",
-              "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
+              "verdict": "ok",
+              "detail": "Omen of Light pairing matches verified rule omen-light",
+              "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         }
@@ -3264,7 +3264,7 @@
         },
         {
           "idx": 4,
-          "verdict": "unknown",
+          "verdict": "ok",
           "checks": [
             {
               "kind": "catalog",
@@ -3280,9 +3280,9 @@
             },
             {
               "kind": "pairing",
-              "verdict": "unknown",
-              "detail": "Omen of Light pairing matches only the unverified rule omen-light",
-              "source": "RePoE OmenOnAnnulRemoveAbyssMod; docs/kb/creator-videos.md S20 (2026-09-29 correction)"
+              "verdict": "ok",
+              "detail": "Omen of Light pairing matches verified rule omen-light",
+              "source": "poe2-crafting-knowledge.md §4"
             }
           ]
         },
